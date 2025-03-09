@@ -1,0 +1,3 @@
+/mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug/CMakeFiles/GAM300.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/GAM300.dir/main.cpp.o -o GAM300  /usr/lib64/libGLEW.so /usr/lib64/libglfw.so /usr/lib64/libGLX.so /usr/lib64/libOpenGL.so
