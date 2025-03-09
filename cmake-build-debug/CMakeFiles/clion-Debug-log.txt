@@ -1,4 +1,4 @@
-/home/admin/Downloads/clion-2024.3.4/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /mnt/THDD/Nextcloud/School/Repos/GAM300 -B /mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug
+/home/admin/CLion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /mnt/THDD/Nextcloud/School/Repos/GAM300 -B /mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug
 -- The C compiler identification is GNU 14.2.1
 -- The CXX compiler identification is GNU 14.2.1
 -- Detecting C compiler ABI info
@@ -13,6 +13,6 @@
 -- Detecting CXX compile features - done
 -- Found OpenGL: /usr/lib64/libOpenGL.so
 -- Configuring for Linux...
--- Configuring done (0.5s)
--- Generating done (0.1s)
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
 -- Build files have been written to: /mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug
