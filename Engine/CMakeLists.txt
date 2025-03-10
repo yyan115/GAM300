@@ -1,50 +1,59 @@
-# ------------------------------------------------------------------------------
-# Engine/CMakeLists.txt
-# This file builds the custom game engine as a library.
-# ------------------------------------------------------------------------------
-# Define directories for source and header files.
-set(ENGINE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(ENGINE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# We generally do NOT call "project(...)" in sub CMake files if we want a single top-level project.
+cmake_minimum_required(VERSION 3.20)
 
 # ------------------------------------------------------------------------------
-# Gather Source Files
+# 1) Collect the Engine source/header files
 # ------------------------------------------------------------------------------
-# Using file(GLOB_RECURSE ...) is convenient but note that for production builds,
-# manually listing source files is recommended.
-file(GLOB_RECURSE ENGINE_SOURCES ${ENGINE_SRC_DIR}/*.cpp)
-file(GLOB_RECURSE ENGINE_HEADERS ${ENGINE_INCLUDE_DIR}/*.h)
-
-# ------------------------------------------------------------------------------
-# Create the Engine Library Target
-# ------------------------------------------------------------------------------
-if(BUILD_SHARED_ENGINE)
-    add_library(${ENGINE_PROJECT_NAME} SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
-else()
-    add_library(${ENGINE_PROJECT_NAME} STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
-endif()
-
-# ------------------------------------------------------------------------------
-# Specify Include Directories for the Engine
-# ------------------------------------------------------------------------------
-target_include_directories(${ENGINE_PROJECT_NAME}
-    PUBLIC
-        ${ENGINE_INCLUDE_DIR}
+# We recursively grab all .cpp/.c and .hpp/.h in src/ and include/.
+file(GLOB_RECURSE ENGINE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+file(GLOB_RECURSE ENGINE_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
 # ------------------------------------------------------------------------------
-# Link External Dependencies (if the engine uses them)
+# 2) Declare the engine library
 # ------------------------------------------------------------------------------
-target_link_libraries(${ENGINE_PROJECT_NAME}
-    PUBLIC
-        glm::glm
-        glfw
-        GLEW::GLEW
+# Using STATIC library. If you want a DLL, change to SHARED.
+add_library(${ENGINE_NAME} STATIC
+    ${ENGINE_SOURCES}
+    ${ENGINE_HEADERS}
 )
 
 # ------------------------------------------------------------------------------
-# Windows-Specific: DLL Export Definitions
+# 3) Include paths (where to find engine headers + third-party libs)
 # ------------------------------------------------------------------------------
-# When building a shared library on Windows, you might need to define export macros.
-if(WIN32 AND BUILD_SHARED_ENGINE)
-    target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE ENGINE_EXPORTS)
-endif()
+target_include_directories(${ENGINE_NAME}
+    PUBLIC
+        # Engine's own "public" include directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+
+        # Example includes for third-party libraries:
+        "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glm"
+        "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glew/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glfw/include"
+)
+
+# ------------------------------------------------------------------------------
+# 4) Linking to external libraries (GLFW, GLEW) if needed
+# ------------------------------------------------------------------------------
+# If you have .lib or .a files inside your libraries folder, you can do:
+#   find_library(GLFW_LIB glfw3 HINTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glfw/lib")
+#   target_link_libraries(${ENGINE_NAME} PUBLIC ${GLFW_LIB})
+#
+# Or if you have a CMake project for GLFW in libraries/glfw:
+#   add_subdirectory(libraries/glfw)
+#   target_link_libraries(${ENGINE_NAME} PUBLIC glfw)
+#
+# Same logic for GLEW (or any other library).
+# For GLM, typically no need to link; it's headers only.
+
+# ------------------------------------------------------------------------------
+# 5) Additional compiler definitions or options (if needed)
+# ------------------------------------------------------------------------------
+# e.g.: target_compile_definitions(${ENGINE_NAME} PRIVATE MY_ENGINE_INTERNALS=1)
+
+# That's all for the Engine.

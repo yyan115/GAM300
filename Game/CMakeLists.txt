@@ -1,45 +1,51 @@
-# ------------------------------------------------------------------------------
-# Game/CMakeLists.txt
-# This file builds the game executable that uses the engine.
-# ------------------------------------------------------------------------------
-set(GAME_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(GAME_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+cmake_minimum_required(VERSION 3.20)
 
 # ------------------------------------------------------------------------------
-# Gather Source Files
+# 1) Collect all .cpp/.c/.hpp/.h in the Game folder
 # ------------------------------------------------------------------------------
-file(GLOB_RECURSE GAME_SOURCES ${GAME_SRC_DIR}/*.cpp)
-file(GLOB_RECURSE GAME_HEADERS ${GAME_INCLUDE_DIR}/*.h)
-
-# ------------------------------------------------------------------------------
-# Create the Game Executable
-# ------------------------------------------------------------------------------
-add_executable(${GAME_PROJECT_NAME} ${GAME_SOURCES} ${GAME_HEADERS})
-
-# ------------------------------------------------------------------------------
-# Specify Include Directories for the Game
-# ------------------------------------------------------------------------------
-target_include_directories(${GAME_PROJECT_NAME}
-    PRIVATE
-        ${GAME_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/Engine/include  # Engine header dependency
+file(GLOB_RECURSE GAME_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+file(GLOB_RECURSE GAME_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
 # ------------------------------------------------------------------------------
-# Link the Engine Library to the Game
+# 2) Declare an executable target for the Game
 # ------------------------------------------------------------------------------
-target_link_libraries(${GAME_PROJECT_NAME}
-    PRIVATE
-        ${ENGINE_PROJECT_NAME}
+add_executable(${GAME_NAME}
+    ${GAME_SOURCES}
+    ${GAME_HEADERS}
 )
 
 # ------------------------------------------------------------------------------
-# Post-Build: Copy Resources Folder
+# 3) Link with the Engine library (so the Game can call engine functions)
 # ------------------------------------------------------------------------------
-# This command ensures that after building the game executable, the Resources
-# folder is copied to its output directory.
-add_custom_command(TARGET ${GAME_PROJECT_NAME} POST_BUILD
+target_link_libraries(${GAME_NAME}
+    PRIVATE
+        ${ENGINE_NAME}
+)
+
+# ------------------------------------------------------------------------------
+# 4) Include path for Game-specific headers
+# ------------------------------------------------------------------------------
+target_include_directories(${GAME_NAME}
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+# ------------------------------------------------------------------------------
+# 5) Automatically copy the Resources/ folder next to the built EXE
+# ------------------------------------------------------------------------------
+# This ensures that when you build, the EXE has the resources it needs right away.
+add_custom_command(
+    TARGET ${GAME_NAME}
+    POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:${GAME_PROJECT_NAME}>/Resources
-    COMMENT "Copying Resources to output directory for game"
+        "${CMAKE_SOURCE_DIR}/Resources"
+        "$<TARGET_FILE_DIR:${GAME_NAME}>/Resources"
 )
+
+# End of Game CMakeLists.

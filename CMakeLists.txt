@@ -1,52 +1,55 @@
-cmake_minimum_required(VERSION 3.15)  # Use a modern CMake version
-project(GAM300)                       # Overall project name
+cmake_minimum_required(VERSION 3.20)
 
 # ------------------------------------------------------------------------------
-# Centralized Variables for Project Names
+# 1) Set the main project name and language
 # ------------------------------------------------------------------------------
-set(ENGINE_PROJECT_NAME "engine")
-set(GAME_PROJECT_NAME "game")
-set(EDITOR_PROJECT_NAME "editor")
+# Use a variable so you can rename easily if desired:
+set(PROJECT_NAME "GAM300")
+project(${PROJECT_NAME} LANGUAGES CXX)
 
 # ------------------------------------------------------------------------------
-# Global C++ Settings
+# 2) Define sub-project (module) names as variables
 # ------------------------------------------------------------------------------
+set(ENGINE_NAME  "Engine")
+set(GAME_NAME    "Game")
+set(EDITOR_NAME  "Editor")
+
+# ------------------------------------------------------------------------------
+# 3) Global compiler settings
+# ------------------------------------------------------------------------------
+# C++17 or whichever standard you need
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ------------------------------------------------------------------------------
-# Option: Build Engine as a Shared Library (for dynamic linking)
+# 4) Set global output directories
 # ------------------------------------------------------------------------------
-option(BUILD_SHARED_ENGINE "Build engine as shared library (DLL)" ON)
+# This ensures that Visual Studio, CLion, or any other generator
+# will place compiled libs and executables in the build/bin or build/lib folder.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Optional: helps group your projects in Visual Studio's Solution Explorer
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # ------------------------------------------------------------------------------
-# External Dependencies
+# 5) Add subdirectories for each project
 # ------------------------------------------------------------------------------
-# Attempt to find the libraries. These must be installed or provided in libraries/.
-find_package(GLM REQUIRED)
-find_package(GLFW3 REQUIRED)
-find_package(GLEW REQUIRED)
-
-# If a package isn’t found and you have the source in libraries/, you could add:
-# if (NOT TARGET glfw)
-#   add_subdirectory(${CMAKE_SOURCE_DIR}/libraries/glfw)
-# endif()
+add_subdirectory(${ENGINE_NAME})
+add_subdirectory(${GAME_NAME})
+add_subdirectory(${EDITOR_NAME})
 
 # ------------------------------------------------------------------------------
-# Add Subdirectories for Each Project
+# 6) (Optional) Additional libraries or utility subdirectories
+# e.g., add_subdirectory(External) ...
 # ------------------------------------------------------------------------------
-add_subdirectory(Engine)
-add_subdirectory(Game)
-add_subdirectory(Editor)
 
-# ------------------------------------------------------------------------------
-# Custom Target: Copy Resources Folder
-# ------------------------------------------------------------------------------
-# This target will copy the entire Resources folder into the build directory.
-# This ensures that the executables have access to all necessary assets.
-add_custom_target(copy_resources ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Resources
-            ${CMAKE_BINARY_DIR}/Resources
-    COMMENT "Copying Resources to build directory"
-)
+# That's it for the root CMakeLists.
+# Build instructions:
+#   mkdir build
+#   cd build
+#   cmake -G "Visual Studio 17 2022" ..
+#   [ or cmake -G "Unix Makefiles" .. on Linux/Mac ]
+#   [ then open GAM300.sln in build, or make -j, etc. ]

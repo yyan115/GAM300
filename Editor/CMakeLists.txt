@@ -1,45 +1,53 @@
-# ------------------------------------------------------------------------------
-# Editor/CMakeLists.txt
-# This file builds the IMGUI-based editor, which depends on both the engine and game.
-# ------------------------------------------------------------------------------
-set(EDITOR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(EDITOR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+cmake_minimum_required(VERSION 3.20)
 
 # ------------------------------------------------------------------------------
-# Gather Source Files
+# 1) Collect all Editor .cpp/.hpp
 # ------------------------------------------------------------------------------
-file(GLOB_RECURSE EDITOR_SOURCES ${EDITOR_SRC_DIR}/*.cpp)
-file(GLOB_RECURSE EDITOR_HEADERS ${EDITOR_INCLUDE_DIR}/*.h)
-
-# ------------------------------------------------------------------------------
-# Create the Editor Executable
-# ------------------------------------------------------------------------------
-add_executable(${EDITOR_PROJECT_NAME} ${EDITOR_SOURCES} ${EDITOR_HEADERS})
-
-# ------------------------------------------------------------------------------
-# Specify Include Directories for the Editor
-# ------------------------------------------------------------------------------
-target_include_directories(${EDITOR_PROJECT_NAME}
-    PRIVATE
-        ${EDITOR_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/Engine/include  # Engine header dependency
-        ${CMAKE_SOURCE_DIR}/Game/include    # Game header dependency (if needed)
+file(GLOB_RECURSE EDITOR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+file(GLOB_RECURSE EDITOR_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
 # ------------------------------------------------------------------------------
-# Link the Engine and Game Libraries to the Editor
+# 2) Declare an executable for the Editor
 # ------------------------------------------------------------------------------
-target_link_libraries(${EDITOR_PROJECT_NAME}
-    PRIVATE
-        ${ENGINE_PROJECT_NAME}
-        ${GAME_PROJECT_NAME}
+add_executable(${EDITOR_NAME}
+    ${EDITOR_SOURCES}
+    ${EDITOR_HEADERS}
 )
 
 # ------------------------------------------------------------------------------
-# Post-Build: Copy Resources Folder
+# 3) Link with the Engine library.
+#    If you truly need to reference "Game" code from the Editor, you'd have to
+#    restructure the Game as a library, then link that here as well.
 # ------------------------------------------------------------------------------
-add_custom_command(TARGET ${EDITOR_PROJECT_NAME} POST_BUILD
+target_link_libraries(${EDITOR_NAME}
+    PRIVATE
+        ${ENGINE_NAME}
+        # If the Editor needs the Game as a library, do it here.
+)
+
+# ------------------------------------------------------------------------------
+# 4) Include path for Editor-specific headers
+# ------------------------------------------------------------------------------
+target_include_directories(${EDITOR_NAME}
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+# ------------------------------------------------------------------------------
+# 5) Copy resources to Editor build folder too (if you want them there)
+# ------------------------------------------------------------------------------
+add_custom_command(
+    TARGET ${EDITOR_NAME}
+    POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Resources $<TARGET_FILE_DIR:${EDITOR_PROJECT_NAME}>/Resources
-    COMMENT "Copying Resources to output directory for editor"
+        "${CMAKE_SOURCE_DIR}/Resources"
+        "$<TARGET_FILE_DIR:${EDITOR_NAME}>/Resources"
 )
+
+# End of Editor CMakeLists.
