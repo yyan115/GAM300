@@ -1,21 +1,24 @@
 ```
-GameProject/
-├── CMakeLists.txt         # Root CMake file
-├── libraries/             # (Optional) Third-party dependencies (if needed)
-├── build/                 # Out-of-source builds (generated)
-├── Engine/                # Custom game engine
+GAM300/
+│── CMakeLists.txt               # Root-level CMake
+│── build/                       # Out-of-source build directory (generated)
+│── Engine/
+│   ├── src/
+│   ├── include/
+│   ├── libraries/
+│   │    ├── glm/                # Example: GLM headers only
+│   │    ├── glew/               # Example: GLEW includes + maybe .lib/.dll
+│   │    └── glfw/               # Example: GLFW includes + maybe .lib/.dll
+│   └── CMakeLists.txt
+│── Game/
 │   ├── src/
 │   ├── include/
 │   └── CMakeLists.txt
-├── Game/                  # Actual game that uses the engine
+│── Editor/
 │   ├── src/
 │   ├── include/
 │   └── CMakeLists.txt
-├── Editor/                # IMGUI-based editor (optional)
-│   ├── src/
-│   ├── include/
-│   └── CMakeLists.txt
-├── Resources/             # Game assets (shaders, textures, sounds)
+│── Resources/
 └── GAM300.sln             # (Generated) Visual Studio solution file
 ```
 
