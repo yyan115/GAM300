@@ -1,4 +1,4 @@
-#include "Editor.hpp"
+#include "EditorMain.hpp"
 #include <iostream>
 
 namespace Editor

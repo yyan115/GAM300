@@ -14,6 +14,7 @@ namespace Game
     {
         std::cout << "[Game] Running main loop...\n";
         // Put your game loop logic here...
+        Engine::Update();
     }
 
     void Shutdown()

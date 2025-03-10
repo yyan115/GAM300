@@ -46,6 +46,11 @@ add_custom_target(CopyResources ALL
         "${CMAKE_BINARY_DIR}/Resources"
     COMMENT "Copying game resources to build directory"
 )
+set_target_properties(CopyResources PROPERTIES FOLDER "CMakePredefinedTargets")  # Hide it
+
+# Also hide the ALL_BUILD and ZERO_CHECK targets
+set_target_properties(ALL_BUILD PROPERTIES FOLDER "CMakePredefinedTargets")
+set_target_properties(ZERO_CHECK PROPERTIES FOLDER "CMakePredefinedTargets")
 
 #
 # 6) Optionally, we can make the 'Game' project the default startup project in Visual Studio

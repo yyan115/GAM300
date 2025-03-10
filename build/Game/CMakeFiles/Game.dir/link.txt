@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/Game.dir/src/Game.cpp.o -o Game   -L/mnt/THDD/Nextcloud/School/Repos/GAM300/Engine/libraries/glew/lib  -Wl,-rpath,/mnt/THDD/Nextcloud/School/Repos/GAM300/Engine/libraries/glew/lib libGame_lib.a ../Engine/libEngine.a -lGLEW /mnt/THDD/Nextcloud/School/Repos/GAM300/Engine/libraries/glfw/lib/libglfw3.a -lGL -lX11 -lpthread -ldl

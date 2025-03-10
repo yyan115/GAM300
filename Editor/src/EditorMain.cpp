@@ -1,4 +1,4 @@
-#include "Editor.hpp"
+#include "EditorMain.hpp"
 #include "Game.hpp"
 #include "Engine.hpp"
 #include <iostream>

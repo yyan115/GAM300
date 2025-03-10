@@ -40,11 +40,30 @@ if (MSVC)
     # Example: Link with GLEW and GLFW .lib files.
     # Suppose your .lib files are at libraries/glew/lib/Debug/glew32.lib, etc.
     # You might do something like:
-    target_link_directories(${ENGINE_NAME} PRIVATE
-        "${CMAKE_CURRENT_LIST_DIR}/libraries/glew/lib"
-        "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw/lib"
+    # target_link_directories(${ENGINE_NAME} PRIVATE
+    #     "${CMAKE_CURRENT_LIST_DIR}/libraries/glew"
+    #     "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw"
+    # )
+    # # If you're using "glew32s.lib" (static version), ensure "GLEW_STATIC" is defined
+    # target_compile_definitions(${ENGINE_NAME} PRIVATE GLEW_STATIC)
+
+    # target_link_libraries(${ENGINE_NAME} PRIVATE glew32s glfw3 opengl32)
+
+        # Correcting paths to the actual GLEW and GLFW locations inside "Engine/libraries/"
+        target_link_directories(${ENGINE_NAME} PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glew"  # <- Corrected path for GLEW
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw"  # <- Corrected path for GLFW
     )
-    target_link_libraries(${ENGINE_NAME} PRIVATE glew32 glfw3 opengl32)
+
+    # If using static GLEW, define GLEW_STATIC to avoid linker errors
+    target_compile_definitions(${ENGINE_NAME} PRIVATE GLEW_STATIC)
+
+    # Link against the correct libraries (EXPLICIT FILE PATH)
+    target_link_libraries(${ENGINE_NAME} PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glew/glew32s.lib"  # <- Corrected path for GLEW
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw/glfw3.lib"  # <- Corrected path for GLFW
+        opengl32
+    )
 else()
     # On Linux, link with .so or .a. The exact library names vary.
     # Also link to dl, pthread, X11, etc. if needed by GLFW. For example:

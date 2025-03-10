@@ -1,0 +1,43 @@
+# Ignore Visual Studio generated files
+.vs/
+*.vcxproj*
+*.vcxproj.filters
+*.sdf
+*.db
+
+# Ignore CMake-generated files
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Ignore temporary and compiled files
+*.obj
+*.pdb
+*.ilk
+*.ipch
+*.tlog
+*.log
+*.pch
+*.ncb
+*.aps
+*.suo
+*.sln.ide
+*.idb
+*.opendb
+*.VC.db
+*.a.out
+
+# Ignore Editor backup files
+*.bak
+*.swp
+*.swo
+*.tmp
+
+# Ignore executables
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.o
