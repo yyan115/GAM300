@@ -1,0 +1,13 @@
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CopyResources.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/CMakeFiles/edit_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/CMakeFiles/rebuild_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Engine/CMakeFiles/Engine.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Engine/CMakeFiles/edit_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Engine/CMakeFiles/rebuild_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/Game_lib.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/Game.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/edit_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/rebuild_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Editor/CMakeFiles/Editor.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Editor/CMakeFiles/edit_cache.dir
+/mnt/THDD/Nextcloud/School/Repos/GAM300/build/Editor/CMakeFiles/rebuild_cache.dir

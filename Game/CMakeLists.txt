@@ -31,7 +31,7 @@ target_link_libraries(${GAME_NAME}_lib
 # 4) Now create the final executable for launching the game
 #    This can be minimal (just a main() that calls into the library).
 #    We'll have a small .cpp in src/ that includes "Game.hpp" and runs something.
-add_executable(${GAME_NAME} "${CMAKE_CURRENT_LIST_DIR}/src/GameMain.cpp")
+add_executable(${GAME_NAME} "${CMAKE_CURRENT_LIST_DIR}/src/Game.cpp")
 target_link_libraries(${GAME_NAME}
     PRIVATE
         ${GAME_NAME}_lib

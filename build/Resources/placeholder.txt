@@ -1,0 +1,1 @@
+(This file is just a placeholder; replace it with actual game assets like textures, shaders, etc.)

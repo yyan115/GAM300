@@ -1,0 +1,10 @@
+/home/admin/CLion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /mnt/THDD/Nextcloud/School/Repos/GAM300 -B /mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug
+-- The CXX compiler identification is GNU 14.2.1
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /mnt/THDD/Nextcloud/School/Repos/GAM300/cmake-build-debug
