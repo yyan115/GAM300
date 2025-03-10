@@ -1,3 +1,4 @@
+```
 GameProject/
 ├── CMakeLists.txt         # Root CMake file
 ├── libraries/             # (Optional) Third-party dependencies (if needed)
@@ -16,3 +17,4 @@ GameProject/
 │   └── CMakeLists.txt
 ├── Resources/             # Game assets (shaders, textures, sounds)
 └── GAM300.sln             # (Generated) Visual Studio solution file
+```
