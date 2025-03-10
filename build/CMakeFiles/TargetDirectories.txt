@@ -1,3 +1,0 @@
-/home/yy/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/MyProject.dir
-/home/yy/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/edit_cache.dir
-/home/yy/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/rebuild_cache.dir
