@@ -1,9 +1,7 @@
-#ifndef ENGINE_HPP
-#define ENGINE_HPP
+#pragma once
 
-namespace MyEngine
+namespace Engine
 {
-    void PrintEngineVersion();
+    void Init();
+    void Shutdown();
 }
-
-#endif // ENGINE_HPP

@@ -1,53 +1,35 @@
-cmake_minimum_required(VERSION 3.20)
+#
+# CMakeLists for the Editor subproject
+#
+# We'll build the Editor as an executable that depends on:
+#  - The Engine library (for engine functionality)
+#  - The Game library (so the editor can manipulate or introspect game objects)
+#
 
-# ------------------------------------------------------------------------------
-# 1) Collect all Editor .cpp/.hpp
-# ------------------------------------------------------------------------------
+project(${EDITOR_NAME} LANGUAGES CXX)
+
+# 1) Gather all Editor source/header files
 file(GLOB_RECURSE EDITOR_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
-)
-file(GLOB_RECURSE EDITOR_HEADERS
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/include/*.h"
+    "${CMAKE_CURRENT_LIST_DIR}/include/*.hpp"
 )
 
-# ------------------------------------------------------------------------------
-# 2) Declare an executable for the Editor
-# ------------------------------------------------------------------------------
-add_executable(${EDITOR_NAME}
-    ${EDITOR_SOURCES}
-    ${EDITOR_HEADERS}
-)
+# 2) Create the Editor executable
+add_executable(${EDITOR_NAME} ${EDITOR_SOURCES})
 
-# ------------------------------------------------------------------------------
-# 3) Link with the Engine library.
-#    If you truly need to reference "Game" code from the Editor, you'd have to
-#    restructure the Game as a library, then link that here as well.
-# ------------------------------------------------------------------------------
+# 3) Link with Engine library and with the Game library (not the Game executable)
 target_link_libraries(${EDITOR_NAME}
     PRIVATE
         ${ENGINE_NAME}
-        # If the Editor needs the Game as a library, do it here.
+        ${GAME_NAME}_lib
 )
 
-# ------------------------------------------------------------------------------
-# 4) Include path for Editor-specific headers
-# ------------------------------------------------------------------------------
 target_include_directories(${EDITOR_NAME}
     PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_LIST_DIR}/include"
 )
 
-# ------------------------------------------------------------------------------
-# 5) Copy resources to Editor build folder too (if you want them there)
-# ------------------------------------------------------------------------------
-add_custom_command(
-    TARGET ${EDITOR_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/Resources"
-        "$<TARGET_FILE_DIR:${EDITOR_NAME}>/Resources"
-)
-
-# End of Editor CMakeLists.
+#
+# -- End of Editor/CMakeLists.txt --
+#

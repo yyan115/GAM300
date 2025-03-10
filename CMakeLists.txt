@@ -1,55 +1,59 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 
-# ------------------------------------------------------------------------------
-# 1) Set the main project name and language
-# ------------------------------------------------------------------------------
-# Use a variable so you can rename easily if desired:
-set(PROJECT_NAME "GAM300")
+#
+# 1) Set up global project name and version
+#    - We'll also define variables for the subproject names so you can easily rename them.
+#
+set(PROJECT_NAME        "GAM300")
+set(ENGINE_NAME         "Engine")
+set(GAME_NAME           "Game")
+set(EDITOR_NAME         "Editor")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-# ------------------------------------------------------------------------------
-# 2) Define sub-project (module) names as variables
-# ------------------------------------------------------------------------------
-set(ENGINE_NAME  "Engine")
-set(GAME_NAME    "Game")
-set(EDITOR_NAME  "Editor")
-
-# ------------------------------------------------------------------------------
-# 3) Global compiler settings
-# ------------------------------------------------------------------------------
-# C++17 or whichever standard you need
+#
+# 2) Set the C++ standard globally (e.g., C++17).
+#    - Using 'standard required' to enforce it strictly.
+#
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ------------------------------------------------------------------------------
-# 4) Set global output directories
-# ------------------------------------------------------------------------------
-# This ensures that Visual Studio, CLion, or any other generator
-# will place compiled libs and executables in the build/bin or build/lib folder.
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+#
+# 3) Optionally set any default compiler warnings if you like.
+#    - e.g., for MSVC: /W4 ; for GCC/Clang: -Wall -Wextra -Wpedantic
+#
+if(MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-# Optional: helps group your projects in Visual Studio's Solution Explorer
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+#
+# 4) Add the subdirectories for each subproject.
+#    - This will create three entries (Engine, Game, Editor) in the solution.
+#
+add_subdirectory(Engine)
+add_subdirectory(Game)
+add_subdirectory(Editor)
 
-# ------------------------------------------------------------------------------
-# 5) Add subdirectories for each project
-# ------------------------------------------------------------------------------
-add_subdirectory(${ENGINE_NAME})
-add_subdirectory(${GAME_NAME})
-add_subdirectory(${EDITOR_NAME})
+#
+# 5) Copying Resources folder into the build directory so the executables can run
+#    in-place with all required assets.
+#    - 'ALL' ensures it runs as part of a normal build, not just on 'make install'.
+#
+add_custom_target(CopyResources ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/Resources"
+        "${CMAKE_BINARY_DIR}/Resources"
+    COMMENT "Copying game resources to build directory"
+)
 
-# ------------------------------------------------------------------------------
-# 6) (Optional) Additional libraries or utility subdirectories
-# e.g., add_subdirectory(External) ...
-# ------------------------------------------------------------------------------
+#
+# 6) Optionally, we can make the 'Game' project the default startup project in Visual Studio
+#    by using a custom property. If you prefer the Editor to be the default, set it there.
+#    This is purely optional and can vary based on personal preference.
+#
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${GAME_NAME})
 
-# That's it for the root CMakeLists.
-# Build instructions:
-#   mkdir build
-#   cd build
-#   cmake -G "Visual Studio 17 2022" ..
-#   [ or cmake -G "Unix Makefiles" .. on Linux/Mac ]
-#   [ then open GAM300.sln in build, or make -j, etc. ]
+#
+# -- End of root CMakeLists.txt --
+#

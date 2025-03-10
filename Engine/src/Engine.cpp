@@ -1,10 +1,12 @@
 #include "Engine.hpp"
 #include <iostream>
 
-namespace MyEngine
+void Engine::Init()
 {
-    void PrintEngineVersion()
-    {
-        std::cout << "Engine Version 1.0\n";
-    }
+    std::cout << "[Engine] Initializing...\n";
+}
+
+void Engine::Shutdown()
+{
+    std::cout << "[Engine] Shutting down...\n";
 }
