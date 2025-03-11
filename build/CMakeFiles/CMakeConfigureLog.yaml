@@ -24,7 +24,7 @@ events:
       The output was:
       0
       MSBuild version 17.12.12+1cce77968 for .NET Framework
-      Build started 10/3/2025 11:48:24 pm.
+      Build started 11/3/2025 5:59:04 am.
       
       Project "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\4.0.0-rc3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -53,7 +53,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.35
+      Time Elapsed 00:00:00.39
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -72,8 +72,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-82ri7y"
-      binary: "C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-82ri7y"
+      source: "C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-vxgfm7"
+      binary: "C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-vxgfm7"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -83,40 +83,40 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-82ri7y'
+        Change Dir: 'C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-vxgfm7'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_de751.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_42b37.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.12.12+1cce77968 for .NET Framework
-        Build started 10/3/2025 11:48:24 pm.
+        Build started 11/3/2025 5:59:05 am.
         
-        Project "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-82ri7y\\cmTC_de751.vcxproj" on node 1 (default targets).
+        Project "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vxgfm7\\cmTC_42b37.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_de751.dir\\Debug\\".
+          Creating directory "cmTC_42b37.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-82ri7y\\Debug\\".
-          Creating directory "cmTC_de751.dir\\Debug\\cmTC_de751.tlog\\".
+          Creating directory "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vxgfm7\\Debug\\".
+          Creating directory "cmTC_42b37.dir\\Debug\\cmTC_42b37.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_de751.dir\\Debug\\cmTC_de751.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_de751.dir\\Debug\\cmTC_de751.tlog\\unsuccessfulbuild".
+          Creating "cmTC_42b37.dir\\Debug\\cmTC_42b37.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_42b37.dir\\Debug\\cmTC_42b37.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_de751.dir\\Debug\\\\" /Fd"cmTC_de751.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Applications\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_42b37.dir\\Debug\\\\" /Fd"cmTC_42b37.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Applications\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_de751.dir\\Debug\\\\" /Fd"cmTC_de751.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Applications\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_42b37.dir\\Debug\\\\" /Fd"cmTC_42b37.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Applications\\CMake\\share\\cmake-4.0\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-82ri7y\\Debug\\cmTC_de751.exe" /INCREMENTAL /ILK:"cmTC_de751.dir\\Debug\\cmTC_de751.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-82ri7y/Debug/cmTC_de751.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-82ri7y/Debug/cmTC_de751.lib" /MACHINE:X64  /machine:x64 cmTC_de751.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_de751.vcxproj -> C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-82ri7y\\Debug\\cmTC_de751.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vxgfm7\\Debug\\cmTC_42b37.exe" /INCREMENTAL /ILK:"cmTC_42b37.dir\\Debug\\cmTC_42b37.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-vxgfm7/Debug/cmTC_42b37.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/CMakeScratch/TryCompile-vxgfm7/Debug/cmTC_42b37.lib" /MACHINE:X64  /machine:x64 cmTC_42b37.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_42b37.vcxproj -> C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vxgfm7\\Debug\\cmTC_42b37.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_de751.dir\\Debug\\cmTC_de751.tlog\\unsuccessfulbuild".
-          Touching "cmTC_de751.dir\\Debug\\cmTC_de751.tlog\\cmTC_de751.lastbuildstate".
-        Done Building Project "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-82ri7y\\cmTC_de751.vcxproj" (default targets).
+          Deleting file "cmTC_42b37.dir\\Debug\\cmTC_42b37.tlog\\unsuccessfulbuild".
+          Touching "cmTC_42b37.dir\\Debug\\cmTC_42b37.tlog\\cmTC_42b37.lastbuildstate".
+        Done Building Project "C:\\Users\\admin\\Desktop\\Nextcloud\\School\\Repos\\GAM300\\build\\CMakeFiles\\CMakeScratch\\TryCompile-vxgfm7\\cmTC_42b37.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.33
+        Time Elapsed 00:00:00.38
         
       exitCode: 0
   -

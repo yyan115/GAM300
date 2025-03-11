@@ -1,5 +1,5 @@
 #include "EditorMain.hpp"
-#include "Game.hpp"
+//#include "GameCore.hpp"
 #include "Engine.hpp"
 #include <iostream>
 
@@ -9,13 +9,13 @@ int main()
 
     // Possibly initialize Engine and Game for editing:
     Engine::Init();
-    Game::Initialize();
+    //Game::Initialize();
 
     // Example usage:
     Editor::LaunchEditor();
 
     // Shut down
-    Game::Shutdown();
+    //Game::Shutdown();
     Engine::Shutdown();
     return 0;
 }

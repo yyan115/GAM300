@@ -1,42 +1,40 @@
 #
 # CMakeLists for the Game subproject
 #
-# We'll create:
-# 1) A STATIC library target named ${GAME_NAME}_lib  that contains the game logic
-# 2) An EXECUTABLE named ${GAME_NAME} which depends on ${GAME_NAME}_lib and the Engine
+# In normal builds (Debug/Release), we build Game as an executable (Game.exe).
+# In Editor builds (EditorDebug/EditorRelease), we build Game as a static library (Game.lib)
+# so that Editor can link to it directly.
 #
 
 project(${GAME_NAME} LANGUAGES CXX)
 
-# 1) Gather all source/header files
+# 1) Gather all Game source/header files
 file(GLOB_RECURSE GAME_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/include/*.h"
     "${CMAKE_CURRENT_LIST_DIR}/include/*.hpp"
 )
 
-# 2) Create the Game library (so that the Editor can also link to "Game logic")
-add_library(${GAME_NAME}_lib STATIC ${GAME_SOURCES})
-target_include_directories(${GAME_NAME}_lib
-    PUBLIC
-        "${CMAKE_CURRENT_LIST_DIR}/include"
-)
+# 2) Check if we're in an "Editor" build configuration
+string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
+if(BUILD_TYPE_UPPER MATCHES "EDITORDEBUG" OR BUILD_TYPE_UPPER MATCHES "EDITORRELEASE")
+    message(STATUS "Building ${GAME_NAME} as a STATIC LIB for Editor mode.")
 
-# 3) Link with our Engine library
-target_link_libraries(${GAME_NAME}_lib
-    PUBLIC
-        ${ENGINE_NAME}
-)
+    # Create a static library that the Editor can link to
+    add_library(${GAME_NAME} STATIC ${GAME_SOURCES})
+    # Link to Engine
+    target_link_libraries(${GAME_NAME} PUBLIC ${ENGINE_NAME})
 
-# 4) Now create the final executable for launching the game
-#    This can be minimal (just a main() that calls into the library).
-#    We'll have a small .cpp in src/ that includes "Game.hpp" and runs something.
-add_executable(${GAME_NAME} "${CMAKE_CURRENT_LIST_DIR}/src/Game.cpp")
-target_link_libraries(${GAME_NAME}
-    PRIVATE
-        ${GAME_NAME}_lib
-)
+else()
+    message(STATUS "Building ${GAME_NAME} as an EXECUTABLE for normal game mode.")
 
-#
-# -- End of Game/CMakeLists.txt --
-#
+    # Create an executable with a minimal main() and link the game logic
+    # We'll assume "GameCore.cpp" etc. are in the same set of sources
+    add_executable(${GAME_NAME} ${GAME_SOURCES})
+    target_link_libraries(${GAME_NAME} PRIVATE ${ENGINE_NAME})
+endif()
+
+# 3) Include directories for the Game code
+target_include_directories(${GAME_NAME} PUBLIC
+    "${CMAKE_CURRENT_LIST_DIR}/include"
+)

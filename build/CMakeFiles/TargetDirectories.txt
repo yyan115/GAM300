@@ -3,7 +3,6 @@ C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/ALL_BUILD.
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/CMakeFiles/ZERO_CHECK.dir
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Engine/CMakeFiles/Engine.dir
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Engine/CMakeFiles/ALL_BUILD.dir
-C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/Game_lib.dir
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/Game.dir
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Game/CMakeFiles/ALL_BUILD.dir
 C:/Users/admin/Desktop/Nextcloud/School/Repos/GAM300/build/Editor/CMakeFiles/Editor.dir

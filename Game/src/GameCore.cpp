@@ -1,4 +1,4 @@
-#include "Game.hpp"
+#include "GameMain.hpp"
 #include <iostream>
 #include "Engine.hpp"
 
