@@ -2,13 +2,14 @@
 GAM300/
 │── CMakeLists.txt               # Root-level CMake
 │── build/                       # Out-of-source build directory (generated)
+|── └── GAM300.sln               # (Generated) Visual Studio solution file
 │── Engine/
 │   ├── src/
 │   ├── include/
 │   ├── libraries/
 │   │    ├── glm/                # Example: GLM headers only
-│   │    ├── glew/               # Example: GLEW includes + maybe .lib/.dll
-│   │    └── glfw/               # Example: GLFW includes + maybe .lib/.dll
+│   │    ├── glew/               # Example: GLEW includes + .lib/.dll
+│   │    └── glfw/               # Example: GLFW includes + .lib/.dll
 │   └── CMakeLists.txt
 │── Game/
 │   ├── src/
@@ -19,7 +20,6 @@ GAM300/
 │   ├── include/
 │   └── CMakeLists.txt
 │── Resources/
-└── GAM300.sln             # (Generated) Visual Studio solution file
 ```
 
 CMake uses a configuration file called CMakeLists.txt.
