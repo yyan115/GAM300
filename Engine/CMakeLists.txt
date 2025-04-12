@@ -46,8 +46,8 @@ if(MSVC)
 else()
     # On Linux:
     target_link_libraries(${ENGINE_NAME} PRIVATE
-        "${CMAKE_CURRENT_LIST_DIR}/libraries/glew/lib/libGLEW.so"
-        "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw/lib/libglfw3.a"
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glew/libGLEW.so"
+        "${CMAKE_CURRENT_LIST_DIR}/libraries/glfw/libglfw.so"
         GL
         X11
         pthread

@@ -41,3 +41,5 @@ cmake_install.cmake
 *.a
 *.so
 *.o
+
+!*.sln

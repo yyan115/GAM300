@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Engine/include",
+                "${workspaceFolder}/Engine/libraries/glew/include",
+                "${workspaceFolder}/Engine/libraries/glfw/include",
+                "${workspaceFolder}/Engine/libraries/glm",
+                "${workspaceFolder}/Engine/libraries/freetype/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/Engine/include",
+                    "${workspaceFolder}/Engine/libraries/glew/include",
+                    "${workspaceFolder}/Engine/libraries/glfw/include",
+                    "${workspaceFolder}/Engine/libraries/glm",
+                    "${workspaceFolder}/Engine/libraries/freetype/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

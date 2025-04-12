@@ -1,0 +1,5 @@
+# ninja log v6
+0	24	1741759432145058976	build.ninja	e62e180577ec16b2
+1	28	1741759432145058976	build.ninja	e62e180577ec16b2
+1	366	1741759432156138052	Game/CMakeFiles/Game.dir/src/GameMain.cpp.o	98c631a13799cffe
+1	371	1741759432155933674	Game/CMakeFiles/Game.dir/src/GameCore.cpp.o	60a617e5af6699a2
