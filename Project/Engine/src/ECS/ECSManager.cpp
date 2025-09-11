@@ -1,10 +1,6 @@
 #include "pch.h"
 #include "ECS/ECSManager.hpp"
-#include <Transform/TransformComponent.hpp>
-#include <Graphics/Model/ModelSystem.hpp>
-#include <Graphics/Model/ModelRenderComponent.hpp>
-#include <Graphics/TextRendering/TextRenderComponent.hpp>
-#include "ECS/NameComponent.hpp"
+#include <Graphics/Renderer.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -14,9 +10,7 @@ void ECSManager::Initialize() {
 	// REGISTER ALL COMPONENTS HERE
 	// e.g., 
 	RegisterComponent<Transform>();
-	RegisterComponent<ModelRenderComponent>();
-	RegisterComponent<TextRenderComponent>();
-	RegisterComponent<NameComponent>();
+	RegisterComponent<Renderer>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -27,20 +21,12 @@ void ECSManager::Initialize() {
 		SetSystemSignature<TransformSystem>(signature);
 	}
 
-	modelSystem = RegisterSystem<ModelSystem>();
+	renderSystem = RegisterSystem<RenderSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<ModelRenderComponent>());
-		SetSystemSignature<ModelSystem>(signature);
+		signature.set(GetComponentID<Renderer>());
+		SetSystemSignature<RenderSystem>(signature);
 	}
-
-	textSystem = RegisterSystem<TextRenderingSystem>();
-	{
-		Signature signature;
-		signature.set(GetComponentID<TextRenderComponent>());
-		SetSystemSignature<TextRenderingSystem>(signature);
-	}
-	
 }
 
 Entity ECSManager::CreateEntity() {

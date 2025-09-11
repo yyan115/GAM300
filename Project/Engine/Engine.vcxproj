@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -35,19 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ECS\NameComponent.hpp" />
-    <ClInclude Include="include\Graphics\TextRendering\Font.hpp" />
-    <ClInclude Include="include\Graphics\GraphicsManager.hpp" />
-    <ClInclude Include="include\Graphics\IRenderComponent.hpp" />
-    <ClInclude Include="include\Graphics\Material.hpp" />
-    <ClInclude Include="include\Graphics\Model\ModelRenderComponent.hpp" />
-    <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
-    <ClInclude Include="include\Graphics\TextRendering\TextRenderComponent.hpp" />
-    <ClInclude Include="include\Graphics\TextRendering\TextRenderingSystem.hpp" />
-    <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
-    <ClInclude Include="include\Logging.hpp" />
-    <ClInclude Include="include\Scene\Scene.hpp" />
-    <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
     <ClInclude Include="include\Asset Manager\Asset.hpp" />
@@ -69,8 +56,9 @@
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\LightManager.hpp" />
     <ClInclude Include="include\Graphics\Mesh.h" />
-    <ClInclude Include="include\Graphics\Model\Model.h" />
-    <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
+    <ClInclude Include="include\Graphics\Model.h" />
+    <ClInclude Include="include\Graphics\Renderer.hpp" />
+    <ClInclude Include="include\Graphics\RenderSystem.hpp" />
     <ClInclude Include="include\Graphics\ShaderClass.h" />
     <ClInclude Include="include\Graphics\stb_image.h" />
     <ClInclude Include="include\Graphics\Texture.h" />
@@ -81,21 +69,12 @@
     <ClInclude Include="include\Math\Matrix4x4.h" />
     <ClInclude Include="include\Math\Vector3D.h" />
     <ClInclude Include="include\pch.h" />
-    <ClInclude Include="include\Transform\TransformComponent.hpp" />
-    <ClInclude Include="include\Transform\TransformSystem.hpp" />
-    <ClInclude Include="include\Scene\SceneInstance.hpp" />
+    <ClInclude Include="include\TestScene.hpp" />
+    <ClInclude Include="include\TransformSystem.hpp" />
     <ClInclude Include="include\WindowManager.hpp" />
-    <ClInclude Include="include\Input\InputManager.hpp" />
+    <ClInclude Include="src\Input\InputManager.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
-    <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
-    <ClCompile Include="src\Graphics\Material.cpp" />
-    <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
-    <ClCompile Include="src\Graphics\TextRendering\TextRenderingSystem.cpp" />
-    <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
-    <ClCompile Include="src\Logging.cpp" />
-    <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Asset Manager\GUID.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
@@ -112,10 +91,11 @@
     <ClCompile Include="src\Graphics\EBO.cpp" />
     <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Graphics\Mesh.cpp" />
-    <ClCompile Include="src\Graphics\Model\Model.cpp" />
-    <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />
+    <ClCompile Include="src\Graphics\Model.cpp" />
+    <ClCompile Include="src\Graphics\RenderSystem.cpp" />
     <ClCompile Include="src\Graphics\ShaderClass.cpp" />
     <ClCompile Include="src\Graphics\Texture.cpp" />
+    <ClCompile Include="src\Graphics\TextureManager.cpp" />
     <ClCompile Include="src\Graphics\VAO.cpp" />
     <ClCompile Include="src\Graphics\VBO.cpp" />
     <ClCompile Include="src\Input\InputManager.cpp" />
@@ -128,8 +108,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\TestScene.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
-    <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -317,7 +297,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -337,7 +317,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -359,7 +339,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -381,7 +361,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\rapidjson</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

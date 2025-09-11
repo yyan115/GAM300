@@ -1,17 +1,14 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 #include "EntityManager.hpp"
 #include "ComponentManager.hpp"
 #include "SystemManager.hpp"
-#include <Transform/TransformSystem.hpp>
-#include <Graphics/Model/ModelSystem.hpp>
-#include <Graphics/TextRendering/TextRenderingSystem.hpp>
-#include "../Engine.h"  // For ENGINE_API macro
+#include <Graphics/RenderSystem.hpp>
+#include <TransformSystem.hpp>
 
-class ENGINE_API ECSManager {
+class ECSManager {
 public:
 	ECSManager() { Initialize(); };
 	~ECSManager() {};
@@ -82,15 +79,10 @@ public:
 		systemManager->SetSignature<T>(signature);
 	}
 
-	std::vector<Entity> GetActiveEntities() const {
-		return entityManager->GetActiveEntities();
-	}
-
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 
 	std::shared_ptr<TransformSystem> transformSystem;
-	std::shared_ptr<ModelSystem> modelSystem;
-	std::shared_ptr<TextRenderingSystem> textSystem;
+	std::shared_ptr<RenderSystem> renderSystem;
 
 private:
 	template <typename T>
