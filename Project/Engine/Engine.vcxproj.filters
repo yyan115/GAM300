@@ -9,7 +9,7 @@
   <ItemGroup>
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\pch.h" />
-    <ClInclude Include="include\Input\InputManager.hpp" />
+    <ClInclude Include="src\Input\InputManager.hpp" />
     <ClInclude Include="include\Graphics\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\Mesh.h" />
@@ -39,7 +39,7 @@
     <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
     <ClInclude Include="include\Asset Manager\GUID.hpp" />
     <ClInclude Include="include\Asset Manager\MetaFilesManager.hpp" />
-    <ClInclude Include="include\Scene\SceneInstance.hpp" />
+    <ClInclude Include="include\TestScene.hpp" />
     <ClInclude Include="include\Graphics\LightManager.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
@@ -47,12 +47,7 @@
     <ClInclude Include="include\Graphics\IRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Model\ModelRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\GraphicsManager.hpp" />
-    <ClInclude Include="include\Logging.hpp" />
-    <ClInclude Include="include\Scene\Scene.hpp" />
-    <ClInclude Include="include\Scene\SceneManager.hpp" />
-    <ClInclude Include="include\Transform\TransformSystem.hpp" />
-    <ClInclude Include="include\Transform\TransformComponent.hpp" />
-    <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
+    <ClInclude Include="include\Graphics\Font\Font.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -73,18 +68,16 @@
     <ClCompile Include="src\Math\Matrix4x4.cpp" />
     <ClCompile Include="src\Math\Matrix3x3.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
+    <ClCompile Include="src\Graphics\TextureManager.cpp" />
     <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />
     <ClCompile Include="src\Asset Manager\GUID.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
-    <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\TestScene.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
-    <ClCompile Include="src\Logging.cpp" />
-    <ClCompile Include="src\Scene\SceneManager.cpp" />
-    <ClCompile Include="src\TransformSystem.cpp" />
-    <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
+    <ClCompile Include="include\Graphics\Font\Font.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

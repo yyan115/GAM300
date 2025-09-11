@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Graphics\Font\Font.hpp" />
     <ClInclude Include="include\Graphics\GraphicsManager.hpp" />
     <ClInclude Include="include\Graphics\IRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Material.hpp" />
@@ -83,6 +84,7 @@
     <ClInclude Include="include\Input\InputManager.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\Graphics\Font\Font.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
