@@ -47,7 +47,9 @@
     <ClInclude Include="include\Graphics\IRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Model\ModelRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\GraphicsManager.hpp" />
-    <ClInclude Include="include\Graphics\Font\Font.hpp" />
+    <ClInclude Include="include\Graphics\TextRendering\Font.hpp" />
+    <ClInclude Include="include\Graphics\TextRendering\TextRenderingSystem.hpp" />
+    <ClInclude Include="include\Graphics\TextRendering\TextRenderComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -77,7 +79,9 @@
     <ClCompile Include="src\TestScene.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
-    <ClCompile Include="include\Graphics\Font\Font.cpp" />
+    <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
+    <ClCompile Include="src\Graphics\TextRendering\TextRenderingSystem.cpp" />
+    <ClCompile Include="src\Graphics\TextRendering\TextRenderComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

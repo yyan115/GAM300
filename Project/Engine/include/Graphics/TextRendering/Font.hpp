@@ -13,7 +13,7 @@ class VBO;
 struct Character {
 	unsigned int textureID;
 	glm::ivec2 size;
-	glm::ivec2 bearing;
+	glm::ivec2 Bearing;
 	unsigned int advance;
 };
 

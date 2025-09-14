@@ -12,7 +12,7 @@ Font::~Font()
 
 bool Font::LoadAsset(const std::string& path)
 {
-    return LoadFont(path, fontSize);
+    LoadFont(path, fontSize);
 }
 
 bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
@@ -26,23 +26,20 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
 
     // Initialize FreeType
     FT_Library ft;
-    if (FT_Init_FreeType(&ft)) 
-    {
+    if (FT_Init_FreeType(&ft)) {
         std::cerr << "[Font] Could not initialize FreeType Library" << std::endl;
         return false;
     }
 
     // Load font as face
     FT_Face face;
-    if (FT_New_Face(ft, path.c_str(), 0, &face)) 
-    {
+    if (FT_New_Face(ft, path.c_str(), 0, &face)) {
         std::cerr << "[Font] Failed to load font: " << path << std::endl;
         FT_Done_FreeType(ft);
         return false;
     }
 
-    // Sets the font's width and height parameters
-    // Setting the width to 0 lets the face dynamically calculate the width based on the given height
+    // Set size to load glyphs as
     FT_Set_Pixel_Sizes(face, 0, fontSize);
 
     // Disable byte-alignment restriction

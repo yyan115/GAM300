@@ -3,7 +3,6 @@
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
-#include "Graphics/TextRendering/TextUtils.hpp"
 
 bool TextRenderingSystem::Initialise()
 {
@@ -22,7 +21,7 @@ void TextRenderingSystem::Update()
         auto& textComponent = ecsManager.GetComponent<TextRenderComponent>(entity);
 
         // Only submit valid, visible text
-        if (textComponent.isVisible && TextUtils::IsValid(textComponent)) 
+        if (textComponent.isVisible && textComponent.IsValid()) 
         {
             // Create a copy of the text component for submission
             // This ensures the graphics manager has its own copy to work with

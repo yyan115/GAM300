@@ -67,4 +67,82 @@ public:
     // Default constructor for ECS requirements
     TextRenderComponent() = default;
     ~TextRenderComponent() = default;
+
+    // Utility methods
+    bool IsValid() const 
+    {
+        return !text.empty() && font && shader;
+    }
+
+    void SetText(const std::string& newText) 
+    {
+        text = newText;
+    }
+
+    void SetColor(const glm::vec3& newColor) 
+    {
+        color = newColor;
+    }
+
+    void SetColor(float r, float g, float b) 
+    {
+        color = glm::vec3(r, g, b);
+    }
+
+    void SetPosition(const glm::vec3& newPosition) 
+    {
+        position = newPosition;
+    }
+
+    void SetPosition(float x, float y, float z = 0.0f) 
+    {
+        position = glm::vec3(x, y, z);
+    }
+
+    void SetScale(float newScale) 
+    {
+        scale = newScale;
+    }
+
+    void SetAlignment(Alignment newAlignment) 
+    {
+        alignment = newAlignment;
+    }
+
+    // For 3D text positioning
+    void SetWorldTransform(const glm::mat4& newTransform) 
+    {
+        transform = newTransform;
+        is3D = true; // Automatically set to 3D mode
+    }
+
+    void SetWorldPosition(const glm::vec3& worldPos) 
+    {
+        transform = glm::translate(glm::mat4(1.0f), worldPos);
+        is3D = true;
+    }
+
+    void SetWorldPosition(float x, float y, float z) 
+    {
+        SetWorldPosition(glm::vec3(x, y, z));
+    }
+
+    // Get estimated text dimensions (useful for UI layout)
+    float GetEstimatedWidth() const 
+    {
+        if (font) 
+        {
+            return font->GetTextWidth(text, scale);
+        }
+        return 0.0f;
+    }
+
+    float GetEstimatedHeight() const 
+    {
+        if (font) 
+        {
+            return font->GetTextHeight(scale);
+        }
+        return 0.0f;
+    }
 };
