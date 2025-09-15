@@ -2,7 +2,7 @@
 
 #include "pch.h"
 
-#include <glad/glad.h>
+#include "OpenGL.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp> 
 #include "Asset Manager/Asset.hpp"

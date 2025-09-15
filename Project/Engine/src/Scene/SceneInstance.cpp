@@ -1,6 +1,8 @@
 #include "pch.h"
 #include <Scene/SceneInstance.hpp>
 #include <Input/InputManager.hpp>
+#include <Input/Keys.h>
+#include <WindowManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Transform/TransformComponent.hpp>
@@ -125,17 +127,17 @@ void SceneInstance::Exit() {
 
 void SceneInstance::processInput(float deltaTime)
 {
-	if (InputManager::GetKeyDown(GLFW_KEY_ESCAPE))
-		glfwSetWindowShouldClose(WindowManager::getWindow(), true);
+	if (InputManager::GetKeyDown(Input::Key::ESC))
+		WindowManager::SetWindowShouldClose();
 
 	float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::GetKey(GLFW_KEY_W))
+	if (InputManager::GetKey(Input::Key::W))
 		camera.Position += cameraSpeed * camera.Front;
-	if (InputManager::GetKey(GLFW_KEY_S))
+	if (InputManager::GetKey(Input::Key::S))
 		camera.Position -= cameraSpeed * camera.Front;
-	if (InputManager::GetKey(GLFW_KEY_A))
+	if (InputManager::GetKey(Input::Key::A))
 		camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-	if (InputManager::GetKey(GLFW_KEY_D))
+	if (InputManager::GetKey(Input::Key::D))
 		camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
 
 	float xpos = (float)InputManager::GetMouseX();

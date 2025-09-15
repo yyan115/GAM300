@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "Graphics/OpenGL.h"
+#include "Platform/Platform.h"
 #include "Graphics/LightManager.hpp"
 
 #include "Engine.h"
@@ -42,7 +42,7 @@ bool Engine::Initialize() {
     ENGINE_LOG_INFO("Engine initializing...");
 
 	// WOON LI TEST CODE
-	InputManager::Initialize(WindowManager::getWindow());
+	InputManager::Initialize();
 	MetaFilesManager::InitializeAssetMetaFiles("Resources");
 
 	// Load test scene
@@ -104,14 +104,14 @@ void Engine::Draw() {
 }
 
 void Engine::EndDraw() {
-	glfwSwapBuffers(WindowManager::getWindow());
+	WindowManager::SwapBuffers();
 
 	// Only process input if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
 		InputManager::Update();
 	}
 
-	glfwPollEvents(); // Always poll events for UI and window management
+	WindowManager::PollEvents(); // Always poll events for UI and window management
 }
 
 void Engine::Shutdown() {

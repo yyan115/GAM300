@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include "OpenGL.h"
 #include <Graphics/stb_image.h>
 #include "ShaderClass.h"
 #include "Asset Manager/Asset.hpp"

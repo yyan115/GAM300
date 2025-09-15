@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
-# vcpkg integration - must be set before project()
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-    CACHE STRING "Vcpkg toolchain file")
+# vcpkg integration - only for non-Android builds
+# Android builds use CMake's built-in Android toolchain
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
 
 # Project definition
 project(GAM300 VERSION 1.0.0 LANGUAGES CXX)
@@ -28,9 +31,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib) 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Find required packages for Linux
-find_package(OpenGL REQUIRED)
-find_package(PkgConfig REQUIRED)
+# Platform-specific dependencies
+if(ANDROID)
+    # Android uses OpenGL ES, not desktop OpenGL
+    find_library(GLES3_LIBRARY GLESv3)
+    find_library(EGL_LIBRARY EGL)
+    set(OPENGL_LIBRARIES ${GLES3_LIBRARY} ${EGL_LIBRARY})
+else()
+    # Desktop platforms use OpenGL and PkgConfig
+    find_package(OpenGL REQUIRED)
+    find_package(PkgConfig REQUIRED)
+endif()
 
 # Always build Engine (always shared library)
 add_subdirectory(Engine)

@@ -84,7 +84,38 @@ cmake --build Build/editor-debug
 ### Cross-platform notes
 - **Windows**: Use `--triplet=x64-windows`
 - **macOS**: Use `--triplet=x64-osx`
+- **Android**: See Android setup section below
 - This setup is primarily tested on Linux
+
+## Android Development Setup
+
+### Prerequisites
+- **Android SDK**: Install Android Studio or SDK tools
+- **Android NDK**: Version 27+ recommended
+- Set environment variables:
+  ```bash
+  export ANDROID_HOME="/path/to/Android/Sdk"
+  export ANDROID_NDK_HOME="/path/to/Android/Sdk/ndk/27.0.12077973"
+  ```
+- Add to your `~/.bashrc` or `~/.profile` for permanent setup
+
+### Android Build Configurations
+- **android-arm64-debug**: ARM64 debug build for modern devices
+- **android-arm64-release**: ARM64 release build for modern devices
+
+### Building for Android
+```bash
+# Configure
+cmake --preset android-arm64-debug
+
+# Build  
+cmake --build Build/android-arm64-debug
+```
+
+### Notes
+- Only Game builds for Android (no Editor on mobile)
+- Cross-compilation handled automatically by vcpkg
+- Some dependencies may not support Android - this is normal
 
 ## Contributing
 
