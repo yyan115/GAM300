@@ -1,0 +1,71 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug (Game Only)",
+            "description": "Build game executable in debug mode",
+            "binaryDir": "${sourceDir}/Build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release (Game Only)", 
+            "description": "Build game executable in release mode",
+            "binaryDir": "${sourceDir}/Build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "editor-debug",
+            "displayName": "Editor Debug",
+            "description": "Build editor executable in debug mode",
+            "binaryDir": "${sourceDir}/Build/editor-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorDebug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "editor-release", 
+            "displayName": "Editor Release",
+            "description": "Build editor executable in release mode",
+            "binaryDir": "${sourceDir}/Build/editor-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorRelease",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "displayName": "Build Debug"
+        },
+        {
+            "name": "release", 
+            "configurePreset": "release",
+            "displayName": "Build Release"
+        },
+        {
+            "name": "editor-debug",
+            "configurePreset": "editor-debug", 
+            "displayName": "Build Editor Debug"
+        },
+        {
+            "name": "editor-release",
+            "configurePreset": "editor-release",
+            "displayName": "Build Editor Release"
+        }
+    ]
+}

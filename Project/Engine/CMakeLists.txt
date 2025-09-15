@@ -44,28 +44,41 @@ foreach(item ${ENGINE_INCLUDE_SUBDIRS})
     endif()
 endforeach()
 
+# Find vcpkg packages - must be called after vcpkg toolchain is set
+find_package(assimp CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
+find_package(glad CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
+
+# Manual libraries that aren't available in vcpkg or need custom versions
 target_include_directories(Engine
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/Libraries/glad/include
-        ${CMAKE_SOURCE_DIR}/Libraries/glfw/include
-        ${CMAKE_SOURCE_DIR}/Libraries/glm
-        ${CMAKE_SOURCE_DIR}/Libraries/Assimp/include
-        ${CMAKE_SOURCE_DIR}/Libraries/freetype/include
-        ${CMAKE_SOURCE_DIR}/Libraries/spdlog/include
+        # Keep manual libraries: ImGui (docking), FMOD (commercial)
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/include
 )
 
-# Link libraries for Linux
+# Link vcpkg libraries and system libraries
 target_link_libraries(Engine
     PUBLIC
         ${OPENGL_LIBRARIES}
+        # Public dependencies that consumers need
+        glm::glm
     PRIVATE
+        # Private dependencies only Engine needs
+        assimp::assimp
         glfw
-        assimp
-        freetype
+        Freetype::Freetype
+        glad::glad
+        spdlog::spdlog
+        rapidjson
+        # System libraries
         ${CMAKE_DL_LIBS}
         pthread
 )

@@ -60,7 +60,13 @@ void ConsolePanel::OnImGuiRender() {
                 std::time_t timeT = static_cast<std::time_t>(entry.timestamp);
                 std::tm timeInfo;
                 char timeBuffer[100];
+                
+                // Cross-platform localtime handling
+#ifdef _WIN32
                 localtime_s(&timeInfo, &timeT);
+#else
+                localtime_r(&timeT, &timeInfo);
+#endif
 
                 std::strftime(timeBuffer, sizeof(timeBuffer), "%m/%d/%Y %I:%M:%S %p", &timeInfo);
                 

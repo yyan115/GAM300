@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <cstdint>
 #include "Engine.h"
 
 // Forward declare Entity type

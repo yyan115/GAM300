@@ -1,4 +1,3 @@
-#pragma once
 #include "pch.h"
 #include "GUIManager.hpp"
 #include "imgui.h"
