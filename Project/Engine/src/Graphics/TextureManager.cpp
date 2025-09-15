@@ -28,7 +28,7 @@ std::shared_ptr<Texture> TextureManager::loadTexture(const std::string& filepath
 
 	// Create texture with NO permanent unit (-1)
 #ifdef _WIN32
-	auto texture = std::make_shared<Texture>(filepath.c_str(), type.c_str(), -1, format);
+	auto texture = std::make_shared<Texture>(filepath.c_str(), type.c_str(), -1, format, GL_UNSIGNED_BYTE);
 #else
 	auto texture = std::make_shared<Texture>(filepath.c_str(), type.c_str(), -1, format);
 #endif

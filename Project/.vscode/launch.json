@@ -1,0 +1,75 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Game",
+            "type": "cppdbg",
+            "request": "launch", 
+            "program": "${workspaceFolder}/Build/debug/bin/Game",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Build/debug/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build Debug (Game)",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Release Game (No Debug)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/release/bin/Game", 
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Build/release/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Release (Game)",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug Editor",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/editor-debug/bin/Editor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Build/editor-debug/bin", 
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build Editor Debug",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Release Editor (No Debug)",
+            "type": "cppdbg", 
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/editor-release/bin/Editor",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Build/editor-release/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build Editor Release", 
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}
