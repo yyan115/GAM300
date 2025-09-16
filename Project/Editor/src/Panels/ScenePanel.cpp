@@ -139,8 +139,22 @@ void ScenePanel::HandleEntitySelection() {
 
             // Get camera matrices
             float aspectRatio = sceneWidth / sceneHeight;
-            glm::mat4 viewMatrix = m_EditorCamera.GetViewMatrix();
-            glm::mat4 projMatrix = m_EditorCamera.GetProjectionMatrix(aspectRatio);
+            glm::mat4 glmViewMatrix = m_EditorCamera.GetViewMatrix();
+            glm::mat4 glmProjMatrix = m_EditorCamera.GetProjectionMatrix(aspectRatio);
+
+            // Convert GLM matrices to Matrix4x4 for raycast
+            Matrix4x4 viewMatrix(
+                glmViewMatrix[0][0], glmViewMatrix[1][0], glmViewMatrix[2][0], glmViewMatrix[3][0],
+                glmViewMatrix[0][1], glmViewMatrix[1][1], glmViewMatrix[2][1], glmViewMatrix[3][1],
+                glmViewMatrix[0][2], glmViewMatrix[1][2], glmViewMatrix[2][2], glmViewMatrix[3][2],
+                glmViewMatrix[0][3], glmViewMatrix[1][3], glmViewMatrix[2][3], glmViewMatrix[3][3]
+            );
+            Matrix4x4 projMatrix(
+                glmProjMatrix[0][0], glmProjMatrix[1][0], glmProjMatrix[2][0], glmProjMatrix[3][0],
+                glmProjMatrix[0][1], glmProjMatrix[1][1], glmProjMatrix[2][1], glmProjMatrix[3][1],
+                glmProjMatrix[0][2], glmProjMatrix[1][2], glmProjMatrix[2][2], glmProjMatrix[3][2],
+                glmProjMatrix[0][3], glmProjMatrix[1][3], glmProjMatrix[2][3], glmProjMatrix[3][3]
+            );
 
             // Cast ray from camera through mouse position
             RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(

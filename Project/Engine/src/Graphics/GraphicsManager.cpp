@@ -49,11 +49,13 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	}
 }
 
-void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const glm::mat4& transform)
+void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform)
 {
 	if (model && shader) 
 	{
-		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader, transform);
+		glm::mat4 glmTransform = ConvertMatrix4x4ToGLM(transform);
+		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader);
+		renderItem->transform = glmTransform;
 		Submit(std::move(renderItem));
 	}
 }
@@ -78,9 +80,15 @@ void GraphicsManager::Render()
 		// Cast to ModelRenderItem since that's what we have for now
 		// Later you can add a switch statement for different types
 		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
+
 		if (modelItem) 
 		{
 			RenderModel(*modelItem);
+		}
+		else if (textItem) 
+		{
+			RenderText(*textItem);
 		}
 	}
 }
@@ -157,9 +165,23 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		glm::mat4 view = currentCamera->GetViewMatrix();
 		shader.setMat4("view", view);
 
+		// Get window dimensions with safety checks
+		int windowWidth = WindowManager::GetWindowWidth();
+		int windowHeight = WindowManager::GetWindowHeight();
+
+		// Prevent division by zero and ensure minimum dimensions
+		if (windowWidth <= 0) windowWidth = 1;
+		if (windowHeight <= 0) windowHeight = 1;
+
+		float aspectRatio = (float)windowWidth / (float)windowHeight;
+
+		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
+		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
+		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
+
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			aspectRatio,
 			0.1f, 100.0f
 		);
 		shader.setMat4("projection", projection);
@@ -291,5 +313,27 @@ void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& posit
 
 	shader.setMat4("projection", projection);
 	shader.setMat4("model", model);
+}
+
+glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
+{
+	Matrix4x4 transposed = m.Transposed();
+	glm::mat4 converted(
+		transposed[0][0], transposed[0][1], transposed[0][2], transposed[0][3],
+		transposed[1][0], transposed[1][1], transposed[1][2], transposed[1][3],
+		transposed[2][0], transposed[2][1], transposed[2][2], transposed[2][3],
+		transposed[3][0], transposed[3][1], transposed[3][2], transposed[3][3]);
+	return converted;
+}
+
+Matrix4x4 GraphicsManager::ConvertGLMToMatrix4x4(const glm::mat4& m)
+{
+	// GLM is column-major, Matrix4x4 is row-major, so we need to transpose
+	Matrix4x4 converted(
+		m[0][0], m[1][0], m[2][0], m[3][0],
+		m[0][1], m[1][1], m[2][1], m[3][1],
+		m[0][2], m[1][2], m[2][2], m[3][2],
+		m[0][3], m[1][3], m[2][3], m[3][3]);
+	return converted;
 }
 

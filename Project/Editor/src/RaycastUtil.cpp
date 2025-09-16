@@ -3,17 +3,12 @@
 #include <limits>
 #include <iostream>
 #include <optional>
-#include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 
 // Include ECS system from Engine (using configured include paths)
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Math/Vector3D.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 RaycastUtil::Ray RaycastUtil::ScreenToWorldRay(float mouseX, float mouseY,
                                               float screenWidth, float screenHeight,
@@ -92,6 +87,14 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
         std::cout << "[RaycastUtil] Ray origin: (" << ray.origin.x << ", " << ray.origin.y << ", " << ray.origin.z
                   << ") direction: (" << ray.direction.x << ", " << ray.direction.y << ", " << ray.direction.z << ")" << std::endl;
 
+        // Get all entities with ModelRenderComponent
+        // Note: This is a simplified approach. In a real implementation,
+        // you'd want to iterate through entities more efficiently
+
+        // For now, we'll test against some known entities
+        // In a real implementation, you'd have a system to get all renderable entities
+
+        // Debug: Count total entities with ModelRenderComponent
         int entitiesWithComponent = 0;
 
         // Test against entities 0-50, looking for Transform components
@@ -178,30 +181,12 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
 
             // Convert column-major float array (ImGuizmo/GLM format) to row-major Matrix4x4
             // ImGuizmo provides column-major, Matrix4x4 is row-major
-            Matrix4x4 newMatrix;
-            newMatrix.m[0][0] = matrix[0];  newMatrix.m[0][1] = matrix[4];  newMatrix.m[0][2] = matrix[8];   newMatrix.m[0][3] = matrix[12];
-            newMatrix.m[1][0] = matrix[1];  newMatrix.m[1][1] = matrix[5];  newMatrix.m[1][2] = matrix[9];   newMatrix.m[1][3] = matrix[13];
-            newMatrix.m[2][0] = matrix[2];  newMatrix.m[2][1] = matrix[6];  newMatrix.m[2][2] = matrix[10];  newMatrix.m[2][3] = matrix[14];
-            newMatrix.m[3][0] = matrix[3];  newMatrix.m[3][1] = matrix[7];  newMatrix.m[3][2] = matrix[11];  newMatrix.m[3][3] = matrix[15];
+            transform.model.m[0][0] = matrix[0];  transform.model.m[0][1] = matrix[4];  transform.model.m[0][2] = matrix[8];   transform.model.m[0][3] = matrix[12];
+            transform.model.m[1][0] = matrix[1];  transform.model.m[1][1] = matrix[5];  transform.model.m[1][2] = matrix[9];   transform.model.m[1][3] = matrix[13];
+            transform.model.m[2][0] = matrix[2];  transform.model.m[2][1] = matrix[6];  transform.model.m[2][2] = matrix[10];  transform.model.m[2][3] = matrix[14];
+            transform.model.m[3][0] = matrix[3];  transform.model.m[3][1] = matrix[7];  transform.model.m[3][2] = matrix[11];  transform.model.m[3][3] = matrix[15];
 
-            // Extract transform components properly
-            Vector3D newPosition(newMatrix.m[0][3], newMatrix.m[1][3], newMatrix.m[2][3]);
-
-            // Extract scale from the matrix
-            Vector3D newScale;
-            newScale.x = sqrt(newMatrix.m[0][0]*newMatrix.m[0][0] + newMatrix.m[1][0]*newMatrix.m[1][0] + newMatrix.m[2][0]*newMatrix.m[2][0]);
-            newScale.y = sqrt(newMatrix.m[0][1]*newMatrix.m[0][1] + newMatrix.m[1][1]*newMatrix.m[1][1] + newMatrix.m[2][1]*newMatrix.m[2][1]);
-            newScale.z = sqrt(newMatrix.m[0][2]*newMatrix.m[0][2] + newMatrix.m[1][2]*newMatrix.m[1][2] + newMatrix.m[2][2]*newMatrix.m[2][2]);
-
-            // Update all components to stay in sync
-            transform.position = newPosition;
-            transform.scale = newScale;  // Make sure scale is updated too
-            transform.model = newMatrix;
-
-            // Update last known values to prevent TransformSystem from recalculating
-            transform.lastPosition = newPosition;
-            transform.lastScale = newScale;
-
+            std::cout << "[RaycastUtil] Updated Transform component for entity " << entity << std::endl;
             return true;
         }
     } catch (const std::exception& e) {
@@ -210,4 +195,3 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
 
     return false;
 }
-
