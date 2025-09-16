@@ -69,3 +69,12 @@ add_custom_command(TARGET Editor POST_BUILD
     ${CMAKE_SOURCE_DIR}/Resources
     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
 )
+
+# Windows-specific: Copy required DLLs for Editor
+if(WIN32)
+    add_custom_command(TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    )
+endif()

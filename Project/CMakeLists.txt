@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-# vcpkg integration - only for non-Android builds
-# Android builds use CMake's built-in Android toolchain
+# vcpkg integration - for Linux and Windows builds
+# Only Android uses prebuilt libraries
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
@@ -19,10 +19,17 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Linux compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+# Platform-specific compiler flags
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+elseif(WIN32)
+    # Windows-specific flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /EHsc")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
+endif()
 set(CMAKE_CXX_FLAGS_EDITORDEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_EDITORRELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
@@ -38,9 +45,11 @@ if(ANDROID)
     find_library(EGL_LIBRARY EGL)
     set(OPENGL_LIBRARIES ${GLES3_LIBRARY} ${EGL_LIBRARY})
 else()
-    # Desktop platforms use OpenGL and PkgConfig
+    # Desktop platforms (Linux/Windows) use OpenGL
     find_package(OpenGL REQUIRED)
-    find_package(PkgConfig REQUIRED)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_package(PkgConfig REQUIRED)
+    endif()
 endif()
 
 # Always build Engine (always shared library)

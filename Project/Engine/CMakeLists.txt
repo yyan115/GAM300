@@ -23,6 +23,11 @@ add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
+# Windows-specific definitions
+if(WIN32)
+    target_compile_definitions(Engine PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 # Set symbol visibility for Linux
 set_target_properties(Engine PROPERTIES
     CXX_VISIBILITY_PRESET hidden
@@ -78,7 +83,7 @@ if(ANDROID)
     message(STATUS "  freetype: ${FREETYPE_LIBRARY}")
     message(STATUS "  assimp: ${ASSIMP_LIBRARY}")
 else()
-    # Desktop builds use vcpkg packages
+    # Desktop builds (Linux/Windows) use vcpkg packages
     find_package(assimp CONFIG REQUIRED)
     find_package(glfw3 CONFIG REQUIRED)
     find_package(Freetype REQUIRED)
@@ -99,7 +104,7 @@ target_include_directories(Engine
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/include
 )
 
-# Add Android headers to main includes for Android builds
+# Add Android-specific headers (vcpkg handles desktop headers automatically)
 if(ANDROID)
     target_include_directories(Engine
         PUBLIC
@@ -131,7 +136,7 @@ if(ANDROID)
             android  # Android NDK library
     )
 else()
-    # Desktop linking - full vcpkg dependencies
+    # Desktop linking (Linux/Windows) - vcpkg dependencies
     target_link_libraries(Engine
         PUBLIC
             ${OPENGL_LIBRARIES}
@@ -141,14 +146,16 @@ else()
             # Private dependencies only Engine needs
             assimp::assimp
             glfw
-        Freetype::Freetype
-        glad::glad
-        spdlog::spdlog
-        rapidjson
-        # System libraries
-        ${CMAKE_DL_LIBS}
-        pthread
+            Freetype::Freetype
+            glad::glad
+            spdlog::spdlog
+            rapidjson
     )
+    
+    # Linux-specific system libraries
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(Engine PRIVATE ${CMAKE_DL_LIBS} pthread)
+    endif()
 endif()
 
 # Set rpath so executables can find this shared library

@@ -5,13 +5,10 @@
             "name": "Debug Game",
             "type": "cppdbg",
             "request": "launch", 
-            "program": "${workspaceFolder}/Project/Build/debug/bin/Game",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Project/Build/debug/bin",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -20,33 +17,47 @@
                 }
             ],
             "preLaunchTask": "Build Debug (Game)",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/debug/bin/Game",
+                "cwd": "${workspaceFolder}/Project/Build/debug/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/debug/bin/Debug/Game.exe",
+                "cwd": "${workspaceFolder}/Project/Build/debug/bin/Debug",
+                "MIMode": "lldb"
+            }
         },
         {
             "name": "Release Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Project/Build/release/bin/Game", 
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Project/Build/release/bin",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
             "preLaunchTask": "Build Release (Game)",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/release/bin/Game",
+                "cwd": "${workspaceFolder}/Project/Build/release/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/release/bin/Release/Game.exe",
+                "cwd": "${workspaceFolder}/Project/Build/release/bin/Release",
+                "MIMode": "lldb"
+            }
         },
         {
             "name": "Debug Editor",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Editor",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin", 
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -55,21 +66,38 @@
                 }
             ],
             "preLaunchTask": "Build Editor Debug",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Debug/Editor.exe",
+                "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin/Debug",
+                "MIMode": "lldb"
+            }
         },
         {
             "name": "Release Editor",
             "type": "cppdbg", 
             "request": "launch",
-            "program": "${workspaceFolder}/Project/Build/editor-release/bin/Editor",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Project/Build/editor-release/bin",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
-            "preLaunchTask": "Build Editor Release", 
-            "miDebuggerPath": "/usr/bin/gdb"
+            "preLaunchTask": "Build Editor Release",
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/editor-release/bin/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/editor-release/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/editor-release/bin/Release/Editor.exe",
+                "cwd": "${workspaceFolder}/Project/Build/editor-release/bin/Release",
+                "MIMode": "lldb"
+            }
         },
         {
             "name": "Build Android Debug",
