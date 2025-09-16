@@ -12,7 +12,7 @@ Font::~Font()
 
 bool Font::LoadAsset(const std::string& path)
 {
-    LoadFont(path, fontSize);
+    return LoadFont(path, fontSize);
 }
 
 bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)

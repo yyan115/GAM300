@@ -40,6 +40,18 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 
+	// Text
+	auto textShader = std::make_shared<Shader>();
+	if (textShader->LoadAsset("Resources/Shaders/text")) {
+		std::cout << "Text shader loaded successfully!" << std::endl;
+	}
+	else {
+		std::cout << "Failed to load text shader!" << std::endl;
+	}
+	Entity text = ecsManager.CreateEntity();
+	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
+	
+
 	// Loads model
 	//backpackModel = std::make_shared<Model>("Resources/Models/backpack/backpack.obj");
 	//shader = std::make_shared<Shader>("Resources/Shaders/default.vert", "Resources/Shaders/default.frag");
@@ -87,6 +99,10 @@ void SceneInstance::Draw() {
 	if (mainECS.modelSystem)
 	{
 		mainECS.modelSystem->Update();
+	}
+	if (mainECS.textSystem)
+	{
+		mainECS.textSystem->Update();
 	}
 
 	gfxManager.Render();

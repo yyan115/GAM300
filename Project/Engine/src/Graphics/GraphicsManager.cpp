@@ -184,7 +184,8 @@ void GraphicsManager::SubmitText(const std::string& text, std::shared_ptr<Font> 
 
 void GraphicsManager::RenderText(const TextRenderComponent& item)
 {
-	if (!item.isVisible || !item.font || !item.shader || item.text.empty()) {
+	if (!item.isVisible || !item.font || !item.shader || item.text.empty()) 
+	{
 		return;
 	}
 
@@ -197,11 +198,13 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	item.shader->setVec3("textColor", item.color);
 
 	// Set up matrices based on whether it's 2D or 3D text
-	if (item.is3D) {
+	if (item.is3D) 
+	{
 		// 3D text rendering - use normal 3D matrices
 		SetupMatrices(*item.shader, item.transform);
 	}
-	else {
+	else 
+	{
 		// 2D screen space text rendering
 		Setup2DTextMatrices(*item.shader, item.position, item.scale);
 	}
@@ -211,7 +214,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	VAO* fontVAO = item.font->GetVAO();
 	VBO* fontVBO = item.font->GetVBO();
 
-	if (!fontVAO || !fontVBO) {
+	if (!fontVAO || !fontVBO) 
+	{
 		std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
@@ -223,19 +227,27 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	float y = 0.0f;
 
 	// Calculate starting position based on alignment
-	if (item.alignment == TextRenderComponent::Alignment::CENTER) {
+	if (item.alignment == TextRenderComponent::Alignment::CENTER) 
+	{
 		x = -item.font->GetTextWidth(item.text, item.scale) / 2.0f;
 	}
-	else if (item.alignment == TextRenderComponent::Alignment::RIGHT) {
+
+	else if (item.alignment == TextRenderComponent::Alignment::RIGHT) 
+	{
 		x = -item.font->GetTextWidth(item.text, item.scale);
 	}
 
 	// Iterate through all characters
-	for (char c : item.text) {
+	for (char c : item.text) 
+	{
 		const Character& ch = item.font->GetCharacter(c);
+		if (ch.textureID == 0) {
+			std::cerr << "Character '" << c << "' has no texture!" << std::endl;
+			continue;
+		}
 
-		float xpos = x + ch.Bearing.x * item.scale;
-		float ypos = y - (ch.size.y - ch.Bearing.y) * item.scale;
+		float xpos = x + ch.bearing.x * item.scale;
+		float ypos = y - (ch.size.y - ch.bearing.y) * item.scale;
 
 		float w = ch.size.x * item.scale;
 		float h = ch.size.y * item.scale;
@@ -271,12 +283,10 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale)
 {
-	// Create orthographic projection for 2D text
 	glm::mat4 projection = glm::ortho(0.0f, (float)WindowManager::GetWindowWidth(), 0.0f, (float)WindowManager::GetWindowHeight());
 
-	// Create model matrix for positioning
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, position);
+	model = glm::translate(model, position);  // Use position as-is
 	model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
 
 	shader.setMat4("projection", projection);
