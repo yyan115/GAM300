@@ -1,5 +1,6 @@
 #include "pch.h"
-#include "TransformSystem.hpp"
+#include "Transform/TransformComponent.hpp"
+#include "Transform/TransformSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
 
@@ -34,20 +35,20 @@ void TransformSystem::update() {
 	}
 }
 
-#if 0
+#if 1
 Matrix4x4 TransformSystem::calculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation) {
-	Matrix4x4 modelMatrix;
-	modelMatrix.Translate(position.x, position.y, position.z);
-	modelMatrix = modelMatrix.RotationX(rotation.x * (M_PI / -180.f));
-	modelMatrix = modelMatrix.RotationY(rotation.y * (M_PI / -180.f));
-	modelMatrix = modelMatrix.RotationZ(rotation.z * (M_PI / -180.f));
+	float radx = rotation.x * (M_PI / 180.f);
+	float rady = rotation.y * (M_PI / 180.f);
+	float radz = rotation.z * (M_PI / 180.f);
 
-	return modelMatrix.Scale(scale.x, scale.y, scale.z);
-	//return Matrix4x4::Translate(position.x, position.y, position.z) * Matrix4x4::RotationZ(rotation.z) * Matrix4x4::Scale(scale.x, scale.y, scale.z);
+	//  TRS = T * R * S  (column-major, column vectors)
+	Matrix4x4 R = Matrix4x4::RotationZ(radz) * Matrix4x4::RotationY(rady) * Matrix4x4::RotationX(radx);
+
+	return Matrix4x4::TRS(position, R, scale);
 }
 #endif
 
-#if 1
+#if 0
 glm::mat4 TransformSystem::calculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation) {
 	//// First, extract the rotation basis of the transform
 	//Vector3D x = Vector3D(1, 0, 0) * rotation; // Vec3 * Quat (right vector)

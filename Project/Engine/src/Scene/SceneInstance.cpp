@@ -6,8 +6,6 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Transform/TransformComponent.hpp>
-#include <Graphics/TextRendering/TextUtils.hpp>
-#include "ECS/NameComponent.hpp"
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -26,7 +24,6 @@ void SceneInstance::Initialize() {
 	backpacktransform.position = { 0, 0, 0 };
 	backpacktransform.scale = { .1f, .1f, .1f };
 	backpacktransform.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"dora the explorer"});
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
 		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
 
@@ -36,7 +33,6 @@ void SceneInstance::Initialize() {
 	backpacktransform2.position = { 1, -0.5f, 0 };
 	backpacktransform2.scale = { .2f, .2f, .2f };
 	backpacktransform2.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "ash ketchum" });
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
 		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
 
@@ -44,19 +40,9 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 
-	// Text
-	auto textShader = std::make_shared<Shader>();
-	if (textShader->LoadAsset("Resources/Shaders/text")) {
-		std::cout << "Text shader loaded successfully!" << std::endl;
-	}
-	else {
-		std::cout << "Failed to load text shader!" << std::endl;
-	}
-	Entity text = ecsManager.CreateEntity();
-	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
-	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-	TextUtils::SetPosition(textComp, glm::vec3(800,0,0));
-	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+	// Loads model
+	//backpackModel = std::make_shared<Model>("Resources/Models/backpack/backpack.obj");
+	//shader = std::make_shared<Shader>("Resources/Shaders/default.vert", "Resources/Shaders/default.frag");
 
 	// Creates light
 	lightShader = std::make_shared<Shader>();
@@ -101,10 +87,6 @@ void SceneInstance::Draw() {
 	if (mainECS.modelSystem)
 	{
 		mainECS.modelSystem->Update();
-	}
-	if (mainECS.textSystem)
-	{
-		mainECS.textSystem->Update();
 	}
 
 	gfxManager.Render();
