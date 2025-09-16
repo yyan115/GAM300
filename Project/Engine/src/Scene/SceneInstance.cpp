@@ -6,6 +6,7 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Transform/TransformComponent.hpp>
+#include <Graphics/TextRendering/TextUtils.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -50,11 +51,9 @@ void SceneInstance::Initialize() {
 	}
 	Entity text = ecsManager.CreateEntity();
 	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
-	
-
-	// Loads model
-	//backpackModel = std::make_shared<Model>("Resources/Models/backpack/backpack.obj");
-	//shader = std::make_shared<Shader>("Resources/Shaders/default.vert", "Resources/Shaders/default.frag");
+	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
+	TextUtils::SetPosition(textComp, glm::vec3(800,0,0));
+	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
 	// Creates light
 	lightShader = std::make_shared<Shader>();
