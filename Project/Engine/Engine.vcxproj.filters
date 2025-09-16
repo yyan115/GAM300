@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -56,6 +56,7 @@
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -90,6 +91,7 @@
     <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
+    <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
