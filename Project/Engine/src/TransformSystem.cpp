@@ -46,6 +46,27 @@ Matrix4x4 TransformSystem::calculateModelMatrix(Vector3D const& position, Vector
 
 	return Matrix4x4::TRS(position, R, scale);
 }
+
+void TransformSystem::SetPosition(Transform& transform, Vector3D position) {
+	transform.position = position;
+	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	// Reset last values to force transform system to detect changes
+	transform.lastPosition = { -99999.0f, -99999.0f, -99999.0f };
+}
+
+void TransformSystem::SetRotation(Transform& transform, Vector3D rotation) {
+	transform.rotation = rotation;
+	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	// Reset last values to force transform system to detect changes
+	transform.lastRotation = { -99999.0f, -99999.0f, -99999.0f };
+}
+
+void TransformSystem::SetScale(Transform& transform, Vector3D scale) {
+	transform.scale = scale;
+	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	// Reset last values to force transform system to detect changes
+	transform.lastScale = { -99999.0f, -99999.0f, -99999.0f };
+}
 #endif
 
 #if 0

@@ -57,6 +57,7 @@
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
+    <ClInclude Include="include\ECS\NameComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

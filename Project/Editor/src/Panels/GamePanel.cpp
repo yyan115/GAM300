@@ -9,7 +9,7 @@ GamePanel::GamePanel()
 }
 
 void GamePanel::OnImGuiRender() {
-    if (ImGui::Begin(m_Name.c_str(), &m_IsOpen)) {
+    if (ImGui::Begin(name.c_str(), &isOpen)) {
 
         // Get the content region size
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();

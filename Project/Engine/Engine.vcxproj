@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\ECS\NameComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\Font.hpp" />
     <ClInclude Include="include\Graphics\GraphicsManager.hpp" />
     <ClInclude Include="include\Graphics\IRenderComponent.hpp" />

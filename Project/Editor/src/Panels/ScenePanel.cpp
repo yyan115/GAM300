@@ -6,6 +6,7 @@
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "EditorState.hpp"
+#include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
 #include <iostream>
@@ -168,12 +169,12 @@ void ScenePanel::HandleEntitySelection() {
 
             if (hit.hit) {
                 // Entity found, select it
-                editorState.SetSelectedEntity(hit.entity);
+                GUIManager::SetSelectedEntity(hit.entity);
                 std::cout << "[ScenePanel] Raycast hit entity " << hit.entity
                           << " at distance " << hit.distance << std::endl;
             } else {
                 // No entity hit, clear selection
-                editorState.ClearSelection();
+                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                 std::cout << "[ScenePanel] Raycast missed - cleared selection" << std::endl;
             }
 
@@ -213,7 +214,7 @@ void ScenePanel::OnImGuiRender() {
     // Update input manager state
     EditorInputManager::Update();
 
-    if (ImGui::Begin(m_Name.c_str(), &m_IsOpen)) {
+    if (ImGui::Begin(name.c_str(), &isOpen)) {
 
         // Render gizmo controls at the top
         RenderGizmoControls();
@@ -326,13 +327,6 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     ImGuizmo::Enable(true);
     ImGuizmo::AllowAxisFlip(false);
 
-    // Print debug info about the setup
-    static bool setupPrinted = false;
-    if (!setupPrinted) {
-        std::cout << "[ImGuizmo] Setup - WindowPos: (" << windowPos.x << ", " << windowPos.y
-                  << ") Size: (" << windowSize.x << ", " << windowSize.y << ")" << std::endl;
-        setupPrinted = true;
-    }
 
     // Get matrices from editor camera
     float aspectRatio = sceneWidth / sceneHeight;
@@ -347,10 +341,9 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     ImGuizmo::DrawGrid(viewMatrix, projMatrix, m_IdentityMatrix, 10.0f);
 
     // Only show gizmo when an entity is selected AND not in normal pan mode
-    EditorState& editorState = EditorState::GetInstance();
-    if (editorState.HasSelectedEntity() && !m_IsNormalPanMode) {
+    Entity selectedEntity = GUIManager::GetSelectedEntity();
+    if (selectedEntity != static_cast<Entity>(-1) && !m_IsNormalPanMode) {
         // Get the actual transform matrix from the selected entity
-        Entity selectedEntity = editorState.GetSelectedEntity();
         static float selectedObjectMatrix[16];
 
         // Get transform using RaycastUtil helper to avoid OpenGL header conflicts
@@ -366,50 +359,12 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             nullptr, nullptr
         );
 
-        // Debug: Check if ImGuizmo is responding to mouse
-        static bool wasOver = false;
-        static bool wasUsing = false;
-
-        bool isOver = ImGuizmo::IsOver();
-        bool isCurrentlyUsing = ImGuizmo::IsUsing();
-
-        if (isOver != wasOver) {
-            std::cout << "[ImGuizmo] IsOver changed: " << (isOver ? "true" : "false") << std::endl;
-            wasOver = isOver;
-        }
-
-        if (isCurrentlyUsing != wasUsing) {
-            std::cout << "[ImGuizmo] IsUsing changed: " << (isCurrentlyUsing ? "true" : "false") << std::endl;
-            wasUsing = isCurrentlyUsing;
-        }
-
-        // Debug mouse click detection
-        ImGuiIO& io = ImGui::GetIO();
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            std::cout << "[ImGuizmo] Mouse clicked at (" << io.MousePos.x << ", " << io.MousePos.y << ")" << std::endl;
-            std::cout << "[ImGuizmo] Gizmo area: (" << windowPos.x << ", " << windowPos.y << ") to ("
-                      << (windowPos.x + windowSize.x) << ", " << (windowPos.y + windowSize.y) << ")" << std::endl;
-
-            // Calculate relative mouse position within the child window
-            float relativeX = io.MousePos.x - windowPos.x;
-            float relativeY = io.MousePos.y - windowPos.y;
-            std::cout << "[ImGuizmo] Relative mouse pos: (" << relativeX << ", " << relativeY << ")" << std::endl;
-
-            // Check if click is within ImGuizmo area
-            bool withinGizmoArea = (io.MousePos.x >= windowPos.x && io.MousePos.x <= windowPos.x + windowSize.x &&
-                                   io.MousePos.y >= windowPos.y && io.MousePos.y <= windowPos.y + windowSize.y);
-            std::cout << "[ImGuizmo] Click within gizmo area: " << (withinGizmoArea ? "true" : "false") << std::endl;
-            std::cout << "[ImGuizmo] ImGuizmo::IsOver(): " << (ImGuizmo::IsOver() ? "true" : "false") << std::endl;
-            std::cout << "[ImGuizmo] ImGuizmo::IsUsing(): " << (ImGuizmo::IsUsing() ? "true" : "false") << std::endl;
-        }
 
         // Apply transform changes to the actual entity
         if (isUsing) {
             // Update the entity's transform in the ECS system
             RaycastUtil::SetEntityTransform(selectedEntity, selectedObjectMatrix);
 
-            // Display transformation information for debugging (render outside child window)
-            // This will be shown in the main panel
         }
     }
 

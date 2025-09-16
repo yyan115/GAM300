@@ -7,6 +7,7 @@
 #include <Asset Manager/AssetManager.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
+#include "ECS/NameComponent.hpp"
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -25,6 +26,7 @@ void SceneInstance::Initialize() {
 	backpacktransform.position = { 0, 0, 0 };
 	backpacktransform.scale = { .1f, .1f, .1f };
 	backpacktransform.rotation = { 0, 0, 0 };
+	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"backpack1"});
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
 		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
 
@@ -34,6 +36,7 @@ void SceneInstance::Initialize() {
 	backpacktransform2.position = { 1, -0.5f, 0 };
 	backpacktransform2.scale = { .2f, .2f, .2f };
 	backpacktransform2.rotation = { 0, 0, 0 };
+	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "backpack2" });
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
 		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
 
