@@ -6,7 +6,6 @@
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "EditorState.hpp"
-#include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
 #include <iostream>
@@ -20,14 +19,14 @@
 #endif
 
 ScenePanel::ScenePanel()
-    : EditorPanel("Scene", true), editorCamera(glm::vec3(0.0f, 0.0f, 0.0f), 5.0f) {
+    : EditorPanel("Scene", true), m_EditorCamera(glm::vec3(0.0f, 0.0f, 0.0f), 5.0f) {
     InitializeMatrices();
 }
 
 void ScenePanel::InitializeMatrices() {
     // Initialize identity matrix for ImGuizmo
-    memset(identityMatrix, 0, sizeof(identityMatrix));
-    identityMatrix[0] = identityMatrix[5] = identityMatrix[10] = identityMatrix[15] = 1.0f;
+    memset(m_IdentityMatrix, 0, sizeof(m_IdentityMatrix));
+    m_IdentityMatrix[0] = m_IdentityMatrix[5] = m_IdentityMatrix[10] = m_IdentityMatrix[15] = 1.0f;
 }
 
 void ScenePanel::Mat4ToFloatArray(const glm::mat4& mat, float* arr) {
@@ -42,22 +41,22 @@ void ScenePanel::HandleKeyboardInput() {
     // Check keyboard input regardless of camera input conditions
     if (EditorInputManager::IsGizmoShortcutPressed(0)) {
         // Q key - Normal pan mode (no gizmos, left click panning)
-        isNormalPanMode = true;
+        m_IsNormalPanMode = true;
         std::cout << "[ScenePanel] Q pressed - Normal/Pan mode (gizmos hidden, LMB panning)" << std::endl;
     }
     if (EditorInputManager::IsGizmoShortcutPressed(1)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::TRANSLATE;
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::TRANSLATE;
         std::cout << "[ScenePanel] W pressed - Translate mode" << std::endl;
     }
     if (EditorInputManager::IsGizmoShortcutPressed(2)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::ROTATE;
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::ROTATE;
         std::cout << "[ScenePanel] E pressed - Rotate mode" << std::endl;
     }
     if (EditorInputManager::IsGizmoShortcutPressed(3)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::SCALE;
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::SCALE;
         std::cout << "[ScenePanel] R pressed - Scale mode" << std::endl;
     }
 }
@@ -71,12 +70,12 @@ void ScenePanel::HandleCameraInput() {
 
     // Calculate mouse delta (original working logic)
     glm::vec2 mouseDelta(0.0f);
-    if (!firstMouse) {
-        mouseDelta = currentMousePos - lastMousePos;
+    if (!m_FirstMouse) {
+        mouseDelta = currentMousePos - m_LastMousePos;
     } else {
-        firstMouse = false;
+        m_FirstMouse = false;
     }
-    lastMousePos = currentMousePos;
+    m_LastMousePos = currentMousePos;
 
     // Get input states
     bool isAltPressed = io.KeyAlt;
@@ -84,13 +83,13 @@ void ScenePanel::HandleCameraInput() {
     bool isMiddleMousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
     float scrollDelta = io.MouseWheel;
 
-    if (isNormalPanMode) {
+    if (m_IsNormalPanMode) {
         isMiddleMousePressed = isLeftMousePressed;
         isLeftMousePressed = false; 
         isAltPressed = false; 
     }
 
-    editorCamera.ProcessInput(
+    m_EditorCamera.ProcessInput(
         io.DeltaTime,
         true,
         isAltPressed,
@@ -106,7 +105,7 @@ void ScenePanel::HandleEntitySelection() {
     // Hover check is now handled by the caller
 
     // Skip entity selection in normal pan mode
-    if (isNormalPanMode) {
+    if (m_IsNormalPanMode) {
         return;  // No entity selection in pan mode
     }
 
@@ -140,22 +139,8 @@ void ScenePanel::HandleEntitySelection() {
 
             // Get camera matrices
             float aspectRatio = sceneWidth / sceneHeight;
-            glm::mat4 glmViewMatrix = editorCamera.GetViewMatrix();
-            glm::mat4 glmProjMatrix = editorCamera.GetProjectionMatrix(aspectRatio);
-
-            // Convert GLM matrices to Matrix4x4 for raycast
-            Matrix4x4 viewMatrix(
-                glmViewMatrix[0][0], glmViewMatrix[1][0], glmViewMatrix[2][0], glmViewMatrix[3][0],
-                glmViewMatrix[0][1], glmViewMatrix[1][1], glmViewMatrix[2][1], glmViewMatrix[3][1],
-                glmViewMatrix[0][2], glmViewMatrix[1][2], glmViewMatrix[2][2], glmViewMatrix[3][2],
-                glmViewMatrix[0][3], glmViewMatrix[1][3], glmViewMatrix[2][3], glmViewMatrix[3][3]
-            );
-            Matrix4x4 projMatrix(
-                glmProjMatrix[0][0], glmProjMatrix[1][0], glmProjMatrix[2][0], glmProjMatrix[3][0],
-                glmProjMatrix[0][1], glmProjMatrix[1][1], glmProjMatrix[2][1], glmProjMatrix[3][1],
-                glmProjMatrix[0][2], glmProjMatrix[1][2], glmProjMatrix[2][2], glmProjMatrix[3][2],
-                glmProjMatrix[0][3], glmProjMatrix[1][3], glmProjMatrix[2][3], glmProjMatrix[3][3]
-            );
+            glm::mat4 viewMatrix = m_EditorCamera.GetViewMatrix();
+            glm::mat4 projMatrix = m_EditorCamera.GetProjectionMatrix(aspectRatio);
 
             // Cast ray from camera through mouse position
             RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(
@@ -169,12 +154,12 @@ void ScenePanel::HandleEntitySelection() {
 
             if (hit.hit) {
                 // Entity found, select it
-                GUIManager::SetSelectedEntity(hit.entity);
+                editorState.SetSelectedEntity(hit.entity);
                 std::cout << "[ScenePanel] Raycast hit entity " << hit.entity
                           << " at distance " << hit.distance << std::endl;
             } else {
                 // No entity hit, clear selection
-                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+                editorState.ClearSelection();
                 std::cout << "[ScenePanel] Raycast missed - cleared selection" << std::endl;
             }
 
@@ -186,23 +171,23 @@ void ScenePanel::HandleEntitySelection() {
 
 void ScenePanel::RenderGizmoControls() {
     // Toolbar for gizmo operations with visual feedback for active mode
-    if (ImGui::Button(isNormalPanMode ? "[Normal/Pan (Q)]" : "Normal/Pan (Q)")) {
-        isNormalPanMode = true;
+    if (ImGui::Button(m_IsNormalPanMode ? "[Normal/Pan (Q)]" : "Normal/Pan (Q)")) {
+        m_IsNormalPanMode = true;
     }
     ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::TRANSLATE ? "[Translate (W)]" : "Translate (W)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::TRANSLATE;
+    if (ImGui::Button(!m_IsNormalPanMode && m_GizmoOperation == ImGuizmo::TRANSLATE ? "[Translate (W)]" : "Translate (W)")) {
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::TRANSLATE;
     }
     ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::ROTATE ? "[Rotate (E)]" : "Rotate (E)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::ROTATE;
+    if (ImGui::Button(!m_IsNormalPanMode && m_GizmoOperation == ImGuizmo::ROTATE ? "[Rotate (E)]" : "Rotate (E)")) {
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::ROTATE;
     }
     ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::SCALE ? "[Scale (R)]" : "Scale (R)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::SCALE;
+    if (ImGui::Button(!m_IsNormalPanMode && m_GizmoOperation == ImGuizmo::SCALE ? "[Scale (R)]" : "Scale (R)")) {
+        m_IsNormalPanMode = false;
+        m_GizmoOperation = ImGuizmo::SCALE;
     }
 
     ImGui::SameLine();
@@ -214,7 +199,7 @@ void ScenePanel::OnImGuiRender() {
     // Update input manager state
     EditorInputManager::Update();
 
-    if (ImGui::Begin(name.c_str(), &isOpen)) {
+    if (ImGui::Begin(m_Name.c_str(), &m_IsOpen)) {
 
         // Render gizmo controls at the top
         RenderGizmoControls();
@@ -266,9 +251,6 @@ void ScenePanel::OnImGuiRender() {
             // Now handle ImGuizmo within the child window context
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // Render the ViewGizmo in the top right corner
-            RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
-
             // End the child window here
             ImGui::EndChild();
         }
@@ -278,9 +260,7 @@ void ScenePanel::OnImGuiRender() {
         }
 
         // Handle input based on ImGuizmo state (now calculated)
-        bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
-
-        if (canHandleInput) {
+        if (isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing()) {
             HandleCameraInput();
             HandleEntitySelection();
         }
@@ -293,10 +273,10 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
         // Pass our editor camera data to the rendering system
         SceneRenderer::BeginSceneRender(width, height);
         SceneRenderer::RenderSceneForEditor(
-            editorCamera.Position,
-            editorCamera.Front,
-            editorCamera.Up,
-            editorCamera.Zoom
+            m_EditorCamera.Position,
+            m_EditorCamera.Front,
+            m_EditorCamera.Up,
+            m_EditorCamera.Zoom
         );
         SceneRenderer::EndSceneRender();
 
@@ -332,110 +312,93 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     ImGuizmo::Enable(true);
     ImGuizmo::AllowAxisFlip(false);
 
+    // Print debug info about the setup
+    static bool setupPrinted = false;
+    if (!setupPrinted) {
+        std::cout << "[ImGuizmo] Setup - WindowPos: (" << windowPos.x << ", " << windowPos.y
+                  << ") Size: (" << windowSize.x << ", " << windowSize.y << ")" << std::endl;
+        setupPrinted = true;
+    }
 
     // Get matrices from editor camera
     float aspectRatio = sceneWidth / sceneHeight;
-    glm::mat4 view = editorCamera.GetViewMatrix();
-    glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+    glm::mat4 view = m_EditorCamera.GetViewMatrix();
+    glm::mat4 projection = m_EditorCamera.GetProjectionMatrix(aspectRatio);
 
     float viewMatrix[16], projMatrix[16];
     Mat4ToFloatArray(view, viewMatrix);
     Mat4ToFloatArray(projection, projMatrix);
 
     // Draw grid
-    ImGuizmo::DrawGrid(viewMatrix, projMatrix, identityMatrix, 10.0f);
+    ImGuizmo::DrawGrid(viewMatrix, projMatrix, m_IdentityMatrix, 10.0f);
 
     // Only show gizmo when an entity is selected AND not in normal pan mode
-    Entity selectedEntity = GUIManager::GetSelectedEntity();
-    if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
+    EditorState& editorState = EditorState::GetInstance();
+    if (editorState.HasSelectedEntity() && !m_IsNormalPanMode) {
         // Get the actual transform matrix from the selected entity
+        Entity selectedEntity = editorState.GetSelectedEntity();
         static float selectedObjectMatrix[16];
 
         // Get transform using RaycastUtil helper to avoid OpenGL header conflicts
         if (!RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix)) {
             // Fallback to identity if entity doesn't have transform
-            memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
+            memcpy(selectedObjectMatrix, m_IdentityMatrix, sizeof(selectedObjectMatrix));
         }
 
         bool isUsing = ImGuizmo::Manipulate(
             viewMatrix, projMatrix,
-            gizmoOperation, gizmoMode,
+            m_GizmoOperation, m_GizmoMode,
             selectedObjectMatrix,
             nullptr, nullptr
         );
 
+        // Debug: Check if ImGuizmo is responding to mouse
+        static bool wasOver = false;
+        static bool wasUsing = false;
+
+        bool isOver = ImGuizmo::IsOver();
+        bool isCurrentlyUsing = ImGuizmo::IsUsing();
+
+        if (isOver != wasOver) {
+            std::cout << "[ImGuizmo] IsOver changed: " << (isOver ? "true" : "false") << std::endl;
+            wasOver = isOver;
+        }
+
+        if (isCurrentlyUsing != wasUsing) {
+            std::cout << "[ImGuizmo] IsUsing changed: " << (isCurrentlyUsing ? "true" : "false") << std::endl;
+            wasUsing = isCurrentlyUsing;
+        }
+
+        // Debug mouse click detection
+        ImGuiIO& io = ImGui::GetIO();
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            std::cout << "[ImGuizmo] Mouse clicked at (" << io.MousePos.x << ", " << io.MousePos.y << ")" << std::endl;
+            std::cout << "[ImGuizmo] Gizmo area: (" << windowPos.x << ", " << windowPos.y << ") to ("
+                      << (windowPos.x + windowSize.x) << ", " << (windowPos.y + windowSize.y) << ")" << std::endl;
+
+            // Calculate relative mouse position within the child window
+            float relativeX = io.MousePos.x - windowPos.x;
+            float relativeY = io.MousePos.y - windowPos.y;
+            std::cout << "[ImGuizmo] Relative mouse pos: (" << relativeX << ", " << relativeY << ")" << std::endl;
+
+            // Check if click is within ImGuizmo area
+            bool withinGizmoArea = (io.MousePos.x >= windowPos.x && io.MousePos.x <= windowPos.x + windowSize.x &&
+                                   io.MousePos.y >= windowPos.y && io.MousePos.y <= windowPos.y + windowSize.y);
+            std::cout << "[ImGuizmo] Click within gizmo area: " << (withinGizmoArea ? "true" : "false") << std::endl;
+            std::cout << "[ImGuizmo] ImGuizmo::IsOver(): " << (ImGuizmo::IsOver() ? "true" : "false") << std::endl;
+            std::cout << "[ImGuizmo] ImGuizmo::IsUsing(): " << (ImGuizmo::IsUsing() ? "true" : "false") << std::endl;
+        }
 
         // Apply transform changes to the actual entity
         if (isUsing) {
             // Update the entity's transform in the ECS system
             RaycastUtil::SetEntityTransform(selectedEntity, selectedObjectMatrix);
 
+            // Display transformation information for debugging (render outside child window)
+            // This will be shown in the main panel
         }
     }
 
     // Pop the ID scope
     ImGui::PopID();
-}
-
-void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
-    // Get matrices from editor camera
-    float aspectRatio = sceneWidth / sceneHeight;
-    glm::mat4 view = editorCamera.GetViewMatrix();
-    glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
-
-    float viewMatrix[16], projMatrix[16];
-    Mat4ToFloatArray(view, viewMatrix);
-    Mat4ToFloatArray(projection, projMatrix);
-
-    // Position the ViewGizmo in the top right corner
-    ImVec2 windowPos = ImGui::GetWindowPos();
-    ImVec2 windowSize = ImGui::GetWindowSize();
-
-    float gizmoSize = 100.0f; // Size of the ViewGizmo
-    float margin = 10.0f;     // Margin from the edges
-
-    // Calculate position for top right corner
-    float gizmoX = windowPos.x + windowSize.x - gizmoSize - margin;
-    float gizmoY = windowPos.y + margin;
-
-    // Set the ViewGizmo position and size
-    ImGuizmo::SetRect(gizmoX, gizmoY, gizmoSize, gizmoSize);
-
-    // Create a copy of the view matrix for manipulation
-    float manipulatedViewMatrix[16];
-    memcpy(manipulatedViewMatrix, viewMatrix, sizeof(manipulatedViewMatrix));
-
-    // Render the ViewGizmo and check if it was manipulated
-    ImGuizmo::ViewManipulate(manipulatedViewMatrix, 8.0f,
-                             ImVec2(gizmoX, gizmoY),
-                             ImVec2(gizmoSize, gizmoSize),
-                             0x10101010);
-
-    // Check if the view matrix was modified by comparing with original
-    bool wasManipulated = false;
-    for (int i = 0; i < 16; ++i) {
-        if (std::abs(manipulatedViewMatrix[i] - viewMatrix[i]) > 1e-6f) {
-            wasManipulated = true;
-            break;
-        }
-    }
-
-    if (wasManipulated) {
-        // Convert the manipulated view matrix back to camera parameters
-        glm::mat4 newViewMatrix;
-        for (int i = 0; i < 16; ++i) {
-            glm::value_ptr(newViewMatrix)[i] = manipulatedViewMatrix[i];
-        }
-
-        // Extract camera position and orientation from the inverse view matrix
-        glm::mat4 inverseView = glm::inverse(newViewMatrix);
-        glm::vec3 newPosition = glm::vec3(inverseView[3]);
-        glm::vec3 newFront = -glm::normalize(glm::vec3(inverseView[2]));
-        glm::vec3 newUp = glm::normalize(glm::vec3(inverseView[1]));
-
-        // Update the editor camera
-        editorCamera.Position = newPosition;
-        editorCamera.Front = newFront;
-        editorCamera.Up = newUp;
-    }
 }

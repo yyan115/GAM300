@@ -6,7 +6,6 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "Scene/SceneManager.hpp"
 #include "Scene/SceneInstance.hpp"
-#include "WindowManager.hpp"
 #include <iostream>
 
 // Static member definitions
@@ -96,9 +95,6 @@ void SceneRenderer::BeginSceneRender(int width, int height)
         CreateSceneFramebuffer(width, height);
     }
 
-    // Update WindowManager viewport dimensions to match scene rendering area
-    WindowManager::SetViewportDimensions(width, height);
-
     // Bind framebuffer and set viewport
     glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
     glViewport(0, 0, width, height);
@@ -157,10 +153,6 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         if (mainECS.modelSystem) {
             mainECS.modelSystem->Update();
         }
-		if (mainECS.textSystem)
-		{
-			mainECS.textSystem->Update();
-		}
 
         // Render the scene
         gfxManager.Render();
