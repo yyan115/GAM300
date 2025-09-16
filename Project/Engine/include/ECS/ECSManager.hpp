@@ -5,11 +5,10 @@
 #include "EntityManager.hpp"
 #include "ComponentManager.hpp"
 #include "SystemManager.hpp"
-#include <Transform/TransformSystem.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
-#include "../Engine.h"  // For ENGINE_API macro
+#include <Graphics/TextRendering/TextRenderingSystem.hpp>
 
-class ENGINE_API ECSManager {
+class ECSManager {
 public:
 	ECSManager() { Initialize(); };
 	~ECSManager() {};
@@ -81,9 +80,9 @@ public:
 	}
 
 	// STORE SHARED POINTERS TO SYSTEMS HERE
-	// e.g., 
-	std::shared_ptr<TransformSystem> transformSystem;
+	// e.g., std::shared_ptr<TransformSystem> transformSystem;
 	std::shared_ptr<ModelSystem> modelSystem;
+	std::shared_ptr<TextRenderingSystem> textSystem;
 
 private:
 	template <typename T>
