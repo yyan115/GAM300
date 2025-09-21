@@ -3,6 +3,7 @@
 #include <Input/InputManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
+#include "TimeManager.hpp"
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -58,7 +59,7 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	//ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	processInput((float)WindowManager::getDeltaTime());
+	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 }

@@ -77,6 +77,7 @@
     <ClInclude Include="include\Math\Vector3D.h" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
+    <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\WindowManager.hpp" />
     <ClInclude Include="include\Input\InputManager.hpp" />
   </ItemGroup>
@@ -119,6 +120,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>

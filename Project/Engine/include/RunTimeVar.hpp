@@ -40,6 +40,7 @@
 
         extern Window window;
         extern Input input;
+        //TimeManager
 		extern double deltaTime;
 		extern double lastFrameTime;
     }

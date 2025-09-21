@@ -51,6 +51,7 @@
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\RunTimeVar.hpp" />
+    <ClInclude Include="include\TimeManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -82,6 +83,7 @@
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
