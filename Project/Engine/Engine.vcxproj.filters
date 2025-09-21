@@ -53,6 +53,7 @@
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
+    <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
@@ -69,6 +70,7 @@
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
+    <ClInclude Include="include\TimeManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -113,6 +115,8 @@
     <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
     <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
+    <ClCompile Include="src\RunTimeVar.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

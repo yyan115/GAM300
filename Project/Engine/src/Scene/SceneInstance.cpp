@@ -4,6 +4,8 @@
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include <Asset Manager/AssetManager.hpp>
+#include "TimeManager.hpp"
 #include <Asset Manager/ResourceManager.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
@@ -14,8 +16,8 @@ void SceneInstance::Initialize() {
 	
 	// Initialize GraphicsManager first
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-	gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
-
+	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
+	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
@@ -80,7 +82,7 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	processInput((float)WindowManager::getDeltaTime());
+	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 	mainECS.transformSystem->update();
@@ -180,7 +182,8 @@ void SceneInstance::DrawLightCubes()
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(camera.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 
@@ -212,7 +215,8 @@ void SceneInstance::DrawLightCubes(const Camera& cameraOverride)
 		glm::mat4 view = cameraOverride.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(cameraOverride.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 

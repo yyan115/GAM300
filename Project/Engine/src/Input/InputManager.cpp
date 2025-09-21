@@ -10,10 +10,11 @@ std::unordered_map<Input::Key, bool> InputManager::keyStates;
 std::unordered_map<Input::MouseButton, bool> InputManager::mouseButtonStates;
 std::unordered_map<Input::Key, bool> InputManager::prevKeyStates;
 std::unordered_map<Input::MouseButton, bool> InputManager::prevMouseButtonStates;
-double InputManager::mouseX = 0.0;
-double InputManager::mouseY = 0.0;
-double InputManager::scrollOffsetX = 0.0;
-double InputManager::scrollOffsetY = 0.0;
+
+//double InputManager::mouseX = 0.0;
+//double InputManager::mouseY = 0.0;
+//double InputManager::scrollOffsetX = 0.0;
+//double InputManager::scrollOffsetY = 0.0;
 
 void InputManager::Initialize()
 {
@@ -27,7 +28,7 @@ void InputManager::Update()
 	// Store previous frame state for GetKeyDown/GetMouseButtonDown detection
 	prevKeyStates = keyStates;
 	prevMouseButtonStates = mouseButtonStates;
-	
+
 	// Input is updated through callbacks (OnKeyEvent, OnMouseButtonEvent, etc.)
 	// No polling needed - events are pushed to us by the platform
 }
@@ -56,12 +57,12 @@ bool InputManager::GetMouseButton(Input::MouseButton button)
 
 double InputManager::GetMouseX()
 {
-	return mouseX;
+	return RunTimeVar::input.mouseX;
 }
 
 double InputManager::GetMouseY()
 {
-	return mouseY;
+	return  RunTimeVar::input.mouseY;
 }
 
 bool InputManager::GetAnyKeyDown()
@@ -104,12 +105,12 @@ void InputManager::OnMouseButtonEvent(Input::MouseButton button, Input::KeyActio
 
 void InputManager::OnMousePositionEvent(double x, double y)
 {
-	mouseX = x;
-	mouseY = y;
+	RunTimeVar::input.mouseX = x;
+	RunTimeVar::input.mouseY = y;
 }
 
 void InputManager::OnScrollEvent(double xOffset, double yOffset)
 {
-	scrollOffsetX += xOffset;
-	scrollOffsetY += yOffset;
+	RunTimeVar::input.scrollOffsetX += xOffset;
+	RunTimeVar::input.scrollOffsetY += yOffset;
 }

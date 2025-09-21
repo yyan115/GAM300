@@ -49,6 +49,7 @@
     <ClInclude Include="include\Graphics\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Logging.hpp" />
+    <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
@@ -86,6 +87,7 @@
     <ClInclude Include="include\Math\Matrix4x4.hpp" />
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
@@ -111,6 +113,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
+    <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Asset Manager\GUID.cpp" />
@@ -144,6 +147,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
