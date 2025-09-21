@@ -1,12 +1,11 @@
 #include "Panels/AssetBrowserPanel.hpp"
-#include "Asset Manager/MetaFilesManager.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <algorithm>
 #include <iostream>
 #include <cstring>
 #include <cmath>
-//#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/AssetManager.hpp"
 #include "Graphics/TextureManager.h"
 
 #ifdef _WIN32
@@ -106,44 +105,82 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
 
     // Handle different file events
-    switch (event) {
-    case filewatch::Event::added:
-        if (!MetaFilesManager::MetaFileExists(fullPath)) {
-            MetaFilesManager::GenerateMetaFile(fullPath);
-        }
-        QueueRefresh();
-        break;
-    case filewatch::Event::renamed_new:
-        // For new files, ensure meta file is generated
-        if (event == filewatch::Event::added) {
-            std::string fullPath = rootAssetDirectory + "/" + relativePath;
-            if (!MetaFilesManager::MetaFileExists(fullPath)) {
-                MetaFilesManager::GenerateMetaFile(fullPath);
-            }
-        }
-        QueueRefresh();
-        break;
+    if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+        // Sleep this thread for a while to allow the OS to finish the file operation.
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    case filewatch::Event::removed:
-        QueueRefresh();
-        break;
-    case filewatch::Event::renamed_old:
-        // For removed files, we should clean up meta files
-        QueueRefresh();
-        break;
-
-    case filewatch::Event::modified:
-        // For modified files, update meta file if needed
-    {
-        std::string fullPath = rootAssetDirectory + "/" + relativePath;
-        if (MetaFilesManager::MetaFileExists(fullPath)) {
-            MetaFilesManager::UpdateMetaFile(fullPath);
+        if (event == filewatch::Event::modified || event == filewatch::Event::added) {
+            std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
+            AssetManager::GetInstance().CompileAsset(fullPath);
         }
+        else if (event == filewatch::Event::removed) {
+            std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
+            AssetManager::GetInstance().UnloadAsset(fullPath);
+        }
+        else if (event == filewatch::Event::renamed_old) {
+            std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
+            AssetManager::GetInstance().UnloadAsset(fullPath);
+        }
+        else if (event == filewatch::Event::renamed_new) {
+            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
+            AssetManager::GetInstance().CompileAsset(fullPath);
+        }
+
         QueueRefresh();
-        break;
+    }
+    else if (AssetManager::GetInstance().IsExtensionMetaFile(extension)) {
+        if (event == filewatch::Event::removed) {
+            std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
+            AssetManager::GetInstance().HandleMetaFileDeletion(fullPath);
+
+            QueueRefresh();
+        }
+    }
+    else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
+        if (event == filewatch::Event::removed) {
+            std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
+            AssetManager::GetInstance().HandleResourceFileDeletion(fullPath);
+
+            QueueRefresh();
+        }
     }
 
-    }
+    //switch (event) {
+    //case filewatch::Event::added:
+    //    if (!MetaFilesManager::MetaFileExists(fullPath)) {
+    //        MetaFilesManager::GenerateMetaFile(fullPath);
+    //    }
+    //    QueueRefresh();
+    //    break;
+    //case filewatch::Event::renamed_new:
+    //    // For new files, ensure meta file is generated
+    //    if (event == filewatch::Event::added) {
+    //        std::string fullPath = rootAssetDirectory + "/" + relativePath;
+    //        if (!MetaFilesManager::MetaFileExists(fullPath)) {
+    //            MetaFilesManager::GenerateMetaFile(fullPath);
+    //        }
+    //    }
+    //    QueueRefresh();
+    //    break;
+
+    //case filewatch::Event::removed:
+    //    QueueRefresh();
+    //    break;
+    //case filewatch::Event::renamed_old:
+    //    // For removed files, we should clean up meta files
+    //    QueueRefresh();
+    //    break;
+
+    //case filewatch::Event::modified:
+    //    // For modified files, update meta file if needed
+    //{
+    //    std::string fullPath = rootAssetDirectory + "/" + relativePath;
+    //    if (MetaFilesManager::MetaFileExists(fullPath)) {
+    //        MetaFilesManager::UpdateMetaFile(fullPath);
+    //    }
+    //    QueueRefresh();
+    //    break;
+    //}
 }
 
 void AssetBrowserPanel::QueueRefresh() {
@@ -482,9 +519,6 @@ void AssetBrowserPanel::RefreshAssets() {
                 // Get or generate GUID using normalized filePath
                 if (MetaFilesManager::MetaFileExists(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
-                }
-                else {
-                    guid = MetaFilesManager::GenerateMetaFile(filePath);
                 }
             }
             else {

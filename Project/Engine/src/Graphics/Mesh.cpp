@@ -2,6 +2,7 @@
 
 #include "Graphics/Mesh.h"
 #include "WindowManager.hpp"
+#include <cassert>
 
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures) : vertices(vertices), indices(indices), textures(textures)
@@ -10,6 +11,12 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
 }
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat) : vertices(vertices), indices(indices), material(mat)
+{
+	setupMesh();
+}
+
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat) :
+	vertices(vertices), indices(indices), textures(textures), material(mat)
 {
 	setupMesh();
 }
@@ -60,7 +67,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	if (material)
 	{
 		//material->debugPrintProperties();
-		material->applyToShader(shader);
+		material->ApplyToShader(shader);
 	}
 	else
 	{
@@ -83,11 +90,15 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 			}
 
 			glActiveTexture(GL_TEXTURE0 + textureUnit);
-			textures[i]->Bind();
+			textures[i]->Bind(textureUnit);
 			shader.setInt(("material." + type + num).c_str(), textureUnit);
 			textureUnit++;
 		}
 	}
+
+	//assert(glIsProgram(shader.ID));
+	//assert(glIsVertexArray(vao.ID));
+	//assert(glIsTexture(textures[0]->ID));
 
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

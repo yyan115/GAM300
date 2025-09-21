@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "../Engine.h"  // For ENGINE_API macro
 
 // Asset GUIDs are written to .meta files as strings.
 using GUID_string = std::string;
@@ -25,7 +26,7 @@ namespace std {
 
 class GUIDUtilities {
 public:
-	static GUID_string GenerateGUIDString();
-	static GUID_128  ConvertStringToGUID128(const GUID_string& guidStr);
+	ENGINE_API static GUID_string GenerateGUIDString();
+	ENGINE_API static GUID_128  ConvertStringToGUID128(const GUID_string& guidStr);
 	static GUID_string ConvertGUID128ToString(const GUID_128& guid_128_t);
 };

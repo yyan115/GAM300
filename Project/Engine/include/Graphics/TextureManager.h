@@ -10,7 +10,7 @@ public:
 
 	std::shared_ptr<Texture> loadTexture(const std::string& filepath, const std::string& type = "diffuse");
 
-	std::shared_ptr<Texture> getTexture(const std::string& filepath);
+	std::shared_ptr<Texture> GetTextureInfo(const std::string& filepath);
 
 	bool isLoaded(const std::string& filepath) const;
 
