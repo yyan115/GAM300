@@ -405,23 +405,18 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
     float manipulatedViewMatrix[16];
     memcpy(manipulatedViewMatrix, viewMatrix, sizeof(manipulatedViewMatrix));
 
-    // Render the ViewGizmo and check if it was manipulated
+    // Render the ViewGizmo
     ImGuizmo::ViewManipulate(manipulatedViewMatrix, 8.0f,
                              ImVec2(gizmoX, gizmoY),
                              ImVec2(gizmoSize, gizmoSize),
                              0x10101010);
 
-    // Check if the view matrix was modified by comparing with original
-    bool wasManipulated = false;
-    for (int i = 0; i < 16; ++i) {
-        if (std::abs(manipulatedViewMatrix[i] - viewMatrix[i]) > 1e-6f) {
-            wasManipulated = true;
-            break;
-        }
-    }
+    // Check if the ViewGizmo was manipulated this frame
+    bool wasManipulated = ImGuizmo::IsUsingViewManipulate();
 
+    // Only update camera if ViewGizmo was actively manipulated this frame
     if (wasManipulated) {
-        // Convert the manipulated view matrix back to camera parameters
+        // Convert the manipulated view matrix back to orbit camera parameters
         glm::mat4 newViewMatrix;
         for (int i = 0; i < 16; ++i) {
             glm::value_ptr(newViewMatrix)[i] = manipulatedViewMatrix[i];
@@ -433,9 +428,29 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
         glm::vec3 newFront = -glm::normalize(glm::vec3(inverseView[2]));
         glm::vec3 newUp = glm::normalize(glm::vec3(inverseView[1]));
 
-        // Update the editor camera
+        // For orbit camera, we need to maintain the target point
+        // Calculate the new target by projecting forward from the new position
+        // Use the current distance to maintain zoom level
+        glm::vec3 newTarget = newPosition + newFront * editorCamera.Distance;
+
+        // Calculate new yaw and pitch relative to the target
+        glm::vec3 offset = newPosition - newTarget;
+        float newDistance = glm::length(offset);
+
+        // Calculate yaw (horizontal rotation around Y axis)
+        float newYaw = glm::degrees(atan2(offset.x, offset.z));
+
+        // Calculate pitch (vertical rotation)
+        float horizontalDistance = sqrt(offset.x * offset.x + offset.z * offset.z);
+        float newPitch = glm::degrees(atan2(offset.y, horizontalDistance));
+
+        // Update the editor camera's orbit parameters
         editorCamera.Position = newPosition;
         editorCamera.Front = newFront;
         editorCamera.Up = newUp;
+        editorCamera.Target = newTarget;
+        editorCamera.Yaw = newYaw;
+        editorCamera.Pitch = newPitch;
+        editorCamera.Distance = newDistance;
     }
 }
