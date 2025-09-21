@@ -18,11 +18,13 @@ public:
 
 	static bool MetaFileUpdated(const std::string& assetPath);
 
-	static GUID_128 UpdateMetaFile(const std::string& assetPath);
+	//static GUID_128 UpdateMetaFile(const std::string& assetPath);
 
 	static void AddGUID128Mapping(const std::string& assetPath, const GUID_128& guid);
 
-    static constexpr int CURRENT_METADATA_VERSION = 2;
+	static bool DeleteMetaFile(const std::string& assetPath);
+
+    static constexpr int CURRENT_METADATA_VERSION = 3;
 
 private:
     /**

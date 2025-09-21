@@ -44,10 +44,6 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	MetaFilesManager::AddGUID128Mapping(assetPath, guid128);
 
 	std::shared_ptr<AssetMeta> metaData = std::make_shared<AssetMeta>();
-	metaData->guid = guid128;
-	metaData->sourceFilePath = assetPath;
-	metaData->compiledFilePath = resourcePath;
-	metaData->lastCompileTime = tp;
-	metaData->version = MetaFilesManager::CURRENT_METADATA_VERSION;
+	metaData->PopulateAssetMeta(guid128, assetPath, resourcePath, MetaFilesManager::CURRENT_METADATA_VERSION);
 	return metaData;
 }

@@ -68,6 +68,7 @@
     <ClInclude Include="include\Platform\AndroidPlatform.h" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
+    <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -109,6 +110,8 @@
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
+    <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
+    <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

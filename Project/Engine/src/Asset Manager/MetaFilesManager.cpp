@@ -5,6 +5,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#include <Asset Manager/FileUtilities.hpp>
 
 std::unordered_map<std::string, GUID_128> MetaFilesManager::assetPathToGUID128;
 
@@ -81,8 +82,6 @@ GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath)
 }
 
 void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFolder) {
-	AssetManager::GetInstance().InitializeSupportedExtensions();
-	std::unordered_set supportedExtensions = AssetManager::GetInstance().GetSupportedExtensions();
 	std::unordered_set<std::string> compiledShaderNames; // To avoid compiling the same shader multiple times.
 
 	for (const auto& file : std::filesystem::recursive_directory_iterator(rootAssetFolder)) {
@@ -91,7 +90,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			bool isShader = false;
 			std::string extension = file.path().extension().string();
 
-			if (supportedExtensions.find(extension) != supportedExtensions.end()) {
+			if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
 				std::string assetPath = file.path().generic_string();
 				if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
 					std::string shaderName = file.path().stem().string();
@@ -102,7 +101,6 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 					isShader = true;
 				}
 
-				GUID_128 guid128{};
 				if (!MetaFileExists(assetPath)) {
 					std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
 					AssetManager::GetInstance().CompileAsset(assetPath);
@@ -116,9 +114,10 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 						assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
 					}
 
-					GUID_string guidStr = GetGUIDFromAssetFile(assetPath);
-					guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
 					AddGUID128Mapping(assetPath, guid128);
+					AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+
 					//std::cout << "[MetaFilesManager] .meta already exists for: " << assetPath << std::endl;
 				}
 			}
@@ -172,30 +171,35 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 	}
 }
 
-GUID_128 MetaFilesManager::UpdateMetaFile(const std::string& assetPath) {
-	std::filesystem::path metaPath = std::filesystem::path(assetPath + ".meta");
-	if (std::filesystem::exists(metaPath)) {
-		std::ofstream metaFile(metaPath, std::ios::out | std::ios::trunc);
-		if (metaFile.is_open()) {
-			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
-			metaFile << "GUID: " << guidStr << std::endl;
-			metaFile << "Version: " << CURRENT_METADATA_VERSION << std::endl;
-			metaFile.close();
-
-			std::cout << "[MetaFilesManager] Updated .meta for: " << assetPath << std::endl;
-
-			GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
-			AddGUID128Mapping(assetPath, guid128);
-			return guid128;
-		}
-		else {
-			std::cerr << "[MetaFilesManager] ERROR: Unable to update .meta file: " << metaPath << std::endl;
-		}
-	}
-
-	return GUID_128{};
-}
+//GUID_128 MetaFilesManager::UpdateMetaFile(const std::string& assetPath) {
+//	std::filesystem::path metaPath = std::filesystem::path(assetPath + ".meta");
+//	if (std::filesystem::exists(metaPath)) {
+//		std::ofstream metaFile(metaPath, std::ios::out | std::ios::trunc);
+//		if (metaFile.is_open()) {
+//			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
+//			metaFile << "GUID: " << guidStr << std::endl;
+//			metaFile << "Version: " << CURRENT_METADATA_VERSION << std::endl;
+//			metaFile.close();
+//
+//			std::cout << "[MetaFilesManager] Updated .meta for: " << assetPath << std::endl;
+//
+//			GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
+//			AddGUID128Mapping(assetPath, guid128);
+//			return guid128;
+//		}
+//		else {
+//			std::cerr << "[MetaFilesManager] ERROR: Unable to update .meta file: " << metaPath << std::endl;
+//		}
+//	}
+//
+//	return GUID_128{};
+//}
 
 void MetaFilesManager::AddGUID128Mapping(const std::string& assetPath, const GUID_128& guid) {
 	assetPathToGUID128[assetPath] = guid;
+}
+
+bool MetaFilesManager::DeleteMetaFile(const std::string& assetPath) {
+	std::filesystem::path p(assetPath + ".meta");
+	return FileUtilities::RemoveFile(p.generic_string());
 }

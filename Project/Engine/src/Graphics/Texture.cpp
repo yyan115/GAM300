@@ -181,14 +181,8 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	metaFile.close();
 
 	std::shared_ptr<TextureMeta> metaData = std::make_shared<TextureMeta>();
-	metaData->guid = currentMetaData->guid;
-	metaData->sourceFilePath = currentMetaData->sourceFilePath;
-	metaData->compiledFilePath = currentMetaData->compiledFilePath;
-	metaData->lastCompileTime = currentMetaData->lastCompileTime;
-	metaData->version = currentMetaData->version;
-	metaData->ID = ID;
-	metaData->type = type;
-	metaData->unit = unit;
+	metaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
+	metaData->PopulateTextureMeta(ID, type, unit);
 	return metaData;
 }
 

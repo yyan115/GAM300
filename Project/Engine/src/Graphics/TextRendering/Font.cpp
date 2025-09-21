@@ -12,6 +12,16 @@ Font::~Font()
 
 std::string Font::CompileToResource(const std::string& assetPath)
 {
+    if (!std::filesystem::exists(assetPath)) {
+        std::cerr << "[Font] File does not exist: " << assetPath << std::endl;
+        return std::string{};
+    }
+
+    if (std::filesystem::is_directory(assetPath)) {
+        std::cerr << "[Font] Path is a directory, not a file: " << assetPath << std::endl;
+        return std::string{};
+    }
+
     // Load font data from file and extract raw binary data.
     std::ifstream fontAsset(assetPath, std::ios::binary | std::ios::ate); // Use std::ios::ate to query data size
     if (!fontAsset.is_open()) {

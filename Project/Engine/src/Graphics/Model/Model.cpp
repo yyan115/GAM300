@@ -2,6 +2,7 @@
 #include "Graphics/Model/Model.h"
 #include "Graphics/TextureManager.h"
 #include <iostream>
+#include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 
 std::string Model::CompileToResource(const std::string& assetPath)

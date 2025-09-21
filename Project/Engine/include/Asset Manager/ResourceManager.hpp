@@ -5,7 +5,8 @@
 #include <filesystem>
 #include "GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
-#include "Asset Manager/AssetManager.hpp"
+#include "Graphics/TextRendering/Font.hpp"
+#include "Asset Manager/FileUtilities.hpp"
 
 class ResourceManager {
 public:
@@ -68,15 +69,49 @@ public:
 	}
 
 	template <typename T>
-	void UnloadResource(const std::string& assetPath) {
+	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
 		// Implementation for unloading the resource
 		auto& resourceMap = GetResourceMap<T>();
-		if (MetaFilesManager::MetaFileExists(assetPath)) {
-			GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(assetPath);
-			auto it = resourceMap.find(guid);
-			if (it != resourceMap.end()) {
-				resourceMap.erase(it);
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			resourceMap.erase(it);
+			std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
+		}
+
+		if (FileUtilities::RemoveFile(resourcePath)) {
+			std::cout << "[ResourceManager] Deleted resource file: " << resourcePath << std::endl;
+			if (MetaFilesManager::DeleteMetaFile(assetPath)) {
+				std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
+				return true;
 			}
+			else {
+				std::cerr << "[ResourceManager] ERROR: Failed to delete meta file for resource: " << resourcePath << std::endl;
+				return false;
+			}
+		}
+
+		std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
+		return false;
+	}
+
+	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
+		std::filesystem::path p(resourcePath);
+		std::string extension = p.extension().string();
+		if (textureExtensions.find(extension) != textureExtensions.end()) {
+			return UnloadResource<Texture>(guid, assetPath, resourcePath);
+		}
+		else if (fontExtensions.find(extension) != fontExtensions.end()) {
+			return UnloadResource<Font>(guid, assetPath, resourcePath);
+		}
+		else if (modelExtensions.find(extension) != modelExtensions.end()) {
+			return UnloadResource<Model>(guid, assetPath, resourcePath);
+		}
+		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
+			return UnloadResource<Shader>(guid, assetPath, resourcePath);
+		}
+		else {
+			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
+			return false;
 		}
 	}
 
@@ -85,8 +120,28 @@ public:
 		GetResourceMap<T>().clear();
 	}
 
+	bool IsResourceExtensionSupported(const std::string& extension) const {
+		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
+	}
+
 private:
-	ResourceManager() {};
+	// Supported resource extensions
+	const std::unordered_set<std::string> textureExtensions = { ".dds"};
+	const std::unordered_set<std::string> audioExtensions = {  };
+	const std::unordered_set<std::string> fontExtensions = { ".font" };
+	const std::unordered_set<std::string> modelExtensions = { ".mesh" };
+	const std::unordered_set<std::string> shaderExtensions = { ".shader" };
+
+	// Supported resource extensions
+	std::unordered_set<std::string> supportedResourceExtensions;
+
+	ResourceManager() {
+		supportedResourceExtensions.insert(textureExtensions.begin(), textureExtensions.end());
+		supportedResourceExtensions.insert(audioExtensions.begin(), audioExtensions.end());
+		supportedResourceExtensions.insert(fontExtensions.begin(), fontExtensions.end());
+		supportedResourceExtensions.insert(modelExtensions.begin(), modelExtensions.end());
+		supportedResourceExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
+	};
 
 	/**
 	 * \brief Returns a singleton container for the asset type T.
