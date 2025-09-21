@@ -14,11 +14,11 @@
 #include <shellapi.h>
 #endif
 
-// Thumbnail/grid constants (SCRAMING_SNAKE_CASE)
-static constexpr float THUMBNAIL_BASE_SIZE = 96.0f;
-static constexpr float THUMBNAIL_MIN_SIZE = 48.0f;
-static constexpr float THUMBNAIL_PADDING = 8.0f;
-static constexpr float LABEL_HEIGHT = 18.0f;
+// Thumbnail/grid
+static constexpr float THUMBNAILBASESIZE = 96.0f;
+static constexpr float THUMBNAILMINSIZE = 48.0f;
+static constexpr float THUMBNAILPADDING = 8.0f;
+static constexpr float LABELHEIGHT = 18.0f;
 
 AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128& g, bool isDir)
     : filePath(path), guid(g), isDirectory(isDir) {
@@ -338,14 +338,14 @@ void AssetBrowserPanel::RenderAssetGrid() {
 
     // Use content region width as the source of truth
     float avail = ImGui::GetContentRegionAvail().x;
-    float pad = THUMBNAIL_PADDING;
+    float pad = THUMBNAILPADDING;
 
     // Compute columns from available width using the base thumbnail size,
     // then compute an even thumbnail size so items fill the row.
-    int cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (THUMBNAIL_BASE_SIZE + pad))));
+    int cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (THUMBNAILBASESIZE + pad))));
     float thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
-    if (thumb < THUMBNAIL_MIN_SIZE) {
-        thumb = THUMBNAIL_MIN_SIZE;
+    if (thumb < THUMBNAILMINSIZE) {
+        thumb = THUMBNAILMINSIZE;
         cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (thumb + pad))));
         thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
     }
@@ -361,7 +361,7 @@ void AssetBrowserPanel::RenderAssetGrid() {
         ImGui::PushID(asset.filePath.c_str());
 
         // Hitbox: thumbnail + label
-        ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABEL_HEIGHT));
+        ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         bool hovered = ImGui::IsItemHovered();
         bool clicked = ImGui::IsItemClicked();
 

@@ -16,10 +16,6 @@
 // Include FileWatch for hot-reloading
 #include "FileWatch.hpp"
 
-// Forward declarations
-class AssetManager;
-class MetaFilesManager;
-
 /**
  * @brief Unity-like Asset Browser panel for managing and viewing project assets.
  */
