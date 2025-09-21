@@ -16,6 +16,7 @@
     <ClCompile Include="src\Panels\GamePanel.cpp" />
     <ClCompile Include="src\Panels\PlayControlPanel.cpp" />
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
+    <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
@@ -25,6 +26,7 @@
     <ClInclude Include="include\RaycastUtil.hpp" />
     <ClInclude Include="include\Panels\PlayControlPanel.hpp" />
     <ClInclude Include="include\Panels\PerformancePanel.hpp" />
+    <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
