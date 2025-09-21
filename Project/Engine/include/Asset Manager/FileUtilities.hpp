@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
 #include <filesystem>
+#include "../Engine.h"
 
 class FileUtilities {
 public:
-	static bool RemoveFile(const std::string& filePath);
+	ENGINE_API static bool RemoveFile(const std::string& filePath);
 };

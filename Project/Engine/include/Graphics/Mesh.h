@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Material.hpp"
+#include "Engine.h"
 
 class Mesh {
 public:
@@ -18,7 +19,7 @@ public:
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat);
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat);
 
-	~Mesh();
+	ENGINE_API ~Mesh();
 	void Draw(Shader& shader, const Camera& camera);
 
 	Mesh(const Mesh& other) = delete;  // Prevent copying

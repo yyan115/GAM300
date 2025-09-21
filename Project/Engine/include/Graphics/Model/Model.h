@@ -9,6 +9,7 @@
 #include <chrono>
 #include <algorithm>
 #include "Asset Manager/Asset.hpp"
+#include "../../Engine.h"
 
 class Model : public IAsset {
 public:
@@ -16,10 +17,10 @@ public:
 	std::string directory;
 
 	//Model(const std::string& filePath);
-	std::string CompileToResource(const std::string& assetPath) override;
+	ENGINE_API std::string CompileToResource(const std::string& assetPath) override;
 	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile);
-	bool LoadResource(const std::string& assetPath) override;
-	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	ENGINE_API bool LoadResource(const std::string& assetPath) override;
+	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 	
 	void Draw(Shader& shader, const Camera& camera);
 

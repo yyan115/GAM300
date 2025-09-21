@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp> 
 #include "Asset Manager/Asset.hpp"
+#include "../Engine.h"
 
 std::string get_file_contents(const char* filename);
 
@@ -16,9 +17,9 @@ public:
     //Shader() {};
 	//Shader(const char* vertexFile, const char* fragmentFile);
 
-	std::string CompileToResource(const std::string& path) override;
-	bool LoadResource(const std::string& assetPath) override;
-    std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+    ENGINE_API std::string CompileToResource(const std::string& path) override;
+    ENGINE_API bool LoadResource(const std::string& assetPath) override;
+    ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	void Activate();
 	void Delete();

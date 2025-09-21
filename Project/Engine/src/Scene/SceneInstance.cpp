@@ -49,7 +49,7 @@ void SceneInstance::Initialize() {
 	ecsManager.AddComponent<NameComponent>(text, NameComponent{ "Hello World Text" });
 	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/text") });
 	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-	TextUtils::SetPosition(textComp, glm::vec3(800, 50, 0));
+	TextUtils::SetPosition(textComp, glm::vec3(800, 100, 0));
 	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
 	Entity text2 = ecsManager.CreateEntity();

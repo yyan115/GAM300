@@ -5,7 +5,8 @@
 #include <type_traits>
 #include <filesystem>
 #include <thread>
-#include <FileWatch.hpp>
+//#include <FileWatch.hpp>
+#include "../Engine.h"
 #include "GUID.hpp"
 #include "MetaFilesManager.hpp"
 #include "Asset Manager/AssetMeta.hpp"
@@ -13,12 +14,9 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 
-class AssetManager {
+class ENGINE_API AssetManager {
 public:
-	static AssetManager& GetInstance() {
-		static AssetManager instance;
-		return instance;
-	}
+	static AssetManager& GetInstance();
 
 	void AddAssetMetaToMap(const std::string& assetPath) {
 		std::filesystem::path p(assetPath);
@@ -214,115 +212,6 @@ public:
 		return extension == ".meta";
 	}
 
-private:
-	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;
-	std::unique_ptr<filewatch::FileWatch<std::string>> assetWatcher;
-
-	// Supported asset extensions
-	const std::unordered_set<std::string> textureExtensions = { ".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".bmp", ".BMP" };
-	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg" };
-	const std::unordered_set<std::string> fontExtensions = { ".ttf" };
-	const std::unordered_set<std::string> modelExtensions = { ".obj", ".fbx" };
-	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };
-	std::unordered_set<std::string> supportedAssetExtensions;
-
-	AssetManager() {
-		InitializeSupportedExtensions();
-		assetWatcher = std::make_unique<filewatch::FileWatch<std::string>>(
-			"Resources",
-			[this](const std::string& path, const filewatch::Event event_type) {
-				std::filesystem::path pathObj("Resources/" + path);
-				std::string fullPath = pathObj.generic_string();
-				std::string extension = pathObj.extension().generic_string();
-				if (IsAssetExtensionSupported(extension)) {
-					// Sleep this thread for a while to allow the OS to finish the file operation.
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-					if (event_type == filewatch::Event::modified || event_type == filewatch::Event::added) {
-						std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
-						AssetManager::GetInstance().CompileAsset(fullPath);
-					}
-					else if (event_type == filewatch::Event::removed) {
-						std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
-						AssetManager::GetInstance().UnloadAsset(fullPath);
-					}
-					else if (event_type == filewatch::Event::renamed_old) {
-						std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
-						AssetManager::GetInstance().UnloadAsset(fullPath);
-					}
-					else if (event_type == filewatch::Event::renamed_new) {
-						std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
-						AssetManager::GetInstance().CompileAsset(fullPath);
-					}
-				}
-				else if (IsExtensionMetaFile(extension)) {
-					if (event_type == filewatch::Event::removed) {
-						std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
-						HandleMetaFileDeletion(fullPath);
-					}
-				}
-				else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
-					if (event_type == filewatch::Event::removed) {
-						std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
-						HandleResourceFileDeletion(fullPath);
-					}
-				}
-			}
-		);
-	}
-
-	///**
-	// * \brief Returns a singleton container for the asset type T.
-	// *
-	// * \tparam T The type of the assets.
-	// * \return A reference to the map of assets for the specified type.
-	// */
-	//template <typename T>
-	//std::unordered_map<GUID_128, std::shared_ptr<T>>& GetAssetMap() {
-	//	static std::unordered_map<GUID_128, std::shared_ptr<T>> assetMap;
-	//	return assetMap;
-	//}
-
-	template <typename T>
-	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath) {
-		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
-			std::shared_ptr<T> asset = std::make_shared<T>();
-			std::string compiledPath = asset->CompileToResource(filePath);
-			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
-				return false;
-			}
-
-			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
-			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
-			return true;
-		}
-
-		return true;
-	}
-
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot) {
-		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
-			Texture texture{ texType, slot };
-			std::string compiledPath = texture.CompileToResource(filePath);
-			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
-				return false;
-			}
-
-			std::shared_ptr<AssetMeta> assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
-			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
-			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
-			return true;
-		}
-
-		return true;
-	}
-
 	bool HandleMetaFileDeletion(const std::string& metaFilePath) {
 		// Get the compiled resource file path from the asset's AssetMeta.
 		std::string assetFilePath = metaFilePath.substr(0, metaFilePath.size() - 5); // Remove ".meta"
@@ -373,6 +262,115 @@ private:
 		if (failedToUnload) {
 			std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
 			return false;
+		}
+
+		return true;
+	}
+
+private:
+	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;
+	//std::unique_ptr<filewatch::FileWatch<std::string>> assetWatcher;
+
+	// Supported asset extensions
+	const std::unordered_set<std::string> textureExtensions = { ".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".bmp", ".BMP" };
+	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg" };
+	const std::unordered_set<std::string> fontExtensions = { ".ttf" };
+	const std::unordered_set<std::string> modelExtensions = { ".obj", ".fbx" };
+	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };
+	std::unordered_set<std::string> supportedAssetExtensions;
+
+	AssetManager() {
+		InitializeSupportedExtensions();
+		//assetWatcher = std::make_unique<filewatch::FileWatch<std::string>>(
+		//	"Resources",
+		//	[this](const std::string& path, const filewatch::Event event_type) {
+		//		std::filesystem::path pathObj("Resources/" + path);
+		//		std::string fullPath = pathObj.generic_string();
+		//		std::string extension = pathObj.extension().generic_string();
+		//		if (IsAssetExtensionSupported(extension)) {
+		//			// Sleep this thread for a while to allow the OS to finish the file operation.
+		//			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		//			if (event_type == filewatch::Event::modified || event_type == filewatch::Event::added) {
+		//				std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
+		//				AssetManager::GetInstance().CompileAsset(fullPath);
+		//			}
+		//			else if (event_type == filewatch::Event::removed) {
+		//				std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
+		//				AssetManager::GetInstance().UnloadAsset(fullPath);
+		//			}
+		//			else if (event_type == filewatch::Event::renamed_old) {
+		//				std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
+		//				AssetManager::GetInstance().UnloadAsset(fullPath);
+		//			}
+		//			else if (event_type == filewatch::Event::renamed_new) {
+		//				std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
+		//				AssetManager::GetInstance().CompileAsset(fullPath);
+		//			}
+		//		}
+		//		else if (IsExtensionMetaFile(extension)) {
+		//			if (event_type == filewatch::Event::removed) {
+		//				std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
+		//				HandleMetaFileDeletion(fullPath);
+		//			}
+		//		}
+		//		else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
+		//			if (event_type == filewatch::Event::removed) {
+		//				std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
+		//				HandleResourceFileDeletion(fullPath);
+		//			}
+		//		}
+		//	}
+		//);
+	}
+
+	///**
+	// * \brief Returns a singleton container for the asset type T.
+	// *
+	// * \tparam T The type of the assets.
+	// * \return A reference to the map of assets for the specified type.
+	// */
+	//template <typename T>
+	//std::unordered_map<GUID_128, std::shared_ptr<T>>& GetAssetMap() {
+	//	static std::unordered_map<GUID_128, std::shared_ptr<T>> assetMap;
+	//	return assetMap;
+	//}
+
+	template <typename T>
+	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath) {
+		// If the asset is not already loaded, load and store it using the GUID.
+		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+			std::shared_ptr<T> asset = std::make_shared<T>();
+			std::string compiledPath = asset->CompileToResource(filePath);
+			if (compiledPath.empty()) {
+				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				return false;
+			}
+
+			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
+			assetMetaMap[guid] = assetMeta;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			return true;
+		}
+
+		return true;
+	}
+
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot) {
+		// If the asset is not already loaded, load and store it using the GUID.
+		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+			Texture texture{ texType, slot };
+			std::string compiledPath = texture.CompileToResource(filePath);
+			if (compiledPath.empty()) {
+				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				return false;
+			}
+
+			std::shared_ptr<AssetMeta> assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
+			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
+			assetMetaMap[guid] = assetMeta;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			return true;
 		}
 
 		return true;

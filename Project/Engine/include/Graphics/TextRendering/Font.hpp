@@ -19,7 +19,7 @@ struct Character {
 
 class Font : public IAsset {
 public:
-	Font(unsigned int fontSize = 48);
+	ENGINE_API Font(unsigned int fontSize = 48);
 	~Font();
 
 	std::string CompileToResource(const std::string& assetPath) override;
