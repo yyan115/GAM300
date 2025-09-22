@@ -58,7 +58,7 @@ void SceneInstance::Initialize() {
 
 	Entity text2 = ecsManager.CreateEntity();
 	ecsManager.AddComponent<NameComponent>(text2, NameComponent{ "Text2" });
-	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "nihao fine shyt", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "More test text", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
 	TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 	TextUtils::SetPosition(textComp2, glm::vec3(800, 800, 0));
 	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);

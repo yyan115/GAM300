@@ -15,6 +15,7 @@ int main() {
     }
 
     Engine::Initialize();
+    Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
@@ -23,7 +24,7 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    
+
     GameManager::Initialize();
 	GUIManager::Initialize();
 

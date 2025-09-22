@@ -63,6 +63,11 @@ find "$PROJECT_ROOT" -name "*.o" -not -path "*/Libraries/*" -delete 2>/dev/null 
 find "$PROJECT_ROOT" -name "*.a" -not -path "*/Libraries/*" -delete 2>/dev/null || true
 find "$PROJECT_ROOT" -name "*.so" -not -path "*/Libraries/*" -delete 2>/dev/null || true
 
+# Clean compiled model files (.mesh) from all locations
+echo "Removing compiled model files..."
+find "$PROJECT_ROOT" -name "*.mesh" -not -path "*/Libraries/*" -delete 2>/dev/null || true
+find "$PROJECT_ROOT/Build" -name "*.mesh" -delete 2>/dev/null || true
+
 echo "✅ CMake cache cleanup complete!"
 echo ""
 echo "You can now run:"
