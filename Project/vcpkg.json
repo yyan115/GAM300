@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "gam300-engine",
+  "version": "1.0.0",
+  "description": "GAM300 3D Game Engine - Cross-platform game engine with editor support",
+  "homepage": "https://github.com/yyanorg/gam300-project",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "assimp",
+      "$comment": "3D model loading and asset importing - using latest stable version"
+    },
+    {
+      "name": "glfw3", 
+      "$comment": "Cross-platform window management and input handling"
+    },
+    {
+      "name": "freetype",
+      "$comment": "Font rendering and text display"
+    },
+    {
+      "name": "glad",
+      "$comment": "OpenGL function loader - required for OpenGL 3.3+ context"
+    },
+    {
+      "name": "glm",
+      "$comment": "Header-only math library for graphics (vectors, matrices, etc.)"
+    },
+    {
+      "name": "spdlog",
+      "$comment": "Fast C++ logging library for engine diagnostics"
+    },
+    {
+      "name": "rapidjson",
+      "$comment": "JSON parsing for serialization and asset loading"
+    }
+  ],
+  "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149"
+}

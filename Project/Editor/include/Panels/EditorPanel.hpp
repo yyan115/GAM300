@@ -34,7 +34,7 @@ public:
      * @brief Set the visibility state of this panel.
      * @param isOpen True to show the panel, false to hide it.
      */
-    void SetOpen(bool isOpen) { this->isOpen = isOpen; }
+    void SetOpen(bool CheckOpen) { this->isOpen = CheckOpen; }
 
     /**
      * @brief Toggle the visibility state of this panel.

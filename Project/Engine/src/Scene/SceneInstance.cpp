@@ -1,8 +1,12 @@
 #include "pch.h"
 #include <Scene/SceneInstance.hpp>
 #include <Input/InputManager.hpp>
+#include <Input/Keys.h>
+#include <WindowManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
+#include "TimeManager.hpp"
+#include <Asset Manager/ResourceManager.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
@@ -12,8 +16,8 @@ void SceneInstance::Initialize() {
 	
 	// Initialize GraphicsManager first
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-	gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
-
+	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
+	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
@@ -24,9 +28,9 @@ void SceneInstance::Initialize() {
 	backpacktransform.position = { 0, 0, 0 };
 	backpacktransform.scale = { .1f, .1f, .1f };
 	backpacktransform.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"backpack1"});
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
-		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
+	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"dora the explorer"});
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default")});
 
 	Entity backpackEntt2 = ecsManager.CreateEntity();
 	ecsManager.AddComponent<Transform>(backpackEntt2, Transform{});
@@ -34,31 +38,34 @@ void SceneInstance::Initialize() {
 	backpacktransform2.position = { 1, -0.5f, 0 };
 	backpacktransform2.scale = { .2f, .2f, .2f };
 	backpacktransform2.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "backpack2" });
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ AssetManager::GetInstance().GetAsset<Model>("Resources/Models/backpack/backpack.obj"),
-		AssetManager::GetInstance().GetAsset<Shader>("Resources/Shaders/default")});
+	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "ash ketchum" });
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default") });
 
 	// GRAPHICS TEST CODE
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
+	ecsManager.debugDrawSystem->Initialise();
 
-	// Text
-	auto textShader = std::make_shared<Shader>();
-	if (textShader->LoadAsset("Resources/Shaders/text")) {
-		std::cout << "Text shader loaded successfully!" << std::endl;
-	}
-	else {
-		std::cout << "Failed to load text shader!" << std::endl;
-	}
+	// Text entity test
 	Entity text = ecsManager.CreateEntity();
-	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
+	ecsManager.AddComponent<NameComponent>(text, NameComponent{ "Hello World Text" });
+	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/text") });
 	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-	TextUtils::SetPosition(textComp, glm::vec3(800,0,0));
+	TextUtils::SetPosition(textComp, glm::vec3(800, 100, 0));
 	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+
+	Entity text2 = ecsManager.CreateEntity();
+	ecsManager.AddComponent<NameComponent>(text2, NameComponent{ "Text2" });
+	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "nihao fine shyt", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/text") });
+	TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
+	TextUtils::SetPosition(textComp2, glm::vec3(800, 800, 0));
+	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
 
 	// Creates light
 	lightShader = std::make_shared<Shader>();
-	lightShader->LoadAsset("Resources/Shaders/light");
+	lightShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/light");
+	//lightShader->LoadAsset("Resources/Shaders/light");
 	std::vector<std::shared_ptr<Texture>> emptyTextures = {};
 	lightCubeMesh = std::make_shared<Mesh>(lightVertices, lightIndices, emptyTextures);
 
@@ -76,7 +83,7 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	processInput((float)WindowManager::getDeltaTime());
+	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 	mainECS.transformSystem->update();
@@ -104,7 +111,18 @@ void SceneInstance::Draw() {
 	{
 		mainECS.textSystem->Update();
 	}
+	// Test debug drawing
+	//DebugDrawSystem::DrawCube(glm::vec3(0, 1, 0), glm::vec3(1, 1, 1), glm::vec3(1, 0, 0)); // Red cube above origin
+	//DebugDrawSystem::DrawSphere(glm::vec3(2, 0, 0), 1.0f, glm::vec3(0, 1, 0)); // Green sphere to the right
+	//DebugDrawSystem::DrawLine(glm::vec3(0, 0, 0), glm::vec3(3, 3, 3), glm::vec3(0, 0, 1)); // Blue line diagonal
+	//auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
+	//DebugDrawSystem::DrawMeshWireframe(backpackModel, glm::vec3(-2, 0, 0), glm::vec3(1, 1, 0), 0.0f); 
 
+	// Update debug draw system to submit to graphics manager
+	if (mainECS.debugDrawSystem)
+	{
+		mainECS.debugDrawSystem->Update();
+	}
 	gfxManager.Render();
 
 	// 5. Draw light cubes manually (temporary - you can make this a system later)
@@ -125,17 +143,17 @@ void SceneInstance::Exit() {
 
 void SceneInstance::processInput(float deltaTime)
 {
-	if (InputManager::GetKeyDown(GLFW_KEY_ESCAPE))
-		glfwSetWindowShouldClose(WindowManager::getWindow(), true);
+	if (InputManager::GetKeyDown(Input::Key::ESC))
+		WindowManager::SetWindowShouldClose();
 
 	float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::GetKey(GLFW_KEY_W))
+	if (InputManager::GetKey(Input::Key::W))
 		camera.Position += cameraSpeed * camera.Front;
-	if (InputManager::GetKey(GLFW_KEY_S))
+	if (InputManager::GetKey(Input::Key::S))
 		camera.Position -= cameraSpeed * camera.Front;
-	if (InputManager::GetKey(GLFW_KEY_A))
+	if (InputManager::GetKey(Input::Key::A))
 		camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-	if (InputManager::GetKey(GLFW_KEY_D))
+	if (InputManager::GetKey(Input::Key::D))
 		camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
 
 	float xpos = (float)InputManager::GetMouseX();
@@ -176,7 +194,8 @@ void SceneInstance::DrawLightCubes()
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(camera.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 
@@ -208,7 +227,8 @@ void SceneInstance::DrawLightCubes(const Camera& cameraOverride)
 		glm::mat4 view = cameraOverride.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(cameraOverride.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 

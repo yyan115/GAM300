@@ -9,11 +9,7 @@
 // Include ECS system from Engine (using configured include paths)
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Math/Vector3D.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#include "Math/Vector3D.hpp"
 
 RaycastUtil::Ray RaycastUtil::ScreenToWorldRay(float mouseX, float mouseY,
                                               float screenWidth, float screenHeight,

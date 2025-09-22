@@ -2,7 +2,7 @@
 
 #include "pch.h"
 
-#include <glad/glad.h>
+#include "OpenGL.h"
 
 class EBO {
 public:

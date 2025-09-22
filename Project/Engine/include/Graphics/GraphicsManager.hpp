@@ -10,7 +10,8 @@
 #include "Model/ModelRenderComponent.hpp"
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
-#include <Math/Matrix4x4.h>
+#include "DebugDraw/DebugDrawComponent.hpp"
+#include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
 public:
@@ -39,6 +40,7 @@ public:
 
     // Text Rendering
     void SubmitText(const std::string& text, std::shared_ptr<Font> font, std::shared_ptr<Shader> shader, const glm::vec3& position, const glm::vec3& color = glm::vec3(1.0f), float scale = 1.0f, bool is3D = false, const glm::mat4& transform = glm::mat4(1.0f));
+
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -61,6 +63,9 @@ private:
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
+
+    // Debug Draw
+    void RenderDebugDraw(const DebugDrawComponent& item);
 
     // Remove later
     glm::vec3 pointLightPositions[4] = {

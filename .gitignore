@@ -4,3 +4,10 @@
 # Ignore build folder
 Project/Build
 /Project/.claude
+
+# vcpkg build artifacts (keep vcpkg source for reproducible builds)
+Project/vcpkg/buildtrees/
+Project/vcpkg/downloads/
+Project/vcpkg/packages/
+Project/vcpkg/installed/
+Project/vcpkg_installed/

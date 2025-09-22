@@ -44,7 +44,7 @@ public:
      * @brief Get all registered panels.
      * @return Vector of all registered panels.
      */
-    const std::vector<std::shared_ptr<EditorPanel>>& GetAllPanels() const { return m_Panels; }
+    const std::vector<std::shared_ptr<EditorPanel>>& GetAllPanels() const { return panels; }
 
     /**
      * @brief Toggle the visibility of a panel by name.
@@ -60,6 +60,6 @@ public:
     bool HasPanel(const std::string& panelName) const;
 
 private:
-    std::vector<std::shared_ptr<EditorPanel>> m_Panels;
-    std::unordered_map<std::string, std::shared_ptr<EditorPanel>> m_PanelMap;
+    std::vector<std::shared_ptr<EditorPanel>> panels;
+    std::unordered_map<std::string, std::shared_ptr<EditorPanel>> panelMap;
 };

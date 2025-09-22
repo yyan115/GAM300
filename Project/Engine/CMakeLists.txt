@@ -23,6 +23,11 @@ add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
+# Windows-specific definitions
+if(WIN32)
+    target_compile_definitions(Engine PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 # Set symbol visibility for Linux
 set_target_properties(Engine PROPERTIES
     CXX_VISIBILITY_PRESET hidden
@@ -44,31 +49,114 @@ foreach(item ${ENGINE_INCLUDE_SUBDIRS})
     endif()
 endforeach()
 
+# Platform-specific dependencies
+if(ANDROID)
+    # Android build - using prebuilt libraries
+    message(STATUS "Android build - using prebuilt libraries")
+    
+    # Define Android library paths
+    set(ANDROID_LIBS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/arm64")
+    set(ANDROID_HEADERS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/headers")
+    
+    # Header-only libraries - include directories only
+    set(GLM_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}" CACHE STRING "GLM include directory")
+    set(RAPIDJSON_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}/rapidjson" CACHE STRING "RapidJSON include directory")
+    
+    # Prebuilt static/shared libraries - use direct paths for reliability
+    set(SPDLOG_LIBRARY "${ANDROID_LIBS_DIR}/libspdlog.a")
+    set(FREETYPE_LIBRARY "${ANDROID_LIBS_DIR}/libfreetype.a")
+    set(ASSIMP_LIBRARY "${ANDROID_LIBS_DIR}/libassimp.so")
+    
+    # Verify all library files exist
+    if(NOT EXISTS ${SPDLOG_LIBRARY})
+        message(FATAL_ERROR "spdlog library not found: ${SPDLOG_LIBRARY}")
+    endif()
+    if(NOT EXISTS ${FREETYPE_LIBRARY})
+        message(FATAL_ERROR "freetype library not found: ${FREETYPE_LIBRARY}")
+    endif()
+    if(NOT EXISTS ${ASSIMP_LIBRARY})
+        message(FATAL_ERROR "assimp library not found: ${ASSIMP_LIBRARY}")
+    endif()
+    
+    message(STATUS "Found Android prebuilt libraries:")
+    message(STATUS "  spdlog: ${SPDLOG_LIBRARY}")
+    message(STATUS "  freetype: ${FREETYPE_LIBRARY}")
+    message(STATUS "  assimp: ${ASSIMP_LIBRARY}")
+else()
+    # Desktop builds (Linux/Windows) use vcpkg packages
+    find_package(assimp CONFIG REQUIRED)
+    find_package(glfw3 CONFIG REQUIRED)
+    find_package(Freetype REQUIRED)
+    find_package(glad CONFIG REQUIRED)
+    find_package(glm CONFIG REQUIRED)
+    find_package(spdlog CONFIG REQUIRED)
+    find_package(RapidJSON CONFIG REQUIRED)
+endif()
+
+# Manual libraries that aren't available in vcpkg or need custom versions
 target_include_directories(Engine
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/Libraries/glad/include
-        ${CMAKE_SOURCE_DIR}/Libraries/glfw/include
-        ${CMAKE_SOURCE_DIR}/Libraries/glm
-        ${CMAKE_SOURCE_DIR}/Libraries/Assimp/include
-        ${CMAKE_SOURCE_DIR}/Libraries/freetype/include
-        ${CMAKE_SOURCE_DIR}/Libraries/spdlog/include
+        # Keep manual libraries: ImGui (docking), FMOD (commercial)
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/include
 )
 
-# Link libraries for Linux
-target_link_libraries(Engine
-    PUBLIC
-        ${OPENGL_LIBRARIES}
-    PRIVATE
-        glfw
-        assimp
-        freetype
-        ${CMAKE_DL_LIBS}
-        pthread
-)
+# Add Android-specific headers (vcpkg handles desktop headers automatically)
+if(ANDROID)
+    target_include_directories(Engine
+        PUBLIC
+            ${ANDROID_HEADERS_DIR}  # Base headers directory
+            ${ANDROID_HEADERS_DIR}/glm        # GLM specific path
+            ${ANDROID_HEADERS_DIR}/rapidjson  # RapidJSON specific path
+            ${ANDROID_HEADERS_DIR}/assimp     # Assimp specific path
+            ${ANDROID_HEADERS_DIR}/spdlog     # spdlog specific path
+            ${ANDROID_HEADERS_DIR}/freetype2  # freetype specific path
+    )
+endif()
+
+# Platform-specific include directories section removed - now handled above
+
+# Platform-specific linking
+if(ANDROID)
+    # Android linking - using prebuilt libraries
+    target_link_libraries(Engine
+        PUBLIC
+            ${OPENGL_LIBRARIES}
+            # GLM and RapidJSON are header-only, no linking needed
+        PRIVATE
+            # Prebuilt libraries
+            ${SPDLOG_LIBRARY}
+            ${FREETYPE_LIBRARY}
+            ${ASSIMP_LIBRARY}
+            # Android system libraries
+            log  # Android log library
+            android  # Android NDK library
+    )
+else()
+    # Desktop linking (Linux/Windows) - vcpkg dependencies
+    target_link_libraries(Engine
+        PUBLIC
+            ${OPENGL_LIBRARIES}
+            # Public dependencies that consumers need
+            glm::glm
+        PRIVATE
+            # Private dependencies only Engine needs
+            assimp::assimp
+            glfw
+            Freetype::Freetype
+            glad::glad
+            spdlog::spdlog
+            rapidjson
+    )
+    
+    # Linux-specific system libraries
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(Engine PRIVATE ${CMAKE_DL_LIBS} pthread)
+    endif()
+endif()
 
 # Set rpath so executables can find this shared library
 set_target_properties(Engine PROPERTIES

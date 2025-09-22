@@ -80,8 +80,8 @@ public:
     static bool IsGizmoShortcutPressed(int gizmoType); // 0=normal, 1=translate, 2=rotate, 3=scale
 
 private:
-    static MouseState s_MouseState;
-    static KeyboardState s_KeyboardState;
+    static MouseState mouseState;
+    static KeyboardState keyboardState;
 
     static void UpdateMouseState();
     static void UpdateKeyboardState();

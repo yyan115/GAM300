@@ -4,6 +4,7 @@
 #include <iostream>
 #include "imgui.h"
 #include "WindowManager.hpp"
+#include "TimeManager.hpp"
 
 
 int main() {
@@ -26,9 +27,10 @@ int main() {
     
     GameManager::Initialize();
 	GUIManager::Initialize();
+
     while (Engine::IsRunning()) {
         //Update deltaTime at start of Frame
-        WindowManager::updateDeltaTime();
+        TimeManager::UpdateDeltaTime();
 
         Engine::Update();
         GameManager::Update();

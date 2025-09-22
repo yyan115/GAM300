@@ -1,0 +1,2 @@
+Libraries/android/**/*.a filter=lfs diff=lfs merge=lfs -text
+Libraries/android/**/*.so filter=lfs diff=lfs merge=lfs -text

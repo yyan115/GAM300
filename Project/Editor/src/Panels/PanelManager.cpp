@@ -6,38 +6,38 @@ void PanelManager::RegisterPanel(std::shared_ptr<EditorPanel> panel) {
     assert(!panel->GetName().empty() && "Panel name cannot be empty");
     
     if (panel && !HasPanel(panel->GetName())) {
-        m_Panels.push_back(panel);
-        m_PanelMap[panel->GetName()] = panel;
+        panels.push_back(panel);
+        panelMap[panel->GetName()] = panel;
     }
 }
 
 void PanelManager::UnregisterPanel(const std::string& panelName) {
     assert(!panelName.empty() && "Panel name cannot be empty");
     
-    auto it = m_PanelMap.find(panelName);
-    if (it != m_PanelMap.end()) {
+    auto it = panelMap.find(panelName);
+    if (it != panelMap.end()) {
         // Remove from vector
-        m_Panels.erase(
-            std::remove_if(m_Panels.begin(), m_Panels.end(),
+        panels.erase(
+            std::remove_if(panels.begin(), panels.end(),
                 [&panelName](const std::shared_ptr<EditorPanel>& panel) {
                     return panel && panel->GetName() == panelName;
                 }),
-            m_Panels.end());
+            panels.end());
         
         // Remove from map
-        m_PanelMap.erase(it);
+        panelMap.erase(it);
     }
 }
 
 std::shared_ptr<EditorPanel> PanelManager::GetPanel(const std::string& panelName) {
     assert(!panelName.empty() && "Panel name cannot be empty");
     
-    auto it = m_PanelMap.find(panelName);
-    return (it != m_PanelMap.end()) ? it->second : nullptr;
+    auto it = panelMap.find(panelName);
+    return (it != panelMap.end()) ? it->second : nullptr;
 }
 
 void PanelManager::RenderOpenPanels() {
-    for (auto& panel : m_Panels) {
+    for (auto& panel : panels) {
         assert(panel != nullptr && "Panel in manager should not be null");
         
         if (panel && panel->IsOpen()) {
@@ -58,5 +58,5 @@ void PanelManager::TogglePanel(const std::string& panelName) {
 bool PanelManager::HasPanel(const std::string& panelName) const {
     assert(!panelName.empty() && "Panel name cannot be empty");
     
-    return m_PanelMap.find(panelName) != m_PanelMap.end();
+    return panelMap.find(panelName) != panelMap.end();
 }

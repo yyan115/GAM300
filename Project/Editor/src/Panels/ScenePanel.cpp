@@ -15,10 +15,6 @@
 // Don't include Graphics headers here due to OpenGL conflicts
 // We'll use RaycastUtil to get entity transforms instead
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 ScenePanel::ScenePanel()
     : EditorPanel("Scene", true), editorCamera(glm::vec3(0.0f, 0.0f, 0.0f), 5.0f) {
     InitializeMatrices();

@@ -56,15 +56,15 @@ void EditorState::Stop() {
 }
 
 void EditorState::SetSelectedEntity(Entity entity) {
-    if (m_SelectedEntity != entity) {
-        m_SelectedEntity = entity;
+    if (selectedEntity != entity) {
+        selectedEntity = entity;
         std::cout << "[EditorState] Selected entity: " << entity << std::endl;
     }
 }
 
 void EditorState::ClearSelection() {
-    if (m_SelectedEntity != INVALID_ENTITY) {
+    if (selectedEntity != INVALID_ENTITY) {
         std::cout << "[EditorState] Cleared selection" << std::endl;
-        m_SelectedEntity = INVALID_ENTITY;
+        selectedEntity = INVALID_ENTITY;
     }
 }

@@ -1,0 +1,121 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug (Game Only)",
+            "description": "Build game executable in debug mode",
+            "binaryDir": "${sourceDir}/Build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release (Game Only)", 
+            "description": "Build game executable in release mode",
+            "binaryDir": "${sourceDir}/Build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "editor-debug",
+            "displayName": "Editor Debug",
+            "description": "Build editor executable in debug mode",
+            "binaryDir": "${sourceDir}/Build/editor-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorDebug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "editor-release", 
+            "displayName": "Editor Release",
+            "description": "Build editor executable in release mode",
+            "binaryDir": "${sourceDir}/Build/editor-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorRelease",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "android-debug",
+            "displayName": "Android Debug", 
+            "description": "Build for Android devices in debug mode (pure CMake)",
+            "binaryDir": "${sourceDir}/Build/android-debug",
+            "environment": {
+                "ANDROID_NDK": "$env{ANDROID_NDK_HOME}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_SYSTEM_NAME": "Android",
+                "CMAKE_SYSTEM_VERSION": "33",
+                "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+                "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
+                "CMAKE_ANDROID_STL_TYPE": "c++_shared",
+                "ANDROID_PLATFORM": "android-33",
+                "ANDROID_ABI": "arm64-v8a"
+            }
+        },
+        {
+            "name": "android-release",
+            "displayName": "Android Release",
+            "description": "Build for Android devices in release mode (pure CMake)", 
+            "binaryDir": "${sourceDir}/Build/android-release",
+            "environment": {
+                "ANDROID_NDK": "$env{ANDROID_NDK_HOME}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_SYSTEM_NAME": "Android",
+                "CMAKE_SYSTEM_VERSION": "33",
+                "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+                "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
+                "CMAKE_ANDROID_STL_TYPE": "c++_shared",
+                "ANDROID_PLATFORM": "android-33",
+                "ANDROID_ABI": "arm64-v8a"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "displayName": "Build Debug"
+        },
+        {
+            "name": "release", 
+            "configurePreset": "release",
+            "displayName": "Build Release"
+        },
+        {
+            "name": "editor-debug",
+            "configurePreset": "editor-debug", 
+            "displayName": "Build Editor Debug"
+        },
+        {
+            "name": "editor-release",
+            "configurePreset": "editor-release",
+            "displayName": "Build Editor Release"
+        },
+        {
+            "name": "android-debug",
+            "configurePreset": "android-debug",
+            "displayName": "Build Android Debug"
+        },
+        {
+            "name": "android-release", 
+            "configurePreset": "android-release",
+            "displayName": "Build Android Release"
+        }
+    ]
+}

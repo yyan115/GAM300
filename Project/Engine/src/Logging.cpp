@@ -14,7 +14,7 @@ namespace EngineLogging {
     // Custom GUI sink that pushes to thread-safe queue
     class GuiSink : public spdlog::sinks::base_sink<std::mutex> {
     public:
-        explicit GuiSink(GuiLogQueue& queue) : m_GuiQueue(queue) {}
+        explicit GuiSink(GuiLogQueue& queue) : guiQueue(queue) {}
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
@@ -35,7 +35,7 @@ namespace EngineLogging {
             assert(!message.empty() && "Log message should not be empty");
             
             // Push to GUI queue
-            m_GuiQueue.Push(LogMessage(message, level));
+            guiQueue.Push(LogMessage(message, level));
         }
 
         void flush_() override {
@@ -43,58 +43,58 @@ namespace EngineLogging {
         }
 
     private:
-        GuiLogQueue& m_GuiQueue;
+        GuiLogQueue& guiQueue;
     };
 
     // Static instances
-    static std::shared_ptr<spdlog::logger> s_Logger;
+    static std::shared_ptr<spdlog::logger> logger;
 
-    static GuiLogQueue s_GuiLogQueue;
-    static bool s_Initialized = false;
+    static GuiLogQueue guiLogQueue;
+    static bool initialized = false;
 
     // GuiLogQueue implementation
     void GuiLogQueue::Push(const LogMessage& message) {
         assert(!message.text.empty() && "Log message text cannot be empty");
         
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         
         // Remove old messages if queue is full
-        while (m_Queue.size() >= MAX_QUEUE_SIZE) {
-            assert(!m_Queue.empty() && "Queue should not be empty when size >= MAX_QUEUE_SIZE");
-            m_Queue.pop();
+        while (queue.size() >= MAX_QUEUE_SIZE) {
+            assert(!queue.empty() && "Queue should not be empty when size >= MAX_QUEUE_SIZE");
+            queue.pop();
         }
         
-        m_Queue.push(message);
-        assert(m_Queue.size() <= MAX_QUEUE_SIZE && "Queue size should not exceed maximum");
+        queue.push(message);
+        assert(queue.size() <= MAX_QUEUE_SIZE && "Queue size should not exceed maximum");
     }
 
     bool GuiLogQueue::TryPop(LogMessage& message) {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        if (m_Queue.empty()) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (queue.empty()) {
             return false;
         }
         
-        message = m_Queue.front();
+        message = queue.front();
         assert(!message.text.empty() && "Popped message should not be empty");
-        m_Queue.pop();
+        queue.pop();
         return true;
     }
 
     void GuiLogQueue::Clear() {
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         std::queue<LogMessage> empty;
-        m_Queue.swap(empty);
-        assert(m_Queue.empty() && "Queue should be empty after clear");
+        queue.swap(empty);
+        assert(queue.empty() && "Queue should be empty after clear");
     }
 
     size_t GuiLogQueue::Size() const {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        return m_Queue.size();
+        std::lock_guard<std::mutex> lock(mutex);
+        return queue.size();
     }
 
     // Logging system functions
     bool Initialize() {
-        if (s_Initialized) {
+        if (initialized) {
             return true;
         }
 
@@ -114,7 +114,7 @@ namespace EngineLogging {
             file_sink->set_level(spdlog::level::trace);
             file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
 
-            auto gui_sink = std::make_shared<GuiSink>(s_GuiLogQueue);
+            auto gui_sink = std::make_shared<GuiSink>(guiLogQueue);
             assert(gui_sink != nullptr && "GUI sink creation failed");
             gui_sink->set_level(spdlog::level::trace);
             gui_sink->set_pattern("%v");
@@ -123,16 +123,16 @@ namespace EngineLogging {
             std::vector<spdlog::sink_ptr> sinks{ console_sink, file_sink, gui_sink };
             assert(!sinks.empty() && "Sinks vector should not be empty");
             
-            s_Logger = std::make_shared<spdlog::logger>("engine", sinks.begin(), sinks.end());
-            assert(s_Logger != nullptr && "Logger creation failed");
+            logger = std::make_shared<spdlog::logger>("engine", sinks.begin(), sinks.end());
+            assert(logger != nullptr && "Logger creation failed");
             
-            s_Logger->set_level(spdlog::level::trace);
-            s_Logger->flush_on(spdlog::level::warn);
+            logger->set_level(spdlog::level::trace);
+            logger->flush_on(spdlog::level::warn);
 
             // Register as default logger
-            spdlog::set_default_logger(s_Logger);
+            spdlog::set_default_logger(logger);
 
-            s_Initialized = true;
+            initialized = true;
             
             // Log initialization message
             LogInfo("Engine logging system initialized");
@@ -141,51 +141,51 @@ namespace EngineLogging {
         }
         catch (const std::exception& ex) {
             std::cerr << "Failed to initialize logging system: " << ex.what() << std::endl;
-            s_Initialized = true; // Set to true anyway to avoid repeated attempts
+            initialized = true; // Set to true anyway to avoid repeated attempts
             return false;
         }
     }
 
     void Shutdown() {
-        if (!s_Initialized) {
+        if (!initialized) {
             return;
         }
 
         LogInfo("Shutting down logging system");
         
-        if (s_Logger) {
-            s_Logger->flush();
-            s_Logger.reset();
+        if (logger) {
+            logger->flush();
+            logger.reset();
         }
         
         spdlog::shutdown();
-        s_GuiLogQueue.Clear();
-        s_Initialized = false;
+        guiLogQueue.Clear();
+        initialized = false;
     }
 
     GuiLogQueue& GetGuiLogQueue() {
-        assert(s_Initialized && "Logging system must be initialized before accessing GUI queue");
-        return s_GuiLogQueue;
+        assert(initialized && "Logging system must be initialized before accessing GUI queue");
+        return guiLogQueue;
     }
 
     // Internal helper for logging
     void LogInternal(LogLevel level, const std::string& message) {
         assert(!message.empty() && "Log message cannot be empty");
         
-        if (!s_Initialized) {
+        if (!initialized) {
             return;
         }
 
-        assert(s_Logger != nullptr && "Logger should be valid when initialized");
+        assert(logger != nullptr && "Logger should be valid when initialized");
         
-        if (s_Logger) {
+        if (logger) {
             switch (level) {
-                case LogLevel::Trace:    s_Logger->trace(message); break;
-                case LogLevel::Debug:    s_Logger->debug(message); break;
-                case LogLevel::Info:     s_Logger->info(message); break;
-                case LogLevel::Warn:     s_Logger->warn(message); break;
-                case LogLevel::Error:    s_Logger->error(message); break;
-                case LogLevel::Critical: s_Logger->critical(message); break;
+                case LogLevel::Trace:    logger->trace(message); break;
+                case LogLevel::Debug:    logger->debug(message); break;
+                case LogLevel::Info:     logger->info(message); break;
+                case LogLevel::Warn:     logger->warn(message); break;
+                case LogLevel::Error:    logger->error(message); break;
+                case LogLevel::Critical: logger->critical(message); break;
             }
         }
     }

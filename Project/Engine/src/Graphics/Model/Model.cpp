@@ -3,46 +3,47 @@
 #include "Graphics/TextureManager.h"
 #include <iostream>
 #include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 
-bool Model::LoadAsset(const std::string& path) 
+std::string Model::CompileToResource(const std::string& assetPath)
 {
 	Assimp::Importer importer;
 	// The function expects a file path and several post-processing options as its second argument
 	// aiProcess_Triangulate tells Assimp that if the model does not (entirely) consist of triangles, it should transform all the model's primitive shapes to triangles first.
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
 		std::cout << "ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
-		return false;
+        return std::string{};
 	}
 
-	directory = path.substr(0, path.find_last_of('/'));
+	directory = assetPath.substr(0, assetPath.find_last_of('/'));
 
 	// Recursive function
-	processNode(scene->mRootNode, scene);
+	ProcessNode(scene->mRootNode, scene);
 
-	return true;
+	return CompileToMesh(assetPath, meshes);
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene)
+void Model::ProcessNode(aiNode* node, const aiScene* scene)
 {
 	// Process each mesh in this node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.emplace_back(processMesh(mesh, scene));
+		meshes.emplace_back(ProcessMesh(mesh, scene));
 	}
 
 	// Process children nodes
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		processNode(node->mChildren[i], scene);
+		ProcessNode(node->mChildren[i], scene);
 	}
 
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -146,30 +147,30 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         // Load textures and assign to material
 
         // Diffuse textures
-        std::vector<std::shared_ptr<Texture>> diffuseMaps = loadMaterialTexture(assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
-        if (!diffuseMaps.empty()) {
-            material->SetTexture(TextureType::DIFFUSE, diffuseMaps[0]);
-        }
+        std::vector<std::shared_ptr<Texture>> diffuseMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
+        //if (!diffuseMaps.empty()) {
+        //    material->SetTexture(TextureType::DIFFUSE, diffuseMaps[0]);
+        //}
 
         // Specular textures
-        std::vector<std::shared_ptr<Texture>> specularMaps = loadMaterialTexture(assimpMaterial, aiTextureType_SPECULAR, "specular");
-        if (!specularMaps.empty()) 
-        {
-            material->SetTexture(TextureType::SPECULAR, specularMaps[0]);
-        }
+        std::vector<std::shared_ptr<Texture>> specularMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
+        //if (!specularMaps.empty()) 
+        //{
+        //    material->SetTexture(TextureType::SPECULAR, specularMaps[0]);
+        //}
 
         // Normal maps
-        std::vector<std::shared_ptr<Texture>> normalMaps = loadMaterialTexture(assimpMaterial, aiTextureType_NORMALS, "normal");
-        if (!normalMaps.empty()) 
-        {
-            material->SetTexture(TextureType::NORMAL, normalMaps[0]);
-        }
+        std::vector<std::shared_ptr<Texture>> normalMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+        //if (!normalMaps.empty()) 
+        //{
+        //    material->SetTexture(TextureType::NORMAL, normalMaps[0]);
+        //}
 
         // Height maps
-        std::vector<std::shared_ptr<Texture>> heightMaps = loadMaterialTexture(assimpMaterial, aiTextureType_HEIGHT, "height");
-        if (!heightMaps.empty()) {
-            material->SetTexture(TextureType::HEIGHT, heightMaps[0]);
-        }
+        //std::vector<std::shared_ptr<Texture>> heightMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height");
+        //if (!heightMaps.empty()) {
+        //    material->SetTexture(TextureType::HEIGHT, heightMaps[0]);
+        //}
 
         // Keep old texture list for backward compatibility
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -179,13 +180,13 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     // If no material was created, use a default one
     if (!material) 
     {
-        material = Material::createDefault();
+        material = Material::CreateDefault();
     }
 
     return Mesh(vertices, indices, material);
 }
 
-std::vector<std::shared_ptr<Texture>> Model::loadMaterialTexture(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName)
 {
 	typeName;
 	std::vector<std::shared_ptr<Texture>> textures;
@@ -198,15 +199,225 @@ std::vector<std::shared_ptr<Texture>> Model::loadMaterialTexture(aiMaterial* mat
 		std::string texturePath = directory + '/' + str.C_Str();
 
 		// Use the asset manager
-		auto texture = AssetManager::GetInstance().GetTexture(texturePath, typeName, -1, GL_UNSIGNED_BYTE);
-		//auto texture = textureManager.loadTexture(texturePath, typeName);
-		if (texture) 
-		{
-			textures.push_back(texture); // Dereference shared_ptr
+        if (AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1)) {
+		    auto texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+		    //auto texture = textureManager.loadTexture(texturePath, typeName);
+		    if (texture) 
+		    {
+			    textures.push_back(texture); // Dereference shared_ptr
+
+			    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+                material->SetTexture(static_cast<TextureType>(type), std::move(textureInfo));
+		    }            
 		}
 	}
 
 	return textures;
+}
+
+std::string Model::CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile) {
+    std::filesystem::path p(modelPath);
+    std::string meshPath = (p.parent_path() / p.stem()).generic_string() + ".mesh";
+
+    std::ofstream meshFile(meshPath, std::ios::binary);
+    if (meshFile.is_open()) {
+		// Write the number of meshes to the file as binary data.
+		size_t meshCount = meshesToCompile.size();
+		meshFile.write(reinterpret_cast<const char*>(&meshCount), sizeof(meshCount));
+
+		// For each mesh, write its data to the file.
+        for (const Mesh& mesh : meshesToCompile) {
+		    size_t vertexCount = mesh.vertices.size();
+            size_t indexCount = mesh.indices.size();
+
+            // Write vertex and index count to the file as binary data.
+            meshFile.write(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+		    meshFile.write(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
+
+            // Write vertex data to the file as binary data.
+            for (const Vertex& v : mesh.vertices) {
+                meshFile.write(reinterpret_cast<const char*>(&v.position), sizeof(v.position));
+                meshFile.write(reinterpret_cast<const char*>(&v.normal), sizeof(v.normal));
+                meshFile.write(reinterpret_cast<const char*>(&v.color), sizeof(v.color));
+                meshFile.write(reinterpret_cast<const char*>(&v.texUV), sizeof(v.texUV));
+            }
+
+		    // Write index data to the file as binary data.
+            meshFile.write(reinterpret_cast<const char*>(mesh.indices.data()), indexCount * sizeof(GLuint));
+
+            // Write material properties to a separate .mat file as binary data.
+			size_t nameLength = mesh.material->GetName().size();
+			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
+            std::string meshName = mesh.material->GetName();
+            meshFile.write(meshName.data(), nameLength); // Writes actual characters
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetEmissive()), sizeof(mesh.material->GetEmissive()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetShininess()), sizeof(mesh.material->GetShininess()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetOpacity()), sizeof(mesh.material->GetOpacity()));
+
+            // Write PBR properties to the file as binary data.
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetMetallic()), sizeof(mesh.material->GetMetallic()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetRoughness()), sizeof(mesh.material->GetRoughness()));
+		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAO()), sizeof(mesh.material->GetAO()));
+
+            // Write texture info to the file as binary data.
+			size_t textureCount = mesh.material->GetAllTextureInfo().size();
+			meshFile.write(reinterpret_cast<const char*>(&textureCount), sizeof(textureCount));
+            auto& allTextureInfo = mesh.material->GetAllTextureInfo();
+            for (auto it = allTextureInfo.begin(); it != allTextureInfo.end(); ++it) {
+                // Write texture type
+				meshFile.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
+				// Write texture path length and path
+				size_t pathLength = it->second->filePath.size();
+				meshFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
+                meshFile.write(it->second->filePath.data(), pathLength);
+            }
+        }
+
+		meshFile.close();
+
+        return meshPath;
+    }
+
+    return std::string{};
+}
+
+bool Model::LoadResource(const std::string& assetPath)
+{
+    std::filesystem::path assetPathFS(assetPath);
+    std::string resourcePath = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".mesh";
+
+	std::ifstream meshFile(resourcePath, std::ios::binary);
+    if (meshFile.is_open()) {
+		// Read the number of meshes from the file.
+        size_t meshCount;
+		meshFile.read(reinterpret_cast<char*>(&meshCount), sizeof(meshCount));
+
+        // For each mesh, read its data from the file.
+        for (size_t i = 0; i < meshCount; ++i) {
+            size_t vertexCount, indexCount;
+            // Read vertex and index count from the file.
+            meshFile.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+			meshFile.read(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
+
+            // Read vertex data from the file.
+			std::vector<Vertex> vertices(vertexCount);
+            for (size_t j = 0; j < vertexCount; ++j) {
+                Vertex v;
+                meshFile.read(reinterpret_cast<char*>(&v.position), sizeof(v.position));
+				meshFile.read(reinterpret_cast<char*>(&v.normal), sizeof(v.normal));
+				meshFile.read(reinterpret_cast<char*>(&v.color), sizeof(v.color));
+                meshFile.read(reinterpret_cast<char*>(&v.texUV), sizeof(v.texUV));
+				vertices[j] = std::move(v);
+            }
+
+			// Read index data from the file.
+            std::vector<GLuint> indices(indexCount);
+			meshFile.read(reinterpret_cast<char*>(indices.data()), indexCount * sizeof(GLuint));
+
+            // Read material properties from the file.
+			std::shared_ptr<Material> material = std::make_shared<Material>();
+            // Name
+			size_t nameLength;
+			meshFile.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
+            std::string meshName(nameLength, '\0'); // Pre-size the string
+			meshFile.read(reinterpret_cast<char*>(&meshName[0]), nameLength);
+			material->SetName(meshName);
+            // Ambient
+            glm::vec3 ambient;
+			meshFile.read(reinterpret_cast<char*>(&ambient), sizeof(ambient));
+			material->SetAmbient(ambient);
+            // Diffuse
+			glm::vec3 diffuse;
+			meshFile.read(reinterpret_cast<char*>(&diffuse), sizeof(diffuse));
+			material->SetDiffuse(diffuse);
+			// Specular
+			glm::vec3 specular;
+			meshFile.read(reinterpret_cast<char*>(&specular), sizeof(specular));
+			material->SetSpecular(specular);
+            // Emissive
+            glm::vec3 emissive;
+			meshFile.read(reinterpret_cast<char*>(&emissive), sizeof(emissive));
+            material->SetEmissive(emissive);
+            // Shininess
+			float shininess;
+			meshFile.read(reinterpret_cast<char*>(&shininess), sizeof(shininess));
+            material->SetShininess(shininess);
+			// Opacity
+			float opacity;
+            meshFile.read(reinterpret_cast<char*>(&opacity), sizeof(opacity));
+			material->SetOpacity(opacity);
+            // Metallic
+			float metallic;
+			meshFile.read(reinterpret_cast<char*>(&metallic), sizeof(metallic));
+            material->SetMetallic(metallic);
+			// Roughness
+			float roughness;
+            meshFile.read(reinterpret_cast<char*>(&roughness), sizeof(roughness));
+			material->SetRoughness(roughness);
+			// AO
+            float ao;
+			meshFile.read(reinterpret_cast<char*>(&ao), sizeof(ao));
+			material->SetAO(ao);
+
+			// Read texture paths from the file.
+			size_t textureCount;
+            std::vector<std::shared_ptr<Texture>> textures;
+            meshFile.read(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
+            for (size_t j = 0; j < textureCount; ++j) {
+                TextureType texType;
+				meshFile.read(reinterpret_cast<char*>(&texType), sizeof(texType));
+				size_t pathLength;
+				meshFile.read(reinterpret_cast<char*>(&pathLength), sizeof(pathLength));
+				std::string texturePath(pathLength, '\0');
+				meshFile.read(reinterpret_cast<char*>(&texturePath[0]), pathLength);
+
+                // Load texture via Resource Manager
+				std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+                if (texture) {
+                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+                    material->SetTexture(texType, std::move(textureInfo));
+
+                    // Assign the texture type
+                    switch (texType) {
+                        case TextureType::DIFFUSE:
+                            texture->type = "diffuse";
+							break;
+                        case TextureType::SPECULAR:
+							texture->type = "specular";
+                            break;
+						case TextureType::NORMAL:
+                            texture->type = "normal";
+                            break;
+						case TextureType::EMISSIVE:
+                            texture->type = "emissive";
+                            break;
+                        // Add other cases as needed
+                        default:
+							std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+                            texture->type = "unknown";
+							break;
+                    }
+				}
+
+                textures.push_back(texture);
+            }
+
+            meshes.emplace_back(vertices, indices, textures, material);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
+{
+    assetPath, currentMetaData;
+    return std::shared_ptr<AssetMeta>();
 }
 
 void Model::Draw(Shader& shader, const Camera& camera)

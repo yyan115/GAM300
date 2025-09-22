@@ -2,23 +2,21 @@
 
 #include <unordered_map>
 #include <WindowManager.hpp>
+#include "RunTimeVar.hpp"
+#include "Keys.h"
 
-// #ifdef ENGINE_EXPORTS
-// #define ENGINE_API __declspec(dllexport)
-// #else
-// #define ENGINE_API __declspec(dllimport)
-// #endif
+class IPlatform; // Forward declaration
 
 class InputManager {
 public:
-	static void Initialize(GLFWwindow* window);
+	static void Initialize();  // No longer needs window parameter
 	static void Update();
 
-	static bool GetKeyDown(int key);
-	static bool GetKey(int key);
+	static bool GetKeyDown(Input::Key key);
+	static bool GetKey(Input::Key key);
 
-	static bool GetMouseButtonDown(int button);
-	static bool GetMouseButton(int button);
+	static bool GetMouseButtonDown(Input::MouseButton button);
+	static bool GetMouseButton(Input::MouseButton button);
 
 	static double GetMouseX();
 	static double GetMouseY();
@@ -27,41 +25,24 @@ public:
 	static bool GetAnyMouseButtonDown();
 	static bool GetAnyInputDown();
 
+	// Platform callback methods - called by platform implementations
+	static void OnKeyEvent(Input::Key key, Input::KeyAction action);
+	static void OnMouseButtonEvent(Input::MouseButton button, Input::KeyAction action);
+	static void OnMousePositionEvent(double x, double y);
+	static void OnScrollEvent(double xOffset, double yOffset);
+
 private:
-	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-		window, scancode, mods;
-		keyStates[key] = (action != GLFW_RELEASE);
-		//ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-	}
+	static IPlatform* platform;  // Reference to platform for input polling
+	
+	//// Internal state tracking using engine key constants
+	static std::unordered_map<Input::Key, bool> keyStates;
+	static std::unordered_map<Input::MouseButton, bool> mouseButtonStates;
+	
+	static std::unordered_map<Input::Key, bool> prevKeyStates;
+	static std::unordered_map<Input::MouseButton, bool> prevMouseButtonStates;
 
-	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-		window, mods;
-		mouseButtonStates[button] = (action != GLFW_RELEASE);
-		//ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-	}
-
-	static void CursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
-		window;
-		mouseX = xpos;
-		mouseY = ypos;
-		//ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-	}
-
-	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-		window;
-		scrollOffsetX += xoffset;
-		scrollOffsetY += yoffset;
-		//ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-	}
-
-	static std::unordered_map<int, bool> keyStates;
-	static std::unordered_map<int, bool> mouseButtonStates;
-
-	static std::unordered_map<int, bool> prevKeyStates;
-	static std::unordered_map<int, bool> prevMouseButtonStates;
-
-	static double mouseX;
-	static double mouseY;
-	static double scrollOffsetX;
-	static double scrollOffsetY;
+	//static double mouseX;
+	//static double mouseY;
+	//static double scrollOffsetX;
+	//static double scrollOffsetY;
 };

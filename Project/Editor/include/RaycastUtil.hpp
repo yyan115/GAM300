@@ -5,7 +5,7 @@
 #include <vector>
 #include <limits>
 #include "EditorState.hpp"  // This already defines Entity and INVALID_ENTITY
-#include "Math/Matrix4x4.h"
+#include "Math/Matrix4x4.hpp"
 
 /**
  * @brief Utility class for raycasting in 3D space for entity selection.
