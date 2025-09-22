@@ -1,0 +1,232 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Clean All Builds",
+            "type": "shell", 
+            "command": "rm",
+            "args": ["-rf", "Project/Build"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Configure Debug (Game)",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "debug"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always", 
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Debug (Game)",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "Build/debug", "-j8"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false, 
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Debug (Game)"
+        },
+        {
+            "label": "Configure Release (Game)",
+            "type": "shell",
+            "command": "cmake", 
+            "args": ["--preset", "release"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Release (Game)",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "Build/release", "-j8"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Release (Game)"
+        },
+        {
+            "label": "Configure Editor Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "editor-debug"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Editor Debug",
+            "type": "shell", 
+            "command": "cmake",
+            "args": ["--build", "Build/editor-debug", "-j8"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Editor Debug"
+        },
+        {
+            "label": "Configure Editor Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "editor-release"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Editor Release",
+            "type": "shell",
+            "command": "cmake", 
+            "args": ["--build", "Build/editor-release", "-j8"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Editor Release"
+        },
+        {
+            "label": "Configure Android Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "android-debug"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Android Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "Build/android-debug", "-j4"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Android Debug"
+        },
+        {
+            "label": "Configure Android Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--preset", "android-release"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Android Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "Build/android-release", "-j4"],
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/Project"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": ["$gcc"],
+            "dependsOn": "Configure Android Release"
+        }
+    ]
+}

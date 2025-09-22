@@ -26,6 +26,7 @@ int main() {
     
     GameManager::Initialize();
 	GUIManager::Initialize();
+
     while (Engine::IsRunning()) {
         //Update deltaTime at start of Frame
         WindowManager::updateDeltaTime();

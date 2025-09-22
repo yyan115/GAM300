@@ -11,7 +11,7 @@
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
 #include "DebugDraw/DebugDrawComponent.hpp"
-#include <Math/Matrix4x4.h>
+#include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
 public:

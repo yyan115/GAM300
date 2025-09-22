@@ -1,6 +1,7 @@
 #include "pch.h"
 
-#include <glad/glad.h>
+#include "Graphics/OpenGL.h"
+#include "Platform/IPlatform.h"
 
 #include "WindowManager.hpp"
 #include "Engine.h"
@@ -9,7 +10,8 @@
 
 #define UNREFERENCED_PARAMETER(P) (P)
 
-GLFWwindow* WindowManager::ptrWindow = nullptr;
+IPlatform* WindowManager::platform = nullptr;
+PlatformWindow WindowManager::ptrWindow = nullptr;
 GLint WindowManager::width;
 GLint WindowManager::height;
 GLint WindowManager::viewportWidth;
@@ -37,46 +39,41 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     windowedWidth = _width;
     windowedHeight = _height;
 
-    // Check if glfw init success
-    if (!glfwInit()) {
-        std::cout << "GLFW init has failed - abort program!!!" << std::endl;
+    // Create platform instance
+    platform = CreatePlatform();
+    if (!platform) {
+        std::cout << "Platform creation failed - abort program!!!" << std::endl;
         return false;
     }
 
-    // If GLFW function fails, callback error
-    glfwSetErrorCallback(error_cb);
-
-    // Setup GLFW hints
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_DEPTH_BITS, 24);
-    glfwWindowHint(GLFW_RED_BITS, 8); glfwWindowHint(GLFW_GREEN_BITS, 8);
-    glfwWindowHint(GLFW_BLUE_BITS, 8); glfwWindowHint(GLFW_ALPHA_BITS, 8);
-
-    // Create window and check if success
-    ptrWindow = glfwCreateWindow(width, height, title, NULL, NULL);
-    if (!ptrWindow) {
-        std::cerr << "GLFW unable to create OpenGL context - abort program\n";
-        glfwTerminate();
+    // Initialize platform window
+    if (!platform->InitializeWindow(_width, _height, _title)) {
+        std::cout << "Platform window initialization failed - abort program!!!" << std::endl;
         return false;
     }
 
-    glfwMakeContextCurrent(ptrWindow);
+    // Initialize graphics context
+    if (!platform->InitializeGraphics()) {
+        std::cout << "Platform graphics initialization failed - abort program!!!" << std::endl;
+        return false;
+    }
 
-    // Set callback for FB size change
-    glfwSetFramebufferSizeCallback(ptrWindow, fbsize_cb);
-    glfwSetWindowFocusCallback(ptrWindow, window_focus_callback);
+    // Make context current
+    platform->MakeContextCurrent();
 
-    // Initializes GLAD
+    // Get platform window handle for compatibility
+    ptrWindow = static_cast<PlatformWindow>(platform->GetNativeWindow());
+
+#ifndef ANDROID
+    // Desktop: Initialize GLAD (Android uses OpenGL ES directly)
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
+        return false;
     }
+#endif
+    
+    // Enable depth testing and set viewport
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, _width, _height);
 
@@ -84,27 +81,16 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
 }
 
 void WindowManager::ToggleFullscreen() {
-    if (isFullscreen) {
-        // Restore to windowed mode
-        glfwSetWindowMonitor(ptrWindow, nullptr, windowedPosX, windowedPosY, windowedWidth, windowedHeight, 0);
+    if (platform) {
+        platform->ToggleFullscreen();
+        isFullscreen = !isFullscreen; // Toggle fullscreen state
     }
-    else {
-        // Save current window position and size
-        glfwGetWindowPos(ptrWindow, &windowedPosX, &windowedPosY);
-        glfwGetWindowSize(ptrWindow, &windowedWidth, &windowedHeight);
-
-        // Get the primary monitor and its video mode
-        GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
-
-        // Switch to fullscreen
-        glfwSetWindowMonitor(ptrWindow, primaryMonitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-    }
-    isFullscreen = !isFullscreen; // Toggle fullscreen state
 }
 
 void WindowManager::MinimizeWindow() {
-    glfwIconifyWindow(ptrWindow);  // Minimizes the window
+    if (platform) {
+        platform->MinimizeWindow();
+    }
 }
 
 void WindowManager::UpdateViewportDimensions() {
@@ -122,22 +108,30 @@ void WindowManager::UpdateViewportDimensions() {
     // std::cout << "viewport w h: " << viewportWidth << ", " << viewportHeight << "\n";
 }
 
-GLFWwindow* WindowManager::getWindow() {
+PlatformWindow WindowManager::getWindow() {
     return ptrWindow;
 }
 
 void WindowManager::SetWindowShouldClose()
 {
-    glfwSetWindowShouldClose(ptrWindow, 1);
+    if (platform) {
+        platform->SetShouldClose(true);
+    }
 }
 
 bool WindowManager::ShouldClose() {
-    return glfwWindowShouldClose(ptrWindow);
+    if (platform) {
+        return platform->ShouldClose();
+    }
+    return false;
 }
 
 void WindowManager::Exit() {
-    glfwDestroyWindow(ptrWindow);
-    glfwTerminate();
+    if (platform) {
+        platform->DestroyWindow();
+        delete platform;
+        platform = nullptr;
+    }
 }
 
 void WindowManager::error_cb(int error, char const* description) {
@@ -149,7 +143,7 @@ void WindowManager::error_cb(int error, char const* description) {
 #endif
 }
 
-void WindowManager::fbsize_cb(GLFWwindow* ptr_win, int _width, int _height) {
+void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
     UNREFERENCED_PARAMETER(ptr_win);
 
 #ifdef _DEBUG
@@ -192,10 +186,12 @@ void WindowManager::SetViewportDimensions(GLint width, GLint height)
 }
 
 void WindowManager::SetWindowTitle(const char* _title) {
-    glfwSetWindowTitle(ptrWindow, _title);
+    if (platform) {
+        platform->SetWindowTitle(_title);
+    }
 }
 
-void WindowManager::window_focus_callback(GLFWwindow* window, int focused) {
+void WindowManager::window_focus_callback(PlatformWindow window, int focused) {
 
     //if (!focused && !isFullscreen && !DuckEngine::isEditor)  glfwIconifyWindow(ptrWindow);  // Minimizes the window
 
@@ -204,7 +200,10 @@ void WindowManager::window_focus_callback(GLFWwindow* window, int focused) {
 }
 
 bool WindowManager::IsWindowMinimized() {
-    return glfwGetWindowAttrib(ptrWindow, GLFW_ICONIFIED) != 0;
+    if (platform) {
+        return platform->IsWindowMinimized();
+    }
+    return false;
 }
 
 bool WindowManager::IsWindowFocused() {
@@ -214,7 +213,7 @@ bool WindowManager::IsWindowFocused() {
 void WindowManager::updateDeltaTime() {
     const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
 
-    double currentTime = glfwGetTime();
+    double currentTime = platform ? platform->GetTime() : 0.0;
     double frameTime = currentTime - lastFrameTime;
 
     double remainingTime = targetDeltaTime - frameTime;
@@ -224,14 +223,14 @@ void WindowManager::updateDeltaTime() {
     //if (remainingTime > 0.005) {
     //    std::this_thread::sleep_for(std::chrono::milliseconds((int)((remainingTime - 0.001) * 1000)));
     //}
-    //// Busy-wait the last few milliseconds
-    //while ((glfwGetTime() - lastFrameTime) < targetDeltaTime) {}
+    //// Busy-wait the last few milliseconds - now handled by platform
+    //while ((platform->GetTime() - lastFrameTime) < targetDeltaTime) {}
 
     // Update deltaTime
-    currentTime = glfwGetTime();
+    currentTime = platform ? platform->GetTime() : 0.0;
     deltaTime = currentTime - lastFrameTime;
     lastFrameTime = currentTime;
-    glfwSwapInterval(1);
+    // Swap interval handled by platform internally
 }
 
 double WindowManager::getDeltaTime() {
@@ -239,4 +238,17 @@ double WindowManager::getDeltaTime() {
 }
 double WindowManager::getFps() {
     return deltaTime > 0.0 ? 1.0 / deltaTime : 0.0;
+}
+
+// Platform abstraction methods
+void WindowManager::SwapBuffers() {
+    if (platform) {
+        platform->SwapBuffers();
+    }
+}
+
+void WindowManager::PollEvents() {
+    if (platform) {
+        platform->PollEvents();
+    }
 }

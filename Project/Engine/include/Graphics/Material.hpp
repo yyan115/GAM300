@@ -3,18 +3,21 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <optional>
+#include <functional>
 #include "Texture.h"
 #include "ShaderClass.h"
 
 enum class TextureType {
-	DIFFUSE,
-	SPECULAR,
-	NORMAL,
-	HEIGHT,
-	AMBIENT_OCCLUSION,
-	METALLIC,
-	ROUGHNESS,
-	EMISSIVE
+	NONE = 0,
+	DIFFUSE = 1,
+	SPECULAR = 2,
+	AMBIENT_OCCLUSION = 3,
+	EMISSIVE = 4,
+	HEIGHT = 5,
+	NORMAL = 6,
+	METALLIC = 15,
+	ROUGHNESS = 16,
 };
 
 class Material {
@@ -31,31 +34,43 @@ public:
 	void SetShininess(float shininess);
 	void SetOpacity(float opacity);
 
+	const glm::vec3& GetAmbient() const { return m_ambient; }
+	const glm::vec3& GetDiffuse() const { return m_diffuse; }
+	const glm::vec3& GetSpecular() const { return m_specular; }
+	const glm::vec3& GetEmissive() const { return m_emissive; }
+	const float& GetShininess() const { return m_shininess; }
+	const float& GetOpacity() const { return m_opacity; }
+
 	// PBR properties - Future
 	void SetMetallic(float metallic);
 	void SetRoughness(float roughness);
 	void SetAO(float ao);
 
+	const float& GetMetallic() const { return m_metallic; }
+	const float& GetRoughness() const { return m_roughness; }
+	const float& GetAO() const { return m_ao; }
+
 	// Texture Managment
-	void SetTexture(TextureType type, std::shared_ptr<Texture> texture);
-	std::shared_ptr<Texture> getTexture(TextureType type) const;
-	bool hasTexture(TextureType type) const;
-	void removeTexture(TextureType type);
+	void SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo);
+	std::optional<std::reference_wrapper<TextureInfo>> GetTextureInfo(TextureType type) const;
+	const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>& GetAllTextureInfo();
+	bool HasTexture(TextureType type) const;
+	void RemoveTexture(TextureType type);
 
 	// Utility methods
-	void setName(const std::string& name);
-	const std::string& getName() const;
+	void SetName(const std::string& name);
+	const std::string& GetName() const;
 
 	// Apply material to shader
-	void applyToShader(Shader& shader) const;
+	void ApplyToShader(Shader& shader) const;
 
 	// Static factory methods for common materials
-	static std::shared_ptr<Material> createDefault();
-	static std::shared_ptr<Material> createMetal(const glm::vec3& color);
-	static std::shared_ptr<Material> createPlastic(const glm::vec3& color);
-	static std::shared_ptr<Material> createWood();
+	static std::shared_ptr<Material> CreateDefault();
+	static std::shared_ptr<Material> CreateMetal(const glm::vec3& color);
+	static std::shared_ptr<Material> CreatePlastic(const glm::vec3& color);
+	static std::shared_ptr<Material> CreateWood();
 
-	void debugPrintProperties() const;
+	void DebugPrintProperties() const;
 private:
 	std::string m_name;
 
@@ -73,10 +88,9 @@ private:
 	float m_ao{ 1.0f };
 
 	// Texture storage
-	std::unordered_map<TextureType, std::shared_ptr<Texture>> m_textures;
+	std::unordered_map<TextureType, std::unique_ptr<TextureInfo>> m_textureInfo;
 
 	// Helper methods
-	std::string textureTypeToString(TextureType type) const;
-	void bindTextures(Shader& shader) const;
-
+	std::string TextureTypeToString(TextureType type) const;
+	void BindTextures(Shader& shader) const;
 };

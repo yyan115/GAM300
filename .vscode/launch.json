@@ -1,0 +1,123 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Game",
+            "type": "cppdbg",
+            "request": "launch", 
+            "args": [],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build Debug (Game)",
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/debug/bin/Game",
+                "cwd": "${workspaceFolder}/Project/Build/debug/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/debug/bin/Debug/Game.exe",
+                "cwd": "${workspaceFolder}/Project/Build/debug/bin/Debug",
+                "MIMode": "lldb"
+            }
+        },
+        {
+            "name": "Release Game",
+            "type": "cppdbg",
+            "request": "launch",
+            "args": [],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "preLaunchTask": "Build Release (Game)",
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/release/bin/Game",
+                "cwd": "${workspaceFolder}/Project/Build/release/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/release/bin/Release/Game.exe",
+                "cwd": "${workspaceFolder}/Project/Build/release/bin/Release",
+                "MIMode": "lldb"
+            }
+        },
+        {
+            "name": "Debug Editor",
+            "type": "cppdbg",
+            "request": "launch",
+            "args": [],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build Editor Debug",
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Debug/Editor.exe",
+                "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin/Debug",
+                "MIMode": "lldb"
+            }
+        },
+        {
+            "name": "Release Editor",
+            "type": "cppdbg", 
+            "request": "launch",
+            "args": [],
+            "stopAtEntry": false,
+            "environment": [],
+            "externalConsole": false,
+            "preLaunchTask": "Build Editor Release",
+            "linux": {
+                "program": "${workspaceFolder}/Project/Build/editor-release/bin/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/editor-release/bin",
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/Project/Build/editor-release/bin/Release/Editor.exe",
+                "cwd": "${workspaceFolder}/Project/Build/editor-release/bin/Release",
+                "MIMode": "lldb"
+            }
+        },
+        {
+            "name": "Build Android Debug",
+            "type": "node",
+            "request": "launch",
+            "program": "echo",
+            "args": ["Android Debug build completed. Check Build/android-debug/bin/ for binaries."],
+            "preLaunchTask": "Build Android Debug",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "name": "Build Android Release",
+            "type": "node", 
+            "request": "launch",
+            "program": "echo",
+            "args": ["Android Release build completed. Check Build/android-release/bin/ for binaries."],
+            "preLaunchTask": "Build Android Release",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        }
+    ]
+}

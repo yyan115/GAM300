@@ -10,6 +10,7 @@
  *
  * This panel provides scene editing capabilities with gizmos for
  * transforming objects, grid visualization, and other scene editing tools.
+ * Updated to use camelCase member variables without m_ prefix.
  */
 class ScenePanel : public EditorPanel {
 public:

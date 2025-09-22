@@ -1,4 +1,3 @@
-#pragma once
 #include "pch.h"
 #include "GUIManager.hpp"
 #include "imgui.h"
@@ -18,6 +17,7 @@
 #include "Panels/GamePanel.hpp"
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
+#include "Panels/AssetBrowserPanel.hpp"
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -153,6 +153,10 @@ void GUIManager::SetupDefaultPanels() {
 	assert(performancePanel != nullptr && "Failed to create PerformancePanel");
 	panelManager->RegisterPanel(performancePanel);
 
+	auto assetBrowserPanel = std::make_shared<AssetBrowserPanel>();
+	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
+	panelManager->RegisterPanel(assetBrowserPanel);
+
 	std::cout << "[GUIManager] Default panels registered" << std::endl;
 }
 
@@ -212,6 +216,7 @@ void GUIManager::CreateDockspace() {
 				ImGui::DockBuilderDockWindow("Inspector", dock_left);
 				ImGui::DockBuilderDockWindow("Console", dock_down);
 				ImGui::DockBuilderDockWindow("Performance", dock_down);
+				ImGui::DockBuilderDockWindow("Asset Browser", dock_down);
 
 				// Ensure all panels are open by default so they get saved to the layout
 				if (panelManager) {
@@ -221,6 +226,7 @@ void GUIManager::CreateDockspace() {
 					auto inspectorPanel = panelManager->GetPanel("Inspector");
 					auto consolePanel = panelManager->GetPanel("Console");
 					auto performancePanel = panelManager->GetPanel("Performance");
+					auto assetBrowserPanel = panelManager->GetPanel("Asset Browser");
 
 					if (gamePanel) gamePanel->SetOpen(true);
 					if (scenePanel) scenePanel->SetOpen(true);
@@ -228,6 +234,7 @@ void GUIManager::CreateDockspace() {
 					if (inspectorPanel) inspectorPanel->SetOpen(true);
 					if (consolePanel) consolePanel->SetOpen(true);
 					if (performancePanel) performancePanel->SetOpen(true);
+					if (assetBrowserPanel) assetBrowserPanel->SetOpen(true);
 				}
 
 				ImGui::DockBuilderFinish(dockspace_id);

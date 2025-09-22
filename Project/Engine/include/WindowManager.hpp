@@ -1,7 +1,6 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+#include "Platform/Platform.h"
 #include <string>
 #include <glm/glm.hpp>
 
@@ -28,14 +27,17 @@ public:
 
     static void Exit();
 
-    static GLFWwindow* getWindow();
+    static PlatformWindow getWindow();
 
     static void SetWindowShouldClose();
 
     static bool ShouldClose();
+    
+    static void SwapBuffers();
+    static void PollEvents();
 
     static void error_cb(int error, char const* description);
-    static void fbsize_cb(GLFWwindow* ptr_win, int width, int height);
+    static void fbsize_cb(PlatformWindow ptr_win, int width, int height);
 
     static GLint GetWindowWidth();
     static GLint GetWindowHeight();
@@ -55,7 +57,7 @@ public:
 
     static bool IsWindowMinimized();
     static bool IsWindowFocused();
-    static void window_focus_callback(GLFWwindow* window, int focused);
+    static void window_focus_callback(PlatformWindow window, int focused);
 
     static void updateDeltaTime();
     static double getDeltaTime();
@@ -71,7 +73,8 @@ private:
     static GLint windowedPosX;     // Saved X position for windowed mode
     static GLint windowedPosY;     // Saved Y position for windowed mode
 
-    static GLFWwindow* ptrWindow;
+    static class IPlatform* platform;
+    static PlatformWindow ptrWindow;
 
     static GLint width;
     static GLint height;
