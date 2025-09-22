@@ -17,22 +17,19 @@ Font::~Font()
 	Cleanup();
 }
 
-bool Font::LoadAsset(const std::string& path)
+std::string Font::CompileToResource(const std::string& assetPath)
 {
-    return LoadFont(path, fontSize);
+    return assetPath + ".font";
 }
 
-bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
+bool Font::LoadResource(const std::string& assetPath, unsigned int newFontSize)
 {
-    // Store font info
-    fontPath = path;
-    fontSize = fontSizeParam;
+    fontSize = newFontSize;
+    fontAssetPath = assetPath;
 
-    // Clean up existing font data if any
+    // Clean up existing data
     Cleanup();
 
-<<<<<<< Updated upstream
-=======
     std::vector<unsigned char> fontData;
 
 #ifdef ANDROID
@@ -100,24 +97,23 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     std::cout << "[Font] Successfully loaded font from desktop: " << fontPath << " (size: " << fontData.size() << " bytes)" << std::endl;
 #endif
 
->>>>>>> Stashed changes
     // Initialize FreeType
     FT_Library ft;
-    if (FT_Init_FreeType(&ft)) 
+    if (FT_Init_FreeType(&ft))
     {
         std::cerr << "[Font] Could not initialize FreeType Library" << std::endl;
         return false;
     }
 
-    // Load font as face
+    // Load font as face from memory
     FT_Face face;
-    if (FT_New_Face(ft, path.c_str(), 0, &face)) 
+#ifdef ANDROID
+    if (FT_New_Memory_Face(ft, fontData.data(), fontData.size(), 0, &face))
+#else
+    if (FT_New_Memory_Face(ft, fontData.data(), fontData.size(), 0, &face))
+#endif
     {
-<<<<<<< Updated upstream
-        std::cerr << "[Font] Failed to load font: " << path << std::endl;
-=======
         std::cerr << "[Font] Failed to load font resource: " << assetPath << std::endl;
->>>>>>> Stashed changes
         FT_Done_FreeType(ft);
         return false;
     }
@@ -130,10 +126,10 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Load first 128 characters of ASCII set
-    for (unsigned char c = 0; c < 128; c++) 
+    for (unsigned char c = 0; c < 128; c++)
     {
         // Load character glyph
-        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) 
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
             std::cerr << "[Font] Failed to load Glyph for character: " << c << std::endl;
             continue;
@@ -179,36 +175,22 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     // Set flag to defer VAO/VBO setup until render thread
     vaoSetupNeeded = true;
 
-<<<<<<< Updated upstream
-    textVAO->Bind();
-    textVBO->Bind();
-
-    // Set up vertex attributes for text (vec4: x, y, u, v)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    textVBO->Unbind();
-    textVAO->Unbind();
-
-    std::cout << "[Font] Successfully loaded font: " << path << " (size: " << fontSize << ")" << std::endl;
-=======
     std::cout << "[Font] Successfully loaded font resource: " << assetPath << " (size: " << fontSize << ")" << std::endl;
->>>>>>> Stashed changes
     return true;
 }
 
 void Font::SetFontSize(unsigned int newSize)
 {
-    if (newSize != fontSize && !fontPath.empty()) 
+    if (newSize != fontSize && !fontAssetPath.empty())
     {
-        LoadFont(fontPath, newSize);
+        LoadResource(fontAssetPath, newSize);
     }
 }
 
 const Character& Font::GetCharacter(char c) const
 {
     auto it = Characters.find(c);
-    if (it != Characters.end()) 
+    if (it != Characters.end())
     {
         return it->second;
     }
@@ -221,7 +203,7 @@ const Character& Font::GetCharacter(char c) const
 float Font::GetTextWidth(const std::string& text, float scale) const
 {
     float width = 0.0f;
-    for (char c : text) 
+    for (char c : text)
     {
         const Character& ch = GetCharacter(c);
         width += (ch.advance >> 6) * scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
@@ -232,10 +214,10 @@ float Font::GetTextWidth(const std::string& text, float scale) const
 float Font::GetTextHeight(float scale) const
 {
     float maxHeight = 0.0f;
-    for (const auto& pair : Characters) 
+    for (const auto& pair : Characters)
     {
         float height = pair.second.size.y * scale;
-        if (height > maxHeight) 
+        if (height > maxHeight)
         {
             maxHeight = height;
         }
@@ -246,28 +228,25 @@ float Font::GetTextHeight(float scale) const
 void Font::Cleanup()
 {
     // Clean up textures
-    for (auto& pair : Characters) 
+    for (auto& pair : Characters)
     {
         glDeleteTextures(1, &pair.second.textureID);
     }
     Characters.clear();
 
     // Clean up VAO/VBO
-    if (textVAO) 
+    if (textVAO)
     {
         textVAO->Delete();
         textVAO.reset();
     }
-    if (textVBO) 
+    if (textVBO)
     {
         textVBO->Delete();
         textVBO.reset();
     }
 }
 
-<<<<<<< Updated upstream
-
-=======
 void Font::EnsureVAOSetup() const
 {
     if (!vaoSetupNeeded || textVAO) {
@@ -321,4 +300,3 @@ std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, st
     assetPath, currentMetaData;
     return std::shared_ptr<AssetMeta>();
 }
->>>>>>> Stashed changes
