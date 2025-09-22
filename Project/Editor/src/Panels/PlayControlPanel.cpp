@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Panels/PlayControlPanel.hpp"
 #include "EditorState.hpp"
 #include "GUIManager.hpp"
@@ -6,6 +7,7 @@
 
 PlayControlPanel::PlayControlPanel()
     : EditorPanel("Play Controls", true) {
+    // Initialize with no tool selected by default
 }
 
 void PlayControlPanel::OnImGuiRender() {
@@ -32,33 +34,51 @@ void PlayControlPanel::OnImGuiRender() {
     if (ImGui::Begin("##PlayControlsToolbar", nullptr, flags)) {
         EditorState& editorState = EditorState::GetInstance();
 
-        // Center the buttons within the toolbar
-        ImVec2 windowSize = ImGui::GetContentRegionAvail();
+        // Render transform tools on the left
+        RenderTransformTools();
+        
+        // Add spacing and center play controls
+        ImGui::SameLine();
+        ImGui::Dummy(ImVec2(40.0f, 0.0f)); // Increased spacing
+        ImGui::SameLine();
 
-        // Calculate actual button group width more accurately
+        // Get available space after transform tools
+        ImVec2 availableSize = ImGui::GetContentRegionAvail();
+        
+        // Calculate button group width
         float playButtonWidth = 80.0f;
-        float stopButtonWidth = 70.0f;
-        float spacing = ImGui::GetStyle().ItemSpacing.x * 2; // Space between buttons
-        float stateTextWidth = 60.0f; // Estimated width for " | EDIT"
+        float stopButtonWidth = 80.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float stateTextWidth = 80.0f;
         float totalButtonWidth = playButtonWidth + stopButtonWidth + stateTextWidth + spacing;
 
-        float centerX = (windowSize.x - totalButtonWidth) * 0.5f;
-        if (centerX > 0) {
-            ImGui::SetCursorPosX(centerX);
+        // Get the current cursor position for consistent baseline
+        ImVec2 startPos = ImGui::GetCursorPos();
+        
+        // Center the button group in available space
+        float centerOffset = (availableSize.x - totalButtonWidth) * 0.4f;
+        if (centerOffset > 0) {
+            ImGui::SetCursorPosX(startPos.x + centerOffset);
         }
+        
+        // Fixed height for all play/stop buttons
+        float buttonHeight = 30.0f;
+        
+        // Set consistent vertical position for all buttons
+        float toolbarHeight = toolbarSize.y; // Use the actual toolbar height we defined
+        float centerY = (toolbarHeight - buttonHeight) * 0.5f;
+        ImGui::SetCursorPosY(centerY);
 
-        // Add some vertical centering too
-        float centerY = (ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeight()) * 0.5f;
-        if (centerY > 0) {
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + centerY);
-        }
-
-        // Make buttons with good padding
+        // Make buttons with good padding and ensure consistent alignment
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 4.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f)); // Center text
 
+        // Store the Y position before drawing buttons for consistent alignment
+        float buttonY = ImGui::GetCursorPosY();
+        
         // Play/Pause button
         if (editorState.IsEditMode() || editorState.IsPaused()) {
-            if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(80.0f, 0.0f))) {
+            if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(80.0f, buttonHeight))) {
                 editorState.Play();
                 // Auto-focus the Game panel when play is pressed
                 auto gamePanel = GUIManager::GetPanelManager().GetPanel("Game");
@@ -68,15 +88,18 @@ void PlayControlPanel::OnImGuiRender() {
                 }
             }
         } else {
-            if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(80.0f, 0.0f))) {
+            if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(80.0f, buttonHeight))) {
                 editorState.Pause();
             }
         }
 
         ImGui::SameLine();
+        
+        // Ensure Stop button is at exactly the same Y position as Play button
+        ImGui::SetCursorPosY(buttonY);
 
         // Stop button
-        if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(70.0f, 0.0f))) {
+        if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(80.0f, buttonHeight))) {
             editorState.Stop();
             // Auto-switch to Scene panel when stopping
             auto scenePanel = GUIManager::GetPanelManager().GetPanel("Scene");
@@ -96,8 +119,113 @@ void PlayControlPanel::OnImGuiRender() {
                           editorState.IsPaused() ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) :
                           ImVec4(0.7f, 0.7f, 0.7f, 1.0f), " | %s", stateText);
 
-        ImGui::PopStyleVar(); // FramePadding
+        ImGui::PopStyleVar(2); // FramePadding and ButtonTextAlign
     }
     ImGui::End();
     ImGui::PopStyleVar(3); // WindowPadding, WindowRounding, WindowBorderSize
+}
+
+void PlayControlPanel::RenderTransformTools() {
+    // Transform tool buttons with Unity-style layout and highlighting
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 6.0f)); // Increased padding
+    
+    float toolButtonHeight = 30.0f; // Same height as play/stop buttons
+    
+    // Center transform tools vertically in the toolbar
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    float menuBarHeight = ImGui::GetFrameHeight();
+    float toolbarHeight = ImGui::GetFrameHeight() + 18.0f; // Same as toolbar size
+    float centerY = (toolbarHeight - toolButtonHeight) * 0.5f;
+    ImGui::SetCursorPosY(centerY);
+    
+    // Normal/Pan tool (Hand icon)
+    bool isHandActive = (hasToolSelected && isNormalPanMode);
+    if (isHandActive) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f)); // Highlighted
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button(ICON_FA_HAND " Q", ImVec2(60.0f, toolButtonHeight))) { // Increased width
+        // Toggle pan mode - if already in pan mode, deselect all tools
+        if (hasToolSelected && isNormalPanMode) {
+            hasToolSelected = false;
+            isNormalPanMode = false;
+        } else {
+            hasToolSelected = true;
+            isNormalPanMode = true;
+        }
+    }
+    if (isHandActive) {
+        ImGui::PopStyleColor(2);
+    }
+    
+    ImGui::SameLine();
+    
+    // Move tool (Arrows icon)
+    bool isMoveActive = (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::TRANSLATE);
+    if (isMoveActive) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f)); // Highlighted
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT " W", ImVec2(60.0f, toolButtonHeight))) { // Increased width
+        // Toggle translate mode - if already in translate mode, deselect all tools
+        if (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::TRANSLATE) {
+            hasToolSelected = false;
+            isNormalPanMode = false;
+        } else {
+            hasToolSelected = true;
+            isNormalPanMode = false;
+            gizmoOperation = ImGuizmo::TRANSLATE;
+        }
+    }
+    if (isMoveActive) {
+        ImGui::PopStyleColor(2);
+    }
+    
+    ImGui::SameLine();
+    
+    // Rotate tool (Rotate icon)
+    bool isRotateActive = (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::ROTATE);
+    if (isRotateActive) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f)); // Highlighted
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button(ICON_FA_ROTATE " E", ImVec2(60.0f, toolButtonHeight))) { // Increased width
+        // Toggle rotate mode - if already in rotate mode, deselect all tools
+        if (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::ROTATE) {
+            hasToolSelected = false;
+            isNormalPanMode = false;
+        } else {
+            hasToolSelected = true;
+            isNormalPanMode = false;
+            gizmoOperation = ImGuizmo::ROTATE;
+        }
+    }
+    if (isRotateActive) {
+        ImGui::PopStyleColor(2);
+    }
+    
+    ImGui::SameLine();
+    
+    // Scale tool (Scale icon)
+    bool isScaleActive = (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::SCALE);
+    if (isScaleActive) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f)); // Highlighted
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+    }
+    if (ImGui::Button(ICON_FA_SCALE_BALANCED " R", ImVec2(60.0f, toolButtonHeight))) { // Increased width
+        // Toggle scale mode - if already in scale mode, deselect all tools
+        if (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::SCALE) {
+            hasToolSelected = false;
+            isNormalPanMode = false;
+        } else {
+            hasToolSelected = true;
+            isNormalPanMode = false;
+            gizmoOperation = ImGuizmo::SCALE;
+        }
+    }
+    if (isScaleActive) {
+        ImGui::PopStyleColor(2);
+    }
+    
+    ImGui::PopStyleVar(); // FramePadding
 }

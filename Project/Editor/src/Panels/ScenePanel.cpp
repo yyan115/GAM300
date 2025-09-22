@@ -1,4 +1,6 @@
+#include "pch.h"
 #include "Panels/ScenePanel.hpp"
+#include "Panels/PlayControlPanel.hpp"
 #include "EditorInputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
@@ -35,26 +37,62 @@ void ScenePanel::Mat4ToFloatArray(const glm::mat4& mat, float* arr) {
 
 
 void ScenePanel::HandleKeyboardInput() {
+    // Get the PlayControlPanel to modify its state
+    auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
+    auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
+    if (!playControlPanel) return;
+    
     // Check keyboard input regardless of camera input conditions
     if (EditorInputManager::IsGizmoShortcutPressed(0)) {
-        // Q key - Normal pan mode (no gizmos, left click panning)
-        isNormalPanMode = true;
-        std::cout << "[ScenePanel] Q pressed - Normal/Pan mode (gizmos hidden, LMB panning)" << std::endl;
+        // Q key - Toggle pan mode
+        if (playControlPanel->HasToolSelected() && playControlPanel->IsNormalPanMode()) {
+            // Already in pan mode, deselect all tools
+            playControlPanel->SetNormalPanMode(false);
+            std::cout << "[ScenePanel] Q pressed - Deselected all tools" << std::endl;
+        } else {
+            // Not in pan mode, switch to pan
+            playControlPanel->SetNormalPanMode(true);
+            std::cout << "[ScenePanel] Q pressed - Switched to Pan mode" << std::endl;
+        }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(1)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::TRANSLATE;
-        std::cout << "[ScenePanel] W pressed - Translate mode" << std::endl;
+        // W key - Toggle translate mode
+        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::TRANSLATE) {
+            // Already in translate mode, deselect all tools
+            playControlPanel->SetNormalPanMode(false);
+            std::cout << "[ScenePanel] W pressed - Deselected all tools" << std::endl;
+        } else {
+            // Not in translate mode, switch to translate
+            playControlPanel->SetNormalPanMode(false);
+            playControlPanel->SetGizmoOperation(ImGuizmo::TRANSLATE);
+            std::cout << "[ScenePanel] W pressed - Switched to Translate mode" << std::endl;
+        }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(2)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::ROTATE;
-        std::cout << "[ScenePanel] E pressed - Rotate mode" << std::endl;
+        // E key - Toggle rotate mode
+        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::ROTATE) {
+            // Already in rotate mode, deselect all tools
+            playControlPanel->SetNormalPanMode(false);
+            std::cout << "[ScenePanel] E pressed - Deselected all tools" << std::endl;
+        } else {
+            // Not in rotate mode, switch to rotate
+            playControlPanel->SetNormalPanMode(false);
+            playControlPanel->SetGizmoOperation(ImGuizmo::ROTATE);
+            std::cout << "[ScenePanel] E pressed - Switched to Rotate mode" << std::endl;
+        }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(3)) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::SCALE;
-        std::cout << "[ScenePanel] R pressed - Scale mode" << std::endl;
+        // R key - Toggle scale mode
+        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::SCALE) {
+            // Already in scale mode, deselect all tools
+            playControlPanel->SetNormalPanMode(false);
+            std::cout << "[ScenePanel] R pressed - Deselected all tools" << std::endl;
+        } else {
+            // Not in scale mode, switch to scale
+            playControlPanel->SetNormalPanMode(false);
+            playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
+            std::cout << "[ScenePanel] R pressed - Switched to Scale mode" << std::endl;
+        }
     }
 }
 
@@ -80,6 +118,11 @@ void ScenePanel::HandleCameraInput() {
     bool isMiddleMousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
     float scrollDelta = io.MouseWheel;
 
+    // Get the PlayControlPanel to check state
+    auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
+    auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
+    bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
+    
     if (isNormalPanMode) {
         isMiddleMousePressed = isLeftMousePressed;
         isLeftMousePressed = false; 
@@ -101,6 +144,11 @@ void ScenePanel::HandleCameraInput() {
 void ScenePanel::HandleEntitySelection() {
     // Hover check is now handled by the caller
 
+    // Get the PlayControlPanel to check state
+    auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
+    auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
+    bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
+    
     // Skip entity selection in normal pan mode
     if (isNormalPanMode) {
         return;  // No entity selection in pan mode
@@ -180,31 +228,6 @@ void ScenePanel::HandleEntitySelection() {
     }
 }
 
-void ScenePanel::RenderGizmoControls() {
-    // Toolbar for gizmo operations with visual feedback for active mode
-    if (ImGui::Button(isNormalPanMode ? "[Normal/Pan (Q)]" : "Normal/Pan (Q)")) {
-        isNormalPanMode = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::TRANSLATE ? "[Translate (W)]" : "Translate (W)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::TRANSLATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::ROTATE ? "[Rotate (E)]" : "Rotate (E)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::ROTATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(!isNormalPanMode && gizmoOperation == ImGuizmo::SCALE ? "[Scale (R)]" : "Scale (R)")) {
-        isNormalPanMode = false;
-        gizmoOperation = ImGuizmo::SCALE;
-    }
-
-    ImGui::SameLine();
-    ImGui::Separator();
-    ImGui::SameLine();
-}
 
 void ScenePanel::OnImGuiRender() {
     // Update input manager state
@@ -212,9 +235,7 @@ void ScenePanel::OnImGuiRender() {
 
     if (ImGui::Begin(name.c_str(), &isOpen)) {
 
-        // Render gizmo controls at the top
-        RenderGizmoControls();
-        ImGui::Separator();
+        // Gizmo controls now handled by PlayControlPanel
 
         // Handle input (but not if ImGuizmo is active)
         HandleKeyboardInput();
@@ -341,6 +362,12 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     // Draw grid
     ImGuizmo::DrawGrid(viewMatrix, projMatrix, identityMatrix, 10.0f);
 
+    // Get the PlayControlPanel to check state and get gizmo operation
+    auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
+    auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
+    bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
+    ImGuizmo::OPERATION gizmoOperation = playControlPanel ? playControlPanel->GetGizmoOperation() : ImGuizmo::TRANSLATE;
+    
     // Only show gizmo when an entity is selected AND not in normal pan mode
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
