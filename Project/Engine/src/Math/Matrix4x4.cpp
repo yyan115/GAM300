@@ -11,8 +11,30 @@
 *********************************************************************************/
 
 #include "pch.h"
-#include "Math/Matrix4x4.h"
+#include "Math/Matrix4x4.hpp"
 
+#pragma region Reflection
+//TODO: Change to actual values and not in an array format
+//REFL_REGISTER_START(Matrix4x4)
+//    REFL_REGISTER_PROPERTY(m[0][0])
+//    REFL_REGISTER_PROPERTY(m[0][1])
+//    REFL_REGISTER_PROPERTY(m[0][2])
+//    REFL_REGISTER_PROPERTY(m[0][3])
+//    REFL_REGISTER_PROPERTY(m[1][0])
+//    REFL_REGISTER_PROPERTY(m[1][1])
+//    REFL_REGISTER_PROPERTY(m[1][2])
+//    REFL_REGISTER_PROPERTY(m[1][3])
+//    REFL_REGISTER_PROPERTY(m[2][0])
+//    REFL_REGISTER_PROPERTY(m[2][1])
+//    REFL_REGISTER_PROPERTY(m[2][2])
+//    REFL_REGISTER_PROPERTY(m[2][3])
+//    REFL_REGISTER_PROPERTY(m[3][0])
+//    REFL_REGISTER_PROPERTY(m[3][1])
+//    REFL_REGISTER_PROPERTY(m[3][2])
+//    REFL_REGISTER_PROPERTY(m[3][3])
+//REFL_REGISTER_END;
+
+#pragma endregion
 
 // ============================
 // Constructors

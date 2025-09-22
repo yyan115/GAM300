@@ -11,7 +11,7 @@
 *********************************************************************************/
 
 #include "pch.h"
-#include "Math/Vector3D.h"
+#include "Math/Vector3D.hpp"
 
 // Indexing
 float& Vector3D::operator[](int i)
@@ -94,9 +94,9 @@ bool Vector3D::operator!=(const Vector3D& rhs) const { return !(*this == rhs); }
 
 
 // Math functions
-float Vector3D::dot(const Vector3D& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
+float Vector3D::Dot(const Vector3D& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
 
-Vector3D Vector3D::cross(const Vector3D& rhs) const
+Vector3D Vector3D::Cross(const Vector3D& rhs) const
 {
 	return
 	{
@@ -106,18 +106,18 @@ Vector3D Vector3D::cross(const Vector3D& rhs) const
 	};
 }
 
-float Vector3D::length_sq() const { return x * x + y * y + z * z; }
-float Vector3D::length() const { return std::sqrt(length_sq()); }
+float Vector3D::LengthSq() const { return x * x + y * y + z * z; }
+float Vector3D::Length() const { return std::sqrt(LengthSq()); }
 
-Vector3D Vector3D::normalized() const 
+Vector3D Vector3D::Normalized() const 
 {
-	float len = length();
+	float len = Length();
 	return (len > 0.0f) ? (*this / len) : Vector3D::Zero();
 }
 
-Vector3D& Vector3D::normalize() 
+Vector3D& Vector3D::Normalize() 
 {
-	float len = length();
+	float len = Length();
 	if (len > 0.0f) 
 	{ 
 		x /= len; 
@@ -127,16 +127,16 @@ Vector3D& Vector3D::normalize()
 	return *this;
 }
 
-Vector3D Vector3D::project_onto(const Vector3D& n) const 
+Vector3D Vector3D::ProjectOnto(const Vector3D& n) const 
 {
-	float d = n.length_sq();
+	float d = n.LengthSq();
 	if (d <= 0.0f) return Vector3D::Zero();
-	return n * (dot(n) / d);
+	return n * (Dot(n) / d);
 }
 
-Vector3D Vector3D::reflect(const Vector3D& n_normalized) const 
+Vector3D Vector3D::Reflect(const Vector3D& n_normalized) const 
 {
-	return *this - n_normalized * (2.0f * this->dot(n_normalized));
+	return *this - n_normalized * (2.0f * this->Dot(n_normalized));
 }
 
 Vector3D Vector3D::Lerp(const Vector3D& a, const Vector3D& b, float t) 
@@ -151,3 +151,11 @@ Vector3D operator*(float scalar, const Vector3D& v) { return v * scalar; }
 std::ostream& operator<<(std::ostream& os, const Vector3D& v) {
 	return os << '(' << v.x << ", " << v.y << ", " << v.z << ')';
 }
+
+#pragma region Reflection
+REFL_REGISTER_START(Vector3D)
+	REFL_REGISTER_PROPERTY(x)
+	REFL_REGISTER_PROPERTY(y)
+	REFL_REGISTER_PROPERTY(z)
+REFL_REGISTER_END
+#pragma endregion

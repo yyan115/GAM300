@@ -6,17 +6,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp> 
 #include "Asset Manager/Asset.hpp"
+#include "../Engine.h"
 
 std::string get_file_contents(const char* filename);
 
 class ENGINE_API Shader : public IAsset {
 public:
-	GLuint ID;
+    GLuint ID{};
 
     //Shader() {};
 	//Shader(const char* vertexFile, const char* fragmentFile);
 
-	bool LoadAsset(const std::string& path) override;
+    ENGINE_API std::string CompileToResource(const std::string& path) override;
+    ENGINE_API bool LoadResource(const std::string& assetPath) override;
+    ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	void Activate();
 	void Delete();
@@ -35,9 +38,17 @@ public:
     void setMat3(const std::string& name, const glm::mat3& mat);
     void setMat4(const std::string& name, const glm::mat4& mat);
 
-    void clearUniformCache();
+    //void clearUniformCache();
 
 private:
     std::unordered_map<std::string, GLint> m_uniformCache;
     GLint getUniformLocation(const std::string& name);
+
+    // Store shader binary data (precompiled shader).
+    GLint binaryLength{};
+	std::vector<uint8_t> binaryData;
+    GLenum binaryFormat{};
+    bool binarySupported = true;
+
+    bool SetupShader(const std::string& path);
 };

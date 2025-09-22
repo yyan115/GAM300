@@ -19,9 +19,9 @@
     <ClInclude Include="include\Graphics\VBO.h" />
     <ClInclude Include="include\Graphics\stb_image.h" />
     <ClInclude Include="include\Graphics\Model\Model.h" />
-    <ClInclude Include="include\Math\Vector3D.h" />
-    <ClInclude Include="include\Math\Matrix4x4.h" />
-    <ClInclude Include="include\Math\Matrix3x3.h" />
+    <ClInclude Include="include\Math\Vector3D.hpp" />
+    <ClInclude Include="include\Math\Matrix4x4.hpp" />
+    <ClInclude Include="include\Math\Matrix3x3.hpp" />
     <ClInclude Include="include\ECS\Component.hpp" />
     <ClInclude Include="include\ECS\ComponentArray.hpp" />
     <ClInclude Include="include\ECS\ComponentManager.hpp" />
@@ -53,11 +53,24 @@
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
+    <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
+    <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
+    <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Input\Keys.h" />
+    <ClInclude Include="include\Platform\IPlatform.h" />
+    <ClInclude Include="include\Platform\Platform.h" />
+    <ClInclude Include="include\Platform\DesktopPlatform.h" />
+    <ClInclude Include="include\Platform\AndroidPlatform.h" />
+    <ClInclude Include="include\Reflection\Base64.hpp" />
+    <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
+    <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
+    <ClInclude Include="include\TimeManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -93,6 +106,17 @@
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
+    <ClCompile Include="src\Asset Manager\Asset.cpp" />
+    <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Platform\Platform.cpp" />
+    <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
+    <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
+    <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
+    <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
+    <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
+    <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
+    <ClCompile Include="src\RunTimeVar.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

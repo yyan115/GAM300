@@ -10,7 +10,7 @@
 #include "Model/ModelRenderComponent.hpp"
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
-#include <Math/Matrix4x4.h>
+#include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
 public:

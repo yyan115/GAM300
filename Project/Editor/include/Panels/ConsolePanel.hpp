@@ -55,10 +55,10 @@ private:
      */
     int ConvertEngineLogLevel(EngineLogging::LogLevel level);
 
-    std::vector<LogEntry> m_LogEntries;
-    bool m_ShowInfo = true;
-    bool m_ShowWarnings = true;
-    bool m_ShowErrors = true;
-    bool m_AutoScroll = true;
-    int m_MaxLogEntries = 1000;
+    std::vector<LogEntry> logEntries;
+    bool showInfo = true;
+    bool showWarnings = true;
+    bool showErrors = true;
+    bool autoScroll = true;
+    static const int MAX_LOG_ENTRIES = 1000;
 };

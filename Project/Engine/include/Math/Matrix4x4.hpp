@@ -1,5 +1,5 @@
 /*********************************************************************************
-* @File			Matrix4x4.h
+* @File			Matrix4x4.hpp
 * @Author		Ernest Ho, h.yonghengernest@digipen.edu
 * @Co-Author	-
 * @Date			3/9/2025
@@ -12,7 +12,7 @@
 #pragma once
 
 #include "pch.h"
-#include "Math/Vector3D.h"
+#include "Math/Vector3D.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -30,6 +30,7 @@
 #endif
 
 struct ENGINE_API Matrix4x4 {
+    //REFL_SERIALIZABLE
     // Row-major storage: m[row][col]
     float m[4][4];
 
@@ -86,6 +87,7 @@ struct ENGINE_API Matrix4x4 {
 
     // ---- camera / projection (Right-Handed) ----
     static Matrix4x4 LookAtRH(const Vector3D& eye, const Vector3D& target, const Vector3D& up);
+
     // fovY in radians, aspect = width/height, zNear>0, zFar>zNear
     static Matrix4x4 PerspectiveFovRH(float fovY, float aspect, float zNear, float zFar);
     static Matrix4x4 OrthoRH(float left, float right, float bottom, float top, float zNear, float zFar);

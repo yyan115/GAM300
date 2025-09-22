@@ -1,5 +1,5 @@
 /*********************************************************************************
-* @File			Matrix3x3.h
+* @File			Matrix3x3.hpp
 * @Author		Ernest Ho, h.yonghengernest@digipen.edu
 * @Co-Author	-
 * @Date			3/9/2025
@@ -12,9 +12,10 @@
 #pragma once
 
 #include "pch.h"
-#include "Math/Vector3D.h"
+#include "Math/Vector3D.hpp"
 
 struct Matrix3x3 {
+    //REFL_SERIALIZABLE
     // Storage: row-major (m[row][col])
     float m[3][3];
 

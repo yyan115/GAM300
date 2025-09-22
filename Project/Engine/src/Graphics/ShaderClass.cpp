@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <filesystem>
 #include "Graphics/ShaderClass.h"
 
 #ifdef ANDROID
@@ -69,7 +70,7 @@ std::string get_file_contents(const char* filename)
 	throw(errno);
 }
 
-bool Shader::LoadAsset(const std::string& path) {
+bool Shader::SetupShader(const std::string& path) {
 	std::string vertexFile = path + ".vert";
 	std::string fragmentFile = path + ".frag";
 
@@ -132,13 +133,108 @@ bool Shader::LoadAsset(const std::string& path) {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	if (success) 
-	{
-		std::cout << "Successfully loaded shader ID: " << ID << " from: " << path << std::endl;
+	return true;
+}
+
+std::string Shader::CompileToResource(const std::string& path) {
+	// Check if glGetProgramBinary is supported first.
+	GLint supported = 0;
+	glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &supported);
+	if (supported == 0) {
+		std::cerr << "[SHADER]: Program binary not supported. Skipping binary cache.\n";
+		binarySupported = false;
+		return std::string{};
+	}
+
+	binarySupported = true;
+
+	if (!SetupShader(path)) {
+		std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
+		return std::string{};
+	}
+
+	// Enable the retrievable binary flag.
+	glProgramParameteri(ID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+
+	// Retrieve the binary code of the compiled shader.
+	glGetProgramiv(ID, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
+
+	binaryData.resize(binaryLength);
+	glGetProgramBinary(ID, binaryLength, nullptr, &binaryFormat, binaryData.data());
+
+	// Save the binary code to a file.
+	std::filesystem::path p(path);
+	std::string shaderPath = (p.parent_path() / p.stem()).generic_string() + ".shader";
+
+	std::ofstream shaderFile(shaderPath, std::ios::binary);
+	if (shaderFile.is_open()) {
+		// Write the binary format to the file.
+		shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
+		// Write the binary length to the file.
+		shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
+		// Write the binary code to the file.
+		shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
+		shaderFile.close();
+		return shaderPath;
+	}
+
+	return std::string{};
+}
+
+bool Shader::LoadResource(const std::string& assetPath)
+{
+	if (!binarySupported) {
+		// Fallback to regular shader compilation if binary is not supported.
+		if (!SetupShader(assetPath)) {
+			std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
+			return false;
+		}
+
 		return true;
 	}
 
-	return true;
+	std::filesystem::path assetPathFS(assetPath);
+	std::string resourcePath = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".shader";
+
+	std::ifstream shaderFile(resourcePath, std::ios::binary);
+	if (shaderFile.is_open()) {
+		// Read the binary format from the file.
+		shaderFile.read(reinterpret_cast<char*>(&binaryFormat), sizeof(binaryFormat));
+		// Read the binary length from the file.
+		shaderFile.read(reinterpret_cast<char*>(&binaryLength), sizeof(binaryLength));
+		binaryData.resize(binaryLength);
+		// Read the binary code from the file.
+		shaderFile.read(reinterpret_cast<char*>(binaryData.data()), binaryLength);
+
+		// Create a new shader program.
+		ID = glCreateProgram();
+		glProgramBinary(ID, binaryFormat, binaryData.data(), binaryLength);
+
+		// Check if the program was successfully loaded.
+		GLint status = 0;
+		glGetProgramiv(ID, GL_LINK_STATUS, &status);
+		if (status == GL_FALSE) {
+			std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+			if (CompileToResource(assetPath).empty()) {
+				std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
+				return false;
+			}
+
+			return LoadResource(assetPath);
+		}
+
+		return true;
+	}
+	else {
+		std::cerr << "[SHADER]: Shader file not found: " << resourcePath << std::endl;
+		return false;
+	}
+}
+
+std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
+{
+	assetPath, currentMetaData;
+	return std::shared_ptr<AssetMeta>();
 }
 
 std::string Shader::CompileToResource(const std::string& path) {

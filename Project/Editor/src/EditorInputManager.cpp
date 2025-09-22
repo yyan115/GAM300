@@ -2,8 +2,8 @@
 #include <algorithm>
 
 // Static member definitions
-EditorInputManager::MouseState EditorInputManager::s_MouseState;
-EditorInputManager::KeyboardState EditorInputManager::s_KeyboardState;
+EditorInputManager::MouseState EditorInputManager::mouseState;
+EditorInputManager::KeyboardState EditorInputManager::keyboardState;
 
 void EditorInputManager::Update() {
     UpdateMouseState();
@@ -17,55 +17,55 @@ void EditorInputManager::UpdateMouseState() {
     glm::vec2 currentPos(io.MousePos.x, io.MousePos.y);
 
     // Calculate mouse delta (same as the original working method)
-    if (!s_MouseState.firstMouse) {
-        s_MouseState.delta = currentPos - s_MouseState.lastPosition;
+    if (!mouseState.firstMouse) {
+        mouseState.delta = currentPos - mouseState.lastPosition;
     } else {
-        s_MouseState.delta = glm::vec2(0.0f);
-        s_MouseState.firstMouse = false;
+        mouseState.delta = glm::vec2(0.0f);
+        mouseState.firstMouse = false;
     }
 
     // Update positions
-    s_MouseState.position = currentPos;
-    s_MouseState.lastPosition = currentPos;
+    mouseState.position = currentPos;
+    mouseState.lastPosition = currentPos;
 
     // Update scroll
-    s_MouseState.scrollDelta = io.MouseWheel;
+    mouseState.scrollDelta = io.MouseWheel;
 
     // Update mouse button states (pressed = just pressed this frame)
     bool currentLeft = ImGui::IsMouseDown(ImGuiMouseButton_Left);
     bool currentMiddle = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
     bool currentRight = ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
-    s_MouseState.leftPressed = currentLeft && !s_MouseState.leftDown;
-    s_MouseState.middlePressed = currentMiddle && !s_MouseState.middleDown;
-    s_MouseState.rightPressed = currentRight && !s_MouseState.rightDown;
+    mouseState.leftPressed = currentLeft && !mouseState.leftDown;
+    mouseState.middlePressed = currentMiddle && !mouseState.middleDown;
+    mouseState.rightPressed = currentRight && !mouseState.rightDown;
 
-    s_MouseState.leftDown = currentLeft;
-    s_MouseState.middleDown = currentMiddle;
-    s_MouseState.rightDown = currentRight;
+    mouseState.leftDown = currentLeft;
+    mouseState.middleDown = currentMiddle;
+    mouseState.rightDown = currentRight;
 }
 
 void EditorInputManager::UpdateKeyboardState() {
     ImGuiIO& io = ImGui::GetIO();
 
     // Update modifier keys
-    s_KeyboardState.altPressed = io.KeyAlt;
-    s_KeyboardState.ctrlPressed = io.KeyCtrl;
-    s_KeyboardState.shiftPressed = io.KeyShift;
+    keyboardState.altPressed = io.KeyAlt;
+    keyboardState.ctrlPressed = io.KeyCtrl;
+    keyboardState.shiftPressed = io.KeyShift;
 
     // Update editor shortcut keys (only register as pressed if just pressed this frame)
-    s_KeyboardState.qKeyPressed = ImGui::IsKeyPressed(ImGuiKey_Q);  // Normal/panning mode
-    s_KeyboardState.wKeyPressed = ImGui::IsKeyPressed(ImGuiKey_W);  // Translate
-    s_KeyboardState.eKeyPressed = ImGui::IsKeyPressed(ImGuiKey_E);  // Rotate
-    s_KeyboardState.rKeyPressed = ImGui::IsKeyPressed(ImGuiKey_R);  // Scale
+    keyboardState.qKeyPressed = ImGui::IsKeyPressed(ImGuiKey_Q);  // Normal/panning mode
+    keyboardState.wKeyPressed = ImGui::IsKeyPressed(ImGuiKey_W);  // Translate
+    keyboardState.eKeyPressed = ImGui::IsKeyPressed(ImGuiKey_E);  // Rotate
+    keyboardState.rKeyPressed = ImGui::IsKeyPressed(ImGuiKey_R);  // Scale
 }
 
 const EditorInputManager::MouseState& EditorInputManager::GetMouseState() {
-    return s_MouseState;
+    return mouseState;
 }
 
 const EditorInputManager::KeyboardState& EditorInputManager::GetKeyboardState() {
-    return s_KeyboardState;
+    return keyboardState;
 }
 
 bool EditorInputManager::IsWindowHovered(const char* windowName) {
@@ -76,7 +76,7 @@ bool EditorInputManager::IsWindowHovered(const char* windowName) {
 }
 
 glm::vec2 EditorInputManager::GetMouseDelta(float sensitivity) {
-    return s_MouseState.delta * sensitivity;
+    return mouseState.delta * sensitivity;
 }
 
 bool EditorInputManager::ShouldHandleCameraInput(const char* windowName) {
@@ -87,10 +87,10 @@ bool EditorInputManager::ShouldHandleCameraInput(const char* windowName) {
 
 bool EditorInputManager::IsGizmoShortcutPressed(int gizmoType) {
     switch (gizmoType) {
-        case 0: return s_KeyboardState.qKeyPressed;  // Normal/panning mode
-        case 1: return s_KeyboardState.wKeyPressed;  // Translate
-        case 2: return s_KeyboardState.eKeyPressed;  // Rotate
-        case 3: return s_KeyboardState.rKeyPressed;  // Scale
+        case 0: return keyboardState.qKeyPressed;  // Normal/panning mode
+        case 1: return keyboardState.wKeyPressed;  // Translate
+        case 2: return keyboardState.eKeyPressed;  // Rotate
+        case 3: return keyboardState.rKeyPressed;  // Scale
         default: return false;
     }
 }

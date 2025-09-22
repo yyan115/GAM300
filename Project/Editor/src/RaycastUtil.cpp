@@ -8,7 +8,7 @@
 // Include ECS system from Engine (using configured include paths)
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Math/Vector3D.h"
+#include "Math/Vector3D.hpp"
 
 RaycastUtil::Ray RaycastUtil::ScreenToWorldRay(float mouseX, float mouseY,
                                               float screenWidth, float screenHeight,

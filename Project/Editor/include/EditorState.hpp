@@ -41,8 +41,8 @@ public:
     // Entity selection management
     void SetSelectedEntity(Entity entity);
     void ClearSelection();
-    Entity GetSelectedEntity() const { return m_SelectedEntity; }
-    bool HasSelectedEntity() const { return m_SelectedEntity != INVALID_ENTITY; }
+    Entity GetSelectedEntity() const { return selectedEntity; }
+    bool HasSelectedEntity() const { return selectedEntity != INVALID_ENTITY; }
     
 private:
     EditorState() = default;
@@ -51,5 +51,5 @@ private:
     EditorState& operator=(const EditorState&) = delete;
 
     // Only store entity selection, game state is managed by Engine
-    Entity m_SelectedEntity = INVALID_ENTITY;
+    Entity selectedEntity = INVALID_ENTITY;
 };

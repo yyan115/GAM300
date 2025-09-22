@@ -1,5 +1,5 @@
 /*********************************************************************************
-* @File			Vector3.h 
+* @File			Vector3.hpp
 * @Author		Ernest Ho, h.yonghengernest@digipen.edu
 * @Co-Author	-
 * @Date			3/9/2025
@@ -13,6 +13,7 @@
 #pragma once
 
 #include "pch.h"
+#include "Reflection/ReflectionBase.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -31,6 +32,8 @@
 
 struct ENGINE_API Vector3D
 {
+	REFL_SERIALIZABLE
+
 	float x, y, z;
 
 	// Constructs
@@ -78,17 +81,17 @@ struct ENGINE_API Vector3D
 	bool operator!=(const Vector3D&) const;
 
 	// Math functions
-	float dot(const Vector3D&) const;
-	Vector3D cross(const Vector3D&) const;
+	float Dot(const Vector3D&) const;
+	Vector3D Cross(const Vector3D&) const;
 
-	float length_sq() const;
-	float length() const;
+	float LengthSq() const;
+	float Length() const;
 
-	Vector3D normalized() const;
-	Vector3D& normalize();
+	Vector3D Normalized() const;
+	Vector3D& Normalize();
 
-	Vector3D project_onto(const Vector3D&) const;
-	Vector3D reflect(const Vector3D& normalized) const;
+	Vector3D ProjectOnto(const Vector3D&) const;
+	Vector3D Reflect(const Vector3D& Normalized) const;
 
 	static Vector3D Lerp(const Vector3D& a, const Vector3D& b, float t);
 

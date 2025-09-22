@@ -19,12 +19,14 @@ struct Character {
 
 class Font : public IAsset {
 public:
-	Font(unsigned int defaultFontSize = 48);
+	ENGINE_API Font(unsigned int fontSize = 48);
 	~Font();
 
-	bool LoadAsset(const std::string& path) override;
+	std::string CompileToResource(const std::string& assetPath) override;
 	void Cleanup();
-	bool LoadFont(const std::string& path, unsigned int fontSize);
+	//bool LoadFont(const std::string& path, unsigned int fontSize);
+	bool LoadResource(const std::string& assetPath, unsigned int newFontSize);
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	void SetFontSize(unsigned int newSize);
 	unsigned int GetFontSize() const { return fontSize; }
@@ -49,5 +51,6 @@ private:
 	mutable std::unique_ptr<VBO> textVBO;
 	mutable bool vaoSetupNeeded;
 	unsigned int fontSize;
-	std::string fontPath;
+	std::string fontAssetPath;
 };
+

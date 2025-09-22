@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include "ECS/System.hpp"
-#include "Math/Matrix4x4.h"
+#include "Math/Matrix4x4.hpp"
 #include "TransformComponent.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
 

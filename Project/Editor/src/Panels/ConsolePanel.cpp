@@ -17,10 +17,10 @@ void ConsolePanel::OnImGuiRender() {
     
     if (ImGui::Begin(name.c_str(), &isOpen)) {
         // Filter checkboxes
-        ImGui::Checkbox("Info", &m_ShowInfo); ImGui::SameLine();
-        ImGui::Checkbox("Warnings", &m_ShowWarnings); ImGui::SameLine();
-        ImGui::Checkbox("Errors", &m_ShowErrors); ImGui::SameLine();
-        ImGui::Checkbox("Auto Scroll", &m_AutoScroll);
+        ImGui::Checkbox("Info", &showInfo); ImGui::SameLine();
+        ImGui::Checkbox("Warnings", &showWarnings); ImGui::SameLine();
+        ImGui::Checkbox("Errors", &showErrors); ImGui::SameLine();
+        ImGui::Checkbox("Auto Scroll", &autoScroll);
 
         ImGui::SameLine();
         if (ImGui::Button("Clear")) {
@@ -34,21 +34,21 @@ void ConsolePanel::OnImGuiRender() {
         ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         // Display log entries
-        for (const auto& entry : m_LogEntries) {
+        for (const auto& entry : logEntries) {
             bool show = false;
             ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // Default white
 
             switch (entry.level) {
                 case 0: // Info/Debug/Trace
-                    show = m_ShowInfo;
+                    show = showInfo;
                     color = ImVec4(0.8f, 0.8f, 0.8f, 1.0f); // Light gray
                     break;
                 case 1: // Warning
-                    show = m_ShowWarnings;
+                    show = showWarnings;
                     color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
                     break;
                 case 2: // Error/Critical
-                    show = m_ShowErrors;
+                    show = showErrors;
                     color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // Red
                     break;
             }
@@ -80,7 +80,7 @@ void ConsolePanel::OnImGuiRender() {
         }
 
         // Auto-scroll to bottom
-        if (m_AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+        if (autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
             ImGui::SetScrollHereY(1.0f);
         }
 
@@ -125,11 +125,11 @@ void ConsolePanel::DrainEngineLogQueue() {
         entry.level = ConvertEngineLogLevel(message.level);
         entry.timestamp = message.timestamp;
 
-        m_LogEntries.push_back(entry);
+        logEntries.push_back(entry);
 
         // Keep only the most recent entries
-        if (m_LogEntries.size() > static_cast<size_t>(m_MaxLogEntries)) {
-            m_LogEntries.erase(m_LogEntries.begin());
+        if (logEntries.size() > static_cast<size_t>(MAX_LOG_ENTRIES)) {
+            logEntries.erase(logEntries.begin());
         }
     }
 }
@@ -156,14 +156,14 @@ void ConsolePanel::AddLog(const std::string& message, int level) {
     entry.level = level;
     entry.timestamp = ImGui::GetTime();
 
-    m_LogEntries.push_back(entry);
+    logEntries.push_back(entry);
 
     // Keep only the most recent entries
-    if (m_LogEntries.size() > static_cast<size_t>(m_MaxLogEntries)) {
-        m_LogEntries.erase(m_LogEntries.begin());
+    if (logEntries.size() > static_cast<size_t>(MAX_LOG_ENTRIES)) {
+        logEntries.erase(logEntries.begin());
     }
 }
 
 void ConsolePanel::Clear() {
-    m_LogEntries.clear();
+    logEntries.clear();
 }

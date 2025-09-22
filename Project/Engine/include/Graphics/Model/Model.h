@@ -9,6 +9,7 @@
 #include <chrono>
 #include <algorithm>
 #include "Asset Manager/Asset.hpp"
+#include "../../Engine.h"
 
 class ENGINE_API Model : public IAsset {
 public:
@@ -16,13 +17,17 @@ public:
 	std::string directory;
 
 	//Model(const std::string& filePath);
-	bool LoadAsset(const std::string& path) override;
+	ENGINE_API std::string CompileToResource(const std::string& assetPath) override;
+	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile);
+	ENGINE_API bool LoadResource(const std::string& assetPath) override;
+	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	
 	void Draw(Shader& shader, const Camera& camera);
 
 private:
 	//void loadModel(const std::string& path);
-	void processNode(aiNode* node, const aiScene* scene);
-	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-	std::vector<std::shared_ptr<Texture>> loadMaterialTexture(aiMaterial* mat, aiTextureType type, std::string typeName);
+	void ProcessNode(aiNode* node, const aiScene* scene);
+	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+	std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
 
 };

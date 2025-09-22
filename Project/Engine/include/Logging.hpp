@@ -54,8 +54,8 @@ namespace EngineLogging {
         size_t Size() const;
 
     private:
-        mutable std::mutex m_Mutex;
-        std::queue<LogMessage> m_Queue;
+        mutable std::mutex mutex;
+        std::queue<LogMessage> queue;
         static constexpr size_t MAX_QUEUE_SIZE = 1000;
     };
 
