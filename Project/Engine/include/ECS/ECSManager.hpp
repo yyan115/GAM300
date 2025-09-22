@@ -19,6 +19,7 @@ public:
 	void Initialize();
 
 	Entity CreateEntity();
+	Entity CreateEntityWithGUID(const GUID_128& guid);
 
 	void DestroyEntity(Entity entity);
 

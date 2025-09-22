@@ -3,10 +3,10 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
-#include "GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
-#include "Asset Manager/FileUtilities.hpp"
+#include "Utilities/FileUtilities.hpp"
 
 class ResourceManager {
 public:

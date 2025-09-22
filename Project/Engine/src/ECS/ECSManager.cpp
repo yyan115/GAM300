@@ -1,10 +1,13 @@
 #include "pch.h"
-#include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "ECS/NameComponent.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
-#include "ECS/NameComponent.hpp"
+#include <Hierarchy/ParentComponent.hpp>
+#include <Hierarchy/ChildrenComponent.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -17,6 +20,8 @@ void ECSManager::Initialize() {
 	RegisterComponent<ModelRenderComponent>();
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<ParentComponent>();
+	RegisterComponent<ChildrenComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -44,10 +49,22 @@ void ECSManager::Initialize() {
 }
 
 Entity ECSManager::CreateEntity() {
+	// Register the entity with a new GUID
+	GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
+	GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+
+	return CreateEntityWithGUID(guid);
+}
+
+Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	Entity entity = entityManager->CreateEntity();
-	std::cout << "[ECSManager] Created entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
+	EntityGUIDRegistry::GetInstance().Register(entity, guid);
+	std::cout << "[ECSManager] Created entity " << entity << ". Total active entities : " << entityManager->GetActiveEntityCount() << std::endl;
 
 	// Add default components here (e.g. Name, Transform, etc.)
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
+	ecsManager.AddComponent<Transform>(entity, Transform());
 
 	return entity;
 }

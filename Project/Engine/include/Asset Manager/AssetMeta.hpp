@@ -1,5 +1,5 @@
 #pragma once
-#include "Asset Manager/GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include <string>
 #include <chrono>
 

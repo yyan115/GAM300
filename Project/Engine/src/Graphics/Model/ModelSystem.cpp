@@ -28,7 +28,7 @@ void ModelSystem::Update()
             gfxManager.SubmitModel(
                 modelComponent.model,
                 modelComponent.shader,
-                ecsManager.GetComponent<Transform>(entity).model
+                ecsManager.GetComponent<Transform>(entity).worldMatrix
             );
         }
     }

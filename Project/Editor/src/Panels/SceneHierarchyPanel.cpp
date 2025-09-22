@@ -2,6 +2,8 @@
 #include "imgui.h"
 #include "pch.h"
 #include "GUIManager.hpp"
+#include <Hierarchy/ChildrenComponent.hpp>
+#include <Hierarchy/ParentComponent.hpp>
 
 SceneHierarchyPanel::SceneHierarchyPanel() 
     : EditorPanel("Scene Hierarchy", true) {
@@ -25,26 +27,35 @@ void SceneHierarchyPanel::OnImGuiRender() {
             // Get the active ECS manager
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-            // Get all active entities
-            std::vector<Entity> entities = ecsManager.GetActiveEntities();
-
-            // Display each entity
-            for (Entity entity : entities) {
-                std::string entityName;
-
-                // Try to get the name from NameComponent
-                if (ecsManager.HasComponent<NameComponent>(entity)) {
-                    const NameComponent& nameComp = ecsManager.GetComponent<NameComponent>(entity);
-                    entityName = nameComp.name;
-                } else {
-                    // Fallback to "Entity [ID]" format
-                    entityName = "Entity " + std::to_string(entity);
+            // Draw entity nodes starting from root entities, in a depth-first manner.
+            for (const auto& entity : ecsManager.GetActiveEntities()) {
+                if (!ecsManager.HasComponent<ParentComponent>(entity)) {
+                    std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
+                    DrawEntityNode(entityName, entity, ecsManager.HasComponent<ChildrenComponent>(entity));
                 }
-
-                DrawEntityNode(entityName, entity);
             }
 
-            if (entities.empty()) {
+            //// Get all active entities
+            //std::vector<Entity> entities = ecsManager.GetActiveEntities();
+
+            //// Display each entity
+            //for (Entity entity : entities) {
+            //    std::string entityName;
+
+            //    // Try to get the name from NameComponent
+            //    if (ecsManager.HasComponent<NameComponent>(entity)) {
+            //        const NameComponent& nameComp = ecsManager.GetComponent<NameComponent>(entity);
+            //        entityName = nameComp.name;
+            //    } else {
+            //        // Fallback to "Entity [ID]" format
+            //        entityName = "Entity " + std::to_string(entity);
+            //    }
+
+            //    bool hasChildren = ecsManager.HasComponent<ChildrenComponent>(entity);
+            //    DrawEntityNode(entityName, entity, hasChildren);
+            //}
+
+            if (ecsManager.GetActiveEntities().empty()) {
                 ImGui::Text("No entities in scene");
             }
         }
@@ -146,8 +157,59 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         ImGui::EndPopup();
     }
 
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Drag source
+    if (ImGui::BeginDragDropSource()) {
+        ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entityId, sizeof(Entity));
+        ImGui::Text("Move %s", ecsManager.GetComponent<NameComponent>(entityId).name.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    // Drop target
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            Entity dragged = *(Entity*)payload->Data;
+            ReparentEntity(dragged, entityId); // your logic
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     if (opened && hasChildren) {
         // Child nodes would be drawn here in a real implementation
+        for (const auto& child : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
+            DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
+        }
+
         ImGui::TreePop();
     }
+}
+
+void SceneHierarchyPanel::ReparentEntity(Entity child, Entity parent) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecsManager.HasComponent<ParentComponent>(child)) {
+        ecsManager.GetComponent<ParentComponent>(child).parent = parent;
+    }
+    else {
+        ecsManager.AddComponent<ParentComponent>(child, ParentComponent{});
+        ecsManager.GetComponent<ParentComponent>(child).parent = parent;
+    }
+
+    if (ecsManager.HasComponent<ChildrenComponent>(parent)) {
+        ecsManager.GetComponent<ChildrenComponent>(parent).children.push_back(child);
+    }
+    else {
+        ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
+        ecsManager.GetComponent<ChildrenComponent>(parent).children.push_back(child);
+    }
+
+    // Calculate the child's new worldMatrix.
+    Transform& childTransform = ecsManager.GetComponent<Transform>(child);
+    Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
+    //Vector3D newLocalPos = childTransform.localPosition - parentTransform.localPosition;
+    //Vector3D newLocalRot = childTransform.localRotation - parentTransform.localRotation;
+    //Vector3D newLocalScale = childTransform.localScale / parentTransform.localScale;
+
+    ecsManager.transformSystem->SetWorldPosition(child, childTransform.localPosition);
+    ecsManager.transformSystem->SetWorldRotation(child, childTransform.localRotation);
+    ecsManager.transformSystem->SetWorldScale(child, childTransform.localScale);
 }

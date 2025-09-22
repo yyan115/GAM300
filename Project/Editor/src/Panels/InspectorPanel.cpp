@@ -122,27 +122,27 @@ void InspectorPanel::DrawTransformComponent(Entity entity) {
         ImGui::PushID("Transform");
 
         // Position
-        float position[3] = { transform.position.x, transform.position.y, transform.position.z };
+        float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
         ImGui::Text("Position");
         ImGui::SameLine();
         if (ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f")) {
-            TransformSystem::SetPosition(transform, { position[0], position[1], position[2] });
+            ecsManager.transformSystem->SetLocalPosition(entity, { position[0], position[1], position[2] });
         }
 
         // Rotation
-        float rotation[3] = { transform.rotation.x, transform.rotation.y, transform.rotation.z };
+        float rotation[3] = { transform.localRotation.x, transform.localRotation.y, transform.localRotation.z };
         ImGui::Text("Rotation");
         ImGui::SameLine();
         if (ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.1f")) {
-            TransformSystem::SetRotation(transform, { rotation[0], rotation[1], rotation[2] });
+            ecsManager.transformSystem->SetLocalRotation(entity, { rotation[0], rotation[1], rotation[2] });
         }
 
         // Scale
-        float scale[3] = { transform.scale.x, transform.scale.y, transform.scale.z };
+        float scale[3] = { transform.localScale.x, transform.localScale.y, transform.localScale.z };
         ImGui::Text("Scale");
         ImGui::SameLine();
         if (ImGui::DragFloat3("##Scale", scale, 0.1f, 0.001f, FLT_MAX, "%.3f")) {
-            TransformSystem::SetScale(transform, { scale[0], scale[1], scale[2] });
+            ecsManager.transformSystem->SetLocalScale(entity, { scale[0], scale[1], scale[2] });
         }
 
 

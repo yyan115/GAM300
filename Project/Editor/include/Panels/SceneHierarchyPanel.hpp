@@ -24,6 +24,7 @@ public:
 
 private:
     void DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren = false);
+    void ReparentEntity(Entity child, Entity parent);
 
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);

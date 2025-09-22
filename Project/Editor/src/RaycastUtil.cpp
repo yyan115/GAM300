@@ -104,7 +104,7 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
                 std::cout << "[RaycastUtil] Found entity " << entity << " with Transform component" << std::endl;
 
                 // Create AABB from the entity's transform
-                AABB entityAABB = CreateAABBFromTransform(transform.model);
+                AABB entityAABB = CreateAABBFromTransform(transform.worldMatrix);
 
                 std::cout << "[RaycastUtil] Entity " << entity << " AABB: min("
                           << entityAABB.min.x << ", " << entityAABB.min.y << ", " << entityAABB.min.z
@@ -148,10 +148,10 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
 
             // Convert Matrix4x4 to column-major float array for ImGuizmo (GLM format)
             // Matrix4x4 is row-major, ImGuizmo expects column-major
-            outMatrix[0]  = transform.model.m[0][0]; outMatrix[4]  = transform.model.m[0][1]; outMatrix[8]  = transform.model.m[0][2]; outMatrix[12] = transform.model.m[0][3];
-            outMatrix[1]  = transform.model.m[1][0]; outMatrix[5]  = transform.model.m[1][1]; outMatrix[9]  = transform.model.m[1][2]; outMatrix[13] = transform.model.m[1][3];
-            outMatrix[2]  = transform.model.m[2][0]; outMatrix[6]  = transform.model.m[2][1]; outMatrix[10] = transform.model.m[2][2]; outMatrix[14] = transform.model.m[2][3];
-            outMatrix[3]  = transform.model.m[3][0]; outMatrix[7]  = transform.model.m[3][1]; outMatrix[11] = transform.model.m[3][2]; outMatrix[15] = transform.model.m[3][3];
+            outMatrix[0]  = transform.worldMatrix.m[0][0]; outMatrix[4]  = transform.worldMatrix.m[0][1]; outMatrix[8]  = transform.worldMatrix.m[0][2]; outMatrix[12] = transform.worldMatrix.m[0][3];
+            outMatrix[1]  = transform.worldMatrix.m[1][0]; outMatrix[5]  = transform.worldMatrix.m[1][1]; outMatrix[9]  = transform.worldMatrix.m[1][2]; outMatrix[13] = transform.worldMatrix.m[1][3];
+            outMatrix[2]  = transform.worldMatrix.m[2][0]; outMatrix[6]  = transform.worldMatrix.m[2][1]; outMatrix[10] = transform.worldMatrix.m[2][2]; outMatrix[14] = transform.worldMatrix.m[2][3];
+            outMatrix[3]  = transform.worldMatrix.m[3][0]; outMatrix[7]  = transform.worldMatrix.m[3][1]; outMatrix[11] = transform.worldMatrix.m[3][2]; outMatrix[15] = transform.worldMatrix.m[3][3];
 
             return true;
         }
@@ -190,13 +190,16 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             newScale.z = sqrt(newMatrix.m[0][2]*newMatrix.m[0][2] + newMatrix.m[1][2]*newMatrix.m[1][2] + newMatrix.m[2][2]*newMatrix.m[2][2]);
 
             // Update all components to stay in sync
-            transform.position = newPosition;
-            transform.scale = newScale;  // Make sure scale is updated too
-            transform.model = newMatrix;
+            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+            ecsManager.transformSystem->SetWorldScale(entity, newScale);
 
-            // Update last known values to prevent TransformSystem from recalculating
-            transform.lastPosition = newPosition;
-            transform.lastScale = newScale;
+            //transform.position = newPosition;
+            //transform.scale = newScale;  // Make sure scale is updated too
+            //transform.worldMatrix = newMatrix;
+
+            //// Update last known values to prevent TransformSystem from recalculating
+            //transform.lastPosition = newPosition;
+            //transform.lastScale = newScale;
 
             return true;
         }
