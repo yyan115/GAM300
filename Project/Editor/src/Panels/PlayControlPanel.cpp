@@ -212,7 +212,7 @@ void PlayControlPanel::RenderTransformTools() {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f)); // Highlighted
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
     }
-    if (ImGui::Button(ICON_FA_SCALE_BALANCED " R", ImVec2(60.0f, toolButtonHeight))) { // Increased width
+    if (ImGui::Button(ICON_FA_UP_RIGHT_AND_DOWN_LEFT_FROM_CENTER " R", ImVec2(60.0f, toolButtonHeight))) { // Increased width
         // Toggle scale mode - if already in scale mode, deselect all tools
         if (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::SCALE) {
             hasToolSelected = false;
