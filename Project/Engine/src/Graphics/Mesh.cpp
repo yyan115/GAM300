@@ -98,7 +98,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	if (material)
 	{
 		//material->debugPrintProperties();
-		material->applyToShader(shader);
+		material->ApplyToShader(shader);
 	}
 	else
 	{
@@ -121,7 +121,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 			}
 
 			glActiveTexture(GL_TEXTURE0 + textureUnit);
-			textures[i]->Bind();
+			textures[i]->Bind(textureUnit);
 			shader.setInt(("material." + type + num).c_str(), textureUnit);
 			textureUnit++;
 		}

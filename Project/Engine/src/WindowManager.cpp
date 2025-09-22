@@ -12,32 +12,18 @@
 
 IPlatform* WindowManager::platform = nullptr;
 PlatformWindow WindowManager::ptrWindow = nullptr;
-GLint WindowManager::width;
-GLint WindowManager::height;
-GLint WindowManager::viewportWidth;
-GLint WindowManager::viewportHeight;
-const char* WindowManager::title;
-
-bool WindowManager::isFocused = true;
-bool WindowManager::isFullscreen = false;
-GLint WindowManager::windowedWidth = 1600;   // Default windowed size
-GLint WindowManager::windowedHeight = 900;  // Default windowed size
-GLint WindowManager::windowedPosX = 0;      // Default window position
-GLint WindowManager::windowedPosY = 0;      // Default window position
-
-double WindowManager::deltaTime = 0.0;
-double WindowManager::lastFrameTime = 0.0;
+// Static member variables removed - using RunTimeVar namespace instead
 
 
 bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) {
-    WindowManager::width = _width;
-    WindowManager::height = _height;
-    WindowManager::viewportWidth = _width;
-    WindowManager::viewportHeight = _height;
-    title = _title;
+    RunTimeVar::window.width = _width;
+    RunTimeVar::window.height = _height;
+    RunTimeVar::window.viewportWidth = _width;
+    RunTimeVar::window.viewportHeight = _height;
+    RunTimeVar::window.title = _title;
 
-    windowedWidth = _width;
-    windowedHeight = _height;
+    RunTimeVar::window.windowedWidth = _width;
+    RunTimeVar::window.windowedHeight = _height;
 
     // Create platform instance
     platform = CreatePlatform();
@@ -85,7 +71,7 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
 void WindowManager::ToggleFullscreen() {
     if (platform) {
         platform->ToggleFullscreen();
-        isFullscreen = !isFullscreen; // Toggle fullscreen state
+        RunTimeVar::window.isFullscreen = !RunTimeVar::window.isFullscreen; // Toggle fullscreen state
     }
 }
 
@@ -151,8 +137,8 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 #ifdef _DEBUG
     std::cout << "fbsize_cb getting called!!!" << std::endl;
 #endif
-    WindowManager::width = _width;
-    WindowManager::height = _height;
+    RunTimeVar::window.width = _width;
+    RunTimeVar::window.height = _height;
 
     glViewport(0, 0, _width, _height);
 
@@ -162,23 +148,23 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 
 GLint WindowManager::GetWindowWidth()
 {
-    return width;
+    return RunTimeVar::window.width;
 }
 
 GLint WindowManager::GetWindowHeight()
 {
-    return height;
+    return RunTimeVar::window.height;
 }
 
 GLint WindowManager::GetViewportWidth()
 {
     //std::cout << "viewportW: " << viewportWidth << ", normalW: " << width << "\n";
-    return viewportWidth;
+    return RunTimeVar::window.viewportWidth;
 }
 
 GLint WindowManager::GetViewportHeight()
 {
-    return viewportHeight;
+    return RunTimeVar::window.viewportHeight;
 }
 
 void WindowManager::SetWindowTitle(const char* _title) {
@@ -203,9 +189,11 @@ bool WindowManager::IsWindowMinimized() {
 }
 
 bool WindowManager::IsWindowFocused() {
-    return isFocused;
+    return RunTimeVar::window.isFocused;
 }
 
+// TODO: Fix or remove this function - not declared in header
+/*
 void WindowManager::updateDeltaTime() {
     const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
 
@@ -224,16 +212,16 @@ void WindowManager::updateDeltaTime() {
 
     // Update deltaTime
     currentTime = platform ? platform->GetTime() : 0.0;
-    deltaTime = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
+    RunTimeVar::deltaTime = currentTime - RunTimeVar::lastFrameTime;
+    RunTimeVar::lastFrameTime = currentTime;
     // Swap interval handled by platform internally
 }
 
 double WindowManager::getDeltaTime() {
-    return deltaTime;
+    return RunTimeVar::deltaTime;
 }
 double WindowManager::getFps() {
-    return deltaTime > 0.0 ? 1.0 / deltaTime : 0.0;
+    return RunTimeVar::deltaTime > 0.0 ? 1.0 / RunTimeVar::deltaTime : 0.0;
 }
 
 // Scene framebuffer functions
@@ -340,8 +328,11 @@ void WindowManager::RenderScene()
         std::cerr << "Exception in RenderScene: " << e.what() << std::endl;
     }
 }
+*/
 
-void WindowManager::RenderSceneForEditor() 
+// TODO: Fix or remove these editor functions - not declared in header and cause build issues
+/*
+void WindowManager::RenderSceneForEditor()
 {
     // Use default camera parameters for the original function
     RenderSceneForEditor(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
@@ -393,6 +384,7 @@ void WindowManager::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         std::cerr << "Exception in RenderSceneForEditor: " << e.what() << std::endl;
     }
 }
+*/
 
 // Platform abstraction methods
 void WindowManager::SwapBuffers() {

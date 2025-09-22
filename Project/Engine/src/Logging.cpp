@@ -88,40 +88,40 @@ namespace EngineLogging {
     void GuiLogQueue::Push(const LogMessage& message) {
         assert(!message.text.empty() && "Log message text cannot be empty");
         
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         
         // Remove old messages if queue is full
-        while (m_Queue.size() >= MAX_QUEUE_SIZE) {
-            assert(!m_Queue.empty() && "Queue should not be empty when size >= MAX_QUEUE_SIZE");
-            m_Queue.pop();
+        while (queue.size() >= MAX_QUEUE_SIZE) {
+            assert(!queue.empty() && "Queue should not be empty when size >= MAX_QUEUE_SIZE");
+            queue.pop();
         }
         
-        m_Queue.push(message);
-        assert(m_Queue.size() <= MAX_QUEUE_SIZE && "Queue size should not exceed maximum");
+        queue.push(message);
+        assert(queue.size() <= MAX_QUEUE_SIZE && "Queue size should not exceed maximum");
     }
 
     bool GuiLogQueue::TryPop(LogMessage& message) {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        if (m_Queue.empty()) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (queue.empty()) {
             return false;
         }
         
-        message = m_Queue.front();
+        message = queue.front();
         assert(!message.text.empty() && "Popped message should not be empty");
-        m_Queue.pop();
+        queue.pop();
         return true;
     }
 
     void GuiLogQueue::Clear() {
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         std::queue<LogMessage> empty;
-        m_Queue.swap(empty);
-        assert(m_Queue.empty() && "Queue should be empty after clear");
+        queue.swap(empty);
+        assert(queue.empty() && "Queue should be empty after clear");
     }
 
     size_t GuiLogQueue::Size() const {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        return m_Queue.size();
+        std::lock_guard<std::mutex> lock(mutex);
+        return queue.size();
     }
 
     // Logging system functions
@@ -160,7 +160,7 @@ namespace EngineLogging {
 #endif
 
             // GUI sink for editor (all platforms)
-            auto gui_sink = std::make_shared<GuiSink>(guiLogQueue);
+            auto gui_sink = std::make_shared<GuiSink>(s_GuiLogQueue);
             assert(gui_sink != nullptr && "GUI sink creation failed");
             gui_sink->set_level(spdlog::level::trace);
             gui_sink->set_pattern("%v");
@@ -217,7 +217,7 @@ namespace EngineLogging {
     void LogInternal(LogLevel level, const std::string& message) {
         assert(!message.empty() && "Log message cannot be empty");
 
-        if (!initialized || !logger) {
+        if (!s_Initialized || !s_Logger) {
             // Logger not initialized or already destroyed - fail silently
 #ifdef ANDROID
             // On Android, fallback to direct logcat
@@ -235,7 +235,7 @@ namespace EngineLogging {
             return;
         }
 
-        if (logger) {
+        if (s_Logger) {
             switch (level) {
                 case LogLevel::Trace:    s_Logger->trace(message); break;
                 case LogLevel::Debug:    s_Logger->debug(message); break;

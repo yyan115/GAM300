@@ -16,40 +16,40 @@ std::string Model::CompileToResource(const std::string& assetPath)
 	Assimp::Importer importer;
 	// The function expects a file path and several post-processing options as its second argument
 	// aiProcess_Triangulate tells Assimp that if the model does not (entirely) consist of triangles, it should transform all the model's primitive shapes to triangles first.
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
 		std::cout << "ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
-		return false;
+		return "";
 	}
 
-	directory = path.substr(0, path.find_last_of('/'));
+	directory = assetPath.substr(0, assetPath.find_last_of('/'));
 
 	// Recursive function
-	processNode(scene->mRootNode, scene);
+	ProcessNode(scene->mRootNode, scene);
 
-	return true;
+	return assetPath;
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene)
+void Model::ProcessNode(aiNode* node, const aiScene* scene)
 {
 	// Process each mesh in this node
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.emplace_back(processMesh(mesh, scene));
+		meshes.emplace_back(ProcessMesh(mesh, scene));
 	}
 
 	// Process children nodes
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		processNode(node->mChildren[i], scene);
+		ProcessNode(node->mChildren[i], scene);
 	}
 
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -153,29 +153,33 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         // Load textures and assign to material
 
         // Diffuse textures
-        std::vector<std::shared_ptr<Texture>> diffuseMaps = loadMaterialTexture(assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
+        std::vector<std::shared_ptr<Texture>> diffuseMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
         if (!diffuseMaps.empty()) {
-            material->SetTexture(TextureType::DIFFUSE, diffuseMaps[0]);
+            std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>("", diffuseMaps[0]);
+            material->SetTexture(TextureType::DIFFUSE, std::move(textureInfo));
         }
 
         // Specular textures
-        std::vector<std::shared_ptr<Texture>> specularMaps = loadMaterialTexture(assimpMaterial, aiTextureType_SPECULAR, "specular");
-        if (!specularMaps.empty()) 
+        std::vector<std::shared_ptr<Texture>> specularMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
+        if (!specularMaps.empty())
         {
-            material->SetTexture(TextureType::SPECULAR, specularMaps[0]);
+            std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>("", specularMaps[0]);
+            material->SetTexture(TextureType::SPECULAR, std::move(textureInfo));
         }
 
         // Normal maps
-        std::vector<std::shared_ptr<Texture>> normalMaps = loadMaterialTexture(assimpMaterial, aiTextureType_NORMALS, "normal");
-        if (!normalMaps.empty()) 
+        std::vector<std::shared_ptr<Texture>> normalMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+        if (!normalMaps.empty())
         {
-            material->SetTexture(TextureType::NORMAL, normalMaps[0]);
+            std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>("", normalMaps[0]);
+            material->SetTexture(TextureType::NORMAL, std::move(textureInfo));
         }
 
         // Height maps
-        std::vector<std::shared_ptr<Texture>> heightMaps = loadMaterialTexture(assimpMaterial, aiTextureType_HEIGHT, "height");
+        std::vector<std::shared_ptr<Texture>> heightMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height");
         if (!heightMaps.empty()) {
-            material->SetTexture(TextureType::HEIGHT, heightMaps[0]);
+            std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>("", heightMaps[0]);
+            material->SetTexture(TextureType::HEIGHT, std::move(textureInfo));
         }
 
         // Keep old texture list for backward compatibility
@@ -186,15 +190,15 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     // If no material was created, use a default one
     if (!material) 
     {
-        material = Material::createDefault();
+        material = Material::CreateDefault();
     }
 
     return Mesh(vertices, indices, material);
 }
 
-std::vector<std::shared_ptr<Texture>> Model::loadMaterialTexture(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName)
 {
-	typeName;
+	(void)typeName; (void)material;
 	std::vector<std::shared_ptr<Texture>> textures;
 	//TextureManager& textureManager = TextureManager::getInstance();
 
@@ -205,7 +209,7 @@ std::vector<std::shared_ptr<Texture>> Model::loadMaterialTexture(aiMaterial* mat
 		std::string texturePath = directory + '/' + str.C_Str();
 
 		// Use the asset manager
-		auto texture = AssetManager::GetInstance().GetTexture(texturePath, typeName, -1, GL_UNSIGNED_BYTE);
+		auto texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
 		//auto texture = textureManager.loadTexture(texturePath, typeName);
 		if (texture) 
 		{
@@ -463,7 +467,7 @@ bool Model::LoadResource(const std::string& assetPath)
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
 {
-    assetPath, currentMetaData;
+    (void)assetPath; (void)currentMetaData;
     return std::shared_ptr<AssetMeta>();
 }
 

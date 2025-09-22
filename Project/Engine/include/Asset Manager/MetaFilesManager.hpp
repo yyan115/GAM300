@@ -5,7 +5,7 @@
 
 class MetaFilesManager {
 public:
-	// ENGINE_API static GUID_128 GenerateMetaFile(const std::string& assetPath, const std::string& resourcePath);
+	ENGINE_API static GUID_128 GenerateMetaFile(const std::string& assetPath);
 
     ENGINE_API static bool MetaFileExists(const std::string& assetPath);
 
@@ -19,7 +19,7 @@ public:
 
     ENGINE_API static bool MetaFileUpdated(const std::string& assetPath);
 
-	// ENGINE_API static GUID_128 UpdateMetaFile(const std::string& assetPath);
+	ENGINE_API static GUID_128 UpdateMetaFile(const std::string& assetPath);
 
 	static void AddGUID128Mapping(const std::string& assetPath, const GUID_128& guid);
 

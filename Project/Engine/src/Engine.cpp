@@ -181,6 +181,8 @@ void Engine::StartDraw() {
 
 void Engine::Draw() {
     #ifdef ANDROID
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "Engine::Draw() called");
+
     // Ensure the EGL context is current
     if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current in Draw()");
@@ -221,11 +223,11 @@ void Engine::Draw() {
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
-    // --- Clear screen to grey for visibility ---
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    // --- Clear screen to light blue to match desktop ---
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // --- Triangle test (disabled) ---
+    // --- Triangle test (disabled for now) ---
     /*static GLuint vao = 0, vbo = 0, shaderProgram = 0;
     if (vao == 0) {
 #ifdef ANDROID
@@ -368,8 +370,8 @@ void main() {
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "Triangle rendered successfully");
     }
 #endif*/
-	SceneManager::GetInstance().DrawScene();
-	
+
+    SceneManager::GetInstance().DrawScene();
 }
 
 void Engine::EndDraw() {

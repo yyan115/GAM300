@@ -3,6 +3,9 @@
 #include <Scene/SceneManager.hpp>
 #include <Scene/SceneInstance.hpp>
 #include <filesystem>
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 SceneManager::~SceneManager() {
 	ExitScene();
@@ -11,7 +14,7 @@ SceneManager::~SceneManager() {
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
 	ECSRegistry::GetInstance().CreateECSManager("TestScene");
-	currentScene = std::make_unique<SceneInstance>("TestScene");
+	currentScene = std::make_unique<TestScene>();
 	currentScenePath = "TestScene";
 	currentScene->Initialize();
 }
@@ -29,7 +32,7 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 	}
 
 	// Create and initialize the new scene.
-	currentScene = std::make_unique<SceneInstance>(scenePath);
+	currentScene = std::make_unique<TestScene>();
 	currentScenePath = scenePath;
 
 	// Deserialize the new scene data.
@@ -46,6 +49,18 @@ void SceneManager::UpdateScene(double dt) {
 }
 
 void SceneManager::DrawScene() {
+#ifdef ANDROID
+	static int debugCount = 0;
+	if (debugCount % 60 == 0) { // Log every 60 frames
+		if (currentScene) {
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "SceneManager::DrawScene() - calling currentScene->Draw()");
+		} else {
+			__android_log_print(ANDROID_LOG_WARN, "GAM300", "SceneManager::DrawScene() - NO CURRENT SCENE SET!");
+		}
+	}
+	debugCount++;
+#endif
+
 	if (currentScene) {
 		currentScene->Draw();
 	}

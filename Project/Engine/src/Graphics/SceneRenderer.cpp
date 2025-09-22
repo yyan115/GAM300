@@ -158,10 +158,13 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.Render();
 
         // Draw light cubes using the static editor camera (not the game camera)
+        // TODO: Fix or remove this - SceneInstance class doesn't exist and DrawLightCubes method is undefined
+        /*
         SceneInstance* currentScene = static_cast<SceneInstance*>(SceneManager::GetInstance().GetCurrentScene());
         if (currentScene) {
             currentScene->DrawLightCubes(*editorCamera);
         }
+        */
 
         // End frame
         gfxManager.EndFrame();

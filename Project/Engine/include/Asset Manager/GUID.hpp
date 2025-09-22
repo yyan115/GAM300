@@ -1,10 +1,7 @@
 #pragma once
 #include <string>
-<<<<<<< Updated upstream
-=======
 #include <cstdint>
 #include "../Engine.h"  // For ENGINE_API macro
->>>>>>> Stashed changes
 
 // Asset GUIDs are written to .meta files as strings.
 using GUID_string = std::string;

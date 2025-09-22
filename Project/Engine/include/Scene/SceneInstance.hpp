@@ -1,14 +1,16 @@
 #pragma once
+#include "Scene.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Graphics/TextRendering/TextRenderingSystem.hpp"
 #include "Graphics/TextRendering/Font.hpp"
 
-class TestScene {
+class TestScene : public IScene {
 public:
-	void Initialize();
-	void Update();
-	void Exit();
+	void Initialize() override;
+	void Update(double dt) override;
+	void Draw() override;
+	void Exit() override;
 	void processInput();
 
 	void DrawLightCubes();

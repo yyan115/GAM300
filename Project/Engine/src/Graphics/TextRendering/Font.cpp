@@ -297,6 +297,6 @@ void Font::EnsureVAOSetup() const
 
 std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
 {
-    assetPath, currentMetaData;
+    (void)assetPath; (void)currentMetaData;
     return std::shared_ptr<AssetMeta>();
 }

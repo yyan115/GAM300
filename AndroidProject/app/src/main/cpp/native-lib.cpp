@@ -89,27 +89,24 @@ Java_com_gam300_game_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jo
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_gam300_game_MainActivity_renderFrame(JNIEnv* env, jobject /* this */) {
+    static int frameCount = 0;
     if (engineInitialized) {
-        //LOGI("Starting render frame");
+        if (frameCount % 60 == 0) { // Log every 60 frames (~1 second)
+            LOGI("renderFrame() called - frame %d", frameCount);
+        }
 
         // Update engine and game manager (same as game's main.cpp)
-        //LOGI("Calling Engine::Update()");
         Engine::Update();
-
-        //LOGI("Calling GameManager::Update()");
         GameManager::Update();
 
         // Draw frame (same as game's main.cpp)
-        //LOGI("Calling Engine::StartDraw()");
         Engine::StartDraw();
-
-        //LOGI("Calling Engine::Draw()");
         Engine::Draw();
-
-        //LOGI("Calling Engine::EndDraw()");
         Engine::EndDraw();
 
-        //LOGI("Render frame completed");
+        frameCount++;
+    } else {
+        LOGI("renderFrame() called but engine not initialized");
     }
 }
 

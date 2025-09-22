@@ -2,7 +2,9 @@
 #include "pch.h"
 #include <unordered_map>
 #include <WindowManager.hpp>
+#ifndef ANDROID
 #include <GLFW/glfw3.h>
+#endif
 #include "Input/Keys.h"
 
 namespace RunTimeVar {

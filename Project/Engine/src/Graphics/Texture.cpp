@@ -13,9 +13,9 @@
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 
-Texture::Texture() : ID(0), type(type), unit(0) {}
+Texture::Texture() : ID(0), type(""), unit(0) {}
 
-Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pixelType)
+Texture::Texture(const char* texType, GLint slot)
 {
 	// Assigns the type of the texture ot the texture object
 	type = texType;
@@ -25,8 +25,12 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pix
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
-	// Reads the image from a file and stores it in bytes
-	unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 0);
+	// TODO: Image loading should be done in LoadResource method
+	// unsigned char* bytes = stbi_load(image, &widthImg, &heightImg, &numColCh, 0);
+	unsigned char* bytes = nullptr;
+	widthImg = 1;
+	heightImg = 1;
+	numColCh = 4;
 
 	// Get the image format and set it accordingly.
 	GLenum format;
@@ -72,7 +76,7 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pix
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+	// glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1)); // TODO: Fix undefined texture variable
 #ifndef ANDROID
 	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
 #endif
@@ -82,21 +86,36 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pix
 	// glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, flatColor);
 
 	// Assigns the image to the OpenGL Texture object
+	GLenum pixelType = GL_UNSIGNED_BYTE; // Default pixel type
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, widthImg, heightImg, 0, format, pixelType, bytes);
 	// Generates MipMaps
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Deletes the image data as it is already in the OpenGL Texture object
-	stbi_image_free(bytes);
+	if (bytes) {
+		stbi_image_free(bytes);
+	}
 
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-bool Texture::LoadAsset(const std::string& path) {
-	path;
+bool Texture::LoadResource(const std::string& assetPath) {
+	(void)assetPath;
 
 	return true;
+}
+
+std::string Texture::CompileToResource(const std::string& assetPath) {
+	(void)assetPath;
+	// TODO: Implement texture compilation
+	return "";
+}
+
+std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) {
+	(void)assetPath; (void)currentMetaData;
+	// TODO: Implement meta file extension
+	return std::shared_ptr<AssetMeta>();
 }
 
 GLenum Texture::GetFormatFromExtension(const std::string& filepath) {
@@ -129,14 +148,15 @@ void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 	shader.setInt(uniform, unit);
 }
 
-void Texture::Bind()
+void Texture::Bind(GLint runtimeUnit)
 {
-	glActiveTexture(GL_TEXTURE0 + unit);
+	glActiveTexture(GL_TEXTURE0 + runtimeUnit);
 	glBindTexture(GL_TEXTURE_2D, ID);
 }
 
-void Texture::Unbind()
+void Texture::Unbind(GLint runtimeUnit)
 {
+	(void)runtimeUnit; // Parameter not used in this implementation
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
