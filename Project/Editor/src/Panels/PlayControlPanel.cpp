@@ -2,6 +2,7 @@
 #include "EditorState.hpp"
 #include "GUIManager.hpp"
 #include "imgui.h"
+#include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 PlayControlPanel::PlayControlPanel()
     : EditorPanel("Play Controls", true) {
@@ -57,7 +58,7 @@ void PlayControlPanel::OnImGuiRender() {
 
         // Play/Pause button
         if (editorState.IsEditMode() || editorState.IsPaused()) {
-            if (ImGui::Button("▶ Play", ImVec2(80.0f, 0.0f))) {
+            if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(80.0f, 0.0f))) {
                 editorState.Play();
                 // Auto-focus the Game panel when play is pressed
                 auto gamePanel = GUIManager::GetPanelManager().GetPanel("Game");
@@ -67,7 +68,7 @@ void PlayControlPanel::OnImGuiRender() {
                 }
             }
         } else {
-            if (ImGui::Button("|| Pause", ImVec2(80.0f, 0.0f))) {
+            if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(80.0f, 0.0f))) {
                 editorState.Pause();
             }
         }
@@ -75,7 +76,7 @@ void PlayControlPanel::OnImGuiRender() {
         ImGui::SameLine();
 
         // Stop button
-        if (ImGui::Button("■ Stop", ImVec2(70.0f, 0.0f))) {
+        if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(70.0f, 0.0f))) {
             editorState.Stop();
             // Auto-switch to Scene panel when stopping
             auto scenePanel = GUIManager::GetPanelManager().GetPanel("Scene");
