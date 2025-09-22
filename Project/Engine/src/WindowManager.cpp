@@ -8,36 +8,40 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
 
+#include "RunTimeVar.hpp"
+#include "TimeManager.hpp"
+
 #define UNREFERENCED_PARAMETER(P) (P)
 
 IPlatform* WindowManager::platform = nullptr;
 PlatformWindow WindowManager::ptrWindow = nullptr;
-GLint WindowManager::width;
-GLint WindowManager::height;
-GLint WindowManager::viewportWidth;
-GLint WindowManager::viewportHeight;
-const char* WindowManager::title;
+//GLint WindowManager::width;
+//GLint WindowManager::height;
+//GLint WindowManager::viewportWidth;
+//GLint WindowManager::viewportHeight;
+//const char* WindowManager::title;
 
-bool WindowManager::isFocused = true;
-bool WindowManager::isFullscreen = false;
-GLint WindowManager::windowedWidth = 1600;   // Default windowed size
-GLint WindowManager::windowedHeight = 900;  // Default windowed size
-GLint WindowManager::windowedPosX = 0;      // Default window position
-GLint WindowManager::windowedPosY = 0;      // Default window position
+//bool WindowManager::isFocused = true;
+//bool WindowManager::isFullscreen = false;
+//GLint WindowManager::windowedWidth = 1600;   // Default windowed size
+//GLint WindowManager::windowedHeight = 900;  // Default windowed size
+//GLint WindowManager::windowedPosX = 0;      // Default window position
+//GLint WindowManager::windowedPosY = 0;      // Default window position
+//
+//double WindowManager::deltaTime = 0.0;
 
-double WindowManager::deltaTime = 0.0;
-double WindowManager::lastFrameTime = 0.0;
+//double WindowManager::lastFrameTime = 0.0;
 
 
 bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) {
-    WindowManager::width = _width;
-    WindowManager::height = _height;
-    WindowManager::viewportWidth = _width;
-    WindowManager::viewportHeight = _height;
-    title = _title;
 
-    windowedWidth = _width;
-    windowedHeight = _height;
+    //WindowManager::width = _width;
+    //WindowManager::height = _height;
+    RunTimeVar::window.width = _width; 
+    RunTimeVar::window.height = _height;
+    RunTimeVar::window.viewportWidth = _width;
+    RunTimeVar::window.viewportHeight = _height;
+
 
     // Create platform instance
     platform = CreatePlatform();
@@ -83,7 +87,7 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
 void WindowManager::ToggleFullscreen() {
     if (platform) {
         platform->ToggleFullscreen();
-        isFullscreen = !isFullscreen; // Toggle fullscreen state
+        RunTimeVar::window.isFullscreen = !RunTimeVar::window.isFullscreen; // Toggle fullscreen state
     }
 }
 
@@ -149,8 +153,10 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 #ifdef _DEBUG
     std::cout << "fbsize_cb getting called!!!" << std::endl;
 #endif
-    WindowManager::width = _width;
-    WindowManager::height = _height;
+    //WindowManager::width = _width;
+    //WindowManager::height = _height;
+    RunTimeVar::window.width = _width;
+    RunTimeVar::window.height = _height;
 
     glViewport(0, 0, _width, _height);
 
@@ -160,29 +166,29 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 
 GLint WindowManager::GetWindowWidth()
 {
-    return width;
+    return RunTimeVar::window.width;
 }
 
 GLint WindowManager::GetWindowHeight()
 {
-    return height;
+    return RunTimeVar::window.height;
 }
 
 GLint WindowManager::GetViewportWidth()
 {
     //std::cout << "viewportW: " << viewportWidth << ", normalW: " << width << "\n";
-    return viewportWidth;
+    return RunTimeVar::window.viewportWidth;
 }
 
 GLint WindowManager::GetViewportHeight()
 {
-    return viewportHeight;
+    return RunTimeVar::window.viewportHeight;
 }
 
 void WindowManager::SetViewportDimensions(GLint width, GLint height)
 {
-    viewportWidth = width;
-    viewportHeight = height;
+    RunTimeVar::window.viewportWidth = width;
+    RunTimeVar::window.viewportHeight = height;
 }
 
 void WindowManager::SetWindowTitle(const char* _title) {
@@ -207,37 +213,7 @@ bool WindowManager::IsWindowMinimized() {
 }
 
 bool WindowManager::IsWindowFocused() {
-    return isFocused;
-}
-
-void WindowManager::updateDeltaTime() {
-    const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
-
-    double currentTime = platform ? platform->GetTime() : 0.0;
-    double frameTime = currentTime - lastFrameTime;
-
-    double remainingTime = targetDeltaTime - frameTime;
-
-    //Limit to 60 FPS?
-    //// Sleep only if we have at least 5 ms remaining
-    //if (remainingTime > 0.005) {
-    //    std::this_thread::sleep_for(std::chrono::milliseconds((int)((remainingTime - 0.001) * 1000)));
-    //}
-    //// Busy-wait the last few milliseconds - now handled by platform
-    //while ((platform->GetTime() - lastFrameTime) < targetDeltaTime) {}
-
-    // Update deltaTime
-    currentTime = platform ? platform->GetTime() : 0.0;
-    deltaTime = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
-    // Swap interval handled by platform internally
-}
-
-double WindowManager::getDeltaTime() {
-    return deltaTime;
-}
-double WindowManager::getFps() {
-    return deltaTime > 0.0 ? 1.0 / deltaTime : 0.0;
+    return RunTimeVar::window.isFocused;
 }
 
 // Platform abstraction methods

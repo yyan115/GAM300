@@ -12,6 +12,7 @@
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include <Scene/SceneManager.hpp>
+#include "TimeManager.hpp"
 #include <Sound/AudioManager.hpp>
 
 namespace TEMP {
@@ -292,7 +293,7 @@ This prevents requesting descriptors for reference types (e.g. float&).
 void Engine::Update() {
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
-		SceneManager::GetInstance().UpdateScene(WindowManager::getDeltaTime()); // REPLACE WITH DT LATER
+        SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 
 
 		// Test Audio

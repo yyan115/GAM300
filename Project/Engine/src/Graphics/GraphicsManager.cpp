@@ -90,6 +90,10 @@ void GraphicsManager::Render()
 		{
 			RenderText(*textItem);
 		}
+		else if (const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get()))
+		{
+			RenderDebugDraw(*debugItem);
+		}
 	}
 }
 
@@ -166,14 +170,18 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("view", view);
 
 		// Get window dimensions with safety checks
-		int windowWidth = WindowManager::GetWindowWidth();
-		int windowHeight = WindowManager::GetWindowHeight();
+		//int windowWidth = WindowManager::GetWindowWidth();
+		//int windowHeight = WindowManager::GetWindowHeight();
 
 		// Prevent division by zero and ensure minimum dimensions
-		if (windowWidth <= 0) windowWidth = 1;
-		if (windowHeight <= 0) windowHeight = 1;
+		//if (windowWidth <= 0) windowWidth = 1;
+		//if (windowHeight <= 0) windowHeight = 1;
 
-		float aspectRatio = (float)windowWidth / (float)windowHeight;
+		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
+		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
+
+
+		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
@@ -313,6 +321,88 @@ void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& posit
 
 	shader.setMat4("projection", projection);
 	shader.setMat4("model", model);
+}
+
+void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
+{
+	if (!item.isVisible || !item.shader || item.drawCommands.empty()) {
+		return;
+	}
+	// Enable wireframe mode for debug rendering
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDisable(GL_DEPTH_TEST);
+	// Activate shader
+	item.shader->Activate();
+	// Render each draw command
+	for (const auto& drawCommand : item.drawCommands)
+	{
+		VAO* currentVAO = nullptr;
+		unsigned int indexCount = 0;
+		// Select appropriate geometry
+		switch (drawCommand.type) {
+		case DebugDrawType::CUBE:
+			currentVAO = item.cubeVAO;
+			indexCount = item.cubeIndexCount;
+			break;
+		case DebugDrawType::SPHERE:
+			currentVAO = item.sphereVAO;
+			indexCount = item.sphereIndexCount;
+			break;
+		case DebugDrawType::LINE:
+			currentVAO = item.lineVAO;
+			indexCount = 2;
+			break;
+		case DebugDrawType::MESH_WIREFRAME:
+		{
+			if (drawCommand.meshModel) {
+				// Create transform matrix
+				glm::mat4 transform = glm::mat4(1.0f);
+				transform = glm::translate(transform, drawCommand.position);
+				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.x), glm::vec3(1, 0, 0));
+				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.y), glm::vec3(0, 1, 0));
+				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.z), glm::vec3(0, 0, 1));
+				transform = glm::scale(transform, drawCommand.scale);
+
+				// Set up matrices and uniforms
+				SetupMatrices(*item.shader, transform);
+				item.shader->setVec3("debugColor", drawCommand.color);
+
+				// Draw the model in wireframe mode (wireframe is already enabled above)
+				drawCommand.meshModel->Draw(*item.shader, *currentCamera);
+				continue; // Skip the regular VAO rendering below
+			}
+			break;
+		}
+		default:
+			continue;
+		}
+		if (!currentVAO) continue;
+		// Create transform matrix
+		glm::mat4 transform = glm::mat4(1.0f);
+		transform = glm::translate(transform, drawCommand.position);
+		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.x), glm::vec3(1, 0, 0));
+		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.y), glm::vec3(0, 1, 0));
+		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.z), glm::vec3(0, 0, 1));
+		transform = glm::scale(transform, drawCommand.scale);
+		// Set up matrices and uniforms
+		SetupMatrices(*item.shader, transform);
+		item.shader->setVec3("debugColor", drawCommand.color);
+		// Bind VAO and render
+		currentVAO->Bind();
+		if (drawCommand.type == DebugDrawType::LINE)
+		{
+			glLineWidth(drawCommand.lineWidth);
+			glDrawArrays(GL_LINES, 0, indexCount);
+		}
+		else
+		{
+			glDrawElements(GL_LINES, indexCount, GL_UNSIGNED_INT, 0);
+		}
+		currentVAO->Unbind();
+	}
+	// Restore render state
+	glEnable(GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)

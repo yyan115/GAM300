@@ -4,6 +4,8 @@
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include <Asset Manager/AssetManager.hpp>
+#include "TimeManager.hpp"
 #include <Asset Manager/ResourceManager.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
@@ -14,8 +16,8 @@ void SceneInstance::Initialize() {
 	
 	// Initialize GraphicsManager first
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-	gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
-
+	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
+	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
@@ -43,6 +45,7 @@ void SceneInstance::Initialize() {
 	// GRAPHICS TEST CODE
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
+	ecsManager.debugDrawSystem->Initialise();
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
@@ -80,7 +83,7 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	processInput((float)WindowManager::getDeltaTime());
+	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 	mainECS.transformSystem->update();
@@ -108,7 +111,18 @@ void SceneInstance::Draw() {
 	{
 		mainECS.textSystem->Update();
 	}
+	// Test debug drawing
+	//DebugDrawSystem::DrawCube(glm::vec3(0, 1, 0), glm::vec3(1, 1, 1), glm::vec3(1, 0, 0)); // Red cube above origin
+	//DebugDrawSystem::DrawSphere(glm::vec3(2, 0, 0), 1.0f, glm::vec3(0, 1, 0)); // Green sphere to the right
+	//DebugDrawSystem::DrawLine(glm::vec3(0, 0, 0), glm::vec3(3, 3, 3), glm::vec3(0, 0, 1)); // Blue line diagonal
+	//auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
+	//DebugDrawSystem::DrawMeshWireframe(backpackModel, glm::vec3(-2, 0, 0), glm::vec3(1, 1, 0), 0.0f); 
 
+	// Update debug draw system to submit to graphics manager
+	if (mainECS.debugDrawSystem)
+	{
+		mainECS.debugDrawSystem->Update();
+	}
 	gfxManager.Render();
 
 	// 5. Draw light cubes manually (temporary - you can make this a system later)
@@ -180,7 +194,8 @@ void SceneInstance::DrawLightCubes()
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(camera.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 
@@ -212,7 +227,8 @@ void SceneInstance::DrawLightCubes(const Camera& cameraOverride)
 		glm::mat4 view = cameraOverride.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(
 			glm::radians(cameraOverride.Zoom),
-			(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
+			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
 			0.1f, 100.0f
 		);
 
