@@ -104,43 +104,81 @@ void DebugDrawSystem::CreateSphereGeometry()
     std::vector<glm::vec3> vertices;
     std::vector<GLuint> indices;
 
-    const int segments = 16;
-    const int rings = 8;
+    const int subdivisions = 2; // Adjust for more/less detail (0-4 recommended)
 
-    // Generate sphere wireframe
-    for (int ring = 0; ring <= rings; ++ring) 
-    {
-        float phi = glm::pi<float>() * ring / rings;
-        for (int segment = 0; segment <= segments; ++segment) 
-        {
-            float theta = 2.0f * glm::pi<float>() * segment / segments;
+    // Start with icosahedron vertices
+    const float t = (1.0f + sqrt(5.0f)) / 2.0f; // Golden ratio
+    const float scale = 0.5f / sqrt(1.0f + t * t); // Normalize to radius 0.5
 
-            float x = sin(phi) * cos(theta);
-            float y = cos(phi);
-            float z = sin(phi) * sin(theta);
+    // 12 vertices of icosahedron
+    std::vector<glm::vec3> icosahedronVertices = {
+        {-1, t, 0}, {1, t, 0}, {-1, -t, 0}, {1, -t, 0},
+        {0, -1, t}, {0, 1, t}, {0, -1, -t}, {0, 1, -t},
+        {t, 0, -1}, {t, 0, 1}, {-t, 0, -1}, {-t, 0, 1}
+    };
 
-            vertices.push_back(glm::vec3(x, y, z) * 0.5f);
+    // Normalize vertices to sphere
+    for (auto& vertex : icosahedronVertices) {
+        vertex = glm::normalize(vertex) * scale;
+    }
+
+    // 20 triangular faces of icosahedron
+    std::vector<std::array<int, 3>> icosahedronFaces = {
+        {0, 11, 5}, {0, 5, 1}, {0, 1, 7}, {0, 7, 10}, {0, 10, 11},
+        {1, 5, 9}, {5, 11, 4}, {11, 10, 2}, {10, 7, 6}, {7, 1, 8},
+        {3, 9, 4}, {3, 4, 2}, {3, 2, 6}, {3, 6, 8}, {3, 8, 9},
+        {4, 9, 5}, {2, 4, 11}, {6, 2, 10}, {8, 6, 7}, {9, 8, 1}
+    };
+
+    vertices = icosahedronVertices;
+
+    // Subdivide faces
+    for (int sub = 0; sub < subdivisions; ++sub) {
+        std::vector<std::array<int, 3>> newFaces;
+        std::map<std::pair<int, int>, int> midpointCache;
+
+        auto getMidpoint = [&](int i1, int i2) -> int {
+            auto key = std::make_pair(std::min(i1, i2), std::max(i1, i2));
+            auto it = midpointCache.find(key);
+            if (it != midpointCache.end()) {
+                return it->second;
+            }
+
+            glm::vec3 midpoint = glm::normalize(vertices[i1] + vertices[i2]) * scale;
+            vertices.push_back(midpoint);
+            int index = vertices.size() - 1;
+            midpointCache[key] = index;
+            return index;
+            };
+
+        for (const auto& face : icosahedronFaces) {
+            int mid1 = getMidpoint(face[0], face[1]);
+            int mid2 = getMidpoint(face[1], face[2]);
+            int mid3 = getMidpoint(face[2], face[0]);
+
+            newFaces.push_back({ face[0], mid1, mid3 });
+            newFaces.push_back({ face[1], mid2, mid1 });
+            newFaces.push_back({ face[2], mid3, mid2 });
+            newFaces.push_back({ mid1, mid2, mid3 });
+        }
+
+        icosahedronFaces = newFaces;
+    }
+
+    // Create wireframe indices from faces
+    std::set<std::pair<int, int>> edgeSet;
+    for (const auto& face : icosahedronFaces) {
+        for (int i = 0; i < 3; ++i) {
+            int v1 = face[i];
+            int v2 = face[(i + 1) % 3];
+            edgeSet.insert({ std::min(v1, v2), std::max(v1, v2) });
         }
     }
 
-    // Generate indices for wireframe
-    for (int ring = 0; ring < rings; ++ring) 
-    {
-        for (int segment = 0; segment < segments; ++segment) 
-        {
-            int current = ring * (segments + 1) + segment;
-            int next = current + segments + 1;
-
-            // Horizontal lines
-            indices.push_back(current);
-            indices.push_back(current + 1);
-
-            // Vertical lines
-            if (ring < rings - 1) {
-                indices.push_back(current);
-                indices.push_back(next);
-            }
-        }
+    // Convert edges to line indices
+    for (const auto& edge : edgeSet) {
+        indices.push_back(edge.first);
+        indices.push_back(edge.second);
     }
 
     sphereGeometry.vao = std::make_unique<VAO>();
@@ -150,6 +188,7 @@ void DebugDrawSystem::CreateSphereGeometry()
     sphereGeometry.vao->Bind();
     sphereGeometry.vbo->UpdateData(vertices.data(), vertices.size() * sizeof(glm::vec3));
     sphereGeometry.ebo->Bind();
+
     sphereGeometry.vao->LinkAttrib(*sphereGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
     sphereGeometry.indexCount = indices.size();
