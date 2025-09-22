@@ -1,19 +1,24 @@
 #pragma once
-#include "Scene.hpp"
-#include "Graphics/GraphicsManager.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Graphics/TextRendering/TextRenderingSystem.hpp"
 #include "Graphics/TextRendering/Font.hpp"
+#include <Scene/Scene.hpp>
+#include <Graphics/GraphicsManager.hpp>
 
-class TestScene : public IScene {
+class SceneInstance : public IScene {
 public:
+	SceneInstance() = default;
+	SceneInstance(const std::string& path) : IScene(path) {}
+	~SceneInstance() override = default;
+
 	void Initialize() override;
 	void Update(double dt) override;
 	void Draw() override;
 	void Exit() override;
-	void processInput();
+	void processInput(float deltaTime); // temp function
 
 	void DrawLightCubes();
+	void DrawLightCubes(const Camera& cameraOverride);
 
 	const unsigned int SCR_WIDTH = 800;
 	const unsigned int SCR_HEIGHT = 600;
@@ -23,9 +28,6 @@ public:
 	float lastX = SCR_WIDTH / 2.0f;
 	float lastY = SCR_HEIGHT / 2.0f;
 	bool firstMouse = true;
-
-	float deltaTime = 0.0f;
-	float lastFrame = 0.0f;
 
 	std::vector<Vertex> lightVertices = {
 		// Back face (4 vertices: 0-3)
