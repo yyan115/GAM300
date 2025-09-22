@@ -45,8 +45,11 @@ public:
     double GetTime() override;
     
     bool InitializeGraphics() override;
-    void MakeContextCurrent() override;
-    
+    bool MakeContextCurrent() override;
+
+    // Asset management
+    std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) override;
+
     void* GetNativeWindow() override;
     
     // Desktop-specific getters

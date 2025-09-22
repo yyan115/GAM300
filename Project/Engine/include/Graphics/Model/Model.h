@@ -11,7 +11,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../../Engine.h"
 
-class Model : public IAsset {
+class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;

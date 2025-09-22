@@ -12,9 +12,10 @@ public:
 	std::shared_ptr<Model> model;
 	std::shared_ptr<Shader> shader;
 	glm::mat4 transform;
+	bool isVisible = true;
 
-	ModelRenderComponent(std::shared_ptr<Model> m, std::shared_ptr<Shader> s) 
-		: model(std::move(m)), shader(std::move(s)), transform(){}
+	ModelRenderComponent(std::shared_ptr<Model> m, std::shared_ptr<Shader> s)
+		: model(std::move(m)), shader(std::move(s)), transform(), isVisible(true) {}
 	ModelRenderComponent() = default;
 	~ModelRenderComponent() = default;
 

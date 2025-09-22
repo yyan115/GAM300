@@ -4,6 +4,15 @@
 #include <iostream>
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+// Forward declaration for get_file_contents
+std::string get_file_contents(const char* filename);
 
 std::string Model::CompileToResource(const std::string& assetPath)
 {
@@ -94,6 +103,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
     // Create material from Assimp material
     std::shared_ptr<Material> material = nullptr;
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Processing mesh material - mMaterialIndex=%d", mesh->mMaterialIndex);
+#endif
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
@@ -102,6 +114,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         aiString materialName;
         assimpMaterial->Get(AI_MATKEY_NAME, materialName);
         material = std::make_shared<Material>(materialName.C_Str());
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Created material from Assimp: %s, pointer=%p", materialName.C_Str(), material.get());
+#endif
 
         // Load material properties
         aiColor3D color;
@@ -178,11 +193,20 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     }
 
     // If no material was created, use a default one
-    if (!material) 
+    if (!material)
     {
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] No material found, creating default material");
+#endif
         material = Material::CreateDefault();
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Created default material, pointer=%p", material.get());
+#endif
     }
 
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Creating mesh with material pointer=%p", material.get());
+#endif
     return Mesh(vertices, indices, material);
 }
 
@@ -411,7 +435,53 @@ bool Model::LoadResource(const std::string& assetPath)
         return true;
     }
 
-    return false;
+    // Fallback: If .mesh file doesn't exist, try to load from original .obj file
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_WARN, "GAM300", "[MODEL] .mesh file not found: %s, attempting to load from .obj", resourcePath.c_str());
+#endif
+    std::cerr << "[MODEL] .mesh file not found: " << resourcePath << ", attempting to load from .obj" << std::endl;
+
+    // Try to load from original asset file using Assimp
+    Assimp::Importer importer;
+
+    // Check if we need to get file contents for Android
+    const aiScene* scene = nullptr;
+#ifdef ANDROID
+    try {
+        std::string fileContents = get_file_contents(assetPath.c_str());
+        // Use Assimp's ReadFileFromMemory for Android
+        scene = importer.ReadFileFromMemory(fileContents.data(), fileContents.size(),
+                                          aiProcess_Triangulate | aiProcess_FlipUVs,
+                                          assetPathFS.extension().string().c_str());
+    } catch (const std::exception& e) {
+        std::cerr << "[MODEL] Exception while loading file contents: " << e.what() << std::endl;
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Exception while loading file contents: %s", e.what());
+        return false;
+    }
+#else
+    scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
+#endif
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        std::cerr << "[MODEL] ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] ERROR:ASSIMP:: %s", importer.GetErrorString());
+#endif
+        return false;
+    }
+
+    // Set directory for texture loading
+    directory = assetPathFS.parent_path().generic_string();
+
+    // Process the loaded scene
+    ProcessNode(scene->mRootNode, scene);
+
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully loaded model from .obj: %s", assetPath.c_str());
+#endif
+    std::cout << "[MODEL] Successfully loaded model from .obj: " << assetPath << std::endl;
+
+    return true;
 }
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
@@ -422,8 +492,56 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
 
 void Model::Draw(Shader& shader, const Camera& camera)
 {
-	for (auto& mesh : meshes)
-	{
-		mesh.Draw(shader, camera);
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
+
+	// Ensure OpenGL context is current for Android
+	auto platform = WindowManager::GetPlatform();
+	if (platform) {
+		if (!platform->MakeContextCurrent()) {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to make OpenGL context current for model drawing");
+			return;
+		}
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");
 	}
+
+	// Validate shader
+	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Invalid shader program ID: %u", shader.ID);
+		return;
+	}
+
+	// Check if meshes vector is empty
+	if (meshes.empty()) {
+		__android_log_print(ANDROID_LOG_WARN, "GAM300", "[MODEL] No meshes to draw");
+		return;
+	}
+#endif
+
+	for (size_t i = 0; i < meshes.size(); ++i)
+	{
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu - vertices=%zu, indices=%zu", i+1, meshes.size(), meshes[i].vertices.size(), meshes[i].indices.size());
+
+		// Validate mesh before drawing
+		if (meshes[i].vertices.empty()) {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no vertices, skipping", i+1);
+			continue;
+		}
+		if (meshes[i].indices.empty()) {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no indices, skipping", i+1);
+			continue;
+		}
+#endif
+
+		meshes[i].Draw(shader, camera);
+
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu", i+1, meshes.size());
+#endif
+	}
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw completed successfully");
+#endif
 }

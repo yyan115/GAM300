@@ -9,6 +9,10 @@
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
 	
@@ -106,16 +110,40 @@ void SceneInstance::Draw() {
 	}
 	if (mainECS.textSystem)
 	{
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+#endif
 		mainECS.textSystem->Update();
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+#endif
 	}
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
+#endif
 	gfxManager.Render();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.Render() completed");
+#endif
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call DrawLightCubes()");
+#endif
 	// 5. Draw light cubes manually (temporary - you can make this a system later)
 	DrawLightCubes();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
+#endif
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");
+#endif
 	// 6. End frame
 	gfxManager.EndFrame();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
+#endif
 }
 
 void SceneInstance::Exit() {
@@ -161,14 +189,37 @@ void SceneInstance::processInput(float deltaTime)
 	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void SceneInstance::DrawLightCubes() 
+void SceneInstance::DrawLightCubes()
 {
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - checking lightShader");
+#endif
+
+	// Check if lightShader is valid (asset loading might have failed on Android)
+	if (!lightShader) {
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "DrawLightCubes() - lightShader is null, skipping");
+#endif
+		return;
+	}
+
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - lightShader is valid");
+#endif
+
 	// Get light positions from LightManager instead of renderSystem
 	LightManager& lightManager = LightManager::getInstance();
 	const auto& pointLights = lightManager.getPointLights();
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - about to loop through %zu lights", pointLights.size());
+#endif
+
 	// Draw light cubes at point light positions
 	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - processing light %zu", i);
+#endif
 		lightShader->Activate();
 
 		// Set up matrices for light cube

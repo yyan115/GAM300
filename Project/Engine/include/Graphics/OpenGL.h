@@ -6,6 +6,8 @@
     #include <GLES3/gl3.h>
     #include <GLES3/gl3ext.h>
     #include <EGL/egl.h>
+
+    // OpenGL ES 3.0 has VAO functions as core, no mapping needed
 #else
     // Desktop uses OpenGL with GLAD
     #include <glad/glad.h>

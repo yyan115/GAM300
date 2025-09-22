@@ -88,7 +88,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     std::filesystem::path fullPathObj(fullPath);
     try {
         if (std::filesystem::exists(fullPathObj) && std::filesystem::is_directory(fullPathObj)) {
-            // Directory created/modified — refresh UI
+            // Directory created/modified ï¿½ refresh UI
             QueueRefresh();
             return;
         }
@@ -279,7 +279,11 @@ void AssetBrowserPanel::RenderToolbar() {
     // Search and filter bar
     ImGui::SetNextItemWidth(200.0f);
     char searchBuffer[256];
+#ifdef _WIN32
     strncpy_s(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#else
+    strncpy(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#endif
     searchBuffer[sizeof(searchBuffer) - 1] = '\0';
 
     if (ImGui::InputTextWithHint("##Search", "Search assets...", searchBuffer, sizeof(searchBuffer))) {

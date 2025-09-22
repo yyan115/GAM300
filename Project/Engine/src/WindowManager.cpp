@@ -58,8 +58,10 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
         return false;
     }
 
-    // Make context current
+#ifndef ANDROID
+    // Make context current (Android will do this later when surface is set)
     platform->MakeContextCurrent();
+#endif
 
     // Get platform window handle for compatibility
     ptrWindow = static_cast<PlatformWindow>(platform->GetNativeWindow());
@@ -251,4 +253,8 @@ void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
     }
+}
+
+IPlatform* WindowManager::GetPlatform() {
+    return platform;
 }

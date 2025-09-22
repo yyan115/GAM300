@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(adb shell am start:*)",
+      "Bash(cmake:*)",
+      "Bash(chmod:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(./AndroidProject/gradlew:*)",
+      "Bash(adb logcat:*)",
+      "Bash(adb shell am force-stop:*)",
+      "Bash(objdump:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

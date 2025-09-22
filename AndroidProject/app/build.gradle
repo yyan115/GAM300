@@ -47,11 +47,41 @@ android {
     }
 }
 
+// Task to build the Engine library before Android native build
+task buildEngine(type: Exec) {
+    description 'Build the GAM300 Engine library for Android'
+    group 'build'
+
+    // Set working directory to the main project
+    workingDir = file('../../Project')
+
+    // Build the engine using cmake
+    commandLine 'cmake', '--build', 'Build/android-debug', '--config', 'Debug'
+
+    // Only run if build directory exists (engine has been configured)
+    onlyIf {
+        file('../../Project/Build/android-debug').exists()
+    }
+}
+
+// Make all native build tasks depend on engine build
+tasks.whenTaskAdded { task ->
+    if (task.name.contains('external') && task.name.contains('Native') && task.name.contains('Build')) {
+        task.dependsOn buildEngine
+    }
+}
+
+// Also make sure the engine is built before any assembleDebug/assembleRelease
+tasks.matching { it.name.startsWith('assemble') }.all {
+    dependsOn buildEngine
+}
+
 dependencies {
 
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout
+    implementation files('libs/fmod.jar')
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

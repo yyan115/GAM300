@@ -5,7 +5,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
 
-class Texture : public IAsset {
+class ENGINE_API Texture : public IAsset {
 public:
 	GLuint ID{};
 	std::string type;

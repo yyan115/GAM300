@@ -14,7 +14,7 @@ public:
 	std::vector<std::shared_ptr<Texture>> textures;
 	std::shared_ptr<Material> material;
 
-	Mesh() {};
+	Mesh() : vaoSetup(false), ebo(indices) {};
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures);
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat);
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat);
@@ -30,9 +30,15 @@ public:
 		indices(std::move(other.indices)),
 		textures(std::move(other.textures)),
 		material(std::move(other.material)),
-		vao(std::move(other.vao)) {}
+		vao(std::move(other.vao)),
+		ebo(std::move(other.ebo)),
+		vaoSetup(other.vaoSetup) {
+		other.vaoSetup = false;
+	}
 
 private:
 	VAO vao;
+	EBO ebo;
+	bool vaoSetup;
 	void setupMesh();
 };

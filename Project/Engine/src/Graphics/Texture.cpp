@@ -4,7 +4,11 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
-#include "GLI/gli.hpp"
+#ifdef ANDROID
+#include <GLI/gli.hpp>
+#else
+#include <gli/gli.hpp>
+#endif
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
@@ -126,7 +130,9 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+#ifndef ANDROID
 	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
+#endif
 
 	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
 	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
