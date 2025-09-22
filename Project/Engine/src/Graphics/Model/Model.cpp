@@ -661,8 +661,10 @@ bool Model::LoadResource(const std::string& assetPath)
     scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
 #endif
 
+#ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Scene validation - scene:%p flags:%u rootNode:%p",
         scene, scene ? scene->mFlags : 0, scene ? scene->mRootNode : nullptr);
+#endif
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cerr << "[MODEL] ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
 #ifdef ANDROID

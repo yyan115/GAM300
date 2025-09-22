@@ -14,7 +14,13 @@
       "Bash(find:*)",
       "Bash(adb shell:*)",
       "Read(//home/admin/Desktop/**)",
-      "Bash(adb install:*)"
+      "Bash(adb install:*)",
+      "Bash(./clean-cmake.sh:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(./vcpkg/vcpkg:*)",
+      "Bash(git lfs:*)",
+      "Read(//home/admin/**)"
     ],
     "deny": [],
     "ask": []
