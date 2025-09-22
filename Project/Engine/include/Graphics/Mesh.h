@@ -7,6 +7,10 @@
 #include "Material.hpp"
 #include "Engine.h"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 class Mesh {
 public:
 	std::vector<Vertex> vertices; 
@@ -34,6 +38,9 @@ public:
 		ebo(std::move(other.ebo)),
 		vaoSetup(other.vaoSetup) {
 		other.vaoSetup = false;
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Move constructor - moved material pointer from %p to %p", other.material.get(), material.get());
+#endif
 	}
 
 private:

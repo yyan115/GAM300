@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Graphics/Material.hpp"
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 
 Material::Material() : m_name("DefaultMaterial") {
 }
@@ -99,6 +102,10 @@ const std::string& Material::GetName() const
 
 void Material::ApplyToShader(Shader& shader) const
 {
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Applying material %s - diffuse:(%.2f,%.2f,%.2f) ambient:(%.2f,%.2f,%.2f)",
+		m_name.c_str(), m_diffuse.x, m_diffuse.y, m_diffuse.z, m_ambient.x, m_ambient.y, m_ambient.z);
+#endif
 	// Apply basic material properties
 	shader.setVec3("material.ambient", m_ambient);
 	shader.setVec3("material.diffuse", m_diffuse);
@@ -123,10 +130,21 @@ void Material::BindTextures(Shader& shader) const
 	unsigned int textureUnit = 0;
 
 	// Set texture availability flags
-	shader.setBool("material.hasDiffuseMap", HasTexture(TextureType::DIFFUSE));
-	shader.setBool("material.hasSpecularMap", HasTexture(TextureType::SPECULAR));
-	shader.setBool("material.hasNormalMap", HasTexture(TextureType::NORMAL));
-	shader.setBool("material.hasEmissiveMap", HasTexture(TextureType::EMISSIVE));
+	bool hasDiffuse = HasTexture(TextureType::DIFFUSE);
+	bool hasSpecular = HasTexture(TextureType::SPECULAR);
+	bool hasNormal = HasTexture(TextureType::NORMAL);
+	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
+
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
+		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
+
+#endif
+
+	shader.setBool("material.hasDiffuseMap", hasDiffuse);
+	shader.setBool("material.hasSpecularMap", hasSpecular);
+	shader.setBool("material.hasNormalMap", hasNormal);
+	shader.setBool("material.hasEmissiveMap", hasEmissive);
 	// For Future Use
 	/*shader.setBool("material.hasHeightMap", hasTexture(TextureType::HEIGHT));
 	shader.setBool("material.hasAOMap", hasTexture(TextureType::AMBIENT_OCCLUSION));

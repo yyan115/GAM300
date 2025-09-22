@@ -85,6 +85,10 @@ bool Shader::SetupShader(const std::string& path) {
 	std::string vertexFile = path + ".vert";
 	std::string fragmentFile = path + ".frag";
 
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading shader files: %s and %s", vertexFile.c_str(), fragmentFile.c_str());
+#endif
+
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
@@ -154,6 +158,7 @@ bool Shader::SetupShader(const std::string& path) {
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling fragment shader with %d chars", (int)strlen(fragmentSource));
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Fragment shader source (first 300 chars): %.300s", fragmentSource);
 #endif
 	// Compile the Fragment Shader into machine code
 	glCompileShader(fragmentShader);

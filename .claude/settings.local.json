@@ -11,7 +11,10 @@
       "Bash(adb logcat:*)",
       "Bash(adb shell am force-stop:*)",
       "Bash(objdump:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(adb shell:*)",
+      "Read(//home/admin/Desktop/**)",
+      "Bash(adb install:*)"
     ],
     "deny": [],
     "ask": []

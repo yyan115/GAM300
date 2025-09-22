@@ -189,23 +189,28 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 view_di
 
 void main()
 {
+    // TEMPORARY DEBUG: Show bright green to test if shader is being used at all
+    FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Bright green
+
+    /* ORIGINAL LIGHTING CODE - COMMENTED OUT FOR DEBUGGING
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
-    
+
     // Calculate lighting
     vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
-    
+
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);    
-    
-    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);    
-    
+        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
+
+    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
+
     // Add emissive component
     if (material.hasEmissiveMap) {
         result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;
     } else {
         result += material.emissive;
     }
-    
+
     FragColor = vec4(result, material.opacity);
+    */
 }

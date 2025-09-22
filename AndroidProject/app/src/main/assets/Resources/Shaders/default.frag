@@ -201,21 +201,43 @@ void main()
 {
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
-    
+
     // Calculate lighting
     vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
-    
+
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);    
-    
-    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);    
-    
+        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
+
+    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
+
     // Add emissive component
     if (material.hasEmissiveMap) {
         result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;
     } else {
         result += material.emissive;
     }
-    
+
     FragColor = vec4(result, material.opacity);
+
+    /* ORIGINAL LIGHTING CODE - COMMENTED OUT FOR DEBUGGING
+    vec3 norm = getNormalFromMap();
+    vec3 viewDir = normalize(cameraPos - FragPos);
+
+    // Calculate lighting
+    vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
+
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
+        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
+
+    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
+
+    // Add emissive component
+    if (material.hasEmissiveMap) {
+        result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;
+    } else {
+        result += material.emissive;
+    }
+
+    FragColor = vec4(result, material.opacity);
+    */
 }

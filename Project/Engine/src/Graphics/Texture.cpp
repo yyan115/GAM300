@@ -1,5 +1,12 @@
 #include "pch.h"
 
+#ifdef __ANDROID__
+#include <android/asset_manager.h>
+#include <android/log.h>
+#include "WindowManager.hpp"
+#include "Platform/AndroidPlatform.h"
+#endif
+
 #include "Graphics/Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -24,7 +31,41 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
 	// Reads the image from a file and stores it in bytes
-	unsigned char* bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
+	unsigned char* bytes = nullptr;
+
+#ifdef __ANDROID__
+	// On Android, load texture from AssetManager
+	auto* platform = WindowManager::GetPlatform();
+	if (platform) {
+		AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+		AAssetManager* assetManager = androidPlatform->GetAssetManager();
+
+		if (assetManager) {
+			AAsset* asset = AAssetManager_open(assetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+			if (asset) {
+				off_t assetLength = AAsset_getLength(asset);
+				const unsigned char* assetData = (const unsigned char*)AAsset_getBuffer(asset);
+
+				if (assetData && assetLength > 0) {
+					bytes = stbi_load_from_memory(assetData, (int)assetLength, &widthImg, &heightImg, &numColCh, 0);
+					__android_log_print(ANDROID_LOG_INFO, "GAM300", "[TEXTURE] Loaded texture from Android assets: %s (%dx%d, %d channels)", assetPath.c_str(), widthImg, heightImg, numColCh);
+				} else {
+					__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to get asset data for: %s", assetPath.c_str());
+				}
+				AAsset_close(asset);
+			} else {
+				__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to open asset: %s", assetPath.c_str());
+			}
+		} else {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] AssetManager not available");
+		}
+	} else {
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Platform not available");
+	}
+#else
+	// On other platforms, load from filesystem
+	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
+#endif
 
 	// Dynamically choose the appropriate format.
 	gli::format gliFormat;

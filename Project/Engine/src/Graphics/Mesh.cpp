@@ -4,6 +4,10 @@
 #include "WindowManager.hpp"
 #include <cassert>
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures) : vertices(vertices), indices(indices), textures(textures), ebo(indices), vaoSetup(false)
 {
@@ -11,6 +15,9 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat) : vertices(vertices), indices(indices), material(mat), ebo(indices), vaoSetup(false)
 {
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Constructor with material - material pointer=%p", material.get());
+#endif
 }
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat) :
@@ -129,6 +136,18 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] About to apply material - material=%p", material.get());
 #endif
+	if (!material)
+	{
+		// Create default material if none exists
+#ifdef __ANDROID__
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] No material found, creating default material");
+#endif
+		material = Material::CreateDefault();
+#ifdef __ANDROID__
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Created default material for rendering: %p", material.get());
+#endif
+	}
+
 	if (material)
 	{
 #ifdef __ANDROID__
@@ -143,7 +162,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	else
 	{
 #ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] No material available, using fallback texture system");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Material creation failed, using fallback texture system");
 #endif
 		// Fallback to old texture system for backward compatibility
 		unsigned int textureUnit = 0;
