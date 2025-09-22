@@ -395,11 +395,15 @@ std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr
 			}
 		}
 #else
+        std::cout << "[MODEL] DEBUG: Attempting to compile texture: " << texturePath << std::endl;
         if (AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1)) {
-			// Convert original texture path to compiled DDS path
-			std::filesystem::path texPath(texturePath);
-			std::string ddsPath = (texPath.parent_path() / texPath.stem()).generic_string() + ".dds";
-		    texture = ResourceManager::GetInstance().GetResource<Texture>(ddsPath);
+			// Use the original texture path - ResourceManager will handle finding the compiled DDS
+			std::cout << "[MODEL] DEBUG: Compiled texture successfully, loading with original path: " << texturePath << std::endl;
+		    texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+		    std::cout << "[MODEL] DEBUG: Loaded texture resource, valid: " << (texture != nullptr) << std::endl;
+		    if (texture) {
+		        std::cout << "[MODEL] DEBUG: Texture ID: " << texture->ID << ", type: " << texture->type << std::endl;
+		    }
 
 		}
 #endif
@@ -415,10 +419,13 @@ std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr
 			textures.push_back(texture);
 			std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
 			material->SetTexture(static_cast<TextureType>(type), std::move(textureInfo));
+
+			std::cout << "[MODEL] DEBUG: Texture set successfully on material, type: " << (int)type << ", path: " << texturePath << std::endl;
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Texture set successfully: %s", texturePath.c_str());
 #endif
 		} else {
+			std::cout << "[MODEL] DEBUG: Failed to get texture resource: " << texturePath << std::endl;
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to get texture resource: %s", texturePath.c_str());
 #endif

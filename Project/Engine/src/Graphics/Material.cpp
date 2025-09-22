@@ -135,10 +135,12 @@ void Material::BindTextures(Shader& shader) const
 	bool hasNormal = HasTexture(TextureType::NORMAL);
 	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
 
+	std::cout << "[MATERIAL] DEBUG: Texture flags - diffuse:" << hasDiffuse << " specular:" << hasSpecular << " normal:" << hasNormal << " emissive:" << hasEmissive << std::endl;
+	std::cout << "[MATERIAL] DEBUG: Total texture info entries: " << m_textureInfo.size() << std::endl;
+
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
 		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
-
 #endif
 
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
@@ -154,17 +156,27 @@ void Material::BindTextures(Shader& shader) const
 	// Bind each texture type
 	for (const auto& [type, textureInfo] : m_textureInfo)
 	{
-		if (textureInfo && textureUnit < 16) 
+		std::cout << "[MATERIAL] DEBUG: Processing texture type " << (int)type << ", textureInfo valid: " << (textureInfo != nullptr) << std::endl;
+		if (textureInfo) {
+			std::cout << "[MATERIAL] DEBUG: Texture ID: " << textureInfo->texture->ID << std::endl;
+		}
+
+		if (textureInfo && textureUnit < 16)
 		{
-			//glActiveTexture(GL_TEXTURE0 + textureUnit);
+			glActiveTexture(GL_TEXTURE0 + textureUnit);
+			std::cout << "[MATERIAL] DEBUG: Activating texture unit " << textureUnit << std::endl;
+
 			textureInfo->texture->Bind(textureUnit);
+			std::cout << "[MATERIAL] DEBUG: Bound texture to unit " << textureUnit << std::endl;
 
 			std::string uniformName = "material." + TextureTypeToString(type);
 			shader.setInt(uniformName.c_str(), textureUnit);
+			std::cout << "[MATERIAL] DEBUG: Set uniform '" << uniformName << "' to " << textureUnit << std::endl;
 
 			textureUnit++;
 		}
 	}
+	std::cout << "[MATERIAL] DEBUG: Finished binding, total units used: " << textureUnit << std::endl;
 }
 
 std::shared_ptr<Material> Material::CreateDefault()

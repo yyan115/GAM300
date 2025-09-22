@@ -73,7 +73,7 @@ if(ANDROID)
     set(FREETYPE_LIBRARY "${ANDROID_LIBS_DIR}/libfreetype.a")
     set(ASSIMP_LIBRARY "${ANDROID_LIBS_DIR}/libassimp.so")
     set(FMOD_LIBRARY "${ANDROID_LIBS_DIR}/libfmod.so")
-    
+
     # Verify all library files exist
     if(NOT EXISTS ${SPDLOG_LIBRARY})
         message(FATAL_ERROR "spdlog library not found: ${SPDLOG_LIBRARY}")
@@ -170,9 +170,9 @@ else()
 
     # Platform-specific FMOD and system libraries
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        # Find FMOD library
+        # Find FMOD library - try different possible names
         find_library(FMOD_LIBRARY
-            NAMES fmod
+            NAMES fmod libfmod.so.14.9 libfmod.so.14 libfmod.so
             PATHS ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64
             NO_DEFAULT_PATH
         )

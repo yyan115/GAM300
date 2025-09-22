@@ -57,11 +57,11 @@ find "$PROJECT_ROOT" -maxdepth 3 -name "CMakeFiles" -type d -not -path "*/vcpkg/
 find "$PROJECT_ROOT" -maxdepth 3 -name "cmake_install.cmake" -not -path "*/vcpkg/*" -not -path "*/android-*" -delete 2>/dev/null
 find "$PROJECT_ROOT" -maxdepth 3 -name "Makefile" -not -path "*/vcpkg/*" -not -path "*/android-*" -delete 2>/dev/null
 
-# Clean any compiled binaries (optional)
+# Clean any compiled binaries (optional) - exclude Libraries directory
 echo "Removing compiled binaries..."
-find "$PROJECT_ROOT" -name "*.o" -delete 2>/dev/null || true
-find "$PROJECT_ROOT" -name "*.a" -delete 2>/dev/null || true
-find "$PROJECT_ROOT" -name "*.so" -delete 2>/dev/null || true
+find "$PROJECT_ROOT" -name "*.o" -not -path "*/Libraries/*" -delete 2>/dev/null || true
+find "$PROJECT_ROOT" -name "*.a" -not -path "*/Libraries/*" -delete 2>/dev/null || true
+find "$PROJECT_ROOT" -name "*.so" -not -path "*/Libraries/*" -delete 2>/dev/null || true
 
 echo "✅ CMake cache cleanup complete!"
 echo ""

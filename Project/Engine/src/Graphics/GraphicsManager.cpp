@@ -157,6 +157,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Draw the model
 	item.model->Draw(*item.shader, *currentCamera);
+
+	std::cout << "rendered model\n";
 }
 
 void GraphicsManager::ApplyLighting(Shader& shader)

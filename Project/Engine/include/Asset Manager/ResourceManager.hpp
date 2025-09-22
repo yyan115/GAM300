@@ -128,6 +128,15 @@ public:
 		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
 	}
 
+	// Helper function to get platform-specific shader path
+	static std::string GetPlatformShaderPath(const std::string& baseShaderName) {
+#ifdef ANDROID
+		return "Resources/Shaders/" + baseShaderName + "android";
+#else
+		return "Resources/Shaders/" + baseShaderName;
+#endif
+	}
+
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};

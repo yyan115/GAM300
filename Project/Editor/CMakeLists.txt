@@ -86,12 +86,7 @@ if(WIN32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    )
-    add_custom_command(TARGET Editor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

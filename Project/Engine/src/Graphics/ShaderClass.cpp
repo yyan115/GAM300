@@ -67,7 +67,11 @@ std::string get_file_contents(const char* filename)
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to load file: %s", filename);
 #endif
-	throw(errno);
+	std::string error_msg = "Failed to open file: " + std::string(filename);
+	if (errno != 0) {
+		error_msg += " (Error: " + std::string(strerror(errno)) + ")";
+	}
+	throw std::runtime_error(error_msg);
 }
 
 bool Shader::SetupShader(const std::string& path) {

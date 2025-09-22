@@ -88,7 +88,7 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_custom_command(TARGET Game POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         )
     endif()

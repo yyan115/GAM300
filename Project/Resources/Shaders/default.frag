@@ -1,5 +1,4 @@
-#version 300 es
-precision mediump float;
+#version 330 core
 
 struct Material {
     // Basic properties
@@ -103,19 +102,19 @@ vec3 getMaterialAmbient() {
 vec3 getNormalFromMap() {
     if (material.hasNormalMap) {
         vec3 tangentNormal = texture(material.normalMap, TexCoords).xyz * 2.0 - 1.0;
-
+        
         // For simple normal mapping without tangent space
         // This is a simplified approach - for full normal mapping you'd need tangent vectors
         vec3 Q1 = dFdx(FragPos);
         vec3 Q2 = dFdy(FragPos);
         vec2 st1 = dFdx(TexCoords);
         vec2 st2 = dFdy(TexCoords);
-
+        
         vec3 N = normalize(Normal);
         vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
         vec3 B = -normalize(cross(N, T));
         mat3 TBN = mat3(T, B, N);
-
+        
         return normalize(TBN * tangentNormal);
     }
     return normalize(Normal);
@@ -201,43 +200,21 @@ void main()
 {
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
-
+    
     // Calculate lighting
     vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
-
+    
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
-
-    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
-
+        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);    
+    
+    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);    
+    
     // Add emissive component
     if (material.hasEmissiveMap) {
         result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;
     } else {
         result += material.emissive;
     }
-
+    
     FragColor = vec4(result, material.opacity);
-
-    /* ORIGINAL LIGHTING CODE - COMMENTED OUT FOR DEBUGGING
-    vec3 norm = getNormalFromMap();
-    vec3 viewDir = normalize(cameraPos - FragPos);
-
-    // Calculate lighting
-    vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
-
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
-
-    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
-
-    // Add emissive component
-    if (material.hasEmissiveMap) {
-        result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;
-    } else {
-        result += material.emissive;
-    }
-
-    FragColor = vec4(result, material.opacity);
-    */
 }

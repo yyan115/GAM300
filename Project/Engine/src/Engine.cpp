@@ -404,6 +404,7 @@ void Engine::Draw() {
     }
 #else
     SceneManager::GetInstance().DrawScene();
+    std::cout << "drawn scene\n";
 #endif
 }
 

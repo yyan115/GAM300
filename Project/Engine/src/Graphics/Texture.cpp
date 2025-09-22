@@ -105,14 +105,17 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 }
 
 bool Texture::LoadResource(const std::string& assetPath) {
+	std::cout << "[TEXTURE] DEBUG: Loading texture resource: " << assetPath << std::endl;
 	std::filesystem::path assetPathFS(assetPath);
 
 	// Load the meta file to get texture parameters
 	std::string metaFilePath = assetPathFS.string() + ".meta";
+	std::cout << "[TEXTURE] DEBUG: Looking for meta file: " << metaFilePath << std::endl;
 	if (!std::filesystem::exists(metaFilePath)) {
 		std::cerr << "[TEXTURE]: Meta file not found for texture: " << assetPath << std::endl;
 		return false;
 	}
+	std::cout << "[TEXTURE] DEBUG: Meta file found, loading..." << std::endl;
 
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -136,11 +139,25 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	// Load the DDS file using GLI
 	std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".dds";
+	std::cout << "[TEXTURE] DEBUG: Loading DDS file: " << path << std::endl;
+
+	if (!std::filesystem::exists(path)) {
+		std::cerr << "[TEXTURE] DEBUG: DDS file does not exist: " << path << std::endl;
+		return false;
+	}
 
 	gli::texture texture = gli::load(path);
+	std::cout << "[TEXTURE] DEBUG: GLI texture loaded, empty: " << texture.empty() << ", size: " << texture.size() << std::endl;
+
+	if (texture.empty()) {
+		std::cerr << "[TEXTURE] DEBUG: GLI texture is empty!" << std::endl;
+		return false;
+	}
+
 	void* bytes = texture.data();
 	int widthImg = texture.extent().x;
 	int heightImg = texture.extent().y;
+	std::cout << "[TEXTURE] DEBUG: Texture dimensions: " << widthImg << "x" << heightImg << std::endl;
 	
 	gli::gl GL(gli::gl::PROFILE_GL33);
 	gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
@@ -148,6 +165,7 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
+	std::cout << "[TEXTURE] DEBUG: Generated OpenGL texture ID: " << ID << std::endl;
 
 	//// Assigns the texture to a Texture Unit
 	//glActiveTexture(GL_TEXTURE0 + slot);
@@ -160,6 +178,7 @@ bool Texture::LoadResource(const std::string& assetPath) {
 	//	glActiveTexture(GL_TEXTURE0 + unit);
 	//}
 	glBindTexture(target, ID);
+	std::cout << "[TEXTURE] DEBUG: Bound texture to target: " << target << std::endl;
 
 	// Configures the type of algorithm that is used to make the image smaller or bigger
 	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -194,6 +213,7 @@ bool Texture::LoadResource(const std::string& assetPath) {
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
 
+	std::cout << "[TEXTURE] DEBUG: Texture loading completed successfully! Final ID: " << ID << std::endl;
 	return true;
 }
 

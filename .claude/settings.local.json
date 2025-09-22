@@ -24,7 +24,10 @@
       "Bash(xargs ls:*)",
       "Bash(cp:*)",
       "Bash(rsync:*)",
-      "Bash(adb:*)"
+      "Bash(adb:*)",
+      "Bash(./Build/debug/bin/Game)",
+      "Bash(./clean-android.sh:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
