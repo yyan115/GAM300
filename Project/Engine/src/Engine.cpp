@@ -427,6 +427,8 @@ void Engine::Shutdown() {
 
 bool Engine::IsRunning() {
 	return !WindowManager::ShouldClose();
+    //
+    //
 }
 
 // Game state management functions

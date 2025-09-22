@@ -14,17 +14,18 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        
+
         ndk {
             abiFilters 'arm64-v8a'
         }
-        
+
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"
             }
         }
     }
+
 
     buildTypes {
         release {
@@ -47,6 +48,27 @@ android {
     }
 }
 
+// Task to copy resources directly via Gradle (more reliable than CMake)
+task copyResources(type: Copy) {
+    description 'Copy resources from main project to Android assets'
+    group 'build'
+
+    from '../../Project/Resources'
+    into 'src/main/assets/Resources'
+
+    // Always run this task
+    outputs.upToDateWhen { false }
+
+    doFirst {
+        println "🚀 [Gradle] Copying resources from ../../Project/Resources to src/main/assets/Resources"
+        delete 'src/main/assets/Resources'
+    }
+
+    doLast {
+        println "✅ [Gradle] Resources copied successfully"
+    }
+}
+
 // Task to build the Engine library before Android native build
 task buildEngine(type: Exec) {
     description 'Build the GAM300 Engine library for Android'
@@ -62,6 +84,9 @@ task buildEngine(type: Exec) {
     onlyIf {
         file('../../Project/Build/android-debug').exists()
     }
+
+    // Ensure resources are copied first
+    dependsOn copyResources
 }
 
 // Make all native build tasks depend on engine build
@@ -74,6 +99,17 @@ tasks.whenTaskAdded { task ->
 // Also make sure the engine is built before any assembleDebug/assembleRelease
 tasks.matching { it.name.startsWith('assemble') }.all {
     dependsOn buildEngine
+}
+
+// Make sure resources are copied before any asset processing
+tasks.whenTaskAdded { task ->
+    // Ensure resources are copied before any asset merging or APK building
+    if (task.name.contains('merge') && task.name.contains('Assets')) {
+        task.dependsOn copyResources
+    }
+    if (task.name.contains('package') && task.name.contains('Assets')) {
+        task.dependsOn copyResources
+    }
 }
 
 dependencies {

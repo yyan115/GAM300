@@ -8,3 +8,9 @@ FMOD - downloaded manually for both windows,linux, and android. for linux, copy 
 GLI - Uses vcpkg for linux, windows not working
 ...
 
+# Android
+
+filesystems becareful
+use android studio and visual studio i guess for running
+resources folder gets copied over to assets
+use clean-android if resources folder gets changed

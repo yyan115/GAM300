@@ -9,6 +9,11 @@ set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
 set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-debug")
 
 # Configure Engine project if needed (one-time setup)
+if(NOT EXISTS ${ENGINE_BUILD_DIR})
+    message(STATUS "Creating Engine build directory...")
+    file(MAKE_DIRECTORY ${ENGINE_BUILD_DIR})
+endif()
+
 if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
     message(STATUS "Configuring Engine for Android...")
     execute_process(
@@ -39,13 +44,16 @@ file(GLOB ENGINE_CMAKE_FILES
     "${ENGINE_PROJECT_DIR}/CMakePresets.json"
 )
 
-# Create custom target to build Engine when sources change
+# Create custom target to build Engine when sources OR main Resources folder changes
 add_custom_command(
     OUTPUT ${ENGINE_BUILD_DIR}/lib/libEngine.so
+    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] Resources changed - cleaning and rebuilding Engine..."
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} --preset android-debug
     COMMAND ${CMAKE_COMMAND} --build ${ENGINE_BUILD_DIR} --config $<CONFIG>
     WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
-    DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES}
-    COMMENT "Building Engine library (triggered by source changes)"
+    DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES} ${RESOURCE_FILES}
+    COMMENT "Building Engine library (CLEAN + REBUILD when main Resources folder changes)"
     VERBATIM
 )
 
@@ -72,6 +80,35 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
     DEPENDS ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so
     COMMENT "Copying FMOD library to jniLibs"
+)
+
+# Collect all files in Resources directory for dependency tracking
+file(GLOB_RECURSE RESOURCE_FILES "${ENGINE_PROJECT_DIR}/Resources/*")
+
+# Copy Resources from main project to Android assets - ALWAYS RUNS FIRST
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD: Starting Resources copy..."
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${ENGINE_PROJECT_DIR}/Resources
+        ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD SUCCESS: Resources copied to assets folder"
+    DEPENDS ${RESOURCE_FILES}
+    COMMENT "PRE-BUILD: Copying Resources to Android assets"
+    VERBATIM
+)
+
+# Create custom target for resources - runs BEFORE everything else
+add_custom_target(copy_resources ALL
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+)
+
+# Create alias target for Gradle to reference
+add_custom_target(copyResourcesToAssets
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+    COMMENT "Alias target for Gradle: Copy Resources to Android assets"
 )
 
 # Create custom target to ensure libraries are copied
@@ -124,14 +161,14 @@ set_target_properties(fmod PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libfmod.so
 )
 
-# Make sure our main library depends on the copied libraries and engine build
-add_dependencies(${CMAKE_PROJECT_NAME} build_engine copy_libraries)
+# Make sure our main library depends on the copied libraries, resources, and engine build
+add_dependencies(${CMAKE_PROJECT_NAME} build_engine copy_libraries copy_resources)
 
 # Also add the Engine sources as dependencies to our main target to force rebuilds
 set_source_files_properties(native-lib.cpp PROPERTIES OBJECT_DEPENDS "${ENGINE_SOURCES}")
 
-# Make the imported Engine library depend on the actual file
-add_dependencies(Engine copy_libraries)
+# Make the imported Engine library depend on the actual file being built AND copied
+add_dependencies(Engine build_engine copy_libraries)
 
 # Link everything together
 target_link_libraries(${CMAKE_PROJECT_NAME}

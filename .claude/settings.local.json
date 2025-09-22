@@ -20,7 +20,11 @@
       "Bash(sudo apt install:*)",
       "Bash(./vcpkg/vcpkg:*)",
       "Bash(git lfs:*)",
-      "Read(//home/admin/**)"
+      "Read(//home/admin/**)",
+      "Bash(xargs ls:*)",
+      "Bash(cp:*)",
+      "Bash(rsync:*)",
+      "Bash(adb:*)"
     ],
     "deny": [],
     "ask": []
