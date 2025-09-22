@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
+#include <Transform/TransformSystem.hpp>
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -46,17 +47,6 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	if (renderItem && renderItem->isVisible)
 	{
 		renderQueue.push_back(std::move(renderItem));
-	}
-}
-
-void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform)
-{
-	if (model && shader) 
-	{
-		glm::mat4 glmTransform = ConvertMatrix4x4ToGLM(transform);
-		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader);
-		renderItem->transform = glmTransform;
-		Submit(std::move(renderItem));
 	}
 }
 
@@ -195,20 +185,6 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("projection", projection);
 
 		shader.setVec3("cameraPos", currentCamera->Position);
-	}
-}
-
-void GraphicsManager::SubmitText(const std::string& text, std::shared_ptr<Font> font, std::shared_ptr<Shader> shader, const glm::vec3& position, const glm::vec3& color, float scale, bool is3D, const glm::mat4& transform)
-{
-	if (font && shader && !text.empty()) 
-	{
-		auto textItem = std::make_unique<TextRenderComponent>(text, font, shader);
-		textItem->position = position;
-		textItem->color = color;
-		textItem->scale = scale;
-		textItem->is3D = is3D;
-		textItem->transform = transform;
-		Submit(std::move(textItem));
 	}
 }
 
@@ -354,14 +330,10 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 			break;
 		case DebugDrawType::MESH_WIREFRAME:
 		{
-			if (drawCommand.meshModel) {
+			if (drawCommand.meshModel) 
+			{
 				// Create transform matrix
-				glm::mat4 transform = glm::mat4(1.0f);
-				transform = glm::translate(transform, drawCommand.position);
-				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.x), glm::vec3(1, 0, 0));
-				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.y), glm::vec3(0, 1, 0));
-				transform = glm::rotate(transform, glm::radians(drawCommand.rotation.z), glm::vec3(0, 0, 1));
-				transform = glm::scale(transform, drawCommand.scale);
+				glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
 
 				// Set up matrices and uniforms
 				SetupMatrices(*item.shader, transform);
@@ -376,19 +348,17 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		default:
 			continue;
 		}
+
 		if (!currentVAO) continue;
+
 		// Create transform matrix
-		glm::mat4 transform = glm::mat4(1.0f);
-		transform = glm::translate(transform, drawCommand.position);
-		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.x), glm::vec3(1, 0, 0));
-		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.y), glm::vec3(0, 1, 0));
-		transform = glm::rotate(transform, glm::radians(drawCommand.rotation.z), glm::vec3(0, 0, 1));
-		transform = glm::scale(transform, drawCommand.scale);
+		glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
 		// Set up matrices and uniforms
 		SetupMatrices(*item.shader, transform);
 		item.shader->setVec3("debugColor", drawCommand.color);
 		// Bind VAO and render
 		currentVAO->Bind();
+
 		if (drawCommand.type == DebugDrawType::LINE)
 		{
 			glLineWidth(drawCommand.lineWidth);
@@ -425,5 +395,15 @@ Matrix4x4 GraphicsManager::ConvertGLMToMatrix4x4(const glm::mat4& m)
 		m[0][2], m[1][2], m[2][2], m[3][2],
 		m[0][3], m[1][3], m[2][3], m[3][3]);
 	return converted;
+}
+
+glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
+{
+	Vector3D position = { pos.x, pos.y, pos.z };
+	Vector3D rotation = { rot.x, rot.y, rot.z };
+	Vector3D scaleVec = { scale.x, scale.y, scale.z };
+
+	Matrix4x4 modelMatrix = TransformSystem::calculateModelMatrix(position, scaleVec, rotation);
+	return ConvertMatrix4x4ToGLM(modelMatrix);
 }
 

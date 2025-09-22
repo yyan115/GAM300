@@ -19,17 +19,16 @@ void ModelSystem::Update()
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
     // Submit all visible models to the graphics manager
-    for (const auto& entity : entities) 
+    for (const auto& entity : entities)
     {
         auto& modelComponent = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
-        if (modelComponent.isVisible && modelComponent.model && modelComponent.shader) 
+        if (modelComponent.isVisible && modelComponent.model && modelComponent.shader)
         {
-            gfxManager.SubmitModel(
-                modelComponent.model,
-                modelComponent.shader,
-                ecsManager.GetComponent<Transform>(entity).model
-            );
+            auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
+            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).model);
+
+            gfxManager.Submit(std::move(modelRenderItem));
         }
     }
 }
