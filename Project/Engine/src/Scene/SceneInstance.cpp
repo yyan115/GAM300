@@ -42,6 +42,7 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 
+
 	// Text
 	auto textShader = std::make_shared<Shader>();
 	if (textShader->LoadAsset("Resources/Shaders/text")) {

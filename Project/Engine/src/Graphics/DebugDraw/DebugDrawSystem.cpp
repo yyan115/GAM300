@@ -6,11 +6,21 @@
 #include "Transform/TransformComponent.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
+std::vector<DebugDrawData> DebugDrawSystem::debugQueue; 
+
 bool DebugDrawSystem::Initialise() 
 {
     // Create debug shader (you'll need to create this shader file)
-    debugShader = std::make_shared<Shader>("shaders/debug.vert", "shaders/debug.frag");
+    debugShader = std::make_shared<Shader>(); 
 
+    if (debugShader->LoadAsset("Resources/Shaders/debug"))
+    {
+        std::cout << "Debug shader loaded successfully!" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to load debug shader!" << std::endl;
+    }
     CreatePrimitiveGeometry();
 
     std::cout << "[DebugDrawSystem] Initialized" << std::endl;
@@ -182,7 +192,8 @@ void DebugDrawSystem::UpdateTimedCommands(float deltaTime)
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    for (const auto& entity : entities) {
+    for (const auto& entity : entities) 
+    {
         auto& debugComponent = ecsManager.GetComponent<DebugDrawComponent>(entity);
 
         // Remove expired commands
@@ -202,16 +213,48 @@ void DebugDrawSystem::UpdateTimedCommands(float deltaTime)
 
 void DebugDrawSystem::DrawCube(const glm::vec3& position, const glm::vec3& scale, const glm::vec3& color, float duration)
 {
+    DebugDrawData cubeData(DebugDrawType::CUBE);
+    cubeData.position = position;
+    cubeData.scale = scale;
+    cubeData.color = color;
+    cubeData.duration = duration;
+
+    debugQueue.push_back(cubeData);
 }
 
 void DebugDrawSystem::DrawSphere(const glm::vec3& position, float radius, const glm::vec3& color, float duration)
 {
+    DebugDrawData sphereData(DebugDrawType::SPHERE);
+    sphereData.position = position;
+    sphereData.scale = glm::vec3(radius * 2.0f); // Scale by diameter
+    sphereData.color = color;
+    sphereData.duration = duration;
+
+    debugQueue.push_back(sphereData);
 }
 
 void DebugDrawSystem::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color, float duration, float width)
 {
+    DebugDrawData lineData(DebugDrawType::LINE);
+    lineData.position = start;
+    lineData.endPosition = end;
+    lineData.color = color;
+    lineData.duration = duration;
+    lineData.lineWidth = width;
+
+    debugQueue.push_back(lineData);
 }
 
 void DebugDrawSystem::DrawMeshWireframe(std::shared_ptr<Model> model, const glm::vec3& position, const glm::vec3& color, float duration)
 {
+    if (!model) return;
+
+    DebugDrawData meshData(DebugDrawType::MESH_WIREFRAME); 
+    meshData.position = position; 
+    meshData.scale = glm::vec3(1.0f); 
+    meshData.color = color; 
+    meshData.duration = duration; 
+    meshData.meshModel = model; 
+
+    debugQueue.push_back(meshData); 
 }

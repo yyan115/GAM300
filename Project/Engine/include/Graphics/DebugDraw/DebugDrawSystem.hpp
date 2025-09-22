@@ -24,6 +24,8 @@ public:
     static void DrawMeshWireframe(std::shared_ptr<Model> model, const glm::vec3& position, const glm::vec3& color = glm::vec3(1.0f), float duration = 0.0f);
 
 private:
+    static std::vector<DebugDrawData> debugQueue;
+
     void CreatePrimitiveGeometry();
     void CreateCubeGeometry();
     void CreateSphereGeometry();
