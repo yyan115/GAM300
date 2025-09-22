@@ -39,6 +39,9 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     //WindowManager::height = _height;
     RunTimeVar::window.width = _width; 
     RunTimeVar::window.height = _height;
+    RunTimeVar::window.viewportWidth = _width;
+    RunTimeVar::window.viewportHeight = _height;
+
 
     // Create platform instance
     platform = CreatePlatform();
