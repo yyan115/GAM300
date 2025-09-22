@@ -9,6 +9,10 @@
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
 	
@@ -23,7 +27,7 @@ void SceneInstance::Initialize() {
 	Entity backpackEntt = ecsManager.CreateEntity();
 	ecsManager.AddComponent<Transform>(backpackEntt, Transform{});
 	Transform& backpacktransform = ecsManager.GetComponent<Transform>(backpackEntt);
-	backpacktransform.position = { 0, 0, 0 };
+	backpacktransform.position = { 0, 0, -5 };
 	backpacktransform.scale = { .1f, .1f, .1f };
 	backpacktransform.rotation = { 0, 0, 0 };
 	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"backpack1"});
@@ -33,7 +37,7 @@ void SceneInstance::Initialize() {
 	Entity backpackEntt2 = ecsManager.CreateEntity();
 	ecsManager.AddComponent<Transform>(backpackEntt2, Transform{});
 	Transform& backpacktransform2 = ecsManager.GetComponent<Transform>(backpackEntt2);
-	backpacktransform2.position = { 1, -0.5f, 0 };
+	backpacktransform2.position = { 1, -0.5f, -5 };
 	backpacktransform2.scale = { .2f, .2f, .2f };
 	backpacktransform2.rotation = { 0, 0, 0 };
 	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "backpack2" });
@@ -55,9 +59,22 @@ void SceneInstance::Initialize() {
 	Entity text = ecsManager.CreateEntity();
 	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
 	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
+<<<<<<< Updated upstream
 	TextUtils::SetPosition(textComp, glm::vec3(800,0,0));
 	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
+=======
+	TextUtils::SetPosition(textComp, glm::vec3(100, 100, 0));
+	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+
+	Entity text2 = ecsManager.CreateEntity();
+	ecsManager.AddComponent<NameComponent>(text2, NameComponent{ "Text2" });
+	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "nihao fine shyt", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/text") });
+	TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
+	TextUtils::SetPosition(textComp2, glm::vec3(200, 200, 0));
+	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+
+>>>>>>> Stashed changes
 	// Creates light
 	lightShader = std::make_shared<Shader>();
 	lightShader->LoadAsset("Resources/Shaders/light");
@@ -104,16 +121,40 @@ void SceneInstance::Draw() {
 	}
 	if (mainECS.textSystem)
 	{
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+#endif
 		mainECS.textSystem->Update();
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+#endif
 	}
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
+#endif
 	gfxManager.Render();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.Render() completed");
+#endif
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call DrawLightCubes()");
+#endif
 	// 5. Draw light cubes manually (temporary - you can make this a system later)
 	DrawLightCubes();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
+#endif
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");
+#endif
 	// 6. End frame
 	gfxManager.EndFrame();
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
+#endif
 }
 
 void SceneInstance::Exit() {
@@ -159,14 +200,37 @@ void SceneInstance::processInput(float deltaTime)
 	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void SceneInstance::DrawLightCubes() 
+void SceneInstance::DrawLightCubes()
 {
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - checking lightShader");
+#endif
+
+	// Check if lightShader is valid (asset loading might have failed on Android)
+	if (!lightShader) {
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "DrawLightCubes() - lightShader is null, skipping");
+#endif
+		return;
+	}
+
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - lightShader is valid");
+#endif
+
 	// Get light positions from LightManager instead of renderSystem
 	LightManager& lightManager = LightManager::getInstance();
 	const auto& pointLights = lightManager.getPointLights();
 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - about to loop through %zu lights", pointLights.size());
+#endif
+
 	// Draw light cubes at point light positions
 	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - processing light %zu", i);
+#endif
 		lightShader->Activate();
 
 		// Set up matrices for light cube

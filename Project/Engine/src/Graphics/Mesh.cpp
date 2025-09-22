@@ -4,50 +4,91 @@
 #include "WindowManager.hpp"
 
 
-Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures) : vertices(vertices), indices(indices), textures(textures)
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures) : vertices(vertices), indices(indices), textures(textures), ebo(indices), vaoSetup(false)
 {
-	setupMesh();
 }
 
-Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat) : vertices(vertices), indices(indices), material(mat)
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::shared_ptr<Material> mat) : vertices(vertices), indices(indices), material(mat), ebo(indices), vaoSetup(false)
 {
-	setupMesh();
 }
 
+<<<<<<< Updated upstream
+=======
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat) :
+	vertices(vertices), indices(indices), textures(textures), material(mat), ebo(indices), vaoSetup(false)
+{
+}
+
+>>>>>>> Stashed changes
 Mesh::~Mesh()
 {
 	vao.Delete();
+	ebo.Delete();
 }
 
 void Mesh::setupMesh()
 {
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting up mesh with VAO ID: %u", vao.ID);
+#endif
 	// Generates Vertex Array Object and binds it
 	vao.Bind();
 
-	VBO vbo(vertices);
+	// Initialize member VBO with vertices data
+	vbo.vertices = vertices;
 	vbo.Bind();
 
-	EBO ebo(indices);
+	ebo.Bind();
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to setup vertex attributes for VAO %u", vao.ID);
+#endif
 
 	// Position
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting up position attribute (layout 0) for VAO %u", vao.ID);
+#endif
 	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0); // Compiler knows the exact size of your Vertex struct (including any padding) no need 11 * sizeof(float)
+
 	// Normal
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting up normal attribute (layout 1) for VAO %u", vao.ID);
+#endif
 	vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+
 	// Color
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting up color attribute (layout 2) for VAO %u", vao.ID);
+#endif
 	vao.LinkAttrib(vbo, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+
 	// Texture
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting up texture attribute (layout 3) for VAO %u", vao.ID);
+#endif
 	vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
-	vao.Unbind();
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Finished setting up mesh for VAO %u", vao.ID);
+#endif
+
 	vbo.Unbind();
+	vao.Unbind();
 	ebo.Unbind();
 }
 
 void Mesh::Draw(Shader& shader, const Camera& camera)
 {
+	// Setup VAO on first draw when we have active OpenGL context
+	if (!vaoSetup) {
+		setupMesh();
+		vaoSetup = true;
+	}
+
 	shader.Activate();
 	vao.Bind();
 
+	// Note: model matrix should already be set by the render system
 	// Set camera matrices
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
@@ -89,6 +130,39 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 		}
 	}
 
+<<<<<<< Updated upstream
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+=======
+	//assert(glIsProgram(shader.ID));
+	//assert(glIsVertexArray(vao.ID));
+	//assert(glIsTexture(textures[0]->ID));
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to draw VAO %u with %zu indices", vao.ID, indices.size());
+	// Validate draw parameters
+	if (indices.empty()) {
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "VAO %u has empty indices array!", vao.ID);
+		return;
+	}
+	if (vertices.empty()) {
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "VAO %u has empty vertices array!", vao.ID);
+		return;
+	}
+#endif
+
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Drew VAO %u successfully", vao.ID);
+#endif
+
+#ifdef ANDROID
+GLenum err;
+while ((err = glGetError()) != GL_NO_ERROR) {
+    __android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error after DrawElements: 0x%x (count=%zu, VAO=%u)",
+                       err, indices.size(), vao.ID);
+}
+#endif
+>>>>>>> Stashed changes
 }
 

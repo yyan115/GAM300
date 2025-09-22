@@ -6,6 +6,8 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <chrono>
+#include <fstream>
+#include <sstream>
 
 // Static instance pointer for callbacks
 static DesktopPlatform* s_instance = nullptr;
@@ -195,14 +197,41 @@ bool DesktopPlatform::InitializeGraphics() {
     return true;
 }
 
-void DesktopPlatform::MakeContextCurrent() {
+bool DesktopPlatform::MakeContextCurrent() {
     if (window) {
         glfwMakeContextCurrent(window);
+        return true;
     }
+    return false;
 }
 
 void* DesktopPlatform::GetNativeWindow() {
     return window;
+}
+
+// Asset management for desktop - uses filesystem
+std::vector<std::string> DesktopPlatform::ListAssets(const std::string& folder, bool recursive) {
+    std::vector<std::string> assetPaths;
+
+    if (!std::filesystem::exists(folder)) {
+        return assetPaths;
+    }
+
+    if (recursive) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(folder)) {
+            if (entry.is_regular_file()) {
+                assetPaths.push_back(entry.path().generic_string());
+            }
+        }
+    } else {
+        for (const auto& entry : std::filesystem::directory_iterator(folder)) {
+            if (entry.is_regular_file()) {
+                assetPaths.push_back(entry.path().generic_string());
+            }
+        }
+    }
+
+    return assetPaths;
 }
 
 // Static callback implementations

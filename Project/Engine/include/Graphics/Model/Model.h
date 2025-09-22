@@ -10,7 +10,7 @@
 #include <algorithm>
 #include "Asset Manager/Asset.hpp"
 
-class Model : public IAsset {
+class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;

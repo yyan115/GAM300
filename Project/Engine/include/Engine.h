@@ -33,6 +33,7 @@ enum class GameState {
 class ENGINE_API Engine {
 public:
     static bool Initialize();
+    static bool InitializeGraphicsResources();
     static void Update();
 
     // Rendering phases

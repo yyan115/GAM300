@@ -2,8 +2,19 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Graphics/VAO.h"
 #include "Graphics/VBO.h"
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+#ifdef ANDROID
+#include "Platform/AndroidPlatform.h"
+#include <android/asset_manager.h>
+#include <cstring>
+#endif
 
+<<<<<<< Updated upstream
 Font::Font(unsigned int defaultFontSize) : fontSize(defaultFontSize) {}
+=======
+Font::Font(unsigned int fontSize) : fontSize(fontSize), vaoSetupNeeded(false) {}
+>>>>>>> Stashed changes
 
 Font::~Font()
 {
@@ -24,6 +35,76 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     // Clean up existing font data if any
     Cleanup();
 
+<<<<<<< Updated upstream
+=======
+    std::vector<unsigned char> fontData;
+
+#ifdef ANDROID
+    // Use Android AssetManager to load font data directly from APK
+    auto* platform = WindowManager::GetPlatform();
+    if (!platform) {
+        std::cerr << "[Font] Platform not available" << std::endl;
+        return false;
+    }
+
+    // Cast to AndroidPlatform to access AssetManager
+    AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+    AAssetManager* assetManager = androidPlatform->GetAssetManager();
+
+    if (!assetManager) {
+        std::cerr << "[Font] AssetManager is null!" << std::endl;
+        return false;
+    }
+
+    // Try to load from Android assets
+    AAsset* asset = AAssetManager_open(assetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+    if (!asset) {
+        std::cerr << "[Font] Failed to open font asset: " << assetPath << std::endl;
+        return false;
+    }
+
+    size_t length = AAsset_getLength(asset);
+    const void* buffer = AAsset_getBuffer(asset);
+    if (!buffer) {
+        std::cerr << "[Font] Failed to get buffer for font asset: " << assetPath << std::endl;
+        AAsset_close(asset);
+        return false;
+    }
+
+    // Copy the data to our vector
+    fontData.resize(length);
+    std::memcpy(fontData.data(), buffer, length);
+    AAsset_close(asset);
+
+    std::cout << "[Font] Successfully loaded font from Android assets: " << assetPath << " (size: " << fontData.size() << " bytes)" << std::endl;
+#else
+    // Desktop: Try to load .font file first, fallback to .ttf
+    std::filesystem::path assetPathFS(assetPath);
+    std::string fontPath = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".font";
+
+    // Try .font file first
+    std::ifstream fontFile(fontPath, std::ios::binary | std::ios::ate);
+    if (!fontFile.is_open()) {
+        // Fallback to original .ttf file
+        fontFile.open(assetPath, std::ios::binary | std::ios::ate);
+        if (!fontFile.is_open()) {
+            std::cerr << "[Font] Failed to open font asset: " << assetPath << std::endl;
+            return false;
+        }
+        fontPath = assetPath;
+    }
+
+    std::streamsize size = fontFile.tellg();
+    fontFile.seekg(0, std::ios::beg);
+
+    fontData.resize(size);
+    fontFile.read(reinterpret_cast<char*>(fontData.data()), size);
+    fontFile.close();
+
+    std::cout << "[Font] Successfully loaded font from desktop: " << fontPath << " (size: " << fontData.size() << " bytes)" << std::endl;
+#endif
+
+>>>>>>> Stashed changes
     // Initialize FreeType
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) 
@@ -36,7 +117,11 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     FT_Face face;
     if (FT_New_Face(ft, path.c_str(), 0, &face)) 
     {
+<<<<<<< Updated upstream
         std::cerr << "[Font] Failed to load font: " << path << std::endl;
+=======
+        std::cerr << "[Font] Failed to load font resource: " << assetPath << std::endl;
+>>>>>>> Stashed changes
         FT_Done_FreeType(ft);
         return false;
     }
@@ -95,10 +180,10 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
-    // Set up VAO/VBO for text rendering using your extended classes
-    textVAO = std::make_unique<VAO>();
-    textVBO = std::make_unique<VBO>(sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
+    // Set flag to defer VAO/VBO setup until render thread
+    vaoSetupNeeded = true;
 
+<<<<<<< Updated upstream
     textVAO->Bind();
     textVBO->Bind();
 
@@ -110,6 +195,9 @@ bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
     textVAO->Unbind();
 
     std::cout << "[Font] Successfully loaded font: " << path << " (size: " << fontSize << ")" << std::endl;
+=======
+    std::cout << "[Font] Successfully loaded font resource: " << assetPath << " (size: " << fontSize << ")" << std::endl;
+>>>>>>> Stashed changes
     return true;
 }
 
@@ -181,4 +269,60 @@ void Font::Cleanup()
     }
 }
 
+<<<<<<< Updated upstream
 
+=======
+void Font::EnsureVAOSetup() const
+{
+    if (!vaoSetupNeeded || textVAO) {
+        return; // Already set up or not needed
+    }
+
+#ifdef ANDROID
+    // Check if we have an active OpenGL context before generating VAO/VBO
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLContext context = eglGetCurrentContext();
+    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
+        std::cout << "[Font] No OpenGL context available for VAO/VBO setup, deferring..." << std::endl;
+        return;
+    }
+#endif
+
+    std::cout << "[Font] Setting up deferred VAO/VBO on render thread" << std::endl;
+
+    // Set up VAO/VBO for text rendering using your extended classes
+    textVAO = std::make_unique<VAO>();
+    textVBO = std::make_unique<VBO>(sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
+
+#ifdef ANDROID
+    std::cout << "[Font] Created VAO ID: " << (textVAO ? textVAO->ID : 0)
+              << ", VBO ID: " << (textVBO ? textVBO->ID : 0) << std::endl;
+#endif
+
+    textVAO->Bind();
+    textVBO->Bind();
+
+    // Set up vertex attributes for text (vec4: x, y, u, v)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+#ifdef ANDROID
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cout << "[Font] OpenGL error after vertex attribute setup: 0x" << std::hex << error << std::endl;
+    }
+#endif
+
+    textVBO->Unbind();
+    textVAO->Unbind();
+
+    vaoSetupNeeded = false;
+    std::cout << "[Font] VAO/VBO setup completed successfully" << std::endl;
+}
+
+std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
+{
+    assetPath, currentMetaData;
+    return std::shared_ptr<AssetMeta>();
+}
+>>>>>>> Stashed changes

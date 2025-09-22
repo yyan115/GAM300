@@ -63,6 +63,9 @@ public:
     static double getDeltaTime();
     static double getFps();
 
+    // Platform access
+    static class IPlatform* GetPlatform();
+
 
 private:
 

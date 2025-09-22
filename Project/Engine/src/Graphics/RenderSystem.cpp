@@ -3,6 +3,9 @@
 #include "Graphics/RenderSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include <Graphics/Renderer.hpp>
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 
 bool RenderSystem::Initialise(int window_width, int window_height)
@@ -83,7 +86,11 @@ void RenderSystem::Render()
 	for (const auto& entity : entities) {
 		auto& renderer = ecsManager.GetComponent<Renderer>(entity);
 		renderer.shader->Activate();
-		renderer.shader->setMat4("model", ecsManager.GetComponent<Transform>(entity).model);
+		glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).model;
+		renderer.shader->setMat4("model", modelMatrix);
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting model matrix for entity %u", entity);
+#endif
 
 		if (currentCamera)
 		{

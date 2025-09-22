@@ -2,6 +2,15 @@
 
 #include <filesystem>
 #include "Asset Manager/MetaFilesManager.hpp"
+<<<<<<< Updated upstream
+=======
+#include "Asset Manager/AssetManager.hpp"
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+#include <Asset Manager/FileUtilities.hpp>
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+>>>>>>> Stashed changes
 
 std::unordered_map<std::string, GUID_128> MetaFilesManager::assetPathToGUID128;
 
@@ -63,6 +72,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 		".vert", ".frag" // shader files
 	};
 
+<<<<<<< Updated upstream
 	for (const auto& file : std::filesystem::recursive_directory_iterator(rootAssetFolder)) {
 		// Check that it is a regular file (not a directory).
 		if (file.is_regular_file()) {
@@ -87,6 +97,61 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 				AddGUID128Mapping(assetPath, guid128);
 			}
 		}
+=======
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		std::cerr << "[MetaFilesManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		return;
+	}
+
+	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
+
+	for (const std::string& assetPath : assetFiles) {
+		bool isShader = false;
+		std::filesystem::path filePath(assetPath);
+		std::string extension = filePath.extension().string();
+
+		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+			if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
+				std::string shaderName = filePath.stem().string();
+				if (compiledShaderNames.find(shaderName) != compiledShaderNames.end()) {
+					continue; // Skip if this shader has already been compiled.
+				}
+				compiledShaderNames.insert(shaderName);
+				isShader = true;
+			}
+
+			if (!MetaFileExists(assetPath)) {
+				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
+				AssetManager::GetInstance().CompileAsset(assetPath);
+			}
+			else if (!MetaFileUpdated(assetPath)) {
+				std::cout << "[MetaFilesManager] .meta outdated for: " << assetPath << ". Re-compiling and regenerating..." << std::endl;
+				AssetManager::GetInstance().CompileAsset(assetPath);
+			}
+			else {
+				std::string finalAssetPath = assetPath;
+				if (isShader) {
+					finalAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+				}
+
+				GUID_128 guid128 = GetGUID128FromAssetFile(finalAssetPath);
+				AddGUID128Mapping(finalAssetPath, guid128);
+				AssetManager::GetInstance().AddAssetMetaToMap(finalAssetPath);
+
+				//std::cout << "[MetaFilesManager] .meta already exists for: " << assetPath << std::endl;
+			}
+		}
+			//// fallback for shaders
+			//else if (extension == ".meta") {
+			//	std::string assetPath = file.path().generic_string();
+			//	assetPath = assetPath.substr(0, assetPath.size() - 5); // Remove the .meta extension
+			//	GUID_string guidStr = GetGUIDFromMetaFile(file.path().generic_string());
+			//	GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
+			//	AddGUID128Mapping(assetPath, guid128);
+			//}
+>>>>>>> Stashed changes
 	}
 }
 

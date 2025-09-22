@@ -4,7 +4,7 @@
 #include "ShaderClass.h"
 #include "Asset Manager/Asset.hpp"
 
-class Texture : public IAsset {
+class ENGINE_API Texture : public IAsset {
 public:
 	GLuint ID{};
 	const char* type;

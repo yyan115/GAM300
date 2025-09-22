@@ -1,11 +1,15 @@
 #include "pch.h"
 #include "Logging.hpp"
 
-#include "spdlog/spdlog.h" 
+#include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/base_sink.h"
 #include "spdlog/pattern_formatter.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 #include <filesystem>
 
@@ -29,11 +33,11 @@ namespace EngineLogging {
                 case spdlog::level::critical: level = LogLevel::Critical; break;
                 default:                      level = LogLevel::Info; break;
             }
-            
+
             // Format the message
             std::string message = fmt::to_string(msg.payload);
             assert(!message.empty() && "Log message should not be empty");
-            
+
             // Push to GUI queue
             m_GuiQueue.Push(LogMessage(message, level));
         }
@@ -45,6 +49,34 @@ namespace EngineLogging {
     private:
         GuiLogQueue& m_GuiQueue;
     };
+
+#ifdef ANDROID
+    // Android logcat sink
+    class AndroidSink : public spdlog::sinks::base_sink<std::mutex> {
+    protected:
+        void sink_it_(const spdlog::details::log_msg& msg) override {
+            // Convert spdlog level to Android log level
+            android_LogPriority priority;
+            switch (msg.level) {
+                case spdlog::level::trace:    priority = ANDROID_LOG_VERBOSE; break;
+                case spdlog::level::debug:    priority = ANDROID_LOG_DEBUG; break;
+                case spdlog::level::info:     priority = ANDROID_LOG_INFO; break;
+                case spdlog::level::warn:     priority = ANDROID_LOG_WARN; break;
+                case spdlog::level::err:      priority = ANDROID_LOG_ERROR; break;
+                case spdlog::level::critical: priority = ANDROID_LOG_FATAL; break;
+                default:                      priority = ANDROID_LOG_INFO; break;
+            }
+
+            // Format the message and send to logcat
+            std::string message = fmt::to_string(msg.payload);
+            __android_log_print(priority, "GAM300", "%s", message.c_str());
+        }
+
+        void flush_() override {
+            // Nothing to flush for Android logcat
+        }
+    };
+#endif
 
     // Static instances
     static std::shared_ptr<spdlog::logger> s_Logger;
@@ -99,28 +131,45 @@ namespace EngineLogging {
         }
 
         try {
-            // Create logs directory if it doesn't exist
+            std::vector<spdlog::sink_ptr> sinks;
+
+#ifdef ANDROID
+            // On Android, use logcat instead of stdout and skip file logging
+            auto android_sink = std::make_shared<AndroidSink>();
+            assert(android_sink != nullptr && "Android sink creation failed");
+            android_sink->set_level(spdlog::level::trace);
+            android_sink->set_pattern("%v");
+            sinks.push_back(android_sink);
+#else
+            // Create logs directory if it doesn't exist (desktop only)
             std::filesystem::create_directories("logs");
             assert(std::filesystem::exists("logs") && "Logs directory should exist after creation");
 
-            // Create sinks
+            // Desktop: use stdout and file logging
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             assert(console_sink != nullptr && "Console sink creation failed");
             console_sink->set_level(spdlog::level::trace);
             console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+            sinks.push_back(console_sink);
 
             auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine.log", true);
             assert(file_sink != nullptr && "File sink creation failed");
             file_sink->set_level(spdlog::level::trace);
             file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+            sinks.push_back(file_sink);
+#endif
 
+<<<<<<< Updated upstream
             auto gui_sink = std::make_shared<GuiSink>(s_GuiLogQueue);
+=======
+            // GUI sink for editor (all platforms)
+            auto gui_sink = std::make_shared<GuiSink>(guiLogQueue);
+>>>>>>> Stashed changes
             assert(gui_sink != nullptr && "GUI sink creation failed");
             gui_sink->set_level(spdlog::level::trace);
             gui_sink->set_pattern("%v");
+            sinks.push_back(gui_sink);
 
-            // Create logger with multiple sinks
-            std::vector<spdlog::sink_ptr> sinks{ console_sink, file_sink, gui_sink };
             assert(!sinks.empty() && "Sinks vector should not be empty");
             
             s_Logger = std::make_shared<spdlog::logger>("engine", sinks.begin(), sinks.end());
@@ -171,6 +220,7 @@ namespace EngineLogging {
     // Internal helper for logging
     void LogInternal(LogLevel level, const std::string& message) {
         assert(!message.empty() && "Log message cannot be empty");
+<<<<<<< Updated upstream
         
         if (!s_Initialized) {
             return;
@@ -179,6 +229,28 @@ namespace EngineLogging {
         assert(s_Logger != nullptr && "Logger should be valid when initialized");
         
         if (s_Logger) {
+=======
+
+        if (!initialized || !logger) {
+            // Logger not initialized or already destroyed - fail silently
+#ifdef ANDROID
+            // On Android, fallback to direct logcat
+            android_LogPriority priority = ANDROID_LOG_INFO;
+            switch (level) {
+                case LogLevel::Trace:    priority = ANDROID_LOG_VERBOSE; break;
+                case LogLevel::Debug:    priority = ANDROID_LOG_DEBUG; break;
+                case LogLevel::Info:     priority = ANDROID_LOG_INFO; break;
+                case LogLevel::Warn:     priority = ANDROID_LOG_WARN; break;
+                case LogLevel::Error:    priority = ANDROID_LOG_ERROR; break;
+                case LogLevel::Critical: priority = ANDROID_LOG_FATAL; break;
+            }
+            __android_log_print(priority, "GAM300", "%s", message.c_str());
+#endif
+            return;
+        }
+
+        if (logger) {
+>>>>>>> Stashed changes
             switch (level) {
                 case LogLevel::Trace:    s_Logger->trace(message); break;
                 case LogLevel::Debug:    s_Logger->debug(message); break;

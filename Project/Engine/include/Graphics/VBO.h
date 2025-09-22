@@ -14,6 +14,8 @@ struct Vertex {
 class VBO {
 public:
 	GLuint ID{};
+	std::vector<Vertex> vertices;
+	VBO() = default;  // Default constructor for member variables
 	VBO(std::vector<Vertex>& vertices);
 
 	void Bind();
@@ -27,4 +29,5 @@ public:
 
 private:
 	bool initialized = false;
+	void setupBuffer();
 };

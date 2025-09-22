@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IPlatform.h"
+#include "../Engine.h"
 
 #ifdef ANDROID
 #include <android/native_activity.h>
@@ -11,6 +12,7 @@
 class AndroidPlatform : public IPlatform {
 private:
     ANativeWindow* window;
+    AAssetManager* assetManager;
     EGLDisplay display;
     EGLContext context;
     EGLSurface surface;
@@ -50,12 +52,17 @@ public:
     double GetTime() override;
     
     bool InitializeGraphics() override;
-    void MakeContextCurrent() override;
-    
+    bool MakeContextCurrent() override;
+
+    // Asset management
+    std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) override;
+
     void* GetNativeWindow() override;
     
     // Android-specific methods
-    void SetNativeWindow(ANativeWindow* nativeWindow);
+    ENGINE_API void SetNativeWindow(ANativeWindow* nativeWindow);
+    ENGINE_API void SetAssetManager(AAssetManager* manager);
+    ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
     void HandleInputEvent(/* Android input event parameters */);
 };
 

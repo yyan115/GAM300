@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Graphics/TextureManager.h"
+#include "Graphics/Texture.h"
 #include <filesystem>
 
 int TextureManager::nextTextureUnit = 0;
@@ -27,17 +28,13 @@ std::shared_ptr<Texture> TextureManager::loadTexture(const std::string& filepath
 	GLenum format = getFormatFromExtension(filepath);
 
 	// Create texture with NO permanent unit (-1)
-#ifdef _WIN32
-	auto texture = std::make_shared<Texture>(filepath.c_str(), type.c_str(), -1, format, GL_UNSIGNED_BYTE);
-#else
-	auto texture = std::make_shared<Texture>(filepath.c_str(), type.c_str(), -1, format);
-#endif
+	auto texture = std::make_shared<Texture>(type.c_str(), -1);
 
 	textureCache.emplace(filepath, texture);
 	return texture;
 }
 
-std::shared_ptr<Texture> TextureManager::getTexture(const std::string& filepath)
+std::shared_ptr<Texture> TextureManager::GetTextureInfo(const std::string& filepath)
 {
 	auto it = textureCache.find(filepath);
 	if (it != textureCache.end())

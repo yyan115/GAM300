@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "Graphics/TextRendering/TextUtils.hpp"
 #include "Graphics/TextRendering/Font.hpp"
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 void TextUtils::SetText(TextRenderComponent& comp, const std::string& newText) 
 {
@@ -73,9 +76,22 @@ float TextUtils::GetEstimatedHeight(const TextRenderComponent& comp)
     return 0.0f;
 }
 
-bool TextUtils::IsValid(const TextRenderComponent& comp) 
+bool TextUtils::IsValid(const TextRenderComponent& comp)
 {
+#ifdef ANDROID
+    bool textValid = !comp.text.empty();
+    bool fontValid = comp.font != nullptr;
+    bool shaderValid = comp.shader != nullptr;
+
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "TextUtils::IsValid - text='%s' empty=%d, font=%p, shader=%p",
+        comp.text.c_str(), comp.text.empty(), comp.font.get(), comp.shader.get());
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "TextUtils::IsValid - textValid=%d, fontValid=%d, shaderValid=%d, overall=%d",
+        textValid, fontValid, shaderValid, (textValid && fontValid && shaderValid));
+
+    return textValid && fontValid && shaderValid;
+#else
     return !comp.text.empty() && comp.font && comp.shader;
+#endif
 }
 
 void TextUtils::CenterOnScreen(TextRenderComponent& comp, int screenWidth, int screenHeight)

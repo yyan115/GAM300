@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include "Graphics/OpenGL.h"
 #include <glm/glm.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -32,12 +32,22 @@ public:
 	float GetTextWidth(const std::string& text, float scale = 1.0f) const;
 	float GetTextHeight(float scale = 1.0f) const;
 
-	VAO* GetVAO() const { return textVAO.get(); }
-	VBO* GetVBO() const { return textVBO.get(); }
+	VAO* GetVAO() const {
+		EnsureVAOSetup();
+		return textVAO.get();
+	}
+	VBO* GetVBO() const {
+		EnsureVAOSetup();
+		return textVBO.get();
+	}
+
 private:
+	void EnsureVAOSetup() const;
+
 	std::map<GLchar, Character> Characters;
-	std::unique_ptr<VAO> textVAO;
-	std::unique_ptr<VBO> textVBO;
+	mutable std::unique_ptr<VAO> textVAO;
+	mutable std::unique_ptr<VBO> textVBO;
+	mutable bool vaoSetupNeeded;
 	unsigned int fontSize;
 	std::string fontPath;
 };

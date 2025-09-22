@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -32,8 +37,26 @@ void GraphicsManager::EndFrame()
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
 {
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() called");
+
+	// Ensure EGL context is current before making OpenGL calls
+	auto* platform = WindowManager::GetPlatform();
+	if (platform) {
+		platform->MakeContextCurrent();
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context made current");
+	}
+
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClearColor");
+#endif
 	glClearColor(r, g, b, a);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClear");
+#endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() completed");
+#endif
 }
 
 void GraphicsManager::SetCamera(Camera* camera)
@@ -51,13 +74,36 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 
 void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform)
 {
-	if (model && shader) 
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "SubmitModel() called");
+#endif
+	if (model && shader)
 	{
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to convert Matrix4x4 to GLM");
+#endif
 		glm::mat4 glmTransform = ConvertMatrix4x4ToGLM(transform);
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to create ModelRenderComponent");
+#endif
 		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader);
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to set transform");
+#endif
 		renderItem->transform = glmTransform;
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to Submit renderItem");
+#endif
 		Submit(std::move(renderItem));
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "SubmitModel() completed");
+#endif
 	}
+#ifdef ANDROID
+	else {
+		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "SubmitModel() called with null model or shader");
+	}
+#endif
 }
 
 void GraphicsManager::Render()
@@ -159,6 +205,10 @@ void GraphicsManager::ApplyLighting(Shader& shader)
 void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix)
 {
 	shader.setMat4("model", modelMatrix);
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setting model matrix: [%.2f %.2f %.2f %.2f]",
+		modelMatrix[3][0], modelMatrix[3][1], modelMatrix[3][2], modelMatrix[3][3]);
+#endif
 
 	if (currentCamera) 
 	{
