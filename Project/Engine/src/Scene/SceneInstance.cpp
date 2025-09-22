@@ -112,9 +112,11 @@ void SceneInstance::Draw() {
 		mainECS.textSystem->Update();
 	}
 	// Test debug drawing
-	DebugDrawSystem::DrawCube(glm::vec3(0, 1, 0), glm::vec3(1, 1, 1), glm::vec3(1, 0, 0)); // Red cube above origin
-	DebugDrawSystem::DrawSphere(glm::vec3(2, 0, 0), 1.0f, glm::vec3(0, 1, 0)); // Green sphere to the right
-	DebugDrawSystem::DrawLine(glm::vec3(0, 0, 0), glm::vec3(3, 3, 3), glm::vec3(0, 0, 1)); // Blue line diagonal
+	//DebugDrawSystem::DrawCube(glm::vec3(0, 1, 0), glm::vec3(1, 1, 1), glm::vec3(1, 0, 0)); // Red cube above origin
+	//DebugDrawSystem::DrawSphere(glm::vec3(2, 0, 0), 1.0f, glm::vec3(0, 1, 0)); // Green sphere to the right
+	//DebugDrawSystem::DrawLine(glm::vec3(0, 0, 0), glm::vec3(3, 3, 3), glm::vec3(0, 0, 1)); // Blue line diagonal
+	//auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
+	//DebugDrawSystem::DrawMeshWireframe(backpackModel, glm::vec3(-2, 0, 0), glm::vec3(1, 1, 0), 0.0f); 
 
 	// Update debug draw system to submit to graphics manager
 	if (mainECS.debugDrawSystem)
