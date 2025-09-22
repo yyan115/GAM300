@@ -10,11 +10,7 @@
 #include <cstring>
 #endif
 
-<<<<<<< Updated upstream
-Font::Font(unsigned int defaultFontSize) : fontSize(defaultFontSize) {}
-=======
 Font::Font(unsigned int fontSize) : fontSize(fontSize), vaoSetupNeeded(false) {}
->>>>>>> Stashed changes
 
 Font::~Font()
 {
