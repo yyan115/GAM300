@@ -218,12 +218,18 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		// Get window dimensions with safety checks
 		int windowWidth = WindowManager::GetWindowWidth();
 		int windowHeight = WindowManager::GetWindowHeight();
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Window dimensions: %dx%d", windowWidth, windowHeight);
+#endif
 
 		// Prevent division by zero and ensure minimum dimensions
 		if (windowWidth <= 0) windowWidth = 1;
 		if (windowHeight <= 0) windowHeight = 1;
 
 		float aspectRatio = (float)windowWidth / (float)windowHeight;
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Aspect ratio: %.3f", aspectRatio);
+#endif
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
