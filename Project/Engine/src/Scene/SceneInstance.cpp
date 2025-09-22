@@ -59,11 +59,6 @@ void SceneInstance::Initialize() {
 	Entity text = ecsManager.CreateEntity();
 	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", AssetManager::GetInstance().GetAsset<Font>("Resources/Fonts/Kenney Mini.ttf"), textShader });
 	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-<<<<<<< Updated upstream
-	TextUtils::SetPosition(textComp, glm::vec3(800,0,0));
-	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
-
-=======
 	TextUtils::SetPosition(textComp, glm::vec3(100, 100, 0));
 	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
@@ -74,7 +69,6 @@ void SceneInstance::Initialize() {
 	TextUtils::SetPosition(textComp2, glm::vec3(200, 200, 0));
 	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
 
->>>>>>> Stashed changes
 	// Creates light
 	lightShader = std::make_shared<Shader>();
 	lightShader->LoadAsset("Resources/Shaders/light");

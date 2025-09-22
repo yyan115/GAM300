@@ -159,12 +159,8 @@ namespace EngineLogging {
             sinks.push_back(file_sink);
 #endif
 
-<<<<<<< Updated upstream
-            auto gui_sink = std::make_shared<GuiSink>(s_GuiLogQueue);
-=======
             // GUI sink for editor (all platforms)
             auto gui_sink = std::make_shared<GuiSink>(guiLogQueue);
->>>>>>> Stashed changes
             assert(gui_sink != nullptr && "GUI sink creation failed");
             gui_sink->set_level(spdlog::level::trace);
             gui_sink->set_pattern("%v");
@@ -220,16 +216,6 @@ namespace EngineLogging {
     // Internal helper for logging
     void LogInternal(LogLevel level, const std::string& message) {
         assert(!message.empty() && "Log message cannot be empty");
-<<<<<<< Updated upstream
-        
-        if (!s_Initialized) {
-            return;
-        }
-
-        assert(s_Logger != nullptr && "Logger should be valid when initialized");
-        
-        if (s_Logger) {
-=======
 
         if (!initialized || !logger) {
             // Logger not initialized or already destroyed - fail silently
@@ -250,7 +236,6 @@ namespace EngineLogging {
         }
 
         if (logger) {
->>>>>>> Stashed changes
             switch (level) {
                 case LogLevel::Trace:    s_Logger->trace(message); break;
                 case LogLevel::Debug:    s_Logger->debug(message); break;

@@ -4,9 +4,6 @@
 #include <iostream>
 #include "Asset Manager/AssetManager.hpp"
 
-<<<<<<< Updated upstream
-bool Model::LoadAsset(const std::string& path) 
-=======
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -15,7 +12,6 @@ bool Model::LoadAsset(const std::string& path)
 std::string get_file_contents(const char* filename);
 
 std::string Model::CompileToResource(const std::string& assetPath)
->>>>>>> Stashed changes
 {
 	Assimp::Importer importer;
 	// The function expects a file path and several post-processing options as its second argument
@@ -220,8 +216,6 @@ std::vector<std::shared_ptr<Texture>> Model::loadMaterialTexture(aiMaterial* mat
 	return textures;
 }
 
-<<<<<<< Updated upstream
-=======
 std::string Model::CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile) {
     std::filesystem::path p(modelPath);
     std::string meshPath = (p.parent_path() / p.stem()).generic_string() + ".mesh";
@@ -473,7 +467,6 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
     return std::shared_ptr<AssetMeta>();
 }
 
->>>>>>> Stashed changes
 void Model::Draw(Shader& shader, const Camera& camera)
 {
 	for (auto& mesh : meshes)

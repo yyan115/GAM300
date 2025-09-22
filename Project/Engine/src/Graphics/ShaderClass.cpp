@@ -141,8 +141,6 @@ bool Shader::LoadAsset(const std::string& path) {
 	return true;
 }
 
-<<<<<<< Updated upstream
-=======
 std::string Shader::CompileToResource(const std::string& path) {
 	// Check if glGetProgramBinary is supported first.
 	GLint supported = 0;
@@ -259,7 +257,6 @@ std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, 
 	return std::shared_ptr<AssetMeta>();
 }
 
->>>>>>> Stashed changes
 void Shader::Activate()
 {
 	glUseProgram(ID);

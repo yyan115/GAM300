@@ -4,8 +4,6 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
-<<<<<<< Updated upstream
-=======
 #ifdef ANDROID
 #include <GLI/gli.hpp>
 #else
@@ -14,7 +12,6 @@
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
->>>>>>> Stashed changes
 
 Texture::Texture() : ID(0), type(type), unit(0) {}
 
@@ -71,10 +68,6 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pix
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// Configures the way the texture repeats (if it does at all)
-<<<<<<< Updated upstream
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-=======
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -83,7 +76,6 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum pix
 #ifndef ANDROID
 	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
 #endif
->>>>>>> Stashed changes
 
 	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
 	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};

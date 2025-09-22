@@ -12,14 +12,11 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::sha
 {
 }
 
-<<<<<<< Updated upstream
-=======
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat) :
 	vertices(vertices), indices(indices), textures(textures), material(mat), ebo(indices), vaoSetup(false)
 {
 }
 
->>>>>>> Stashed changes
 Mesh::~Mesh()
 {
 	vao.Delete();
@@ -130,9 +127,6 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 		}
 	}
 
-<<<<<<< Updated upstream
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-=======
 	//assert(glIsProgram(shader.ID));
 	//assert(glIsVertexArray(vao.ID));
 	//assert(glIsTexture(textures[0]->ID));
@@ -163,6 +157,5 @@ while ((err = glGetError()) != GL_NO_ERROR) {
                        err, indices.size(), vao.ID);
 }
 #endif
->>>>>>> Stashed changes
 }
 
