@@ -327,15 +327,13 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 
 	// Enable wireframe mode for debug rendering
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	// Disable depth testing for debug draws so they're always visible
 	glDisable(GL_DEPTH_TEST);
 
 	// Activate shader
 	item.shader->Activate();
 
 	// Render each draw command
-	for (const auto& drawCommand : item.drawCommands) 
+	for (const auto& drawCommand : item.drawCommands)
 	{
 		VAO* currentVAO = nullptr;
 		unsigned int indexCount = 0;

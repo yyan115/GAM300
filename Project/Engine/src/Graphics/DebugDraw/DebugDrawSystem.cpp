@@ -5,22 +5,15 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include "Asset Manager/ResourceManager.hpp"
 
 std::vector<DebugDrawData> DebugDrawSystem::debugQueue; 
 
 bool DebugDrawSystem::Initialise() 
 {
     // Create debug shader (you'll need to create this shader file)
-    debugShader = std::make_shared<Shader>(); 
+    debugShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
 
-    if (debugShader->LoadAsset("Resources/Shaders/debug"))
-    {
-        std::cout << "Debug shader loaded successfully!" << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to load debug shader!" << std::endl;
-    }
     CreatePrimitiveGeometry();
 
     std::cout << "[DebugDrawSystem] Initialized" << std::endl;
@@ -29,37 +22,33 @@ bool DebugDrawSystem::Initialise()
 
 void DebugDrawSystem::Update()
 {
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (debugQueue.empty()) return;
+
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
-    // Process all entities with DebugDrawComponent
-    for (const auto& entity : entities) 
-    {
-        auto& debugComponent = ecsManager.GetComponent<DebugDrawComponent>(entity);
+    // Create component and check all pointers are valid
+    auto debugComponent = std::make_unique<DebugDrawComponent>();
+    auto shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
 
-        if (!debugComponent.isVisible || !debugComponent.HasCommands()) 
-        {
-            continue;
-        }
-
-        // Set up shared geometry references if not already set
-        if (!debugComponent.cubeVAO) 
-        {
-            debugComponent.shader = debugShader;
-            debugComponent.cubeVAO = cubeGeometry.vao.get();
-            debugComponent.sphereVAO = sphereGeometry.vao.get();
-            debugComponent.lineVAO = lineGeometry.vao.get();
-            debugComponent.cubeIndexCount = cubeGeometry.indexCount;
-            debugComponent.sphereIndexCount = sphereGeometry.indexCount;
-        }
-
-        // Submit the debug component directly to graphics manager
-        auto debugComponentCopy = std::make_unique<DebugDrawComponent>(debugComponent);
-        gfxManager.Submit(std::move(debugComponentCopy));
+    if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
+        std::cerr << "Error: Required debug resources are null!" << std::endl;
+        debugQueue.clear();
+        return;
     }
 
-    // Update timed commands (remove expired ones)
-    UpdateTimedCommands(0.016f);
+    debugComponent->shader = shader;
+    debugComponent->cubeVAO = cubeGeometry.vao.get();
+    debugComponent->sphereVAO = sphereGeometry.vao.get();
+    debugComponent->lineVAO = lineGeometry.vao.get();
+    debugComponent->cubeIndexCount = cubeGeometry.indexCount;
+    debugComponent->sphereIndexCount = sphereGeometry.indexCount;
+
+    // Copy instead of move to avoid potential issues
+    debugComponent->drawCommands = debugQueue;
+
+    gfxManager.Submit(std::move(debugComponent));
+
+    debugQueue.clear();
 }
 
 void DebugDrawSystem::Shutdown()
@@ -100,6 +89,8 @@ void DebugDrawSystem::CreateCubeGeometry()
 
     cubeGeometry.vao->Bind();
     cubeGeometry.vbo->UpdateData(vertices.data(), vertices.size() * sizeof(glm::vec3));
+
+    cubeGeometry.ebo->Bind();
 
     // Position attribute
     cubeGeometry.vao->LinkAttrib(*cubeGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
@@ -158,7 +149,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
     sphereGeometry.vao->Bind();
     sphereGeometry.vbo->UpdateData(vertices.data(), vertices.size() * sizeof(glm::vec3));
-
+    sphereGeometry.ebo->Bind();
     sphereGeometry.vao->LinkAttrib(*sphereGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
     sphereGeometry.indexCount = indices.size();
