@@ -170,14 +170,18 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("view", view);
 
 		// Get window dimensions with safety checks
-		int windowWidth = WindowManager::GetWindowWidth();
-		int windowHeight = WindowManager::GetWindowHeight();
+		//int windowWidth = WindowManager::GetWindowWidth();
+		//int windowHeight = WindowManager::GetWindowHeight();
 
 		// Prevent division by zero and ensure minimum dimensions
-		if (windowWidth <= 0) windowWidth = 1;
-		if (windowHeight <= 0) windowHeight = 1;
+		//if (windowWidth <= 0) windowWidth = 1;
+		//if (windowHeight <= 0) windowHeight = 1;
 
-		float aspectRatio = (float)windowWidth / (float)windowHeight;
+		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
+		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
+
+
+		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
