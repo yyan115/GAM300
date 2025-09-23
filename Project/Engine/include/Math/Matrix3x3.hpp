@@ -14,7 +14,22 @@
 #include "pch.h"
 #include "Math/Vector3D.hpp"
 
-struct Matrix3x3 {
+#ifdef _WIN32
+#ifdef ENGINE_EXPORTS
+#define ENGINE_API __declspec(dllexport)
+#else
+#define ENGINE_API __declspec(dllimport)
+#endif
+#else
+// Linux/GCC
+#ifdef ENGINE_EXPORTS
+#define ENGINE_API __attribute__((visibility("default")))
+#else
+#define ENGINE_API
+#endif
+#endif
+
+struct ENGINE_API Matrix3x3 {
     REFL_SERIALIZABLE
     // Storage: row-major (m[row][col])
     struct Matrix
