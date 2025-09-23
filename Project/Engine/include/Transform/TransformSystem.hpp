@@ -30,11 +30,4 @@ public:
 
 	void SetDirtyRecursive(Entity entity);
 	Transform& GetRootParentTransform(Entity currentEntity);
-
-	// Extract translation, scale, rotation from matrix
-	static Vector3D ExtractTranslation(const Matrix4x4& m);
-	static Vector3D ExtractScale(const Matrix4x4& m);
-	static Vector3D ExtractRotation(const Matrix4x4& m);
-
-	static Matrix4x4 RemoveScale(const Matrix4x4& m);
 };

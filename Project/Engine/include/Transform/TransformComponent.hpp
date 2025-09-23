@@ -1,5 +1,6 @@
 #pragma once
 #include "Math/Matrix4x4.hpp"
+#include "Quaternion.hpp"
 
 struct Transform {
 	//Vector3D worldPosition = { 0, 0, 0 };
@@ -8,7 +9,8 @@ struct Transform {
 
 	Vector3D localPosition;
 	Vector3D localScale;
-	Vector3D localRotation;
+	//Vector3D editorEuler;
+	Quaternion localRotation;
 
 	//Vector3D lastPosition = { 0, 0, 0 };
 	//Vector3D lastScale = { 0, 0, 0 };

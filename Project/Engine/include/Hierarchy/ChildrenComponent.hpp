@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
+#include <set>
 #include "../ECS/Entity.hpp"
 
 struct ChildrenComponent {
-	std::vector<Entity> children; // Children entity IDs
+	std::set<Entity> children; // Children entity IDs
 };

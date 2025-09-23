@@ -130,7 +130,8 @@ void InspectorPanel::DrawTransformComponent(Entity entity) {
         }
 
         // Rotation
-        float rotation[3] = { transform.localRotation.x, transform.localRotation.y, transform.localRotation.z };
+        Vector3D rotationEuler = transform.localRotation.ToEulerDegrees();
+        float rotation[3] = { rotationEuler.x, rotationEuler.y, rotationEuler.z };
         ImGui::Text("Rotation");
         ImGui::SameLine();
         if (ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.1f")) {

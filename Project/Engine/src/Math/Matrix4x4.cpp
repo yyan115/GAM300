@@ -394,6 +394,62 @@ Matrix4x4 Matrix4x4::OrthoRH(float l, float r, float b, float t, float n, float 
     };
 }
 
+Vector3D Matrix4x4::ExtractTranslation(const Matrix4x4& m) {
+    Vector3D localPosition = Vec3(m[0][3], m[1][3], m[2][3]);
+    return localPosition;
+}
+
+Vector3D Matrix4x4::ExtractScale(const Matrix4x4& m) {
+    Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]);
+    Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]);
+    Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]);
+
+    Vector3D localScale = Vector3D(xAxis.Length(), yAxis.Length(), zAxis.Length());
+    return localScale;
+}
+
+Vector3D Matrix4x4::ExtractRotation(const Matrix4x4& m) {
+    Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]).Normalize();
+    Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]).Normalize();
+    Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]).Normalize();
+
+    Matrix3x3 rotMat(xAxis.x, xAxis.y, xAxis.z,
+        yAxis.x, yAxis.y, yAxis.z,
+        zAxis.x, zAxis.y, zAxis.z);
+
+    float pitch = -std::asin(rotMat[1][2]);
+    float yaw = std::atan2(rotMat[0][2], rotMat[2][2]);
+    float roll = std::atan2(rotMat[1][0], rotMat[1][1]);
+
+    return Vector3D(pitch, yaw, roll); // in radians
+}
+
+Matrix4x4 Matrix4x4::RemoveScale(const Matrix4x4& m) {
+    // Extract basis vectors from columns
+    Vector3D xAxis(m[0][0], m[1][0], m[2][0]);
+    Vector3D yAxis(m[0][1], m[1][1], m[2][1]);
+    Vector3D zAxis(m[0][2], m[1][2], m[2][2]);
+
+    // Normalize to remove scale
+    xAxis = xAxis.Normalize();
+    yAxis = yAxis.Normalize();
+    zAxis = zAxis.Normalize();
+
+    // Extract translation from last column
+    Vector3D translation(m[0][3], m[1][3], m[2][3]);
+
+    Matrix4x4 result = Matrix4x4::Identity();
+    result[0][0] = xAxis.x; result[1][0] = xAxis.y; result[2][0] = xAxis.z;
+    result[0][1] = yAxis.x; result[1][1] = yAxis.y; result[2][1] = yAxis.z;
+    result[0][2] = zAxis.x; result[1][2] = zAxis.y; result[2][2] = zAxis.z;
+
+    result[0][3] = translation.x;
+    result[1][3] = translation.y;
+    result[2][3] = translation.z;
+
+    return result;
+}
+
 std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {

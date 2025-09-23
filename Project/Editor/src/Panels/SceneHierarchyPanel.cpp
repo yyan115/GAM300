@@ -63,7 +63,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             ImGui::Text("Error accessing ECS: %s", e.what());
         }
 
-        ImGui::Separator();
+        //ImGui::Separator();
 
         // Context menu for creating new objects
         if (ImGui::BeginPopupContextWindow()) {
@@ -77,6 +77,20 @@ void SceneHierarchyPanel::OnImGuiRender() {
                 // TODO: Create sphere primitive
             }
             ImGui::EndPopup();
+        }
+
+        // Handle unparenting of an entity
+        // Take up all remaining space in the window
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        if (avail.y > 0) {
+            ImGui::InvisibleButton("HierarchyBackground", avail);
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                    Entity dragged = *(Entity*)payload->Data;
+                    UnparentEntity(dragged);
+                }
+                ImGui::EndDragDropTarget();
+            }
         }
     }
     ImGui::End();
@@ -184,32 +198,109 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
 }
 
-void SceneHierarchyPanel::ReparentEntity(Entity child, Entity parent) {
+void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetParent) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    if (ecsManager.HasComponent<ParentComponent>(child)) {
-        ecsManager.GetComponent<ParentComponent>(child).parent = parent;
+    Transform& draggedEntityTransform = ecsManager.GetComponent<Transform>(draggedEntity);
+
+    // If the target parent is one of the dragged entity's child, do nothing (circular dependency).
+    std::set<Entity> nestedChildren;
+    TraverseHierarchy(draggedEntity, nestedChildren, [&](Entity _entity, std::set<Entity>& nestedChildren) {
+        AddNestedChildren(_entity, nestedChildren);
+    });
+
+    if (nestedChildren.find(targetParent) != nestedChildren.end()) {
+        return;
+    }
+
+    // If the dragged entity had a parent
+    if (ecsManager.HasComponent<ParentComponent>(draggedEntity)) {
+        ParentComponent& parentComponent = ecsManager.GetComponent<ParentComponent>(draggedEntity);
+
+        // Check if the new parent is the same as the old parent. If it is, exit.
+        if (parentComponent.parent == targetParent) return;
+        
+        // Set the child's new parent.
+        Entity oldParent = parentComponent.parent;
+        parentComponent.parent = targetParent;
+
+        // Remove the child from the old parent.
+        auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
+        auto it = oldPChildCompOpt->get().children.find(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
+
+        // If the old parent has no more children, remove the children component from the old parent.
+        if (oldPChildCompOpt->get().children.empty())
+            ecsManager.RemoveComponent<ChildrenComponent>(oldParent);
     }
     else {
-        ecsManager.AddComponent<ParentComponent>(child, ParentComponent{});
-        ecsManager.GetComponent<ParentComponent>(child).parent = parent;
+        ecsManager.AddComponent<ParentComponent>(draggedEntity, ParentComponent{});
+        ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParent;
     }
 
-    if (ecsManager.HasComponent<ChildrenComponent>(parent)) {
-        ecsManager.GetComponent<ChildrenComponent>(parent).children.push_back(child);
+    // If the parent already has children
+    if (ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
+
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
     }
     else {
-        ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
-        ecsManager.GetComponent<ChildrenComponent>(parent).children.push_back(child);
+        ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
     }
 
-    // Calculate the child's new worldMatrix.
-    Transform& childTransform = ecsManager.GetComponent<Transform>(child);
-    Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
-    //Vector3D newLocalPos = childTransform.localPosition - parentTransform.localPosition;
-    //Vector3D newLocalRot = childTransform.localRotation - parentTransform.localRotation;
-    //Vector3D newLocalScale = childTransform.localScale / parentTransform.localScale;
+    // Calculate the child's world position, rotation and scale.
+    Vector3D worldPos = Matrix4x4::ExtractTranslation(draggedEntityTransform.worldMatrix);
+    Vector3D worldScale = Matrix4x4::ExtractScale(draggedEntityTransform.worldMatrix);
+    Matrix4x4 noScale = Matrix4x4::RemoveScale(draggedEntityTransform.worldMatrix);
+    Quaternion worldRot = Quaternion::FromMatrix(noScale);
 
-    ecsManager.transformSystem->SetWorldPosition(child, childTransform.localPosition);
-    ecsManager.transformSystem->SetWorldRotation(child, childTransform.localRotation);
-    ecsManager.transformSystem->SetWorldScale(child, childTransform.localScale);
+    ecsManager.transformSystem->SetWorldPosition(draggedEntity, worldPos);
+    ecsManager.transformSystem->SetWorldRotation(draggedEntity, worldRot.ToEulerDegrees());
+    ecsManager.transformSystem->SetWorldScale(draggedEntity, worldScale);
+}
+
+void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    // First check if the dragged entity has a ParentComponent
+    if (ecsManager.HasComponent<ParentComponent>(draggedEntity)) {
+        // If there is, remove it, but store the parent first.
+        Entity parent = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
+        ecsManager.RemoveComponent<ParentComponent>(draggedEntity);
+
+        // Update the parent by removing the dragged entity from its children.
+        ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
+        auto it = pChildrenComponent.children.find(draggedEntity);
+        pChildrenComponent.children.erase(it);
+        if (pChildrenComponent.children.empty()) {
+            ecsManager.RemoveComponent<ChildrenComponent>(parent);
+        }
+
+        // Calculate the child's local position, rotation and scale equal to its world transform (since it now has no parent).
+        Transform& draggedEntityTransform = ecsManager.GetComponent<Transform>(draggedEntity);
+        Vector3D worldPos = Matrix4x4::ExtractTranslation(draggedEntityTransform.worldMatrix);
+        Vector3D worldScale = Matrix4x4::ExtractScale(draggedEntityTransform.worldMatrix);
+        Matrix4x4 noScale = Matrix4x4::RemoveScale(draggedEntityTransform.worldMatrix);
+        Quaternion worldRot = Quaternion::FromMatrix(noScale);
+
+        ecsManager.transformSystem->SetLocalPosition(draggedEntity, worldPos);
+        ecsManager.transformSystem->SetLocalRotation(draggedEntity, worldRot.ToEulerDegrees());
+        ecsManager.transformSystem->SetLocalScale(draggedEntity, worldScale);
+    }
+}
+
+void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nestedChildren, std::function<void(Entity, std::set<Entity>&)> addNestedChildren) {
+    // Update its own transform first.
+    addNestedChildren(entity, nestedChildren);
+
+    // Then traverse children.
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+        auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
+        for (const auto& child : childrenComp.children) {
+            TraverseHierarchy(child, nestedChildren, addNestedChildren);
+        }
+    }
+}
+
+void SceneHierarchyPanel::AddNestedChildren(Entity entity, std::set<Entity>& nestedChildren) {
+    nestedChildren.insert(entity);
 }

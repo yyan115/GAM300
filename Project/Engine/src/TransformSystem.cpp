@@ -85,13 +85,13 @@ void TransformSystem::UpdateTransform(Entity entity) {
 			Matrix4x4 localMatrix = CalculateModelMatrix(
 				transform.localPosition,   // unaffected by parent scale
 				transform.localScale,
-				transform.localRotation
+				transform.localRotation.ToEulerDegrees()
 			);
 
 			transform.worldMatrix = parentTransform.worldMatrix * localMatrix;
 		}
 		else {
-			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
+			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation.ToEulerDegrees());
 		}
 
 		transform.isDirty = false;
@@ -164,25 +164,14 @@ void TransformSystem::SetWorldRotation(Entity entity, Vector3D rotation) {
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
-		float radx = rotation.x * (M_PI / 180.f);
-		float rady = rotation.y * (M_PI / 180.f);
-		float radz = rotation.z * (M_PI / 180.f);
-		Matrix4x4 desiredR = Matrix4x4::RotationZ(radz)
-			* Matrix4x4::RotationY(rady)
-			* Matrix4x4::RotationX(radx);
-		Vector3D parentRotation = ExtractRotation(parentTransform.worldMatrix);
-		float p_radx = parentRotation.x * (M_PI / 180.f);
-		float p_rady = parentRotation.y * (M_PI / 180.f);
-		float p_radz = parentRotation.z * (M_PI / 180.f);
-		Matrix4x4 parentR = Matrix4x4::RotationZ(p_radz)
-			* Matrix4x4::RotationY(p_rady)
-			* Matrix4x4::RotationX(p_radx);
-		Matrix4x4 localR = parentR.Inversed() * desiredR;
-		Vector3D rotationRad = ExtractRotation(localR);
-		transform.localRotation = rotationRad * (180.0f / M_PI);
+		Matrix4x4 parentNoScale = Matrix4x4::RemoveScale(parentTransform.worldMatrix);
+		Quaternion parentWorldRot = Quaternion::FromMatrix(parentNoScale);
+		Quaternion desiredWorldRot = Quaternion::FromEulerDegrees(rotation);
+
+		transform.localRotation = parentWorldRot.Inverse() * desiredWorldRot;
 	}
 	else {
-		transform.localRotation = rotation;
+		transform.localRotation = Quaternion::FromEulerDegrees(rotation);
 	}
 
 	SetDirtyRecursive(entity);
@@ -191,7 +180,7 @@ void TransformSystem::SetWorldRotation(Entity entity, Vector3D rotation) {
 void TransformSystem::SetLocalRotation(Entity entity, Vector3D rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
-	transform.localRotation = rotation;
+	transform.localRotation = Quaternion::FromEulerDegrees(rotation);
 
 	SetDirtyRecursive(entity);
 }
@@ -205,7 +194,7 @@ void TransformSystem::SetWorldScale(Entity entity, Vector3D scale) {
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
-		Vector3D parentScale = ExtractScale(parentTransform.worldMatrix);
+		Vector3D parentScale = Matrix4x4::ExtractScale(parentTransform.worldMatrix);
 		transform.localScale = scale / parentScale;
 	}
 	else {
@@ -246,61 +235,3 @@ Transform& TransformSystem::GetRootParentTransform(Entity currentEntity) {
 		return GetRootParentTransform(parent);
 	}
 }
-
-Vector3D TransformSystem::ExtractTranslation(const Matrix4x4& m) {
-	// Assuming row-major layout
-	Vector3D localPosition = Vec3(m[3][0], m[3][1], m[3][2]);
-	return localPosition;
-}
-
-Vector3D TransformSystem::ExtractScale(const Matrix4x4& m) {
-	Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]);
-	Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]);
-	Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]);
-
-	Vector3D localScale = Vector3D(xAxis.Length(), yAxis.Length(), zAxis.Length());
-	return localScale;
-}
-
-Vector3D TransformSystem::ExtractRotation(const Matrix4x4& m) {
-	Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]).Normalize();
-	Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]).Normalize();
-	Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]).Normalize();
-
-	Matrix3x3 rotMat(xAxis.x, xAxis.y, xAxis.z,
-		yAxis.x, yAxis.y, yAxis.z,
-		zAxis.x, zAxis.y, zAxis.z);
-
-	float pitch = -std::asin(rotMat[1][2]);
-	float yaw = std::atan2(rotMat[0][2], rotMat[2][2]);
-	float roll = std::atan2(rotMat[1][0], rotMat[1][1]);
-
-	return Vector3D(pitch, yaw, roll); // in radians
-}
-
-Matrix4x4 TransformSystem::RemoveScale(const Matrix4x4& m) {
-	// Extract basis vectors from columns
-	Vector3D xAxis(m[0][0], m[1][0], m[2][0]);
-	Vector3D yAxis(m[0][1], m[1][1], m[2][1]);
-	Vector3D zAxis(m[0][2], m[1][2], m[2][2]);
-
-	// Normalize to remove scale
-	xAxis = xAxis.Normalize();
-	yAxis = yAxis.Normalize();
-	zAxis = zAxis.Normalize();
-
-	// Extract translation from last column
-	Vector3D translation(m[0][3], m[1][3], m[2][3]);
-
-	Matrix4x4 result = Matrix4x4::Identity();
-	result[0][0] = xAxis.x; result[1][0] = xAxis.y; result[2][0] = xAxis.z;
-	result[0][1] = yAxis.x; result[1][1] = yAxis.y; result[2][1] = yAxis.z;
-	result[0][2] = zAxis.x; result[1][2] = zAxis.y; result[2][2] = zAxis.z;
-
-	result[0][3] = translation.x;
-	result[1][3] = translation.y;
-	result[2][3] = translation.z;
-
-	return result;
-}
-
