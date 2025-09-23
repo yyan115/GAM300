@@ -53,11 +53,14 @@
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
+    <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
+    <ClInclude Include="include\Graphics\DebugDraw\DebugDrawSystem.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
@@ -69,6 +72,7 @@
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
+    <ClInclude Include="include\TimeManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -104,6 +108,7 @@
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
+    <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Platform\Platform.cpp" />
@@ -113,6 +118,8 @@
     <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
     <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
+    <ClCompile Include="src\RunTimeVar.cpp" />
+    <ClCompile Include="src\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

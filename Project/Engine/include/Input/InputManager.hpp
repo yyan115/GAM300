@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <WindowManager.hpp>
+#include "RunTimeVar.hpp"
 #include "Keys.h"
 
 class IPlatform; // Forward declaration
@@ -32,15 +34,15 @@ public:
 private:
 	static IPlatform* platform;  // Reference to platform for input polling
 	
-	// Internal state tracking using engine key constants
+	//// Internal state tracking using engine key constants
 	static std::unordered_map<Input::Key, bool> keyStates;
 	static std::unordered_map<Input::MouseButton, bool> mouseButtonStates;
 	
 	static std::unordered_map<Input::Key, bool> prevKeyStates;
 	static std::unordered_map<Input::MouseButton, bool> prevMouseButtonStates;
 
-	static double mouseX;
-	static double mouseY;
-	static double scrollOffsetX;
-	static double scrollOffsetY;
+	//static double mouseX;
+	//static double mouseY;
+	//static double scrollOffsetX;
+	//static double scrollOffsetY;
 };

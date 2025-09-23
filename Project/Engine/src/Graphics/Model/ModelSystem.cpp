@@ -41,17 +41,15 @@ void ModelSystem::Update()
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, model=%p, shader=%p",
          //                 entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
 #endif
-
         if (modelComponent.isVisible && modelComponent.model && modelComponent.shader)
         {
 #ifdef ANDROID
            // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting model for entity: %u", entity);
 #endif
-            gfxManager.SubmitModel(
-                modelComponent.model,
-                modelComponent.shader,
-                ecsManager.GetComponent<Transform>(entity).model
-            );
+            auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
+            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).model);
+
+            gfxManager.Submit(std::move(modelRenderItem));
         }
 #ifdef ANDROID
         else {

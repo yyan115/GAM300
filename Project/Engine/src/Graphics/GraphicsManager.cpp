@@ -6,6 +6,7 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#include <Transform/TransformSystem.hpp>
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -72,40 +73,6 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	}
 }
 
-void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform)
-{
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "SubmitModel() called");
-#endif
-	if (model && shader)
-	{
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to convert Matrix4x4 to GLM");
-#endif
-		glm::mat4 glmTransform = ConvertMatrix4x4ToGLM(transform);
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to create ModelRenderComponent");
-#endif
-		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader);
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to set transform");
-#endif
-		renderItem->transform = glmTransform;
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to Submit renderItem");
-#endif
-		Submit(std::move(renderItem));
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "SubmitModel() completed");
-#endif
-	}
-#ifdef ANDROID
-	else {
-		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "SubmitModel() called with null model or shader");
-	}
-#endif
-}
-
 void GraphicsManager::Render()
 {
 	if (!currentCamera) 
@@ -135,6 +102,10 @@ void GraphicsManager::Render()
 		else if (textItem) 
 		{
 			RenderText(*textItem);
+		}
+		else if (const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get()))
+		{
+			RenderDebugDraw(*debugItem);
 		}
 	}
 }
@@ -214,14 +185,18 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("view", view);
 
 		// Get window dimensions with safety checks
-		int windowWidth = WindowManager::GetWindowWidth();
-		int windowHeight = WindowManager::GetWindowHeight();
+		//int windowWidth = WindowManager::GetWindowWidth();
+		//int windowHeight = WindowManager::GetWindowHeight();
 
 		// Prevent division by zero and ensure minimum dimensions
-		if (windowWidth <= 0) windowWidth = 1;
-		if (windowHeight <= 0) windowHeight = 1;
+		//if (windowWidth <= 0) windowWidth = 1;
+		//if (windowHeight <= 0) windowHeight = 1;
 
-		float aspectRatio = (float)windowWidth / (float)windowHeight;
+		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
+		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
+
+
+		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
@@ -235,20 +210,6 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("projection", projection);
 
 		shader.setVec3("cameraPos", currentCamera->Position);
-	}
-}
-
-void GraphicsManager::SubmitText(const std::string& text, std::shared_ptr<Font> font, std::shared_ptr<Shader> shader, const glm::vec3& position, const glm::vec3& color, float scale, bool is3D, const glm::mat4& transform)
-{
-	if (font && shader && !text.empty()) 
-	{
-		auto textItem = std::make_unique<TextRenderComponent>(text, font, shader);
-		textItem->position = position;
-		textItem->color = color;
-		textItem->scale = scale;
-		textItem->is3D = is3D;
-		textItem->transform = transform;
-		Submit(std::move(textItem));
 	}
 }
 
@@ -363,14 +324,91 @@ void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& posit
 	shader.setMat4("model", model);
 }
 
+void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
+{
+	if (!item.isVisible || !item.shader || item.drawCommands.empty()) {
+		return;
+	}
+	// Enable wireframe mode for debug rendering
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDisable(GL_DEPTH_TEST);
+	// Activate shader
+	item.shader->Activate();
+	// Render each draw command
+	for (const auto& drawCommand : item.drawCommands)
+	{
+		VAO* currentVAO = nullptr;
+		unsigned int indexCount = 0;
+		// Select appropriate geometry
+		switch (drawCommand.type) {
+		case DebugDrawType::CUBE:
+			currentVAO = item.cubeVAO;
+			indexCount = item.cubeIndexCount;
+			break;
+		case DebugDrawType::SPHERE:
+			currentVAO = item.sphereVAO;
+			indexCount = item.sphereIndexCount;
+			break;
+		case DebugDrawType::LINE:
+			currentVAO = item.lineVAO;
+			indexCount = 2;
+			break;
+		case DebugDrawType::MESH_WIREFRAME:
+		{
+			if (drawCommand.meshModel) 
+			{
+				// Create transform matrix
+				glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+
+				// Set up matrices and uniforms
+				SetupMatrices(*item.shader, transform);
+				item.shader->setVec3("debugColor", drawCommand.color);
+
+				// Draw the model in wireframe mode (wireframe is already enabled above)
+				drawCommand.meshModel->Draw(*item.shader, *currentCamera);
+				continue; // Skip the regular VAO rendering below
+			}
+			break;
+		}
+		default:
+			continue;
+		}
+
+		if (!currentVAO) continue;
+
+		// Create transform matrix
+		glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+		// Set up matrices and uniforms
+		SetupMatrices(*item.shader, transform);
+		item.shader->setVec3("debugColor", drawCommand.color);
+		// Bind VAO and render
+		currentVAO->Bind();
+
+		if (drawCommand.type == DebugDrawType::LINE)
+		{
+			glLineWidth(drawCommand.lineWidth);
+			glDrawArrays(GL_LINES, 0, indexCount);
+		}
+		else
+		{
+			glDrawElements(GL_LINES, indexCount, GL_UNSIGNED_INT, 0);
+		}
+		currentVAO->Unbind();
+	}
+	// Restore render state
+	glEnable(GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
 {
 	Matrix4x4 transposed = m.Transposed();
 	glm::mat4 converted(
-		transposed[0][0], transposed[0][1], transposed[0][2], transposed[0][3],
-		transposed[1][0], transposed[1][1], transposed[1][2], transposed[1][3],
-		transposed[2][0], transposed[2][1], transposed[2][2], transposed[2][3],
-		transposed[3][0], transposed[3][1], transposed[3][2], transposed[3][3]);
+		transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03, 
+		transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
+		transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
+		transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
+
 	return converted;
 }
 
@@ -383,5 +421,15 @@ Matrix4x4 GraphicsManager::ConvertGLMToMatrix4x4(const glm::mat4& m)
 		m[0][2], m[1][2], m[2][2], m[3][2],
 		m[0][3], m[1][3], m[2][3], m[3][3]);
 	return converted;
+}
+
+glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
+{
+	Vector3D position = { pos.x, pos.y, pos.z };
+	Vector3D rotation = { rot.x, rot.y, rot.z };
+	Vector3D scaleVec = { scale.x, scale.y, scale.z };
+
+	Matrix4x4 modelMatrix = TransformSystem::calculateModelMatrix(position, scaleVec, rotation);
+	return ConvertMatrix4x4ToGLM(modelMatrix);
 }
 
