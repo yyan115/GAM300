@@ -231,7 +231,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 
-	std::cout << "drawn mesh\n";
+	//std::cout << "drawn mesh\n";
 	
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] glDrawElements called successfully");

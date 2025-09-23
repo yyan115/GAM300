@@ -48,7 +48,7 @@ void SceneManager::UpdateScene(double dt) {
 void SceneManager::DrawScene() {
 	if (currentScene) {
 		currentScene->Draw();
-		std::cout << "drawn scene scenemanager\n";
+		//std::cout << "drawn scene scenemanager\n";
 	}
 }
 

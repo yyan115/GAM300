@@ -145,7 +145,7 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
 #endif
 
-std::cout << "drawn\n";
+//std::cout << "drawn\n";
 }
 
 void SceneInstance::Exit() {
