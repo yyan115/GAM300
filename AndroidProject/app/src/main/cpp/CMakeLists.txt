@@ -17,7 +17,7 @@ endif()
 if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
     message(STATUS "Configuring Engine for Android...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND} --preset android-debug
+        COMMAND ${CMAKE_COMMAND} --preset android-debug -G Ninja
         WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
         RESULT_VARIABLE ENGINE_CONFIG_RESULT
         OUTPUT_VARIABLE ENGINE_CONFIG_OUTPUT
@@ -49,7 +49,7 @@ add_custom_command(
     OUTPUT ${ENGINE_BUILD_DIR}/lib/libEngine.so
     COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] Resources changed - cleaning and rebuilding Engine..."
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} --preset android-debug
+    COMMAND ${CMAKE_COMMAND} --preset android-debug -G Ninja
     COMMAND ${CMAKE_COMMAND} --build ${ENGINE_BUILD_DIR} --config $<CONFIG>
     WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
     DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES} ${RESOURCE_FILES}
