@@ -11,6 +11,7 @@
 #else
     // Desktop uses OpenGL with GLAD
     #include <glad/glad.h>
+    #include <GLFW/glfw3.h>
 #endif
 
 // Common OpenGL type aliases and constants that work on both platforms
