@@ -177,6 +177,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Prebuilt libraries
     assimp
     fmod
+    # C++ standard library (critical for Android)
+    c++_shared
     # Android system libraries
     android
     log

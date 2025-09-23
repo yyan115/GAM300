@@ -13,19 +13,19 @@ Project/vcpkg/installed/
 Project/vcpkg_installed/
 
 # Android Studio
-# AndroidProject/.idea/
-# AndroidProject/*.iml
-# AndroidProject/*.ipr
-# AndroidProject/*.iws
+AndroidProject/.idea/
+AndroidProject/*.iml
+AndroidProject/*.ipr
+AndroidProject/*.iws
 
 # Gradle
-# AndroidProject/.gradle/
-# AndroidProject/build/
-# AndroidProject/*/build/
-# AndroidProject/gradle-wrapper.jar
+AndroidProject/.gradle/
+AndroidProject/build/
+AndroidProject/*/build/
+AndroidProject/gradle-wrapper.jar
 
 # Local configuration
-#AndroidProject/local.properties
+AndroidProject/local.properties
 
 # Built libraries (should be rebuilt for each platform)
 # Project/Libraries/android/arm64/*.a
