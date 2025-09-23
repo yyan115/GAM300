@@ -27,7 +27,16 @@
       "Bash(adb:*)",
       "Bash(./Build/debug/bin/Game)",
       "Bash(./clean-android.sh:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git -C vcpkg pull)",
+      "WebSearch",
+      "Bash(git clone:*)",
+      "Bash(./bootstrap-vcpkg.bat)",
+      "Bash(./bootstrap-vcpkg.sh:*)",
+      "Bash(ANDROID_NDK_HOME=\"C:/Users/yy/AppData/Local/Android/Sdk/ndk/29.0.14033849\" cmake .. -DCMAKE_SYSTEM_NAME=Android -DCMAKE_SYSTEM_VERSION=33 -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a -DCMAKE_ANDROID_NDK=\"$ANDROID_NDK_HOME\" -DCMAKE_ANDROID_STL_TYPE=c++_shared -DANDROID_PLATFORM=android-33 -DANDROID_ABI=arm64-v8a -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -G Ninja)",
+      "Bash(\"/c/Users/yy/AppData/Local/Android/Sdk/ndk/29.0.14033849/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe\" --target=aarch64-none-linux-android33 -fPIC -O2 -std=c++20 -Iinclude -c src/*.cpp)",
+      "Bash(\"/c/Users/yy/AppData/Local/Android/Sdk/ndk/29.0.14033849/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe\" --target=aarch64-none-linux-android33 -fPIC -O2 -std=c++20 -DSPDLOG_COMPILED_LIB -Iinclude -c src/*.cpp)",
+      "Bash(\"/c/Users/yy/AppData/Local/Android/Sdk/ndk/29.0.14033849/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar.exe\" rcs libspdlog.a *.o)"
     ],
     "deny": [],
     "ask": []

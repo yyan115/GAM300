@@ -38,6 +38,8 @@ if "%NDK_VERSION%"=="" (
 echo Found Android SDK: %SDK_PATH%
 echo Found Android NDK: %NDK_VERSION%
 
+echo Setting environment now. DO NOT CLOSE. It can take up to 2-5 minutes.
+
 REM Set environment variables (using forward slashes for CMake compatibility)
 set "NDK_PATH_FORWARD=%NDK_PATH:\=/%"
 setx ANDROID_SDK_ROOT "%SDK_PATH%" >nul

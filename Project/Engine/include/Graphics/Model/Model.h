@@ -49,16 +49,16 @@ public:
 };
 #endif
 
-class ENGINE_API Model : public IAsset {
+class Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;
 
 	//Model(const std::string& filePath);
-	ENGINE_API std::string CompileToResource(const std::string& assetPath) override;
+    ENGINE_API std::string CompileToResource(const std::string& assetPath) override;
 	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile);
-	ENGINE_API bool LoadResource(const std::string& assetPath) override;
-	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+    ENGINE_API bool LoadResource(const std::string& assetPath) override;
+    ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 	
 	void Draw(Shader& shader, const Camera& camera);
 

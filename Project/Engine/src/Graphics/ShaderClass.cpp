@@ -69,7 +69,13 @@ std::string get_file_contents(const char* filename)
 #endif
 	std::string error_msg = "Failed to open file: " + std::string(filename);
 	if (errno != 0) {
+#ifdef _WIN32
+		char error_buffer[256];
+		strerror_s(error_buffer, sizeof(error_buffer), errno);
+		error_msg += " (Error: " + std::string(error_buffer) + ")";
+#else
 		error_msg += " (Error: " + std::string(strerror(errno)) + ")";
+#endif
 	}
 	throw std::runtime_error(error_msg);
 }
