@@ -379,10 +379,11 @@ glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
 {
 	Matrix4x4 transposed = m.Transposed();
 	glm::mat4 converted(
-		transposed[0][0], transposed[0][1], transposed[0][2], transposed[0][3],
-		transposed[1][0], transposed[1][1], transposed[1][2], transposed[1][3],
-		transposed[2][0], transposed[2][1], transposed[2][2], transposed[2][3],
-		transposed[3][0], transposed[3][1], transposed[3][2], transposed[3][3]);
+		transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03, 
+		transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
+		transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
+		transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
+
 	return converted;
 }
 

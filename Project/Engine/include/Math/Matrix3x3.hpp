@@ -17,7 +17,12 @@
 struct Matrix3x3 {
     //REFL_SERIALIZABLE
     // Storage: row-major (m[row][col])
-    float m[3][3];
+    struct Matrix
+    {
+        float m00, m01, m02;
+        float m10, m11, m12;
+		float m20, m21, m22;
+    }m;
 
     // ---- ctors ----
     Matrix3x3();                                 // identity by default is convenient
@@ -26,8 +31,8 @@ struct Matrix3x3 {
         float m20, float m21, float m22);
 
     // ---- element access ----
-    float* operator[](int r) { return m[r]; }
-    const float* operator[](int r) const { return m[r]; }
+    float& operator()(int r, int c);
+    const float& operator()(int r, int c) const;
 
     // ---- arithmetic ----
     Matrix3x3  operator+(const Matrix3x3& rhs) const;
