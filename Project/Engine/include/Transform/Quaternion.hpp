@@ -46,17 +46,17 @@ struct Quaternion {
         float wx = w * x, wy = w * y, wz = w * z;
 
         Matrix4x4 m = Matrix4x4::Identity();
-        m[0][0] = 1 - 2 * (yy + zz);
-        m[0][1] = 2 * (xy - wz);
-        m[0][2] = 2 * (xz + wy);
+        m.m.m00 = 1 - 2 * (yy + zz);
+        m.m.m01 = 2 * (xy - wz);
+        m.m.m02 = 2 * (xz + wy);
 
-        m[1][0] = 2 * (xy + wz);
-        m[1][1] = 1 - 2 * (xx + zz);
-        m[1][2] = 2 * (yz - wx);
+        m.m.m10 = 2 * (xy + wz);
+        m.m.m11 = 1 - 2 * (xx + zz);
+        m.m.m12 = 2 * (yz - wx);
 
-        m[2][0] = 2 * (xz - wy);
-        m[2][1] = 2 * (yz + wx);
-        m[2][2] = 1 - 2 * (xx + yy);
+        m.m.m20 = 2 * (xz - wy);
+        m.m.m21 = 2 * (yz + wx);
+        m.m.m22 = 1 - 2 * (xx + yy);
 
         return m;
     }
@@ -114,9 +114,9 @@ struct Quaternion {
 
     static Quaternion FromMatrix(const Matrix4x4& m) {
         // Extract rotation-only 3x3
-        float m00 = m[0][0], m01 = m[0][1], m02 = m[0][2];
-        float m10 = m[1][0], m11 = m[1][1], m12 = m[1][2];
-        float m20 = m[2][0], m21 = m[2][1], m22 = m[2][2];
+        float m00 = m.m.m00, m01 = m.m.m01, m02 = m.m.m02;
+        float m10 = m.m.m10, m11 = m.m.m11, m12 = m.m.m12;
+        float m20 = m.m.m20, m21 = m.m.m21, m22 = m.m.m22;
 
         float trace = m00 + m11 + m22;
         Quaternion q;

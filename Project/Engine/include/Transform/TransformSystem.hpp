@@ -17,7 +17,7 @@ public:
 	void Update();
 	void UpdateTransform(Entity entity);
 	void TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform);
-	Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
+	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
 
 	void SetWorldPosition(Entity entity, Vector3D position);
 	void SetLocalPosition(Entity entity, Vector3D position);

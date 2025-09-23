@@ -435,7 +435,7 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 	Vector3D rotation = { rot.x, rot.y, rot.z };
 	Vector3D scaleVec = { scale.x, scale.y, scale.z };
 
-	Matrix4x4 modelMatrix = TransformSystem::calculateModelMatrix(position, scaleVec, rotation);
+	Matrix4x4 modelMatrix = TransformSystem::CalculateModelMatrix(position, scaleVec, rotation);
 	return ConvertMatrix4x4ToGLM(modelMatrix);
 }
 

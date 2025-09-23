@@ -415,40 +415,40 @@ Matrix4x4 Matrix4x4::OrthoRH(float l, float r, float b, float t, float n, float 
 }
 
 Vector3D Matrix4x4::ExtractTranslation(const Matrix4x4& m) {
-    Vector3D localPosition = Vec3(m[0][3], m[1][3], m[2][3]);
+    Vector3D localPosition = Vec3(m.m.m03, m.m.m13, m.m.m23);
     return localPosition;
 }
 
 Vector3D Matrix4x4::ExtractScale(const Matrix4x4& m) {
-    Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]);
-    Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]);
-    Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]);
+    Vector3D xAxis = Vector3D(m.m.m00, m.m.m01, m.m.m02);
+    Vector3D yAxis = Vector3D(m.m.m10, m.m.m11, m.m.m12);
+    Vector3D zAxis = Vector3D(m.m.m20, m.m.m21, m.m.m22);
 
     Vector3D localScale = Vector3D(xAxis.Length(), yAxis.Length(), zAxis.Length());
     return localScale;
 }
 
 Vector3D Matrix4x4::ExtractRotation(const Matrix4x4& m) {
-    Vector3D xAxis = Vector3D(m[0][0], m[0][1], m[0][2]).Normalize();
-    Vector3D yAxis = Vector3D(m[1][0], m[1][1], m[1][2]).Normalize();
-    Vector3D zAxis = Vector3D(m[2][0], m[2][1], m[2][2]).Normalize();
+    Vector3D xAxis = Vector3D(m.m.m00, m.m.m01, m.m.m02).Normalize();
+    Vector3D yAxis = Vector3D(m.m.m10, m.m.m11, m.m.m12).Normalize();
+    Vector3D zAxis = Vector3D(m.m.m20, m.m.m21, m.m.m22).Normalize();
 
     Matrix3x3 rotMat(xAxis.x, xAxis.y, xAxis.z,
         yAxis.x, yAxis.y, yAxis.z,
         zAxis.x, zAxis.y, zAxis.z);
 
-    float pitch = -std::asin(rotMat[1][2]);
-    float yaw = std::atan2(rotMat[0][2], rotMat[2][2]);
-    float roll = std::atan2(rotMat[1][0], rotMat[1][1]);
+    float pitch = -std::asin(rotMat.m.m12);
+    float yaw = std::atan2(rotMat.m.m02, rotMat.m.m22);
+    float roll = std::atan2(rotMat.m.m10, rotMat.m.m11);
 
     return Vector3D(pitch, yaw, roll); // in radians
 }
 
 Matrix4x4 Matrix4x4::RemoveScale(const Matrix4x4& m) {
     // Extract basis vectors from columns
-    Vector3D xAxis(m[0][0], m[1][0], m[2][0]);
-    Vector3D yAxis(m[0][1], m[1][1], m[2][1]);
-    Vector3D zAxis(m[0][2], m[1][2], m[2][2]);
+    Vector3D xAxis(m.m.m00, m.m.m10, m.m.m20);
+    Vector3D yAxis(m.m.m01, m.m.m11, m.m.m21);
+    Vector3D zAxis(m.m.m02, m.m.m12, m.m.m22);
 
     // Normalize to remove scale
     xAxis = xAxis.Normalize();
@@ -456,16 +456,16 @@ Matrix4x4 Matrix4x4::RemoveScale(const Matrix4x4& m) {
     zAxis = zAxis.Normalize();
 
     // Extract translation from last column
-    Vector3D translation(m[0][3], m[1][3], m[2][3]);
+    Vector3D translation(m.m.m03, m.m.m13, m.m.m23);
 
     Matrix4x4 result = Matrix4x4::Identity();
-    result[0][0] = xAxis.x; result[1][0] = xAxis.y; result[2][0] = xAxis.z;
-    result[0][1] = yAxis.x; result[1][1] = yAxis.y; result[2][1] = yAxis.z;
-    result[0][2] = zAxis.x; result[1][2] = zAxis.y; result[2][2] = zAxis.z;
+    result.m.m00 = xAxis.x; result.m.m10 = xAxis.y; result.m.m20 = xAxis.z;
+    result.m.m01 = yAxis.x; result.m.m11 = yAxis.y; result.m.m21 = yAxis.z;
+    result.m.m02 = zAxis.x; result.m.m12 = zAxis.y; result.m.m22 = zAxis.z;
 
-    result[0][3] = translation.x;
-    result[1][3] = translation.y;
-    result[2][3] = translation.z;
+    result.m.m03 = translation.x;
+    result.m.m13 = translation.y;
+    result.m.m23 = translation.z;
 
     return result;
 }
