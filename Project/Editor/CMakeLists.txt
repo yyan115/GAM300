@@ -49,11 +49,12 @@ endforeach()
 target_include_directories(Editor
     PRIVATE
         ${EDITOR_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/Engine/include  
+        ${CMAKE_SOURCE_DIR}/Engine/include
         ${CMAKE_SOURCE_DIR}/Game/include
         # Manual libraries for Editor-specific features (more troublesome to set up in vcpkg)
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui/backends
+        ${CMAKE_SOURCE_DIR}/Libraries/FileWatch
 )
 
 # Link to Engine (shared lib) and Game (static lib)
@@ -70,11 +71,22 @@ add_custom_command(TARGET Editor POST_BUILD
     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
 )
 
-# Windows-specific: Copy required DLLs for Editor
+# Platform-specific: Copy required libraries for Editor
 if(WIN32)
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    )
+    add_custom_command(TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/fmod.dll
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_custom_command(TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

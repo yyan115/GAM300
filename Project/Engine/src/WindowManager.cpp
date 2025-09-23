@@ -39,6 +39,9 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     //WindowManager::height = _height;
     RunTimeVar::window.width = _width; 
     RunTimeVar::window.height = _height;
+    RunTimeVar::window.viewportWidth = _width;
+    RunTimeVar::window.viewportHeight = _height;
+
 
     // Create platform instance
     platform = CreatePlatform();
@@ -59,8 +62,10 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
         return false;
     }
 
-    // Make context current
+#ifndef ANDROID
+    // Make context current (Android will do this later when surface is set)
     platform->MakeContextCurrent();
+#endif
 
     // Get platform window handle for compatibility
     ptrWindow = static_cast<PlatformWindow>(platform->GetNativeWindow());
@@ -224,4 +229,8 @@ void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
     }
+}
+
+IPlatform* WindowManager::GetPlatform() {
+    return platform;
 }

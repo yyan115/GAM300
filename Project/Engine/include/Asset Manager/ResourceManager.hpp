@@ -8,6 +8,10 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Utilities/FileUtilities.hpp"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 class ResourceManager {
 public:
 	static ResourceManager& GetInstance() {
@@ -124,6 +128,15 @@ public:
 		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
 	}
 
+	// Helper function to get platform-specific shader path
+	static std::string GetPlatformShaderPath(const std::string& baseShaderName) {
+#ifdef ANDROID
+		return "Resources/Shaders/" + baseShaderName + "android";
+#else
+		return "Resources/Shaders/" + baseShaderName;
+#endif
+	}
+
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
@@ -155,17 +168,30 @@ private:
 		return resourceMap;
 	}
 
+
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& assetPath) {
 		std::shared_ptr<T> resource = std::make_shared<T>();
+
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+#endif
+		// Use the regular LoadResource method - the Android asset loading
+		// is now handled in get_file_contents() at a lower level
 		if (resource->LoadResource(assetPath)) {
 			auto& resourceMap = GetResourceMap<T>();
 			resourceMap[guid] = resource;
 			std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
+#endif
 			return resource;
 		}
 
 		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
+#endif
 		return nullptr;
 	}
 

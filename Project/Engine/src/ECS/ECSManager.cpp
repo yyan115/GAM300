@@ -19,6 +19,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<Transform>();
 	RegisterComponent<ModelRenderComponent>();
 	RegisterComponent<TextRenderComponent>();
+	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
@@ -46,6 +47,12 @@ void ECSManager::Initialize() {
 		SetSystemSignature<TextRenderingSystem>(signature);
 	}
 	
+	debugDrawSystem = RegisterSystem<DebugDrawSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<DebugDrawComponent>());
+		SetSystemSignature<DebugDrawSystem>(signature);
+	}
 }
 
 Entity ECSManager::CreateEntity() {

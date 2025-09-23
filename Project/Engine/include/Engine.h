@@ -33,6 +33,8 @@ enum class GameState {
 class ENGINE_API Engine {
 public:
     static bool Initialize();
+    static bool InitializeAssets(); // Android-specific delayed asset loading
+    static bool InitializeGraphicsResources();
     static void Update();
 
     // Rendering phases

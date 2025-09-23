@@ -141,6 +141,11 @@ private:
 	//}
 
 	template <typename T>
+	std::shared_ptr<T> GetAsset(const std::string& assetPath) {
+		return ResourceManager::GetInstance().GetResource<T>(assetPath);
+	}
+
+	template <typename T>
 	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath) {
 		// If the asset is not already loaded, load and store it using the GUID.
 		if (assetMetaMap.find(guid) == assetMetaMap.end()) {

@@ -5,7 +5,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
 
-class Texture : public IAsset {
+class ENGINE_API Texture : public IAsset {
 public:
 	GLuint ID{};
 	std::string type;
@@ -13,11 +13,11 @@ public:
 	GLenum target;
 
 	Texture();
-	ENGINE_API Texture(const char* texType, GLint slot);
+	Texture(const char* texType, GLint slot);
 
-	ENGINE_API std::string CompileToResource(const std::string& assetPath) override;
+	std::string CompileToResource(const std::string& assetPath) override;
 	bool LoadResource(const std::string& assetPath) override;
-	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	GLenum GetFormatFromExtension(const std::string& filePath);
 

@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+#include <Transform/TransformSystem.hpp>
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -32,8 +38,26 @@ void GraphicsManager::EndFrame()
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
 {
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() called");
+
+	// Ensure EGL context is current before making OpenGL calls
+	auto* platform = WindowManager::GetPlatform();
+	if (platform) {
+		platform->MakeContextCurrent();
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context made current");
+	}
+
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClearColor");
+#endif
 	glClearColor(r, g, b, a);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClear");
+#endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() completed");
+#endif
 }
 
 void GraphicsManager::SetCamera(Camera* camera)
@@ -46,17 +70,6 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	if (renderItem && renderItem->isVisible)
 	{
 		renderQueue.push_back(std::move(renderItem));
-	}
-}
-
-void GraphicsManager::SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform)
-{
-	if (model && shader) 
-	{
-		glm::mat4 glmTransform = ConvertMatrix4x4ToGLM(transform);
-		auto renderItem = std::make_unique<ModelRenderComponent>(model, shader);
-		renderItem->transform = glmTransform;
-		Submit(std::move(renderItem));
 	}
 }
 
@@ -90,6 +103,10 @@ void GraphicsManager::Render()
 		{
 			RenderText(*textItem);
 		}
+		else if (const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get()))
+		{
+			RenderDebugDraw(*debugItem);
+		}
 	}
 }
 
@@ -111,6 +128,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Draw the model
 	item.model->Draw(*item.shader, *currentCamera);
+
+	//std::cout << "rendered model\n";
 }
 
 void GraphicsManager::ApplyLighting(Shader& shader)
@@ -191,20 +210,6 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat4("projection", projection);
 
 		shader.setVec3("cameraPos", currentCamera->Position);
-	}
-}
-
-void GraphicsManager::SubmitText(const std::string& text, std::shared_ptr<Font> font, std::shared_ptr<Shader> shader, const glm::vec3& position, const glm::vec3& color, float scale, bool is3D, const glm::mat4& transform)
-{
-	if (font && shader && !text.empty()) 
-	{
-		auto textItem = std::make_unique<TextRenderComponent>(text, font, shader);
-		textItem->position = position;
-		textItem->color = color;
-		textItem->scale = scale;
-		textItem->is3D = is3D;
-		textItem->transform = transform;
-		Submit(std::move(textItem));
 	}
 }
 
@@ -319,14 +324,97 @@ void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& posit
 	shader.setMat4("model", model);
 }
 
+void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
+{
+	if (!item.isVisible || !item.shader || item.drawCommands.empty()) {
+		return;
+	}
+	// Enable wireframe mode for debug rendering
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
+#else
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	glDisable(GL_DEPTH_TEST);
+	// Activate shader
+	item.shader->Activate();
+	// Render each draw command
+	for (const auto& drawCommand : item.drawCommands)
+	{
+		VAO* currentVAO = nullptr;
+		unsigned int indexCount = 0;
+		// Select appropriate geometry
+		switch (drawCommand.type) {
+		case DebugDrawType::CUBE:
+			currentVAO = item.cubeVAO;
+			indexCount = item.cubeIndexCount;
+			break;
+		case DebugDrawType::SPHERE:
+			currentVAO = item.sphereVAO;
+			indexCount = item.sphereIndexCount;
+			break;
+		case DebugDrawType::LINE:
+			currentVAO = item.lineVAO;
+			indexCount = 2;
+			break;
+		case DebugDrawType::MESH_WIREFRAME:
+		{
+			if (drawCommand.meshModel) 
+			{
+				// Create transform matrix
+				glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+
+				// Set up matrices and uniforms
+				SetupMatrices(*item.shader, transform);
+				item.shader->setVec3("debugColor", drawCommand.color);
+
+				// Draw the model in wireframe mode (wireframe is already enabled above)
+				drawCommand.meshModel->Draw(*item.shader, *currentCamera);
+				continue; // Skip the regular VAO rendering below
+			}
+			break;
+		}
+		default:
+			continue;
+		}
+
+		if (!currentVAO) continue;
+
+		// Create transform matrix
+		glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+		// Set up matrices and uniforms
+		SetupMatrices(*item.shader, transform);
+		item.shader->setVec3("debugColor", drawCommand.color);
+		// Bind VAO and render
+		currentVAO->Bind();
+
+		if (drawCommand.type == DebugDrawType::LINE)
+		{
+			glLineWidth(drawCommand.lineWidth);
+			glDrawArrays(GL_LINES, 0, indexCount);
+		}
+		else
+		{
+			glDrawElements(GL_LINES, indexCount, GL_UNSIGNED_INT, 0);
+		}
+		currentVAO->Unbind();
+	}
+	// Restore render state
+	glEnable(GL_DEPTH_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+#endif
+}
+
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
 {
 	Matrix4x4 transposed = m.Transposed();
 	glm::mat4 converted(
-		transposed[0][0], transposed[0][1], transposed[0][2], transposed[0][3],
-		transposed[1][0], transposed[1][1], transposed[1][2], transposed[1][3],
-		transposed[2][0], transposed[2][1], transposed[2][2], transposed[2][3],
-		transposed[3][0], transposed[3][1], transposed[3][2], transposed[3][3]);
+		transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03, 
+		transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
+		transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
+		transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
+
 	return converted;
 }
 
@@ -339,5 +427,15 @@ Matrix4x4 GraphicsManager::ConvertGLMToMatrix4x4(const glm::mat4& m)
 		m[0][2], m[1][2], m[2][2], m[3][2],
 		m[0][3], m[1][3], m[2][3], m[3][3]);
 	return converted;
+}
+
+glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
+{
+	Vector3D position = { pos.x, pos.y, pos.z };
+	Vector3D rotation = { rot.x, rot.y, rot.z };
+	Vector3D scaleVec = { scale.x, scale.y, scale.z };
+
+	Matrix4x4 modelMatrix = TransformSystem::calculateModelMatrix(position, scaleVec, rotation);
+	return ConvertMatrix4x4ToGLM(modelMatrix);
 }
 

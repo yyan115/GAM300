@@ -16,26 +16,31 @@
 
 #pragma region Reflection
 //TODO: Change to actual values and not in an array format
-//REFL_REGISTER_START(Matrix4x4)
-//    REFL_REGISTER_PROPERTY(m[0][0])
-//    REFL_REGISTER_PROPERTY(m[0][1])
-//    REFL_REGISTER_PROPERTY(m[0][2])
-//    REFL_REGISTER_PROPERTY(m[0][3])
-//    REFL_REGISTER_PROPERTY(m[1][0])
-//    REFL_REGISTER_PROPERTY(m[1][1])
-//    REFL_REGISTER_PROPERTY(m[1][2])
-//    REFL_REGISTER_PROPERTY(m[1][3])
-//    REFL_REGISTER_PROPERTY(m[2][0])
-//    REFL_REGISTER_PROPERTY(m[2][1])
-//    REFL_REGISTER_PROPERTY(m[2][2])
-//    REFL_REGISTER_PROPERTY(m[2][3])
-//    REFL_REGISTER_PROPERTY(m[3][0])
-//    REFL_REGISTER_PROPERTY(m[3][1])
-//    REFL_REGISTER_PROPERTY(m[3][2])
-//    REFL_REGISTER_PROPERTY(m[3][3])
-//REFL_REGISTER_END;
+REFL_REGISTER_START(Matrix4x4)
+    REFL_REGISTER_PROPERTY(m.m00)
+    REFL_REGISTER_PROPERTY(m.m01)
+    REFL_REGISTER_PROPERTY(m.m02)
+    REFL_REGISTER_PROPERTY(m.m03)
+    REFL_REGISTER_PROPERTY(m.m10)
+    REFL_REGISTER_PROPERTY(m.m11)
+    REFL_REGISTER_PROPERTY(m.m12)
+    REFL_REGISTER_PROPERTY(m.m13)
+    REFL_REGISTER_PROPERTY(m.m20)
+    REFL_REGISTER_PROPERTY(m.m21)
+    REFL_REGISTER_PROPERTY(m.m22)
+    REFL_REGISTER_PROPERTY(m.m23)
+    REFL_REGISTER_PROPERTY(m.m30)
+    REFL_REGISTER_PROPERTY(m.m31)
+    REFL_REGISTER_PROPERTY(m.m32)
+    REFL_REGISTER_PROPERTY(m.m33)
+REFL_REGISTER_END;
 
 #pragma endregion
+
+// For asserts
+static inline void assert_rc4(int r, int c) {
+    assert(r >= 0 && r < 4 && c >= 0 && c < 4);
+}
 
 // ============================
 // Constructors
@@ -48,43 +53,76 @@ Matrix4x4::Matrix4x4(float m00, float m01, float m02, float m03,
     float m10, float m11, float m12, float m13,
     float m20, float m21, float m22, float m23,
     float m30, float m31, float m32, float m33) {
-    m[0][0] = m00; m[0][1] = m01; m[0][2] = m02; m[0][3] = m03;
-    m[1][0] = m10; m[1][1] = m11; m[1][2] = m12; m[1][3] = m13;
-    m[2][0] = m20; m[2][1] = m21; m[2][2] = m22; m[2][3] = m23;
-    m[3][0] = m30; m[3][1] = m31; m[3][2] = m32; m[3][3] = m33;
+	m ={m00, m01, m02, m03,
+        m10, m11, m12, m13,
+        m20, m21, m22, m23,
+		m30, m31, m32, m33 };
+}
+
+// ============================
+// Element access
+// ============================
+float& Matrix4x4::operator()(int r, int c)
+{
+    assert_rc4(r, c);
+    if (r == 0)      return c == 0 ? m.m00 : (c == 1 ? m.m01 : (c == 2 ? m.m02 : m.m03));
+    else if (r == 1) return c == 0 ? m.m10 : (c == 1 ? m.m11 : (c == 2 ? m.m12 : m.m13));
+    else if (r == 2) return c == 0 ? m.m20 : (c == 1 ? m.m21 : (c == 2 ? m.m22 : m.m23));
+    else           return c == 0 ? m.m30 : (c == 1 ? m.m31 : (c == 2 ? m.m32 : m.m33));
+}
+const float& Matrix4x4::operator()(int r, int c) const 
+{
+    assert_rc4(r, c);
+    if (r == 0)      return c == 0 ? m.m00 : (c == 1 ? m.m01 : (c == 2 ? m.m02 : m.m03));
+    else if (r == 1) return c == 0 ? m.m10 : (c == 1 ? m.m11 : (c == 2 ? m.m12 : m.m13));
+    else if (r == 2) return c == 0 ? m.m20 : (c == 1 ? m.m21 : (c == 2 ? m.m22 : m.m23));
+    else           return c == 0 ? m.m30 : (c == 1 ? m.m31 : (c == 2 ? m.m32 : m.m33));
 }
 
 // ============================
 // Arithmetic
 // ============================
 Matrix4x4 Matrix4x4::operator+(const Matrix4x4& rhs) const {
-    Matrix4x4 out;
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            out.m[i][j] = m[i][j] + rhs.m[i][j];
-    return out;
+    return {
+        m.m00 + rhs.m.m00, m.m01 + rhs.m.m01, m.m02 + rhs.m.m02, m.m03 + rhs.m.m03,
+        m.m10 + rhs.m.m10, m.m11 + rhs.m.m11, m.m12 + rhs.m.m12, m.m13 + rhs.m.m13,
+        m.m20 + rhs.m.m20, m.m21 + rhs.m.m21, m.m22 + rhs.m.m22, m.m23 + rhs.m.m23,
+        m.m30 + rhs.m.m30, m.m31 + rhs.m.m31, m.m32 + rhs.m.m32, m.m33 + rhs.m.m33
+    };
 }
 
 Matrix4x4 Matrix4x4::operator-(const Matrix4x4& rhs) const {
-    Matrix4x4 out;
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            out.m[i][j] = m[i][j] - rhs.m[i][j];
-    return out;
+    return {
+        m.m00 - rhs.m.m00, m.m01 - rhs.m.m01, m.m02 - rhs.m.m02, m.m03 - rhs.m.m03,
+        m.m10 - rhs.m.m10, m.m11 - rhs.m.m11, m.m12 - rhs.m.m12, m.m13 - rhs.m.m13,
+        m.m20 - rhs.m.m20, m.m21 - rhs.m.m21, m.m22 - rhs.m.m22, m.m23 - rhs.m.m23,
+        m.m30 - rhs.m.m30, m.m31 - rhs.m.m31, m.m32 - rhs.m.m32, m.m33 - rhs.m.m33
+    };
 }
 
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const {
-    Matrix4x4 out;
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            out.m[i][j] = 
-                m[i][0] * rhs.m[0][j] +
-                m[i][1] * rhs.m[1][j] +
-                m[i][2] * rhs.m[2][j] +
-                m[i][3] * rhs.m[3][j];
-        }
-    }
-    return out;
+    Matrix4x4 o;
+    // Row 0
+    o.m.m00 = m.m00 * rhs.m.m00 + m.m01 * rhs.m.m10 + m.m02 * rhs.m.m20 + m.m03 * rhs.m.m30;
+    o.m.m01 = m.m00 * rhs.m.m01 + m.m01 * rhs.m.m11 + m.m02 * rhs.m.m21 + m.m03 * rhs.m.m31;
+    o.m.m02 = m.m00 * rhs.m.m02 + m.m01 * rhs.m.m12 + m.m02 * rhs.m.m22 + m.m03 * rhs.m.m32;
+    o.m.m03 = m.m00 * rhs.m.m03 + m.m01 * rhs.m.m13 + m.m02 * rhs.m.m23 + m.m03 * rhs.m.m33;
+    // Row 1
+    o.m.m10 = m.m10 * rhs.m.m00 + m.m11 * rhs.m.m10 + m.m12 * rhs.m.m20 + m.m13 * rhs.m.m30;
+    o.m.m11 = m.m10 * rhs.m.m01 + m.m11 * rhs.m.m11 + m.m12 * rhs.m.m21 + m.m13 * rhs.m.m31;
+    o.m.m12 = m.m10 * rhs.m.m02 + m.m11 * rhs.m.m12 + m.m12 * rhs.m.m22 + m.m13 * rhs.m.m32;
+    o.m.m13 = m.m10 * rhs.m.m03 + m.m11 * rhs.m.m13 + m.m12 * rhs.m.m23 + m.m13 * rhs.m.m33;
+    // Row 2
+    o.m.m20 = m.m20 * rhs.m.m00 + m.m21 * rhs.m.m10 + m.m22 * rhs.m.m20 + m.m23 * rhs.m.m30;
+    o.m.m21 = m.m20 * rhs.m.m01 + m.m21 * rhs.m.m11 + m.m22 * rhs.m.m21 + m.m23 * rhs.m.m31;
+    o.m.m22 = m.m20 * rhs.m.m02 + m.m21 * rhs.m.m12 + m.m22 * rhs.m.m22 + m.m23 * rhs.m.m32;
+    o.m.m23 = m.m20 * rhs.m.m03 + m.m21 * rhs.m.m13 + m.m22 * rhs.m.m23 + m.m23 * rhs.m.m33;
+    // Row 3
+    o.m.m30 = m.m30 * rhs.m.m00 + m.m31 * rhs.m.m10 + m.m32 * rhs.m.m20 + m.m33 * rhs.m.m30;
+    o.m.m31 = m.m30 * rhs.m.m01 + m.m31 * rhs.m.m11 + m.m32 * rhs.m.m21 + m.m33 * rhs.m.m31;
+    o.m.m32 = m.m30 * rhs.m.m02 + m.m31 * rhs.m.m12 + m.m32 * rhs.m.m22 + m.m33 * rhs.m.m32;
+    o.m.m33 = m.m30 * rhs.m.m03 + m.m31 * rhs.m.m13 + m.m32 * rhs.m.m23 + m.m33 * rhs.m.m33;
+    return o;
 }
 
 Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& rhs) {
@@ -93,11 +131,12 @@ Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& rhs) {
 }
 
 Matrix4x4 Matrix4x4::operator*(float s) const {
-    Matrix4x4 out;
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            out.m[i][j] = m[i][j] * s;
-    return out;
+    return {
+        m.m00 * s, m.m01 * s, m.m02 * s, m.m03 * s,
+        m.m10 * s, m.m11 * s, m.m12 * s, m.m13 * s,
+        m.m20 * s, m.m21 * s, m.m22 * s, m.m23 * s,
+        m.m30 * s, m.m31 * s, m.m32 * s, m.m33 * s
+    };
 }
 
 Matrix4x4 Matrix4x4::operator/(float s) const {
@@ -107,9 +146,10 @@ Matrix4x4 Matrix4x4::operator/(float s) const {
 }
 
 Matrix4x4& Matrix4x4::operator*=(float s) {
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            m[i][j] *= s;
+    m.m00 *= s; m.m01 *= s; m.m02 *= s; m.m03 *= s;
+    m.m10 *= s; m.m11 *= s; m.m12 *= s; m.m13 *= s;
+    m.m20 *= s; m.m21 *= s; m.m22 *= s; m.m23 *= s;
+    m.m30 *= s; m.m31 *= s; m.m32 *= s; m.m33 *= s;
     return *this;
 }
 
@@ -120,21 +160,30 @@ Matrix4x4& Matrix4x4::operator/=(float s) {
 }
 
 bool Matrix4x4::operator==(const Matrix4x4& rhs) const {
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            if (std::fabs(m[i][j] - rhs.m[i][j]) > 1e-6f)
-                return false;
-    return true;
+    const float e = 1e-6f;
+    return
+        std::fabs(m.m00 - rhs.m.m00) < e && std::fabs(m.m01 - rhs.m.m01) < e &&
+        std::fabs(m.m02 - rhs.m.m02) < e && std::fabs(m.m03 - rhs.m.m03) < e &&
+                                            
+        std::fabs(m.m10 - rhs.m.m10) < e && std::fabs(m.m11 - rhs.m.m11) < e &&
+        std::fabs(m.m12 - rhs.m.m12) < e && std::fabs(m.m13 - rhs.m.m13) < e &&
+                                            
+        std::fabs(m.m20 - rhs.m.m20) < e && std::fabs(m.m21 - rhs.m.m21) < e &&
+        std::fabs(m.m22 - rhs.m.m22) < e && std::fabs(m.m23 - rhs.m.m23) < e &&
+
+        std::fabs(m.m30 - rhs.m.m30) < e && std::fabs(m.m31 - rhs.m.m31) < e &&
+        std::fabs(m.m32 - rhs.m.m32) < e && std::fabs(m.m33 - rhs.m.m33) < e;
 }
 
 // ============================
 // Vector transforms
 // ============================
-Vector3D Matrix4x4::TransformPoint(const Vector3D& v) const {
-    float x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * 1.0f;
-    float y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * 1.0f;
-    float z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * 1.0f;
-    float w = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * 1.0f;
+Vector3D Matrix4x4::TransformPoint(const Vector3D& v) const 
+{
+    float x = m.m00 * v.x + m.m01 * v.y + m.m02 * v.z + m.m03;
+    float y = m.m10 * v.x + m.m11 * v.y + m.m12 * v.z + m.m13;
+    float z = m.m20 * v.x + m.m21 * v.y + m.m22 * v.z + m.m23;
+    float w = m.m30 * v.x + m.m31 * v.y + m.m32 * v.z + m.m33;
     if (std::fabs(w) > 1e-8f) {
         float invw = 1.0f / w;
         return { x * invw, y * invw, z * invw };
@@ -143,12 +192,13 @@ Vector3D Matrix4x4::TransformPoint(const Vector3D& v) const {
     return { x, y, z };
 }
 
-Vector3D Matrix4x4::TransformVector(const Vector3D& v) const {
+Vector3D Matrix4x4::TransformVector(const Vector3D& v) const 
+{
     // w=0 => translation ignored
     return {
-        m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
-        m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
-        m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z
+        m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
+        m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
+        m.m20 * v.x + m.m21 * v.y + m.m22 * v.z
     };
 }
 
@@ -157,80 +207,60 @@ Vector3D Matrix4x4::TransformVector(const Vector3D& v) const {
 // ============================
 Matrix4x4 Matrix4x4::Transposed() const {
     return {
-        m[0][0], m[1][0], m[2][0], m[3][0],
-        m[0][1], m[1][1], m[2][1], m[3][1],
-        m[0][2], m[1][2], m[2][2], m[3][2],
-        m[0][3], m[1][3], m[2][3], m[3][3]
+		m.m00, m.m10, m.m20, m.m30,
+		m.m01, m.m11, m.m21, m.m31,
+		m.m02, m.m12, m.m22, m.m32,
+		m.m03, m.m13, m.m23, m.m33
     };
 }
 
-static inline float Det3(const float a[3][3]) {
-    return a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
-        - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
-        + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+static inline float Det3(   float a00, float a01, float a02,
+                            float a10, float a11, float a12,
+                            float a20, float a21, float a22) {
+    return a00 * (a11 * a22 - a12 * a21) - a01 * (a10 * a22 - a12 * a20) + a02 * (a10 * a21 - a11 * a20);
 }
 
 float Matrix4x4::Determinant() const {
-    // Expand along row 0 using 3x3 minors
-    float det = 0.0f;
-    for (int col = 0; col < 4; ++col) {
-        float sub[3][3];
-        // build minor excluding row 0, column 'col'
-        for (int i = 1, si = 0; i < 4; ++i, ++si) {
-            int sj = 0;
-            for (int j = 0; j < 4; ++j) {
-                if (j == col) continue;
-                sub[si][sj++] = m[i][j];
-            }
-        }
-        float cofactor = ((col % 2) ? -1.0f : 1.0f) * Det3(sub);
-        det += m[0][col] * cofactor;
-    }
-    return det;
+    float c0 =  Det3(m.m11,m.m12,m.m13, m.m21,m.m22,m.m23, m.m31,m.m32,m.m33);
+    float c1 = -Det3(m.m10,m.m12,m.m13, m.m20,m.m22,m.m23, m.m30,m.m32,m.m33);
+    float c2 =  Det3(m.m10,m.m11,m.m13, m.m20,m.m21,m.m23, m.m30,m.m31,m.m33);
+    float c3 = -Det3(m.m10,m.m11,m.m12, m.m20,m.m21,m.m22, m.m30,m.m31,m.m32);
+    return m.m00*c0 + m.m01*c1 + m.m02*c2 + m.m03*c3;
 }
 
 // Robust Gauss-Jordan inverse
 bool Matrix4x4::TryInverse(Matrix4x4& out) const {
-    // Augment [A | I] and reduce to [I | A^{-1}]
-    float a[4][8] = {};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) a[i][j] = m[i][j];
-        for (int j = 0; j < 4; ++j) a[i][4 + j] = (i == j) ? 1.0f : 0.0f;
-    }
+    float a[4][8] = {
+        {m.m00,m.m01,m.m02,m.m03, 1,0,0,0},
+        {m.m10,m.m11,m.m12,m.m13, 0,1,0,0},
+        {m.m20,m.m21,m.m22,m.m23, 0,0,1,0},
+        {m.m30,m.m31,m.m32,m.m33, 0,0,0,1}
+    };
 
     for (int col = 0; col < 4; ++col) {
-        // Pivot selection (max abs)
         int pivot = col;
         float maxAbs = std::fabs(a[pivot][col]);
         for (int r = col + 1; r < 4; ++r) {
             float v = std::fabs(a[r][col]);
             if (v > maxAbs) { maxAbs = v; pivot = r; }
         }
-        if (maxAbs < 1e-10f) return false; // singular
+        if (maxAbs < 1e-10f) return false;
 
-        // Swap pivot row
-        if (pivot != col) {
-            for (int j = 0; j < 8; ++j) std::swap(a[pivot][j], a[col][j]);
-        }
+        if (pivot != col) { for (int j = 0; j < 8; ++j) std::swap(a[pivot][j], a[col][j]); }
 
-        // Normalize pivot row
-        float invPivot = 1.0f / a[col][col];
-        for (int j = 0; j < 8; ++j) a[col][j] *= invPivot;
+        float invP = 1.0f / a[col][col];
+        for (int j = 0; j < 8; ++j) a[col][j] *= invP;
 
-        // Eliminate other rows
-        for (int r = 0; r < 4; ++r) {
-            if (r == col) continue;
+        for (int r = 0; r < 4; ++r) if (r != col) {
             float f = a[r][col];
             if (std::fabs(f) < 1e-20f) continue;
             for (int j = 0; j < 8; ++j) a[r][j] -= f * a[col][j];
         }
     }
-
-    // Extract right block as inverse
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            out.m[i][j] = a[i][4 + j];
-
+    out.m.m00 = a[0][4]; out.m.m01 = a[0][5]; out.m.m02 = a[0][6]; out.m.m03 = a[0][7];
+    out.m.m10 = a[1][4]; out.m.m11 = a[1][5]; out.m.m12 = a[1][6]; out.m.m13 = a[1][7];
+    out.m.m20 = a[2][4]; out.m.m21 = a[2][5]; out.m.m22 = a[2][6]; out.m.m23 = a[2][7];
+    out.m.m30 = a[3][4]; out.m.m31 = a[3][5]; out.m.m32 = a[3][6]; out.m.m33 = a[3][7];
     return true;
 }
 
@@ -245,21 +275,11 @@ Matrix4x4 Matrix4x4::Inversed() const {
 // Factories
 // ============================
 Matrix4x4 Matrix4x4::Identity() {
-    return {
-        1,0,0,0,
-        0,1,0,0,
-        0,0,1,0,
-        0,0,0,1
-    };
+    return { 1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1 };
 }
 
 Matrix4x4 Matrix4x4::Zero() {
-    return {
-        0,0,0,0,
-        0,0,0,0,
-        0,0,0,0,
-        0,0,0,0
-    };
+    return {0,0,0,0,  0,0,0,0,  0,0,0,0,  0,0,0,0};
 }
 
 Matrix4x4 Matrix4x4::Translate(float tx, float ty, float tz) {
@@ -315,10 +335,10 @@ Matrix4x4 Matrix4x4::RotationAxisAngle(const Vector3D& axis_unit, float a) {
     float c = std::cos(a), s = std::sin(a), t = 1.0f - c;
     // Upper-left 3x3 is the rotation; last row/col make it affine
     return {
-        t * x * x + c,     t * x * y - s * z, t * x * z + s * y, 0,
-        t * x * y + s * z,   t * y * y + c,   t * y * z - s * x, 0,
-        t * x * z - s * y,   t * y * z + s * x, t * z * z + c,   0,
-        0,             0,           0,           1
+        t * x * x + c,      t * x * y - s * z,  t * x * z + s * y,  0,
+        t * x * y + s * z,  t * y * y + c,      t * y * z - s * x,  0,
+        t * x * z - s * y,  t * y * z + s * x,  t * z * z + c,      0,
+        0,                  0,                  0,                  1
     };
 }
 
@@ -451,12 +471,9 @@ Matrix4x4 Matrix4x4::RemoveScale(const Matrix4x4& m) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            os << mat.m[i][j];
-            if (j < 3) os << ", ";
-        }
-        if (i < 3) os << '\n';
-    }
+    os << mat.m.m00 << ", " << mat.m.m01 << ", " << mat.m.m02 << ", " << mat.m.m03 << ";\n "
+        << mat.m.m10 << ", " << mat.m.m11 << ", " << mat.m.m12 << ", " << mat.m.m13 << ";\n "
+        << mat.m.m20 << ", " << mat.m.m21 << ", " << mat.m.m22 << ", " << mat.m.m23 << ";\n "
+        << mat.m.m30 << ", " << mat.m.m31 << ", " << mat.m.m32 << ", " << mat.m.m33 << "]\n";
     return os;
 }

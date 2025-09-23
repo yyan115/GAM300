@@ -10,6 +10,7 @@
 #include "Model/ModelRenderComponent.hpp"
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
+#include "DebugDraw/DebugDrawComponent.hpp"
 #include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
@@ -31,14 +32,11 @@ public:
 
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
-    void SubmitModel(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, const Matrix4x4& transform);
 
     // Main rendering
     void Render();
 
-
-    // Text Rendering
-    void SubmitText(const std::string& text, std::shared_ptr<Font> font, std::shared_ptr<Shader> shader, const glm::vec3& position, const glm::vec3& color = glm::vec3(1.0f), float scale = 1.0f, bool is3D = false, const glm::mat4& transform = glm::mat4(1.0f));
+    glm::mat4 ConvertMatrix4x4ToGLM(const Matrix4x4& m);
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -50,8 +48,9 @@ private:
     void RenderModel(const ModelRenderComponent& item);
     void ApplyLighting(Shader& shader);
     void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
-    glm::mat4 ConvertMatrix4x4ToGLM(const Matrix4x4& m);
+    
     Matrix4x4 ConvertGLMToMatrix4x4(const glm::mat4& m);
+    glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
 
     // Private text rendering methods
     void RenderText(const TextRenderComponent& item);
@@ -61,6 +60,9 @@ private:
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
+
+    // Debug Draw
+    void RenderDebugDraw(const DebugDrawComponent& item);
 
     // Remove later
     glm::vec3 pointLightPositions[4] = {

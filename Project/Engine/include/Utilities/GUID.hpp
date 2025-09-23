@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstdint>
 #include "../Engine.h"  // For ENGINE_API macro
 
 // GUIDs are written to .meta files as strings.

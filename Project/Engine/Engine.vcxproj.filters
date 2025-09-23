@@ -58,6 +58,8 @@
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Graphics\SceneRenderer.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
+    <ClInclude Include="include\Graphics\DebugDraw\DebugDrawSystem.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
@@ -109,6 +111,7 @@
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
+    <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Platform\Platform.cpp" />
