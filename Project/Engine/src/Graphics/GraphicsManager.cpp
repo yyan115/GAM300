@@ -330,7 +330,11 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		return;
 	}
 	// Enable wireframe mode for debug rendering
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
+#else
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
 	glDisable(GL_DEPTH_TEST);
 	// Activate shader
 	item.shader->Activate();
