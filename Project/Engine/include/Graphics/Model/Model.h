@@ -11,6 +11,16 @@
 #include "Asset Manager/Asset.hpp"
 #include "../../Engine.h"
 
+struct BoneInfo
+{
+	// Id is index in finalBoneMatrices
+	int id;
+
+	// Offset matrix transforms vertex from model space to bone space
+	glm::mat4 offset;
+};
+
+
 class Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
@@ -29,5 +39,19 @@ private:
 	void ProcessNode(aiNode* node, const aiScene* scene);
 	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
 	std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+
+
+	// Bone data
+	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
+	int mBoneCounter = 0;
+
+	// Helper functions for Bones
+	auto& GetBoneInfoMap() { return mBoneInfoMap; }
+	int& GetBoneCount() { return mBoneCounter; }
+
+	void SetVertexBoneDataToDefault(Vertex& vertex);
+	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
+	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+
 
 };

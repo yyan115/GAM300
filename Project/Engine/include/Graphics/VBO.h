@@ -3,11 +3,17 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#define MaxBoneInfluences 4
+
+
 struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec3 color;
 	glm::vec2 texUV;
+
+	int mBoneIDs[MaxBoneInfluences];
+	float mWeights[MaxBoneInfluences];
 };
 
 // VBO stores multiple vertices on the GPU memory

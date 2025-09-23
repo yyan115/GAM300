@@ -54,6 +54,8 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         Vertex vertex;
 
+        SetVertexBoneDataToDefault(vertex);
+
         // Position
         vertex.position.x = mesh->mVertices[i].x;
         vertex.position.y = mesh->mVertices[i].y;
@@ -182,6 +184,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         material = Material::CreateDefault();
     }
+
+	// Extract bone weights for vertices
+	ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     return Mesh(vertices, indices, material);
 }
@@ -427,3 +432,72 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		mesh.Draw(shader, camera);
 	}
 }
+
+
+// Helper functions for Bones
+void Model::SetVertexBoneDataToDefault(Vertex& vertex)
+{
+    for (int i = 0; i < MaxBoneInfluences; i++)
+    {
+        vertex.mBoneIDs[i] = -1;
+        vertex.mWeights[i] = 0.0f;
+    }
+}
+
+void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
+{
+    for (int i = 0; i < MaxBoneInfluences; ++i)
+    {
+        if (vertex.mBoneIDs[i] < 0)
+        {
+            vertex.mBoneIDs[i] = boneID;
+            vertex.mWeights[i] = weight;
+            break;
+        }
+    }
+}
+
+inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
+{
+    glm::mat4 to;
+    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+    return to;
+}
+
+void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+{
+    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    {
+        int boneID = -1;
+        std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+        if (mBoneInfoMap.find(boneName) == mBoneInfoMap.end())
+        {
+            BoneInfo newBoneInfo;
+            newBoneInfo.id = mBoneCounter;
+			newBoneInfo.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix); // Transpose for glm
+            mBoneInfoMap[boneName] = newBoneInfo;
+            boneID = mBoneCounter;
+            mBoneCounter++;
+        }
+        else
+        {
+			boneID = mBoneInfoMap[boneName].id;
+        }
+
+		assert(boneID != -1);
+        auto weights = mesh->mBones[boneIndex]->mWeights;
+        int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+        for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+        {
+            int vertexID = weights[weightIndex].mVertexId;
+            float weight = weights[weightIndex].mWeight;
+            assert(vertexID <= vertices.size());
+            SetVertexBoneData(vertices[vertexID], boneID, weight);
+		}
+    }
+}
+
