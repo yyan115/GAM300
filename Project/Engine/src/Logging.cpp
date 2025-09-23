@@ -189,6 +189,14 @@ namespace EngineLogging {
             }
         }
     }
+    
+    void PrintOutput(const std::string& message, LogLevel logType, bool toEditor)
+    {
+        if (!toEditor)
+            std::cout << message << std::endl;
+        else
+            LogInternal(logType, message);
+    }
 
     // Public logging functions
     void LogTrace(const std::string& message) {

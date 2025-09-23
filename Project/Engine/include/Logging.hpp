@@ -75,13 +75,38 @@ namespace EngineLogging {
     void ENGINE_API LogWarn(const std::string& message);
     void ENGINE_API LogError(const std::string& message);
     void ENGINE_API LogCritical(const std::string& message);
+
+    void PrintOutput(const std::string& message, LogLevel logType = LogLevel::Info, bool toEditor = true);
     
 }
 
-// Convenience macros for Engine logging
+// Convenience macros for Engine logging  //SHOULDNT BE NEEDED ANYMORE, ALL CHANGE TO ENGINE_PRINT
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
 #define ENGINE_LOG_INFO(msg)     EngineLogging::LogInfo(msg)
 #define ENGINE_LOG_WARN(msg)     EngineLogging::LogWarn(msg)
 #define ENGINE_LOG_ERROR(msg)    EngineLogging::LogError(msg)
 #define ENGINE_LOG_CRITICAL(msg) EngineLogging::LogCritical(msg)
+
+
+//Currently TRACE DEBUG INFO is all printed to console as [INFO], to be changed?
+
+/**
+ * @brief Prints a message either to the console or to the internal editor logger.
+ *
+ * @param message   The text you want to output. Cannot be empty.
+ * @param logType   The logging level used when printing to the editor(Info is default).
+ *                  Possible values (from LogLevel enum):
+ *                  - LogLevel::Trace
+ *                  - LogLevel::Debug
+ *                  - LogLevel::Info
+ *                  - LogLevel::Warn
+ *                  - LogLevel::Error
+ *                  - LogLevel::Critical
+ *
+ * @param toEditor  Determines the output target:
+ *                  - false: Prints message to standard output (console).
+ *                  - true : Sends message to the editor logger with the specified logType.
+ * PrintOutput("Something went wrong!", LogLevel::Error, true);
+ */
+#define ENGINE_PRINT(...) EngineLogging::PrintOutput(__VA_ARGS__)
