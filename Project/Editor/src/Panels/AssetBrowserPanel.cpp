@@ -507,7 +507,7 @@ void AssetBrowserPanel::RefreshAssets() {
                 }
 
                 // Get or generate GUID using normalized filePath
-                if (MetaFilesManager::MetaFileExists(filePath)) {
+                if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
                 }
             }
