@@ -334,7 +334,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
 #else
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-#endif
+
 	glDisable(GL_DEPTH_TEST);
 	// Activate shader
 	item.shader->Activate();
@@ -402,6 +402,8 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+#endif
 }
 
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
