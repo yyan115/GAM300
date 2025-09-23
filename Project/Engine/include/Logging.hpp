@@ -76,7 +76,7 @@ namespace EngineLogging {
     void ENGINE_API LogError(const std::string& message);
     void ENGINE_API LogCritical(const std::string& message);
 
-    void PrintOutput(const std::string& message, LogLevel logType = LogLevel::Info, bool toEditor = true);
+    void ENGINE_API PrintOutput(const std::string& message, LogLevel logType = LogLevel::Info, bool toEditor = true);
     
 }
 

@@ -5,13 +5,14 @@
 #include "imgui.h"
 #include "WindowManager.hpp"
 #include "TimeManager.hpp"
+#include "Logging.hpp"
 
 
 int main() {
-    std::cout << "=== EDITOR BUILD ===" << std::endl;
+    ENGINE_PRINT("=== EDITOR BUILD ===", EngineLogging::LogLevel::Info, false);
 
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW!" << std::endl;
+        ENGINE_PRINT("Failed to initialize GLFW!", EngineLogging::LogLevel::Error, false);
         return -1;
     }
 

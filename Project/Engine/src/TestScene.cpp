@@ -29,7 +29,8 @@ void TestScene::Initialize()
 	//transform.scale = { .1, .1, .1 };
 	//transform.rotation = { 0, 0, 0 };
 
-	std::cout << "[TestScene] Created backpack entity with ID: " << testEntt << std::endl;
+	
+	<< "[TestScene] Created backpack entity with ID: " << testEntt << std::endl;
 
 	glm::mat4 transform = glm::mat4(1.0f);
 	transform = glm::translate(transform, glm::vec3(0.0f, -1.0f, -5.0f)); // Move it away from camera and down a bit
