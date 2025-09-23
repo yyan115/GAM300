@@ -30,6 +30,11 @@
 
 #pragma endregion
 
+// helper macro to convert (row,col) to index
+static inline void assert_rc(int r, int c) {
+    assert(r >= 0 && r < 3 && c >= 0 && c < 3);
+}
+
 // ============================
 // Constructors
 // ============================
@@ -40,40 +45,60 @@ Matrix3x3::Matrix3x3() {
 Matrix3x3::Matrix3x3(float m00, float m01, float m02,
     float m10, float m11, float m12,
     float m20, float m21, float m22) {
-    m[0][0] = m00; m[0][1] = m01; m[0][2] = m02;
-    m[1][0] = m10; m[1][1] = m11; m[1][2] = m12;
-    m[2][0] = m20; m[2][1] = m21; m[2][2] = m22;
+    m = { m00,m01,m02, m10,m11,m12, m20,m21,m22 };
 }
+
+
+// ============================
+// Element access
+// ============================
+float& Matrix3x3::operator()(int r, int c) {
+    assert_rc(r, c);
+    if (r == 0)      return c == 0 ? m.m00 : (c == 1 ? m.m01 : m.m02);
+    else if (r == 1) return c == 0 ? m.m10 : (c == 1 ? m.m11 : m.m12);
+    else           return c == 0 ? m.m20 : (c == 1 ? m.m21 : m.m22);
+}
+const float& Matrix3x3::operator()(int r, int c) const {
+    assert_rc(r, c);
+    if (r == 0)      return c == 0 ? m.m00 : (c == 1 ? m.m01 : m.m02);
+    else if (r == 1) return c == 0 ? m.m10 : (c == 1 ? m.m11 : m.m12);
+    else           return c == 0 ? m.m20 : (c == 1 ? m.m21 : m.m22);
+}
+
 
 // ============================
 // Arithmetic operators
 // ============================
-Matrix3x3 Matrix3x3::operator+(const Matrix3x3& rhs) const {
-    Matrix3x3 out;
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            out.m[i][j] = m[i][j] + rhs.m[i][j];
-    return out;
+Matrix3x3 Matrix3x3::operator+(const Matrix3x3& r) const {
+    return {
+        m.m00 + r.m.m00, m.m01 + r.m.m01, m.m02 + r.m.m02,
+        m.m10 + r.m.m10, m.m11 + r.m.m11, m.m12 + r.m.m12,
+        m.m20 + r.m.m20, m.m21 + r.m.m21, m.m22 + r.m.m22
+    };
 }
 
-Matrix3x3 Matrix3x3::operator-(const Matrix3x3& rhs) const {
-    Matrix3x3 out;
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            out.m[i][j] = m[i][j] - rhs.m[i][j];
-    return out;
+Matrix3x3 Matrix3x3::operator-(const Matrix3x3& r) const {
+    return {
+        m.m00 - r.m.m00, m.m01 - r.m.m01, m.m02 - r.m.m02,
+        m.m10 - r.m.m10, m.m11 - r.m.m11, m.m12 - r.m.m12,
+        m.m20 - r.m.m20, m.m21 - r.m.m21, m.m22 - r.m.m22
+    };
 }
 
 Matrix3x3 Matrix3x3::operator*(const Matrix3x3& rhs) const {
-    Matrix3x3 out;
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            out.m[i][j] = m[i][0] * rhs.m[0][j] +
-                m[i][1] * rhs.m[1][j] +
-                m[i][2] * rhs.m[2][j];
-        }
-    }
-    return out;
+    Matrix3x3 o;
+    o.m.m00 = m.m00 * rhs.m.m00 + m.m01 * rhs.m.m10 + m.m02 * rhs.m.m20;
+    o.m.m01 = m.m00 * rhs.m.m01 + m.m01 * rhs.m.m11 + m.m02 * rhs.m.m21;
+    o.m.m02 = m.m00 * rhs.m.m02 + m.m01 * rhs.m.m12 + m.m02 * rhs.m.m22;
+
+    o.m.m10 = m.m10 * rhs.m.m00 + m.m11 * rhs.m.m10 + m.m12 * rhs.m.m20;
+    o.m.m11 = m.m10 * rhs.m.m01 + m.m11 * rhs.m.m11 + m.m12 * rhs.m.m21;
+    o.m.m12 = m.m10 * rhs.m.m02 + m.m11 * rhs.m.m12 + m.m12 * rhs.m.m22;
+
+    o.m.m20 = m.m20 * rhs.m.m00 + m.m21 * rhs.m.m10 + m.m22 * rhs.m.m20;
+    o.m.m21 = m.m20 * rhs.m.m01 + m.m21 * rhs.m.m11 + m.m22 * rhs.m.m21;
+    o.m.m22 = m.m20 * rhs.m.m02 + m.m21 * rhs.m.m12 + m.m22 * rhs.m.m22;
+    return o;
 }
 
 Matrix3x3& Matrix3x3::operator*=(const Matrix3x3& rhs) {
@@ -82,11 +107,9 @@ Matrix3x3& Matrix3x3::operator*=(const Matrix3x3& rhs) {
 }
 
 Matrix3x3 Matrix3x3::operator*(float s) const {
-    Matrix3x3 out;
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            out.m[i][j] = m[i][j] * s;
-    return out;
+    return { m.m00 * s, m.m01 * s, m.m02 * s,
+             m.m10 * s, m.m11 * s, m.m12 * s,
+             m.m20 * s, m.m21 * s, m.m22 * s };
 }
 
 Matrix3x3 Matrix3x3::operator/(float s) const {
@@ -96,9 +119,9 @@ Matrix3x3 Matrix3x3::operator/(float s) const {
 }
 
 Matrix3x3& Matrix3x3::operator*=(float s) {
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            m[i][j] *= s;
+	m.m00 *= s; m.m01 *= s; m.m02 *= s;
+	m.m10 *= s; m.m11 *= s; m.m12 *= s;
+	m.m20 *= s; m.m21 *= s; m.m22 *= s;
     return *this;
 }
 
@@ -113,21 +136,22 @@ Matrix3x3& Matrix3x3::operator/=(float s) {
 // ============================
 Vector3D Matrix3x3::operator*(const Vector3D& v) const {
     return {
-        m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
-        m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
-        m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z
+        m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
+        m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
+		m.m20* v.x + m.m21 * v.y + m.m22 * v.z
     };
 }
 
 // ============================
 // Equality
 // ============================
-bool Matrix3x3::operator==(const Matrix3x3& rhs) const {
-    for (int i = 0; i < 3; ++i)
-        for (int j = 0; j < 3; ++j)
-            if (std::fabs(m[i][j] - rhs.m[i][j]) > 1e-6f)
-                return false;
-    return true;
+bool Matrix3x3::operator==(const Matrix3x3& r) const {
+    const float eps = 1e-6f;
+    return
+        std::fabs(m.m00 - r.m.m00) < eps && std::fabs(m.m01 - r.m.m01) < eps && std::fabs(m.m02 - r.m.m02) < eps &&
+        std::fabs(m.m10 - r.m.m10) < eps && std::fabs(m.m11 - r.m.m11) < eps && std::fabs(m.m12 - r.m.m12) < eps &&
+        std::fabs(m.m20 - r.m.m20) < eps && std::fabs(m.m21 - r.m.m21) < eps && std::fabs(m.m22 - r.m.m22) < eps;
+
 }
 
 // ============================
@@ -135,32 +159,32 @@ bool Matrix3x3::operator==(const Matrix3x3& rhs) const {
 // ============================
 float Matrix3x3::Determinant() const {
     return
-        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
-        m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
-        m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+		m.m00 * (m.m11 * m.m22 - m.m12 * m.m21) -
+		m.m01 * (m.m10 * m.m22 - m.m12 * m.m20) +
+		m.m02 * (m.m10 * m.m21 - m.m11 * m.m20);
 }
 
 Matrix3x3 Matrix3x3::Cofactor() const {
     Matrix3x3 c;
-    c.m[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]);
-    c.m[0][1] = -(m[1][0] * m[2][2] - m[1][2] * m[2][0]);
-    c.m[0][2] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+	c.m.m00 = (m.m11 * m.m22 - m.m12 * m.m21);
+	c.m.m01 = -(m.m10 * m.m22 - m.m12 * m.m20);
+	c.m.m02 = (m.m10 * m.m21 - m.m11 * m.m20);
 
-    c.m[1][0] = -(m[0][1] * m[2][2] - m[0][2] * m[2][1]);
-    c.m[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]);
-    c.m[1][2] = -(m[0][0] * m[2][1] - m[0][1] * m[2][0]);
+	c.m.m10 = -(m.m01 * m.m22 - m.m02 * m.m21);
+	c.m.m11 = (m.m00 * m.m22 - m.m02 * m.m20);
+	c.m.m12 = -(m.m00 * m.m21 - m.m01 * m.m20);
 
-    c.m[2][0] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]);
-    c.m[2][1] = -(m[0][0] * m[1][2] - m[0][2] * m[1][0]);
-    c.m[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]);
+	c.m.m20 = (m.m01 * m.m12 - m.m02 * m.m11);
+	c.m.m21 = -(m.m00 * m.m12 - m.m02 * m.m10);
+	c.m.m22 = (m.m00 * m.m11 - m.m01 * m.m10);
     return c;
 }
 
 Matrix3x3 Matrix3x3::Transposed() const {
     return {
-        m[0][0], m[1][0], m[2][0],
-        m[0][1], m[1][1], m[2][1],
-        m[0][2], m[1][2], m[2][2]
+		m.m00, m.m10, m.m20,
+		m.m01, m.m11, m.m21,
+		m.m02, m.m12, m.m22
     };
 }
 
@@ -221,12 +245,8 @@ Matrix3x3 Matrix3x3::RotationAxisAngle(const Vector3D& u, float a) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix3x3& mat) {
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            os << mat.m[i][j];
-            if (j < 2) os << ", ";
-        }
-        if (i < 2) os << '\n';
-    }
+    os << "[ " << mat.m.m00 << ", " << mat.m.m01 << ", " << mat.m.m02 << " ]\n"
+       << "[ " << mat.m.m10 << ", " << mat.m.m11 << ", " << mat.m.m12 << " ]\n"
+		<< "[ " << mat.m.m20 << ", " << mat.m.m21 << ", " << mat.m.m22 << " ]";
     return os;
 }
