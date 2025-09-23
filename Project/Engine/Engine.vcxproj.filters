@@ -73,6 +73,8 @@
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Prefab.hpp" />
+    <ClInclude Include="include\PrefabComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -120,6 +122,7 @@
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\Prefab.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
