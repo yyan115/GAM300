@@ -15,7 +15,7 @@
 #include "Math/Vector3D.hpp"
 
 struct Matrix3x3 {
-    //REFL_SERIALIZABLE
+    REFL_SERIALIZABLE
     // Storage: row-major (m[row][col])
     struct Matrix
     {

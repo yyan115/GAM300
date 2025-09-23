@@ -30,7 +30,7 @@
 #endif
 
 struct ENGINE_API Matrix4x4 {
-    //REFL_SERIALIZABLE
+    REFL_SERIALIZABLE
     // Row-major storage: m[row][col]
     struct Matrix
     {
