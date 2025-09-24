@@ -2,6 +2,8 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
 #include <Transform/TransformSystem.hpp>
+#include <ECS/ECSManager.hpp>
+#include <ECS/ECSRegistry.hpp>
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -101,6 +103,11 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	SetupMatrices(*item.shader, item.transform);
 
 	// Apply lighting
+	/*ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
+	if (ecsManager.lightingSystem) 
+	{
+		ecsManager.lightingSystem->ApplyLighting(*item.shader);
+	}*/
 	ApplyLighting(*item.shader);
 
 	// Draw the model

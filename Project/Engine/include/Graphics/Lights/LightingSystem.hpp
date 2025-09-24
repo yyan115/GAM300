@@ -7,6 +7,7 @@ struct PointLightComponent;
 struct SpotLightComponent;
 
 class LightingSystem : public System {
+public:
     int MAX_POINT_LIGHTS = 4;
     int MAX_SPOT_LIGHTS = 1;
 
