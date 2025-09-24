@@ -62,6 +62,9 @@ public:
     static void window_focus_callback(PlatformWindow window, int focused);
 
 
+    // Platform access
+    static class IPlatform* GetPlatform();
+
 
 private:
 

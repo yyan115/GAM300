@@ -5,6 +5,7 @@
             "name": "debug",
             "displayName": "Debug (Game Only)",
             "description": "Build game executable in debug mode",
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/Build/debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
@@ -14,8 +15,9 @@
         },
         {
             "name": "release",
-            "displayName": "Release (Game Only)", 
+            "displayName": "Release (Game Only)",
             "description": "Build game executable in release mode",
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/Build/release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
@@ -27,6 +29,7 @@
             "name": "editor-debug",
             "displayName": "Editor Debug",
             "description": "Build editor executable in debug mode",
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/Build/editor-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "EditorDebug",
@@ -35,9 +38,10 @@
             }
         },
         {
-            "name": "editor-release", 
+            "name": "editor-release",
             "displayName": "Editor Release",
             "description": "Build editor executable in release mode",
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/Build/editor-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "EditorRelease",

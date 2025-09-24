@@ -72,12 +72,23 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
         ${CMAKE_SOURCE_DIR}/Resources
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
     )
-    
-    # Windows-specific: Copy required DLLs
+
+    # Platform-specific: Copy required libraries
     if(WIN32)
         add_custom_command(TARGET Game POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
+        add_custom_command(TARGET Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/fmod.dll
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_custom_command(TARGET Game POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         )
     endif()

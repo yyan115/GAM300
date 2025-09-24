@@ -2,7 +2,10 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
-#include "Texture.h"
+#include "OpenGL.h"
+
+// Forward declaration instead of full include
+class Texture;
 
 class TextureManager {
 public:
