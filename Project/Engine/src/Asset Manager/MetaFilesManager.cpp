@@ -58,6 +58,37 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 	return std::filesystem::exists(metaFilePath.generic_string());
 }
 
+std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMetaFile(const std::string& metaFilePath) {
+	std::ifstream ifs(metaFilePath);
+	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+
+	rapidjson::Document doc;
+	doc.Parse(jsonContent.c_str());
+
+	const auto& assetMetaData = doc["AssetMetaData"];
+	if (assetMetaData.HasMember("last_compiled")) {
+		std::string timestampStr = assetMetaData["last_compiled"].GetString();
+		std::istringstream iss(timestampStr);
+		std::chrono::sys_time<std::chrono::seconds> tp;
+
+		// Parse using the same format string you used for formatting
+		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
+
+		if (iss.fail()) {
+			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
+			return std::chrono::system_clock::time_point{};
+		}
+		else {
+			// Convert sys_time<seconds> to system_clock::time_point
+			return tp;
+		}
+	}
+	else {
+		std::cerr << "[MetaFilesManager] ERROR: last_compiled not found in meta file: " << metaFilePath << std::endl;
+		return std::chrono::system_clock::time_point{};
+	}
+}
+
 GUID_string MetaFilesManager::GetGUIDFromMetaFile(const std::string& metaFilePath) {
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -82,24 +113,13 @@ GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath)
 }
 
 void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFolder) {
-	std::unordered_set<std::string> compiledShaderNames; // To avoid compiling the same shader multiple times.
-
 	for (const auto& file : std::filesystem::recursive_directory_iterator(rootAssetFolder)) {
 		// Check that it is a regular file (not a directory).
 		if (file.is_regular_file()) {
-			bool isShader = false;
 			std::string extension = file.path().extension().string();
 
 			if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
 				std::string assetPath = file.path().generic_string();
-				if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
-					std::string shaderName = file.path().stem().string();
-					if (compiledShaderNames.find(shaderName) != compiledShaderNames.end()) {
-						continue; // Skip if this shader has already been compiled.
-					}
-					compiledShaderNames.insert(shaderName);
-					isShader = true;
-				}
 
 				if (!MetaFileExists(assetPath)) {
 					std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
@@ -110,15 +130,19 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 					AssetManager::GetInstance().CompileAsset(assetPath);
 				}
 				else {
-					if (isShader) {
-						assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
+					if (AssetFileUpdated(assetPath)) {
+						std::cout << "[MetaFilesManager] Asset file was updated: " << assetPath << ". Re-compiling..." << std::endl;
+						AssetManager::GetInstance().CompileAsset(assetPath, true);
 					}
+					else {
+						if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+							assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
+						}
 
-					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
-					AddGUID128Mapping(assetPath, guid128);
-					AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-
-					//std::cout << "[MetaFilesManager] .meta already exists for: " << assetPath << std::endl;
+						GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+						AddGUID128Mapping(assetPath, guid128);
+						AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					}
 				}
 			}
 			//// fallback for shaders
@@ -169,6 +193,30 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 		std::cerr << "[MetaFilesManager] ERROR: version not found in meta file: " << metaFilePath << std::endl;
 		return "";
 	}
+}
+
+bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath) {
+	// Get the last modified time for the asset file.
+	std::filesystem::path assetFile(assetPath);
+	auto ftime = std::filesystem::last_write_time(assetFile);
+	auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
+
+	// Compare the last modified time with the meta file's last compile time.
+	// If it was modified after the last compile time, the asset file was updated and requires re-compilation.
+	std::string extension = assetFile.extension().string();
+	std::string metaFilePath{};
+	if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+		metaFilePath = (assetFile.parent_path() / assetFile.stem()).generic_string() + ".meta";
+	}
+	else {
+		metaFilePath = assetPath + ".meta";
+	}
+
+	if (lastModifiedTime > GetLastCompileTimeFromMetaFile(metaFilePath)) {
+		return true;
+	}
+
+	return false;
 }
 
 //GUID_128 MetaFilesManager::UpdateMetaFile(const std::string& assetPath) {

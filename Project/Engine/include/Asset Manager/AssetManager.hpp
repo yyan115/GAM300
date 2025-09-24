@@ -41,7 +41,7 @@ public:
 		assetMetaMap[assetMeta->guid] = assetMeta;
 	}
 
-	bool CompileAsset(const std::string& filePathStr) {
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
 		std::filesystem::path filePathObj(filePathStr);
 		std::string extension = filePathObj.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
@@ -51,13 +51,13 @@ public:
 		//	return CompileAsset<Audio>(filePathStr);
 		//}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			return CompileAsset<Font>(filePathStr);
+			return CompileAsset<Font>(filePathStr, forceCompile);
 		}
 		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			return CompileAsset<Model>(filePathStr);
+			return CompileAsset<Model>(filePathStr, forceCompile);
 		}
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			return CompileAsset<Shader>(filePathStr);
+			return CompileAsset<Shader>(filePathStr, forceCompile);
 		}
 		else {
 			std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
@@ -66,7 +66,7 @@ public:
 	}
 
 	template <typename T>
-	bool CompileAsset(const std::string& filePathStr) {
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
 		static_assert(!std::is_same_v<T, Texture>,
 			"Calling AssetManager::GetInstance().GetAsset() to compile a texture is forbidden. Use CompileTexture() instead.");
 
@@ -86,12 +86,17 @@ public:
 			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
 
-		auto it = assetMetaMap.find(guid);
-		if (it != assetMetaMap.end()) {
-			return true;
+		if (!forceCompile) {
+			auto it = assetMetaMap.find(guid);
+			if (it != assetMetaMap.end()) {
+				return true;
+			}
+			else {
+				return CompileAssetToResource<T>(guid, filePath, forceCompile);
+			}
 		}
 		else {
-			return CompileAssetToResource<T>(guid, filePath);
+			return CompileAssetToResource<T>(guid, filePath, forceCompile);
 		}
 	}
 
@@ -210,6 +215,10 @@ public:
 
 	bool IsExtensionMetaFile(const std::string& extension) const {
 		return extension == ".meta";
+	}
+
+	bool IsExtensionShaderVertFrag(const std::string& extension) const {
+		return shaderExtensions.find(extension) != shaderExtensions.end();
 	}
 
 	bool HandleMetaFileDeletion(const std::string& metaFilePath) {
@@ -337,9 +346,9 @@ private:
 	//}
 
 	template <typename T>
-	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath) {
+	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath, bool forceCompile = false) {
 		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			std::shared_ptr<T> asset = std::make_shared<T>();
 			std::string compiledPath = asset->CompileToResource(filePath);
 			if (compiledPath.empty()) {

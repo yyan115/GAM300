@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Asset Manager/AssetMeta.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
 #include <rapidjson/document.h>
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver)
@@ -37,22 +38,7 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		compiledFilePath = assetMetaData["compiled"].GetString();
 	}
 
-	if (assetMetaData.HasMember("last_compiled")) {
-		std::string timestampStr = assetMetaData["last_compiled"].GetString();
-		std::istringstream iss(timestampStr);
-		std::chrono::sys_time<std::chrono::seconds> tp;
-
-		// Parse using the same format string you used for formatting
-		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
-
-		if (iss.fail()) {
-			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
-		}
-		else {
-			// Convert sys_time<seconds> to system_clock::time_point
-			lastCompileTime = tp;
-		}
-	}
+	lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 
 	ifs.close();
 }

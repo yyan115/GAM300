@@ -111,7 +111,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
             std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
-            AssetManager::GetInstance().CompileAsset(fullPath);
+            AssetManager::GetInstance().CompileAsset(fullPath, true);
         }
         else if (event == filewatch::Event::removed) {
             std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
