@@ -37,7 +37,6 @@
     <ClInclude Include="include\WindowManager.hpp" />
     <ClInclude Include="include\Graphics\TextureManager.h" />
     <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
-    <ClInclude Include="include\Asset Manager\GUID.hpp" />
     <ClInclude Include="include\Asset Manager\MetaFilesManager.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
     <ClInclude Include="include\Graphics\LightManager.hpp" />
@@ -71,8 +70,13 @@
     <ClInclude Include="include\Platform\AndroidPlatform.h" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
-    <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Utilities\FileUtilities.hpp" />
+    <ClInclude Include="include\Utilities\GUID.hpp" />
+    <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
+    <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
+    <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
+    <ClInclude Include="include\Transform\Quaternion.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -96,7 +100,6 @@
     <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />
-    <ClCompile Include="src\Asset Manager\GUID.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
@@ -116,10 +119,11 @@
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
-    <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\Utilities\FileUtilities.cpp" />
+    <ClCompile Include="src\Utilities\GUID.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

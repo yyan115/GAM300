@@ -12,6 +12,7 @@
 
 #include "pch.h"
 #include "Math/Matrix4x4.hpp"
+#include <Math/Matrix3x3.hpp>
 
 #pragma region Reflection
 //TODO: Change to actual values and not in an array format
@@ -411,6 +412,62 @@ Matrix4x4 Matrix4x4::OrthoRH(float l, float r, float b, float t, float n, float 
         0,  0,  sz, tz,
         0,  0,  0,  1
     };
+}
+
+Vector3D Matrix4x4::ExtractTranslation(const Matrix4x4& m) {
+    Vector3D localPosition = Vec3(m.m.m03, m.m.m13, m.m.m23);
+    return localPosition;
+}
+
+Vector3D Matrix4x4::ExtractScale(const Matrix4x4& m) {
+    Vector3D xAxis = Vector3D(m.m.m00, m.m.m01, m.m.m02);
+    Vector3D yAxis = Vector3D(m.m.m10, m.m.m11, m.m.m12);
+    Vector3D zAxis = Vector3D(m.m.m20, m.m.m21, m.m.m22);
+
+    Vector3D localScale = Vector3D(xAxis.Length(), yAxis.Length(), zAxis.Length());
+    return localScale;
+}
+
+Vector3D Matrix4x4::ExtractRotation(const Matrix4x4& m) {
+    Vector3D xAxis = Vector3D(m.m.m00, m.m.m01, m.m.m02).Normalize();
+    Vector3D yAxis = Vector3D(m.m.m10, m.m.m11, m.m.m12).Normalize();
+    Vector3D zAxis = Vector3D(m.m.m20, m.m.m21, m.m.m22).Normalize();
+
+    Matrix3x3 rotMat(xAxis.x, xAxis.y, xAxis.z,
+        yAxis.x, yAxis.y, yAxis.z,
+        zAxis.x, zAxis.y, zAxis.z);
+
+    float pitch = -std::asin(rotMat.m.m12);
+    float yaw = std::atan2(rotMat.m.m02, rotMat.m.m22);
+    float roll = std::atan2(rotMat.m.m10, rotMat.m.m11);
+
+    return Vector3D(pitch, yaw, roll); // in radians
+}
+
+Matrix4x4 Matrix4x4::RemoveScale(const Matrix4x4& m) {
+    // Extract basis vectors from columns
+    Vector3D xAxis(m.m.m00, m.m.m10, m.m.m20);
+    Vector3D yAxis(m.m.m01, m.m.m11, m.m.m21);
+    Vector3D zAxis(m.m.m02, m.m.m12, m.m.m22);
+
+    // Normalize to remove scale
+    xAxis = xAxis.Normalize();
+    yAxis = yAxis.Normalize();
+    zAxis = zAxis.Normalize();
+
+    // Extract translation from last column
+    Vector3D translation(m.m.m03, m.m.m13, m.m.m23);
+
+    Matrix4x4 result = Matrix4x4::Identity();
+    result.m.m00 = xAxis.x; result.m.m10 = xAxis.y; result.m.m20 = xAxis.z;
+    result.m.m01 = yAxis.x; result.m.m11 = yAxis.y; result.m.m21 = yAxis.z;
+    result.m.m02 = zAxis.x; result.m.m12 = zAxis.y; result.m.m22 = zAxis.z;
+
+    result.m.m03 = translation.x;
+    result.m.m13 = translation.y;
+    result.m.m23 = translation.z;
+
+    return result;
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {

@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 #include <Transform/TransformSystem.hpp>
 
 GraphicsManager& GraphicsManager::GetInstance()
@@ -33,8 +38,26 @@ void GraphicsManager::EndFrame()
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
 {
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() called");
+
+	// Ensure EGL context is current before making OpenGL calls
+	auto* platform = WindowManager::GetPlatform();
+	if (platform) {
+		platform->MakeContextCurrent();
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context made current");
+	}
+
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClearColor");
+#endif
 	glClearColor(r, g, b, a);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClear");
+#endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifdef ANDROID
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() completed");
+#endif
 }
 
 void GraphicsManager::SetCamera(Camera* camera)
@@ -105,6 +128,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Draw the model
 	item.model->Draw(*item.shader, *currentCamera);
+
+	//std::cout << "rendered model\n";
 }
 
 void GraphicsManager::ApplyLighting(Shader& shader)
@@ -305,7 +330,11 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		return;
 	}
 	// Enable wireframe mode for debug rendering
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
+#else
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	glDisable(GL_DEPTH_TEST);
 	// Activate shader
 	item.shader->Activate();
@@ -373,6 +402,8 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+#endif
 }
 
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
@@ -404,7 +435,7 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 	Vector3D rotation = { rot.x, rot.y, rot.z };
 	Vector3D scaleVec = { scale.x, scale.y, scale.z };
 
-	Matrix4x4 modelMatrix = TransformSystem::calculateModelMatrix(position, scaleVec, rotation);
+	Matrix4x4 modelMatrix = TransformSystem::CalculateModelMatrix(position, scaleVec, rotation);
 	return ConvertMatrix4x4ToGLM(modelMatrix);
 }
 

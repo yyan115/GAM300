@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.h"
+#include "Graphics/OpenGL.h"
 #include <unordered_map>
 #include <WindowManager.hpp>
-#include <GLFW/glfw3.h>
 #include "Input/Keys.h"
 
 namespace RunTimeVar {

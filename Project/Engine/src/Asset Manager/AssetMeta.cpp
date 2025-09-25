@@ -43,7 +43,12 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		std::chrono::sys_time<std::chrono::seconds> tp;
 
 		// Parse using the same format string you used for formatting
+#ifdef ANDROID
+		// std::chrono::parse not available on Android NDK yet - use epoch time so assets always recompile
+		tp = std::chrono::sys_time<std::chrono::seconds>{};
+#else
 		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
+#endif
 
 		if (iss.fail()) {
 			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
