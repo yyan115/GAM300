@@ -73,6 +73,12 @@
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Physics\ColliderComponent.hpp" />
+    <ClInclude Include="include\Physics\RigidBodyComponent.hpp" />
+    <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
+    <ClInclude Include="include\Physics\CollisionFilters.hpp" />
+    <ClInclude Include="include\Physics\CollisionLayers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -120,6 +126,8 @@
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="src\Physics\CollisionFilters.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

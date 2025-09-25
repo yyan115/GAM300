@@ -12,6 +12,7 @@
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
 #include "../Engine.h"  // For ENGINE_API macro
 
+class PhysicsSystem;
 class ENGINE_API ECSManager {
 public:
 	ECSManager() { Initialize(); };
@@ -93,6 +94,7 @@ public:
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
+	std::shared_ptr<PhysicsSystem> physicsSystem;
 
 private:
 	template <typename T>

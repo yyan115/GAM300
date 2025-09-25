@@ -10,6 +10,7 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
+#include <Physics/PhysicsSystem.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -46,6 +47,9 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
+	
+	//PHYSICS TEST CODE
+	ecsManager.physicsSystem->Initialise();
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
@@ -87,6 +91,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->update();
+	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
 }
 
 void SceneInstance::Draw() {
@@ -137,7 +142,7 @@ void SceneInstance::Exit() {
 
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
+	ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	std::cout << "TestScene Exited" << std::endl;
 }
 
