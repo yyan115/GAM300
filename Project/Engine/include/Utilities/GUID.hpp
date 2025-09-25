@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "../Engine.h"  // For ENGINE_API macro
 
-// Asset GUIDs are written to .meta files as strings.
+// GUIDs are written to .meta files as strings.
 using GUID_string = std::string;
 
 // Internally, we use a 128-bit structure for asset GUIDs for better performance.

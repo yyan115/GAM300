@@ -47,7 +47,7 @@ void ModelSystem::Update()
            // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting model for entity: %u", entity);
 #endif
             auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
-            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).model);
+            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).worldMatrix);
 
             gfxManager.Submit(std::move(modelRenderItem));
         }

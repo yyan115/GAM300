@@ -27,41 +27,43 @@ void SceneInstance::Initialize() {
 
 	// Create a backpack entity with a Renderer component in the main ECS manager
 	Entity backpackEntt = ecsManager.CreateEntity();
-	ecsManager.AddComponent<Transform>(backpackEntt, Transform{});
-	Transform& backpacktransform = ecsManager.GetComponent<Transform>(backpackEntt);
-	backpacktransform.position = { 0, 0, 0 };
-	backpacktransform.scale = { .1f, .1f, .1f };
-	backpacktransform.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt, NameComponent{"dora the explorer"});
+	ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
+	ecsManager.transformSystem->SetLocalScale(backpackEntt, { .1f, .1f, .1f });
+	ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
+	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
+	backpackName.name = "dora the explorer";
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 	Entity backpackEntt2 = ecsManager.CreateEntity();
-	ecsManager.AddComponent<Transform>(backpackEntt2, Transform{});
-	Transform& backpacktransform2 = ecsManager.GetComponent<Transform>(backpackEntt2);
-	backpacktransform2.position = { 1, -0.5f, 0 };
-	backpacktransform2.scale = { .2f, .2f, .2f };
-	backpacktransform2.rotation = { 0, 0, 0 };
-	ecsManager.AddComponent<NameComponent>(backpackEntt2, NameComponent{ "ash ketchum" });
+	ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
+	ecsManager.transformSystem->SetLocalScale(backpackEntt2, { .2f, .2f, .2f });
+	ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
+	NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
+	backpack2Name.name = "ash ketchum";
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
+		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-	// GRAPHICS TEST CODE
-	ecsManager.transformSystem->Initialise();
-	ecsManager.modelSystem->Initialise();
-	ecsManager.debugDrawSystem->Initialise();
+	Entity backpackEntt3 = ecsManager.CreateEntity();
+	ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
+	ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .5f, .5f, .5f });
+	ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
+	NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
+	backpack3Name.name = "indiana jones";
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(text, NameComponent{ "Hello World Text" });
+	ecsManager.GetComponent<NameComponent>(text).name = "Text1";
 	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
 	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
 	TextUtils::SetPosition(textComp, glm::vec3(800, 100, 0));
 	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
 	Entity text2 = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(text2, NameComponent{ "Text2" });
-	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "More test text", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+	ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
+	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
 	TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 	TextUtils::SetPosition(textComp2, glm::vec3(800, 800, 0));
 	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
@@ -77,6 +79,9 @@ void SceneInstance::Initialize() {
 	gfxManager.SetCamera(&camera);
 
 	// Initialize systems.
+	ecsManager.transformSystem->Initialise();
+	ecsManager.modelSystem->Initialise();
+	ecsManager.debugDrawSystem->Initialise();
 
 	std::cout << "TestScene Initialized" << std::endl;
 }
@@ -90,7 +95,7 @@ void SceneInstance::Update(double dt) {
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
-	mainECS.transformSystem->update();
+	mainECS.transformSystem->Update();
 }
 
 void SceneInstance::Draw() {

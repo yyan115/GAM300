@@ -1,6 +1,6 @@
 #pragma once
 #include "EditorPanel.hpp"
-#include "Asset Manager/GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include <filesystem>
 #include <vector>
 #include <string>

@@ -98,6 +98,13 @@ struct ENGINE_API Matrix4x4 {
     // fovY in radians, aspect = width/height, zNear>0, zFar>zNear
     static Matrix4x4 PerspectiveFovRH(float fovY, float aspect, float zNear, float zFar);
     static Matrix4x4 OrthoRH(float left, float right, float bottom, float top, float zNear, float zFar);
+
+    // Extract translation, scale, rotation from world matrix
+    static Vector3D ExtractTranslation(const Matrix4x4& m);
+    static Vector3D ExtractScale(const Matrix4x4& m);
+    static Vector3D ExtractRotation(const Matrix4x4& m);
+
+    static Matrix4x4 RemoveScale(const Matrix4x4& m);
 };
 
 // left scalar

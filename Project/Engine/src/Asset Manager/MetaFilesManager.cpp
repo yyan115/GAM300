@@ -5,7 +5,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
-#include <Asset Manager/FileUtilities.hpp>
+#include <Utilities/FileUtilities.hpp>
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 

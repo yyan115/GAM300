@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include <iostream>
-#include "Asset Manager/FileUtilities.hpp"
+#include "Utilities/FileUtilities.hpp"
 
 bool FileUtilities::RemoveFile(const std::string& filePath) {
 	std::filesystem::path p(filePath);

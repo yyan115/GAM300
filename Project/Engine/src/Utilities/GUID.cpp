@@ -3,7 +3,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-#include "Asset Manager/GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include <cassert>
 
 GUID_string GUIDUtilities::GenerateGUIDString() {
