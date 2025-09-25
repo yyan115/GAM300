@@ -25,7 +25,8 @@ public:
 	std::string CompileToResource(const std::string& assetPath) override;
 	void Cleanup();
 	//bool LoadFont(const std::string& path, unsigned int fontSize);
-	bool LoadResource(const std::string& assetPath, unsigned int newFontSize);
+	bool LoadResource(const std::string& assetPath, unsigned int newFontSize, bool setFontSize = true);
+	bool ReloadResource(const std::string& assetPath) override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	void SetFontSize(unsigned int newSize);

@@ -181,6 +181,11 @@ bool Shader::LoadResource(const std::string& assetPath)
 	}
 }
 
+bool Shader::ReloadResource(const std::string& assetPath)
+{
+	return LoadResource(assetPath);
+}
+
 std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
 {
 	assetPath, currentMetaData;

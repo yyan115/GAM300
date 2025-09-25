@@ -4,7 +4,7 @@
 #include <memory>
 #include <type_traits>
 #include <filesystem>
-#include <thread>
+#include <queue>
 //#include <FileWatch.hpp>
 #include "../Engine.h"
 #include "GUID.hpp"
@@ -45,7 +45,7 @@ public:
 		std::filesystem::path filePathObj(filePathStr);
 		std::string extension = filePathObj.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			return CompileTexture(filePathStr, "diffuse", -1);
+			return CompileTexture(filePathStr, "diffuse", -1, forceCompile);
 		}
 		//else if (audioExtensions.find(extension) != audioExtensions.end()) {
 		//	return CompileAsset<Audio>(filePathStr);
@@ -100,7 +100,7 @@ public:
 		}
 	}
 
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot) {
+	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false) {
 		GUID_128 guid{};
 		if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -110,12 +110,17 @@ public:
 			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
 
-		auto it = assetMetaMap.find(guid);
-		if (it != assetMetaMap.end()) {
-			return true;
+		if (!forceCompile) {
+			auto it = assetMetaMap.find(guid);
+			if (it != assetMetaMap.end()) {
+				return true;
+			}
+			else {
+				return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
+			}
 		}
 		else {
-			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot);
+			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
 		}
 	}
 
@@ -276,8 +281,13 @@ public:
 		return true;
 	}
 
+	void AddToCompilationQueue(const std::filesystem::path& assetPath);
+
+	void RunCompilationQueue();
+
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;
+	std::queue<std::filesystem::path> compilationQueue;
 	//std::unique_ptr<filewatch::FileWatch<std::string>> assetWatcher;
 
 	// Supported asset extensions
@@ -358,16 +368,39 @@ private:
 
 			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl;
+
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(filePath, guid)) {
+				std::cout << "[AssetManager] Resource is already loaded - hot-reloading the resource: " << compiledPath << std::endl;
+				if constexpr (std::is_same_v<T, Font>) {
+					ResourceManager::GetInstance().GetFontResource(filePath, 0, true);
+				}
+				else if (std::is_same_v<T, Shader>) {
+					ResourceManager::GetInstance().GetResource<Shader>(filePath, true);
+				}
+				else {
+					std::filesystem::path p(filePath);
+					std::string extension = p.extension().generic_string();
+					//else if (audioExtensions.find(extension) != audioExtensions.end()) {
+					//	return CompileAsset<Audio>(filePathStr);
+					//}
+					if (modelExtensions.find(extension) != modelExtensions.end()) {
+						ResourceManager::GetInstance().GetResource<Model>(filePath, true);
+					}
+				}
+			}
+
+			std::cout << std::endl;
 			return true;
 		}
 
 		return true;
 	}
 
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot) {
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false) {
 		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			Texture texture{ texType, slot };
 			std::string compiledPath = texture.CompileToResource(filePath);
 			if (compiledPath.empty()) {
@@ -379,6 +412,15 @@ private:
 			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
 			assetMetaMap[guid] = assetMeta;
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(filePath, guid)) {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
+			}
+			else {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath);
+			}
+
 			return true;
 		}
 

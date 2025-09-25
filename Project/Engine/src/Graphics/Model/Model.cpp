@@ -286,6 +286,7 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
 
 bool Model::LoadResource(const std::string& assetPath)
 {
+    meshes.clear();
     std::filesystem::path assetPathFS(assetPath);
     std::string resourcePath = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".mesh";
 
@@ -412,6 +413,11 @@ bool Model::LoadResource(const std::string& assetPath)
     }
 
     return false;
+}
+
+bool Model::ReloadResource(const std::string& assetPath)
+{
+    return LoadResource(assetPath);
 }
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)

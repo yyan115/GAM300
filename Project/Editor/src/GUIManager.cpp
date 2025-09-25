@@ -18,6 +18,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include <Asset Manager/AssetManager.hpp>
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -104,6 +105,8 @@ void GUIManager::Render() {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
+
+	AssetManager::GetInstance().RunCompilationQueue();
 }
 
 void GUIManager::Exit() {
