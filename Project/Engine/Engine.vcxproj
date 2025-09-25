@@ -90,6 +90,7 @@
     <ClInclude Include="include\Math\Matrix4x4.hpp" />
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />

@@ -8,6 +8,7 @@
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
+#include "Sound/AudioComponent.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -23,6 +24,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<NameComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
+	RegisterComponent<AudioComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,

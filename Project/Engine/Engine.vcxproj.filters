@@ -77,6 +77,7 @@
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
+    <ClInclude Include="include\Sound\AudioComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
