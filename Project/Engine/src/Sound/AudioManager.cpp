@@ -16,8 +16,8 @@
 #include "fmod.h"
 #include "fmod_errors.h"
 #else
-#include "../../Libraries/FMOD/inc/fmod.h"
-#include "../../Libraries/FMOD/inc/fmod_errors.h"
+#include <fmod.h>
+#include <fmod_errors.h>
 #endif
 
 AudioManager::AudioManager(): mSystem(nullptr)
