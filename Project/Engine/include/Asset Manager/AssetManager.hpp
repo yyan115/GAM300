@@ -18,54 +18,8 @@ class ENGINE_API AssetManager {
 public:
 	static AssetManager& GetInstance();
 
-	void AddAssetMetaToMap(const std::string& assetPath) {
-		std::filesystem::path p(assetPath);
-		std::string extension = p.extension().string();
-		std::string metaFilePath = assetPath + ".meta";
-		std::shared_ptr<AssetMeta> assetMeta;
-		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			assetMeta = std::make_shared<TextureMeta>();
-			assetMeta->PopulateAssetMetaFromFile(metaFilePath);
-		}
-		else {
-			assetMeta = std::make_shared<AssetMeta>();
-			assetMeta->PopulateAssetMetaFromFile(metaFilePath);
-		}
-
-		// Check if the compiled resource file exists. If not, we need to recompile the asset.
-		if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
-			std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
-			CompileAsset(assetPath);
-		}
-
-		assetMetaMap[assetMeta->guid] = assetMeta;
-	}
-
-	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
-		std::filesystem::path filePathObj(filePathStr);
-		std::string extension = filePathObj.extension().string();
-		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			return CompileTexture(filePathStr, "diffuse", -1, forceCompile);
-		}
-		//else if (audioExtensions.find(extension) != audioExtensions.end()) {
-		//	return CompileAsset<Audio>(filePathStr);
-		//}
-		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			return CompileAsset<Font>(filePathStr, forceCompile);
-		}
-		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			return CompileAsset<Model>(filePathStr, forceCompile);
-		}
-		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			return CompileAsset<Shader>(filePathStr, forceCompile);
-		}
-		else {
-			std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
-			return false;
-		}
-	}
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false);
 	void AddAssetMetaToMap(const std::string& assetPath);
-	bool CompileAsset(const std::string& filePathStr);
 
 	template <typename T>
 	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
@@ -102,30 +56,8 @@ public:
 		}
 	}
 
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false) {
-		GUID_128 guid{};
-		if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
-			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
-			guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
-		}
-		else {
-			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
-		}
+	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false);
 
-		if (!forceCompile) {
-			auto it = assetMetaMap.find(guid);
-			if (it != assetMetaMap.end()) {
-				return true;
-			}
-			else {
-				return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
-			}
-		}
-		else {
-			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
-		}
-	}
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot);
 	bool IsAssetCompiled(GUID_128 guid);
 	void UnloadAsset(const std::string& assetPath);
 
@@ -141,6 +73,7 @@ public:
 	const std::unordered_set<std::string>& GetShaderExtensions() const;
 	bool IsAssetExtensionSupported(const std::string& extension) const;
 	bool IsExtensionMetaFile(const std::string& extension) const;
+	bool IsExtensionShaderVertFrag(const std::string& extension) const;
 
 	bool HandleMetaFileDeletion(const std::string& metaFilePath);
 	bool HandleResourceFileDeletion(const std::string& resourcePath);
@@ -219,6 +152,7 @@ private:
 	//	return assetMap;
 	//}
 
+	template <typename T>
 	std::shared_ptr<T> GetAsset(const std::string& assetPath) {
 		return ResourceManager::GetInstance().GetResource<T>(assetPath);
 	}
@@ -239,7 +173,7 @@ private:
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl;
 
 			// If the resource is already loaded, hot-reload the resource.
-			if (ResourceManager::GetInstance().IsResourceLoaded(filePath, guid)) {
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
 				std::cout << "[AssetManager] Resource is already loaded - hot-reloading the resource: " << compiledPath << std::endl;
 				if constexpr (std::is_same_v<T, Font>) {
 					ResourceManager::GetInstance().GetFontResource(filePath, 0, true);
@@ -282,7 +216,7 @@ private:
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
 
 			// If the resource is already loaded, hot-reload the resource.
-			if (ResourceManager::GetInstance().IsResourceLoaded(filePath, guid)) {
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
 				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
 			}
 			else {

@@ -12,7 +12,7 @@
 #include <android/log.h>
 #endif
 
-class ResourceManager {
+class ENGINE_API ResourceManager {
 public:
 	static ResourceManager& GetInstance() {
 		static ResourceManager instance;
@@ -137,7 +137,7 @@ public:
 		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
 	}
 
-	bool IsResourceLoaded(const std::string& assetPath, const GUID_128& guid) {
+	bool IsResourceLoaded(const GUID_128& guid) {
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
 		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
@@ -237,7 +237,7 @@ private:
 			if (font->ReloadResource(assetPath)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
-				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;
 				return font;
 			}
 		}

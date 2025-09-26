@@ -113,7 +113,6 @@
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
-    <ClCompile Include="src\Asset Manager\FileUtilities.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />

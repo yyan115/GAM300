@@ -129,13 +129,11 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 
 	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
 
-	for (const std::string& assetPath : assetFiles) {
+	for (std::string assetPath : assetFiles) {
 		std::filesystem::path filePath(assetPath);
 		std::string extension = filePath.extension().string();
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-			std::string assetPath = file.path().generic_string();
-
 			if (!MetaFileExists(assetPath)) {
 				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
 				AssetManager::GetInstance().CompileAsset(assetPath);
@@ -151,7 +149,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 				}
 				else {
 					if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-						assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
+						assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
 					}
 
 					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
