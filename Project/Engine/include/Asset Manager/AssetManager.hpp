@@ -67,9 +67,12 @@ public:
 	const std::unordered_set<std::string>& GetShaderExtensions() const;
 	bool IsAssetExtensionSupported(const std::string& extension) const;
 	bool IsExtensionMetaFile(const std::string& extension) const;
+	bool IsExtensionShaderVertFrag(const std::string& extension) const;
 
 	bool HandleMetaFileDeletion(const std::string& metaFilePath);
 	bool HandleResourceFileDeletion(const std::string& resourcePath);
+
+	std::string GetAssetPathFromGUID(const GUID_128 guid);
 
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;

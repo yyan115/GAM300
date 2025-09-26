@@ -84,8 +84,6 @@ GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath)
 }
 
 void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFolder) {
-	std::unordered_set<std::string> compiledShaderNames; // To avoid compiling the same shader multiple times.
-
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
@@ -96,20 +94,10 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
 
 	for (const std::string& assetPath : assetFiles) {
-		bool isShader = false;
 		std::filesystem::path filePath(assetPath);
 		std::string extension = filePath.extension().string();
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-			if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
-				std::string shaderName = filePath.stem().string();
-				if (compiledShaderNames.find(shaderName) != compiledShaderNames.end()) {
-					continue; // Skip if this shader has already been compiled.
-				}
-				compiledShaderNames.insert(shaderName);
-				isShader = true;
-			}
-
 			if (!MetaFileExists(assetPath)) {
 				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
 				AssetManager::GetInstance().CompileAsset(assetPath);
@@ -120,7 +108,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			}
 			else {
 				std::string finalAssetPath = assetPath;
-				if (isShader) {
+				if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
 					finalAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
 				}
 
@@ -131,14 +119,6 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 				//std::cout << "[MetaFilesManager] .meta already exists for: " << assetPath << std::endl;
 			}
 		}
-			//// fallback for shaders
-			//else if (extension == ".meta") {
-			//	std::string assetPath = file.path().generic_string();
-			//	assetPath = assetPath.substr(0, assetPath.size() - 5); // Remove the .meta extension
-			//	GUID_string guidStr = GetGUIDFromMetaFile(file.path().generic_string());
-			//	GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
-			//	AddGUID128Mapping(assetPath, guid128);
-			//}
 	}
 }
 

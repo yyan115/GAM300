@@ -20,6 +20,29 @@ public:
 	}
 
 	template <typename T>
+	std::shared_ptr<T> GetResourceFromGUID(const GUID_128& guid, const std::string& assetPath) {
+		auto& resourceMap = GetResourceMap<T>();
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			return it->second;
+		}
+		else {
+			return GetResource<T>(assetPath);
+		}
+	}
+
+	std::shared_ptr<Font> GetFontResourceFromGUID(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize) {
+		auto& resourceMap = GetResourceMap<Font>();
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			return it->second;
+		}
+		else {
+			return GetFontResource(assetPath, fontSize);
+		}
+	}
+
+	template <typename T>
 	std::shared_ptr<T> GetResource(const std::string& assetPath) {
 		static_assert(!std::is_same_v<T, Font>,
 			"Calling ResourceManager::GetInstance().GetResource() to get a font is forbidden. Use GetFontResource() instead.");

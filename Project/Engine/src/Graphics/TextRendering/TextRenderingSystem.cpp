@@ -4,9 +4,19 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/TextRendering/TextUtils.hpp"
+#include <Asset Manager/AssetManager.hpp>
 
 bool TextRenderingSystem::Initialise()
 {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        auto& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
+        std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.fontGUID);
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.shaderGUID);
+        textComp.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComp.fontGUID, fontPath, textComp.fontSize);
+        textComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComp.shaderGUID, shaderPath);
+    }
+
 	std::cout << "[TextSystem] Initialized" << std::endl;
 	return true;
 }
