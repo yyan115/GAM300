@@ -3,12 +3,16 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
-#include "GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
-#include "Asset Manager/FileUtilities.hpp"
+#include "Utilities/FileUtilities.hpp"
 
-class ResourceManager {
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
+class ENGINE_API ResourceManager {
 public:
 	static ResourceManager& GetInstance() {
 		static ResourceManager instance;
@@ -16,7 +20,7 @@ public:
 	}
 
 	template <typename T>
-	std::shared_ptr<T> GetResource(const std::string& assetPath) {
+	std::shared_ptr<T> GetResource(const std::string& assetPath, bool forceLoad = false) {
 		static_assert(!std::is_same_v<T, Font>,
 			"Calling ResourceManager::GetInstance().GetResource() to get a font is forbidden. Use GetFontResource() instead.");
 
@@ -34,37 +38,46 @@ public:
 		}
 		
 		// Return a shared pointer to the resource (Texture, Model, etc.)
-		auto it = resourceMap.find(guid);
-		if (it != resourceMap.end()) {
-			return it->second;
+		if (!forceLoad) {
+			auto it = resourceMap.find(guid);
+			if (it != resourceMap.end()) {
+				return it->second;
+			}
+			else {
+				return LoadResource<T>(guid, filePath, forceLoad);
+			}
 		}
 		else {
-			return LoadResource<T>(guid, filePath);
+			return LoadResource<T>(guid, filePath, forceLoad);
 		}
 	}
 
-	std::shared_ptr<Font> GetFontResource(const std::string& assetPath, unsigned int fontSize = 48) {
+	std::shared_ptr<Font> GetFontResource(const std::string& assetPath, unsigned int fontSize = 48, bool forceLoad = false) {
 		auto& resourceMap = GetResourceMap<Font>();
 		std::filesystem::path filePathObj(assetPath);
 		std::string filePath = filePathObj.generic_string();
-		std::string storedFilePath = filePathObj.generic_string() + std::to_string(fontSize);
 
 		GUID_128 guid{};
-		if (!MetaFilesManager::MetaFileExists(storedFilePath)) {
+		if (!MetaFilesManager::MetaFileExists(filePath)) {
 			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
 			guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
 		}
 		else {
-			guid = MetaFilesManager::GetGUID128FromAssetFile(storedFilePath);
+			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
 
 		// Return a shared pointer to the resource (Font).
-		auto it = resourceMap.find(guid);
-		if (it != resourceMap.end()) {
-			return it->second;
+		if (!forceLoad) {
+			auto it = resourceMap.find(guid);
+			if (it != resourceMap.end()) {
+				return it->second;
+			}
+			else {
+				return LoadFontResource(guid, filePath, fontSize, forceLoad);
+			}
 		}
 		else {
-			return LoadFontResource(guid, filePath, fontSize);
+			return LoadFontResource(guid, filePath, fontSize, forceLoad);
 		}
 	}
 
@@ -124,6 +137,23 @@ public:
 		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
 	}
 
+	bool IsResourceLoaded(const GUID_128& guid) {
+		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
+		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
+		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
+		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;		
+		return false;
+	}
+
+	// Helper function to get platform-specific shader path
+	static std::string GetPlatformShaderPath(const std::string& baseShaderName) {
+#ifdef ANDROID
+		return "Resources/Shaders/" + baseShaderName + "android";
+#else
+		return "Resources/Shaders/" + baseShaderName;
+#endif
+	}
+
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
@@ -155,27 +185,61 @@ private:
 		return resourceMap;
 	}
 
+
 	template <typename T>
-	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& assetPath) {
-		std::shared_ptr<T> resource = std::make_shared<T>();
-		if (resource->LoadResource(assetPath)) {
-			auto& resourceMap = GetResourceMap<T>();
-			resourceMap[guid] = resource;
-			std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
-			return resource;
+	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& assetPath, bool reload = false) {
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+#endif
+		std::shared_ptr<T> resource;
+		if (!reload) {
+			resource = std::make_shared<T>();
+			if (resource->LoadResource(assetPath)) {
+				auto& resourceMap = GetResourceMap<T>();
+				resourceMap[guid] = resource;
+				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
+#endif
+				return resource;
+			}
+		}
+		else {
+			resource = GetResource<T>(assetPath);
+			if (resource->ReloadResource(assetPath)) {
+				auto& resourceMap = GetResourceMap<T>();
+				resourceMap[guid] = resource;
+				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;
+				return resource;
+			}
 		}
 
 		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
+#endif
 		return nullptr;
 	}
 
-	std::shared_ptr<Font> LoadFontResource(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize) {
-		std::shared_ptr<Font> font = std::make_shared<Font>();
-		if (font->LoadResource(assetPath, fontSize)) {
-			auto& resourceMap = GetResourceMap<Font>();
-			resourceMap[guid] = font;
-			std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
-			return font;
+	std::shared_ptr<Font> LoadFontResource(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize, bool reload = false) {
+		std::shared_ptr<Font> font;
+		if (!reload) {
+			font = std::make_shared<Font>();
+			if (font->LoadResource(assetPath, fontSize)) {
+				auto& resourceMap = GetResourceMap<Font>();
+				resourceMap[guid] = font;
+				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+				return font;
+			}
+		}
+		else {
+			font = GetFontResource(assetPath);
+			if (font->ReloadResource(assetPath)) {
+				auto& resourceMap = GetResourceMap<Font>();
+				resourceMap[guid] = font;
+				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;
+				return font;
+			}
 		}
 
 		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;

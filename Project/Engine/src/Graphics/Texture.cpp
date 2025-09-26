@@ -1,10 +1,21 @@
 #include "pch.h"
 
+#ifdef __ANDROID__
+#include <android/asset_manager.h>
+#include <android/log.h>
+#include "WindowManager.hpp"
+#include "Platform/AndroidPlatform.h"
+#endif
+
 #include "Graphics/Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
-#include "GLI/gli.hpp"
+#ifdef ANDROID
+#include <GLI/gli.hpp>
+#else
+#include <gli/gli.hpp>
+#endif
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
@@ -20,7 +31,41 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 	// Flips the image so it appears right side up
 	stbi_set_flip_vertically_on_load(true);
 	// Reads the image from a file and stores it in bytes
-	unsigned char* bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
+	unsigned char* bytes = nullptr;
+
+#ifdef __ANDROID__
+	// On Android, load texture from AssetManager
+	auto* platform = WindowManager::GetPlatform();
+	if (platform) {
+		AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+		AAssetManager* assetManager = androidPlatform->GetAssetManager();
+
+		if (assetManager) {
+			AAsset* asset = AAssetManager_open(assetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+			if (asset) {
+				off_t assetLength = AAsset_getLength(asset);
+				const unsigned char* assetData = (const unsigned char*)AAsset_getBuffer(asset);
+
+				if (assetData && assetLength > 0) {
+					bytes = stbi_load_from_memory(assetData, (int)assetLength, &widthImg, &heightImg, &numColCh, 0);
+					__android_log_print(ANDROID_LOG_INFO, "GAM300", "[TEXTURE] Loaded texture from Android assets: %s (%dx%d, %d channels)", assetPath.c_str(), widthImg, heightImg, numColCh);
+				} else {
+					__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to get asset data for: %s", assetPath.c_str());
+				}
+				AAsset_close(asset);
+			} else {
+				__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to open asset: %s", assetPath.c_str());
+			}
+		} else {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] AssetManager not available");
+		}
+	} else {
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Platform not available");
+	}
+#else
+	// On other platforms, load from filesystem
+	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
+#endif
 
 	// Dynamically choose the appropriate format.
 	gli::format gliFormat;
@@ -60,14 +105,17 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 }
 
 bool Texture::LoadResource(const std::string& assetPath) {
+	//std::cout << "[TEXTURE] DEBUG: Loading texture resource: " << assetPath << std::endl;
 	std::filesystem::path assetPathFS(assetPath);
 
 	// Load the meta file to get texture parameters
 	std::string metaFilePath = assetPathFS.string() + ".meta";
+	//std::cout << "[TEXTURE] DEBUG: Looking for meta file: " << metaFilePath << std::endl;
 	if (!std::filesystem::exists(metaFilePath)) {
 		std::cerr << "[TEXTURE]: Meta file not found for texture: " << assetPath << std::endl;
 		return false;
 	}
+	//std::cout << "[TEXTURE] DEBUG: Meta file found, loading..." << std::endl;
 
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -91,11 +139,25 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	// Load the DDS file using GLI
 	std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".dds";
+	//std::cout << "[TEXTURE] DEBUG: Loading DDS file: " << path << std::endl;
+
+	if (!std::filesystem::exists(path)) {
+		//std::cerr << "[TEXTURE] DEBUG: DDS file does not exist: " << path << std::endl;
+		return false;
+	}
 
 	gli::texture texture = gli::load(path);
+	//std::cout << "[TEXTURE] DEBUG: GLI texture loaded, empty: " << texture.empty() << ", size: " << texture.size() << std::endl;
+
+	if (texture.empty()) {
+		//std::cerr << "[TEXTURE] DEBUG: GLI texture is empty!" << std::endl;
+		return false;
+	}
+
 	void* bytes = texture.data();
 	int widthImg = texture.extent().x;
 	int heightImg = texture.extent().y;
+	//std::cout << "[TEXTURE] DEBUG: Texture dimensions: " << widthImg << "x" << heightImg << std::endl;
 	
 	gli::gl GL(gli::gl::PROFILE_GL33);
 	gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
@@ -103,6 +165,7 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
+	//std::cout << "[TEXTURE] DEBUG: Generated OpenGL texture ID: " << ID << std::endl;
 
 	//// Assigns the texture to a Texture Unit
 	//glActiveTexture(GL_TEXTURE0 + slot);
@@ -115,6 +178,7 @@ bool Texture::LoadResource(const std::string& assetPath) {
 	//	glActiveTexture(GL_TEXTURE0 + unit);
 	//}
 	glBindTexture(target, ID);
+	//std::cout << "[TEXTURE] DEBUG: Bound texture to target: " << target << std::endl;
 
 	// Configures the type of algorithm that is used to make the image smaller or bigger
 	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -126,7 +190,138 @@ bool Texture::LoadResource(const std::string& assetPath) {
 
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+#ifndef ANDROID
 	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
+#endif
+
+	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
+	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	// glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, flatColor);
+
+	// Assigns the image to the OpenGL Texture object
+	if (target == GL_TEXTURE_2D) {
+		glTexImage2D(target, 0, format.Internal, widthImg, heightImg, 0, format.External, format.Type, bytes);
+	}
+	else {
+		std::cerr << "[TEXTURE]: Unsupported texture target: " << target << std::endl;
+		return false;
+	}
+
+	// Generates MipMaps
+	glGenerateMipmap(target);
+
+	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
+	glBindTexture(target, 0);
+
+	//std::cout << "[TEXTURE] DEBUG: Texture loading completed successfully! Final ID: " << ID << std::endl;
+	return true;
+}
+
+bool Texture::ReloadResource(const std::string& assetPath) {
+	//int width, height, channels;
+	//stbi_set_flip_vertically_on_load(true); // match your original load
+	//unsigned char* data = stbi_load(assetPath.c_str(), &width, &height, &channels, 0);
+
+	//std::cout << "[TEXTURE DEBUG] Loaded PNG: " << assetPath
+	//	<< " (" << width << "x" << height << ", channels: " << channels << ")" << std::endl;
+
+	//int row = height - 1; // top row in the editor
+	//int col = 0;          // leftmost column
+	//int idx = (row * width + col) * channels;
+
+	//std::cout << "Pixel at editor top-left: "
+	//	<< (int)data[idx] << ", "
+	//	<< (int)data[idx + 1] << ", "
+	//	<< (int)data[idx + 2] << std::endl;
+
+	//if (!data) {
+	//	std::cerr << "[TEXTURE]: Failed to reload from source: " << assetPath << std::endl;
+	//	return false;
+	//}
+
+	//GLenum format = GL_RGB;
+	//GLenum internalFormat = GL_RGB8;
+	//if (channels == 1) {
+	//	format = GL_RED;
+	//	internalFormat = GL_R8;
+	//}
+	//else if (channels == 3) {
+	//	format = GL_RGB;
+	//	internalFormat = GL_SRGB8; // use GL_RGB8 if you don’t want sRGB
+	//}
+	//else if (channels == 4) {
+	//	format = GL_RGBA;
+	//	internalFormat = GL_SRGB8_ALPHA8; // or GL_RGBA8
+	//}
+
+	//glBindTexture(GL_TEXTURE_2D, ID);
+	//std::cout << "[TEXTURE DEBUG] Reloading into texture ID: " << ID << std::endl;
+
+	//// Upload new pixel data into the existing texture object
+	//glTexImage2D(GL_TEXTURE_2D,
+	//	0,
+	//	internalFormat,
+	//	width,
+	//	height,
+	//	0,
+	//	format,
+	//	GL_UNSIGNED_BYTE,
+	//	data);
+
+	//// Regenerate mipmaps if you’re using them
+	////glGenerateMipmap(GL_TEXTURE_2D);
+
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	//stbi_image_free(data);
+
+	//std::cout << "[TEXTURE]: Reloaded texture from source PNG: " << assetPath << std::endl;
+
+	//glBindTexture(GL_TEXTURE_2D, ID);
+
+	//row = height - 1; // top row in OpenGL
+	//col = 0;
+	//idx = (row * width + col) * 3; // 4 channels from GL_RGBA
+	//std::vector<unsigned char> pixelBuffer(width * height * 4);
+	//glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer.data());
+
+	//std::cout << "[TEXTURE DEBUG] Pixel at top-left in OpenGL: "
+	//	<< (int)pixelBuffer[idx] << ", "
+	//	<< (int)pixelBuffer[idx + 1] << ", "
+	//	<< (int)pixelBuffer[idx + 2] << ", "
+	//	<< (int)pixelBuffer[idx + 3] << std::endl;
+
+	//glBindTexture(GL_TEXTURE_2D, 0);
+
+	//return true;
+
+	// Load the DDS file using GLI
+	std::filesystem::path assetPathFS(assetPath);
+	std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".dds";
+
+	gli::texture texture = gli::load(path);
+	void* bytes = texture.data();
+	int widthImg = texture.extent().x;
+	int heightImg = texture.extent().y;
+
+	gli::gl GL(gli::gl::PROFILE_GL33);
+	gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
+	target = GL.translate(texture.target());
+
+	glBindTexture(target, ID);
+
+	// Configures the type of algorithm that is used to make the image smaller or bigger
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	// Configures the way the texture repeats (if it does at all)
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+#ifndef ANDROID
+	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
+#endif
 
 	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
 	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -221,6 +416,7 @@ void Texture::Bind(GLint runtimeUnit)
 	GLint unitToUse = (runtimeUnit >= 0) ? runtimeUnit : (unit >= 0 ? unit : 0);
 	glActiveTexture(GL_TEXTURE0 + unitToUse);
 	glBindTexture(target, ID);
+	//std::cout << "[TEXTURE DEBUG] Rendering with texture ID: " << ID << std::endl;
 }
 
 void Texture::Unbind(GLint runtimeUnit)
