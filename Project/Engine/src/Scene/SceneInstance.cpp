@@ -14,6 +14,8 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#include <Sound/AudioManager.hpp>
+#include <Logging.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -77,6 +79,19 @@ void SceneInstance::Initialize() {
 
 	// Sets camera
 	gfxManager.SetCamera(&camera);
+
+	// Test Audio
+	{
+		if (!AudioManager::StaticInitalize())
+		{
+			ENGINE_LOG_ERROR("Failed to initialize AudioManager");
+		}
+		else
+		{
+			auto audioAsset = ResourceManager::GetInstance().GetResource<Audio>("Resources/Audio/sfx/Test_duck.wav");
+			AudioManager::GetInstance().PlaySound(audioAsset->sound, audioAsset->assetPath);
+		}
+	}
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
