@@ -330,7 +330,6 @@ public:
     }
 };
 
-
 template <typename T>
 struct TypeResolver<std::vector<T>>
 {
@@ -345,8 +344,7 @@ struct TypeResolver<std::vector<T>>
 };
 
 // -------------------------------------------------------------
-// std::unordered_map specialization
-// CHANGE: unique naming, safety checks, mutex-protected registry writes
+// std::unordered_map<KeyType, ValueType> specialization
 // -------------------------------------------------------------
 template <typename KeyType, typename ValueType>
 struct TypeDescriptor_StdUnorderedMap : TypeDescriptor
@@ -475,8 +473,6 @@ struct TypeDescriptor_StdSharedPtr : TypeDescriptor
     }
 };
 
-// Specialization for std::shared_ptr<void>
-// CHANGE: preserve behaviour of original code which encoded a binary blob with size prefix, but make it portable
 template <>
 struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
 {
@@ -504,15 +500,13 @@ struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
         const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<void>*>(obj);
         if (!shared_ptr) { os << "null"; return; }
 
-        // The original code assumed: raw pointer points to [size_t][data...]
-        // CHANGE: use uint64_t for size prefix and ensure we write it in little-endian form.
         void* ptr = shared_ptr.get();
         uint64_t data_size = *static_cast<uint64_t*>(ptr); // NOTE: caller MUST ensure pointer layout matches this contract
         uint64_t le_size = ToLittleEndian_u64(data_size);
 
         uint8_t* byte_ptr = static_cast<uint8_t*>(ptr);
         std::vector<uint8_t> data(byte_ptr, byte_ptr + sizeof(uint64_t) + static_cast<size_t>(data_size));
-        std::string serialized_data = Encode(data);
+        std::string serialized_data = Base64_Encode(data);
 
         os << R"({"type":")" << ToString() << R"(","data":")" << serialized_data << R"("})";
     }
@@ -526,7 +520,7 @@ struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
         }
 
         std::string data = value["data"].GetString();
-        std::vector<uint8_t> decoded = Decode(data);
+        std::vector<uint8_t> decoded = Base64_Decode(data);
         if (decoded.size() < sizeof(uint64_t)) throw std::runtime_error("Decoded shared_ptr<void> too small");
 
         // Read size prefix (little-endian)

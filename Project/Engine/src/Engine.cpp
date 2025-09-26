@@ -231,16 +231,17 @@ bool Engine::Initialize() {
         std::cout << "Reflection: " << (reflection_ok ? "PASS" : "FAIL") << "\n";
         std::cout << "Serialization: " << (serialization_ok ? "PASS" : "FAIL") << "\n";
 
-        if (!reflection_ok) {
+        if (!reflection_ok) 
+        {
             std::cout << R"(
-NOTE: if you hit a linker error mentioning GetPrimitiveDescriptor<float&>() or you see member types printed with '&',
-apply the macro fix to strip references when resolving member types in the macro:
+                NOTE: if you hit a linker error mentioning GetPrimitiveDescriptor<float&>() or you see member types printed with '&',
+                apply the macro fix to strip references when resolving member types in the macro:
 
-Replace the TypeResolver line in REFL_REGISTER_PROPERTY with:
-  TypeResolver<std::remove_reference_t<decltype(std::declval<T>().VARIABLE)>>::Get()
+                Replace the TypeResolver line in REFL_REGISTER_PROPERTY with:
+                  TypeResolver<std::remove_reference_t<decltype(std::declval<T>().VARIABLE)>>::Get()
 
-This prevents requesting descriptors for reference types (e.g. float&).
-)";
+                This prevents requesting descriptors for reference types (e.g. float&).
+            )";
         }
 
 	}
