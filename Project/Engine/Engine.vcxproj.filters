@@ -168,6 +168,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextRenderComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
+    <ClCompile Include="src\ECS\NameComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
