@@ -6,6 +6,8 @@
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
+#include "ECS/NameComponent.hpp"
+#include <Graphics/Lights/LightComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 
@@ -21,6 +23,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<LightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 
@@ -52,6 +55,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<DebugDrawComponent>());
 		SetSystemSignature<DebugDrawSystem>(signature);
+	}
+
+	lightingSystem = RegisterSystem<LightingSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<LightComponent>()); 
+		SetSystemSignature<LightingSystem>(signature); 
 	}
 }
 

@@ -9,6 +9,8 @@ public:
 
     ENGINE_API static bool MetaFileExists(const std::string& assetPath);
 
+    static std::chrono::system_clock::time_point GetLastCompileTimeFromMetaFile(const std::string& metaFilePath);
+
     static GUID_string GetGUIDFromMetaFile(const std::string& metaFilePath);
 
 	static GUID_string GetGUIDFromAssetFile(const std::string& assetPath);
@@ -18,6 +20,8 @@ public:
     ENGINE_API static GUID_128 GetGUID128FromAssetFile(const std::string& assetPath);
 
     ENGINE_API static bool MetaFileUpdated(const std::string& assetPath);
+
+    static bool AssetFileUpdated(const std::string& assetPath);
 
 	// ENGINE_API static GUID_128 UpdateMetaFile(const std::string& assetPath);
 

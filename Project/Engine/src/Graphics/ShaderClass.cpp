@@ -214,6 +214,10 @@ bool Shader::SetupShader(const std::string& path) {
 
 	// Create Shader Program Object and get its reference
 	ID = glCreateProgram();
+
+	// Enable the retrievable binary flag (for compiling of shader).
+	glProgramParameteri(ID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+
 	// Attach the Vertex and Fragment Shaders to the Shader Program
 	glAttachShader(ID, vertexShader);
 	glAttachShader(ID, fragmentShader);
@@ -251,14 +255,14 @@ bool Shader::SetupShader(const std::string& path) {
 }
 
 std::string Shader::CompileToResource(const std::string& path) {
-	// Check if glGetProgramBinary is supported first.
-	GLint supported = 0;
-	glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &supported);
-	if (supported == 0) {
-		std::cerr << "[SHADER]: Program binary not supported. Skipping binary cache.\n";
-		binarySupported = false;
-		return std::string{};
-	}
+	//// Check if glGetProgramBinary is supported first.
+	//GLint supported = 0;
+	//glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &supported);
+	//if (supported == 0) {
+	//	std::cerr << "[SHADER]: Program binary not supported. Skipping binary cache.\n";
+	//	binarySupported = false;
+	//	return std::string{};
+	//}
 
 	binarySupported = true;
 
@@ -266,9 +270,6 @@ std::string Shader::CompileToResource(const std::string& path) {
 		std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
 		return std::string{};
 	}
-
-	// Enable the retrievable binary flag.
-	glProgramParameteri(ID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
 
 	// Retrieve the binary code of the compiled shader.
 	glGetProgramiv(ID, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
@@ -358,6 +359,11 @@ bool Shader::LoadResource(const std::string& assetPath)
 		std::cout << "[SHADER]: Successfully compiled shader from source: " << assetPath << std::endl;
 		return true;
 	}
+}
+
+bool Shader::ReloadResource(const std::string& assetPath)
+{
+	return LoadResource(assetPath);
 }
 
 std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)

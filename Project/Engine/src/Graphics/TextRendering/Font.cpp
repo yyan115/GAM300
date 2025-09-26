@@ -52,9 +52,10 @@ std::string Font::CompileToResource(const std::string& assetPath)
     return outname;
 }
 
-bool Font::LoadResource(const std::string& assetPath, unsigned int newFontSize)
+bool Font::LoadResource(const std::string& assetPath, unsigned int newFontSize, bool setFontSize)
 {
-    fontSize = newFontSize;
+    if (setFontSize)
+        fontSize = newFontSize;
     fontAssetPath = assetPath;
 
     // Clean up existing font data if any
@@ -167,6 +168,12 @@ bool Font::LoadResource(const std::string& assetPath, unsigned int newFontSize)
 
     std::cout << "[Font] Successfully loaded font resource: " << path << " (size: " << fontSize << ")" << std::endl;
     return true;
+}
+
+bool Font::ReloadResource(const std::string& assetPath)
+{
+    // When reloading fonts, don't reset the font size (keep the current font size).
+    return LoadResource(assetPath, 0, false);
 }
 
 //bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)

@@ -511,6 +511,7 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
 
 bool Model::LoadResource(const std::string& assetPath)
 {
+    meshes.clear();
 #ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadResource called with path: %s", assetPath.c_str());
 #endif
@@ -701,6 +702,11 @@ bool Model::LoadResource(const std::string& assetPath)
     std::cout << "[MODEL] Successfully loaded model from .obj: " << assetPath << std::endl;
 
     return true;
+}
+
+bool Model::ReloadResource(const std::string& assetPath)
+{
+    return LoadResource(assetPath);
 }
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)

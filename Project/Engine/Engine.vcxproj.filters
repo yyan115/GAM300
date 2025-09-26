@@ -71,6 +71,8 @@
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Graphics\Lights\LightComponent.hpp" />
+    <ClInclude Include="include\Graphics\Lights\LightingSystem.hpp" />
     <ClInclude Include="include\Utilities\FileUtilities.hpp" />
     <ClInclude Include="include\Utilities\GUID.hpp" />
     <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
@@ -122,6 +124,7 @@
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
   </ItemGroup>
