@@ -176,7 +176,7 @@ void SceneInstance::Update(double dt) {
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
-	mainECS.transformSystem->update();
+	mainECS.transformSystem->Update();
 	//mainECS.lightingSystem->Update();
 }
 
