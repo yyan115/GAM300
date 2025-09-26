@@ -203,7 +203,15 @@ bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath) {
 	// Get the last modified time for the asset file.
 	std::filesystem::path assetFile(assetPath);
 	auto ftime = std::filesystem::last_write_time(assetFile);
+#ifndef ANDROID
 	auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
+#endif
+#ifdef ANDROID
+	using namespace std::chrono;
+	auto lastModifiedTime = time_point_cast<system_clock::duration>(
+		ftime - decltype(ftime)::clock::now() + system_clock::now()
+	);
+#endif
 
 	// Compare the last modified time with the meta file's last compile time.
 	// If it was modified after the last compile time, the asset file was updated and requires re-compilation.
