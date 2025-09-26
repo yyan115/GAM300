@@ -3,10 +3,14 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
-#include "GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
-#include "Asset Manager/FileUtilities.hpp"
+#include "Utilities/FileUtilities.hpp"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 class ResourceManager {
 public:
@@ -137,12 +141,17 @@ public:
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
 		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
-		else {
-			auto& map = GetResourceMap<Font>();
-			return map.find(guid) != map.end();
-		}
-		
+		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;		
 		return false;
+	}
+
+	// Helper function to get platform-specific shader path
+	static std::string GetPlatformShaderPath(const std::string& baseShaderName) {
+#ifdef ANDROID
+		return "Resources/Shaders/" + baseShaderName + "android";
+#else
+		return "Resources/Shaders/" + baseShaderName;
+#endif
 	}
 
 private:
@@ -176,8 +185,12 @@ private:
 		return resourceMap;
 	}
 
+
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& assetPath, bool reload = false) {
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+#endif
 		std::shared_ptr<T> resource;
 		if (!reload) {
 			resource = std::make_shared<T>();
@@ -185,6 +198,9 @@ private:
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
 				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
+#endif
 				return resource;
 			}
 		}
@@ -199,6 +215,9 @@ private:
 		}
 
 		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
+#endif
 		return nullptr;
 	}
 

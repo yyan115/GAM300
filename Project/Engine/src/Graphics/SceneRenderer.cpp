@@ -146,6 +146,8 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager("TestScene");
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+        mainECS.transformSystem->Update();
+
         // Set the static editor camera (this won't be updated by input)
         gfxManager.SetCamera(editorCamera);
 

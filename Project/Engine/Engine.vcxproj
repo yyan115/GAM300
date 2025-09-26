@@ -36,7 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
-    <ClInclude Include="include\Asset Manager\FileUtilities.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
@@ -52,6 +51,9 @@
     <ClInclude Include="include\Graphics\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="include\Graphics\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
+    <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
+    <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
@@ -62,7 +64,6 @@
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
     <ClInclude Include="include\Asset Manager\Asset.hpp" />
     <ClInclude Include="include\Asset Manager\AssetManager.hpp" />
-    <ClInclude Include="include\Asset Manager\GUID.hpp" />
     <ClInclude Include="include\Asset Manager\MetaFilesManager.hpp" />
     <ClInclude Include="include\ECS\Component.hpp" />
     <ClInclude Include="include\ECS\ComponentArray.hpp" />
@@ -92,10 +93,13 @@
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Utilities\FileUtilities.hpp" />
+    <ClInclude Include="include\Utilities\GUID.hpp" />
     <ClInclude Include="include\WindowManager.hpp" />
     <ClInclude Include="include\Input\InputManager.hpp" />
     <ClInclude Include="include\Input\Keys.h" />
@@ -122,7 +126,6 @@
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
-    <ClCompile Include="src\Asset Manager\GUID.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
     <ClCompile Include="src\ECS\ECSManager.cpp" />
     <ClCompile Include="src\ECS\ECSRegistry.cpp" />
@@ -157,6 +160,8 @@
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Utilities\FileUtilities.cpp" />
+    <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
     <ClCompile Include="src\Platform\Platform.cpp" />
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />

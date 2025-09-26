@@ -7,7 +7,7 @@
 #include <queue>
 //#include <FileWatch.hpp>
 #include "../Engine.h"
-#include "GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "MetaFilesManager.hpp"
 #include "Asset Manager/AssetMeta.hpp"
 #include <Graphics/Model/Model.h>
@@ -64,6 +64,8 @@ public:
 			return false;
 		}
 	}
+	void AddAssetMetaToMap(const std::string& assetPath);
+	bool CompileAsset(const std::string& filePathStr);
 
 	template <typename T>
 	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
@@ -123,163 +125,25 @@ public:
 			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
 		}
 	}
+	bool CompileTexture(std::string filePath, std::string texType, GLint slot);
+	bool IsAssetCompiled(GUID_128 guid);
+	void UnloadAsset(const std::string& assetPath);
 
-	bool IsAssetCompiled(GUID_128 guid) {
-		return assetMetaMap.find(guid) != assetMetaMap.end();
-	}
+	//void UnloadAllAssets() {
+	//	assetMetaMap.clear();
+	//}
 
-	void UnloadAsset(const std::string& assetPath) {
-		GUID_128 guid{};
+	GUID_128 GetGUID128FromAssetMeta(const std::string& assetPath);
+	std::shared_ptr<AssetMeta> GetAssetMeta(GUID_128 guid);
 
-		// Fallback if the user accidentally deleted the .meta file.
-		if (!MetaFilesManager::MetaFileExists(assetPath)) {
-			std::cout << "[AssetManager] WARNING: .meta file missing for asset: " << assetPath << ". Resulting to fallback." << std::endl;
-			guid = GetGUID128FromAssetMeta(assetPath);
-		}
-		else {
-			guid = MetaFilesManager::GetGUID128FromAssetFile(assetPath);
-		}
+	void InitializeSupportedExtensions();
+	std::unordered_set<std::string>& GetSupportedExtensions();
+	const std::unordered_set<std::string>& GetShaderExtensions() const;
+	bool IsAssetExtensionSupported(const std::string& extension) const;
+	bool IsExtensionMetaFile(const std::string& extension) const;
 
-		auto it = assetMetaMap.find(guid);
-		if (it != assetMetaMap.end()) {
-			std::filesystem::path filePathObj(assetPath);
-			std::string extension = filePathObj.extension().string();
-			if (textureExtensions.find(extension) != textureExtensions.end()) {
-				ResourceManager::GetInstance().UnloadResource<Texture>(guid, assetPath, it->second->compiledFilePath);
-				MetaFilesManager::DeleteMetaFile(assetPath);
-			}
-			//else if (audioExtensions.find(extension) != audioExtensions.end()) {
-			//	return CompileAsset<Audio>(filePathStr);
-			//}
-			else if (fontExtensions.find(extension) != fontExtensions.end()) {
-				ResourceManager::GetInstance().UnloadResource<Font>(guid, assetPath, it->second->compiledFilePath);
-				MetaFilesManager::DeleteMetaFile(assetPath);
-			}
-			else if (modelExtensions.find(extension) != modelExtensions.end()) {
-				ResourceManager::GetInstance().UnloadResource<Model>(guid, assetPath, it->second->compiledFilePath);
-				MetaFilesManager::DeleteMetaFile(assetPath);
-			}
-			else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-				ResourceManager::GetInstance().UnloadResource<Shader>(guid, assetPath, it->second->compiledFilePath);
-				MetaFilesManager::DeleteMetaFile(assetPath);
-			}
-			else {
-				std::cerr << "[AssetManager] ERROR: Trying to unload unsupported asset extension: " << extension << std::endl;
-			}
-
-			assetMetaMap.erase(it);
-			std::cout << "[AssetManager] Unloaded asset: " << assetPath << std::endl << std::endl;
-		}
-	}
-
-	void UnloadAllAssets() {
-		assetMetaMap.clear();
-	}
-
-	GUID_128 GetGUID128FromAssetMeta(const std::string& assetPath) {
-		for (const auto& pair : assetMetaMap) {
-			if (pair.second->sourceFilePath == assetPath) {
-				return pair.first;
-			}
-		}
-
-		std::cerr << "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: " << assetPath << std::endl;
-		return GUID_128{};
-	}
-
-	std::shared_ptr<AssetMeta> GetAssetMeta(GUID_128 guid) {
-		auto it = assetMetaMap.find(guid);
-		if (it != assetMetaMap.end()) {
-			return it->second;
-		}
-		else {
-			std::cerr << "[AssetManager] ERROR: AssetMeta not found for GUID_128." << std::endl;
-			return nullptr;
-		}
-	}
-
-	void InitializeSupportedExtensions() {
-		supportedAssetExtensions.insert(textureExtensions.begin(), textureExtensions.end());
-		//supportedExtensions.insert(audioExtensions.begin(), audioExtensions.end());
-		supportedAssetExtensions.insert(fontExtensions.begin(), fontExtensions.end());
-		supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
-		supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
-	}
-
-	std::unordered_set<std::string>& GetSupportedExtensions() {
-		return supportedAssetExtensions;
-	}
-
-	const std::unordered_set<std::string>& GetShaderExtensions() const {
-		return shaderExtensions;
-	}
-
-	bool IsAssetExtensionSupported(const std::string& extension) const {
-		return supportedAssetExtensions.find(extension) != supportedAssetExtensions.end();
-	}
-
-	bool IsExtensionMetaFile(const std::string& extension) const {
-		return extension == ".meta";
-	}
-
-	bool IsExtensionShaderVertFrag(const std::string& extension) const {
-		return shaderExtensions.find(extension) != shaderExtensions.end();
-	}
-
-	bool HandleMetaFileDeletion(const std::string& metaFilePath) {
-		// Get the compiled resource file path from the asset's AssetMeta.
-		std::string assetFilePath = metaFilePath.substr(0, metaFilePath.size() - 5); // Remove ".meta"
-		bool failedToUnload = false;
-		for (const auto& pair : assetMetaMap) {
-			if (pair.second->sourceFilePath == assetFilePath) {
-				std::string resourcePath = pair.second->compiledFilePath;
-				GUID_128 guid = pair.first;
-
-				if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-					std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
-					return true;
-				}
-				else {
-					failedToUnload = true;
-					break;
-				}
-			}
-		}
-
-		if (failedToUnload) {
-			std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
-			return false;
-		}
-
-		return true;
-	}
-
-	bool HandleResourceFileDeletion(const std::string& resourcePath) {
-		bool failedToUnload = false;
-		for (const auto& pair : assetMetaMap) {
-			if (pair.second->compiledFilePath == resourcePath) {
-				std::string assetFilePath = pair.second->sourceFilePath;;
-				std::string metaPath = assetFilePath + ".meta";
-				GUID_128 guid = pair.first;
-
-				if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-					std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaPath << std::endl;
-					return true;
-				}
-				else {
-					failedToUnload = true;
-					break;
-				}
-			}
-		}
-
-		if (failedToUnload) {
-			std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
-			return false;
-		}
-
-		return true;
-	}
+	bool HandleMetaFileDeletion(const std::string& metaFilePath);
+	bool HandleResourceFileDeletion(const std::string& resourcePath);
 
 	void AddToCompilationQueue(const std::filesystem::path& assetPath);
 
@@ -354,6 +218,10 @@ private:
 	//	static std::unordered_map<GUID_128, std::shared_ptr<T>> assetMap;
 	//	return assetMap;
 	//}
+
+	std::shared_ptr<T> GetAsset(const std::string& assetPath) {
+		return ResourceManager::GetInstance().GetResource<T>(assetPath);
+	}
 
 	template <typename T>
 	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath, bool forceCompile = false) {

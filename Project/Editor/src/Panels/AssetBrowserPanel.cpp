@@ -88,7 +88,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     std::filesystem::path fullPathObj(fullPath);
     try {
         if (std::filesystem::exists(fullPathObj) && std::filesystem::is_directory(fullPathObj)) {
-            // Directory created/modified — refresh UI
+            // Directory created/modified ï¿½ refresh UI
             QueueRefresh();
             return;
         }
@@ -279,7 +279,11 @@ void AssetBrowserPanel::RenderToolbar() {
     // Search and filter bar
     ImGui::SetNextItemWidth(200.0f);
     char searchBuffer[256];
+#ifdef _WIN32
     strncpy_s(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#else
+    strncpy(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#endif
     searchBuffer[sizeof(searchBuffer) - 1] = '\0';
 
     if (ImGui::InputTextWithHint("##Search", "Search assets...", searchBuffer, sizeof(searchBuffer))) {
@@ -507,7 +511,7 @@ void AssetBrowserPanel::RefreshAssets() {
                 }
 
                 // Get or generate GUID using normalized filePath
-                if (MetaFilesManager::MetaFileExists(filePath)) {
+                if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
                 }
             }

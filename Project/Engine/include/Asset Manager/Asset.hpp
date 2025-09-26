@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Asset Manager/GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "Asset Manager/AssetMeta.hpp"
 #include "../Engine.h"
 

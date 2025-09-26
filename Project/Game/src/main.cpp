@@ -6,6 +6,7 @@ int main() {
     std::cout << "=== GAME BUILD ===" << std::endl;
 
     Engine::Initialize();
+    Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
     GameManager::Initialize();
 
     while (Engine::IsRunning()) {

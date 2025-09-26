@@ -5,7 +5,9 @@
 #include "Asset Manager/AssetManager.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
-#include <Asset Manager/FileUtilities.hpp>
+#include <Utilities/FileUtilities.hpp>
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
 
 std::unordered_map<std::string, GUID_128> MetaFilesManager::assetPathToGUID128;
 
@@ -72,7 +74,12 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 		std::chrono::sys_time<std::chrono::seconds> tp;
 
 		// Parse using the same format string you used for formatting
+#ifdef ANDROID
+		// std::chrono::parse not available on Android NDK yet - use epoch time so assets always recompile
+		tp = std::chrono::sys_time<std::chrono::seconds>{};
+#else
 		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
+#endif
 
 		if (iss.fail()) {
 			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
@@ -113,46 +120,45 @@ GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath)
 }
 
 void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFolder) {
-	for (const auto& file : std::filesystem::recursive_directory_iterator(rootAssetFolder)) {
-		// Check that it is a regular file (not a directory).
-		if (file.is_regular_file()) {
-			std::string extension = file.path().extension().string();
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		std::cerr << "[MetaFilesManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		return;
+	}
 
-			if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-				std::string assetPath = file.path().generic_string();
+	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
 
-				if (!MetaFileExists(assetPath)) {
-					std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
-					AssetManager::GetInstance().CompileAsset(assetPath);
-				}
-				else if (!MetaFileUpdated(assetPath)) {
-					std::cout << "[MetaFilesManager] .meta outdated for: " << assetPath << ". Re-compiling and regenerating..." << std::endl;
-					AssetManager::GetInstance().CompileAsset(assetPath);
+	for (const std::string& assetPath : assetFiles) {
+		std::filesystem::path filePath(assetPath);
+		std::string extension = filePath.extension().string();
+
+		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+			std::string assetPath = file.path().generic_string();
+
+			if (!MetaFileExists(assetPath)) {
+				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
+				AssetManager::GetInstance().CompileAsset(assetPath);
+			}
+			else if (!MetaFileUpdated(assetPath)) {
+				std::cout << "[MetaFilesManager] .meta outdated for: " << assetPath << ". Re-compiling and regenerating..." << std::endl;
+				AssetManager::GetInstance().CompileAsset(assetPath);
+			}
+			else {
+				if (AssetFileUpdated(assetPath)) {
+					std::cout << "[MetaFilesManager] Asset file was updated: " << assetPath << ". Re-compiling..." << std::endl;
+					AssetManager::GetInstance().CompileAsset(assetPath, true);
 				}
 				else {
-					if (AssetFileUpdated(assetPath)) {
-						std::cout << "[MetaFilesManager] Asset file was updated: " << assetPath << ". Re-compiling..." << std::endl;
-						AssetManager::GetInstance().CompileAsset(assetPath, true);
+					if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+						assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
 					}
-					else {
-						if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-							assetPath = (file.path().parent_path() / file.path().stem()).generic_string();
-						}
 
-						GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
-						AddGUID128Mapping(assetPath, guid128);
-						AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-					}
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
 				}
 			}
-			//// fallback for shaders
-			//else if (extension == ".meta") {
-			//	std::string assetPath = file.path().generic_string();
-			//	assetPath = assetPath.substr(0, assetPath.size() - 5); // Remove the .meta extension
-			//	GUID_string guidStr = GetGUIDFromMetaFile(file.path().generic_string());
-			//	GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
-			//	AddGUID128Mapping(assetPath, guid128);
-			//}
 		}
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include "../Engine.h"
 
 class MetaFilesManager {

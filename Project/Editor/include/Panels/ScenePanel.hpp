@@ -23,12 +23,8 @@ public:
     void OnImGuiRender() override;
 
 private:
-    // ImGuizmo state
-    ImGuizmo::OPERATION gizmoOperation = ImGuizmo::TRANSLATE;
+    // ImGuizmo state (now managed by PlayControlPanel)
     ImGuizmo::MODE gizmoMode = ImGuizmo::WORLD;
-
-    // Editor modes
-    bool isNormalPanMode = false;  // Q key mode - no gizmos, LMB panning
     
     // Editor camera for this panel
     EditorCamera editorCamera;
@@ -44,7 +40,6 @@ private:
     void HandleKeyboardInput();
     void HandleCameraInput();
     void HandleEntitySelection();
-    void RenderGizmoControls();
     void RenderSceneWithEditorCamera(int width, int height);
     void HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight);
     void RenderViewGizmo(float sceneWidth, float sceneHeight);

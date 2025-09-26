@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Graphics/Material.hpp"
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 
 Material::Material() : m_name("DefaultMaterial") {
 }
@@ -99,6 +102,10 @@ const std::string& Material::GetName() const
 
 void Material::ApplyToShader(Shader& shader) const
 {
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Applying material %s - diffuse:(%.2f,%.2f,%.2f) ambient:(%.2f,%.2f,%.2f)",
+		m_name.c_str(), m_diffuse.x, m_diffuse.y, m_diffuse.z, m_ambient.x, m_ambient.y, m_ambient.z);
+#endif
 	// Apply basic material properties
 	shader.setVec3("material.ambient", m_ambient);
 	shader.setVec3("material.diffuse", m_diffuse);
@@ -123,10 +130,23 @@ void Material::BindTextures(Shader& shader) const
 	unsigned int textureUnit = 0;
 
 	// Set texture availability flags
-	shader.setBool("material.hasDiffuseMap", HasTexture(TextureType::DIFFUSE));
-	shader.setBool("material.hasSpecularMap", HasTexture(TextureType::SPECULAR));
-	shader.setBool("material.hasNormalMap", HasTexture(TextureType::NORMAL));
-	shader.setBool("material.hasEmissiveMap", HasTexture(TextureType::EMISSIVE));
+	bool hasDiffuse = HasTexture(TextureType::DIFFUSE);
+	bool hasSpecular = HasTexture(TextureType::SPECULAR);
+	bool hasNormal = HasTexture(TextureType::NORMAL);
+	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
+
+	//std::cout << "[MATERIAL] DEBUG: Texture flags - diffuse:" << hasDiffuse << " specular:" << hasSpecular << " normal:" << hasNormal << " emissive:" << hasEmissive << std::endl;
+	//std::cout << "[MATERIAL] DEBUG: Total texture info entries: " << m_textureInfo.size() << std::endl;
+
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
+		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
+#endif
+
+	shader.setBool("material.hasDiffuseMap", hasDiffuse);
+	shader.setBool("material.hasSpecularMap", hasSpecular);
+	shader.setBool("material.hasNormalMap", hasNormal);
+	shader.setBool("material.hasEmissiveMap", hasEmissive);
 	// For Future Use
 	/*shader.setBool("material.hasHeightMap", hasTexture(TextureType::HEIGHT));
 	shader.setBool("material.hasAOMap", hasTexture(TextureType::AMBIENT_OCCLUSION));
@@ -136,17 +156,27 @@ void Material::BindTextures(Shader& shader) const
 	// Bind each texture type
 	for (const auto& [type, textureInfo] : m_textureInfo)
 	{
-		if (textureInfo && textureUnit < 16) 
+		//std::cout << "[MATERIAL] DEBUG: Processing texture type " << (int)type << ", textureInfo valid: " << (textureInfo != nullptr) << std::endl;
+		if (textureInfo) {
+			//std::cout << "[MATERIAL] DEBUG: Texture ID: " << textureInfo->texture->ID << std::endl;
+		}
+
+		if (textureInfo && textureUnit < 16)
 		{
-			//glActiveTexture(GL_TEXTURE0 + textureUnit);
+			glActiveTexture(GL_TEXTURE0 + textureUnit);
+			//std::cout << "[MATERIAL] DEBUG: Activating texture unit " << textureUnit << std::endl;
+
 			textureInfo->texture->Bind(textureUnit);
+			//std::cout << "[MATERIAL] DEBUG: Bound texture to unit " << textureUnit << std::endl;
 
 			std::string uniformName = "material." + TextureTypeToString(type);
 			shader.setInt(uniformName.c_str(), textureUnit);
+			//std::cout << "[MATERIAL] DEBUG: Set uniform '" << uniformName << "' to " << textureUnit << std::endl;
 
 			textureUnit++;
 		}
 	}
+	//std::cout << "[MATERIAL] DEBUG: Finished binding, total units used: " << textureUnit << std::endl;
 }
 
 std::shared_ptr<Material> Material::CreateDefault()
@@ -214,10 +244,10 @@ std::string Material::TextureTypeToString(TextureType type) const
 
 void Material::DebugPrintProperties() const
 {
-	std::cout << "Material: " << m_name << std::endl;
-	std::cout << "  Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
-	std::cout << "  Diffuse: (" << m_diffuse.x << ", " << m_diffuse.y << ", " << m_diffuse.z << ")" << std::endl;
-	std::cout << "  Specular: (" << m_specular.x << ", " << m_specular.y << ", " << m_specular.z << ")" << std::endl;
-	std::cout << "  Has Diffuse Map: " << HasTexture(TextureType::DIFFUSE) << std::endl;
-	std::cout << "  Has Specular Map: " << HasTexture(TextureType::SPECULAR) << std::endl;
+	//std::cout << "Material: " << m_name << std::endl;
+	//std::cout << "  Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+	//std::cout << "  Diffuse: (" << m_diffuse.x << ", " << m_diffuse.y << ", " << m_diffuse.z << ")" << std::endl;
+	//std::cout << "  Specular: (" << m_specular.x << ", " << m_specular.y << ", " << m_specular.z << ")" << std::endl;
+	//std::cout << "  Has Diffuse Map: " << HasTexture(TextureType::DIFFUSE) << std::endl;
+	//std::cout << "  Has Specular Map: " << HasTexture(TextureType::SPECULAR) << std::endl;
 }
