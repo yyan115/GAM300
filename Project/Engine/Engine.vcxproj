@@ -91,12 +91,12 @@
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
+    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
-    <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Utilities\FileUtilities.hpp" />
     <ClInclude Include="include\Utilities\GUID.hpp" />
     <ClInclude Include="include\WindowManager.hpp" />
@@ -153,10 +153,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
-    <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
