@@ -66,6 +66,8 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
 		SetSystemSignature<AudioSystem>(signature);
+	}
+
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
 		Signature signature;

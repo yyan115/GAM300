@@ -252,7 +252,7 @@ This prevents requesting descriptors for reference types (e.g. float&).
 		}
 		else
 		{
-			AudioHandle h = AudioSystem::GetInstance().LoadAudio("Test_duck.wav");
+			AudioHandle h = AudioSystem::GetInstance().LoadAudio("Resources/Audio/sfx/Test_duck.wav");
 			if (h != 0) {
 				AudioSystem::GetInstance().Play(h, false, 0.5f);
 			}
