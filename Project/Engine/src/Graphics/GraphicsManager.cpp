@@ -121,7 +121,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	item.shader->Activate();
 
 	// Set up all matrices and uniforms
-	SetupMatrices(*item.shader, item.transform);
+	SetupMatrices(*item.shader,ConvertMatrix4x4ToGLM(item.transform));
 
 	// Apply lighting
 	ApplyLighting(*item.shader);

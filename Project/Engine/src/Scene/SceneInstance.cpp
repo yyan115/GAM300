@@ -32,8 +32,9 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
 	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 	backpackName.name = "dora the explorer";
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00789a0240b76981-0002b65c12000013")});
+	//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+	//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 	Entity backpackEntt2 = ecsManager.CreateEntity();
 	ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
@@ -41,8 +42,9 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
 	NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
 	backpack2Name.name = "ash ketchum";
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00789a0240b76981-0002b65c12000013") });
+	//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+	//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 	Entity backpackEntt3 = ecsManager.CreateEntity();
 	ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
@@ -50,8 +52,9 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
 	NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
 	backpack3Name.name = "indiana jones";
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00789a0240b76981-0002b65c12000013") });
+	//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+	//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();

@@ -166,6 +166,10 @@ bool AssetManager::IsExtensionMetaFile(const std::string& extension) const {
 	return extension == ".meta";
 }
 
+bool AssetManager::IsExtensionShaderVertFrag(const std::string& extension) const {
+	return shaderExtensions.find(extension) != shaderExtensions.end();
+}
+
 bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
 	// Get the compiled resource file path from the asset's AssetMeta.
 	std::string assetFilePath = metaFilePath.substr(0, metaFilePath.size() - 5); // Remove ".meta"
@@ -219,4 +223,13 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 	}
 
 	return true;
+}
+
+std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
+	auto it = assetMetaMap.find(guid);
+	if (it != assetMetaMap.end()) {
+		return it->second->sourceFilePath;
+	}
+
+	std::cerr << "[AssetManager] ERROR: Asset meta with GUID not found." << std::endl;
 }
