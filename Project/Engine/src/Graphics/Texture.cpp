@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#include "compressonator.h"
 
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
@@ -66,6 +67,37 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 	// On other platforms, load from filesystem
 	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
 #endif
+
+	// Compile the texture first.
+	CMP_Texture srcTexture;
+	srcTexture.dwSize = sizeof(srcTexture);
+	srcTexture.dwWidth = widthImg;
+	srcTexture.dwHeight = heightImg;
+	srcTexture.dwPitch = 0;
+	
+	// Dynamically choose the appropriate format.
+	switch (numColCh)
+	{
+		case 1:
+			srcTexture.format = CMP_FORMAT_R_8;
+			break;
+		case 2:
+			srcTexture.format = CMP_FORMAT_RG_8;
+			break;
+		case 3:
+			srcTexture.format = CMP_FORMAT_RGB_888;
+			break;
+		case 4:
+			srcTexture.format = CMP_FORMAT_RGBA_8888;
+			break;
+		default:
+			stbi_image_free(bytes);
+			std::cerr << "[TEXTURE]: Unsupported number of color channels: " << numColCh << std::endl;
+			return std::string{}; // Unsupported format
+	}
+
+	srcTexture.dwDataSize = widthImg * heightImg * numColCh;
+	srcTexture.pData = bytes;
 
 	// Dynamically choose the appropriate format.
 	gli::format gliFormat;
