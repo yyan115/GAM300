@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <rapidjson/document.h>
 
 class ECSManager;
 class AssetManager;
@@ -13,88 +14,55 @@ using EntityID = std::size_t;
 using ComponentID = uint8_t;
 using AssetID = unsigned;
 
-class Prefab {
+class ENGINE_API Prefab {
 public:
 	Prefab(PrefabID id, AssetID assetId);
 
 	template <typename ...Args>
 	Prefab(PrefabID id, AssetID assetId, Args... args);
 
+	// non-copyable (unique_ptr inside)
+	Prefab(const Prefab&) = delete;
+	Prefab& operator=(const Prefab&) = delete;
+
+	// movable is fine
+	Prefab(Prefab&&) noexcept = default;
+	Prefab& operator=(Prefab&&) noexcept = default;
+
 	// this modifies all entities that has this particular prefab
-	void updateEntities(ECSManager& registry, std::vector<std::pair<EntityID, std::set<ComponentID>>> allEntities) const;
+	void UpdateEntities(ECSManager& registry, std::vector<std::pair<EntityID, std::set<ComponentID>>> allEntities) const;
 
-	// instantiate a copy of the prefab components to entity id.
-	// if entity already has a particular component, it is not instantiated.
-	// the first set of component ids holds the component ids that is successfully instantied.
-	// the second set of component ids holds the component ids that are not successfully instantied, and thus overriden. 
-	// (because entity already has that component)
-	std::pair<std::set<ComponentID>, std::set<ComponentID>> instantiatePrefab(ECSManager& registry, EntityID id) const;
+	std::pair<std::set<ComponentID>, std::set<ComponentID>> InstantiatePrefab(ECSManager& registry, EntityID id) const;
 
-	//Json::Value serialize();
+	rapidjson::Value Serialize(rapidjson::Document::AllocatorType& alloc) const;
+	rapidjson::Document ToDocument() const;
 
 #ifndef DISABLE_IMGUI_LEVELEDITOR
-	void displayComponentUI(ECSManager& registry, AssetManager& assetManager);
+	void DisplayComponentUI(ECSManager& registry, AssetManager& assetManager);
 #endif
-	void captureOriginalPrefab();
-	void restoreOriginalPrefab();
+	void CaptureOriginalPrefab();
+	void RestoreOriginalPrefab();
 
-	// Use the ECS interface if you want to add or remove component from prefab! That way you can update all existing entities.
-	void removeComponent(ComponentID id);
-
-	template <typename T>
-	void removeComponent();
+	void RemoveComponent(ComponentID id);
 
 	template <typename T>
-	void addComponent(T const& component);
+	void RemoveComponent();
 
 	template <typename T>
-	T* getComponent();
+	void AddComponent(T const& component);
 
-	PrefabID getId() const;
-	std::unordered_map<ComponentID, std::unique_ptr<BasePrefabComponent>> const& getComponents() const;
+	template <typename T>
+	T* GetComponent();
 
-	Prefab clone() const;
+	PrefabID GetId() const;
+	std::unordered_map<ComponentID, std::unique_ptr<BasePrefabComponent>> const& GetComponents() const;
 
-	AssetID getAssetId() const;
+	Prefab Clone() const;
+
+	AssetID GetAssetId() const;
 
 private:
 	AssetID assetId;
 	PrefabID id;
 	std::unordered_map<ComponentID, std::unique_ptr<BasePrefabComponent>> components;
 };
-
-#if 0
-template<typename ...Args>
-Prefab::Prefab(PrefabID id, AssetID assetId, Args... args) :
-	id{ id },
-	assetId{ assetId },
-	components{}
-{
-	(components.insert({ Family::getID<Args>(), std::make_unique<PrefabComponent<Args>>(PrefabComponent<Args>{args}) }), ...);
-}
-
-template<typename T>
-void Prefab::removeComponent() {
-	removeComponent(Family::getID<T>());
-}
-
-template <typename T>
-void Prefab::addComponent(T const& component) {
-	components.insert({ Family::getID<T>(), std::make_unique<PrefabComponent<T>>(PrefabComponent<T>{component}) });
-}
-
-template<typename T>
-T* Prefab::getComponent() {
-	auto it = components.find(Family::getID<T>());
-
-	if (it == components.end()) {
-		return nullptr;
-	}
-	else {
-		auto& [componentId, basePrefabComponent] = *it;
-		assert(basePrefabComponent);
-		PrefabComponent<T>& prefabComponent = dynamic_cast<PrefabComponent<T>&>(*basePrefabComponent);
-		return &prefabComponent.component;
-	}
-}
-#endif

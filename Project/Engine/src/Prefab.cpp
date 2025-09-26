@@ -1,22 +1,24 @@
 #include "pch.h"
+#include <rapidjson/document.h>
 #include "Prefab.hpp"
 #include "PrefabComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Asset Manager/AssetManager.hpp"
+#include "Reflection/ReflectionBase.hpp"
 
 Prefab::Prefab(PrefabID id_, AssetID assetId_)
 	: assetId{ assetId_ }, id{ id_ }, components{} {
 }
 
-std::pair<std::set<ComponentID>, std::set<ComponentID>> Prefab::instantiatePrefab(ECSManager& registry, EntityID entityId) const {
+std::pair<std::set<ComponentID>, std::set<ComponentID>> Prefab::InstantiatePrefab(ECSManager& registry, EntityID entityId) const {
 	std::set<ComponentID> affectedComponentIds;
 	std::set<ComponentID> overridenComponentIds;
 
 	for (auto& [componentId, basePrefabComponent] : components) {
 		assert(basePrefabComponent);
 
-		if (basePrefabComponent->createEntityComponent(registry, entityId)) {
+		if (basePrefabComponent->CreateEntityComponent(registry, entityId)) {
 			affectedComponentIds.insert(componentId);
 		}
 		else {
@@ -27,7 +29,7 @@ std::pair<std::set<ComponentID>, std::set<ComponentID>> Prefab::instantiatePrefa
 	return { affectedComponentIds, overridenComponentIds };
 }
 
-void Prefab::removeComponent(ComponentID componentId) {
+void Prefab::RemoveComponent(ComponentID componentId) {
 	auto it = components.find(componentId);
 
 	if (it == components.end()) {
@@ -37,76 +39,92 @@ void Prefab::removeComponent(ComponentID componentId) {
 	components.erase(it);
 }
 
-PrefabID Prefab::getId() const {
+PrefabID Prefab::GetId() const {
 	return id;
 }
 
-std::unordered_map<ComponentID, std::unique_ptr<BasePrefabComponent>> const& Prefab::getComponents() const {
+std::unordered_map<ComponentID, std::unique_ptr<BasePrefabComponent>> const& Prefab::GetComponents() const {
 	return components;
 }
 
-Prefab Prefab::clone() const {
+Prefab Prefab::Clone() const {
 	Prefab clonedPrefab = Prefab{ id, assetId };
 
 	for (auto const& [componentId, basePrefabComponent] : components) {
 		assert(basePrefabComponent);
 
-		clonedPrefab.components.insert({ componentId, basePrefabComponent->clone() });
+		clonedPrefab.components.insert({ componentId, basePrefabComponent->Clone() });
 	}
 
 	return clonedPrefab;
 }
 
-AssetID Prefab::getAssetId() const {
+AssetID Prefab::GetAssetId() const {
 	return assetId;
 }
 
-#if 0
-Json::Value Prefab::serialize() {
-	Json::Value jsonObj;
+rapidjson::Value Prefab::Serialize(rapidjson::Document::AllocatorType& alloc) const {
+	rapidjson::Value obj(rapidjson::kObjectType);
+
 	for (auto it = components.begin(); it != components.end(); ) {
 		auto currentIt = it++;
-		assert(currentIt->second);
-		auto [type, componentJson] = currentIt->second->serializeComponent();
-		jsonObj[type] = componentJson;
+		const auto& uptr = currentIt->second;
+		assert(uptr);
+
+		auto [typeName, compJson] = uptr->SerializeComponent(alloc);
+
+		// key must live in the same allocator
+		rapidjson::Value key(typeName.c_str(), static_cast<rapidjson::SizeType>(typeName.size()), alloc);
+		obj.AddMember(key, compJson, alloc);
 	}
-	return jsonObj;
+
+	return obj;
 }
-#endif
+
+rapidjson::Document Prefab::ToDocument() const {
+	rapidjson::Document doc;
+	doc.SetObject();
+	auto& alloc = doc.GetAllocator();
+
+	rapidjson::Value root = Serialize(alloc);
+	doc.Swap(root);  // make the document itself the prefab object
+
+	return doc;
+}
 
 #ifndef DISABLE_IMGUI_LEVELEDITOR
-void Prefab::displayComponentUI(ECSManager& registry, AssetManager& assetManager) {
+void Prefab::DisplayComponentUI(ECSManager& registry, AssetManager& assetManager) {
 	for (auto it = components.begin(); it != components.end();) {
 		auto currentIt = it++;
 		assert(currentIt->second);
-		currentIt->second->displayComponentUI(registry, *this, assetManager);
+		currentIt->second->DisplayComponentUI(registry, *this, assetManager);
 	}
 }
 #endif
 
-void Prefab::captureOriginalPrefab() {
+void Prefab::CaptureOriginalPrefab() {
 	for (auto& [componentId, basePrefabComponent] : components) {
 		assert(basePrefabComponent);
 
-		basePrefabComponent->captureOriginalComponent();
+		basePrefabComponent->CaptureOriginalComponent();
 	}
 }
 
-void Prefab::restoreOriginalPrefab() {
+void Prefab::RestoreOriginalPrefab() {
 	for (auto& [componentId, basePrefabComponent] : components) {
 		assert(basePrefabComponent);
 
-		basePrefabComponent->restoreOriginalComponent();
+		basePrefabComponent->RestoreOriginalComponent();
 	}
 }
 
-void Prefab::updateEntities(ECSManager& registry, std::vector<std::pair<EntityID, std::set<ComponentID>>> allEntities) const {
+void Prefab::UpdateEntities(ECSManager& registry, std::vector<std::pair<EntityID, std::set<ComponentID>>> allEntities) const {
 	for (auto const& [entityId, componentIds] : allEntities) {
 		for (auto const& componentId : componentIds) {
 			auto it = components.find(componentId);
 			assert(it != components.end());
 			assert(it->second);
-			it->second->updateEntity(registry, entityId);
+			it->second->UpdateEntity(registry, entityId);
 		}
 	}
 }

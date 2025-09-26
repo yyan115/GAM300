@@ -15,7 +15,7 @@ public:
 	void Initialise();
 
 	void update();
-	static Matrix4x4 calculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
+	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
 
 	static void SetPosition(Transform& transform, Vector3D position);
 	static void SetRotation(Transform& transform, Vector3D rotation);

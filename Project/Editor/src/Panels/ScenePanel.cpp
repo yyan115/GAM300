@@ -280,6 +280,34 @@ void ScenePanel::OnImGuiRender() {
             // Check if the child window is hovered (without invisible button interfering)
             isSceneHovered = ImGui::IsWindowHovered();
 
+            // Make a layout-neutral drop area over the image (save/restore cursor)
+            const ImVec2 savedLocal = ImGui::GetCursorPos();          // local coords within the child
+            ImGui::SetCursorScreenPos(childPos);                      // position over the image
+            ImGui::InvisibleButton("##SceneViewportDropArea", childSize, ImGuiButtonFlags_MouseButtonLeft);
+
+            // Accept drops
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
+                    const char* prefabPath = static_cast<const char*>(payload->Data);
+
+                    // TODO: hook up your real load/instantiate here
+                    // ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                    // AssetManager& assets = AssetManager::GetInstance();
+                    // Prefab prefab = assets.LoadPrefab(prefabPath);
+                    // Entity e = ecs.CreateEntity();
+                    // prefab.instantiatePrefab(ecs, e);
+
+                    std::cout << "[ScenePanel] Dropped prefab: " << prefabPath << "\n";
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // Restore cursor so the button doesn't affect layout
+            ImGui::SetCursorPos(savedLocal);
+
+            // Hover logic can also consider the drop area
+            isSceneHovered = isSceneHovered || ImGui::IsItemHovered();
+
             // Now handle ImGuizmo within the child window context
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
 

@@ -9,7 +9,7 @@ void TransformSystem::Initialise() {
 	for (const auto& entity : entities) {
 		auto& transform = ecsManager.GetComponent<Transform>(entity);
 		// Update model matrix
-		transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+		transform.model = CalculateModelMatrix(transform.position, transform.scale, transform.rotation);
 
 		// Update the last known values
 		transform.lastPosition = transform.position;
@@ -25,7 +25,7 @@ void TransformSystem::update() {
 		auto& transform = ecsManager.GetComponent<Transform>(entity);
 		// Update model matrix only if there is a change
 		if (transform.position != transform.lastPosition || transform.scale != transform.lastScale || transform.rotation != transform.lastRotation) {
-			transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+			transform.model = CalculateModelMatrix(transform.position, transform.scale, transform.rotation);
 		}
 
 		// Update the last known values
@@ -36,7 +36,7 @@ void TransformSystem::update() {
 }
 
 #if 1
-Matrix4x4 TransformSystem::calculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation) {
+Matrix4x4 TransformSystem::CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation) {
 	float radx = rotation.x * (M_PI / 180.f);
 	float rady = rotation.y * (M_PI / 180.f);
 	float radz = rotation.z * (M_PI / 180.f);
@@ -49,21 +49,21 @@ Matrix4x4 TransformSystem::calculateModelMatrix(Vector3D const& position, Vector
 
 void TransformSystem::SetPosition(Transform& transform, Vector3D position) {
 	transform.position = position;
-	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	transform.model = CalculateModelMatrix(transform.position, transform.scale, transform.rotation);
 	// Reset last values to force transform system to detect changes
 	transform.lastPosition = { -99999.0f, -99999.0f, -99999.0f };
 }
 
 void TransformSystem::SetRotation(Transform& transform, Vector3D rotation) {
 	transform.rotation = rotation;
-	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	transform.model = CalculateModelMatrix(transform.position, transform.scale, transform.rotation);
 	// Reset last values to force transform system to detect changes
 	transform.lastRotation = { -99999.0f, -99999.0f, -99999.0f };
 }
 
 void TransformSystem::SetScale(Transform& transform, Vector3D scale) {
 	transform.scale = scale;
-	transform.model = calculateModelMatrix(transform.position, transform.scale, transform.rotation);
+	transform.model = CalculateModelMatrix(transform.position, transform.scale, transform.rotation);
 	// Reset last values to force transform system to detect changes
 	transform.lastScale = { -99999.0f, -99999.0f, -99999.0f };
 }

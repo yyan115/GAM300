@@ -1,8 +1,9 @@
 #pragma once
+#include <rapidjson/document.h>
 #include "Prefab.hpp"
 
 template <typename T>
-struct showPrefabComponentFunctor {
+struct ShowPrefabComponentFunctor {
 	void operator()(ECSManager& registry, Prefab& prefab, AssetManager& assetManager, T& component);
 
 	ComponentID componentToBeDeleted = std::numeric_limits<std::size_t>::max();
@@ -23,95 +24,64 @@ struct BasePrefabComponent {
 	BasePrefabComponent(BasePrefabComponent&&) = default;
 	BasePrefabComponent& operator=(BasePrefabComponent&&) = default;
 
-	virtual ~BasePrefabComponent() = 0 {};
+	virtual ~BasePrefabComponent() = default;
 
 public:
 #ifndef DISABLE_IMGUI_LEVELEDITOR
-	virtual void displayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) = 0;
+	virtual void DisplayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) = 0;
 #endif
 
-	//virtual std::pair<std::string, Json::Value> serializeComponent() = 0;
-	virtual void captureOriginalComponent() = 0;
-	virtual void restoreOriginalComponent() = 0;
-	virtual void updateEntity(ECSManager& registry, EntityID id) = 0;
-	virtual std::unique_ptr<BasePrefabComponent> clone() const = 0;
+	virtual std::pair<std::string, rapidjson::Value>
+		SerializeComponent(rapidjson::Document::AllocatorType& alloc) const = 0;
+	virtual void CaptureOriginalComponent() = 0;
+	virtual void RestoreOriginalComponent() = 0;
+	virtual void UpdateEntity(ECSManager& registry, EntityID id) = 0;
+	virtual std::unique_ptr<BasePrefabComponent> Clone() const = 0;
 public:
-	virtual bool createEntityComponent(ECSManager& registry, EntityID id) = 0;
+	virtual bool CreateEntityComponent(ECSManager& registry, EntityID id) = 0;
 };
 
 template <typename T>
 struct PrefabComponent : BasePrefabComponent {
 	PrefabComponent(T component) : component{ std::move(component) }, originalComponentCopy{} {}
 
-	bool createEntityComponent(ECSManager& registry, EntityID id) final;
+	bool CreateEntityComponent(ECSManager& registry, EntityID id) final;
 
-	void captureOriginalComponent() final;
-	void restoreOriginalComponent() final;
-	void updateEntity(ECSManager& registry, EntityID id) final;
-	std::unique_ptr<BasePrefabComponent> clone() const final;
+	void CaptureOriginalComponent() final;
+	void RestoreOriginalComponent() final;
+	void UpdateEntity(ECSManager& registry, EntityID id) final;
+	std::unique_ptr<BasePrefabComponent> Clone() const final;
 
 #ifndef DISABLE_IMGUI_LEVELEDITOR
-	void displayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) final;
+	void DisplayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) final;
 #endif
-
-	//std::pair<std::string, Json::Value> serializeComponent() final;
 
 	T component;
 	T originalComponentCopy;
 
 #ifndef DISABLE_IMGUI_LEVELEDITOR
-	showPrefabComponentFunctor<T> functor;
+	ShowPrefabComponentFunctor<T> functor;
 #endif 
-
-	//serializePrefabComponentFunctor<T> serializer;
 };
 
-#if 0
 template<typename T>
-bool PrefabComponent<T>::createEntityComponent(ECSManager& registry, EntityID id) {
-	if (registry.hasComponent<T>(id)) {
-		return false;
-	}
-
-	registry.addComponent<T>(id, component);
-	return true;
-}
-#endif
-
-template<typename T>
-void PrefabComponent<T>::captureOriginalComponent() {
+void PrefabComponent<T>::CaptureOriginalComponent() {
 	originalComponentCopy = component;
 }
 
 template<typename T>
-void PrefabComponent<T>::restoreOriginalComponent() {
+void PrefabComponent<T>::RestoreOriginalComponent() {
 	component = originalComponentCopy;
 }
 
-#if 0
 template<typename T>
-void PrefabComponent<T>::updateEntity(ECSManager& registry, EntityID id) {
-	if (registry.hasComponent<T>(id)) {
-		registry.unsafeGetComponent<T>(id) = component;
-	}
-}
-#endif
-
-template<typename T>
-std::unique_ptr<BasePrefabComponent> PrefabComponent<T>::clone() const {
+std::unique_ptr<BasePrefabComponent> PrefabComponent<T>::Clone() const {
 	return std::make_unique<PrefabComponent<T>>(component);
 }
 
 #ifndef DISABLE_IMGUI_LEVELEDITOR
 template<typename T>
-void PrefabComponent<T>::displayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) {
+void PrefabComponent<T>::DisplayComponentUI(ECSManager& registry, Prefab& prefab, AssetManager& assetManager) {
 	return functor(registry, prefab, assetManager, component);
-}
-#endif
-
-#if 0
-template <typename T>
-std::pair<std::string, Json::Value> PrefabComponent<T>::serializeComponent() {
-	return serializer(component);
 }
 #endif

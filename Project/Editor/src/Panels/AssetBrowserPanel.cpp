@@ -7,6 +7,14 @@
 #include <cmath>
 #include "Asset Manager/AssetManager.hpp"
 #include "Graphics/TextureManager.h"
+#include "Prefab.hpp"
+#include "PrefabComponent.hpp"
+#include "Reflection/ReflectionBase.hpp"
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/NameComponent.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -18,6 +26,55 @@ static constexpr float THUMBNAILBASESIZE = 96.0f;
 static constexpr float THUMBNAILMINSIZE = 48.0f;
 static constexpr float THUMBNAILPADDING = 8.0f;
 static constexpr float LABELHEIGHT = 18.0f;
+
+static std::filesystem::path MakeUniquePath(std::filesystem::path p)
+{
+    using namespace std::filesystem;
+    if (!exists(p)) return p;
+    path stem = p.stem();
+    path ext = p.extension();
+    path dir = p.parent_path();
+    int i = 1;
+    for (;; ++i) {
+        path cand = dir / (stem.string() + " (" + std::to_string(i) + ")" + ext.string());
+        if (!exists(cand)) return cand;
+    }
+}
+
+static void SaveEntityAsPrefab(ECSManager& ecs, AssetManager& assets,
+    Entity entity, const std::filesystem::path& dstPath)
+{
+    static PrefabID nextPrefabId = 1;
+    static AssetID  nextAssetId = 1;
+
+    Prefab prefab{ nextPrefabId++, nextAssetId++ };
+
+    // Add components you support, e.g.:
+    // TryAdd<NameComponent>(ecs, entity, prefab);
+    // TryAdd<TransformComponent>(ecs, entity, prefab);
+    // TryAdd<MeshRenderer>(ecs, entity, prefab);
+    // ...
+
+    // Build a RapidJSON document and serialize to string
+    rapidjson::Document doc = prefab.ToDocument();
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+    doc.Accept(writer);
+
+    std::filesystem::create_directories(dstPath.parent_path());
+    std::ofstream f(dstPath, std::ios::binary);
+    if (!f) {
+        std::cerr << "[AssetBrowserPanel] Failed to open prefab for write: " << dstPath << "\n";
+        return;
+    }
+    f.write(sb.GetString(), static_cast<std::streamsize>(sb.GetSize()));
+    f.close();
+
+    // Optionally register in your AssetManager
+    // assets.RegisterPrefab(dstPath.string(), prefab.getAssetId());
+
+    std::cout << "[AssetBrowserPanel] Saved prefab: " << dstPath << "\n";
+}
 
 AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128& g, bool isDir)
     : filePath(path), guid(g), isDirectory(isDir) {
@@ -373,6 +430,42 @@ void AssetBrowserPanel::RenderAssetGrid() {
     ImGui::Text("Assets in: %s", GetRelativePath(currentDirectory).c_str());
     ImGui::Separator();
 
+    // ---- layout-neutral background drop target covering the whole grid ----
+    {
+        // Build rect that spans the content region of this child window
+        const ImVec2 win_pos = ImGui::GetWindowPos();
+        const ImVec2 cr_min = ImGui::GetWindowContentRegionMin();
+        const ImVec2 cr_max = ImGui::GetWindowContentRegionMax();
+        const ImVec2 min = ImVec2(win_pos.x + cr_min.x, win_pos.y + cr_min.y);
+        const ImVec2 max = ImVec2(win_pos.x + cr_max.x, win_pos.y + cr_max.y);
+        const ImRect dropRect(min, max);
+        const ImGuiID dropId = ImGui::GetID("##AssetGridDropBg");
+
+        if (ImGui::BeginDragDropTargetCustom(dropRect, dropId)) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB")) {
+                if (payload->DataSize == sizeof(Entity)) {
+                    Entity dropped = *reinterpret_cast<const Entity*>(payload->Data);
+
+                    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                    std::string niceName;
+                    if (ecs.HasComponent<NameComponent>(dropped))
+                        niceName = ecs.GetComponent<NameComponent>(dropped).name;
+                    if (niceName.empty())
+                        niceName = "Entity_" + std::to_string(static_cast<uint64_t>(dropped));
+
+                    std::filesystem::path dst =
+                        std::filesystem::path(currentDirectory) / (niceName + ".prefab");
+                    dst = MakeUniquePath(dst);
+
+                    SaveEntityAsPrefab(ecs, AssetManager::GetInstance(), dropped, dst);
+                    RefreshAssets();
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+    }
+    // ----------------------------------------------------------------------
+
     // Use content region width as the source of truth
     float avail = ImGui::GetContentRegionAvail().x;
     float pad = THUMBNAILPADDING;
@@ -456,6 +549,26 @@ void AssetBrowserPanel::RenderAssetGrid() {
             ImGui::OpenPopup("AssetContextMenu");
         }
 
+        // --- DRAG SOURCE for prefab files (.prefab) ---
+        if (!asset.isDirectory) {
+            std::string lowerExt = asset.extension;
+            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+
+            if (lowerExt == ".prefab" && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+            {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    // send a null-terminated C string (ImGui copies the buffer)
+                    const char* path_cstr = asset.filePath.c_str();
+                    ImGui::SetDragDropPayload("PREFAB_PATH",
+                        path_cstr,
+                        static_cast<size_t>(std::strlen(path_cstr) + 1));
+                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+        }
+        // ----------------------------------------------
+
         ImGui::PopID();
         ImGui::EndGroup();
 
@@ -509,6 +622,13 @@ void AssetBrowserPanel::RefreshAssets() {
                 // Get or generate GUID using normalized filePath
                 if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
+                }
+                else {
+                    // For directories, generate a simple hash-based GUID using normalized path
+                    std::hash<std::string> hasher;
+                    size_t hash = hasher(filePath);
+                    guid.high = static_cast<uint64_t>(hash);
+                    guid.low = static_cast<uint64_t>(hash >> 32);
                 }
             }
             else {
@@ -722,7 +842,8 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".obj", ".fbx", ".dae", ".3ds",                    // Models
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
         ".wav", ".mp3", ".ogg",                            // Audio
-        ".ttf", ".otf"                                     // Fonts
+        ".ttf", ".otf",                                    // Fonts
+        ".prefab"
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;
