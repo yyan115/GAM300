@@ -3,6 +3,7 @@
 #include "Graphics/Lights/LightComponent.hpp" 
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
+#include <Graphics/GraphicsManager.hpp>
 
 bool LightingSystem::Initialise()
 {
@@ -22,34 +23,41 @@ void LightingSystem::Shutdown()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
-    // Hardcoded directional light
-    shader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader.setVec3("dirLight.ambient", glm::vec3(0.05f));
-    shader.setVec3("dirLight.diffuse", glm::vec3(0.4f));
-    shader.setVec3("dirLight.specular", glm::vec3(0.5f));
+    // Apply directional light from collected data
+    if (directionalLightData.hasDirectionalLight) 
+    {
+        shader.setVec3("dirLight.direction", directionalLightData.direction);
+        shader.setVec3("dirLight.ambient", directionalLightData.ambient);
+        shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
+        shader.setVec3("dirLight.specular", directionalLightData.specular);
+    }
+    else 
+    {
+        // Disable directional light if none exists
+        shader.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
+        shader.setVec3("dirLight.ambient", glm::vec3(0.0f));
+        shader.setVec3("dirLight.diffuse", glm::vec3(0.0f));
+        shader.setVec3("dirLight.specular", glm::vec3(0.0f));
+    }
 
-    // Hardcoded point lights (4 lights matching your original positions)
-    std::vector<glm::vec3> pointPositions = {
-        glm::vec3(0.7f,  0.2f,  2.0f),
-        glm::vec3(2.3f, -3.3f, -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3(0.0f,  0.0f, -3.0f)
-    };
-
-    for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
+    // Apply point lights from collected data
+    for (int i = 0; i < MAX_POINT_LIGHTS; i++) 
+    {
         std::string base = "pointLights[" + std::to_string(i) + "]";
 
-        if (i < pointPositions.size()) {
-            // Active point light
-            shader.setVec3(base + ".position", pointPositions[i]);
-            shader.setVec3(base + ".ambient", glm::vec3(0.05f));
-            shader.setVec3(base + ".diffuse", glm::vec3(0.8f));
-            shader.setVec3(base + ".specular", glm::vec3(1.0f));
-            shader.setFloat(base + ".constant", 1.0f);
-            shader.setFloat(base + ".linear", 0.09f);
-            shader.setFloat(base + ".quadratic", 0.032f);
+        if (i < pointLightData.positions.size()) 
+        {
+            // Active point light from ECS data
+            shader.setVec3(base + ".position", pointLightData.positions[i]);
+            shader.setVec3(base + ".ambient", pointLightData.ambient[i]);
+            shader.setVec3(base + ".diffuse", pointLightData.diffuse[i]);
+            shader.setVec3(base + ".specular", pointLightData.specular[i]);
+            shader.setFloat(base + ".constant", pointLightData.constant[i]);
+            shader.setFloat(base + ".linear", pointLightData.linear[i]);
+            shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
         }
-        else {
+        else 
+        {
             // Disabled point light
             shader.setVec3(base + ".position", glm::vec3(0.0f));
             shader.setVec3(base + ".ambient", glm::vec3(0.0f));
@@ -61,37 +69,40 @@ void LightingSystem::ApplyLighting(Shader& shader)
         }
     }
 
-    // Hardcoded spot lights (array format to match updated shader)
-    //for (int i = 0; i < MAX_SPOT_LIGHTS; i++) {
-    //    std::string base = "spotLights[" + std::to_string(i) + "]";
+    // Apply spot lights from collected data
+    for (int i = 0; i < MAX_SPOT_LIGHTS; i++) 
+    {
+        std::string base = "spotLights[" + std::to_string(i) + "]";
 
-    //    if (i == 0) {
-    //        // Active spot light - using camera position/direction
-    //        shader.setVec3(base + ".position", glm::vec3(0.0f, 0.0f, 3.0f)); // hardcoded camera pos
-    //        shader.setVec3(base + ".direction", glm::vec3(0.0f, 0.0f, -1.0f)); // looking forward
-    //        shader.setVec3(base + ".ambient", glm::vec3(0.0f));
-    //        shader.setVec3(base + ".diffuse", glm::vec3(1.0f));
-    //        shader.setVec3(base + ".specular", glm::vec3(1.0f));
-    //        shader.setFloat(base + ".constant", 1.0f);
-    //        shader.setFloat(base + ".linear", 0.09f);
-    //        shader.setFloat(base + ".quadratic", 0.032f);
-    //        shader.setFloat(base + ".cutOff", 0.976f); // cos(12.5 degrees)
-    //        shader.setFloat(base + ".outerCutOff", 0.966f); // cos(15 degrees)
-    //    }
-    //    else {
-    //        // Disabled spot light
-    //        shader.setVec3(base + ".position", glm::vec3(0.0f));
-    //        shader.setVec3(base + ".direction", glm::vec3(0.0f, 0.0f, -1.0f));
-    //        shader.setVec3(base + ".ambient", glm::vec3(0.0f));
-    //        shader.setVec3(base + ".diffuse", glm::vec3(0.0f));
-    //        shader.setVec3(base + ".specular", glm::vec3(0.0f));
-    //        shader.setFloat(base + ".constant", 1.0f);
-    //        shader.setFloat(base + ".linear", 0.0f);
-    //        shader.setFloat(base + ".quadratic", 0.0f);
-    //        shader.setFloat(base + ".cutOff", 0.0f);
-    //        shader.setFloat(base + ".outerCutOff", 0.0f);
-    //    }
-    //}
+        if (i < spotLightData.positions.size()) {
+
+            // Active spot light from ECS data
+            shader.setVec3(base + ".position", spotLightData.positions[i]);
+            shader.setVec3(base + ".direction", spotLightData.directions[i]);
+            shader.setVec3(base + ".ambient", spotLightData.ambient[i]);
+            shader.setVec3(base + ".diffuse", spotLightData.diffuse[i]);
+            shader.setVec3(base + ".specular", spotLightData.specular[i]);
+            shader.setFloat(base + ".constant", spotLightData.constant[i]);
+            shader.setFloat(base + ".linear", spotLightData.linear[i]);
+            shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
+            shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
+            shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
+        }
+        else 
+        {
+            // Disabled spot light
+            shader.setVec3(base + ".position", glm::vec3(0.0f));
+            shader.setVec3(base + ".direction", glm::vec3(0.0f, 0.0f, -1.0f));
+            shader.setVec3(base + ".ambient", glm::vec3(0.0f));
+            shader.setVec3(base + ".diffuse", glm::vec3(0.0f));
+            shader.setVec3(base + ".specular", glm::vec3(0.0f));
+            shader.setFloat(base + ".constant", 1.0f);
+            shader.setFloat(base + ".linear", 0.0f);
+            shader.setFloat(base + ".quadratic", 0.0f);
+            shader.setFloat(base + ".cutOff", 0.0f);
+            shader.setFloat(base + ".outerCutOff", 0.0f);
+        }
+    }
 }
 
 void LightingSystem::CollectLightData()

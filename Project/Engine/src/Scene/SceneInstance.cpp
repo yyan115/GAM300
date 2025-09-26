@@ -10,6 +10,7 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
+#include <Graphics/Lights/LightComponent.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -46,6 +47,71 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
+
+	// Initialize lighting system and create light entities
+	//if (ecsManager.lightingSystem) {
+	//	ecsManager.lightingSystem->Initialise();
+
+	//	// Create a directional light (sun)
+	//	Entity sunLight = ecsManager.CreateEntity();
+	//	ecsManager.AddComponent<NameComponent>(sunLight, NameComponent{ "Sun" });
+	//	ecsManager.AddComponent<Transform>(sunLight, Transform{});
+
+	//	DirectionalLightComponent sunLightComp;
+	//	sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+	//	sunLightComp.ambient = glm::vec3(0.05f);
+	//	sunLightComp.diffuse = glm::vec3(0.4f);
+	//	sunLightComp.specular = glm::vec3(0.5f);
+	//	sunLightComp.enabled = true;
+	//	ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+
+	//	// Create point lights
+	//	std::vector<glm::vec3> pointLightPositions = {
+	//		glm::vec3(0.7f,  0.2f,  2.0f),
+	//		glm::vec3(2.3f, -3.3f, -4.0f),
+	//		glm::vec3(-4.0f,  2.0f, -12.0f),
+	//		glm::vec3(0.0f,  0.0f, -3.0f)
+	//	};
+
+	//	for (size_t i = 0; i < pointLightPositions.size(); i++) {
+	//		Entity pointLight = ecsManager.CreateEntity();
+	//		ecsManager.AddComponent<NameComponent>(pointLight,
+	//			NameComponent{ "Point Light " + std::to_string(i) });
+
+	//		Transform lightTransform;
+	//		lightTransform.position = { pointLightPositions[i].x, pointLightPositions[i].y, pointLightPositions[i].z };
+	//		ecsManager.AddComponent<Transform>(pointLight, lightTransform);
+
+	//		PointLightComponent pointLightComp;
+	//		pointLightComp.ambient = glm::vec3(0.05f);
+	//		pointLightComp.diffuse = glm::vec3(0.8f);
+	//		pointLightComp.specular = glm::vec3(1.0f);
+	//		pointLightComp.constant = 1.0f;
+	//		pointLightComp.linear = 0.09f;
+	//		pointLightComp.quadratic = 0.032f;
+	//		pointLightComp.enabled = true;
+	//		ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+
+	//	}
+
+	//	// Create a spot light that follows the camera
+	//	Entity spotLight = ecsManager.CreateEntity();
+	//	ecsManager.AddComponent<NameComponent>(spotLight, NameComponent{ "Camera Flashlight" });
+	//	ecsManager.AddComponent<Transform>(spotLight, Transform{});
+
+	//	SpotLightComponent spotLightComp;
+	//	spotLightComp.direction = camera.Front;
+	//	spotLightComp.ambient = glm::vec3(0.0f);
+	//	spotLightComp.diffuse = glm::vec3(1.0f);
+	//	spotLightComp.specular = glm::vec3(1.0f);
+	//	spotLightComp.constant = 1.0f;
+	//	spotLightComp.linear = 0.09f;
+	//	spotLightComp.quadratic = 0.032f;
+	//	spotLightComp.cutOff = 0.976f;
+	//	spotLightComp.outerCutOff = 0.966f;
+	//	spotLightComp.enabled = true;
+	//	ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+	//}
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
@@ -87,6 +153,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->update();
+	mainECS.lightingSystem->Update();
 }
 
 void SceneInstance::Draw() {
