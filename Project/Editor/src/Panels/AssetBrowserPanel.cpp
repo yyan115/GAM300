@@ -88,7 +88,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     std::filesystem::path fullPathObj(fullPath);
     try {
         if (std::filesystem::exists(fullPathObj) && std::filesystem::is_directory(fullPathObj)) {
-            // Directory created/modified — refresh UI
+            // Directory created/modified ï¿½ refresh UI
             QueueRefresh();
             return;
         }
@@ -110,8 +110,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
-            std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
-            AssetManager::GetInstance().CompileAsset(fullPath, true);
+            std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
+            AssetManager::GetInstance().AddToCompilationQueue(fullPathObj);
         }
         else if (event == filewatch::Event::removed) {
             std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
@@ -122,8 +122,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_new) {
-            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
-            AssetManager::GetInstance().CompileAsset(fullPath);
+            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
+            AssetManager::GetInstance().AddToCompilationQueue(fullPathObj);
         }
 
         QueueRefresh();
@@ -279,7 +279,11 @@ void AssetBrowserPanel::RenderToolbar() {
     // Search and filter bar
     ImGui::SetNextItemWidth(200.0f);
     char searchBuffer[256];
+#ifdef _WIN32
     strncpy_s(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#else
+    strncpy(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
+#endif
     searchBuffer[sizeof(searchBuffer) - 1] = '\0';
 
     if (ImGui::InputTextWithHint("##Search", "Search assets...", searchBuffer, sizeof(searchBuffer))) {
@@ -507,7 +511,7 @@ void AssetBrowserPanel::RefreshAssets() {
                 }
 
                 // Get or generate GUID using normalized filePath
-                if (MetaFilesManager::MetaFileExists(filePath)) {
+                if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
                 }
             }

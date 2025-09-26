@@ -4,6 +4,12 @@
 #include "Platform/Platform.h"
 #include "Graphics/LightManager.hpp"
 
+#ifdef ANDROID
+#include <EGL/egl.h>
+#include <android/log.h>
+#include "Platform/IPlatform.h"
+#endif
+
 #include "Engine.h"
 #include "Logging.hpp"
 
@@ -45,7 +51,13 @@ bool Engine::Initialize() {
 
 	// WOON LI TEST CODE
 	InputManager::Initialize();
+
+	// Platform-specific asset initialization
+#ifndef __ANDROID__
+	// Desktop platforms: Initialize assets immediately (filesystem-based)
 	MetaFilesManager::InitializeAssetMetaFiles("Resources");
+#endif
+	// Android: Asset initialization happens in JNI after AssetManager is set
 
 	//TEST ON ANDROID FOR REFLECTION - IF NOT WORKING, INFORM IMMEDIATELY
 #if 1
@@ -53,11 +65,11 @@ bool Engine::Initialize() {
         bool reflection_ok = true;
         bool serialization_ok = true;
 
-        std::cout << "=== Running reflection + serialization single-main test for Vector3D ===\n";
+        std::cout << "=== Running reflection + serialization single-main test for Matrix4x4 ===\n";
 
         // --- Reflection-only checks ---
         std::cout << "\n[1] Reflection metadata + runtime access checks\n";
-        using T = Vector3D;
+        using T = Matrix4x4;
         TypeDescriptor* td = nullptr;
         try {
             td = TypeResolver<T>::Get();
@@ -70,7 +82,7 @@ bool Engine::Initialize() {
         }
 
         if (!td) {
-            std::cout << "FAIL: TypeResolver<Vector3D>::Get() returned null. Ensure REFL_REGISTER_START(Vector3D) is compiled & linked.\n";
+            std::cout << "FAIL: TypeResolver<Matrix4x4>::Get() returned null. Ensure REFL_REGISTER_START(Matrix4x4) is compiled & linked.\n";
             reflection_ok = false;
         }
         else {
@@ -234,6 +246,25 @@ This prevents requesting descriptors for reference types (e.g. float&).
 	}
 #endif
 
+	// Note: Scene loading and lighting setup moved to InitializeGraphicsResources()
+	// This will be called after the graphics context is ready
+
+	//lightManager.printLightStats();
+
+	ENGINE_LOG_INFO("Engine initialization completed successfully");
+	
+	// Add some test logging messages
+	ENGINE_LOG_WARN("This is a test warning message");
+	ENGINE_LOG_ERROR("This is a test error message");
+	
+    std::cout << "test\n";
+    
+	return true;
+}
+
+bool Engine::InitializeGraphicsResources() {
+	ENGINE_LOG_INFO("Initializing graphics resources...");
+
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
 
@@ -254,7 +285,7 @@ This prevents requesting descriptors for reference types (e.g. float&).
 		glm::vec3(0.0f,  0.0f, -3.0f)
 	};
 
-	for (int i = 0; i < 4; i++) 
+	for (int i = 0; i < 4; i++)
 	{
 		lightManager.addPointLight(lightPositions[i], glm::vec3(0.8f, 0.8f, 0.8f));
 	}
@@ -266,27 +297,13 @@ This prevents requesting descriptors for reference types (e.g. float&).
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	);
 
-	//lightManager.printLightStats();
+	ENGINE_LOG_INFO("Graphics resources initialized successfully");
+	return true;
+}
 
-	// Test Audio
-	{
-		if (!AudioManager::StaticInitalize())
-		{
-			ENGINE_LOG_ERROR("Failed to initialize AudioManager");
-		}
-		else
-		{
-			AudioManager::StaticLoadSound("test_sound", "Test_duck.wav", false);
-			AudioManager::StaticPlaySound("test_sound", 0.5f, 1.0f);
-		}
-	}
-
-	ENGINE_LOG_INFO("Engine initialization completed successfully");
-	
-	// Add some test logging messages
-	ENGINE_LOG_WARN("This is a test warning message");
-	ENGINE_LOG_ERROR("This is a test error message");
-	
+bool Engine::InitializeAssets() {
+	// Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
+	MetaFilesManager::InitializeAssetMetaFiles("Resources");
 	return true;
 }
 
@@ -302,11 +319,81 @@ void Engine::Update() {
 }
 
 void Engine::StartDraw() {
+#ifdef ANDROID
+    // Ensure context is current before rendering
+    WindowManager::GetPlatform()->MakeContextCurrent();
+
+    // Check if OpenGL context is current
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLContext context = eglGetCurrentContext();
+    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+
+    // __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL State - Display: %p, Context: %p, Surface: %p",
+    //                    display, context, surface);
+
+    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
+        return;
+    }
+#endif
+
+    //glClearColor(1.0f, 0.0f, 0.0f, 1.0f); // Bright red - should be very obvious
+
+#ifdef ANDROID
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
+    }
+#endif
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Actually clear the screen!
+
+#ifdef ANDROID
+    error = glGetError();
+    if (error != GL_NO_ERROR) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
+    } else {
+        // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Engine::StartDraw() - Successfully cleared screen with RED");
+    }
+#endif
 }
 
 void Engine::Draw() {
-	SceneManager::GetInstance().DrawScene();
-	
+#ifdef ANDROID
+    // Ensure the EGL context is current
+    if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current in Draw()");
+        return;
+    }
+
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLContext context = eglGetCurrentContext();
+    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+
+    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT - skipping draw!");
+        return;
+    }
+
+    // Additional check: verify the surface is still valid
+    EGLint surfaceWidth, surfaceHeight;
+    if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
+        !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL surface is invalid - skipping draw!");
+        return;
+    }
+
+    try {
+        SceneManager::GetInstance().DrawScene();
+    } catch (const std::exception& e) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
+    } catch (...) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
+    }
+#else
+    SceneManager::GetInstance().DrawScene();
+    //std::cout << "drawn scene\n";
+#endif
 }
 
 void Engine::EndDraw() {
@@ -329,6 +416,8 @@ void Engine::Shutdown() {
 
 bool Engine::IsRunning() {
 	return !WindowManager::ShouldClose();
+    //
+    //
 }
 
 // Game state management functions

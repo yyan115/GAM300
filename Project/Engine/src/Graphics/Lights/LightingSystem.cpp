@@ -163,7 +163,7 @@ void LightingSystem::CollectLightData()
                 if (ecsManager.HasComponent<Transform>(entity)) 
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    position = glm::vec3(transform.position.x, transform.position.y, transform.position.z);
+                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
                 }
 
                 pointLightData.positions.push_back(position);
@@ -188,7 +188,7 @@ void LightingSystem::CollectLightData()
                 if (ecsManager.HasComponent<Transform>(entity)) 
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    position = glm::vec3(transform.position.x, transform.position.y, transform.position.z);;
+                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);;
                 }
 
                 spotLightData.positions.push_back(position);

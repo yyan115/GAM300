@@ -8,6 +8,7 @@
 #include "Graphics/SceneRenderer.hpp"
 #include "WindowManager.hpp"
 #include "EditorState.hpp"
+#include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
@@ -18,6 +19,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include <Asset Manager/AssetManager.hpp>
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -104,6 +106,8 @@ void GUIManager::Render() {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
+
+	AssetManager::GetInstance().RunCompilationQueue();
 }
 
 void GUIManager::Exit() {
@@ -313,7 +317,17 @@ void GUIManager::CreateEditorTheme() {
 	ImGui::StyleColorsDark();
 	ImGuiStyle& style = ImGui::GetStyle();
 	io.Fonts->Clear();
-	io.Fonts->AddFontFromFileTTF("Resources/Inter.ttf", 18.0f);
+
+	// Load main font
+	ImFont* mainFont = io.Fonts->AddFontFromFileTTF("Resources/Inter.ttf", 18.0f);
+
+	// Merge FontAwesome icons
+	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+	ImFontConfig icons_config;
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.GlyphMinAdvanceX = 18.0f; // Match main font size
+	io.Fonts->AddFontFromFileTTF("Resources/Fonts/fa-solid-900.ttf", 18.0f, &icons_config, icons_ranges);
 	style.ScaleAllSizes(main_scale);        // Bake a fixed style scale
 	io.ConfigDpiScaleFonts = true;          // This will scale fonts but _NOT_ scale sizes/padding
 	io.ConfigDpiScaleViewports = true;

@@ -2,12 +2,16 @@
 #include <android/log.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 
 // Include engine headers
 #include "Engine.h"
 #include "GameManager.h"
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "Platform/AndroidPlatform.h"
+#include "Platform/IPlatform.h"
 
 #define LOG_TAG "GAM300"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -24,14 +28,30 @@ Java_com_gam300_game_MainActivity_stringFromJNI(JNIEnv* env, jobject /* this */)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject /* this */, jint width, jint height) {
+Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject /* this */, jobject assetManager, jint width, jint height) {
     LOGI("Initializing GAM300 Engine: %dx%d", width, height);
-    
+
     if (!engineInitialized) {
-        // Initialize Engine and GameManager (same as game's main.cpp)
+        // Get native AssetManager and set it in the platform FIRST
+        AAssetManager* nativeAssetManager = AAssetManager_fromJava(env, assetManager);
+
+        // Initialize Engine (but skip asset loading for now)
         Engine::Initialize();
+
+        // Set the AssetManager in the Android platform BEFORE asset loading
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (platform) {
+            AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            androidPlatform->SetAssetManager(nativeAssetManager);
+            LOGI("AssetManager set in Android platform");
+
+            // Now initialize assets using Engine method
+            Engine::InitializeAssets();
+            LOGI("Engine assets initialized");
+        }
+
         GameManager::Initialize();
-        
+
         engineInitialized = true;
         LOGI("Engine and GameManager initialized successfully");
     }
@@ -42,9 +62,29 @@ Java_com_gam300_game_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jo
     if (surface) {
         nativeWindow = ANativeWindow_fromSurface(env, surface);
         LOGI("Surface set: %p", nativeWindow);
-        
-        // TODO: Set native window in AndroidPlatform
-        // This will require adding a method to get the platform instance
+
+        // Set native window in AndroidPlatform
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (platform && engineInitialized) {
+            AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            androidPlatform->SetNativeWindow(nativeWindow);
+
+            // Initialize graphics context now that we have a surface
+            if (androidPlatform->InitializeGraphics()) {
+                LOGI("Graphics initialized successfully");
+                // Now initialize graphics resources (scenes, lighting, etc.)
+                if (Engine::InitializeGraphicsResources()) {
+                    LOGI("Graphics resources initialized successfully");
+                    // Release the OpenGL context now that graphics resources are loaded
+                    androidPlatform->ReleaseContext();
+                    LOGI("OpenGL context released after graphics resource initialization");
+                } else {
+                    LOGE("Failed to initialize graphics resources");
+                }
+            } else {
+                LOGE("Failed to initialize graphics");
+            }
+        }
     } else {
         if (nativeWindow) {
             ANativeWindow_release(nativeWindow);
@@ -57,14 +97,26 @@ Java_com_gam300_game_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jo
 extern "C" JNIEXPORT void JNICALL
 Java_com_gam300_game_MainActivity_renderFrame(JNIEnv* env, jobject /* this */) {
     if (engineInitialized) {
+        //LOGI("Starting render frame");
+
         // Update engine and game manager (same as game's main.cpp)
+        //LOGI("Calling Engine::Update()");
         Engine::Update();
+
+        //LOGI("Calling GameManager::Update()");
         GameManager::Update();
-        
+
         // Draw frame (same as game's main.cpp)
+        //LOGI("Calling Engine::StartDraw()");
         Engine::StartDraw();
+
+        //LOGI("Calling Engine::Draw()");
         Engine::Draw();
+
+        //LOGI("Calling Engine::EndDraw()");
         Engine::EndDraw();
+
+        //LOGI("Render frame completed");
     }
 }
 
