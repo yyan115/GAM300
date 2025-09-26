@@ -70,7 +70,8 @@ void SceneInstance::Initialize() {
 	//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 	//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
 	//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
-	// 
+#endif
+
 	// Creates light
 	lightShader = std::make_shared<Shader>();
 	lightShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("light"));
