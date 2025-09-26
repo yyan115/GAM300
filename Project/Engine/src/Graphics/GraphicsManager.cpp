@@ -362,11 +362,11 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 			if (drawCommand.meshModel) 
 			{
 				// Create transform matrix
-				glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+				glm::mat4 transform = CreateTransformMatrix(drawCommand.position.ConvertToGLM(), drawCommand.rotation.ConvertToGLM(), drawCommand.scale.ConvertToGLM());
 
 				// Set up matrices and uniforms
 				SetupMatrices(*item.shader, transform);
-				item.shader->setVec3("debugColor", drawCommand.color);
+				item.shader->setVec3("debugColor", drawCommand.color.ConvertToGLM());
 
 				// Draw the model in wireframe mode (wireframe is already enabled above)
 				drawCommand.meshModel->Draw(*item.shader, *currentCamera);
@@ -381,10 +381,10 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		if (!currentVAO) continue;
 
 		// Create transform matrix
-		glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+		glm::mat4 transform = CreateTransformMatrix(drawCommand.position.ConvertToGLM(), drawCommand.rotation.ConvertToGLM(), drawCommand.scale.ConvertToGLM());
 		// Set up matrices and uniforms
 		SetupMatrices(*item.shader, transform);
-		item.shader->setVec3("debugColor", drawCommand.color);
+		item.shader->setVec3("debugColor", drawCommand.color.ConvertToGLM());
 		// Bind VAO and render
 		currentVAO->Bind();
 

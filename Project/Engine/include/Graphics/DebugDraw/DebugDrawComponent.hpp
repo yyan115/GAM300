@@ -1,8 +1,9 @@
 #pragma once
 #include "Graphics/IRenderComponent.hpp"
-#include <glm/glm.hpp>
 #include <memory>
 #include <vector>
+#include "Math/Vector3D.hpp"
+#include "Utilities/GUID.hpp"
 
 class Shader;
 class VAO;
@@ -21,19 +22,20 @@ struct DebugDrawData {
     REFL_SERIALIZABLE //Change glm to Vector3
     DebugDrawType type;
 
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
+    Vector3D position{};
+    Vector3D scale{};
+    Vector3D rotation{};
+    Vector3D color{};
 
     float duration = 0.0f;  // 0 = permanent, >0 = timed
     float lineWidth = 1.0f;
 
     // For line drawing
-    glm::vec3 endPosition = glm::vec3(0.0f);
+    Vector3D endPosition{};
 
     // For mesh wireframe
-    std::shared_ptr<Model> meshModel = nullptr;
+    GUID_128 modelGUID;
+    std::shared_ptr<Model> meshModel = nullptr; // don't have to serialize for now
 
     DebugDrawData(DebugDrawType t) : type(t) {}
 };
