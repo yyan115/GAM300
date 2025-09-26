@@ -12,6 +12,7 @@
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
 #include "Sound/AudioSystem.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
+#include <Graphics/Lights/LightingSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -96,6 +97,7 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<AudioSystem> audioSystem;
+	std::shared_ptr<LightingSystem> lightingSystem;
 
 private:
 	template <typename T>

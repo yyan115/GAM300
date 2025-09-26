@@ -6,6 +6,20 @@ AssetManager& AssetManager::GetInstance() {
     return instance;
 }
 
+void AssetManager::AddToCompilationQueue(const std::filesystem::path& assetPath) {
+    compilationQueue.push(assetPath);
+}
+
+void AssetManager::RunCompilationQueue() {
+    if (!compilationQueue.empty()) {
+        auto assetPath = compilationQueue.front();
+        std::cout << "[Asset Manager] Running compilation queue... Compiling asset: " << assetPath.generic_string() << std::endl;
+        compilationQueue.pop();
+        std::string extension = assetPath.extension().string();
+
+        CompileAsset(assetPath.generic_string(), true);
+    }
+}
 void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
@@ -29,23 +43,23 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 	assetMetaMap[assetMeta->guid] = assetMeta;
 }
 
-bool AssetManager::CompileAsset(const std::string& filePathStr) {
+bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompile) {
 	std::filesystem::path filePathObj(filePathStr);
 	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
-		return CompileTexture(filePathStr, "diffuse", -1);
+		return CompileTexture(filePathStr, "diffuse", -1, forceCompile);
 	}
 	//else if (audioExtensions.find(extension) != audioExtensions.end()) {
 	//	return CompileAsset<Audio>(filePathStr);
 	//}
 	else if (fontExtensions.find(extension) != fontExtensions.end()) {
-		return CompileAsset<Font>(filePathStr);
+		return CompileAsset<Font>(filePathStr, forceCompile);
 	}
 	else if (modelExtensions.find(extension) != modelExtensions.end()) {
-		return CompileAsset<Model>(filePathStr);
+		return CompileAsset<Model>(filePathStr, forceCompile);
 	}
 	else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-		return CompileAsset<Shader>(filePathStr);
+		return CompileAsset<Shader>(filePathStr, forceCompile);
 	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
@@ -53,7 +67,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr) {
 	}
 }
 
-bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot) {
+bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -63,12 +77,17 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 	}
 
-	auto it = assetMetaMap.find(guid);
-	if (it != assetMetaMap.end()) {
-		return true;
+	if (!forceCompile) {
+		auto it = assetMetaMap.find(guid);
+		if (it != assetMetaMap.end()) {
+			return true;
+		}
+		else {
+			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
+		}
 	}
 	else {
-		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot);
+		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile);
 	}
 }
 
@@ -164,6 +183,10 @@ bool AssetManager::IsAssetExtensionSupported(const std::string& extension) const
 
 bool AssetManager::IsExtensionMetaFile(const std::string& extension) const {
 	return extension == ".meta";
+}
+
+bool AssetManager::IsExtensionShaderVertFrag(const std::string& extension) const {
+	return shaderExtensions.find(extension) != shaderExtensions.end();
 }
 
 bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {

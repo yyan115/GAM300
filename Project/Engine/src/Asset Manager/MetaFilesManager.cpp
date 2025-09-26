@@ -60,6 +60,42 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 	return std::filesystem::exists(metaFilePath.generic_string());
 }
 
+std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMetaFile(const std::string& metaFilePath) {
+	std::ifstream ifs(metaFilePath);
+	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+
+	rapidjson::Document doc;
+	doc.Parse(jsonContent.c_str());
+
+	const auto& assetMetaData = doc["AssetMetaData"];
+	if (assetMetaData.HasMember("last_compiled")) {
+		std::string timestampStr = assetMetaData["last_compiled"].GetString();
+		std::istringstream iss(timestampStr);
+		std::chrono::sys_time<std::chrono::seconds> tp;
+
+		// Parse using the same format string you used for formatting
+#ifdef ANDROID
+		// std::chrono::parse not available on Android NDK yet - use epoch time so assets always recompile
+		tp = std::chrono::sys_time<std::chrono::seconds>{};
+#else
+		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
+#endif
+
+		if (iss.fail()) {
+			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
+			return std::chrono::system_clock::time_point{};
+		}
+		else {
+			// Convert sys_time<seconds> to system_clock::time_point
+			return tp;
+		}
+	}
+	else {
+		std::cerr << "[MetaFilesManager] ERROR: last_compiled not found in meta file: " << metaFilePath << std::endl;
+		return std::chrono::system_clock::time_point{};
+	}
+}
+
 GUID_string MetaFilesManager::GetGUIDFromMetaFile(const std::string& metaFilePath) {
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -84,8 +120,6 @@ GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath)
 }
 
 void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFolder) {
-	std::unordered_set<std::string> compiledShaderNames; // To avoid compiling the same shader multiple times.
-
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
@@ -95,21 +129,11 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 
 	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
 
-	for (const std::string& assetPath : assetFiles) {
-		bool isShader = false;
+	for (std::string assetPath : assetFiles) {
 		std::filesystem::path filePath(assetPath);
 		std::string extension = filePath.extension().string();
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-			if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
-				std::string shaderName = filePath.stem().string();
-				if (compiledShaderNames.find(shaderName) != compiledShaderNames.end()) {
-					continue; // Skip if this shader has already been compiled.
-				}
-				compiledShaderNames.insert(shaderName);
-				isShader = true;
-			}
-
 			if (!MetaFileExists(assetPath)) {
 				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
 				AssetManager::GetInstance().CompileAsset(assetPath);
@@ -119,26 +143,21 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 				AssetManager::GetInstance().CompileAsset(assetPath);
 			}
 			else {
-				std::string finalAssetPath = assetPath;
-				if (isShader) {
-					finalAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+				if (AssetFileUpdated(assetPath)) {
+					std::cout << "[MetaFilesManager] Asset file was updated: " << assetPath << ". Re-compiling..." << std::endl;
+					AssetManager::GetInstance().CompileAsset(assetPath, true);
 				}
+				else {
+					if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+						assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+					}
 
-				GUID_128 guid128 = GetGUID128FromAssetFile(finalAssetPath);
-				AddGUID128Mapping(finalAssetPath, guid128);
-				AssetManager::GetInstance().AddAssetMetaToMap(finalAssetPath);
-
-				//std::cout << "[MetaFilesManager] .meta already exists for: " << assetPath << std::endl;
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+				}
 			}
 		}
-			//// fallback for shaders
-			//else if (extension == ".meta") {
-			//	std::string assetPath = file.path().generic_string();
-			//	assetPath = assetPath.substr(0, assetPath.size() - 5); // Remove the .meta extension
-			//	GUID_string guidStr = GetGUIDFromMetaFile(file.path().generic_string());
-			//	GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
-			//	AddGUID128Mapping(assetPath, guid128);
-			//}
 	}
 }
 
@@ -178,6 +197,38 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 		std::cerr << "[MetaFilesManager] ERROR: version not found in meta file: " << metaFilePath << std::endl;
 		return "";
 	}
+}
+
+bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath) {
+	// Get the last modified time for the asset file.
+	std::filesystem::path assetFile(assetPath);
+	auto ftime = std::filesystem::last_write_time(assetFile);
+#ifndef ANDROID
+	auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
+#endif
+#ifdef ANDROID
+	using namespace std::chrono;
+	auto lastModifiedTime = time_point_cast<system_clock::duration>(
+		ftime - decltype(ftime)::clock::now() + system_clock::now()
+	);
+#endif
+
+	// Compare the last modified time with the meta file's last compile time.
+	// If it was modified after the last compile time, the asset file was updated and requires re-compilation.
+	std::string extension = assetFile.extension().string();
+	std::string metaFilePath{};
+	if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+		metaFilePath = (assetFile.parent_path() / assetFile.stem()).generic_string() + ".meta";
+	}
+	else {
+		metaFilePath = assetPath + ".meta";
+	}
+
+	if (lastModifiedTime > GetLastCompileTimeFromMetaFile(metaFilePath)) {
+		return true;
+	}
+
+	return false;
 }
 
 //GUID_128 MetaFilesManager::UpdateMetaFile(const std::string& assetPath) {

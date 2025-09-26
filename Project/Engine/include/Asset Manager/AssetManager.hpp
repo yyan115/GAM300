@@ -4,7 +4,7 @@
 #include <memory>
 #include <type_traits>
 #include <filesystem>
-#include <thread>
+#include <queue>
 //#include <FileWatch.hpp>
 #include "../Engine.h"
 #include "Utilities/GUID.hpp"
@@ -18,11 +18,11 @@ class ENGINE_API AssetManager {
 public:
 	static AssetManager& GetInstance();
 
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false);
 	void AddAssetMetaToMap(const std::string& assetPath);
-	bool CompileAsset(const std::string& filePathStr);
 
 	template <typename T>
-	bool CompileAsset(const std::string& filePathStr) {
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false) {
 		static_assert(!std::is_same_v<T, Texture>,
 			"Calling AssetManager::GetInstance().GetAsset() to compile a texture is forbidden. Use CompileTexture() instead.");
 
@@ -42,16 +42,22 @@ public:
 			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
 
-		auto it = assetMetaMap.find(guid);
-		if (it != assetMetaMap.end()) {
-			return true;
+		if (!forceCompile) {
+			auto it = assetMetaMap.find(guid);
+			if (it != assetMetaMap.end()) {
+				return true;
+			}
+			else {
+				return CompileAssetToResource<T>(guid, filePath, forceCompile);
+			}
 		}
 		else {
-			return CompileAssetToResource<T>(guid, filePath);
+			return CompileAssetToResource<T>(guid, filePath, forceCompile);
 		}
 	}
 
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot);
+	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false);
+
 	bool IsAssetCompiled(GUID_128 guid);
 	void UnloadAsset(const std::string& assetPath);
 
@@ -67,12 +73,18 @@ public:
 	const std::unordered_set<std::string>& GetShaderExtensions() const;
 	bool IsAssetExtensionSupported(const std::string& extension) const;
 	bool IsExtensionMetaFile(const std::string& extension) const;
+	bool IsExtensionShaderVertFrag(const std::string& extension) const;
 
 	bool HandleMetaFileDeletion(const std::string& metaFilePath);
 	bool HandleResourceFileDeletion(const std::string& resourcePath);
 
+	void AddToCompilationQueue(const std::filesystem::path& assetPath);
+
+	void RunCompilationQueue();
+
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;
+	std::queue<std::filesystem::path> compilationQueue;
 	//std::unique_ptr<filewatch::FileWatch<std::string>> assetWatcher;
 
 	// Supported asset extensions
@@ -146,9 +158,9 @@ private:
 	}
 
 	template <typename T>
-	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath) {
+	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath, bool forceCompile = false) {
 		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			std::shared_ptr<T> asset = std::make_shared<T>();
 			std::string compiledPath = asset->CompileToResource(filePath);
 			if (compiledPath.empty()) {
@@ -158,16 +170,39 @@ private:
 
 			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl;
+
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
+				std::cout << "[AssetManager] Resource is already loaded - hot-reloading the resource: " << compiledPath << std::endl;
+				if constexpr (std::is_same_v<T, Font>) {
+					ResourceManager::GetInstance().GetFontResource(filePath, 0, true);
+				}
+				else if (std::is_same_v<T, Shader>) {
+					ResourceManager::GetInstance().GetResource<Shader>(filePath, true);
+				}
+				else {
+					std::filesystem::path p(filePath);
+					std::string extension = p.extension().generic_string();
+					//else if (audioExtensions.find(extension) != audioExtensions.end()) {
+					//	return CompileAsset<Audio>(filePathStr);
+					//}
+					if (modelExtensions.find(extension) != modelExtensions.end()) {
+						ResourceManager::GetInstance().GetResource<Model>(filePath, true);
+					}
+				}
+			}
+
+			std::cout << std::endl;
 			return true;
 		}
 
 		return true;
 	}
 
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot) {
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false) {
 		// If the asset is not already loaded, load and store it using the GUID.
-		if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			Texture texture{ texType, slot };
 			std::string compiledPath = texture.CompileToResource(filePath);
 			if (compiledPath.empty()) {
@@ -179,6 +214,15 @@ private:
 			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
 			assetMetaMap[guid] = assetMeta;
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
+			}
+			else {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath);
+			}
+
 			return true;
 		}
 

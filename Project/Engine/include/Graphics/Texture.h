@@ -17,6 +17,7 @@ public:
 
 	std::string CompileToResource(const std::string& assetPath) override;
 	bool LoadResource(const std::string& assetPath) override;
+	bool ReloadResource(const std::string& assetPath) override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
 
 	GLenum GetFormatFromExtension(const std::string& filePath);
