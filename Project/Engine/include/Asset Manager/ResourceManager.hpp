@@ -27,7 +27,18 @@ public:
 			return it->second;
 		}
 		else {
-			return LoadResource<T>(guid, assetPath);
+			return GetResource<T>(assetPath);
+		}
+	}
+
+	std::shared_ptr<Font> GetFontResourceFromGUID(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize) {
+		auto& resourceMap = GetResourceMap<Font>();
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			return it->second;
+		}
+		else {
+			return GetFontResource(assetPath, fontSize);
 		}
 	}
 
