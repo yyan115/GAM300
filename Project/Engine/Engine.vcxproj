@@ -156,6 +156,8 @@
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Transform\Quaternion.cpp" />
+    <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />

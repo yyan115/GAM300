@@ -65,11 +65,11 @@ bool Engine::Initialize() {
         bool reflection_ok = true;
         bool serialization_ok = true;
 
-        std::cout << "=== Running reflection + serialization single-main test for Matrix4x4 ===\n";
+        std::cout << "=== Running reflection + serialization single-main test for Transform ===\n";
 
         // --- Reflection-only checks ---
         std::cout << "\n[1] Reflection metadata + runtime access checks\n";
-        using T = Matrix4x4;
+        using T = Transform;
         TypeDescriptor* td = nullptr;
         try {
             td = TypeResolver<T>::Get();
@@ -82,7 +82,7 @@ bool Engine::Initialize() {
         }
 
         if (!td) {
-            std::cout << "FAIL: TypeResolver<Matrix4x4>::Get() returned null. Ensure REFL_REGISTER_START(Matrix4x4) is compiled & linked.\n";
+            std::cout << "FAIL: TypeResolver<Transform>::Get() returned null. Ensure REFL_REGISTER_START(Transform) is compiled & linked.\n";
             reflection_ok = false;
         }
         else {

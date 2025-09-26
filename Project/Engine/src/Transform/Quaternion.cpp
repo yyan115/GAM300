@@ -1,0 +1,10 @@
+// Quaternion.cpp
+#include "pch.h"
+#include "Transform/Quaternion.hpp"
+
+REFL_REGISTER_START(Quaternion)
+	REFL_REGISTER_PROPERTY(w)
+	REFL_REGISTER_PROPERTY(x)
+	REFL_REGISTER_PROPERTY(y)
+	REFL_REGISTER_PROPERTY(z)
+REFL_REGISTER_END
