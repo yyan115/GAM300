@@ -18,6 +18,7 @@ enum class DebugDrawType {
 };
 
 struct DebugDrawData {
+    REFL_SERIALIZABLE //Change glm to Vector3
     DebugDrawType type;
 
     glm::vec3 position = glm::vec3(0.0f);
@@ -39,8 +40,9 @@ struct DebugDrawData {
 
 class DebugDrawComponent : public IRenderComponent {
 public:
+    REFL_SERIALIZABLE
     std::vector<DebugDrawData> drawCommands;
-    std::shared_ptr<Shader> shader;  // Debug shader
+    std::shared_ptr<Shader> shader;  // Debug shader - Should be changed to ID for reflection
 
     // Geometry references (set by system during initialization)
     VAO* cubeVAO = nullptr;

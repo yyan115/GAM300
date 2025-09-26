@@ -1,3 +1,14 @@
+/*********************************************************************************
+* @File			ReflectionBase.cpp
+* @Author		Soh Wei Jie, weijie.soh@digipen.edu
+* @Co-Author	-
+* @Date			26/9/2025
+* @Brief		
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
 

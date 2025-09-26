@@ -225,7 +225,7 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
 
         // Remove the child from the old parent.
         auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
-        auto it = oldPChildCompOpt->get().children.find(draggedEntity);
+        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), draggedEntity);
         ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
 
         // If the old parent has no more children, remove the children component from the old parent.
@@ -240,11 +240,11 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
     // If the parent already has children
     if (ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
 
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
     else {
         ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
 
     // Calculate the child's world position, rotation and scale.
@@ -268,7 +268,7 @@ void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
 
         // Update the parent by removing the dragged entity from its children.
         ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
-        auto it = pChildrenComponent.children.find(draggedEntity);
+        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),draggedEntity);
         pChildrenComponent.children.erase(it);
         if (pChildrenComponent.children.empty()) {
             ecsManager.RemoveComponent<ChildrenComponent>(parent);

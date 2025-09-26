@@ -10,6 +10,7 @@ class Shader;
 
 class TextRenderComponent : public IRenderComponent {
 public:
+    REFL_SERIALIZABLE
     std::string text;
     std::shared_ptr<Font> font;
     std::shared_ptr<Shader> shader;

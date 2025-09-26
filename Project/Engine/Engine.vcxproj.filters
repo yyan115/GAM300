@@ -77,6 +77,42 @@
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
+    <ClInclude Include="src\Graphics\DebugDraw\DebugDrawComponent.hpp" />
+    <ClInclude Include="src\Graphics\DebugDraw\DebugDrawSystem.hpp" />
+    <ClInclude Include="src\Graphics\Model\Model.h" />
+    <ClInclude Include="src\Graphics\Model\ModelRenderComponent.hpp" />
+    <ClInclude Include="src\Graphics\Model\ModelSystem.hpp" />
+    <ClInclude Include="src\Graphics\TextRendering\Font.hpp" />
+    <ClInclude Include="src\Graphics\TextRendering\TextRenderComponent.hpp" />
+    <ClInclude Include="src\Graphics\TextRendering\TextRenderingSystem.hpp" />
+    <ClInclude Include="src\Graphics\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="src\Graphics\Camera.h" />
+    <ClInclude Include="src\Graphics\EBO.h" />
+    <ClInclude Include="src\Graphics\GraphicsManager.hpp" />
+    <ClInclude Include="src\Graphics\IRenderComponent.hpp" />
+    <ClInclude Include="src\Graphics\LightManager.hpp" />
+    <ClInclude Include="src\Graphics\Material.hpp" />
+    <ClInclude Include="src\Graphics\Mesh.h" />
+    <ClInclude Include="src\Graphics\SceneRenderer.hpp" />
+    <ClInclude Include="src\Graphics\ShaderClass.h" />
+    <ClInclude Include="src\Graphics\stb_image.h" />
+    <ClInclude Include="src\Graphics\Texture.h" />
+    <ClInclude Include="src\Graphics\TextureManager.h" />
+    <ClInclude Include="src\Graphics\VAO.h" />
+    <ClInclude Include="src\Graphics\VBO.h" />
+    <ClInclude Include="src\DebugDraw\DebugDrawComponent.hpp" />
+    <ClInclude Include="src\DebugDraw\DebugDrawSystem.hpp" />
+    <ClInclude Include="src\DebugDrawComponent.hpp" />
+    <ClInclude Include="src\Model\Model.h" />
+    <ClInclude Include="src\Model\ModelRenderComponent.hpp" />
+    <ClInclude Include="src\Model\ModelSystem.hpp" />
+    <ClInclude Include="src\ModelRenderComponent.hpp" />
+    <ClInclude Include="src\TextRendering\Font.hpp" />
+    <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
+    <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
+    <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="src\TextRenderComponent.hpp" />
+    <ClInclude Include="src\IRenderComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -126,6 +162,12 @@
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
+    <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
+    <ClCompile Include="src\Graphics\IRenderComponent.cpp" />
+    <ClCompile Include="src\Graphics\Model\ModelRenderComponent.cpp" />
+    <ClCompile Include="src\Graphics\TextRendering\TextRenderComponent.cpp" />
+    <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
+    <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

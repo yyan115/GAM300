@@ -9,6 +9,7 @@ class Camera;
 
 class ModelRenderComponent : public IRenderComponent {
 public:
+	REFL_SERIALIZABLE
 	std::shared_ptr<Model> model;
 	std::shared_ptr<Shader> shader;
 	glm::mat4 transform;

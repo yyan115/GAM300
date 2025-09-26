@@ -1,5 +1,15 @@
 #pragma once
-
+/*********************************************************************************
+* @File			ReflectionBase.hpp
+* @Author		Soh Wei Jie, weijie.soh@digipen.edu
+* @Co-Author	-
+* @Date			26/9/2025
+* @Brief
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 #include "pch.h"
 
 #include <rapidjson/document.h>
@@ -10,7 +20,7 @@
 #include "Base64.hpp"
 
 #include <type_traits>
-//Sticking with this for now unless stated need to move to a consolidated API.hpp file
+
 #ifdef _WIN32
     #ifdef ENGINE_EXPORTS
         #define ENGINE_API __declspec(dllexport)

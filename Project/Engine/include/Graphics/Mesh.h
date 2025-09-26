@@ -7,12 +7,15 @@
 #include "Material.hpp"
 #include "Engine.h"
 
+#include "Reflection/ReflectionBase.hpp"
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif
 
 class Mesh {
 public:
+	REFL_SERIALIZABLE
 	std::vector<Vertex> vertices; 
 	std::vector<GLuint> indices; 
 	std::vector<std::shared_ptr<Texture>> textures;
