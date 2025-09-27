@@ -316,6 +316,9 @@ bool Engine::InitializeAssets() {
 }
 
 void Engine::Update() {
+
+    TimeManager::UpdateDeltaTime();
+    
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
