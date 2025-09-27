@@ -113,7 +113,7 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/include
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)

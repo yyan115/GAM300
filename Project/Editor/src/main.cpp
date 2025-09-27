@@ -31,7 +31,7 @@ int main() {
 
     while (Engine::IsRunning()) {
         //Update deltaTime at start of Frame
-        TimeManager::UpdateDeltaTime();
+        //TimeManager::UpdateDeltaTime();
 
         Engine::Update();
         GameManager::Update();
