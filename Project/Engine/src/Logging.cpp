@@ -140,7 +140,8 @@ namespace EngineLogging {
             return true;
         }
         catch (const std::exception& ex) {
-            std::cerr << "Failed to initialize logging system: " << ex.what() << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize logging system: ", ex.what(), "\n");
+            //std::cerr << "Failed to initialize logging system: " << ex.what() << std::endl;
             initialized = true; // Set to true anyway to avoid repeated attempts
             return false;
         }

@@ -145,7 +145,8 @@ void WindowManager::Exit() {
 
 void WindowManager::error_cb(int error, char const* description) {
 #ifdef _DEBUG
-    std::cerr << "GLFW error: " << description << ", " << error << std::endl;
+    ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW error: ", description, ", ", error, "\n");
+    //std::cerr << "GLFW error: " << description << ", " << error << std::endl;
 #else
     (void)error;        // Avoid unused parameter warning
     (void)description;  // Avoid unused parameter warning

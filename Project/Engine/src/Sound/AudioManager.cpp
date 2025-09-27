@@ -31,16 +31,18 @@ bool AudioManager::Initialize()
 	FMOD_RESULT result = FMOD_System_Create(&mSystem, FMOD_VERSION);
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to create FMOD system: " << FMOD_ErrorString(result) <<
-			std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create FMOD system: ", FMOD_ErrorString(result), "\n");
+		//std::cerr << "Failed to create FMOD system: " << FMOD_ErrorString(result) <<
+		//	std::endl;
 		return false;
 	}
 	// Initialize FMOD system
 	result = FMOD_System_Init(mSystem, 32, FMOD_INIT_NORMAL, nullptr);
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to initialize FMOD system: " << FMOD_ErrorString(result) <<
-			std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize FMOD system: ", FMOD_ErrorString(result), "\n");
+		//std::cerr << "Failed to initialize FMOD system: " << FMOD_ErrorString(result) <<
+		//	std::endl;
 		return false;
 	}
 	ENGINE_PRINT("AudioManager initialized successfully\n");
@@ -77,7 +79,8 @@ bool AudioManager::LoadSound(const std::string& name, const std::string& filePat
 {
 	if (!mSystem) 
 	{
-		std::cerr << "AudioManager not initialized" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "AudioManager not initialized\n");
+		//std::cerr << "AudioManager not initialized" << std::endl;
 		return false;
 	}
 	
@@ -94,7 +97,8 @@ bool AudioManager::LoadSound(const std::string& name, const std::string& filePat
 	// Check if file exists
 	if (!std::filesystem::exists(fullPath)) 
 	{
-		std::cerr << "Audio file not found: " << fullPath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Audio file not found: ", fullPath, "\n");
+		//std::cerr << "Audio file not found: " << fullPath << std::endl;
 		return false;
 	}
 	
@@ -110,8 +114,9 @@ bool AudioManager::LoadSound(const std::string& name, const std::string& filePat
 	
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to load sound '" << name << "': " << FMOD_ErrorString(result)
-			<< std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to load sound '", name, "': ", FMOD_ErrorString(result), "\n");
+		//std::cerr << "Failed to load sound '" << name << "': " << FMOD_ErrorString(result)
+		//	<< std::endl;
 		return false;
 	}
 	
@@ -135,7 +140,8 @@ void AudioManager::UnloadSound(const std::string& name)
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' not found." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' not found.\n");
+		//std::cerr << "Sound '" << name << "' not found." << std::endl;
 	}
 }
 
@@ -154,14 +160,16 @@ bool AudioManager::PlaySound(const std::string& name, float volume, float pitch)
 {
 	if (!mSystem) 
 	{
-		std::cerr << "AudioManager not initialized" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "AudioManager not initialized\n");
+		//std::cerr << "AudioManager not initialized" << std::endl;
 		return false;
 	}
 	
 	auto it = mSounds.find(name);
 	if (it == mSounds.end()) 
 	{
-		std::cerr << "Sound '" << name << "' not loaded" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' not loaded\n");
+		//std::cerr << "Sound '" << name << "' not loaded" << std::endl;
 		return false;
 	}
 	FMOD_CHANNEL* channel = nullptr;
@@ -169,9 +177,9 @@ bool AudioManager::PlaySound(const std::string& name, float volume, float pitch)
 	
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to play sound '" << name << "': " << FMOD_ErrorString(result)
-			<< std::endl;
-		return false;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to play sound '", name , "': ", FMOD_ErrorString(result), "\n");
+		//std::cerr << "Failed to play sound '" << name << "': " << FMOD_ErrorString(result)
+ 		return false;
 	}
 	
 	// Set volume and pitch

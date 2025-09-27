@@ -3,6 +3,7 @@
 #include <Scene/SceneManager.hpp>
 #include <Scene/SceneInstance.hpp>
 #include <filesystem>
+#include "Logging.hpp"
 
 SceneManager::~SceneManager() {
 	ExitScene();
@@ -78,7 +79,8 @@ void SceneManager::ReloadTempScene() {
 	}
 	else {
 		// Handle the case where the temp file doesn't exist
-		std::cerr << "Temp file does not exist: " << tempScenePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist: ", tempScenePath, "\n");
+		//std::cerr << "Temp file does not exist: " << tempScenePath << std::endl;
 		return; // Early exit if needed
 	}
 }

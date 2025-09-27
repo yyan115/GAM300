@@ -537,7 +537,8 @@ void AssetBrowserPanel::RefreshAssets() {
 
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Error refreshing assets: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error refreshing assets: ", e.what(), "\n");
+        //std::cerr << "[AssetBrowserPanel] Error refreshing assets: " << e.what() << std::endl;
     }
 
     UpdateBreadcrumbs();
@@ -677,7 +678,8 @@ void AssetBrowserPanel::DeleteAsset(const AssetInfo& asset) {
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to delete asset: ", e.what(), "\n");
+        //std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;
     }
 }
 
@@ -743,6 +745,7 @@ void AssetBrowserPanel::EnsureDirectoryExists(const std::string& directory) {
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to create directory " << directory << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to create directory ", directory, ": ", e.what(), "\n");
+        //std::cerr << "[AssetBrowserPanel] Failed to create directory " << directory << ": " << e.what() << std::endl;
     }
 }

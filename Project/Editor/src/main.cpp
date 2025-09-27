@@ -9,12 +9,10 @@
 
 
 int main() {
-    
-    
-    ("=== EDITOR BUILD ===", EngineLogging::LogLevel::Info, false);
+    ENGINE_PRINT("=== EDITOR BUILD ===");
 
     if (!glfwInit()) {
-        ENGINE_PRINT(EngineLogging::LogError, false, "Failed to initialize GLFW!");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW!");
         return -1;
     }
 
@@ -22,7 +20,8 @@ int main() {
 
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
-        std::cerr << "Faileasdd to create GLFW window!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window!\n");
+        //std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -50,6 +49,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
+
     ENGINE_PRINT("=== Editor ended ===\n");
     //std::cout << "=== Editor ended ===" << std::endl;
     return 0;

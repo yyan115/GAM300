@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <chrono>
+#include "Logging.hpp"
 
 // Static instance pointer for callbacks
 static DesktopPlatform* s_instance = nullptr;
@@ -28,7 +29,8 @@ DesktopPlatform::~DesktopPlatform() {
 
 bool DesktopPlatform::InitializeWindow(int width, int height, const char* title) {
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW\n");
+        //std::cerr << "Failed to initialize GLFW" << std::endl;
         return false;
     }
 
@@ -44,7 +46,8 @@ bool DesktopPlatform::InitializeWindow(int width, int height, const char* title)
     // Create window
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window\n");
+        //std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return false;
     }
@@ -188,7 +191,8 @@ bool DesktopPlatform::InitializeGraphics() {
     
     // Initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLAD\n");
+        //std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }
     
@@ -207,7 +211,8 @@ void* DesktopPlatform::GetNativeWindow() {
 
 // Static callback implementations
 void DesktopPlatform::ErrorCallback(int error, const char* description) {
-    std::cerr << "GLFW Error " << error << ": " << description << std::endl;
+    ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW Error ", error, ": ", description, "\n");
+    //std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
 
 void DesktopPlatform::FramebufferSizeCallback(GLFWwindow* window, int width, int height) {

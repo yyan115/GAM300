@@ -35,7 +35,8 @@ const unsigned int SCR_HEIGHT = 900;
 bool Engine::Initialize() {
 	// Initialize logging system first
 	if (!EngineLogging::Initialize()) {
-		std::cerr << "[Engine] Failed to initialize logging system!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize logging system!\n");
+		//std::cerr << "[Engine] Failed to initialize logging system!" << std::endl;
 		return false;
 	}
 	SetGameState(GameState::PLAY_MODE);

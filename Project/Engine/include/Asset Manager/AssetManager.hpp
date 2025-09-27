@@ -62,7 +62,8 @@ public:
 			return CompileAsset<Shader>(filePathStr);
 		}
 		else {
-			std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Attempting to compile unsupported asset extension: ", extension, "\n");
+			//std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
 			return false;
 		}
 	}
@@ -157,7 +158,8 @@ public:
 				MetaFilesManager::DeleteMetaFile(assetPath);
 			}
 			else {
-				std::cerr << "[AssetManager] ERROR: Trying to unload unsupported asset extension: " << extension << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Trying to unload unsupported asset extension: ", extension, "\n");
+				//std::cerr << "[AssetManager] ERROR: Trying to unload unsupported asset extension: " << extension << std::endl;
 			}
 
 			assetMetaMap.erase(it);
@@ -176,8 +178,8 @@ public:
 				return pair.first;
 			}
 		}
-
-		std::cerr << "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: " << assetPath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: ", assetPath, "\n");
+		//std::cerr << "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: " << assetPath << std::endl;
 		return GUID_128{};
 	}
 
@@ -187,7 +189,8 @@ public:
 			return it->second;
 		}
 		else {
-			std::cerr << "[AssetManager] ERROR: AssetMeta not found for GUID_128." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: AssetMeta not found for GUID_128.\n");
+			//std::cerr << "[AssetManager] ERROR: AssetMeta not found for GUID_128." << std::endl;
 			return nullptr;
 		}
 	}
@@ -238,7 +241,8 @@ public:
 		}
 
 		if (failedToUnload) {
-			std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion.\n");
+			//std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
 			return false;
 		}
 
@@ -266,7 +270,8 @@ public:
 		}
 
 		if (failedToUnload) {
-			std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion.\n");
+			//std::cerr << "[AssetManager] ERROR: Failed to delete resource file due to meta file deletion." << std::endl;
 			return false;
 		}
 
@@ -349,7 +354,8 @@ private:
 			std::shared_ptr<T> asset = std::make_shared<T>();
 			std::string compiledPath = asset->CompileToResource(filePath);
 			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 
@@ -369,7 +375,8 @@ private:
 			Texture texture{ texType, slot };
 			std::string compiledPath = texture.CompileToResource(filePath);
 			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 
