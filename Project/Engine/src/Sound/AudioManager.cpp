@@ -14,6 +14,7 @@
 #include "Sound/AudioManager.hpp"
 #include "../../Libraries/FMOD/inc/fmod.h"
 #include "../../Libraries/FMOD/inc/fmod_errors.h"
+#include "Logging.hpp"
 
 AudioManager::AudioManager(): mSystem(nullptr)
 {
@@ -42,7 +43,8 @@ bool AudioManager::Initialize()
 			std::endl;
 		return false;
 	}
-	std::cout << "AudioManager initialized successfully" << std::endl;
+	ENGINE_PRINT("AudioManager initialized successfully\n");
+	//std::cout << "AudioManager initialized successfully" << std::endl;
 	return true;
 }
 
@@ -58,7 +60,8 @@ void AudioManager::Shutdown()
 		FMOD_System_Close(mSystem);
 		FMOD_System_Release(mSystem);
 		mSystem = nullptr;
-		std::cout << "AudioManager shutdown complete" << std::endl;
+		ENGINE_PRINT("AudioManager shutdown complete\n");
+		//std::cout << "AudioManager shutdown complete" << std::endl;
 	}
 }
 
@@ -81,7 +84,8 @@ bool AudioManager::LoadSound(const std::string& name, const std::string& filePat
 	// Check if sound is already loaded
 	if (mSounds.find(name) != mSounds.end()) 
 	{
-		std::cout << "Sound '" << name << "' is already loaded" << std::endl;
+		ENGINE_PRINT("Sound '", name, "' is already loaded\n");
+		//std::cout << "Sound '" << name << "' is already loaded" << std::endl;
 		return true;
 	}
 	
@@ -112,7 +116,8 @@ bool AudioManager::LoadSound(const std::string& name, const std::string& filePat
 	}
 	
 	mSounds[name] = sound;
-	std::cout << "Loaded sound: " << name << " from " << fullPath << std::endl;
+	ENGINE_PRINT("Loaded sound: " , name , " from " , fullPath, "\n");
+	//std::cout << "Loaded sound: " << name << " from " << fullPath << std::endl;
 	
 	return true;
 }
@@ -125,7 +130,8 @@ void AudioManager::UnloadSound(const std::string& name)
 		FMOD_Sound_Release(it->second);
 		mSounds.erase(it);
 		mChannels.erase(name); // Also remove any associated channel
-		std::cout << "Unloaded sound: " << name << std::endl;
+		ENGINE_PRINT("Unloaded sound: " , name, "\n");
+		//std::cout << "Unloaded sound: " << name << std::endl;
 	}
 	else 
 	{
@@ -140,7 +146,8 @@ void AudioManager::UnloadAllSounds()
 		FMOD_Sound_Release(pair.second);
 	}
 	mSounds.clear();
-	std::cout << "Unloaded all sounds" << std::endl;
+	ENGINE_PRINT("Unloaded all sounds\n");
+	//std::cout << "Unloaded all sounds" << std::endl;
 }
 
 bool AudioManager::PlaySound(const std::string& name, float volume, float pitch) 
@@ -173,105 +180,98 @@ bool AudioManager::PlaySound(const std::string& name, float volume, float pitch)
 
 	// Store channel for later control
 	mChannels[name] = channel;
-	std::cout << "Playing sound: " << name << std::endl;
+	ENGINE_PRINT("Playing sound: ", name, "\n");
+	//std::cout << "Playing sound: " << name << std::endl;
 	return true;
 }
 
-void AudioManager::StopSound(const std::string& name) 
+void AudioManager::StopSound(const std::string& name)
 {
 	auto it = mChannels.find(name);
-	if (it != mChannels.end()) 
+	if (it != mChannels.end())
 	{
 		FMOD_Channel_Stop(it->second);
 		mChannels.erase(it);
-		std::cout << "Stopped sound: " << name << std::endl;
+		ENGINE_PRINT("Stopped sound: ", name);
 	}
-	else 
+	else
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' is not playing.\n");
 	}
 }
-
-void AudioManager::StopAllSounds() 
+void AudioManager::StopAllSounds()
 {
-	for (auto& pair : mChannels) 
+	for (auto& pair : mChannels)
 	{
 		FMOD_Channel_Stop(pair.second);
 	}
 	mChannels.clear();
-	std::cout << "Stopped all sounds" << std::endl;
+	ENGINE_PRINT("Stopped all sounds");
 }
-
-void AudioManager::PauseSound(const std::string& name, bool pause) 
+void AudioManager::PauseSound(const std::string& name, bool pause)
 {
 	auto it = mChannels.find(name);
-	if (it != mChannels.end()) 
+	if (it != mChannels.end())
 	{
 		FMOD_Channel_SetPaused(it->second, pause);
-		std::cout << (pause ? "Paused" : "Resumed") << " sound: " << name << std::endl;
+		ENGINE_PRINT((pause ? "Paused" : "Resumed"), " sound: ", name, "\n");
 	}
-	else 
+	else
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' is not playing.\n");
 	}
 }
-
-void AudioManager::PauseAllSounds(bool pause) 
+void AudioManager::PauseAllSounds(bool pause)
 {
-	for (auto& pair : mChannels) 
+	for (auto& pair : mChannels)
 	{
 		FMOD_Channel_SetPaused(pair.second, pause);
 	}
-	std::cout << (pause ? "Paused" : "Resumed") << " all sounds" << std::endl;
+	ENGINE_PRINT((pause ? "Paused" : "Resumed"), " all sounds\n");
 }
-
-
 void AudioManager::SetMasterVolume(float volume) {
-	if (mSystem) 
+	if (mSystem)
 	{
 		FMOD_CHANNELGROUP* masterGroup = nullptr;
 		FMOD_RESULT result = FMOD_System_GetMasterChannelGroup(mSystem, &masterGroup);
-		
-		if (result == FMOD_OK && masterGroup) 
+
+		if (result == FMOD_OK && masterGroup)
 		{
 			FMOD_ChannelGroup_SetVolume(masterGroup, volume);
-			std::cout << "Set master volume to: " << volume << std::endl;
+			ENGINE_PRINT("Set master volume to: ", volume, "\n");
 		}
-		else 
+		else
 		{
-			std::cerr << "Failed to get master channel group: " << FMOD_ErrorString(result) << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to get master channel group: ", FMOD_ErrorString(result), "\n");
 		}
 	}
 }
-
-void AudioManager::SetSoundVolume(const std::string& name, float volume) 
+void AudioManager::SetSoundVolume(const std::string& name, float volume)
 {
 	auto it = mChannels.find(name);
-	if (it != mChannels.end()) 
+	if (it != mChannels.end())
 	{
 		FMOD_Channel_SetVolume(it->second, volume);
-		std::cout << "Set volume of sound '" << name << "' to: " << volume << std::endl;
+		ENGINE_PRINT("Set volume of sound '", name, "' to: ", volume, "\n");
 	}
-	else 
+	else
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' is not playing.\n");
 	}
 }
-
-void AudioManager::SetSoundPitch(const std::string& name, float pitch) 
+void AudioManager::SetSoundPitch(const std::string& name, float pitch)
 {
 	auto it = mChannels.find(name);
-	if (it != mChannels.end()) 
+	if (it != mChannels.end())
 	{
 		FMOD_Channel_SetPitch(it->second, pitch);
-		std::cout << "Set pitch of sound '" << name << "' to: " << pitch << std::endl;
+		ENGINE_PRINT("Set pitch of sound '", name, "' to: ", pitch, "\n");
 	}
-	else 
+	else
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Sound '", name, "' is not playing.\n");
 	}
 }
-
 
 bool AudioManager::IsSoundLoaded(const std::string& name) const 
 {
@@ -333,7 +333,8 @@ void AudioManager::CheckFMODError(int result, const std::string& operation) cons
 	FMOD_RESULT fmodResult = static_cast<FMOD_RESULT>(result);
 	if (fmodResult != FMOD_OK)
 	{
-		std::cerr << "FMOD error during " << operation << ": " << FMOD_ErrorString(fmodResult) << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "FMOD error during ", operation, ": ", FMOD_ErrorString(fmodResult), "\n");
+		//std::cerr << "FMOD error during " << operation << ": " << FMOD_ErrorString(fmodResult) << std::endl;
 	}
 }
 

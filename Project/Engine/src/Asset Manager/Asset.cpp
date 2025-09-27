@@ -4,6 +4,7 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#include "Logging.hpp"
 
 std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const std::string& assetPath, const std::string& resourcePath) {
 	std::string metaFilePath = assetPath + ".meta";
@@ -38,8 +39,8 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	std::ofstream metaFile(metaFilePath);
 	metaFile << buffer.GetString();
 	metaFile.close();
-
-	std::cout << "[IAsset] Generated base meta file " << metaFilePath << std::endl;
+	ENGINE_PRINT("[IAsset] Generated base meta file ", metaFilePath, "\n");
+	//std::cout << "[IAsset] Generated base meta file " << metaFilePath << std::endl;
 
 	MetaFilesManager::AddGUID128Mapping(assetPath, guid128);
 

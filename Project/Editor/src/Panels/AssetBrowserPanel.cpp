@@ -7,6 +7,7 @@
 #include <cmath>
 #include "Asset Manager/AssetManager.hpp"
 #include "Graphics/TextureManager.h"
+#include "Logging.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -40,7 +41,8 @@ AssetBrowserPanel::AssetBrowserPanel()
     // Initialize file watcher for hot-reloading
     InitializeFileWatcher();
 
-    std::cout << "[AssetBrowserPanel] Initialized with root directory: " << rootAssetDirectory << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Initialized with root directory: ", rootAssetDirectory, "\n");
+    //std::cout << "[AssetBrowserPanel] Initialized with root directory: " << rootAssetDirectory << std::endl;
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
@@ -56,11 +58,12 @@ void AssetBrowserPanel::InitializeFileWatcher() {
                 OnFileChanged(path, event);
             }
         );
-
-        std::cout << "[AssetBrowserPanel] File watcher initialized for: " << rootAssetDirectory << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] File watcher initialized for: ", rootAssetDirectory, "\n");
+        //std::cout << "[AssetBrowserPanel] File watcher initialized for: " << rootAssetDirectory << std::endl;
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to initialize file watcher: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to initialize file watcher: ", e.what(), "\n");
+        //std::cerr << "[AssetBrowserPanel] Failed to initialize file watcher: " << e.what() << std::endl;
     }
 }
 
@@ -79,8 +82,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     case filewatch::Event::renamed_old: eventStr = "RENAMED_OLD"; break;
     case filewatch::Event::renamed_new: eventStr = "RENAMED_NEW"; break;
     }
-
-    std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] File ", eventStr, ": ", relativePath, "\n");
+    //std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
 
     // Build full path from rootAssetDirectory + relativePath
     std::filesystem::path fullPathPath = std::filesystem::path(rootAssetDirectory) / relativePath;
@@ -94,7 +97,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Filesystem check error for " << fullPath << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Filesystem check error for ", fullPath, ": ", e.what(), "\n");
+        //std::cerr << "[AssetBrowserPanel] Filesystem check error for " << fullPath << ": " << e.what() << std::endl;
     }
 
     // Only process valid asset files
@@ -110,35 +114,33 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
-            std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
+            ENGINE_PRINT("[AssetWatcher] Detected change in asset: ", fullPath, ". Recompiling...\n");
             AssetManager::GetInstance().CompileAsset(fullPath);
         }
         else if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
+            ENGINE_PRINT("[AssetWatcher] Detected removal of asset: ", fullPath, ". Unloading...\n");
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_old) {
-            std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
+            ENGINE_PRINT("[AssetWatcher] Detected rename (old name) of asset: ", fullPath, ". Unloading...\n");
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_new) {
-            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
+            ENGINE_PRINT("[AssetWatcher] Detected rename (new name) of asset: ", fullPath, ". Recompiling...\n");
             AssetManager::GetInstance().CompileAsset(fullPath);
         }
-
         QueueRefresh();
     }
     else if (AssetManager::GetInstance().IsExtensionMetaFile(extension)) {
         if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetWatcher] WARNING: Detected removal of .meta file: ", fullPath, ". Deleting associated resource...\n");
             AssetManager::GetInstance().HandleMetaFileDeletion(fullPath);
-
             QueueRefresh();
         }
     }
     else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
         if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
+            ENGINE_PRINT("[AssetWatcher] WARNING: Detected removal of resource file: " ,fullPath , ". Deleting associated meta file...\n");
             AssetManager::GetInstance().HandleResourceFileDeletion(fullPath);
 
             QueueRefresh();
@@ -191,7 +193,7 @@ void AssetBrowserPanel::QueueRefresh() {
 void AssetBrowserPanel::OnImGuiRender() {
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
-        std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] Refreshing assets due to file changes.\n"); 
         RefreshAssets();
     }
 
@@ -446,9 +448,12 @@ void AssetBrowserPanel::RenderAssetGrid() {
 
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else std::cout << "[AssetBrowserPanel] Opening asset: "
-                << "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")"
-                << std::endl;
+            else 
+                //std::cout << "[AssetBrowserPanel] Opening asset: "
+                //<< "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")"
+                //<< std::endl;
+                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
+
         }
 
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -628,7 +633,8 @@ bool AssetBrowserPanel::IsAssetSelected(const GUID_128& guid) const {
 
 void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     if (ImGui::MenuItem("Open")) {
-        std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] Opening: ", asset.fileName, "\n");
+        //std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
     }
 
     ImGui::Separator();
@@ -680,7 +686,8 @@ void AssetBrowserPanel::RevealInExplorer(const AssetInfo& asset) {
     std::string command = "explorer /select,\"" + asset.filePath + "\"";
     system(command.c_str());
 #else
-    std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Reveal in explorer not implemented for this platform\n");
+    //std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
 #endif
 }
 
@@ -699,7 +706,8 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
         CloseClipboard();
     }
 #else
-    std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
+    //std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
 #endif
 }
 

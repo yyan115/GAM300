@@ -9,6 +9,7 @@
 #include "WindowManager.hpp"
 #include "EditorState.hpp"
 #include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
+#include "Logging.hpp"
 
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
@@ -19,6 +20,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -60,8 +62,8 @@ void GUIManager::Initialize() {
 	// Set editor to edit mode on startup (engine defaults to play mode for game builds)
 	EditorState& editorState = EditorState::GetInstance();
 	editorState.SetState(EditorState::State::EDIT_MODE);
-
-	std::cout << "[GUIManager] Initialized with panel-based architecture" << std::endl;
+	ENGINE_PRINT("[GUIManager] Initialized with panel - based architecture\n");
+	//std::cout << "[GUIManager] Initialized with panel-based architecture" << std::endl;
 }
 
 
@@ -118,8 +120,8 @@ void GUIManager::Exit() {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
-	std::cout << "[GUIManager] Shutdown complete" << std::endl;
+	ENGINE_PRINT("[GUIManager] Shutdown complete\n");
+	//std::cout << "[GUIManager] Shutdown complete" << std::endl;
 }
 
 void GUIManager::SetupDefaultPanels() {
@@ -157,8 +159,8 @@ void GUIManager::SetupDefaultPanels() {
 	auto assetBrowserPanel = std::make_shared<AssetBrowserPanel>();
 	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
 	panelManager->RegisterPanel(assetBrowserPanel);
-
-	std::cout << "[GUIManager] Default panels registered" << std::endl;
+	ENGINE_PRINT("[GUIManager] Default panels registered\n");
+	//std::cout << "[GUIManager] Default panels registered" << std::endl;
 }
 
 void GUIManager::CreateDockspace() {

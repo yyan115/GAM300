@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <filesystem>
 #include <thread>
+#include "Logging.hpp"
 //#include <FileWatch.hpp>
 #include "../Engine.h"
 #include "GUID.hpp"
@@ -34,7 +35,8 @@ public:
 
 		// Check if the compiled resource file exists. If not, we need to recompile the asset.
 		if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
-			std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
+			ENGINE_PRINT("[AssetManager] WARNING: Compiled resource file missing for asset: ", assetPath, ". Recompiling...\n");
+			//std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
 			CompileAsset(assetPath);
 		}
 
@@ -123,7 +125,8 @@ public:
 
 		// Fallback if the user accidentally deleted the .meta file.
 		if (!MetaFilesManager::MetaFileExists(assetPath)) {
-			std::cout << "[AssetManager] WARNING: .meta file missing for asset: " << assetPath << ". Resulting to fallback." << std::endl;
+			ENGINE_PRINT("[AssetManager] WARNING: .meta file missing for asset: ", assetPath, ". Resulting to fallback.\n");
+			//std::cout << "[AssetManager] WARNING: .meta file missing for asset: " << assetPath << ". Resulting to fallback." << std::endl;
 			guid = GetGUID128FromAssetMeta(assetPath);
 		}
 		else {
@@ -158,7 +161,8 @@ public:
 			}
 
 			assetMetaMap.erase(it);
-			std::cout << "[AssetManager] Unloaded asset: " << assetPath << std::endl << std::endl;
+			ENGINE_PRINT("[AssetManager] Unloaded asset: ", assetPath, "\n\n");
+			//std::cout << "[AssetManager] Unloaded asset: " << assetPath << std::endl << std::endl;
 		}
 	}
 
@@ -222,7 +226,8 @@ public:
 				GUID_128 guid = pair.first;
 
 				if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-					std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
+					ENGINE_PRINT("[AssetManager] Successfully deleted resource file and its associated meta file: ", resourcePath, ", ", metaFilePath, "\n");
+					//std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
 					return true;
 				}
 				else {
@@ -249,7 +254,8 @@ public:
 				GUID_128 guid = pair.first;
 
 				if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-					std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaPath << std::endl;
+					ENGINE_PRINT("[AssetManager] Successfully deleted resource file and its associated meta file: ", resourcePath, ", ", metaPath, "\n");
+					//std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaPath << std::endl;
 					return true;
 				}
 				else {
@@ -349,7 +355,8 @@ private:
 
 			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+			//std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
 			return true;
 		}
 
@@ -369,7 +376,8 @@ private:
 			std::shared_ptr<AssetMeta> assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+			//std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
 			return true;
 		}
 
