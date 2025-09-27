@@ -73,6 +73,14 @@ public:
 	
 	void Draw(Shader& shader, const Camera& camera);
 
+	// Helper functions for Bones
+	auto& GetBoneInfoMap() { return mBoneInfoMap; }
+	int& GetBoneCount() { return mBoneCounter; }
+
+	void SetVertexBoneDataToDefault(Vertex& vertex);
+	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
+	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+
 private:
 	//void loadModel(const std::string& path);
 	void ProcessNode(aiNode* node, const aiScene* scene);
@@ -83,14 +91,4 @@ private:
 	// Bone data
 	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
 	int mBoneCounter = 0;
-
-	// Helper functions for Bones
-	auto& GetBoneInfoMap() { return mBoneInfoMap; }
-	int& GetBoneCount() { return mBoneCounter; }
-
-	void SetVertexBoneDataToDefault(Vertex& vertex);
-	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
-	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
-
-
 };
