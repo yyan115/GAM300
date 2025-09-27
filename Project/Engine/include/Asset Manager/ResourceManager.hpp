@@ -7,6 +7,7 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
 #include "Utilities/FileUtilities.hpp"
+#include "Sound/Audio.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -122,6 +123,9 @@ public:
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
 			return UnloadResource<Shader>(guid, assetPath, resourcePath);
 		}
+		else if (audioExtensions.find(extension) != audioExtensions.end()) {
+			return UnloadResource<Audio>(guid, assetPath, resourcePath);
+		}
 		else {
 			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
@@ -157,7 +161,7 @@ public:
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
-	const std::unordered_set<std::string> audioExtensions = {  };
+	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg" };
 	const std::unordered_set<std::string> fontExtensions = { ".font" };
 	const std::unordered_set<std::string> modelExtensions = { ".mesh" };
 	const std::unordered_set<std::string> shaderExtensions = { ".shader" };

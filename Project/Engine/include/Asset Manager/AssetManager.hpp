@@ -13,6 +13,7 @@
 #include <Graphics/Model/Model.h>
 #include "Graphics/TextRendering/Font.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Sound/Audio.hpp"
 
 class ENGINE_API AssetManager {
 public:
@@ -97,47 +98,6 @@ private:
 
 	AssetManager() {
 		InitializeSupportedExtensions();
-		//assetWatcher = std::make_unique<filewatch::FileWatch<std::string>>(
-		//	"Resources",
-		//	[this](const std::string& path, const filewatch::Event event_type) {
-		//		std::filesystem::path pathObj("Resources/" + path);
-		//		std::string fullPath = pathObj.generic_string();
-		//		std::string extension = pathObj.extension().generic_string();
-		//		if (IsAssetExtensionSupported(extension)) {
-		//			// Sleep this thread for a while to allow the OS to finish the file operation.
-		//			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-		//			if (event_type == filewatch::Event::modified || event_type == filewatch::Event::added) {
-		//				std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Recompiling..." << std::endl;
-		//				AssetManager::GetInstance().CompileAsset(fullPath);
-		//			}
-		//			else if (event_type == filewatch::Event::removed) {
-		//				std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
-		//				AssetManager::GetInstance().UnloadAsset(fullPath);
-		//			}
-		//			else if (event_type == filewatch::Event::renamed_old) {
-		//				std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
-		//				AssetManager::GetInstance().UnloadAsset(fullPath);
-		//			}
-		//			else if (event_type == filewatch::Event::renamed_new) {
-		//				std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Recompiling..." << std::endl;
-		//				AssetManager::GetInstance().CompileAsset(fullPath);
-		//			}
-		//		}
-		//		else if (IsExtensionMetaFile(extension)) {
-		//			if (event_type == filewatch::Event::removed) {
-		//				std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
-		//				HandleMetaFileDeletion(fullPath);
-		//			}
-		//		}
-		//		else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
-		//			if (event_type == filewatch::Event::removed) {
-		//				std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
-		//				HandleResourceFileDeletion(fullPath);
-		//			}
-		//		}
-		//	}
-		//);
 	}
 
 	///**
@@ -184,10 +144,10 @@ private:
 				else {
 					std::filesystem::path p(filePath);
 					std::string extension = p.extension().generic_string();
-					//else if (audioExtensions.find(extension) != audioExtensions.end()) {
-					//	return CompileAsset<Audio>(filePathStr);
-					//}
-					if (modelExtensions.find(extension) != modelExtensions.end()) {
+					if (audioExtensions.find(extension) != audioExtensions.end()) {
+						ResourceManager::GetInstance().GetResource<Audio>(filePath, true);
+					}
+					else if (modelExtensions.find(extension) != modelExtensions.end()) {
 						ResourceManager::GetInstance().GetResource<Model>(filePath, true);
 					}
 				}

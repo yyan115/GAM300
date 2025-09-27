@@ -94,6 +94,7 @@
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
+    <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
@@ -157,6 +158,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
+    <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
