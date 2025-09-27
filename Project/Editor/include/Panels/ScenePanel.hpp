@@ -23,6 +23,8 @@ public:
     void OnImGuiRender() override;
 
 private:
+    void AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize);
+
     // ImGuizmo state (now managed by PlayControlPanel)
     ImGuizmo::MODE gizmoMode = ImGuizmo::WORLD;
     

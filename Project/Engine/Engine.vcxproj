@@ -57,6 +57,7 @@
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
+    <ClInclude Include="include\PrefabIO.hpp" />
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="include\Platform\AndroidPlatform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
@@ -124,6 +126,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
+    <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />

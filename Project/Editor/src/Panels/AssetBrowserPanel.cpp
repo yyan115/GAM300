@@ -8,6 +8,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Graphics/TextureManager.h"
 #include "Prefab.hpp"
+#include "PrefabIO.hpp"
 #include "PrefabComponent.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include <rapidjson/writer.h>
@@ -27,6 +28,29 @@ static constexpr float THUMBNAILMINSIZE = 48.0f;
 static constexpr float THUMBNAILPADDING = 8.0f;
 static constexpr float LABELHEIGHT = 18.0f;
 
+// Helper: add a component T to the JSON if the entity has it.
+// JSON layout:  { "<TypeName>": { "type": "...", "data": ... } }
+template <typename T>
+static void AddIfHas(ECSManager& ecs, Entity e, rapidjson::Document& doc, const char* jsonKey)
+{
+    if (!ecs.HasComponent<T>(e)) return;
+
+    const T& comp = ecs.GetComponent<T>(e);
+
+    // Use your reflection to serialize to text, then parse into a Value.
+    std::stringstream ss;
+    TypeResolver<T>::Get()->Serialize(&comp, ss);
+
+    rapidjson::Document tmp;
+    tmp.Parse(ss.str().c_str());              // {"type":"...","data":...}
+
+    auto& alloc = doc.GetAllocator();
+    rapidjson::Value key(jsonKey, alloc);
+    rapidjson::Value val(tmp, alloc);         // deep-copy into doc’s allocator
+
+    doc.AddMember(key, val, alloc);
+}
+
 static std::filesystem::path MakeUniquePath(std::filesystem::path p)
 {
     using namespace std::filesystem;
@@ -39,41 +63,6 @@ static std::filesystem::path MakeUniquePath(std::filesystem::path p)
         path cand = dir / (stem.string() + " (" + std::to_string(i) + ")" + ext.string());
         if (!exists(cand)) return cand;
     }
-}
-
-static void SaveEntityAsPrefab(ECSManager& ecs, AssetManager& assets,
-    Entity entity, const std::filesystem::path& dstPath)
-{
-    static PrefabID nextPrefabId = 1;
-    static AssetID  nextAssetId = 1;
-
-    Prefab prefab{ nextPrefabId++, nextAssetId++ };
-
-    // Add components you support, e.g.:
-    // TryAdd<NameComponent>(ecs, entity, prefab);
-    // TryAdd<TransformComponent>(ecs, entity, prefab);
-    // TryAdd<MeshRenderer>(ecs, entity, prefab);
-    // ...
-
-    // Build a RapidJSON document and serialize to string
-    rapidjson::Document doc = prefab.ToDocument();
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    doc.Accept(writer);
-
-    std::filesystem::create_directories(dstPath.parent_path());
-    std::ofstream f(dstPath, std::ios::binary);
-    if (!f) {
-        std::cerr << "[AssetBrowserPanel] Failed to open prefab for write: " << dstPath << "\n";
-        return;
-    }
-    f.write(sb.GetString(), static_cast<std::streamsize>(sb.GetSize()));
-    f.close();
-
-    // Optionally register in your AssetManager
-    // assets.RegisterPrefab(dstPath.string(), prefab.getAssetId());
-
-    std::cout << "[AssetBrowserPanel] Saved prefab: " << dstPath << "\n";
 }
 
 AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128& g, bool isDir)
@@ -430,110 +419,99 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     ImGui::PopID();
 }
 
-void AssetBrowserPanel::RenderAssetGrid() {
+void AssetBrowserPanel::RenderAssetGrid()
+{
+    ImGui::PushID(this); // unique ID space for this panel
+
+    // Header
     ImGui::Text("Assets in: %s", GetRelativePath(currentDirectory).c_str());
     ImGui::Separator();
 
-    // ---- layout-neutral background drop target covering the whole grid ----
-    {
-        // Build rect that spans the content region of this child window
-        const ImVec2 win_pos = ImGui::GetWindowPos();
-        const ImVec2 cr_min = ImGui::GetWindowContentRegionMin();
-        const ImVec2 cr_max = ImGui::GetWindowContentRegionMax();
-        const ImVec2 min = ImVec2(win_pos.x + cr_min.x, win_pos.y + cr_min.y);
-        const ImVec2 max = ImVec2(win_pos.x + cr_max.x, win_pos.y + cr_max.y);
-        const ImRect dropRect(min, max);
-        const ImGuiID dropId = ImGui::GetID("##AssetGridDropBg");
+    // ----------------------- GRID -----------------------
+    const float availX = ImGui::GetContentRegionAvail().x;
+    const float pad = THUMBNAILPADDING;
 
-        if (ImGui::BeginDragDropTargetCustom(dropRect, dropId)) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB")) {
-                if (payload->DataSize == sizeof(Entity)) {
-                    Entity dropped = *reinterpret_cast<const Entity*>(payload->Data);
-
-                    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-                    std::string niceName;
-                    if (ecs.HasComponent<NameComponent>(dropped))
-                        niceName = ecs.GetComponent<NameComponent>(dropped).name;
-                    if (niceName.empty())
-                        niceName = "Entity_" + std::to_string(static_cast<uint64_t>(dropped));
-
-                    std::filesystem::path dst =
-                        std::filesystem::path(currentDirectory) / (niceName + ".prefab");
-                    dst = MakeUniquePath(dst);
-
-                    SaveEntityAsPrefab(ecs, AssetManager::GetInstance(), dropped, dst);
-                    RefreshAssets();
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-    }
-    // ----------------------------------------------------------------------
-
-    // Use content region width as the source of truth
-    float avail = ImGui::GetContentRegionAvail().x;
-    float pad = THUMBNAILPADDING;
-
-    // Compute columns from available width using the base thumbnail size,
-    // then compute an even thumbnail size so items fill the row.
-    int cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (THUMBNAILBASESIZE + pad))));
-    float thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
+    int   cols = std::max(1, static_cast<int>(std::floor((availX + pad) / (THUMBNAILBASESIZE + pad))));
+    float thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     if (thumb < THUMBNAILMINSIZE) {
         thumb = THUMBNAILMINSIZE;
-        cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (thumb + pad))));
-        thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
+        cols = std::max(1, static_cast<int>(std::floor((availX + pad) / (thumb + pad))));
+        thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     }
 
     bool anyItemClickedInGrid = false;
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
-    for (const auto& asset : currentAssets) {
+    for (const auto& asset : currentAssets)
+    {
         if (!PassesFilter(asset)) continue;
 
         ImGui::BeginGroup();
         ImGui::PushID(asset.filePath.c_str());
 
-        // Hitbox: thumbnail + label
+        // unified hitbox = thumbnail + label
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
-        bool hovered = ImGui::IsItemHovered();
-        bool clicked = ImGui::IsItemClicked();
+        const bool hovered = ImGui::IsItemHovered();
+        const bool clicked = ImGui::IsItemClicked();
 
+        // drag source: prefab -> scene
+        if (!asset.isDirectory) {
+            std::string lowerExt = asset.extension;
+            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+            if (lowerExt == ".prefab" && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
+                    ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
+                        static_cast<int>(absPath.size()) + 1);
+                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+        }
+
+        // draw the tile
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();
         ImVec2 imgMin = rectMin;
         ImVec2 imgMax = ImVec2(rectMin.x + thumb, rectMin.y + thumb);
+        dl->AddRectFilled(imgMin, imgMax, IM_COL32(80, 80, 80, 255), 4.0f);
+        dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
 
-        // Thumbnail fallback
-        ImU32 bg = IM_COL32(80, 80, 80, 255);
-        ImU32 border = IM_COL32(100, 100, 100, 255);
-        dl->AddRectFilled(imgMin, imgMax, bg, 4.0f);
-        dl->AddRect(imgMin, imgMax, border, 4.0f);
+        // text inside tile
+        std::string shortName = asset.fileName;
+        if (shortName.size() > 12) shortName = shortName.substr(0, 9) + "...";
+        ImVec2 textSize = ImGui::CalcTextSize(shortName.c_str());
+        ImVec2 textPos = ImVec2(imgMin.x + (thumb - textSize.x) * 0.5f,
+            imgMin.y + (thumb - textSize.y) * 0.5f);
+        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), shortName.c_str());
 
-        // Centered short name inside thumbnail
-        std::string name = asset.fileName;
-        const size_t maxChars = 12;
-        if (name.size() > maxChars) name = name.substr(0, maxChars - 3) + "...";
-        ImVec2 textSize = ImGui::CalcTextSize(name.c_str());
-        ImVec2 textPos(imgMin.x + (thumb - textSize.x) * 0.5f, imgMin.y + (thumb - textSize.y) * 0.5f);
-        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), name.c_str());
-
-        // Label below thumbnail
+        // label below
         ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
         ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + thumb);
         ImGui::TextWrapped("%s", asset.fileName.c_str());
+        if (!asset.isDirectory) {
+            std::string lowerExt = asset.extension;
+            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+            if (lowerExt == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
+                    ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
+                        static_cast<int>(absPath.size()) + 1);
+                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+        }
         ImGui::PopTextWrapPos();
 
-        // Selection / activation
+        // selection visuals
         if (clicked) {
-            bool ctrl = io.KeyCtrl;
-            SelectAsset(asset.guid, ctrl);
+            SelectAsset(asset.guid, io.KeyCtrl);
             anyItemClickedInGrid = true;
         }
-
-        bool selected = IsAssetSelected(asset.guid);
-        if (selected) {
+        if (IsAssetSelected(asset.guid)) {
             dl->AddRectFilled(rectMin, rectMax, IM_COL32(100, 150, 255, 50));
             dl->AddRect(rectMin, rectMax, IM_COL32(100, 150, 255, 120), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
@@ -541,51 +519,34 @@ void AssetBrowserPanel::RenderAssetGrid() {
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
 
+        // double click
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
             else std::cout << "[AssetBrowserPanel] Opening asset: "
-                << "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")"
-                << std::endl;
+                << "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")\n";
         }
 
+        // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             SelectAsset(asset.guid, false);
             ImGui::OpenPopup("AssetContextMenu");
         }
 
-        // --- DRAG SOURCE for prefab files (.prefab) ---
-        if (!asset.isDirectory) {
-            std::string lowerExt = asset.extension;
-            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
-
-            if (lowerExt == ".prefab" && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-            {
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                    // send a null-terminated C string (ImGui copies the buffer)
-                    const char* path_cstr = asset.filePath.c_str();
-                    ImGui::SetDragDropPayload("PREFAB_PATH",
-                        path_cstr,
-                        static_cast<size_t>(std::strlen(path_cstr) + 1));
-                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
-                    ImGui::EndDragDropSource();
-                }
-            }
-        }
-        // ----------------------------------------------
-
         ImGui::PopID();
         ImGui::EndGroup();
 
+        // wrap
         ++index;
         if ((index % cols) != 0) ImGui::SameLine(0.0f, pad);
     }
 
+    // clear selection by clicking empty space
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemClickedInGrid && ImGui::IsWindowHovered()) {
         selectedAssets.clear();
         lastSelectedAsset = GUID_128{ 0, 0 };
     }
 
-    // Context menu
+    // context menu
     if (ImGui::BeginPopup("AssetContextMenu")) {
         AssetInfo* contextAsset = nullptr;
         for (auto& a : currentAssets) {
@@ -594,6 +555,73 @@ void AssetBrowserPanel::RenderAssetGrid() {
         if (contextAsset) ShowAssetContextMenu(*contextAsset);
         ImGui::EndPopup();
     }
+
+    // ---------------- BACKGROUND DROP OVERLAY (placed LAST) ----------------
+    {
+        // Only show overlay while an ENTITY drag is active
+        const ImGuiPayload* active = ImGui::GetDragDropPayload();
+        const bool entityDragActive =
+            active && (active->IsDataType("ENTITY_AS_PREFAB") || active->IsDataType("HIERARCHY_ENTITY"));
+
+        if (entityDragActive)
+        {
+            // Window content rect in screen coords
+            const ImVec2 win_pos = ImGui::GetWindowPos();
+            const ImVec2 cr_min = ImGui::GetWindowContentRegionMin();
+            const ImVec2 cr_max = ImGui::GetWindowContentRegionMax();
+            const ImVec2 min(win_pos.x + cr_min.x, win_pos.y + cr_min.y);
+            const ImVec2 max(win_pos.x + cr_max.x, win_pos.y + cr_max.y);
+            const ImVec2 size(max.x - min.x, max.y - min.y);
+
+            // Visual cue (border + faint fill when hovered)
+            const bool hovering = ImGui::IsMouseHoveringRect(min, max, true);
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            if (hovering) {
+                dl->AddRectFilled(min, max, IM_COL32(100, 150, 255, 25), 6.0f); // subtle fill
+            }
+            dl->AddRect(min, max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+
+            // Hittable (invisible) item that receives the drop
+            ImGui::SetCursorScreenPos(min);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
+            ImGui::InvisibleButton("##GridDropOverlay", size);
+            ImGui::PopStyleVar();
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                // Prefer ENTITY_AS_PREFAB, but fall back to HIERARCHY_ENTITY
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB");
+                if (!payload) payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY");
+
+                if (payload && payload->Data && payload->DataSize == sizeof(Entity))
+                {
+                    const Entity dropped = *reinterpret_cast<const Entity*>(payload->Data);
+                    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+                    std::string niceName;
+                    if (ecs.HasComponent<NameComponent>(dropped))
+                        niceName = ecs.GetComponent<NameComponent>(dropped).name;
+                    if (niceName.empty())
+                        niceName = "Entity_" + std::to_string(static_cast<uint64_t>(dropped));
+
+                    std::filesystem::path dst = std::filesystem::path(currentDirectory) / (niceName + ".prefab");
+                    dst = MakeUniquePath(dst);
+
+                    const std::string absDst = std::filesystem::absolute(dst).generic_string();
+                    const bool ok = SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), dropped, absDst);
+
+                    if (ok)  std::cout << "[AssetBrowserPanel] Saved prefab: " << absDst << "\n";
+                    else     std::cerr << "[AssetBrowserPanel] Failed to save prefab: " << absDst << "\n";
+
+                    RefreshAssets();
+                }
+                ImGui::EndDragDropTarget();
+            }
+        }
+    }
+    // ----------------------------------------------------------------------
+
+    ImGui::PopID();
 }
 
 void AssetBrowserPanel::RefreshAssets() {
