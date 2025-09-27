@@ -9,10 +9,12 @@
 
 
 int main() {
-    ENGINE_PRINT("=== EDITOR BUILD ===", EngineLogging::LogLevel::Info, false);
+    
+    
+    ("=== EDITOR BUILD ===", EngineLogging::LogLevel::Info, false);
 
     if (!glfwInit()) {
-        ENGINE_PRINT("Failed to initialize GLFW!", EngineLogging::LogLevel::Error, false);
+        ENGINE_PRINT(EngineLogging::LogError, false, "Failed to initialize GLFW!");
         return -1;
     }
 

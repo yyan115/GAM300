@@ -77,10 +77,73 @@ namespace EngineLogging {
     void ENGINE_API LogCritical(const std::string& message);
 
     void ENGINE_API PrintOutput(const std::string& message, LogLevel logType = LogLevel::Info, bool toEditor = true);
+
+
+    // Helper to convert LogLevel to string
+    inline std::string LogLevelToString(LogLevel level) {
+        switch (level) {
+        case LogLevel::Trace:    return "TRACE";
+        case LogLevel::Debug:    return "DEBUG";
+        case LogLevel::Info:     return "INFO";
+        case LogLevel::Warn:     return "WARN";
+        case LogLevel::Error:    return "ERROR";
+        case LogLevel::Critical: return "CRITICAL";
+        default:                 return "UNKNOWN";
+        }
+    }
+
+
+    // Helper to convert various types to string
+    template<typename T>
+    std::string ToString(T&& value) {
+        using DecayedT = std::decay_t<T>;
+
+        if constexpr (std::is_same_v<DecayedT, LogLevel>) {
+            return LogLevelToString(value);
+        }
+        else if constexpr (std::is_arithmetic_v<DecayedT>) {
+            return std::to_string(value);
+        }
+        else if constexpr (std::is_convertible_v<T, std::string>) {
+            return std::string(value);
+        }
+        else {
+            std::ostringstream oss;
+            oss << value;
+            return oss.str();
+        }
+    }
+
+    // Default - prints to EDITOR (Info level)
+    template<typename... Args>
+    void PrintEditorVariadic(Args&&... args) {
+        std::ostringstream oss;
+        (oss << ... << ToString(std::forward<Args>(args)));
+        PrintOutput(oss.str());
+    }
+
+    // LOGTYPE SPECIFIED
+    template<typename... Args>
+    void PrintEditorVariadic(LogLevel logType, Args&&... args) {
+        std::ostringstream oss;
+        (oss << ... << ToString(std::forward<Args>(args)));
+        PrintOutput(oss.str(), logType);
+    }
+
+    // LOGTYPE AND toEDITOR SPECIFIED
+    template<typename... Args>
+    void PrintEditorVariadic(LogLevel logType, bool toEditor, Args&&... args) {
+        std::ostringstream oss;
+        (oss << ... << ToString(std::forward<Args>(args)));
+        PrintOutput(oss.str(), logType, toEditor);
+    }
+
     
 }
 
-// Convenience macros for Engine logging  //SHOULDNT BE NEEDED ANYMORE, ALL CHANGE TO ENGINE_PRINT
+// Convenience macros for Engine logging  //SHOULDNT BE NEEDED ANYMORE, ALL CHANGE TO 
+
+
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
 #define ENGINE_LOG_INFO(msg)     EngineLogging::LogInfo(msg)
@@ -109,4 +172,4 @@ namespace EngineLogging {
  *                  - true : Sends message to the editor logger with the specified logType.
  * PrintOutput("Something went wrong!", LogLevel::Error, true);
  */
-#define ENGINE_PRINT(...) EngineLogging::PrintOutput(__VA_ARGS__)
+#define ENGINE_PRINT(...) EngineLogging::PrintEditorVariadic(__VA_ARGS__)
