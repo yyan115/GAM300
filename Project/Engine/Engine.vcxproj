@@ -95,6 +95,7 @@
     <ClInclude Include="include\Math\Matrix4x4.hpp" />
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
@@ -161,6 +162,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
@@ -357,7 +359,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -380,7 +382,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -405,7 +407,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -430,7 +432,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

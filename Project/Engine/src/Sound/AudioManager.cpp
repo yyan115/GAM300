@@ -58,7 +58,7 @@ void AudioManager::Shutdown()
 		// Stop all sounds
 		StopAllSounds();
 		// Unload all sounds
-		UnloadAllSounds();
+		//UnloadAllSounds();
 		// Close and release FMOD system
 		FMOD_System_Close(mSystem);
 		FMOD_System_Release(mSystem);
@@ -75,80 +75,69 @@ void AudioManager::Update()
 	}
 }
 
-bool AudioManager::LoadSound(const std::string& name, const std::string& filePath, bool	loop) 
+FMOD_SOUND* AudioManager::LoadSound(const std::string& assetPath)
 {
 	if (!mSystem) 
 	{
-		std::cerr << "AudioManager not initialized" << std::endl;
-		return false;
+		std::cerr << "[AudioManager] AudioManager not initialized" << std::endl;
+		return nullptr;
 	}
 	
-	// Check if sound is already loaded
-	if (mSounds.find(name) != mSounds.end()) 
-	{
-		std::cout << "Sound '" << name << "' is already loaded" << std::endl;
-		return true;
-	}
-	
-	std::string fullPath = GetFullPath(filePath);
-	
+	//// Check if sound is already loaded
+	//if (mSounds.find(name) != mSounds.end()) 
+	//{
+	//	std::cout << "Sound '" << name << "' is already loaded" << std::endl;
+	//	return true;
+	//}
+		
 	// Check if file exists
-	if (!std::filesystem::exists(fullPath)) 
+	if (!std::filesystem::exists(assetPath))
 	{
-		std::cerr << "Audio file not found: " << fullPath << std::endl;
-		return false;
+		std::cerr << "[AudioManager] Audio file not found: " << assetPath << std::endl;
+		return nullptr;
 	}
 	
 	FMOD_SOUND* sound = nullptr;
 	FMOD_MODE mode = FMOD_DEFAULT;
-	
-	if (loop) 
-	{
-		mode |= FMOD_LOOP_NORMAL;
-	}
-	
-	FMOD_RESULT result = FMOD_System_CreateSound(mSystem, fullPath.c_str(), mode, nullptr,	&sound);
+	FMOD_RESULT result = FMOD_System_CreateSound(mSystem, assetPath.c_str(), mode, nullptr, &sound);
 	
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to load sound '" << name << "': " << FMOD_ErrorString(result)
+		std::cerr << "[AudioManager] Failed to load audio '" << assetPath << "': " << FMOD_ErrorString(result)
 			<< std::endl;
-		return false;
+		return nullptr;
 	}
 	
-	mSounds[name] = sound;
-	std::cout << "Loaded sound: " << name << " from " << fullPath << std::endl;
+	std::cout << "[AudioManager] Loaded audio: " << assetPath << std::endl;
 	
-	return true;
+	return sound;
 }
 
-void AudioManager::UnloadSound(const std::string& name)
+void AudioManager::UnloadSound(FMOD_SOUND* sound, const std::string& assetPath)
 {
-	auto it = mSounds.find(name);
-	if (it != mSounds.end()) 
+	if (sound) 
 	{
-		FMOD_Sound_Release(it->second);
-		mSounds.erase(it);
-		mChannels.erase(name); // Also remove any associated channel
-		std::cout << "Unloaded sound: " << name << std::endl;
+		FMOD_Sound_Release(sound);
+		mChannels.erase(assetPath); // Also remove any associated channel
+		std::cout << "[AudioManager] Unloaded audio: " << assetPath << std::endl;
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' not found." << std::endl;
+		std::cerr << "[AudioManager] Audio '" << assetPath << "' not found and could not be unloaded." << std::endl;
 	}
 }
 
-void AudioManager::UnloadAllSounds() 
-{
-	for (auto& pair : mSounds) 
-	{
-		FMOD_Sound_Release(pair.second);
-	}
-	mSounds.clear();
-	std::cout << "Unloaded all sounds" << std::endl;
-}
+//void AudioManager::UnloadAllSounds() 
+//{
+//	for (auto& pair : mSounds) 
+//	{
+//		FMOD_Sound_Release(pair.second);
+//	}
+//	mSounds.clear();
+//	std::cout << "Unloaded all sounds" << std::endl;
+//}
 
-bool AudioManager::PlaySound(const std::string& name, float volume, float pitch) 
+bool AudioManager::PlaySound(FMOD_SOUND* sound, const std::string& assetPath, float volume, float pitch) 
 {
 	if (!mSystem) 
 	{
@@ -156,18 +145,18 @@ bool AudioManager::PlaySound(const std::string& name, float volume, float pitch)
 		return false;
 	}
 	
-	auto it = mSounds.find(name);
-	if (it == mSounds.end()) 
+	if (!sound)
 	{
-		std::cerr << "Sound '" << name << "' not loaded" << std::endl;
+		std::cerr << "Sound '" << assetPath << "' not loaded" << std::endl;
 		return false;
 	}
+
 	FMOD_CHANNEL* channel = nullptr;
-	FMOD_RESULT result = FMOD_System_PlaySound(mSystem, it->second, nullptr, false, &channel);
+	FMOD_RESULT result = FMOD_System_PlaySound(mSystem, sound, nullptr, false, &channel);
 	
 	if (result != FMOD_OK) 
 	{
-		std::cerr << "Failed to play sound '" << name << "': " << FMOD_ErrorString(result)
+		std::cerr << "Failed to play sound '" << assetPath << "': " << FMOD_ErrorString(result)
 			<< std::endl;
 		return false;
 	}
@@ -177,23 +166,23 @@ bool AudioManager::PlaySound(const std::string& name, float volume, float pitch)
 	FMOD_Channel_SetPitch(channel, pitch);
 
 	// Store channel for later control
-	mChannels[name] = channel;
-	std::cout << "Playing sound: " << name << std::endl;
+	mChannels[assetPath] = channel;
+	std::cout << "Playing sound: " << assetPath << std::endl;
 	return true;
 }
 
-void AudioManager::StopSound(const std::string& name) 
+void AudioManager::StopSound(const std::string& assetPath) 
 {
-	auto it = mChannels.find(name);
+	auto it = mChannels.find(assetPath);
 	if (it != mChannels.end()) 
 	{
 		FMOD_Channel_Stop(it->second);
 		mChannels.erase(it);
-		std::cout << "Stopped sound: " << name << std::endl;
+		std::cout << "Stopped sound: " << assetPath << std::endl;
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		std::cerr << "Sound '" << assetPath << "' is not playing." << std::endl;
 	}
 }
 
@@ -207,17 +196,17 @@ void AudioManager::StopAllSounds()
 	std::cout << "Stopped all sounds" << std::endl;
 }
 
-void AudioManager::PauseSound(const std::string& name, bool pause) 
+void AudioManager::PauseSound(const std::string& assetPath, bool pause) 
 {
-	auto it = mChannels.find(name);
+	auto it = mChannels.find(assetPath);
 	if (it != mChannels.end()) 
 	{
 		FMOD_Channel_SetPaused(it->second, pause);
-		std::cout << (pause ? "Paused" : "Resumed") << " sound: " << name << std::endl;
+		std::cout << (pause ? "Paused" : "Resumed") << " sound: " << assetPath << std::endl;
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		std::cerr << "Sound '" << assetPath << "' is not playing." << std::endl;
 	}
 }
 
@@ -249,43 +238,37 @@ void AudioManager::SetMasterVolume(float volume) {
 	}
 }
 
-void AudioManager::SetSoundVolume(const std::string& name, float volume) 
+void AudioManager::SetSoundVolume(const std::string& assetPath, float volume) 
 {
-	auto it = mChannels.find(name);
+	auto it = mChannels.find(assetPath);
 	if (it != mChannels.end()) 
 	{
 		FMOD_Channel_SetVolume(it->second, volume);
-		std::cout << "Set volume of sound '" << name << "' to: " << volume << std::endl;
+		std::cout << "Set volume of sound '" << assetPath << "' to: " << volume << std::endl;
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		std::cerr << "Sound '" << assetPath << "' is not playing." << std::endl;
 	}
 }
 
-void AudioManager::SetSoundPitch(const std::string& name, float pitch) 
+void AudioManager::SetSoundPitch(const std::string& assetPath, float pitch) 
 {
-	auto it = mChannels.find(name);
+	auto it = mChannels.find(assetPath);
 	if (it != mChannels.end()) 
 	{
 		FMOD_Channel_SetPitch(it->second, pitch);
-		std::cout << "Set pitch of sound '" << name << "' to: " << pitch << std::endl;
+		std::cout << "Set pitch of sound '" << assetPath << "' to: " << pitch << std::endl;
 	}
 	else 
 	{
-		std::cerr << "Sound '" << name << "' is not playing." << std::endl;
+		std::cerr << "Sound '" << assetPath << "' is not playing." << std::endl;
 	}
 }
 
-
-bool AudioManager::IsSoundLoaded(const std::string& name) const 
+bool AudioManager::IsSoundPlaying(const std::string& assetPath) const 
 {
-	return mSounds.find(name) != mSounds.end();
-}
-
-bool AudioManager::IsSoundPlaying(const std::string& name) const 
-{
-	auto it = mChannels.find(name);
+	auto it = mChannels.find(assetPath);
 	if (it != mChannels.end()) 
 	{
 		FMOD_BOOL isPlaying = false;
@@ -295,43 +278,31 @@ bool AudioManager::IsSoundPlaying(const std::string& name) const
 	return false;
 }
 
-std::vector<std::string> AudioManager::GetLoadedSounds() const 
-{
-	std::vector<std::string> soundNames;
-	for (const auto& pair : mSounds) 
-	{
-		soundNames.push_back(pair.first);
-	}
-	return soundNames;
-}
-
-
-// Additional methods implementation...
-std::string AudioManager::GetFullPath(const std::string& fileName) const 
-{
-	// Try to find the audio file in the game-assets directory
-	std::filesystem::path currentPath = std::filesystem::current_path();
-
-	// Try different possible paths
-	std::vector<std::filesystem::path> possiblePaths = {
-	currentPath / "Resources" / "Audio" / "sfx" / fileName,
-	currentPath / ".." / "Resources" / "Audio" / "sfx" / fileName,
-	currentPath / ".." / ".." / "Resources" / "Audio" / "sfx" / fileName,
-	currentPath / ".." / ".." / ".." / "Resources" / "Audio" / "sfx" / fileName
-	};
-	
-	for (const auto& path : possiblePaths) 
-	{
-		if (std::filesystem::exists(path)) 
-		{
-			return path.string();
-		}
-	}
-	
-	// If not found, return the original filename
-	return fileName;
-}
-
+//// Additional methods implementation...
+//std::string AudioManager::GetFullPath(const std::string& fileName) const 
+//{
+//	// Try to find the audio file in the game-assets directory
+//	std::filesystem::path currentPath = std::filesystem::current_path();
+//
+//	// Try different possible paths
+//	std::vector<std::filesystem::path> possiblePaths = {
+//	currentPath / "Resources" / "Audio" / "sfx" / fileName,
+//	currentPath / ".." / "Resources" / "Audio" / "sfx" / fileName,
+//	currentPath / ".." / ".." / "Resources" / "Audio" / "sfx" / fileName,
+//	currentPath / ".." / ".." / ".." / "Resources" / "Audio" / "sfx" / fileName
+//	};
+//	
+//	for (const auto& path : possiblePaths) 
+//	{
+//		if (std::filesystem::exists(path)) 
+//		{
+//			return path.string();
+//		}
+//	}
+//	
+//	// If not found, return the original filename
+//	return fileName;
+//}
 
 void AudioManager::CheckFMODError(int result, const std::string& operation) const 
 {
@@ -346,36 +317,36 @@ void AudioManager::CheckFMODError(int result, const std::string& operation) cons
 // Static interface implementations
 bool AudioManager::StaticInitalize() 
 {
-	return Instance().Initialize();
+	return GetInstance().Initialize();
 }
 
 void AudioManager::StaticShutdown() 
 {
-	Instance().Shutdown();
+	GetInstance().Shutdown();
 }
 
 void AudioManager::StaticUpdate() 
 {
-	Instance().Update();
+	GetInstance().Update();
 }
 
-bool AudioManager::StaticLoadSound(const std::string& name, const std::string& file, bool loop) 
-{
-	return Instance().LoadSound(name, file, loop);
-}
+//bool AudioManager::StaticLoadSound(const std::string& name, const std::string& file, bool loop) 
+//{
+//	return GetInstance().LoadSound(name, file, loop);
+//}
 
-bool AudioManager::StaticPlaySound(const std::string& name, float vol, float pitch) 
-{
-	return Instance().PlaySound(name, vol, pitch);
-}
+//bool AudioManager::StaticPlaySound(const std::string& name, float vol, float pitch) 
+//{
+//	return GetInstance().PlaySound(name, vol, pitch);
+//}
 
 void AudioManager::StaticStopAllSounds() 
 {
-	Instance().StopAllSounds();
+	GetInstance().StopAllSounds();
 }
 
 void AudioManager::StaticSetMasterVolume(float v) 
 {
-	Instance().SetMasterVolume(v);
+	GetInstance().SetMasterVolume(v);
 }
 

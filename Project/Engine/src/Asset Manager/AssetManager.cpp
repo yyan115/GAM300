@@ -49,9 +49,9 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
 		return CompileTexture(filePathStr, "diffuse", -1, forceCompile);
 	}
-	//else if (audioExtensions.find(extension) != audioExtensions.end()) {
-	//	return CompileAsset<Audio>(filePathStr);
-	//}
+	else if (audioExtensions.find(extension) != audioExtensions.end()) {
+		return CompileAsset<Audio>(filePathStr);
+	}
 	else if (fontExtensions.find(extension) != fontExtensions.end()) {
 		return CompileAsset<Font>(filePathStr, forceCompile);
 	}
@@ -115,9 +115,10 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 			ResourceManager::GetInstance().UnloadResource<Texture>(guid, assetPath, it->second->compiledFilePath);
 			MetaFilesManager::DeleteMetaFile(assetPath);
 		}
-		//else if (audioExtensions.find(extension) != audioExtensions.end()) {
-		//	return CompileAsset<Audio>(filePathStr);
-		//}
+		else if (audioExtensions.find(extension) != audioExtensions.end()) {
+			ResourceManager::GetInstance().UnloadResource<Audio>(guid, assetPath, it->second->compiledFilePath);
+			MetaFilesManager::DeleteMetaFile(assetPath);
+		}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
 			ResourceManager::GetInstance().UnloadResource<Font>(guid, assetPath, it->second->compiledFilePath);
 			MetaFilesManager::DeleteMetaFile(assetPath);
@@ -163,7 +164,7 @@ std::shared_ptr<AssetMeta> AssetManager::GetAssetMeta(GUID_128 guid) {
 
 void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(textureExtensions.begin(), textureExtensions.end());
-	//supportedExtensions.insert(audioExtensions.begin(), audioExtensions.end());
+	supportedAssetExtensions.insert(audioExtensions.begin(), audioExtensions.end());
 	supportedAssetExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 	supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());

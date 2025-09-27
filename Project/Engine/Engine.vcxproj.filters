@@ -82,6 +82,7 @@
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\PrefabIO.hpp" />
+    <ClInclude Include="include\Sound\Audio.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -133,6 +134,7 @@
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
+    <ClCompile Include="src\Sound\Audio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
