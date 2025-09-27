@@ -189,10 +189,15 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             newScale.y = sqrt(newMatrix.m[0][1]*newMatrix.m[0][1] + newMatrix.m[1][1]*newMatrix.m[1][1] + newMatrix.m[2][1]*newMatrix.m[2][1]);
             newScale.z = sqrt(newMatrix.m[0][2]*newMatrix.m[0][2] + newMatrix.m[1][2]*newMatrix.m[1][2] + newMatrix.m[2][2]*newMatrix.m[2][2]);
 
+            // Extract rotation from the matrix (remove scale first)
+            Matrix4x4 rotationMatrix = Matrix4x4::RemoveScale(newMatrix);
+            Quaternion newRotation = Quaternion::FromMatrix(rotationMatrix);
+            Vector3D newRotationEuler = newRotation.ToEulerDegrees();
+
             // Update all components to stay in sync
-            transform.position = newPosition;
-            transform.scale = newScale;  // Make sure scale is updated too
-            transform.model = newMatrix;
+            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+            ecsManager.transformSystem->SetWorldScale(entity, newScale);
+            ecsManager.transformSystem->SetWorldRotation(entity, newRotationEuler);
 
             // Update last known values to prevent TransformSystem from recalculating
             transform.lastPosition = newPosition;
