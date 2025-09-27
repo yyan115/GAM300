@@ -19,7 +19,7 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
-#include <Sound/AudioManager.hpp>
+#include <Sound/AudioSystem.hpp>
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -30,13 +30,6 @@ GameState Engine::currentGameState = GameState::EDIT_MODE;
 
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
-
-//RenderSystem& renderer = RenderSystem::getInstance();
-//std::shared_ptr<Model> backpackModel;
-//std::shared_ptr<Shader> shader;
-////----------------LIGHT-------------------
-//std::shared_ptr<Shader> lightShader;
-//std::shared_ptr<Mesh> lightCubeMesh;
 
 bool Engine::Initialize() {
 	// Initialize logging system first
@@ -251,6 +244,21 @@ This prevents requesting descriptors for reference types (e.g. float&).
 
 	//lightManager.printLightStats();
 
+	// Test Audio
+	/*{
+		if (!AudioSystem::GetInstance().Initialise())
+		{
+			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
+		}
+		else
+		{
+			AudioHandle h = AudioSystem::GetInstance().LoadAudio("Resources/Audio/sfx/Test_duck.wav");
+			if (h != 0) {
+				AudioSystem::GetInstance().Play(h, false, 0.5f);
+			}
+		}
+	}*/
+
 	ENGINE_LOG_INFO("Engine initialization completed successfully");
 	
 	// Add some test logging messages
@@ -317,7 +325,7 @@ void Engine::Update() {
 
 
 		// Test Audio
-		AudioManager::StaticUpdate();
+		AudioSystem::GetInstance().Update();
 	}
 }
 
@@ -412,7 +420,7 @@ void Engine::EndDraw() {
 
 void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
-	AudioManager::StaticShutdown();
+	AudioSystem::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     std::cout << "[Engine] Shutdown complete" << std::endl;
 }

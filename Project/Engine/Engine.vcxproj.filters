@@ -62,7 +62,6 @@
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawSystem.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
-    <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Input\Keys.h" />
     <ClInclude Include="include\Platform\IPlatform.h" />
     <ClInclude Include="include\Platform\Platform.h" />
@@ -79,6 +78,8 @@
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
+    <ClInclude Include="include\Sound\AudioComponent.hpp" />
+    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -116,7 +117,6 @@
     <ClCompile Include="src\Graphics\SceneRenderer.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
-    <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Platform\Platform.cpp" />
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
@@ -128,7 +128,9 @@
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
+    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
+    <ClCompile Include="src\Sound\AudioComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
