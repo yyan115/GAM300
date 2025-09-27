@@ -6,6 +6,7 @@
 #include <queue>
 #include <mutex>
 #include <chrono>
+#include <sstream>
 
 // Cross-platform API export/import macros
 #ifdef _WIN32

@@ -50,7 +50,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
-
-    std::cout << "=== Editor ended ===" << std::endl;
+    ENGINE_PRINT("=== Editor ended ===\n");
+    //std::cout << "=== Editor ended ===" << std::endl;
     return 0;
 }

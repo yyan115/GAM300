@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include "Graphics/ShaderClass.h"
+#include "Logging.hpp"
 
 std::string get_file_contents(const char* filename)
 {
@@ -44,7 +45,8 @@ bool Shader::SetupShader(const std::string& path) {
 	if (!success)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n", infoLog, "\n");
+		//std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 		return false;
 	}
 
@@ -59,7 +61,8 @@ bool Shader::SetupShader(const std::string& path) {
 	if (!success)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n", infoLog, "\n");
+		//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 		return false;
 	}
 
@@ -74,7 +77,8 @@ bool Shader::SetupShader(const std::string& path) {
 	glGetProgramiv(ID, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(ID, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+		ENGINE_PRINT("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", infoLog, "\n");
+		//std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
 		return false;
 	}
 
@@ -90,7 +94,8 @@ std::string Shader::CompileToResource(const std::string& path) {
 	GLint supported = 0;
 	glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &supported);
 	if (supported == 0) {
-		std::cerr << "[SHADER]: Program binary not supported. Skipping binary cache.\n";
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Program binary not supported. Skipping binary cache.\n");
+		//std::cerr << "[SHADER]: Program binary not supported. Skipping binary cache.\n";
 		binarySupported = false;
 		return std::string{};
 	}
@@ -98,7 +103,8 @@ std::string Shader::CompileToResource(const std::string& path) {
 	binarySupported = true;
 
 	if (!SetupShader(path)) {
-		std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
+		//std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
 		return std::string{};
 	}
 
@@ -135,7 +141,8 @@ bool Shader::LoadResource(const std::string& assetPath)
 	if (!binarySupported) {
 		// Fallback to regular shader compilation if binary is not supported.
 		if (!SetupShader(assetPath)) {
-			std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting load.\n");
+			//std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
 			return false;
 		}
 
@@ -163,9 +170,11 @@ bool Shader::LoadResource(const std::string& assetPath)
 		GLint status = 0;
 		glGetProgramiv(ID, GL_LINK_STATUS, &status);
 		if (status == GL_FALSE) {
-			std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
+			//std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
 			if (CompileToResource(assetPath).empty()) {
-				std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
+				//std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
 				return false;
 			}
 
@@ -175,7 +184,8 @@ bool Shader::LoadResource(const std::string& assetPath)
 		return true;
 	}
 	else {
-		std::cerr << "[SHADER]: Shader file not found: " << resourcePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader file not found: ", resourcePath, "\n");
+		//std::cerr << "[SHADER]: Shader file not found: " << resourcePath << std::endl;
 		return false;
 	}
 }
@@ -314,7 +324,8 @@ GLint Shader::getUniformLocation(const std::string& name)
 	// Debug output for missing uniforms (can be removed later)
 	if (location == -1)
 	{
-		std::cout << "Warning: Uniform '" << name << "' not found in shader ID: " << ID << std::endl;
+		ENGINE_PRINT("Warning: Uniform '" , name , "' not found in shader ID: ", ID, "\n");
+		//std::cout << "Warning: Uniform '" << name << "' not found in shader ID: " << ID << std::endl;
 	}
 
 	return location;

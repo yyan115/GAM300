@@ -75,22 +75,26 @@ public:
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
-			std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Removed from resource map: ", resourcePath, "\n");
+			//std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
 		}
 
 		if (FileUtilities::RemoveFile(resourcePath)) {
-			std::cout << "[ResourceManager] Deleted resource file: " << resourcePath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Deleted resource file: ", resourcePath, "\n");
+			//std::cout << "[ResourceManager] Deleted resource file: " << resourcePath << std::endl;
 			if (MetaFilesManager::DeleteMetaFile(assetPath)) {
-				std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
+				ENGINE_PRINT("[ResourceManager] Deleted meta file for resource: ", resourcePath, "\n");
+				//std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
 				return true;
 			}
 			else {
-				std::cerr << "[ResourceManager] ERROR: Failed to delete meta file for resource: " << resourcePath << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to delete meta file for resource: ", resourcePath, "\n");
+				//std::cerr << "[ResourceManager] ERROR: Failed to delete meta file for resource: " << resourcePath << std::endl;
 				return false;
 			}
 		}
-
-		std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to unload resource: ", resourcePath, "\n");
+		//std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
 		return false;
 	}
 
@@ -110,7 +114,8 @@ public:
 			return UnloadResource<Shader>(guid, assetPath, resourcePath);
 		}
 		else {
-			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");
+			//std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
 		}
 	}
@@ -161,11 +166,12 @@ private:
 		if (resource->LoadResource(assetPath)) {
 			auto& resourceMap = GetResourceMap<T>();
 			resourceMap[guid] = resource;
-			std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Loaded resource for: ", assetPath, "\n"); 
+			//std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
 			return resource;
 		}
-
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", assetPath, "\n");
+		//std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
 		return nullptr;
 	}
 
@@ -174,11 +180,12 @@ private:
 		if (font->LoadResource(assetPath, fontSize)) {
 			auto& resourceMap = GetResourceMap<Font>();
 			resourceMap[guid] = font;
-			std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Loaded resource for: ", assetPath, "\n");
+			//std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
 			return font;
 		}
-
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", assetPath, "\n");
+		//std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
 		return nullptr;
 	}
 };

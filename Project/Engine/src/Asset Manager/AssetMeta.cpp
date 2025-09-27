@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Asset Manager/AssetMeta.hpp"
 #include <rapidjson/document.h>
+#include "Logging.hpp"
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver)
 {
@@ -46,7 +47,8 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
 
 		if (iss.fail()) {
-			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: ", metaFilePath, "\n");
+			//std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
 		}
 		else {
 			// Convert sys_time<seconds> to system_clock::time_point

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "Asset Manager/FileUtilities.hpp"
+#include "Logging.hpp"
 
 bool FileUtilities::RemoveFile(const std::string& filePath) {
 	std::filesystem::path p(filePath);
@@ -16,7 +17,7 @@ bool FileUtilities::RemoveFile(const std::string& filePath) {
 		std::cerr << "[FileUtilities] ERROR: Failed to delete file: " << p.generic_string() << " (" << ec.message() << ")" << std::endl;
 		return false;
 	}
-
-	std::cout << "[FileUtilities] Successfully deleted file: " << p.generic_string() << std::endl;
+	ENGINE_PRINT("[FileUtilities] Successfully deleted file: " , p.generic_string(), "\n");
+	//std::cout << "[FileUtilities] Successfully deleted file: " << p.generic_string() << std::endl;
 	return true;
 }

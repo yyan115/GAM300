@@ -73,8 +73,8 @@ void SceneInstance::Initialize() {
 	gfxManager.SetCamera(&camera);
 
 	// Initialize systems.
-
-	std::cout << "TestScene Initialized" << std::endl;
+	ENGINE_PRINT("TestScene Initialized\n");
+	//std::cout << "TestScene Initialized" << std::endl;
 }
 
 void SceneInstance::Update(double dt) {
@@ -137,8 +137,8 @@ void SceneInstance::Exit() {
 
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
-	std::cout << "TestScene Exited" << std::endl;
+	ENGINE_PRINT("TestScene Exited\n");
+	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)

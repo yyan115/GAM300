@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Graphics/Material.hpp"
-
+#include "Logging.hpp"
 Material::Material() : m_name("DefaultMaterial") {
 }
 
@@ -214,10 +214,16 @@ std::string Material::TextureTypeToString(TextureType type) const
 
 void Material::DebugPrintProperties() const
 {
-	std::cout << "Material: " << m_name << std::endl;
-	std::cout << "  Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
-	std::cout << "  Diffuse: (" << m_diffuse.x << ", " << m_diffuse.y << ", " << m_diffuse.z << ")" << std::endl;
-	std::cout << "  Specular: (" << m_specular.x << ", " << m_specular.y << ", " << m_specular.z << ")" << std::endl;
-	std::cout << "  Has Diffuse Map: " << HasTexture(TextureType::DIFFUSE) << std::endl;
-	std::cout << "  Has Specular Map: " << HasTexture(TextureType::SPECULAR) << std::endl;
+	//std::cout << "Material: " << m_name << std::endl;
+	//std::cout << "  Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+	//std::cout << "  Diffuse: (" << m_diffuse.x << ", " << m_diffuse.y << ", " << m_diffuse.z << ")" << std::endl;
+	//std::cout << "  Specular: (" << m_specular.x << ", " << m_specular.y << ", " << m_specular.z << ")" << std::endl;
+	//std::cout << "  Has Diffuse Map: " << HasTexture(TextureType::DIFFUSE) << std::endl;
+	//std::cout << "  Has Specular Map: " << HasTexture(TextureType::SPECULAR) << std::endl;
+	ENGINE_PRINT("Material: ", m_name, "\n");
+	ENGINE_PRINT("  Ambient: (" , m_ambient.x , ", " , m_ambient.y , ", " , m_ambient.z , ")\n");
+	ENGINE_PRINT("  Diffuse: (" , m_diffuse.x , ", " , m_diffuse.y , ", " , m_diffuse.z , ")\n");
+	ENGINE_PRINT("  Specular: (" , m_specular.x , ", " , m_specular.y , ", " , m_specular.z , ")\n");
+	ENGINE_PRINT("  Has Diffuse Map: " , HasTexture(TextureType::DIFFUSE) , "\n");
+	ENGINE_PRINT("  Has Specular Map: " , HasTexture(TextureType::SPECULAR) , "\n");
 }

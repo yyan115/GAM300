@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Logging.hpp"
 
 std::string Model::CompileToResource(const std::string& assetPath)
 {
@@ -14,7 +15,8 @@ std::string Model::CompileToResource(const std::string& assetPath)
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		std::cout << "ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
+        ENGINE_PRINT("ERROR:ASSIMP:: " , importer.GetErrorString(), "\n");
+		//std::cout << "ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
         return std::string{};
 	}
 
@@ -396,7 +398,8 @@ bool Model::LoadResource(const std::string& assetPath)
                             break;
                         // Add other cases as needed
                         default:
-							std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+                            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+							//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
                             texture->type = "unknown";
 							break;
                     }
