@@ -28,4 +28,5 @@ private:
     void DrawNameComponent(Entity entity);
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
+    void DrawAudioComponent(Entity entity);
 };
