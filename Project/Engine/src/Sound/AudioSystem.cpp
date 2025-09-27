@@ -5,6 +5,9 @@
 #include <fmod_errors.h>
 #include <iostream>
 #include <filesystem>
+#include <atomic>
+
+static std::atomic<bool> g_shuttingDown{ false };
 
 AudioSystem& AudioSystem::GetInstance() {
     static AudioSystem inst;
@@ -38,33 +41,59 @@ bool AudioSystem::Initialise() {
 }
 
 void AudioSystem::Shutdown() {
-    std::lock_guard<std::mutex> lock(mtx);
-    // Stop and release channels
-    for (auto& kv : channelMap) {
-        if (kv.second.channel) {
-            FMOD_Channel_Stop(kv.second.channel);
-            kv.second.channel = nullptr;
-        }
-    }
-    channelMap.clear();
+    // mark shutting down early so other threads or callbacks avoid re-entering
+    g_shuttingDown.store(true);
 
-    for (auto& kv : busMap) {
-        if (kv.second) {
-            FMOD_ChannelGroup_Release(kv.second);
-        }
-    }
-    busMap.clear();
+    // copy necessary FMOD objects while holding the lock, then release lock and call FMOD functions
+    FMOD_SYSTEM* sys = nullptr;
+    std::vector<FMOD_CHANNEL*> channels;
+    std::vector<FMOD_CHANNELGROUP*> groups;
 
-    if (system) {
-        FMOD_System_Close(system);
-        FMOD_System_Release(system);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+
+        // copy channels
+        for (auto& kv : channelMap) {
+            if (kv.second.channel) channels.push_back(kv.second.channel);
+        }
+        channelMap.clear();
+
+        // copy groups
+        for (auto& kv : busMap) {
+            if (kv.second) groups.push_back(kv.second);
+        }
+        busMap.clear();
+
+        // take ownership of system pointer and null it under the lock so other methods see it gone
+        sys = system;
         system = nullptr;
     }
 
+    // Stop channels and release groups outside of the mutex to avoid reentrancy/deadlocks
+    for (auto ch : channels) {
+        if (ch) {
+            FMOD_Channel_Stop(ch);
+        }
+    }
+    for (auto g : groups) {
+        if (g) {
+            FMOD_ChannelGroup_Release(g);
+        }
+    }
+
+    if (sys) {
+        FMOD_System_Close(sys);
+        FMOD_System_Release(sys);
+    }
+
     std::cout << "[AudioSystem] Shutdown complete." << std::endl;
+    // keep g_shuttingDown true (optional). It prevents further operations during/after shutdown.
 }
 
 void AudioSystem::Update() {
+    // don't try to update while shutting down
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!system) return;
 
@@ -75,7 +104,9 @@ void AudioSystem::Update() {
     for (auto& kv : channelMap) {
         bool isPlaying = false;
         if (kv.second.channel) {
-            FMOD_Channel_IsPlaying(kv.second.channel, reinterpret_cast<FMOD_BOOL*>(&isPlaying));
+            FMOD_BOOL fmodPlaying = false;
+            FMOD_Channel_IsPlaying(kv.second.channel, &fmodPlaying);
+            isPlaying = (fmodPlaying != 0);
             if (!isPlaying) {
                 // release channel
                 kv.second.channel = nullptr;
@@ -87,6 +118,8 @@ void AudioSystem::Update() {
 }
 
 ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
+    if (g_shuttingDown.load()) return 0;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!system || !audioAsset || !audioAsset->sound) {
         std::cerr << "[AudioSystem] ERROR: PlayAudio called with invalid parameters." << std::endl;
@@ -124,6 +157,8 @@ ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loo
 }
 
 ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
+    if (g_shuttingDown.load()) return 0;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!system || !audioAsset || !audioAsset->sound) return 0;
 
@@ -158,8 +193,11 @@ ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, con
 }
 
 FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
+    std::lock_guard<std::mutex> lock(mtx);
     auto it = busMap.find(busName);
     if (it != busMap.end()) return it->second;
+
+    if (!system) return nullptr;
 
     FMOD_CHANNELGROUP* group = nullptr;
     FMOD_RESULT res = FMOD_System_CreateChannelGroup(system, busName.c_str(), &group);
@@ -173,6 +211,8 @@ FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
 }
 
 ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
+    if (g_shuttingDown.load()) return 0;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!system || !audioAsset || !audioAsset->sound) return 0;
 
@@ -207,6 +247,8 @@ ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset
 }
 
 void AudioSystem::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     auto it = channelMap.find(channel);
     if (it == channelMap.end()) return;
@@ -218,6 +260,9 @@ void AudioSystem::UpdateChannelPosition(ChannelHandle channel, const Vector3D& p
 }
 
 void AudioSystem::Stop(ChannelHandle channel) {
+    // if we're shutting down, avoid taking the mutex (it may be destroyed soon)
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     auto it = channelMap.find(channel);
     if (it == channelMap.end()) return;
@@ -229,6 +274,8 @@ void AudioSystem::Stop(ChannelHandle channel) {
 }
 
 bool AudioSystem::IsPlaying(ChannelHandle channel) {
+    if (g_shuttingDown.load()) return false;
+
     std::lock_guard<std::mutex> lock(mtx);
     auto it = channelMap.find(channel);
     if (it == channelMap.end()) return false;
@@ -239,6 +286,8 @@ bool AudioSystem::IsPlaying(ChannelHandle channel) {
 }
 
 void AudioSystem::SetChannelPitch(ChannelHandle channel, float pitch) {
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     auto it = channelMap.find(channel);
     if (it == channelMap.end()) return;
@@ -247,6 +296,8 @@ void AudioSystem::SetChannelPitch(ChannelHandle channel, float pitch) {
 }
 
 void AudioSystem::SetChannelVolume(ChannelHandle channel, float volume) {
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     auto it = channelMap.find(channel);
     if (it == channelMap.end()) return;
@@ -256,6 +307,8 @@ void AudioSystem::SetChannelVolume(ChannelHandle channel, float volume) {
 
 // New: create a FMOD_SOUND from a file path
 FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
+    if (g_shuttingDown.load()) return nullptr;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!system) {
         std::cerr << "[AudioSystem] ERROR: CreateSound called but FMOD system is not initialized.\n";
@@ -273,6 +326,8 @@ FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
 }
 
 void AudioSystem::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
+    if (g_shuttingDown.load()) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     if (!sound) return;
     FMOD_RESULT res = FMOD_Sound_Release(sound);

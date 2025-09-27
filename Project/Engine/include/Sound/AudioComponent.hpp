@@ -52,8 +52,13 @@ struct AudioComponent {
         audioAsset = nullptr;
 
         if (!AudioAssetPath.empty()) {
-            // If configured to play on awake, attempt to play now (Play will load the asset)
-            if (PlayOnAwake) {
+            // Preload the audio asset synchronously when the path is set
+                audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, true);
+            if (!audioAsset) {
+                std::cerr << "[AudioComponent] ERROR: Failed to load audio asset: " << AudioAssetPath << std::endl;
+            }
+            // If configured to play on awake, attempt to play now (Play will use the preloaded asset)
+            if (PlayOnAwake && audioAsset) {
                 Play();
             }
         }
