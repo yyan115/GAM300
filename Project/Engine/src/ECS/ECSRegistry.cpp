@@ -2,6 +2,7 @@
 #include <iostream>
 #include <assert.h>
 #include "ECS/ECSRegistry.hpp"
+#include "Logging.hpp"
 
 ECSRegistry& ECSRegistry::GetInstance() {
 	static ECSRegistry instance;
@@ -17,8 +18,8 @@ ECSManager& ECSRegistry::CreateECSManager(const std::string& name) {
 	if (activeECSManagerName.empty()) {
 		SetActiveECSManager(name);
 	}
-
-	std::cout << "[ECSRegistry] Created ECSManager '" << name << "'." << std::endl;
+	ENGINE_PRINT("[ECSRegistry] Created ECSManager '", name, "'.\n");
+	//std::cout << "[ECSRegistry] Created ECSManager '" << name << "'." << std::endl;
 	return *ecsManagers[name];
 }
 

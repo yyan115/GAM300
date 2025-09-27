@@ -113,7 +113,7 @@ void SceneInstance::Initialize() {
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 
-	std::cout << "TestScene Initialized" << std::endl;
+	ENGINE_PRINT("TestScene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
@@ -207,8 +207,8 @@ void SceneInstance::Exit() {
 
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
-	std::cout << "TestScene Exited" << std::endl;
+	ENGINE_PRINT("TestScene Exited\n");
+	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)

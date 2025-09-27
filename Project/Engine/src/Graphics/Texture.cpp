@@ -19,7 +19,7 @@
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
-
+#include "Logging.hpp"
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
 Texture::Texture(const char* texType, GLint slot) :
@@ -85,7 +85,8 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 			break;
 		default:
 			stbi_image_free(bytes);
-			std::cerr << "[TEXTURE]: Unsupported number of color channels: " << numColCh << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Unsupported number of color channels: ", numColCh, "\n");
+			//std::cerr << "[TEXTURE]: Unsupported number of color channels: " << numColCh << std::endl;
 			return std::string{}; // Unsupported format
 	}
 
@@ -112,7 +113,8 @@ bool Texture::LoadResource(const std::string& assetPath) {
 	std::string metaFilePath = assetPathFS.string() + ".meta";
 	//std::cout << "[TEXTURE] DEBUG: Looking for meta file: " << metaFilePath << std::endl;
 	if (!std::filesystem::exists(metaFilePath)) {
-		std::cerr << "[TEXTURE]: Meta file not found for texture: " << assetPath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Meta file not found for texture: ", assetPath, "\n");
+		//std::cerr << "[TEXTURE]: Meta file not found for texture: " << assetPath << std::endl;
 		return false;
 	}
 	//std::cout << "[TEXTURE] DEBUG: Meta file found, loading..." << std::endl;
@@ -256,7 +258,8 @@ bool Texture::ReloadResource(const std::string& assetPath) {
 		glTexImage2D(target, 0, format.Internal, widthImg, heightImg, 0, format.External, format.Type, bytes);
 	}
 	else {
-		std::cerr << "[TEXTURE]: Unsupported texture target: " << target << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Unsupported texture target: ", target, "\n");
+		//std::cerr << "[TEXTURE]: Unsupported texture target: " << target << std::endl;
 		return false;
 	}
 

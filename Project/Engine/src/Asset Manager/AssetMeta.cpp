@@ -2,6 +2,7 @@
 #include "Asset Manager/AssetMeta.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include <rapidjson/document.h>
+#include "Logging.hpp"
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver)
 {

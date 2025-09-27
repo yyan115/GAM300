@@ -5,6 +5,7 @@
 #include <optional>
 #include <iostream>
 #include <assert.h>
+#include "Logging.hpp"
 
 class IComponentArray {
 public:
@@ -26,7 +27,8 @@ class ComponentArray : public IComponentArray {
 public:
     inline void InsertComponent(Entity entity, T component) {
         if (entityToIndexMap.find(entity) != entityToIndexMap.end()) {
-			std::cerr << "Component added to same entity more than once." << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Component added to same entity more than once.\n");
+			//std::cerr << "Component added to same entity more than once." << std::endl;
             return;
         }
 
@@ -39,7 +41,8 @@ public:
 
     inline void RemoveComponent(Entity entity) {
         if (entityToIndexMap.find(entity) == entityToIndexMap.end()) {
-			std::cerr << "Removing non-existent component." << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Removing non-existent component.\n");
+			//std::cerr << "Removing non-existent component." << std::endl;
             return;
         }
 

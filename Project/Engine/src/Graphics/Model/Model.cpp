@@ -13,6 +13,7 @@
 #include "Asset Manager/ResourceManager.hpp"
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
+#include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -43,7 +44,7 @@ std::string Model::CompileToResource(const std::string& assetPath)
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		std::cout << "ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
+        ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
 #ifdef __ANDROID__
 		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Assimp loading failed: %s", importer.GetErrorString());
 #endif
@@ -627,7 +628,8 @@ bool Model::LoadResource(const std::string& assetPath)
                             break;
                         // Add other cases as needed
                         default:
-							std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+                            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+							//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
                             texture->type = "unknown";
 							break;
                     }
