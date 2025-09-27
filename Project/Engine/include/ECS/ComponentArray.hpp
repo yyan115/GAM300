@@ -5,6 +5,7 @@
 #include <optional>
 #include <iostream>
 #include <assert.h>
+#include "Logging.hpp"
 
 class IComponentArray {
 public:
