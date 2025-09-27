@@ -245,7 +245,7 @@ This prevents requesting descriptors for reference types (e.g. float&).
 	//lightManager.printLightStats();
 
 	// Test Audio
-	{
+	/*{
 		if (!AudioSystem::GetInstance().Initialise())
 		{
 			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
@@ -257,7 +257,7 @@ This prevents requesting descriptors for reference types (e.g. float&).
 				AudioSystem::GetInstance().Play(h, false, 0.5f);
 			}
 		}
-	}
+	}*/
 
 	ENGINE_LOG_INFO("Engine initialization completed successfully");
 	

@@ -1,78 +1,99 @@
+
 #pragma once
 #include <string>
+#include <memory>
+#include <iostream>
 #include "Sound/AudioSystem.hpp"
 #include "Math/Vector3D.hpp"
+#include "Asset Manager/ResourceManager.hpp" // load Audio assets via ResourceManager
+
+// Forward declare Audio class to avoid including the header
+class Audio;
 
 struct AudioComponent {
     // Public editable properties used by inspector
     std::string AudioAssetPath; // original asset path under Resources
-    AudioHandle AudioHandle{0};
-    float Volume{1.0f};
-    bool Loop{false};
-    bool PlayOnAwake{false};
-    bool Spatialize{false};
-    float Attenuation{1.0f};
+    float Volume{ 1.0f };
+    bool Loop{ false };
+    bool PlayOnAwake{ false };
+    bool Spatialize{ false };
+    float Attenuation{ 1.0f };
 
-    // Runtime channel
-    ChannelHandle Channel{0};
+    // Runtime data
+    std::shared_ptr<Audio> audioAsset{ nullptr };
+    ChannelHandle Channel{ 0 };
 
     // Optional position - when spatialize is enabled inspector / transform system should update this
-    Vector3D Position{0.0f, 0.0f, 0.0f};
+    Vector3D Position{ 0.0f, 0.0f, 0.0f };
 
     AudioComponent() {}
 
     ~AudioComponent() {
-        // Ensure we release audio resource
+        // Ensure we stop any playing channels
         if (Channel) {
             AudioSystem::GetInstance().Stop(Channel);
             Channel = 0;
         }
-        if (AudioHandle) {
-            AudioSystem::GetInstance().UnloadAudio(AudioHandle);
-            AudioHandle = 0;
-        }
+        // audioAsset will be automatically cleaned up by shared_ptr
+        audioAsset = nullptr;
     }
 
     // Called when inspector sets a new asset path
     void SetAudioAssetPath(const std::string& path) {
         if (path == AudioAssetPath) return;
-        // Release old
+
+        // Stop current audio if playing
         if (Channel) {
             AudioSystem::GetInstance().Stop(Channel);
             Channel = 0;
         }
-        if (AudioHandle) {
-            AudioSystem::GetInstance().UnloadAudio(AudioHandle);
-            AudioHandle = 0;
-        }
 
         AudioAssetPath = path;
+        audioAsset = nullptr;
+
         if (!AudioAssetPath.empty()) {
-            AudioHandle = AudioSystem::GetInstance().LoadAudio(AudioAssetPath);
-            if (PlayOnAwake && AudioHandle) {
-                if (Spatialize)
-                    Channel = AudioSystem::GetInstance().PlayAtPosition(AudioHandle, Position, Loop, Volume, Attenuation);
-                else
-                    Channel = AudioSystem::GetInstance().Play(AudioHandle, Loop, Volume);
+            // If configured to play on awake, attempt to play now (Play will load the asset)
+            if (PlayOnAwake) {
+                Play();
             }
         }
     }
 
     void Play() {
-        if (!AudioHandle && !AudioAssetPath.empty()) {
-            AudioHandle = AudioSystem::GetInstance().LoadAudio(AudioAssetPath);
+        // Load the asset lazily via ResourceManager if not already loaded
+        if (!audioAsset && !AudioAssetPath.empty()) {
+            // Force load so editor/Inspector playback works immediately
+            audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, true);
+            if (!audioAsset) {
+                std::cerr << "[AudioComponent] ERROR: Failed to load audio asset: " << AudioAssetPath << std::endl;
+                return;
+            }
         }
-        if (AudioHandle) {
-            if (Spatialize)
-                Channel = AudioSystem::GetInstance().PlayAtPosition(AudioHandle, Position, Loop, Volume, Attenuation);
-            else
-                Channel = AudioSystem::GetInstance().Play(AudioHandle, Loop, Volume);
+
+        if (!audioAsset) {
+            std::cerr << "[AudioComponent] ERROR: No audio asset to play." << std::endl;
+            return;
+        }
+
+        // Ensure the AudioSystem (FMOD) is initialized before attempting to play.
+        AudioSystem& AudioSys = AudioSystem::GetInstance();
+        if (!AudioSys.Initialise()) {
+            std::cerr << "[AudioComponent] ERROR: AudioSystem failed to initialize." << std::endl;
+            return;
+        }
+
+        if (Spatialize) {
+            Channel = AudioSys.PlayAudioAtPosition(audioAsset, Position, Loop, Volume, Attenuation);
+        }
+        else {
+            Channel = AudioSys.PlayAudio(audioAsset, Loop, Volume);
         }
     }
 
     void Pause() {
         if (Channel) {
-            // Pause by setting volume to 0 or using FMOD Channel pause - use Stop for simplicity here
+            // FMOD doesn't have a direct pause, so we stop for simplicity
+            // In a more complete implementation, you might want to track pause state
             AudioSystem::GetInstance().Stop(Channel);
             Channel = 0;
         }
@@ -90,6 +111,23 @@ struct AudioComponent {
         Position = pos;
         if (Spatialize && Channel) {
             AudioSystem::GetInstance().UpdateChannelPosition(Channel, Position);
+        }
+    }
+
+    bool IsPlaying() {
+        return Channel != 0 && AudioSystem::GetInstance().IsPlaying(Channel);
+    }
+
+    void SetVolume(float newVolume) {
+        Volume = newVolume;
+        if (Channel) {
+            AudioSystem::GetInstance().SetChannelVolume(Channel, Volume);
+        }
+    }
+
+    void SetPitch(float pitch) {
+        if (Channel) {
+            AudioSystem::GetInstance().SetChannelPitch(Channel, pitch);
         }
     }
 };

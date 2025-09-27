@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Sound/AudioSystem.hpp"
+#include "Sound/Audio.hpp"
 #include <fmod.h>
 #include <fmod_errors.h>
 #include <iostream>
 #include <filesystem>
-#include "Asset Manager/MetaFilesManager.hpp"
 
 AudioSystem& AudioSystem::GetInstance() {
     static AudioSystem inst;
@@ -48,16 +48,6 @@ void AudioSystem::Shutdown() {
     }
     channelMap.clear();
 
-    // Release sounds
-    for (auto& kv : audioMap) {
-        if (kv.second && kv.second->sound) {
-            FMOD_Sound_Release(kv.second->sound);
-            kv.second->sound = nullptr;
-        }
-    }
-    audioMap.clear();
-    pathToHandle.clear();
-
     for (auto& kv : busMap) {
         if (kv.second) {
             FMOD_ChannelGroup_Release(kv.second);
@@ -96,97 +86,22 @@ void AudioSystem::Update() {
     for (auto id : toErase) channelMap.erase(id);
 }
 
-AudioHandle AudioSystem::LoadAudio(const std::string& assetPath) {
+ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
     std::lock_guard<std::mutex> lock(mtx);
-    if (!system) {
-        std::cerr << "[AudioSystem] ERROR: LoadAudio called before Initialise." << std::endl;
+    if (!system || !audioAsset || !audioAsset->sound) {
+        std::cerr << "[AudioSystem] ERROR: PlayAudio called with invalid parameters." << std::endl;
         return 0;
     }
-
-    std::filesystem::path p(assetPath);
-    std::string normalized = p.generic_string();
-
-    // Reuse existing handle if already loaded
-    auto itPath = pathToHandle.find(normalized);
-    if (itPath != pathToHandle.end()) {
-        auto ah = itPath->second;
-        auto it = audioMap.find(ah);
-        if (it != audioMap.end()) {
-            it->second->refCount++;
-            return ah;
-        }
-    }
-
-    // Create and load FMOD sound directly from file path
-    FMOD_SOUND* sound = nullptr;
-    // Allow 3D sounds by default when playing with position APIs; set 3D flag early to enable 3D features
-    FMOD_MODE mode = FMOD_DEFAULT | FMOD_3D;
-    FMOD_RESULT res = FMOD_System_CreateSound(system, normalized.c_str(), mode, nullptr, &sound);
-    if (res != FMOD_OK) {
-        // Try as stream
-        res = FMOD_System_CreateStream(system, normalized.c_str(), mode, nullptr, &sound);
-        if (res != FMOD_OK) {
-            std::cerr << "[AudioSystem] ERROR: Failed to create sound for " << normalized << " FMOD result=" << FMOD_ErrorString(res) << "\n";
-            return 0;
-        }
-    }
-
-    AudioHandle handle = nextAudioHandle++;
-    auto data = std::make_shared<AudioData>();
-    data->sound = sound;
-    data->assetPath = normalized;
-    data->refCount = 1;
-    data->is3D = true;
-    audioMap[handle] = data;
-    pathToHandle[normalized] = handle;
-
-    // Set user data on the FMOD sound to allow callbacks to map back if needed
-    FMOD_Sound_SetUserData(sound, reinterpret_cast<void*>(static_cast<uintptr_t>(handle)));
-
-    std::cout << "[AudioSystem] Loaded audio: " << normalized << " -> handle " << handle << std::endl;
-    return handle;
-}
-
-bool AudioSystem::UnloadAudio(AudioHandle handle) {
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = audioMap.find(handle);
-    if (it == audioMap.end()) return false;
-
-    auto& data = it->second;
-    data->refCount--;
-    if (data->refCount <= 0) {
-        if (data->sound) {
-            FMOD_Sound_Release(data->sound);
-            data->sound = nullptr;
-        }
-        pathToHandle.erase(data->assetPath);
-        audioMap.erase(it);
-        std::cout << "[AudioSystem] Unloaded audio handle " << handle << std::endl;
-    }
-    return true;
-}
-
-FMOD_SOUND* AudioSystem::GetSound(AudioHandle handle) {
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = audioMap.find(handle);
-    if (it == audioMap.end()) return nullptr;
-    return it->second->sound;
-}
-
-ChannelHandle AudioSystem::Play(AudioHandle handle, bool loop, float volume) {
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return 0;
-    auto it = audioMap.find(handle);
-    if (it == audioMap.end() || !it->second->sound) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
     FMOD_RESULT res;
     FMOD_MODE mode = FMOD_DEFAULT;
     if (loop) mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
-    // Set sound mode for looping if needed
-    FMOD_Sound_SetMode(it->second->sound, mode);
 
-    res = FMOD_System_PlaySound(system, it->second->sound, nullptr, true, &channel);
+    // Set sound mode for looping if needed
+    FMOD_Sound_SetMode(audioAsset->sound, mode);
+
+    res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         std::cerr << "[AudioSystem] ERROR: PlaySound failed: " << FMOD_ErrorString(res) << "\n";
         return 0;
@@ -208,11 +123,9 @@ ChannelHandle AudioSystem::Play(AudioHandle handle, bool loop, float volume) {
     return chId;
 }
 
-ChannelHandle AudioSystem::PlayOnBus(AudioHandle handle, const std::string& busName, bool loop, float volume) {
+ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
     std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return 0;
-    auto it = audioMap.find(handle);
-    if (it == audioMap.end() || !it->second->sound) return 0;
+    if (!system || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
     if (!group) return 0;
@@ -221,9 +134,9 @@ ChannelHandle AudioSystem::PlayOnBus(AudioHandle handle, const std::string& busN
     FMOD_RESULT res;
     FMOD_MODE mode = FMOD_DEFAULT;
     if (loop) mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
-    FMOD_Sound_SetMode(it->second->sound, mode);
+    FMOD_Sound_SetMode(audioAsset->sound, mode);
 
-    res = FMOD_System_PlaySound(system, it->second->sound, nullptr, true, &channel);
+    res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         std::cerr << "[AudioSystem] ERROR: PlayOnBus PlaySound failed: " << FMOD_ErrorString(res) << "\n";
         return 0;
@@ -259,19 +172,17 @@ FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
     return group;
 }
 
-ChannelHandle AudioSystem::PlayAtPosition(AudioHandle handle, const Vector3D& position, bool loop, float volume, float attenuation) {
+ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
     std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return 0;
-    auto it = audioMap.find(handle);
-    if (it == audioMap.end() || !it->second->sound) return 0;
+    if (!system || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
     FMOD_RESULT res;
     FMOD_MODE mode = FMOD_DEFAULT | FMOD_3D;
     if (loop) mode |= FMOD_LOOP_NORMAL; else mode |= FMOD_LOOP_OFF;
-    FMOD_Sound_SetMode(it->second->sound, mode);
+    FMOD_Sound_SetMode(audioAsset->sound, mode);
 
-    res = FMOD_System_PlaySound(system, it->second->sound, nullptr, true, &channel);
+    res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         std::cerr << "[AudioSystem] ERROR: PlayAtPosition PlaySound failed: " << FMOD_ErrorString(res) << "\n";
         return 0;
@@ -282,10 +193,7 @@ ChannelHandle AudioSystem::PlayAtPosition(AudioHandle handle, const Vector3D& po
     FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
     FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
 
-    // Attenuation - implement simple distance scalar as user data on channel
-    if (it->second) it->second->attenuation = attenuation;
-
-    FMOD_Channel_SetVolume(channel, volume);
+    FMOD_Channel_SetVolume(channel, volume * attenuation);
     FMOD_Channel_SetPaused(channel, false);
 
     ChannelHandle chId = nextChannelHandle++;
@@ -344,4 +252,31 @@ void AudioSystem::SetChannelVolume(ChannelHandle channel, float volume) {
     if (it == channelMap.end()) return;
     if (!it->second.channel) return;
     FMOD_Channel_SetVolume(it->second.channel, volume);
+}
+
+// New: create a FMOD_SOUND from a file path
+FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (!system) {
+        std::cerr << "[AudioSystem] ERROR: CreateSound called but FMOD system is not initialized.\n";
+        return nullptr;
+    }
+
+    FMOD_SOUND* sound = nullptr;
+    FMOD_RESULT res = FMOD_System_CreateSound(system, assetPath.c_str(), FMOD_DEFAULT, nullptr, &sound);
+    if (res != FMOD_OK || !sound) {
+        std::cerr << "[AudioSystem] ERROR: Failed to create sound for " << assetPath << " : " << FMOD_ErrorString(res) << "\n";
+        return nullptr;
+    }
+
+    return sound;
+}
+
+void AudioSystem::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (!sound) return;
+    FMOD_RESULT res = FMOD_Sound_Release(sound);
+    if (res != FMOD_OK) {
+        std::cerr << "[AudioSystem] ERROR: Failed to release sound " << assetPath << " : " << FMOD_ErrorString(res) << "\n";
+    }
 }
