@@ -30,9 +30,15 @@
 #endif
 
 struct ENGINE_API Matrix4x4 {
-    //REFL_SERIALIZABLE
+    REFL_SERIALIZABLE
     // Row-major storage: m[row][col]
-    float m[4][4];
+    struct Matrix
+    {
+        float m00, m01, m02, m03;
+        float m10, m11, m12, m13;
+        float m20, m21, m22, m23;
+        float m30, m31, m32, m33;
+	}m;
 
     // ---- ctors ----
     Matrix4x4(); // identity
@@ -42,8 +48,9 @@ struct ENGINE_API Matrix4x4 {
         float m30, float m31, float m32, float m33);
 
     // ---- element access ----
-    float* operator[](int r) { return m[r]; }
-    const float* operator[](int r) const { return m[r]; }
+    float& operator()(int r, int s);
+    const float& operator()(int r, int c) const;
+
 
     // ---- arithmetic ----
     Matrix4x4  operator+(const Matrix4x4& rhs) const;
@@ -91,6 +98,13 @@ struct ENGINE_API Matrix4x4 {
     // fovY in radians, aspect = width/height, zNear>0, zFar>zNear
     static Matrix4x4 PerspectiveFovRH(float fovY, float aspect, float zNear, float zFar);
     static Matrix4x4 OrthoRH(float left, float right, float bottom, float top, float zNear, float zFar);
+
+    // Extract translation, scale, rotation from world matrix
+    static Vector3D ExtractTranslation(const Matrix4x4& m);
+    static Vector3D ExtractScale(const Matrix4x4& m);
+    static Vector3D ExtractRotation(const Matrix4x4& m);
+
+    static Matrix4x4 RemoveScale(const Matrix4x4& m);
 };
 
 // left scalar

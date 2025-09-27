@@ -4,6 +4,10 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#ifdef __ANDROID__
+#include <sstream>
+#include <iomanip>
+#endif
 
 std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const std::string& assetPath, const std::string& resourcePath) {
 	std::string metaFilePath = assetPath + ".meta";
@@ -26,7 +30,15 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	assetMetaData.AddMember("compiled", rapidjson::Value().SetString(resourcePath.c_str(), allocator), allocator);
 	// Add last compiled timestamp
 	auto tp = std::chrono::system_clock::now();
+#ifdef __ANDROID__
+	auto time_t = std::chrono::system_clock::to_time_t(tp);
+	auto tm = *std::localtime(&time_t);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+	std::string timestamp = oss.str();
+#else
 	std::string timestamp = std::format("{:%Y-%m-%d %H:%M:%S}", tp);
+#endif
 	assetMetaData.AddMember("last_compiled", rapidjson::Value().SetString(timestamp.c_str(), allocator), allocator);
 
 	doc.AddMember("AssetMetaData", assetMetaData, allocator);

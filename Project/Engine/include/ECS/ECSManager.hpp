@@ -11,6 +11,7 @@
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
 #include "../Engine.h"  // For ENGINE_API macro
+#include <Graphics/Lights/LightingSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -20,6 +21,7 @@ public:
 	void Initialize();
 
 	Entity CreateEntity();
+	Entity CreateEntityWithGUID(const GUID_128& guid);
 
 	void DestroyEntity(Entity entity);
 
@@ -93,6 +95,7 @@ public:
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
+	std::shared_ptr<LightingSystem> lightingSystem;
 
 private:
 	template <typename T>

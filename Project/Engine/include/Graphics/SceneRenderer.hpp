@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include "Graphics/OpenGL.h"
 #include <glm/glm.hpp>
 
 #ifdef _WIN32

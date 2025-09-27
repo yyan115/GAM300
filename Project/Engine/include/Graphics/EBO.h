@@ -7,6 +7,9 @@
 class EBO {
 public:
 	GLuint ID{};
+	std::vector<GLuint> indices;
+	bool isSetup;
+
 	EBO(std::vector<GLuint>& indices);
 
 	void Bind();

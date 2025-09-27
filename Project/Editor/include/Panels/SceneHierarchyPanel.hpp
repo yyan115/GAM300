@@ -24,6 +24,10 @@ public:
 
 private:
     void DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren = false);
+    void ReparentEntity(Entity draggedEntity, Entity targetParent);
+    void UnparentEntity(Entity draggedEntity);
+    void TraverseHierarchy(Entity entity, std::set<Entity>& nestedChildren, std::function<void(Entity, std::set<Entity>&)> addNestedChildren);
+    void AddNestedChildren(Entity entity, std::set<Entity>& nestedChildren);
 
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);
