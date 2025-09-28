@@ -6,16 +6,12 @@
 #include <Graphics/GraphicsManager.hpp>
 
 class SceneInstance : public IScene {
-	// helper: read JSON and create entities in the ECS manager for this scene
-	void CreateEntitiesFromJson(const std::filesystem::path& inPath);
-
 public:
 	SceneInstance() = default;
 	SceneInstance(const std::string& path) : IScene(path) {}
 	~SceneInstance() override = default;
 
 	void Initialize() override;
-	void Initialize(const std::string& scenePath);
 
 	void Update(double dt) override;
 	void Draw() override;

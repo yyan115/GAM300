@@ -37,6 +37,7 @@ void TextUtils::SetScale(TextRenderComponent& comp, float newScale)
 void TextUtils::SetAlignment(TextRenderComponent& comp, TextRenderComponent::Alignment newAlignment)
 {
     comp.alignment = newAlignment;
+    comp.alignmentInt = static_cast<int>(newAlignment);
 }
 
 void TextUtils::SetWorldTransform(TextRenderComponent& comp, const Matrix4x4& newTransform)

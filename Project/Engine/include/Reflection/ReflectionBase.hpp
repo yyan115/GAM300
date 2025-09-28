@@ -18,6 +18,7 @@
 // Note: intentionally *not* using `using namespace rapidjson;` in header to avoid polluting global namespace.
 
 #include "Base64.hpp"
+#include "Utilities/GUID.hpp"
 
 #include <type_traits>
 
@@ -624,6 +625,31 @@ struct TypeResolver<std::pair<FirstType, SecondType>>
         return &type_desc;
     }
 };
+
+struct TypeDescriptor_GUID128 : TypeDescriptor {
+    TypeDescriptor_GUID128() : TypeDescriptor("GUID_128", sizeof(GUID_128)) {}
+
+    void Dump(const void* obj, std::ostream& os, int) const override {
+        os << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj));
+    }
+
+    void Serialize(const void* obj, std::ostream& os) const override {
+        os << "\"" << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj)) << "\"";
+    }
+
+    void Deserialize(void* obj, const rapidjson::Value& value) const override {
+        if (!value.IsString()) throw std::runtime_error("GUID_128 must be a string");
+        *reinterpret_cast<GUID_128*>(obj) = GUIDUtilities::ConvertStringToGUID128(value.GetString());
+    }
+};
+
+template<> struct TypeResolver<GUID_128> {
+    static TypeDescriptor* Get() {
+        static TypeDescriptor_GUID128 type_desc;
+        return &type_desc;
+    }
+};
+
 
 #pragma endregion
 

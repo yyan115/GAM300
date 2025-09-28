@@ -143,7 +143,7 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         editorCamera->Zoom = cameraZoom;
 
         // Get the ECS manager and graphics manager
-        ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager("TestScene");
+        ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
         mainECS.transformSystem->Update();

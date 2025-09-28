@@ -255,7 +255,13 @@ void GUIManager::RenderMenuBar() {
 			}
 			if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
 				std::string filepath = "Resources/Scene/scene.json";
-				SceneManager::GetInstance().LoadScene(filepath);
+				// TEMP
+				if (!std::filesystem::exists(filepath)) {
+					std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+				}
+				else {
+					SceneManager::GetInstance().LoadScene(filepath);
+				}
 			}
 			if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
 				SceneManager::GetInstance().SaveScene();

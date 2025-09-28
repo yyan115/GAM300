@@ -113,6 +113,7 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
     <ClInclude Include="src\TextRenderComponent.hpp" />
     <ClInclude Include="src\IRenderComponent.hpp" />
+    <ClInclude Include="include\Serialization\Serializer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
+    <ClCompile Include="src\Serialization\Serializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

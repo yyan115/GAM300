@@ -27,12 +27,13 @@ public:
     std::shared_ptr<Shader> shader;
 
     // Text alignment options
-    enum class Alignment {
+    enum class Alignment : int {
         LEFT,
         CENTER,
         RIGHT
     };
     Alignment alignment = Alignment::LEFT;
+    int alignmentInt = 0;
 
     // Constructor with required parameters
     TextRenderComponent(const std::string& t, unsigned int _fontSize, GUID_128 f_GUID, GUID_128 s_GUID)
@@ -53,6 +54,7 @@ public:
         is3D(other.is3D),
         transform(other.transform),
         alignment(other.alignment),
+        alignmentInt(other.alignmentInt),
         font(other.font),
         shader(other.shader) {
     }
@@ -73,6 +75,7 @@ public:
             is3D = other.is3D;
             transform = other.transform;
             alignment = other.alignment;
+            alignmentInt = other.alignmentInt;
         }
         return *this;
     }
