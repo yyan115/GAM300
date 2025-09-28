@@ -38,6 +38,10 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		compiledFilePath = assetMetaData["compiled"].GetString();
 	}
 
+	if (assetMetaData.HasMember("android_compiled")) {
+		androidCompiledFilePath = assetMetaData["android_compiled"].GetString();
+	}
+
 	lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 
 	ifs.close();

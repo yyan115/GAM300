@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "WindowManager.hpp"
 #include "TimeManager.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
 
 
 int main() {
@@ -16,6 +17,8 @@ int main() {
     }
 
     Engine::Initialize();
+    // Only need to generate asset meta files in Editor mode.
+    MetaFilesManager::InitializeAssetMetaFiles("Resources");
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     GLFWwindow* window = WindowManager::getWindow();
@@ -48,6 +51,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
+    MetaFilesManager::CleanupUnusedMetaFiles("Resources");
 
     std::cout << "=== Editor ended ===" << std::endl;
     return 0;

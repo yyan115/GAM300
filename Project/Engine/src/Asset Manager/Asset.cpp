@@ -8,9 +8,17 @@
 #include <sstream>
 #include <iomanip>
 #endif
+#include <Utilities/FileUtilities.hpp>
+#include <Asset Manager/AssetManager.hpp>
 
-std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const std::string& assetPath, const std::string& resourcePath) {
-	std::string metaFilePath = assetPath + ".meta";
+std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const std::string& assetPath, const std::string& resourcePath, const std::string& androidResourcePath, bool forAndroid) {
+	std::string metaFilePath{};
+	if (!forAndroid) {
+		metaFilePath = assetPath + ".meta";
+	}
+	else {
+		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPath).generic_string() + ".meta";
+	}
 	GUID_string guidStr = GUIDUtilities::ConvertGUID128ToString(guid128);
 
 	// Write and save the .meta file to disk.
@@ -28,6 +36,8 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	assetMetaData.AddMember("source", rapidjson::Value().SetString(assetPath.c_str(), allocator), allocator);
 	// Add compiled resource path
 	assetMetaData.AddMember("compiled", rapidjson::Value().SetString(resourcePath.c_str(), allocator), allocator);
+	if (forAndroid)
+		assetMetaData.AddMember("android_compiled", rapidjson::Value().SetString(AssetManager::GetInstance().ExtractRelativeAndroidPath(androidResourcePath).c_str(), allocator), allocator);
 	// Add last compiled timestamp
 	auto tp = std::chrono::system_clock::now();
 #ifdef __ANDROID__
@@ -50,6 +60,30 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	std::ofstream metaFile(metaFilePath);
 	metaFile << buffer.GetString();
 	metaFile.close();
+
+	if (!forAndroid) {
+		// Save the meta file in the root project directory as well.
+		try {
+			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / metaFilePath).generic_string(),
+				std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+		}
+	}
+	else {
+		// Save the meta file to the build and root directory as well.
+		try {
+			std::string buildMetaPath = assetPath + ".meta";
+			std::filesystem::copy_file(metaFilePath, buildMetaPath,
+				std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / buildMetaPath).generic_string(),
+				std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+		}
+	}
 
 	std::cout << "[IAsset] Generated base meta file " << metaFilePath << std::endl;
 

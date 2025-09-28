@@ -107,23 +107,27 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     // Handle different file events
     if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
         // Sleep this thread for a while to allow the OS to finish the file operation.
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        if (event == filewatch::Event::modified || event == filewatch::Event::added) {
-            std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
-            AssetManager::GetInstance().AddToCompilationQueue(fullPathObj);
+        if (event == filewatch::Event::added) {
+            std::cout << "[AssetWatcher] Detected adding in asset: " << fullPath << ". Adding to asset manager event queue..." << std::endl;
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::added, fullPathObj);
+        }
+        else if (event == filewatch::Event::modified) {
+            std::cout << "[AssetWatcher] Detected modification in asset: " << fullPath << ". Adding to asset manager event queue..." << std::endl;
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
         }
         else if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Adding to asset manager event queue..." << std::endl;
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::removed, fullPath);
         }
         else if (event == filewatch::Event::renamed_old) {
-            std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Adding to asset manager event queue..." << std::endl;
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_old, fullPath);
         }
         else if (event == filewatch::Event::renamed_new) {
-            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
-            AssetManager::GetInstance().AddToCompilationQueue(fullPathObj);
+            std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Adding to asset manager event queue..." << std::endl;
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_new, fullPathObj);
         }
 
         QueueRefresh();

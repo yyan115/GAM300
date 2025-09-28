@@ -20,6 +20,7 @@
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include <Asset Manager/AssetManager.hpp>
+#include "Asset Manager/MetaFilesManager.hpp"
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -107,7 +108,7 @@ void GUIManager::Render() {
 		ImGui::RenderPlatformWindowsDefault();
 	}
 
-	AssetManager::GetInstance().RunCompilationQueue();
+	AssetManager::GetInstance().RunEventQueue();
 }
 
 void GUIManager::Exit() {
@@ -262,6 +263,13 @@ void GUIManager::RenderMenuBar() {
 				// TODO: Save scene functionality
 			}
 			ImGui::Separator();
+			if (ImGui::MenuItem("Compile Assets for Desktop")) {
+				AssetManager::GetInstance().CompileAllAssetsForDesktop();
+			}
+			if (ImGui::MenuItem("Compile Assets for Android")) {
+				AssetManager::GetInstance().CompileAllAssetsForAndroid();
+			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Exit", "Alt+F4")) {
 				// TODO: Exit application
 			}
@@ -312,7 +320,7 @@ void GUIManager::RenderMenuBar() {
 
 void GUIManager::CreateEditorTheme() {
 	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-	// Set up dark theme
+	// Set updark theme
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui::StyleColorsDark();
 	ImGuiStyle& style = ImGui::GetStyle();

@@ -8,20 +8,21 @@
 #include "Texture.h"
 #include "ShaderClass.h"
 
-enum class TextureType {
-	NONE = 0,
-	DIFFUSE = 1,
-	SPECULAR = 2,
-	AMBIENT_OCCLUSION = 3,
-	EMISSIVE = 4,
-	HEIGHT = 5,
-	NORMAL = 6,
-	METALLIC = 15,
-	ROUGHNESS = 16,
-};
 
 class Material {
 public:
+	enum class TextureType {
+		NONE = 0,
+		DIFFUSE = 1,
+		SPECULAR = 2,
+		AMBIENT_OCCLUSION = 3,
+		EMISSIVE = 4,
+		HEIGHT = 5,
+		NORMAL = 6,
+		METALLIC = 15,
+		ROUGHNESS = 16,
+	};
+
 	Material();
 	Material(const std::string& name);
 	~Material() = default;

@@ -19,6 +19,8 @@
 #include "../../Libraries/FMOD/inc/fmod.h"
 #include "../../Libraries/FMOD/inc/fmod_errors.h"
 #endif
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 AudioManager::AudioManager(): mSystem(nullptr)
 {
@@ -89,17 +91,30 @@ FMOD_SOUND* AudioManager::LoadSound(const std::string& assetPath)
 	//	std::cout << "Sound '" << name << "' is already loaded" << std::endl;
 	//	return true;
 	//}
+
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		std::cerr << "[AudioManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		return nullptr;
+	}
 		
 	// Check if file exists
-	if (!std::filesystem::exists(assetPath))
+	if (!platform->FileExists(assetPath))
 	{
 		std::cerr << "[AudioManager] Audio file not found: " << assetPath << std::endl;
 		return nullptr;
 	}
+
+	std::vector<uint8_t> data = platform->ReadAsset(assetPath);
+
+	FMOD_CREATESOUNDEXINFO exinfo = {};
+	exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+	exinfo.length = static_cast<unsigned int>(data.size());
 	
 	FMOD_SOUND* sound = nullptr;
-	FMOD_MODE mode = FMOD_DEFAULT;
-	FMOD_RESULT result = FMOD_System_CreateSound(mSystem, assetPath.c_str(), mode, nullptr, &sound);
+	FMOD_MODE mode = FMOD_DEFAULT | FMOD_OPENMEMORY;
+	FMOD_RESULT result = FMOD_System_CreateSound(mSystem, reinterpret_cast<const char*>(data.data()), mode, &exinfo, &sound);
 	
 	if (result != FMOD_OK) 
 	{
