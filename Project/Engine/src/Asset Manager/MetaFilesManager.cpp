@@ -93,11 +93,21 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 }
 
 std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMetaFile(const std::string& metaFilePath) {
-	std::ifstream ifs(metaFilePath);
-	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_LOG_DEBUG("[MetaFilesManager] ERROR: Platform not available for asset discovery!");
+		return std::chrono::system_clock::time_point{};
+	}
+	std::vector<uint8_t> metaFileData = platform->ReadAsset(metaFilePath);
 	rapidjson::Document doc;
-	doc.Parse(jsonContent.c_str());
+	if (!metaFileData.empty()) {
+		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+		doc.ParseStream(ms);
+	}
+	if (doc.HasParseError()) {
+		ENGINE_LOG_DEBUG("[MetaFilesManager]: Rapidjson parse error: " + metaFilePath);
+	}
 
 	const auto& assetMetaData = doc["AssetMetaData"];
 	if (assetMetaData.HasMember("last_compiled")) {
@@ -114,19 +124,16 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 #endif
 
 		if (iss.fail()) {
-			std::cerr << "[AssetMeta] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
-			ifs.close();
+			std::cerr << "[MetaFilesManager] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
 			return std::chrono::system_clock::time_point{};
 		}
 		else {
 			// Convert sys_time<seconds> to system_clock::time_point
-			ifs.close();
 			return tp;
 		}
 	}
 	else {
 		std::cerr << "[MetaFilesManager] ERROR: last_compiled not found in meta file: " << metaFilePath << std::endl;
-		ifs.close();
 		return std::chrono::system_clock::time_point{};
 	}
 }
@@ -167,6 +174,7 @@ GUID_string MetaFilesManager::GetGUIDFromMetaFile(const std::string& metaFilePat
 
 GUID_string MetaFilesManager::GetGUIDFromAssetFile(const std::string& assetPath) {
 	std::string metaFilePath = assetPath + ".meta";
+	ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUIDFromMetaFile: " + metaFilePath);
 	return GetGUIDFromMetaFile(metaFilePath);
 }
 
@@ -179,12 +187,18 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 	}
 
 	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetFolder, true);
+	//ENGINE_LOG_INFO("platform->ListAssets size: " + std::to_string(assetFiles.size()));
 
 	for (std::string assetPath : assetFiles) {
 		std::filesystem::path filePath(assetPath);
 		std::string extension = filePath.extension().string();
+		extension.erase(std::remove_if(extension.begin(), extension.end(), ::isspace), extension.end());
+		assetPath = (filePath.parent_path() / filePath.stem()).generic_string() + extension;
+		//ENGINE_LOG_INFO("extension: " + extension);
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+			//ENGINE_LOG_INFO("yes");
+#ifndef ANDROID
 			if (!MetaFileExists(assetPath)) {
 				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
 				AssetManager::GetInstance().CompileAsset(assetPath);
@@ -208,12 +222,27 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 					AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
 				}
 			}
+#else
+			ENGINE_LOG_INFO("IsAssetExtensionSupported");
+			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+				assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+			}
+
+			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+			AddGUID128Mapping(assetPath, guid128);
+			AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+#endif
+		}
+		else {
+			//ENGINE_LOG_INFO("no");
 		}
 	}
 }
 
 GUID_128 MetaFilesManager::GetGUID128FromAssetFile(const std::string& assetPath) {
+	ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUID128FromAssetFile: " + assetPath);
 	if (assetPathToGUID128.find(assetPath) == assetPathToGUID128.end()) {
+		ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUIDFromAssetFile: " + assetPath);
 		GUID_string guidStr = GetGUIDFromAssetFile(assetPath);
 		GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
 		assetPathToGUID128[assetPath] = guid128;

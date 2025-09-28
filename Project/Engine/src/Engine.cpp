@@ -508,6 +508,7 @@ bool Engine::Initialize() {
 
 bool Engine::InitializeGraphicsResources() {
 	ENGINE_LOG_INFO("Initializing graphics resources...");
+    MetaFilesManager::InitializeAssetMetaFiles("Resources");
 
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
