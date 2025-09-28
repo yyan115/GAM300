@@ -245,6 +245,32 @@ std::vector<std::string> DesktopPlatform::ListAssets(const std::string& folder, 
     return assetPaths;
 }
 
+std::vector<uint8_t> DesktopPlatform::ReadAsset(const std::string& path) {
+    std::vector<uint8_t> data;
+    if (!std::filesystem::exists(path)) {
+        return data;
+    }
+
+    std::ifstream ifs(path, std::ios::binary | std::ios::ate);
+    if (!ifs.is_open()) {
+        return data;
+    }
+
+    std::streamsize size = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    data.resize(size);
+    if (!ifs.read(reinterpret_cast<char*>(data.data()), size)) {
+        data.clear(); // read failed
+    }
+
+    return data;
+}
+
+bool DesktopPlatform::FileExists(const std::string& path) {
+    return std::filesystem::exists(path);
+}
+
 // Static callback implementations
 void DesktopPlatform::ErrorCallback(int error, const char* description) {
     ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW Error ", error, ": ", description, "\n");

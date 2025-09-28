@@ -34,6 +34,7 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
 	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 	backpackName.name = "dora the explorer";
+	ENGINE_LOG_INFO("Loading resource");
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
 
@@ -195,8 +196,6 @@ void SceneInstance::Draw() {
 }
 
 void SceneInstance::Exit() {
-	// Cleanup code for the test scene
-
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	ENGINE_PRINT("TestScene Exited\n");

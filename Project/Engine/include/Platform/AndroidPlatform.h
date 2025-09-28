@@ -24,6 +24,8 @@ private:
     bool keyStates[512];  // Simple key state array
     bool mouseButtonStates[8];
     double mouseX, mouseY;
+
+    std::vector<std::string> assetPaths;
     
 public:
     AndroidPlatform();
@@ -57,6 +59,8 @@ public:
 
     // Asset management
     std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) override;
+    std::vector<uint8_t> ReadAsset(const std::string& path) override;
+    bool FileExists(const std::string& path) override;
 
     void* GetNativeWindow() override;
     

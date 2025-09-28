@@ -290,6 +290,7 @@ bool Engine::InitializeGraphicsResources() {
 
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
+    ENGINE_LOG_INFO("Loaded test scene");
 
 	// ---Set Up Lighting---
 	LightManager& lightManager = LightManager::getInstance();
@@ -326,7 +327,7 @@ bool Engine::InitializeGraphicsResources() {
 
 bool Engine::InitializeAssets() {
 	// Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
-	MetaFilesManager::InitializeAssetMetaFiles("Resources");
+	//MetaFilesManager::InitializeAssetMetaFiles("Resources");
 	return true;
 }
 
