@@ -3,6 +3,10 @@
 #include "Sound/Audio.hpp"
 #include "Sound/AudioManager.hpp"
 
+Audio::Audio() : sound(nullptr) {
+	// Default constructor - sound is nullptr by default
+}
+
 std::string Audio::CompileToResource(const std::string& assetPath) {
 	return assetPath; // fmod nothing to compile
 }

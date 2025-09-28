@@ -133,8 +133,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	}*/
 	ApplyLighting(*item.shader);
 
-	// Draw the model
-	item.model->Draw(*item.shader, *currentCamera);
+	// Draw the model with entity material
+	item.model->Draw(*item.shader, *currentCamera, item.material);
 
 	//std::cout << "rendered model\n";
 }

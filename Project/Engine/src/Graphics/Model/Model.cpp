@@ -18,6 +18,10 @@
 #include <android/log.h>
 #endif
 
+Model::Model() {
+	// Default constructor - meshes vector is empty by default
+}
+
 // Forward declaration for get_file_contents
 std::string get_file_contents(const char* filename);
 
@@ -763,6 +767,39 @@ void Model::Draw(Shader& shader, const Camera& camera)
 
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw completed successfully");
+#endif
+}
+
+void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial)
+{
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
+#endif
+
+	for (size_t i = 0; i < meshes.size(); ++i)
+	{
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu with entity material", i+1, meshes.size());
+#endif
+		// Use entity material if available, otherwise use mesh default
+		std::shared_ptr<Material> meshMaterial = entityMaterial ? entityMaterial : meshes[i].material;
+		if (meshMaterial && meshMaterial != meshes[i].material) {
+			// Temporarily override the mesh material for this draw call
+			std::shared_ptr<Material> originalMaterial = meshes[i].material;
+			meshes[i].material = meshMaterial;
+			meshes[i].Draw(shader, camera);
+			meshes[i].material = originalMaterial; // Restore original
+		} else {
+			meshes[i].Draw(shader, camera);
+		}
+
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu with entity material", i+1, meshes.size());
+#endif
+	}
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
 #endif
 }
 

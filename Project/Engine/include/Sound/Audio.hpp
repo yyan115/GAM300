@@ -1,9 +1,18 @@
 #pragma once
 #include "Asset Manager/Asset.hpp"
 #include "fmod.h"
+#include "../Engine.h"
 
-class Audio : public IAsset {
+class ENGINE_API Audio : public IAsset {
 public:
+	Audio();
+	~Audio() = default;
+
+	Audio(const Audio&) = delete;
+	Audio& operator=(const Audio&) = delete;
+	Audio(Audio&&) = default;
+	Audio& operator=(Audio&&) = default;
+
 	FMOD_SOUND* sound;
 	std::string assetPath;
 

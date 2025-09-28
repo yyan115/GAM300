@@ -13,7 +13,7 @@ void AssetManager::AddToCompilationQueue(const std::filesystem::path& assetPath)
 void AssetManager::RunCompilationQueue() {
     if (!compilationQueue.empty()) {
         auto assetPath = compilationQueue.front();
-        std::cout << "[Asset Manager] Running compilation queue... Compiling asset: " << assetPath.generic_string() << std::endl;
+        // std::cout << "[Asset Manager] Running compilation queue... Compiling asset: " << assetPath.generic_string() << std::endl;
         compilationQueue.pop();
         std::string extension = assetPath.extension().string();
 
@@ -60,6 +60,9 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	}
 	else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
 		return CompileAsset<Shader>(filePathStr, forceCompile);
+	}
+	else if (materialExtensions.find(extension) != materialExtensions.end()) {
+		return CompileAsset<Material>(filePathStr, forceCompile);
 	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
@@ -168,6 +171,7 @@ void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 	supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
+	supportedAssetExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 }
 
 std::unordered_set<std::string>& AssetManager::GetSupportedExtensions() {

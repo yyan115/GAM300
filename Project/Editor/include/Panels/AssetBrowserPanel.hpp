@@ -47,7 +47,8 @@ private:
         Models,
         Shaders,
         Audio,
-        Fonts
+        Fonts,
+        Materials
     };
 
     // UI state
@@ -63,6 +64,11 @@ private:
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };
     std::unique_ptr<filewatch::FileWatch<std::string>> fileWatcher;
+
+    // Rename state
+    bool isRenaming{ false };
+    char renameBuffer[256]{ 0 };
+    GUID_128 renamingAsset;
 
     // UI methods
     void RenderToolbar();
@@ -89,6 +95,7 @@ private:
 
     // Context menu
     void ShowAssetContextMenu(const AssetInfo& asset);
+    void ShowCreateAssetMenu();
 
     // Drag and drop
     void HandleDragAndDrop(const AssetInfo& asset);
@@ -97,6 +104,15 @@ private:
     void DeleteAsset(const AssetInfo& asset);
     void RevealInExplorer(const AssetInfo& asset);
     void CopyAssetPath(const AssetInfo& asset);
+
+    // Asset creation
+    void CreateNewMaterial();
+    void CreateNewFolder();
+
+    // Rename functionality
+    void StartRenameAsset(const GUID_128& guid);
+    void CancelRename();
+    void ConfirmRename();
 
     // Utility methods
     std::string GetRelativePath(const std::string& fullPath) const;
