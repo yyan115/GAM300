@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "GUIManager.hpp"
 #include "imgui.h"
-#include "imgui_internal.h"
+#include "imgui_internal.h" 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "ImGuizmo.h"
@@ -108,7 +108,7 @@ void GUIManager::Render() {
 		ImGui::RenderPlatformWindowsDefault();
 	}
 
-	AssetManager::GetInstance().RunEventQueue();
+	AssetManager::GetInstance().RunCompilationQueue();
 }
 
 void GUIManager::Exit() {
@@ -261,13 +261,6 @@ void GUIManager::RenderMenuBar() {
 			}
 			if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
 				// TODO: Save scene functionality
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Compile Assets for Desktop", "F5")) {
-				AssetManager::GetInstance().CompileAllAssetsForDesktop();
-			}
-			if (ImGui::MenuItem("Compile Assets for Android", "F6")) {
-				AssetManager::GetInstance().CompileAllAssetsForAndroid();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit", "Alt+F4")) {

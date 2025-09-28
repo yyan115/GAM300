@@ -12,7 +12,6 @@
 #include "Graphics/ShaderClass.h"
 #include "Utilities/FileUtilities.hpp"
 #include "Sound/Audio.hpp"
-#include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -47,20 +46,19 @@ public:
 		else {
 			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
-
+		
 		// Return a shared pointer to the resource (Texture, Model, etc.)
-		std::string resourcePath = assetPath;
 		if (!forceLoad) {
 			auto it = resourceMap.find(guid);
 			if (it != resourceMap.end()) {
 				return it->second;
 			}
 			else {
-				return LoadResource<T>(guid, resourcePath, assetPath, forceLoad);
+				return LoadResource<T>(guid, filePath, forceLoad);
 			}
 		}
 		else {
-			return LoadResource<T>(guid, resourcePath, assetPath, forceLoad);
+			return LoadResource<T>(guid, filePath, forceLoad);
 		}
 	}
 
@@ -79,18 +77,17 @@ public:
 		}
 
 		// Return a shared pointer to the resource (Font).
-		std::string resourcePath = assetPath;
 		if (!forceLoad) {
 			auto it = resourceMap.find(guid);
 			if (it != resourceMap.end()) {
 				return it->second;
 			}
 			else {
-				return LoadFontResource(guid, resourcePath, assetPath, fontSize, forceLoad);
+				return LoadFontResource(guid, filePath, fontSize, forceLoad);
 			}
 		}
 		else {
-			return LoadFontResource(guid, resourcePath, assetPath, fontSize, forceLoad);
+			return LoadFontResource(guid, filePath, fontSize, forceLoad);
 		}
 	}
 
@@ -101,24 +98,22 @@ public:
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
-			ENGINE_LOG_ERROR("[ResourceManager] Removed from resource map: " + resourcePath);
-			//std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
+			std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
 		}
 
 		if (FileUtilities::RemoveFile(resourcePath)) {
-			ENGINE_LOG_ERROR("[ResourceManager] Deleted resource file: " + resourcePath);
-			return true;
-			//if (MetaFilesManager::DeleteMetaFile(assetPath)) {
-			//	std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
-			//	return true;
-			//}
-			//else {
-			//	std::cerr << "[ResourceManager] ERROR: Failed to delete meta file for resource: " << resourcePath << std::endl;
-			//	return false;
-			//}
+			std::cout << "[ResourceManager] Deleted resource file: " << resourcePath << std::endl;
+			if (MetaFilesManager::DeleteMetaFile(assetPath)) {
+				std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
+				return true;
+			}
+			else {
+				std::cerr << "[ResourceManager] ERROR: Failed to delete meta file for resource: " << resourcePath << std::endl;
+				return false;
+			}
 		}
-		ENGINE_LOG_ERROR("[ResourceManager] ERROR: Failed to unload resource: " + resourcePath);
-		//std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
+
+		std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
 		return false;
 	}
 
@@ -156,10 +151,6 @@ public:
 
 	bool IsResourceExtensionSupported(const std::string& extension) const {
 		return supportedResourceExtensions.find(extension) != supportedResourceExtensions.end();
-	}
-
-	bool IsExtensionShader(const std::string& extension) const {
-		return shaderExtensions.find(extension) != shaderExtensions.end();
 	}
 
 	bool IsResourceLoaded(const GUID_128& guid) {
@@ -215,18 +206,17 @@ private:
 
 
 	template <typename T>
-	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {
+	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& assetPath, bool reload = false) {
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
 #endif
 		std::shared_ptr<T> resource;
 		if (!reload) {
 			resource = std::make_shared<T>();
-			ENGINE_LOG_DEBUG("resource->LoadResource(resourcePath, assetPath)");
-			if (resource->LoadResource(resourcePath)) {
+			if (resource->LoadResource(assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
-				ENGINE_LOG_DEBUG("[ResourceManager] Loaded resource for: " + resourcePath);
+				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
 #ifdef ANDROID
 			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
 #endif
@@ -235,43 +225,43 @@ private:
 		}
 		else {
 			resource = GetResource<T>(assetPath);
-			if (resource->ReloadResource(resourcePath)) {
+			if (resource && resource->ReloadResource(assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
-				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
+				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;
 				return resource;
 			}
 		}
 
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << resourcePath << std::endl;
+		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
 #endif
 		return nullptr;
 	}
 
-	std::shared_ptr<Font> LoadFontResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, unsigned int fontSize, bool reload = false) {
+	std::shared_ptr<Font> LoadFontResource(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize, bool reload = false) {
 		std::shared_ptr<Font> font;
 		if (!reload) {
 			font = std::make_shared<Font>();
-			if (font->LoadResource(resourcePath, fontSize)) {
+			if (font->LoadResource(assetPath, fontSize)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
-				std::cout << "[ResourceManager] Loaded resource for: " << resourcePath << std::endl;
+				std::cout << "[ResourceManager] Loaded resource for: " << assetPath << std::endl;
 				return font;
 			}
 		}
 		else {
 			font = GetFontResource(assetPath);
-			if (font->ReloadResource(resourcePath)) {
+			if (font->ReloadResource(assetPath)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
-				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
+				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;
 				return font;
 			}
 		}
 
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << resourcePath << std::endl;
+		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << assetPath << std::endl;
 		return nullptr;
 	}
 };
