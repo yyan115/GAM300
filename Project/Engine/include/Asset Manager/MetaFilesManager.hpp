@@ -15,9 +15,11 @@ public:
 
 	static GUID_string GetGUIDFromAssetFile(const std::string& assetPath);
 
-	static void InitializeAssetMetaFiles(const std::string& rootAssetFolder);
+	ENGINE_API static void InitializeAssetMetaFiles(const std::string& rootAssetFolder);
 
     ENGINE_API static GUID_128 GetGUID128FromAssetFile(const std::string& assetPath);
+
+    static std::string GetResourceNameFromAssetFile(const std::string& assetPath);
 
     ENGINE_API static bool MetaFileUpdated(const std::string& assetPath);
 
@@ -29,7 +31,9 @@ public:
 
     ENGINE_API static bool DeleteMetaFile(const std::string& assetPath);
 
-    static constexpr int CURRENT_METADATA_VERSION = 3;
+    ENGINE_API static void CleanupUnusedMetaFiles(const std::string& rootAssetFolder);
+
+    static constexpr int CURRENT_METADATA_VERSION = 4;
 
 private:
     /**

@@ -70,6 +70,14 @@ void ConsolePanel::OnImGuiRender() {
 
                 std::strftime(timeBuffer, sizeof(timeBuffer), "%m/%d/%Y %I:%M:%S %p", &timeInfo);
                 
+                //Trace = 0,
+                //    Debug = 1,
+                //    Info = 2,
+                //    Warn = 3,
+                //    Error = 4,
+                //    Critical = 5
+
+
                 // Add timestamp and level prefix
                 const char* levelStr = (entry.level == 0) ? "[INFO]" : 
                                       (entry.level == 1) ? "[WARN]" : "[ERROR]";
