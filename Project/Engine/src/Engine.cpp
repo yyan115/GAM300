@@ -659,6 +659,7 @@ void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
 	AudioSystem::GetInstance().Shutdown();
     EngineLogging::Shutdown();
+    SceneManager::GetInstance().ExitScene();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }
 
