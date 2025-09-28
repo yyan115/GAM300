@@ -7,7 +7,6 @@ class WindowManager;
 #include "Panels/PanelManager.hpp"
 #include <ECS/Entity.hpp>
 
-
 /**
  * @brief Main GUI management class for the editor.
  * 

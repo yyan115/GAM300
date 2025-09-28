@@ -4,7 +4,8 @@
         "guid": "007ebbc8ae949957-0002c7077c000013",
         "source": "Resources/Models/backpack/normal.png",
         "compiled": "Resources/Models/backpack/normal.dds",
-        "last_compiled": "2025-09-28 15:40:42.0113654"
+        "android_compiled": "Resources/Models/backpack/normal_android.ktx",
+        "last_compiled": "2025-09-28 11:02:10.0842175"
     },
     "TextureMetaData": {
         "id": 0,

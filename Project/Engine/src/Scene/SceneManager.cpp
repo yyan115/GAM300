@@ -10,6 +10,7 @@
 #include <Serialization/Serializer.hpp>
 #include "Logging.hpp"
 #include <Utilities/FileUtilities.hpp>
+#include "Logging.hpp"
 
 ENGINE_API SceneManager::~SceneManager() {
 	ExitScene();
