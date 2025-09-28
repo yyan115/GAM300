@@ -30,6 +30,9 @@ public:
 	float lastY = SCR_HEIGHT / 2.0f;
 	bool firstMouse = true;
 
+	// Player entity for physics-based movement
+	Entity playerEntity = static_cast<Entity>(-1);
+
 	std::vector<Vertex> lightVertices = {
 		// Back face (4 vertices: 0-3)
 		{{-0.1f, -0.1f, -0.1f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}, // 0

@@ -11,6 +11,7 @@
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
 #include "Sound/AudioSystem.hpp"
+#include <Physics/PhysicsSystem.hpp>
 #include "../Engine.h"  // For ENGINE_API macro
 #include <Graphics/Lights/LightingSystem.hpp>
 
@@ -102,6 +103,7 @@ public:
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
+	std::shared_ptr<PhysicsSystem> physicsSystem;
 
 private:
 	template <typename T>

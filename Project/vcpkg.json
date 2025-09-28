@@ -37,6 +37,11 @@
     {
       "name": "gli",
       "$comment": "OpenGL Image library for DDS, KTX, and KMG texture formats"
+    },
+    {
+      "name": "joltphysics",
+      "features": ["debugrenderer", "profiler"],
+      "$comment": "Real-time physics simulation library for 3D games and simulations"
     }
   ],
   "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149"

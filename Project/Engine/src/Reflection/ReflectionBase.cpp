@@ -128,7 +128,7 @@ TYPE_DESCRIPTOR(UnsignedLongLong, uint64_t)
 TYPE_DESCRIPTOR(Double, double)
 TYPE_DESCRIPTOR(Float, float)
 
-// bool specialization — preserves original JSON true/false semantics
+// bool specialization ï¿½ preserves original JSON true/false semantics
 struct ENGINE_API TypeDescriptor_Bool : TypeDescriptor
 {
     TypeDescriptor_Bool() : TypeDescriptor{ "bool", sizeof(bool) } {}
@@ -206,8 +206,7 @@ ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<std::string>()
     return &type_desc;
 }
 
-#ifdef ANDROID
-// primitives.cpp
+// Additional specializations for long long types (needed for some libraries)
 template<>
 ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<long long>() {
     static TypeDescriptor_LongLong type_desc;
@@ -223,6 +222,5 @@ ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<unsigned long long>() {
     if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
     return &type_desc;
 }
-#endif
 
 #pragma endregion

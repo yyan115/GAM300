@@ -178,7 +178,12 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         // Asset path input
         char buffer[512] = {0};
         if (!audio.AudioAssetPath.empty()) {
-            strncpy_s(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer)-1);
+#ifdef _WIN32
+            strncpy_s(buffer, sizeof(buffer), audio.AudioAssetPath.c_str(), sizeof(buffer)-1);
+#else
+            strncpy(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer)-1);
+            buffer[sizeof(buffer)-1] = '\0'; // Ensure null termination
+#endif
         }
         ImGui::Text("Audio Asset Path");
         ImGui::SameLine();

@@ -28,8 +28,11 @@ set(IMGUI_SOURCES
 
 message(STATUS "Building Editor executable for ${CMAKE_BUILD_TYPE}")
 
-# Editor is always an executable  
+# Editor is always an executable
 add_executable(Editor ${EDITOR_SOURCES} ${EDITOR_HEADERS} ${IMGUI_SOURCES})
+
+# Define EDITOR macro for texture compilation
+target_compile_definitions(Editor PRIVATE EDITOR)
 
 # Automatically include all subdirectories
 file(GLOB_RECURSE EDITOR_INCLUDE_SUBDIRS 
@@ -66,6 +69,9 @@ target_link_libraries(Editor
         Game    # static library
 )
 
+# Also define EDITOR for Engine when linked to Editor
+target_compile_definitions(Engine PRIVATE EDITOR)
+
 # Copy resources to editor output directory
 add_custom_command(TARGET Editor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -88,7 +94,7 @@ if(WIN32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/libfmod.so.14.9
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

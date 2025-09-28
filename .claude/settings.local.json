@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./vcpkg/vcpkg install:*)",
+      "Bash(ninja:*)",
+      "Bash(ldd:*)",
+      "Bash(./vcpkg/vcpkg search:*)",
+      "Bash(git clone:*)",
+      "Bash(./bin/Game:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

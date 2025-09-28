@@ -241,3 +241,16 @@ void WindowManager::PollEvents() {
 IPlatform* WindowManager::GetPlatform() {
     return platform;
 }
+
+// Cursor management functions
+void WindowManager::SetCursorMode(bool locked) {
+    if (platform) {
+        platform->SetCursorMode(ptrWindow, locked);
+    }
+}
+
+void WindowManager::SetCursorPosition(double x, double y) {
+    if (platform) {
+        platform->SetCursorPosition(ptrWindow, x, y);
+    }
+}

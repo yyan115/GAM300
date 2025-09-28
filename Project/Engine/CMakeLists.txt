@@ -103,6 +103,7 @@ else()
     find_package(spdlog CONFIG REQUIRED)
     find_package(RapidJSON CONFIG REQUIRED)
     find_package(gli CONFIG REQUIRED)
+    find_package(Jolt CONFIG REQUIRED)
 endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
@@ -112,8 +113,9 @@ target_include_directories(Engine
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        # Keep manual libraries: ImGui (docking), FMOD (commercial)
+        # Keep manual libraries: ImGui (docking), FMOD (commercial), Compressonator
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
+        ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/include
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -166,6 +168,7 @@ else()
             spdlog::spdlog
             rapidjson
             gli
+            Jolt::Jolt
     )
 
     # Platform-specific FMOD and system libraries

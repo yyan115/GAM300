@@ -50,6 +50,10 @@ public:
     bool IsKeyPressed(Input::Key key) override;
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
+
+    // Cursor management (no-op on Android)
+    void SetCursorMode(void* window, bool locked) override;
+    void SetCursorPosition(void* window, double x, double y) override;
     
     double GetTime() override;
     

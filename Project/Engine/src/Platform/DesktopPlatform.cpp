@@ -419,4 +419,20 @@ Input::KeyAction DesktopPlatform::GLFWActionToEngineAction(int glfwAction) {
     }
 }
 
+// Cursor management implementation
+void DesktopPlatform::SetCursorMode(void* windowPtr, bool locked) {
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(windowPtr);
+    if (glfwWindow) {
+        int mode = locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL;
+        glfwSetInputMode(glfwWindow, GLFW_CURSOR, mode);
+    }
+}
+
+void DesktopPlatform::SetCursorPosition(void* windowPtr, double x, double y) {
+    GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(windowPtr);
+    if (glfwWindow) {
+        glfwSetCursorPos(glfwWindow, x, y);
+    }
+}
+
 #endif // !ANDROID

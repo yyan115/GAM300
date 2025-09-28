@@ -31,6 +31,10 @@ public:
     virtual bool IsKeyPressed(Input::Key key) = 0;
     virtual bool IsMouseButtonPressed(Input::MouseButton button) = 0;
     virtual void GetMousePosition(double* x, double* y) = 0;
+
+    // Cursor management
+    virtual void SetCursorMode(void* window, bool locked) = 0;
+    virtual void SetCursorPosition(void* window, double x, double y) = 0;
     
     // Time
     virtual double GetTime() = 0;

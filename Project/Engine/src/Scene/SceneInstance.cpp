@@ -12,6 +12,9 @@
 #include "ECS/NameComponent.hpp"
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
+#include "Physics/RigidbodyComponent.hpp"
+#include "Physics/ColliderComponent.hpp"
+#include "Math/Matrix4x4.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -29,45 +32,121 @@ void SceneInstance::Initialize() {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (scenePath == "TestScene") {
-		// Create a backpack entity with a Renderer component in the main ECS manager
-		Entity backpackEntt = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
-		ecsManager.transformSystem->SetLocalScale(backpackEntt, { .1f, .1f, .1f });
-		ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
-		NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
-		backpackName.name = "dora the explorer";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
-		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		// Create physics test objects (invisible boxes for collision testing)
+		Entity box1 = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(box1, { 0, 8.0f, 0 }); // Much higher to see it fall
+		ecsManager.transformSystem->SetLocalScale(box1, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(box1, { 0, 0, 0 });
+		NameComponent& box1Name = ecsManager.GetComponent<NameComponent>(box1);
+		box1Name.name = "Falling Box";
 
-		Entity backpackEntt2 = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
-		ecsManager.transformSystem->SetLocalScale(backpackEntt2, { .2f, .2f, .2f });
-		ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
-		NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
-		backpack2Name.name = "ash ketchum";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
-		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		// Add physics components to box 1 (dynamic)
+		RigidbodyComponent rigidbody1;
+		rigidbody1.bodyType = BodyType::Dynamic;
+		rigidbody1.mass = 1.0f;
+		rigidbody1.restitution = 0.3f;
+		rigidbody1.friction = 0.7f;
+		rigidbody1.isGravityEnabled = true;
+		ecsManager.AddComponent<RigidbodyComponent>(box1, rigidbody1);
 
-		Entity backpackEntt3 = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
-		ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .5f, .5f, .5f });
-		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
-		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
-		backpack3Name.name = "indiana jones";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
-		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		ColliderComponent collider1;
+		collider1.type = ColliderType::Box;
+		collider1.size = Vector3D(0.5f, 0.5f, 0.5f);
+		ecsManager.AddComponent<ColliderComponent>(box1, collider1);
 
-		// Text entity test
-		Entity text = ecsManager.CreateEntity();
-		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
-		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
-		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+		Entity box2 = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(box2, { 3.0f, 6.0f, 0 }); // Higher and to the side
+		ecsManager.transformSystem->SetLocalScale(box2, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(box2, { 0, 0, 0 });
+		NameComponent& box2Name = ecsManager.GetComponent<NameComponent>(box2);
+		box2Name.name = "Kinematic Box";
+
+		// Add physics components to box 2 (kinematic)
+		RigidbodyComponent rigidbody2;
+		rigidbody2.bodyType = BodyType::Kinematic;
+		rigidbody2.mass = 2.0f;
+		rigidbody2.restitution = 0.5f;
+		rigidbody2.friction = 0.5f;
+		rigidbody2.isGravityEnabled = false; // Kinematic bodies don't need gravity
+		ecsManager.AddComponent<RigidbodyComponent>(box2, rigidbody2);
+
+		ColliderComponent collider2;
+		collider2.type = ColliderType::Box;
+		collider2.size = Vector3D(0.6f, 0.6f, 0.6f);
+		ecsManager.AddComponent<ColliderComponent>(box2, collider2);
+
+		Entity box3 = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(box3, { -3.0f, 4.0f, 0 }); // Higher and to the other side
+		ecsManager.transformSystem->SetLocalScale(box3, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(box3, { 0, 0, 0 });
+		NameComponent& box3Name = ecsManager.GetComponent<NameComponent>(box3);
+		box3Name.name = "Static Box";
+
+		// Add physics components to box 3 (static)
+		RigidbodyComponent rigidbody3;
+		rigidbody3.bodyType = BodyType::Static;
+		rigidbody3.mass = 0.0f; // Static bodies don't need mass
+		rigidbody3.restitution = 0.8f;
+		rigidbody3.friction = 1.0f;
+		rigidbody3.isGravityEnabled = false; // Static bodies don't move
+		ecsManager.AddComponent<RigidbodyComponent>(box3, rigidbody3);
+
+		ColliderComponent collider3;
+		collider3.type = ColliderType::Box;
+		collider3.size = Vector3D(1.0f, 1.0f, 1.0f); // Larger static collider
+		ecsManager.AddComponent<ColliderComponent>(box3, collider3);
+
+		// Create player entity with physics
+		playerEntity = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(playerEntity, { 0, 2.0f, 0 }); // Start above ground
+		ecsManager.transformSystem->SetLocalScale(playerEntity, { 0.5f, 1.8f, 0.5f }); // Human-like proportions
+		ecsManager.transformSystem->SetLocalRotation(playerEntity, { 0, 0, 0 });
+		NameComponent& playerName = ecsManager.GetComponent<NameComponent>(playerEntity);
+		playerName.name = "Player";
+
+		// Add physics components to player (dynamic capsule for character controller feel)
+		RigidbodyComponent playerRigidbody;
+		playerRigidbody.bodyType = BodyType::Dynamic;
+		playerRigidbody.mass = 70.0f; // Average human weight
+		playerRigidbody.restitution = 0.0f; // No bouncing for player
+		playerRigidbody.friction = 0.8f; // Good traction
+		playerRigidbody.isGravityEnabled = true;
+		ecsManager.AddComponent<RigidbodyComponent>(playerEntity, playerRigidbody);
+
+		ColliderComponent playerCollider;
+		playerCollider.type = ColliderType::Capsule;
+		playerCollider.size = Vector3D(0.5f, 1.8f, 0.5f); // Radius in x, height in y
+		ecsManager.AddComponent<ColliderComponent>(playerEntity, playerCollider);
+
+		// Create ground entity for physics objects to land on
+		Entity groundEntity = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(groundEntity, { 0, -2.0f, 0 });
+		ecsManager.transformSystem->SetLocalScale(groundEntity, { 10.0f, 0.1f, 10.0f }); // Large flat ground
+		ecsManager.transformSystem->SetLocalRotation(groundEntity, { 0, 0, 0 });
+		NameComponent& groundName = ecsManager.GetComponent<NameComponent>(groundEntity);
+		groundName.name = "Ground";
+
+		// Add static physics to ground
+		RigidbodyComponent groundRigidbody;
+		groundRigidbody.bodyType = BodyType::Static;
+		groundRigidbody.mass = 0.0f;
+		groundRigidbody.restitution = 0.2f; // Small bounce
+		groundRigidbody.friction = 0.9f; // High friction for ground
+		groundRigidbody.isGravityEnabled = false;
+		ecsManager.AddComponent<RigidbodyComponent>(groundEntity, groundRigidbody);
+
+		ColliderComponent groundCollider;
+		groundCollider.type = ColliderType::Box;
+		groundCollider.size = Vector3D(10.0f, 0.1f, 10.0f); // Match the scale
+		ecsManager.AddComponent<ColliderComponent>(groundEntity, groundCollider);
+
+		// Text entity test - commented out to avoid meta file issues
+		// Entity text = ecsManager.CreateEntity();
+		// ecsManager.GetComponent<NameComponent>(text).name = "Text1";
+		// ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		// TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
+		// TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
+		// TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
 		//Entity text2 = ecsManager.CreateEntity();
 		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
@@ -121,11 +200,16 @@ void SceneInstance::Initialize() {
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
 
+	// Initialize physics system
+	if (ecsManager.physicsSystem) {
+		ecsManager.physicsSystem->Initialise();
+	}
+
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
-	dt;
+	(void)dt; // Suppress unused parameter warning
 
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
@@ -134,7 +218,12 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	
+
+	// Update physics system
+	if (mainECS.physicsSystem) {
+		mainECS.physicsSystem->Update((float)dt);
+	}
+
 	if (mainECS.audioSystem)
 	{
 		mainECS.audioSystem->Update();
@@ -169,12 +258,66 @@ void SceneInstance::Draw() {
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
 	}
-	// Test debug drawing
-	DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
-	DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
+	// Draw physics debug visualization
+	ECSManager& debugECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+
+	// Iterate through all entities with physics components and draw their colliders
+	for (const auto& entity : debugECS.GetActiveEntities()) {
+		if (debugECS.HasComponent<RigidbodyComponent>(entity) && debugECS.HasComponent<ColliderComponent>(entity) && debugECS.HasComponent<Transform>(entity)) {
+			auto& rigidbody = debugECS.GetComponent<RigidbodyComponent>(entity);
+			auto& collider = debugECS.GetComponent<ColliderComponent>(entity);
+			auto& transform = debugECS.GetComponent<Transform>(entity);
+
+			// Get world position from transform
+			Vector3D worldPos = Matrix4x4::ExtractTranslation(transform.worldMatrix);
+			Vector3D worldScale = transform.localScale;
+
+			// Choose color based on body type
+			Vector3D debugColor;
+			switch (rigidbody.bodyType) {
+				case BodyType::Static:
+					debugColor = Vector3D(1, 0, 0); // Red for static
+					break;
+				case BodyType::Kinematic:
+					debugColor = Vector3D(0, 0, 1); // Blue for kinematic
+					break;
+				case BodyType::Dynamic:
+					debugColor = Vector3D(0, 1, 0); // Green for dynamic
+					break;
+			}
+
+			// Draw collider based on type
+			switch (collider.type) {
+				case ColliderType::Box:
+					DebugDrawSystem::DrawCube(
+						worldPos + collider.center,
+						Vector3D(collider.size.x * worldScale.x, collider.size.y * worldScale.y, collider.size.z * worldScale.z),
+						debugColor
+					);
+					break;
+				case ColliderType::Sphere:
+					DebugDrawSystem::DrawSphere(
+						worldPos + collider.center,
+						collider.size.x * worldScale.x, // Use x component as radius
+						debugColor
+					);
+					break;
+				case ColliderType::Capsule:
+					// For capsule, draw a cube for now (could be enhanced later)
+					DebugDrawSystem::DrawCube(
+						worldPos + collider.center,
+						Vector3D(collider.size.x * worldScale.x * 2, collider.size.y * worldScale.y, collider.size.x * worldScale.x * 2),
+						debugColor
+					);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	// Original test debug drawing for reference
 	DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
-	auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
-	DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
 	if (mainECS.debugDrawSystem)
@@ -219,36 +362,135 @@ void SceneInstance::Exit() {
 
 void SceneInstance::processInput(float deltaTime)
 {
-	if (InputManager::GetKeyDown(Input::Key::ESC))
-		WindowManager::SetWindowShouldClose();
+	// Static variable to track cursor state
+	static bool cursorLocked = true;
+	static bool initialized = false;
 
-	float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::GetKey(Input::Key::W))
-		camera.Position += cameraSpeed * camera.Front;
-	if (InputManager::GetKey(Input::Key::S))
-		camera.Position -= cameraSpeed * camera.Front;
-	if (InputManager::GetKey(Input::Key::A))
-		camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-	if (InputManager::GetKey(Input::Key::D))
-		camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
-
-	float xpos = (float)InputManager::GetMouseX();
-	float ypos = (float)InputManager::GetMouseY();
-
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
+	// Initialize cursor lock on first run
+	if (!initialized) {
+		WindowManager::SetCursorMode(true); // Start with cursor locked
+		initialized = true;
 	}
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	// Toggle cursor lock with ESC key
+	if (InputManager::GetKeyDown(Input::Key::ESC)) {
+		cursorLocked = !cursorLocked;
 
-	lastX = xpos;
-	lastY = ypos;
+		if (cursorLocked) {
+			// Lock cursor to center and hide it
+			WindowManager::SetCursorMode(true); // true = locked/hidden
+			firstMouse = true; // Reset mouse for smooth transition
+		} else {
+			// Free cursor and show it
+			WindowManager::SetCursorMode(false); // false = free/visible
+		}
+		return; // Don't process other input while toggling
+	}
 
-	camera.ProcessMouseMovement(xoffset, yoffset);
+	// Move player entity if it exists
+	if (playerEntity != static_cast<Entity>(-1)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] Player entity exists: " + std::to_string(playerEntity));
+
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+
+		bool hasTransform = ecsManager.HasComponent<Transform>(playerEntity);
+		bool hasPhysicsSystem = (ecsManager.physicsSystem != nullptr);
+
+		ENGINE_LOG_DEBUG("[ProcessInput] Has Transform: " + std::string(hasTransform ? "YES" : "NO"));
+		ENGINE_LOG_DEBUG("[ProcessInput] Has PhysicsSystem: " + std::string(hasPhysicsSystem ? "YES" : "NO"));
+
+		if (hasTransform && hasPhysicsSystem) {
+			bool hasRigidbody = ecsManager.HasComponent<RigidbodyComponent>(playerEntity);
+			ENGINE_LOG_DEBUG("[ProcessInput] Has RigidbodyComponent: " + std::string(hasRigidbody ? "YES" : "NO"));
+
+			if (hasRigidbody) {
+				auto& rigidbody = ecsManager.GetComponent<RigidbodyComponent>(playerEntity);
+				ENGINE_LOG_DEBUG("[ProcessInput] Physics body handle: " + std::string(rigidbody.physicsBodyHandle ? "EXISTS" : "NULL"));
+			}
+
+			float moveSpeed = 50.0f; // Force magnitude for movement
+			Vector3D moveForce(0, 0, 0);
+
+			// Calculate movement direction based on camera orientation (only horizontal plane)
+			glm::vec3 forward = glm::normalize(glm::vec3(camera.Front.x, 0.0f, camera.Front.z));
+			glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+
+			bool keyPressed = false;
+			if (InputManager::GetKey(Input::Key::W)) {
+				moveForce += Vector3D(forward.x, 0, forward.z) * moveSpeed;
+				keyPressed = true;
+				ENGINE_LOG_DEBUG("[ProcessInput] W key pressed");
+			}
+			if (InputManager::GetKey(Input::Key::S)) {
+				moveForce -= Vector3D(forward.x, 0, forward.z) * moveSpeed;
+				keyPressed = true;
+				ENGINE_LOG_DEBUG("[ProcessInput] S key pressed");
+			}
+			if (InputManager::GetKey(Input::Key::A)) {
+				moveForce -= Vector3D(right.x, 0, right.z) * moveSpeed;
+				keyPressed = true;
+				ENGINE_LOG_DEBUG("[ProcessInput] A key pressed");
+			}
+			if (InputManager::GetKey(Input::Key::D)) {
+				moveForce += Vector3D(right.x, 0, right.z) * moveSpeed;
+				keyPressed = true;
+				ENGINE_LOG_DEBUG("[ProcessInput] D key pressed");
+			}
+
+			// Apply force to player entity through physics system
+			if (moveForce.x != 0 || moveForce.z != 0) {
+				ENGINE_LOG_DEBUG("[ProcessInput] Applying force: (" + std::to_string(moveForce.x) + ", " + std::to_string(moveForce.y) + ", " + std::to_string(moveForce.z) + ")");
+				ecsManager.physicsSystem->ApplyForce(playerEntity, moveForce);
+			}
+
+			// Update camera to follow player
+			Transform& playerTransform = ecsManager.GetComponent<Transform>(playerEntity);
+			Vector3D playerPos = Matrix4x4::ExtractTranslation(playerTransform.worldMatrix);
+
+			// Position camera behind and above the player
+			glm::vec3 offset = -forward * 3.0f + glm::vec3(0, 2.0f, 0); // 3 units behind, 2 units up
+			camera.Position = glm::vec3(playerPos.x, playerPos.y, playerPos.z) + offset;
+		} else {
+			ENGINE_LOG_DEBUG("[ProcessInput] Missing required components for player movement");
+		}
+	} else {
+		// Fallback to direct camera movement if no player entity
+		float cameraSpeed = 2.5f * deltaTime;
+		if (InputManager::GetKey(Input::Key::W))
+			camera.Position += cameraSpeed * camera.Front;
+		if (InputManager::GetKey(Input::Key::S))
+			camera.Position -= cameraSpeed * camera.Front;
+		if (InputManager::GetKey(Input::Key::A))
+			camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
+		if (InputManager::GetKey(Input::Key::D))
+			camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
+	}
+
+	// Only process mouse movement if cursor is locked
+	if (cursorLocked) {
+		float xpos = (float)InputManager::GetMouseX();
+		float ypos = (float)InputManager::GetMouseY();
+
+		if (firstMouse)
+		{
+			lastX = xpos;
+			lastY = ypos;
+			firstMouse = false;
+		}
+
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+		// Reduce sensitivity to make camera movement less aggressive
+		const float sensitivity = 0.3f; // Much lower sensitivity
+		xoffset *= sensitivity;
+		yoffset *= sensitivity;
+
+		lastX = xpos;
+		lastY = ypos;
+
+		camera.ProcessMouseMovement(xoffset, yoffset);
+	}
 }
 
 void SceneInstance::DrawLightCubes()

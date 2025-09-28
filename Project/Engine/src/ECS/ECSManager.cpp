@@ -12,6 +12,8 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioSystem.hpp"
+#include "Physics/RigidbodyComponent.hpp"
+#include "Physics/ColliderComponent.hpp"
 #include "Logging.hpp"
 
 void ECSManager::Initialize() {
@@ -30,6 +32,8 @@ void ECSManager::Initialize() {
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
+	RegisterComponent<RigidbodyComponent>();
+	RegisterComponent<ColliderComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -72,8 +76,17 @@ void ECSManager::Initialize() {
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<LightComponent>()); 
-		SetSystemSignature<LightingSystem>(signature); 
+		signature.set(GetComponentID<LightComponent>());
+		SetSystemSignature<LightingSystem>(signature);
+	}
+
+	// Physics system
+	physicsSystem = RegisterSystem<PhysicsSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<RigidbodyComponent>());
+		// Physics system processes entities with rigidbody components
+		SetSystemSignature<PhysicsSystem>(signature);
 	}
 }
 

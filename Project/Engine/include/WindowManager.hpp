@@ -61,6 +61,10 @@ public:
     static bool IsWindowFocused();
     static void window_focus_callback(PlatformWindow window, int focused);
 
+    // Cursor management
+    static void SetCursorMode(bool locked); // true = locked/hidden, false = free/visible
+    static void SetCursorPosition(double x, double y);
+
 
     // Platform access
     static class IPlatform* GetPlatform();

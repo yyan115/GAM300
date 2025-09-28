@@ -332,4 +332,18 @@ bool AndroidPlatform::FileExists(const std::string& path) {
     return false;
 }
 
+// Cursor management (no-op implementations for Android)
+void AndroidPlatform::SetCursorMode(void* window, bool locked) {
+    // No cursor control needed on Android
+    (void)window;
+    (void)locked;
+}
+
+void AndroidPlatform::SetCursorPosition(void* window, double x, double y) {
+    // No cursor positioning needed on Android
+    (void)window;
+    (void)x;
+    (void)y;
+}
+
 #endif // ANDROID
