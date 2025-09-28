@@ -62,7 +62,7 @@ void SceneInstance::Initialize() {
 	spriteName.name = "sprite_test";
 	// Load resources first
 	auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
-	auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/sprite");
+	auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
 	// Add component with constructor parameters
 	ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
 	// Get reference and configure
@@ -80,7 +80,7 @@ void SceneInstance::Initialize() {
 	NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
 	spriteName3D.name = "sprite_3d_test";
 	auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
-	auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/sprite");
+	auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
 	ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
 	auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
 	spriteComponent3D.is3D = true;
