@@ -10,7 +10,6 @@
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
-#include "Sound/AudioSystem.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
 #include <Graphics/Lights/LightingSystem.hpp>
 
@@ -96,7 +95,6 @@ public:
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
-	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 
 private:

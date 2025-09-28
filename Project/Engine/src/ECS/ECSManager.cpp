@@ -10,8 +10,6 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
-#include "Sound/AudioComponent.hpp"
-#include "Sound/AudioSystem.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -28,7 +26,6 @@ void ECSManager::Initialize() {
 	RegisterComponent<LightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
-	RegisterComponent<AudioComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -58,14 +55,6 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<DebugDrawComponent>());
 		SetSystemSignature<DebugDrawSystem>(signature);
-	}
-
-	// Audio system
-	audioSystem = RegisterSystem<AudioSystem>();
-	{
-		Signature signature;
-		signature.set(GetComponentID<AudioComponent>());
-		SetSystemSignature<AudioSystem>(signature);
 	}
 
 	lightingSystem = RegisterSystem<LightingSystem>();

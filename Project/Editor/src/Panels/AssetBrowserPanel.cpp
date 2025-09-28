@@ -461,16 +461,6 @@ void AssetBrowserPanel::RenderAssetGrid() {
             }
         }
 
-        // Start drag-and-drop source when dragging
-        if (!asset.isDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            // Set payload with asset info
-            ImGui::SetDragDropPayload("ASSET_PATH", asset.filePath.c_str(), asset.filePath.size() + 1);
-
-            // Show drag preview
-            ImGui::Text("Dragging: %s", asset.fileName.c_str());
-            ImGui::EndDragDropSource();
-        }
-
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();

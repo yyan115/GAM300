@@ -13,12 +13,11 @@
 
 /**
  * @brief Inspector panel for viewing and editing properties of selected objects.
- *
+ * 
  * This panel displays detailed information and editable properties for the currently
  * selected entity or object, similar to Unity's Inspector window.
  */
-class InspectorPanel : public EditorPanel
-{
+class InspectorPanel : public EditorPanel {
 public:
     InspectorPanel();
     virtual ~InspectorPanel() = default;
@@ -32,9 +31,9 @@ private:
     void DrawNameComponent(Entity entity);
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
-    void DrawSelectedAsset(const GUID_128 &assetGuid);
-    void ApplyMaterialToModel(Entity entity, const GUID_128 &materialGuid);
-    void ApplyMaterialToModelByPath(Entity entity, const std::string &materialPath);
+    void DrawSelectedAsset(const GUID_128& assetGuid);
+    void ApplyMaterialToModel(Entity entity, const GUID_128& materialGuid);
+    void ApplyMaterialToModelByPath(Entity entity, const std::string& materialPath);
 
     // Lock functionality
     bool inspectorLocked = false;
@@ -45,5 +44,4 @@ private:
     std::shared_ptr<Material> cachedMaterial;
     std::string cachedMaterialPath;
     GUID_128 cachedMaterialGuid = {0, 0};
-    void DrawAudioComponent(Entity entity);
 };

@@ -92,14 +92,13 @@
     <ClInclude Include="include\Math\Matrix4x4.hpp" />
     <ClInclude Include="include\Math\Vector3D.hpp" />
     <ClInclude Include="include\pch.h" />
-    <ClInclude Include="include\Sound\AudioComponent.hpp" />
-    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
     <ClInclude Include="include\Transform\TransformSystem.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
+    <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Utilities\FileUtilities.hpp" />
     <ClInclude Include="include\Utilities\GUID.hpp" />
     <ClInclude Include="include\WindowManager.hpp" />
@@ -157,11 +156,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
@@ -354,7 +353,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -362,12 +361,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\core\lib\x64\fmod.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\lib\x64\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
@@ -377,7 +376,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -385,12 +384,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\core\lib\x64\fmod.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\lib\x64\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -402,7 +401,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -410,12 +409,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\core\lib\x64\fmod.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\lib\x64\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
@@ -427,7 +426,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -435,12 +434,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\core\lib\x64\fmod.dll" "$(OutDir)"</Command>
+      <Command>copy /Y "$(SolutionDir)Libraries\FMOD\lib\x64\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
