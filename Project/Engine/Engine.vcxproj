@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -55,6 +55,9 @@
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Logging.hpp" />
+    <ClInclude Include="include\Prefab.hpp" />
+    <ClInclude Include="include\PrefabComponent.hpp" />
+    <ClInclude Include="include\PrefabIO.hpp" />
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
@@ -167,6 +170,8 @@
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
     <ClCompile Include="src\Logging.cpp" />
+    <ClCompile Include="src\Prefab.cpp" />
+    <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />

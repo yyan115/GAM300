@@ -98,6 +98,7 @@ std::string AssetManager::ExtractRelativeAndroidPath(const std::string& fullAndr
 }
 
 void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
+	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
 	std::string metaFilePath = assetPath + ".meta";
@@ -111,11 +112,13 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
 	}
 
+#ifndef ANDROID
 	// Check if the compiled resource file exists. If not, we need to recompile the asset.
 	if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
 		std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
 		CompileAsset(assetPath);
 	}
+#endif
 
 	assetMetaMap[assetMeta->guid] = assetMeta;
 }
@@ -256,6 +259,11 @@ const std::unordered_set<std::string>& AssetManager::GetShaderExtensions() const
 }
 
 bool AssetManager::IsAssetExtensionSupported(const std::string& extension) const {
+	//for (auto& supported : supportedAssetExtensions) {
+	//	ENGINE_LOG_INFO("Extension: " + extension);
+	//	ENGINE_LOG_INFO("Supported: " + supported);
+	//}
+
 	return supportedAssetExtensions.find(extension) != supportedAssetExtensions.end();
 }
 
@@ -325,12 +333,13 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
+	ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 		return it->second->sourceFilePath;
 	}
 
-	std::cerr << "[AssetManager] ERROR: Asset meta with GUID not found." << std::endl;
+	ENGINE_LOG_ERROR("[AssetManager] ERROR: Asset meta with GUID not found.");
 	return "";
 }
 

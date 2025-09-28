@@ -508,6 +508,7 @@ bool Engine::Initialize() {
 
 bool Engine::InitializeGraphicsResources() {
 	ENGINE_LOG_INFO("Initializing graphics resources...");
+    MetaFilesManager::InitializeAssetMetaFiles("Resources");
 
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
@@ -659,6 +660,7 @@ void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
 	AudioSystem::GetInstance().Shutdown();
     EngineLogging::Shutdown();
+    SceneManager::GetInstance().ExitScene();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }
 
