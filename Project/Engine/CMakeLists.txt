@@ -113,7 +113,7 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -173,7 +173,7 @@ else()
         # Find FMOD library - try different possible names
         find_library(FMOD_LIBRARY
             NAMES fmod libfmod.so.14.9 libfmod.so.14 libfmod.so
-            PATHS ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64
+            PATHS ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64
             NO_DEFAULT_PATH
         )
         if(FMOD_LIBRARY)
@@ -188,7 +188,7 @@ else()
         endif()
     elseif(WIN32)
         target_link_libraries(Engine PRIVATE
-            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/fmod_vc.lib
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
         )
     endif()
 endif()
@@ -197,5 +197,5 @@ endif()
 set_target_properties(Engine PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
     BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64"
+    INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64"
 )

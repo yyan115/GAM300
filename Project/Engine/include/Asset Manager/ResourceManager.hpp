@@ -16,6 +16,11 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+// Forward declarations to avoid including heavy headers
+class Audio;
+class Texture;
+class Model;
+class Shader;
 
 class ENGINE_API ResourceManager {
 public:
