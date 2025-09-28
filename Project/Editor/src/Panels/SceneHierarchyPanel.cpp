@@ -145,17 +145,32 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             GUIManager::SetSelectedEntity(entityId);
     }
 
-    // --- drag source: allow creating a prefab by dragging this row ---
-    if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+    // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
     {
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Start a drag from this row?
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
-            Entity payload = entityId; // copy; ImGui copies this buffer into the payload
-            ImGui::SetDragDropPayload("ENTITY_AS_PREFAB", &payload, sizeof(Entity));
-            ImGui::TextUnformatted("Create Prefab");
-            ImGui::Separator();
-            ImGui::Text("%s", entityName.c_str());
-            ImGui::EndDragDropSource();
+            const bool moveInHierarchy = io.KeyCtrl;   // Ctrl+Drag => move. Else => create prefab.
+
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+            {
+                if (moveInHierarchy)
+                {
+                    ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entityId, sizeof(Entity));
+                    ImGui::Text("Move %s", entityName.c_str());
+                }
+                else
+                {
+                    Entity payload = entityId; // ImGui copies this buffer
+                    ImGui::SetDragDropPayload("ENTITY_AS_PREFAB", &payload, sizeof(Entity));
+                    ImGui::TextUnformatted("Create Prefab");
+                    ImGui::Separator();
+                    ImGui::Text("%s", entityName.c_str());
+                }
+                ImGui::EndDragDropSource();
+            }
         }
     }
     // -----------------------------------------------------------------
@@ -172,21 +187,6 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    // Drag source
-    if (ImGui::BeginDragDropSource()) {
-        ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entityId, sizeof(Entity));
-        ImGui::Text("Move %s", ecsManager.GetComponent<NameComponent>(entityId).name.c_str());
-        ImGui::EndDragDropSource();
-    }
-
-    // Drop target
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
-            Entity dragged = *(Entity*)payload->Data;
-            ReparentEntity(dragged, entityId); // your logic
-        }
-        ImGui::EndDragDropTarget();
-    }
 
     if (opened && hasChildren) {
         // Child nodes would be drawn here in a real implementation

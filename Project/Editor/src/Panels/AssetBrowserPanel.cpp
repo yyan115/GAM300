@@ -476,17 +476,6 @@ void AssetBrowserPanel::RenderAssetGrid()
             }
         }
 
-        // draw the tile
-        // Start drag-and-drop source when dragging
-        if (!asset.isDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            // Set payload with asset info
-            ImGui::SetDragDropPayload("ASSET_PATH", asset.filePath.c_str(), asset.filePath.size() + 1);
-
-            // Show drag preview
-            ImGui::Text("Dragging: %s", asset.fileName.c_str());
-            ImGui::EndDragDropSource();
-        }
-
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();
@@ -538,12 +527,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         // double click
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else std::cout << "[AssetBrowserPanel] Opening asset: "
-                << "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")\n";
-            else 
-                //std::cout << "[AssetBrowserPanel] Opening asset: "
-                //<< "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")"
-                //<< std::endl;
+            else
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
 
         }
@@ -578,44 +562,30 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImGui::EndPopup();
     }
 
-    // ---------------- BACKGROUND DROP OVERLAY (placed LAST) ----------------
+    // ---------------- BACKGROUND DROP (scroll-safe, non-blocking) ----------------
     {
-        // Only show overlay while an ENTITY drag is active
-        const ImGuiPayload* active = ImGui::GetDragDropPayload();
-        const bool entityDragActive =
-            active && (active->IsDataType("ENTITY_AS_PREFAB") || active->IsDataType("HIERARCHY_ENTITY"));
+        ImGuiWindow* win = ImGui::GetCurrentWindow();
+        const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
 
+        const ImGuiPayload* active = ImGui::GetDragDropPayload();
+        const bool entityDragActive = (active && active->IsDataType("ENTITY_AS_PREFAB"));
+
+        // Foreground visual (never occluded by items)
         if (entityDragActive)
         {
-            // Window content rect in screen coords
-            const ImVec2 win_pos = ImGui::GetWindowPos();
-            const ImVec2 cr_min = ImGui::GetWindowContentRegionMin();
-            const ImVec2 cr_max = ImGui::GetWindowContentRegionMax();
-            const ImVec2 min(win_pos.x + cr_min.x, win_pos.y + cr_min.y);
-            const ImVec2 max(win_pos.x + cr_max.x, win_pos.y + cr_max.y);
-            const ImVec2 size(max.x - min.x, max.y - min.y);
+            ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+            fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+            fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+        }
 
-            // Visual cue (border + faint fill when hovered)
-            const bool hovering = ImGui::IsMouseHoveringRect(min, max, true);
-            ImDrawList* dl = ImGui::GetWindowDrawList();
-            if (hovering) {
-                dl->AddRectFilled(min, max, IM_COL32(100, 150, 255, 25), 6.0f); // subtle fill
-            }
-            dl->AddRect(min, max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
-
-            // Hittable (invisible) item that receives the drop
-            ImGui::SetCursorScreenPos(min);
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
-            ImGui::InvisibleButton("##GridDropOverlay", size);
-            ImGui::PopStyleVar();
-
-            if (ImGui::BeginDragDropTarget())
+        // The target itself; no widget created -> scrolling unaffected
+        if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##AssetGridBgDrop")))
+        {
+            if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB",
+                    ImGuiDragDropFlags_AcceptBeforeDelivery))
             {
-                // Prefer ENTITY_AS_PREFAB, but fall back to HIERARCHY_ENTITY
-                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB");
-                if (!payload) payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY");
-
-                if (payload && payload->Data && payload->DataSize == sizeof(Entity))
+                if (payload->IsDelivery() && payload->DataSize == sizeof(Entity))
                 {
                     const Entity dropped = *reinterpret_cast<const Entity*>(payload->Data);
                     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -626,22 +596,24 @@ void AssetBrowserPanel::RenderAssetGrid()
                     if (niceName.empty())
                         niceName = "Entity_" + std::to_string(static_cast<uint64_t>(dropped));
 
-                    std::filesystem::path dst = std::filesystem::path(currentDirectory) / (niceName + ".prefab");
+                    std::filesystem::path dst =
+                        std::filesystem::path(currentDirectory) / (niceName + ".prefab");
                     dst = MakeUniquePath(dst);
 
                     const std::string absDst = std::filesystem::absolute(dst).generic_string();
-                    const bool ok = SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), dropped, absDst);
+                    const bool ok = SaveEntityToPrefabFile(
+                        ecs, AssetManager::GetInstance(), dropped, absDst);
 
                     if (ok)  std::cout << "[AssetBrowserPanel] Saved prefab: " << absDst << "\n";
-                    else     std::cerr << "[AssetBrowserPanel] Failed to save prefab: " << absDst << "\n";
+                    else     std::cerr << "[AssetBrowserPanel] Failed to save: " << absDst << "\n";
 
                     RefreshAssets();
                 }
-                ImGui::EndDragDropTarget();
             }
+            ImGui::EndDragDropTarget();
         }
     }
-    // ----------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
 
     ImGui::PopID();
 }

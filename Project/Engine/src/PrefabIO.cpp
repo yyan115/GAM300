@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unordered_map>
 #include "Reflection/ReflectionBase.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
@@ -36,14 +37,22 @@ static std::unordered_map<std::string, ApplyFn> s_apply =
     // Loaders (READ)
     { "NameComponent", [](ECSManager& ecs, Entity e, const rapidjson::Value& v) {
         ApplyReflectedComponent<NameComponent>(ecs, e, v);
-      }},
-    // TODO: register more:
-    // { "TransformComponent", [](ECSManager& ecs, Entity e, const rapidjson::Value& v) {
-    //     ApplyReflectedComponent<TransformComponent>(ecs, e, v);
-    // }},
-    // { "MeshRenderer", [](ECSManager& ecs, Entity e, const rapidjson::Value& v) {
-    //     ApplyReflectedComponent<MeshRenderer>(ecs, e, v);
-    // }},
+    }},
+    { "Transform", [](ECSManager& ecs, Entity e, const rapidjson::Value& v) {
+        ApplyReflectedComponent<Transform>(ecs, e, v);
+    }},
+    { "ModelRenderComponent", [](ECSManager& ecs, Entity e, const rapidjson::Value& v) {
+    ModelRenderComponent mrc{};
+    TypeResolver<ModelRenderComponent>::Get()->Deserialize(&mrc, v);
+
+    mrc.model = AssetManager::GetInstance().LoadByGUID<Model>(mrc.modelGUID);
+    mrc.shader = AssetManager::GetInstance().LoadByGUID<Shader>(mrc.shaderGUID);
+
+    if (ecs.HasComponent<ModelRenderComponent>(e))
+        ecs.GetComponent<ModelRenderComponent>(e) = mrc;
+    else
+        ecs.AddComponent<ModelRenderComponent>(e, mrc);
+    }},
 };
 
 ENGINE_API bool InstantiatePrefabFromFile(ECSManager& ecs,
@@ -167,13 +176,10 @@ ENGINE_API bool SaveEntityToPrefabFile(
     // (we'll use the fixed TryWrite<T>() below)
         };
 
-    // NameComponent
     TryWrite<NameComponent>(ecs, e, "NameComponent", doc);
+    TryWrite<Transform>(ecs, e, "Transform", doc);
+    TryWrite<ModelRenderComponent>(ecs, e, "ModelRenderComponent", doc);
 
-    // TODO: add more:
-    // TryWrite<TransformComponent>(ecs, e, "TransformComponent", doc);
-    // TryWrite<MeshRenderer>(ecs, e, "MeshRenderer", doc);
-    // --------------------------------------
 
     // If empty, warn (so you know why nothing appears)
     if (doc.ObjectEmpty()) {
