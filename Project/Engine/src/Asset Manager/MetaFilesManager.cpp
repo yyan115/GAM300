@@ -109,7 +109,8 @@ GUID_string MetaFilesManager::GetGUIDFromMetaFile(const std::string& metaFilePat
 		return assetMetaData["guid"].GetString();
 	}
 	else {
-		std::cerr << "[MetaFilesManager] ERROR: GUID not found in meta file: " << metaFilePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: GUID not found in meta file: ", metaFilePath, "\n");
+		//std::cerr << "[MetaFilesManager] ERROR: GUID not found in meta file: " << metaFilePath << std::endl;
 		return "";
 	}
 }
@@ -194,7 +195,8 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 		return assetMetaData["version"].GetInt() == CURRENT_METADATA_VERSION;
 	}
 	else {
-		std::cerr << "[MetaFilesManager] ERROR: version not found in meta file: " << metaFilePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: version not found in meta file: ", metaFilePath, "\n");
+		//std::cerr << "[MetaFilesManager] ERROR: version not found in meta file: " << metaFilePath << std::endl;
 		return "";
 	}
 }

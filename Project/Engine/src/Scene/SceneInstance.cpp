@@ -10,12 +10,12 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
-#include <Graphics/Lights/LightComponent.hpp>
+//#include <Graphics/Lights/LightComponent.hpp>
+#include "Sound/AudioComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
-#include <Sound/AudioManager.hpp>
 #include <Logging.hpp>
 
 void SceneInstance::Initialize() {
@@ -148,14 +148,29 @@ void SceneInstance::Initialize() {
 
 	// Test Audio
 	{
-		if (!AudioManager::StaticInitalize())
+		// Initialize AudioSystem
+		if (!AudioSystem::GetInstance().Initialise())
 		{
-			ENGINE_LOG_ERROR("Failed to initialize AudioManager");
+			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
 		}
 		else
 		{
-			auto audioAsset = ResourceManager::GetInstance().GetResource<Audio>("Resources/Audio/sfx/Test_duck.wav");
-			AudioManager::GetInstance().PlaySound(audioAsset->sound, audioAsset->assetPath);
+			// Create an entity with AudioComponent
+			Entity audioEntity = ecsManager.CreateEntity();
+			ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+			NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+			audioName.name = "Audio Test Entity";
+			
+			// Add AudioComponent
+			AudioComponent audioComp;
+			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+			audioComp.Volume = 0.8f;
+			audioComp.Loop = false;
+			audioComp.PlayOnAwake = true;
+			audioComp.Spatialize = false;
+			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+			
+			// The AudioComponent will automatically load and play the audio on awake
 		}
 	}
 
@@ -164,7 +179,7 @@ void SceneInstance::Initialize() {
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 
-	std::cout << "TestScene Initialized" << std::endl;
+	ENGINE_PRINT("TestScene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
@@ -178,6 +193,11 @@ void SceneInstance::Update(double dt) {
 	// Update systems.
 	mainECS.transformSystem->Update();
 	//mainECS.lightingSystem->Update();
+	
+	if (mainECS.audioSystem)
+	{
+		mainECS.audioSystem->Update();
+	}
 }
 
 void SceneInstance::Draw() {
@@ -254,8 +274,8 @@ void SceneInstance::Exit() {
 
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
-	std::cout << "TestScene Exited" << std::endl;
+	ENGINE_PRINT("TestScene Exited\n");
+	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)

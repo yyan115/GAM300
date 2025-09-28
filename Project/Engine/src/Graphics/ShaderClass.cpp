@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include "Graphics/ShaderClass.h"
+#include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/asset_manager.h>
@@ -267,7 +268,8 @@ std::string Shader::CompileToResource(const std::string& path) {
 	binarySupported = true;
 
 	if (!SetupShader(path)) {
-		std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
+		//std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
 		return std::string{};
 	}
 
@@ -301,7 +303,8 @@ bool Shader::LoadResource(const std::string& assetPath)
 	if (!binarySupported) {
 		// Fallback to regular shader compilation if binary is not supported.
 		if (!SetupShader(assetPath)) {
-			std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting load.\n");
+			//std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
 			return false;
 		}
 
@@ -329,9 +332,11 @@ bool Shader::LoadResource(const std::string& assetPath)
 		GLint status = 0;
 		glGetProgramiv(ID, GL_LINK_STATUS, &status);
 		if (status == GL_FALSE) {
-			std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
+			//std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
 			if (CompileToResource(assetPath).empty()) {
-				std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
+				//std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
 				return false;
 			}
 
@@ -500,7 +505,8 @@ GLint Shader::getUniformLocation(const std::string& name)
 	// Debug output for missing uniforms (can be removed later)
 	if (location == -1)
 	{
-		std::cout << "Warning: Uniform '" << name << "' not found in shader ID: " << ID << std::endl;
+		ENGINE_PRINT("Warning: Uniform '" , name , "' not found in shader ID: ", ID, "\n");
+		//std::cout << "Warning: Uniform '" << name << "' not found in shader ID: " << ID << std::endl;
 	}
 
 	return location;
