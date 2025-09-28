@@ -34,6 +34,7 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
 	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 	backpackName.name = "dora the explorer";
+	ENGINE_LOG_INFO("Loading resource");
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
 
@@ -105,7 +106,7 @@ void SceneInstance::Initialize() {
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 
-	std::cout << "TestScene Initialized" << std::endl;
+	ENGINE_PRINT("TestScene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
@@ -195,12 +196,10 @@ void SceneInstance::Draw() {
 }
 
 void SceneInstance::Exit() {
-	// Cleanup code for the test scene
-
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
-	std::cout << "TestScene Exited" << std::endl;
+	ENGINE_PRINT("TestScene Exited\n");
+	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)
