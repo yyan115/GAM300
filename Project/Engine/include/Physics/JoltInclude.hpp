@@ -1,5 +1,10 @@
 #pragma once
-
+#undef JPH_OBJECT_STREAM
+#undef JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
+#undef JPH_PROFILE_ENABLED
+#define JPH_OBJECT_STREAM 0
+#define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED 0
+#define JPH_PROFILE_ENABLED 0
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>

@@ -91,7 +91,19 @@ else()
     find_package(glm CONFIG REQUIRED)
     find_package(spdlog CONFIG REQUIRED)
     find_package(RapidJSON CONFIG REQUIRED)
-endif()
+	
+	
+# Build Jolt from source in this project (desktop only)
+# Force static so there's no Jolt.dll at runtime
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(JPH_OBJECT_STREAM OFF CACHE BOOL "" FORCE)
+set(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
+set(JPH_PROFILE_ENABLED OFF CACHE BOOL "" FORCE)
+
+# Bring Jolt into the build graph
+add_subdirectory(${CMAKE_SOURCE_DIR}/../Libraries/joltphysics)
+
+
 
 # Manual libraries that aren't available in vcpkg or need custom versions
 target_include_directories(Engine
@@ -150,7 +162,15 @@ else()
             glad::glad
             spdlog::spdlog
             rapidjson
+		Jolt
+		
     )
+if (WIN32)
+      add_custom_command(TARGET Engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:Jolt>
+                $<TARGET_FILE_DIR:Engine>)
+    endif()
     
     # Linux-specific system libraries
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

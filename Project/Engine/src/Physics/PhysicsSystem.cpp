@@ -12,6 +12,12 @@
 #include <cstdarg>
 
 
+#define STR2(x) #x
+#define STR(x) STR2(x)
+#pragma message("JPH_OBJECT_STREAM=" STR(JPH_OBJECT_STREAM))
+#pragma message("JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=" STR(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED))
+#pragma message("JPH_PROFILE_ENABLED=" STR(JPH_PROFILE_ENABLED))
+
 const uint32_t MAX_BODIES = 65536;
 const uint32_t NUM_BODY_MUTEXES = 0; // 0 = default
 const uint32_t MAX_BODY_PAIRS = 65536;
@@ -42,6 +48,7 @@ bool PhysicsSystem::Initialise() {
         JPH::Trace = JoltTrace;
         JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed; )
             JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
     }
 
     if (!temp) temp = std::make_unique<JPH::TempAllocatorImpl>(16 * 1024 * 1024);
@@ -54,7 +61,7 @@ bool PhysicsSystem::Initialise() {
         broadphase, objVsBP, objPair);  
     physics.SetGravity(JPH::Vec3(0, -9.81f, 0));  // gravity set
 
-    JPH::BodyInterface& bi = physics.GetBodyInterface();
+    /*JPH::BodyInterface& bi = physics.GetBodyInterface();
 
     JPH::RefConst<JPH::Shape> groundShape = new JPH::BoxShape(JPH::Vec3(100, 1, 100));
     JPH::BodyCreationSettings gcs(
@@ -68,7 +75,7 @@ bool PhysicsSystem::Initialise() {
         boxShape.GetPtr(), JPH::RVec3(0, 3, 0), JPH::Quat::sIdentity(),
         JPH::EMotionType::Dynamic, Layers::MOVING
     );
-    bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
+    bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);*/
 
     return true;
 }
@@ -103,13 +110,16 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
 		JPH::RVec3Arg pos = JPH::RVec3(tr.position.x, tr.position.y, tr.position.z);
-		JPH::QuatArg rot = JPH::Quat(tr.rotation.x, tr.rotation.y, tr.rotation.z, 0);
+        JPH::QuatArg rot = JPH::Quat::sIdentity();
+        JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
+
         // 1) Create if not created yet
         if (rb.id.IsInvalid()) {
             const auto motion =
                 rb.motion == Motion::Static ? JPH::EMotionType::Static :
                 rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
                 JPH::EMotionType::Dynamic;
+            JPH_ASSERT(col.shape != nullptr);                     //  catch missing shapes early
 
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
             if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
@@ -150,7 +160,8 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         JPH::RVec3 pos = JPH::RVec3(tr.position.x, tr.position.y, tr.position.z);
-        JPH::Quat rot = JPH::Quat(tr.rotation.x, tr.rotation.y, tr.rotation.z, 0);
+        JPH::QuatArg rot = JPH::Quat::sIdentity();
+        JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
         if (rb.id.IsInvalid()) continue;
         if (rb.motion == Motion::Dynamic) {
@@ -163,7 +174,25 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 }
 
 void PhysicsSystem::Shutdown() {
-	JPH::UnregisterTypes();
-	delete JPH::Factory::sInstance;
-	JPH::Factory::sInstance = nullptr;
+	//JPH::UnregisterTypes();
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
+	for (auto& e : entities) {
+		auto& rb = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<RigidBodyComponent>(e);
+		if (!rb.id.IsInvalid()) {
+			bi.RemoveBody(rb.id);
+			bi.DestroyBody(rb.id);
+			rb.id = JPH::BodyID();
+		}
+	}
+    for (auto& e : entities) {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        auto& col = ecs.GetComponent<ColliderComponent>(e);
+        col.shape = nullptr;    // drop RefConst<Shape>
+    }
+    entities.clear();
+
+    jobs.reset();
+    temp.reset();
+    /*delete JPH::Factory::sInstance;
+	JPH::Factory::sInstance = nullptr;*/
 }

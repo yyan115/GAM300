@@ -11,6 +11,8 @@
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
@@ -50,6 +52,57 @@ void SceneInstance::Initialize() {
 	
 	//PHYSICS TEST CODE
 	ecsManager.physicsSystem->Initialise();
+	Entity physicsBoxObj = ecsManager.CreateEntity();
+	ecsManager.AddComponent<Transform>(physicsBoxObj, Transform{});
+	ecsManager.AddComponent<RigidBodyComponent>(physicsBoxObj, RigidBodyComponent{});
+	ecsManager.AddComponent<ColliderComponent>(physicsBoxObj, ColliderComponent{});
+	Transform& physicsTransform = ecsManager.GetComponent<Transform>(physicsBoxObj);
+	physicsTransform.position = { 0.5f, 2.5f, 0 };
+	physicsTransform.scale = { .1f, .1f, .1f };
+	physicsTransform.rotation = { 0, 0, 0 };
+
+	RigidBodyComponent& rb = ecsManager.GetComponent<RigidBodyComponent>(physicsBoxObj);
+	rb.motion = Motion::Dynamic;
+	rb.ccd = false;
+	rb.transform_dirty = true;
+	rb.motion_dirty = true;
+	rb.collider_seen_version = 0;
+
+	ColliderComponent& col = ecsManager.GetComponent<ColliderComponent>(physicsBoxObj);
+	col.shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+	col.layer = Layers::MOVING;
+	col.version++;
+
+	ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+	ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default") });
+	
+	// ---- FLOOR (static, invisible) ----
+	Entity floor = ecsManager.CreateEntity();
+	ecsManager.AddComponent<Transform>(floor, Transform{});
+	ecsManager.AddComponent<RigidBodyComponent>(floor, RigidBodyComponent{});
+	ecsManager.AddComponent<ColliderComponent>(floor, ColliderComponent{});
+
+	// Transform: center the floor at y = 0 (top surface near y = +0.5 since half-extent is 0.5)
+	auto& floorTr = ecsManager.GetComponent<Transform>(floor);
+	floorTr.position = { 0.0f, -0.5f, 0.0f };
+	floorTr.rotation = { 0, 0, 0 };
+	floorTr.scale = { 1, 1, 1 }; // render-only; physics size comes from the shape
+
+	auto& floorRb = ecsManager.GetComponent<RigidBodyComponent>(floor);
+	floorRb.motion = Motion::Static;
+	floorRb.ccd = false;
+	floorRb.transform_dirty = true;
+	floorRb.motion_dirty = true;
+	floorRb.collider_seen_version = 0;
+
+	ColliderComponent& floorCol = ecsManager.GetComponent<ColliderComponent>(floor);
+	// Large, thin box: 200 x 1 x 200 (half-extents 100,0.5,100)
+	floorCol.shape = JPH::BoxShapeSettings(JPH::Vec3(100.f, 0.5f, 100.f)).Create().Get();
+	floorCol.layer = Layers::NON_MOVING;
+	floorCol.version++;
+
+	ecsManager.physicsSystem->physicsAuthoring(ecsManager);
+
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
@@ -92,6 +145,7 @@ void SceneInstance::Update(double dt) {
 	// Update systems.
 	mainECS.transformSystem->update();
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
+	mainECS.physicsSystem->physicsSyncBack(mainECS);
 }
 
 void SceneInstance::Draw() {
@@ -142,7 +196,8 @@ void SceneInstance::Exit() {
 
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-	ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
 	std::cout << "TestScene Exited" << std::endl;
 }
 

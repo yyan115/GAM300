@@ -1,9 +1,6 @@
 #pragma once
 
-// Force names method to exist when Jolt was built with profiling
-#ifndef JPH_PROFILE_ENABLED
-#define JPH_PROFILE_ENABLED 1
-#endif
+
 
 #include <array>
 #include <Jolt/Jolt.h>
@@ -43,8 +40,16 @@ public:
 //#endif
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
-    virtual const char* GetBroadPhaseLayerName(JPH::BroadPhaseLayer) const = 0;
-#endif
+    virtual const char* GetBroadPhaseLayerName(JPH::BroadPhaseLayer inLayer) const override
+    {
+        switch ((JPH::BroadPhaseLayer::Type)inLayer)
+        {
+        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
+        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
+        default:													JPH_ASSERT(false); return "INVALID";
+        }
+    }
+#endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
 
 private:
     std::array<JPH::BroadPhaseLayer, Layers::COUNT> mObjectToBroadPhase{};
@@ -53,10 +58,17 @@ private:
 // Broadphase culling
 class MyObjectVsBroadPhaseLayerFilter final : public JPH::ObjectVsBroadPhaseLayerFilter {
 public:
-    ~MyObjectVsBroadPhaseLayerFilter() override = default;
     bool ShouldCollide(JPH::ObjectLayer layer, JPH::BroadPhaseLayer bp) const override {
-        if (layer == Layers::NON_MOVING) return bp == BroadPhaseLayers::MOVING;
-        return bp == BroadPhaseLayers::MOVING; // MOVING/SENSOR/DEBRIS test only vs MOVING
+        switch (layer) {
+        case Layers::NON_MOVING:
+            return bp == BroadPhaseLayers::MOVING; // static vs moving only
+        case Layers::MOVING:
+        case Layers::SENSOR:
+        case Layers::DEBRIS:
+            return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::NON_MOVING; // allow floor
+        default:
+            return false;
+        }
     }
 };
 
