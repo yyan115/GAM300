@@ -3,7 +3,10 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include "Reflection/ReflectionBase.hpp"
+
 struct Vertex {
+	//REFL_SERIALIZABLE - I cannot serialize glm
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec3 color;

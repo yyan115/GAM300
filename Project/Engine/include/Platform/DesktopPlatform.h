@@ -60,6 +60,8 @@ public:
 
     // Asset management
     std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) override;
+    std::vector<uint8_t> ReadAsset(const std::string& path) override;
+    bool FileExists(const std::string& path) override;
 
     void* GetNativeWindow() override;
     

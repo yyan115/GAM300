@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "ECSManager.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
+#include "Logging.hpp"
 
 /**
  * \class ECSRegistry
@@ -28,6 +29,8 @@ public:
 	ECSManager& GetActiveECSManager();
 
 	void RenameECSManager(const std::string& oldName, const std::string& newName) {
+		if (oldName == newName) return;
+
 		assert(ecsManagers.find(oldName) != ecsManagers.end() && "ECSManager with the given old name does not exist.");
 		assert(ecsManagers.find(newName) == ecsManagers.end() && "ECSManager with the given new name already exists.");
 		
@@ -37,8 +40,8 @@ public:
 		if (oldName == activeECSManagerName) {
 			activeECSManagerName = newName;
 		}
-
-		std::cout << "[ECSRegistry] Renamed ECSManager from '" << oldName << "' to '" << newName << "'." << std::endl;
+		ENGINE_PRINT("[ECSRegistry] Renamed ECSManager from '", oldName, "' to '", newName, "'.\n");
+		//std::cout << "[ECSRegistry] Renamed ECSManager from '" << oldName << "' to '" << newName << "'." << std::endl;
 	}
 
 private:

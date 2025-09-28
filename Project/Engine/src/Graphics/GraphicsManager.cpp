@@ -9,6 +9,7 @@
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include "Logging.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -25,7 +26,8 @@ void GraphicsManager::Shutdown()
 {
 	renderQueue.clear();
 	currentCamera = nullptr;
-	std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
 void GraphicsManager::BeginFrame()
@@ -79,7 +81,8 @@ void GraphicsManager::Render()
 {
 	if (!currentCamera) 
 	{
-		std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
+		//std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
 		return;
 	}
 
@@ -123,7 +126,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	item.shader->Activate();
 
 	// Set up all matrices and uniforms
-	SetupMatrices(*item.shader, item.transform);
+	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
 
 	// Apply lighting
 	/*ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
@@ -233,18 +236,18 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
-	item.shader->setVec3("textColor", item.color);
+	item.shader->setVec3("textColor", item.color.ConvertToGLM());
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D) 
 	{
 		// 3D text rendering - use normal 3D matrices
-		SetupMatrices(*item.shader, item.transform);
+		SetupMatrices(*item.shader, item.transform.ConvertToGLM());
 	}
 	else 
 	{
 		// 2D screen space text rendering
-		Setup2DTextMatrices(*item.shader, item.position, item.scale);
+		Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
 	}
 
 	// Bind VAO and render each character
@@ -254,7 +257,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	if (!fontVAO || !fontVBO) 
 	{
-		std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
+		//std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
 	}
@@ -280,7 +284,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	{
 		const Character& ch = item.font->GetCharacter(c);
 		if (ch.textureID == 0) {
-			std::cerr << "Character '" << c << "' has no texture!" << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
+			//std::cerr << "Character '" << c << "' has no texture!" << std::endl;
 			continue;
 		}
 
@@ -369,11 +374,11 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 			if (drawCommand.meshModel) 
 			{
 				// Create transform matrix
-				glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+				glm::mat4 transform = CreateTransformMatrix(drawCommand.position.ConvertToGLM(), drawCommand.rotation.ConvertToGLM(), drawCommand.scale.ConvertToGLM());
 
 				// Set up matrices and uniforms
 				SetupMatrices(*item.shader, transform);
-				item.shader->setVec3("debugColor", drawCommand.color);
+				item.shader->setVec3("debugColor", drawCommand.color.ConvertToGLM());
 
 				// Draw the model in wireframe mode (wireframe is already enabled above)
 				drawCommand.meshModel->Draw(*item.shader, *currentCamera);
@@ -388,10 +393,10 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		if (!currentVAO) continue;
 
 		// Create transform matrix
-		glm::mat4 transform = CreateTransformMatrix(drawCommand.position, drawCommand.rotation, drawCommand.scale);
+		glm::mat4 transform = CreateTransformMatrix(drawCommand.position.ConvertToGLM(), drawCommand.rotation.ConvertToGLM(), drawCommand.scale.ConvertToGLM());
 		// Set up matrices and uniforms
 		SetupMatrices(*item.shader, transform);
-		item.shader->setVec3("debugColor", drawCommand.color);
+		item.shader->setVec3("debugColor", drawCommand.color.ConvertToGLM());
 		// Bind VAO and render
 		currentVAO->Bind();
 
@@ -413,29 +418,6 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 #endif
 }
 
-glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)
-{
-	Matrix4x4 transposed = m.Transposed();
-	glm::mat4 converted(
-		transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03, 
-		transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
-		transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
-		transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
-
-	return converted;
-}
-
-Matrix4x4 GraphicsManager::ConvertGLMToMatrix4x4(const glm::mat4& m)
-{
-	// GLM is column-major, Matrix4x4 is row-major, so we need to transpose
-	Matrix4x4 converted(
-		m[0][0], m[1][0], m[2][0], m[3][0],
-		m[0][1], m[1][1], m[2][1], m[3][1],
-		m[0][2], m[1][2], m[2][2], m[3][2],
-		m[0][3], m[1][3], m[2][3], m[3][3]);
-	return converted;
-}
-
 glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
 {
 	Vector3D position = { pos.x, pos.y, pos.z };
@@ -443,6 +425,6 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 	Vector3D scaleVec = { scale.x, scale.y, scale.z };
 
 	Matrix4x4 modelMatrix = TransformSystem::CalculateModelMatrix(position, scaleVec, rotation);
-	return ConvertMatrix4x4ToGLM(modelMatrix);
+	return modelMatrix.ConvertToGLM();
 }
 

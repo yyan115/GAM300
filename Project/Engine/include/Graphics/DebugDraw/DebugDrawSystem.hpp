@@ -18,10 +18,10 @@ public:
     void Update();
     void Shutdown();
 
-    static void DrawCube(const glm::vec3& position, const glm::vec3& scale = glm::vec3(1.0f), const glm::vec3& color = glm::vec3(1.0f), float duration = 0.0f);
-    static void DrawSphere(const glm::vec3& position, float radius = 1.0f, const glm::vec3& color = glm::vec3(1.0f), float duration = 0.0f);
-    static void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color = glm::vec3(1.0f), float duration = 0.0f, float width = 1.0f);
-    static void DrawMeshWireframe(std::shared_ptr<Model> model, const glm::vec3& position, const glm::vec3& color = glm::vec3(1.0f), float duration = 0.0f);
+    static void DrawCube(const Vector3D& position, const Vector3D& scale = Vector3D(1.0f, 1.0f, 1.0f), const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f);
+    static void DrawSphere(const Vector3D& position, float radius = 1.0f, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f);
+    static void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f, float width = 1.0f);
+    static void DrawMeshWireframe(std::shared_ptr<Model> model, const Vector3D& position, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f);
     
 private:
     static std::vector<DebugDrawData> debugQueue;

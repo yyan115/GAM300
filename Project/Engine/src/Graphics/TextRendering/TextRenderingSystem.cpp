@@ -4,10 +4,20 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/TextRendering/TextUtils.hpp"
+#include <Asset Manager/AssetManager.hpp>
 
 bool TextRenderingSystem::Initialise()
 {
-	std::cout << "[TextSystem] Initialized" << std::endl;
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        auto& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
+        std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.fontGUID);
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.shaderGUID);
+        textComp.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComp.fontGUID, fontPath, textComp.fontSize);
+        textComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComp.shaderGUID, shaderPath);
+    }
+
+    ENGINE_PRINT("[TextSystem] Initialized\n");
 	return true;
 }
 
@@ -34,5 +44,6 @@ void TextRenderingSystem::Update()
 
 void TextRenderingSystem::Shutdown()
 {
-    std::cout << "[TextSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[TextSystem] Shutdown\n");
+    //std::cout << "[TextSystem] Shutdown" << std::endl;
 }

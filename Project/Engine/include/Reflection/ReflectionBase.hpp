@@ -1,5 +1,15 @@
 #pragma once
-
+/*********************************************************************************
+* @File			ReflectionBase.hpp
+* @Author		Soh Wei Jie, weijie.soh@digipen.edu
+* @Co-Author	-
+* @Date			26/9/2025
+* @Brief
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 #include "pch.h"
 
 #include <rapidjson/document.h>
@@ -8,9 +18,10 @@
 // Note: intentionally *not* using `using namespace rapidjson;` in header to avoid polluting global namespace.
 
 #include "Base64.hpp"
+#include "Utilities/GUID.hpp"
 
 #include <type_traits>
-//Sticking with this for now unless stated need to move to a consolidated API.hpp file
+
 #ifdef _WIN32
     #ifdef ENGINE_EXPORTS
         #define ENGINE_API __declspec(dllexport)
@@ -330,7 +341,6 @@ public:
     }
 };
 
-
 template <typename T>
 struct TypeResolver<std::vector<T>>
 {
@@ -345,8 +355,7 @@ struct TypeResolver<std::vector<T>>
 };
 
 // -------------------------------------------------------------
-// std::unordered_map specialization
-// CHANGE: unique naming, safety checks, mutex-protected registry writes
+// std::unordered_map<KeyType, ValueType> specialization
 // -------------------------------------------------------------
 template <typename KeyType, typename ValueType>
 struct TypeDescriptor_StdUnorderedMap : TypeDescriptor
@@ -475,8 +484,6 @@ struct TypeDescriptor_StdSharedPtr : TypeDescriptor
     }
 };
 
-// Specialization for std::shared_ptr<void>
-// CHANGE: preserve behaviour of original code which encoded a binary blob with size prefix, but make it portable
 template <>
 struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
 {
@@ -504,15 +511,13 @@ struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
         const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<void>*>(obj);
         if (!shared_ptr) { os << "null"; return; }
 
-        // The original code assumed: raw pointer points to [size_t][data...]
-        // CHANGE: use uint64_t for size prefix and ensure we write it in little-endian form.
         void* ptr = shared_ptr.get();
         uint64_t data_size = *static_cast<uint64_t*>(ptr); // NOTE: caller MUST ensure pointer layout matches this contract
         uint64_t le_size = ToLittleEndian_u64(data_size);
 
         uint8_t* byte_ptr = static_cast<uint8_t*>(ptr);
         std::vector<uint8_t> data(byte_ptr, byte_ptr + sizeof(uint64_t) + static_cast<size_t>(data_size));
-        std::string serialized_data = Encode(data);
+        std::string serialized_data = Base64_Encode(data);
 
         os << R"({"type":")" << ToString() << R"(","data":")" << serialized_data << R"("})";
     }
@@ -526,7 +531,7 @@ struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
         }
 
         std::string data = value["data"].GetString();
-        std::vector<uint8_t> decoded = Decode(data);
+        std::vector<uint8_t> decoded = Base64_Decode(data);
         if (decoded.size() < sizeof(uint64_t)) throw std::runtime_error("Decoded shared_ptr<void> too small");
 
         // Read size prefix (little-endian)
@@ -620,6 +625,31 @@ struct TypeResolver<std::pair<FirstType, SecondType>>
         return &type_desc;
     }
 };
+
+struct TypeDescriptor_GUID128 : TypeDescriptor {
+    TypeDescriptor_GUID128() : TypeDescriptor("GUID_128", sizeof(GUID_128)) {}
+
+    void Dump(const void* obj, std::ostream& os, int) const override {
+        os << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj));
+    }
+
+    void Serialize(const void* obj, std::ostream& os) const override {
+        os << "\"" << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj)) << "\"";
+    }
+
+    void Deserialize(void* obj, const rapidjson::Value& value) const override {
+        if (!value.IsString()) throw std::runtime_error("GUID_128 must be a string");
+        *reinterpret_cast<GUID_128*>(obj) = GUIDUtilities::ConvertStringToGUID128(value.GetString());
+    }
+};
+
+template<> struct TypeResolver<GUID_128> {
+    static TypeDescriptor* Get() {
+        static TypeDescriptor_GUID128 type_desc;
+        return &type_desc;
+    }
+};
+
 
 #pragma endregion
 

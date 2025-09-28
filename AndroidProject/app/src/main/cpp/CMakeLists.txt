@@ -52,7 +52,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} --preset android-debug -G Ninja
     COMMAND ${CMAKE_COMMAND} --build ${ENGINE_BUILD_DIR} --config $<CONFIG>
     WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
-    DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES} ${RESOURCE_FILES}
+    DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES} #${RESOURCE_FILES}
     COMMENT "Building Engine library (CLEAN + REBUILD when main Resources folder changes)"
     VERBATIM
 )
@@ -83,33 +83,33 @@ add_custom_command(
 )
 
 # Collect all files in Resources directory for dependency tracking
-file(GLOB_RECURSE RESOURCE_FILES "${ENGINE_PROJECT_DIR}/Resources/*")
+#file(GLOB_RECURSE RESOURCE_FILES "${ENGINE_PROJECT_DIR}/Resources/*")
 
 # Copy Resources from main project to Android assets - ALWAYS RUNS FIRST
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
-    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD: Starting Resources copy..."
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${ENGINE_PROJECT_DIR}/Resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
-    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
-    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD SUCCESS: Resources copied to assets folder"
-    DEPENDS ${RESOURCE_FILES}
-    COMMENT "PRE-BUILD: Copying Resources to Android assets"
-    VERBATIM
-)
+# add_custom_command(
+#     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD: Starting Resources copy..."
+#     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#         ${ENGINE_PROJECT_DIR}/Resources
+#         ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+#     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD SUCCESS: Resources copied to assets folder"
+#     DEPENDS ${RESOURCE_FILES}
+#     COMMENT "PRE-BUILD: Copying Resources to Android assets"
+#     VERBATIM
+# )
 
 # Create custom target for resources - runs BEFORE everything else
-add_custom_target(copy_resources ALL
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
-)
+# add_custom_target(copy_resources ALL
+#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+# )
 
 # Create alias target for Gradle to reference
-add_custom_target(copyResourcesToAssets
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
-    COMMENT "Alias target for Gradle: Copy Resources to Android assets"
-)
+# add_custom_target(copyResourcesToAssets
+#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMENT "Alias target for Gradle: Copy Resources to Android assets"
+# )
 
 # Create custom target to ensure libraries are copied
 add_custom_target(copy_libraries ALL
@@ -162,7 +162,7 @@ set_target_properties(fmod PROPERTIES
 )
 
 # Make sure our main library depends on the copied libraries, resources, and engine build
-add_dependencies(${CMAKE_PROJECT_NAME} build_engine copy_libraries copy_resources)
+#add_dependencies(${CMAKE_PROJECT_NAME} build_engine copy_libraries copy_resources)
 
 # Also add the Engine sources as dependencies to our main target to force rebuilds
 set_source_files_properties(native-lib.cpp PROPERTIES OBJECT_DEPENDS "${ENGINE_SOURCES}")

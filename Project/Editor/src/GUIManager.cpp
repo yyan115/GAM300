@@ -9,7 +9,9 @@
 #include "WindowManager.hpp"
 #include "EditorState.hpp"
 #include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
+#include "Logging.hpp"
 
+#include "Scene/SceneManager.hpp"
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
@@ -20,6 +22,8 @@
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include <Asset Manager/AssetManager.hpp>
+#include "Asset Manager/MetaFilesManager.hpp"
+
 
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
@@ -61,8 +65,8 @@ void GUIManager::Initialize() {
 	// Set editor to edit mode on startup (engine defaults to play mode for game builds)
 	EditorState& editorState = EditorState::GetInstance();
 	editorState.SetState(EditorState::State::EDIT_MODE);
-
-	std::cout << "[GUIManager] Initialized with panel-based architecture" << std::endl;
+	ENGINE_PRINT("[GUIManager] Initialized with panel - based architecture\n");
+	//std::cout << "[GUIManager] Initialized with panel-based architecture" << std::endl;
 }
 
 
@@ -107,7 +111,7 @@ void GUIManager::Render() {
 		ImGui::RenderPlatformWindowsDefault();
 	}
 
-	AssetManager::GetInstance().RunCompilationQueue();
+	AssetManager::GetInstance().RunEventQueue();
 }
 
 void GUIManager::Exit() {
@@ -121,8 +125,8 @@ void GUIManager::Exit() {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
-	std::cout << "[GUIManager] Shutdown complete" << std::endl;
+	ENGINE_PRINT("[GUIManager] Shutdown complete\n");
+	//std::cout << "[GUIManager] Shutdown complete" << std::endl;
 }
 
 void GUIManager::SetupDefaultPanels() {
@@ -160,8 +164,8 @@ void GUIManager::SetupDefaultPanels() {
 	auto assetBrowserPanel = std::make_shared<AssetBrowserPanel>();
 	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
 	panelManager->RegisterPanel(assetBrowserPanel);
-
-	std::cout << "[GUIManager] Default panels registered" << std::endl;
+	ENGINE_PRINT("[GUIManager] Default panels registered\n");
+	//std::cout << "[GUIManager] Default panels registered" << std::endl;
 }
 
 void GUIManager::CreateDockspace() {
@@ -256,10 +260,24 @@ void GUIManager::RenderMenuBar() {
 				// TODO: New scene functionality
 			}
 			if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
-				// TODO: Open scene functionality
+				std::string filepath = "Resources/Scenes/scene.json";
+				// TEMP
+				if (!std::filesystem::exists(filepath)) {
+					std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+				}
+				else {
+					SceneManager::GetInstance().LoadScene(filepath);
+				}
 			}
 			if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-				// TODO: Save scene functionality
+				SceneManager::GetInstance().SaveScene();
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Compile Assets for Desktop")) {
+				AssetManager::GetInstance().CompileAllAssetsForDesktop();
+			}
+			if (ImGui::MenuItem("Compile Assets for Android")) {
+				AssetManager::GetInstance().CompileAllAssetsForAndroid();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit", "Alt+F4")) {
@@ -312,7 +330,7 @@ void GUIManager::RenderMenuBar() {
 
 void GUIManager::CreateEditorTheme() {
 	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-	// Set up dark theme
+	// Set updark theme
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui::StyleColorsDark();
 	ImGuiStyle& style = ImGui::GetStyle();
