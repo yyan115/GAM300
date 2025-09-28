@@ -10,6 +10,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
+#include <Graphics/Sprite/SpriteRenderComponent.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -26,6 +27,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<LightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
+	RegisterComponent<SpriteRenderComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -62,6 +64,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<LightComponent>()); 
 		SetSystemSignature<LightingSystem>(signature); 
+	}
+
+	spriteSystem = RegisterSystem<SpriteSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<SpriteRenderComponent>());
+		SetSystemSignature<SpriteSystem>(signature);
 	}
 }
 

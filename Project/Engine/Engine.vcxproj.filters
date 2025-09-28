@@ -80,6 +80,8 @@
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -129,6 +131,7 @@
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

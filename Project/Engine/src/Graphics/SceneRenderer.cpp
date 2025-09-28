@@ -156,13 +156,18 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.Clear();
 
         // Update model system for rendering (without input-based updates)
-        if (mainECS.modelSystem) {
+        if (mainECS.modelSystem) 
+        {
             mainECS.modelSystem->Update();
         }
 		if (mainECS.textSystem)
 		{
 			mainECS.textSystem->Update();
 		}
+        if (mainECS.spriteSystem)
+        {
+            mainECS.spriteSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();
