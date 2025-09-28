@@ -14,9 +14,9 @@ class TextRenderComponent : public IRenderComponent {
 public:
     REFL_SERIALIZABLE
     std::string text;
-    unsigned int fontSize;
-    GUID_128 fontGUID;
-    GUID_128 shaderGUID;
+    unsigned int fontSize{};
+    GUID_128 fontGUID{};
+    GUID_128 shaderGUID{};
     Vector3D position{};
     Vector3D color{ 1.0f, 1.0f, 1.0f };
     float scale = 1.0f;

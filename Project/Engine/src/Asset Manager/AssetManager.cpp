@@ -189,23 +189,23 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 		std::filesystem::path filePathObj(assetPath);
 		std::string extension = filePathObj.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Texture>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Texture>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Audio>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Audio>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Font>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Font>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Model>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Model>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Shader>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Shader>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else {
@@ -280,7 +280,7 @@ bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
 			std::string resourcePath = pair.second->compiledFilePath;
 			GUID_128 guid = pair.first;
 
-			if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
+			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
 				std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
 				return true;
 			}
@@ -303,12 +303,10 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 	bool failedToUnload = false;
 	for (const auto& pair : assetMetaMap) {
 		if (pair.second->compiledFilePath == resourcePath) {
-			std::string assetFilePath = pair.second->sourceFilePath;;
-			std::string metaPath = assetFilePath + ".meta";
 			GUID_128 guid = pair.first;
 
-			if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-				std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaPath << std::endl;
+			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
+				std::cout << "[AssetManager] Successfully deleted resource file: " << resourcePath << std::endl;
 				return true;
 			}
 			else {
@@ -333,6 +331,7 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 	}
 
 	std::cerr << "[AssetManager] ERROR: Asset meta with GUID not found." << std::endl;
+	return "";
 }
 
 void AssetManager::CompileAllAssetsForAndroid() {

@@ -114,7 +114,7 @@ public:
 	}
 
 	template <typename T>
-	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
+	bool UnloadResource(GUID_128 guid, const std::string& resourcePath) {
 		// Implementation for unloading the resource
 		auto& resourceMap = GetResourceMap<T>();
 		auto it = resourceMap.find(guid);
@@ -141,23 +141,23 @@ public:
 		return false;
 	}
 
-	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
+	bool UnloadResource(GUID_128 guid, const std::string& resourcePath) {
 		std::filesystem::path p(resourcePath);
 		std::string extension = p.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			return UnloadResource<Texture>(guid, assetPath, resourcePath);
+			return UnloadResource<Texture>(guid, resourcePath);
 		}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			return UnloadResource<Font>(guid, assetPath, resourcePath);
+			return UnloadResource<Font>(guid, resourcePath);
 		}
 		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			return UnloadResource<Model>(guid, assetPath, resourcePath);
+			return UnloadResource<Model>(guid, resourcePath);
 		}
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			return UnloadResource<Shader>(guid, assetPath, resourcePath);
+			return UnloadResource<Shader>(guid, resourcePath);
 		}
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
-			return UnloadResource<Audio>(guid, assetPath, resourcePath);
+			return UnloadResource<Audio>(guid, resourcePath);
 		}
 		else {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");

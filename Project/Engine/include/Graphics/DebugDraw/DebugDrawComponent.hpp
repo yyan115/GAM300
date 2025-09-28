@@ -34,7 +34,7 @@ struct DebugDrawData {
     Vector3D endPosition{};
 
     // For mesh wireframe
-    GUID_128 modelGUID;
+    GUID_128 modelGUID{};
     std::shared_ptr<Model> meshModel = nullptr; // don't have to serialize for now
 
     DebugDrawData(DebugDrawType t) : type(t) {}

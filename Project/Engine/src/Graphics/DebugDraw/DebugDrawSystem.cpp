@@ -13,7 +13,7 @@ std::vector<DebugDrawData> DebugDrawSystem::debugQueue;
 bool DebugDrawSystem::Initialise() 
 {
     // Create debug shader (you'll need to create this shader file)
-    debugShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
+    debugShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
 
     CreatePrimitiveGeometry();
     ENGINE_PRINT("[DebugDrawSystem] Initialized", "\n");
@@ -29,7 +29,7 @@ void DebugDrawSystem::Update()
 
     // Create component and check all pointers are valid
     auto debugComponent = std::make_unique<DebugDrawComponent>();
-    auto shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
+    auto shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
 
     if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Error: Required debug resources are null!\n");
