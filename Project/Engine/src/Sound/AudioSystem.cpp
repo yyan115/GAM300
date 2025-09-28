@@ -7,6 +7,9 @@
 #include <filesystem>
 #include <atomic>
 #include "Logging.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "Sound/AudioComponent.hpp"
+#include "Transform/TransformComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -102,10 +105,27 @@ void AudioSystem::Update() {
     std::lock_guard<std::mutex> lock(mtx);
     if (!system) return;
 
+    // Update FMOD system
     FMOD_System_Update(system);
-    
+
     // Update channel states and cleanup stopped channels
     CleanupStoppedChannels();
+
+    // NEW: Update all AudioComponents in the ECS
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        if (ecsManager.HasComponent<AudioComponent>(entity)) {
+            AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+            audioComp.UpdateComponent();
+
+            // Update spatial audio position from Transform if applicable
+            if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
+                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
+                /*Vector3D worldPos = transform.worldMatrix.GetTranslation();
+                audioComp.OnTransformChanged(worldPos);*/
+            }
+        }
+    }
 }
 
 ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {

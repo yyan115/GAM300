@@ -19,7 +19,7 @@
 
 void SceneInstance::Initialize() {
 	// Initialization code for the scene
-	
+
 	// Initialize GraphicsManager first
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
@@ -35,7 +35,7 @@ void SceneInstance::Initialize() {
 	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 	backpackName.name = "dora the explorer";
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
 
 	Entity backpackEntt2 = ecsManager.CreateEntity();
 	ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
@@ -44,7 +44,7 @@ void SceneInstance::Initialize() {
 	NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
 	backpack2Name.name = "ash ketchum";
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
 
 	Entity backpackEntt3 = ecsManager.CreateEntity();
 	ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
@@ -53,7 +53,7 @@ void SceneInstance::Initialize() {
 	NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
 	backpack3Name.name = "indiana jones";
 	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
 
 	// Text entity test
 	Entity text = ecsManager.CreateEntity();
@@ -87,20 +87,17 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
 		NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
 		audioName.name = "Audio Test Entity";
-		
-		// Add AudioComponent
+
+		// Add AudioComponent - the UpdateComponent() will handle loading when appropriate
 		AudioComponent audioComp;
 		audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
 		audioComp.Volume = 0.8f;
 		audioComp.Loop = false;
-		audioComp.PlayOnAwake = true;
+		audioComp.PlayOnStart = true;
 		audioComp.Spatialize = false;
 		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-		
-		// Set the audio asset path again to ensure it's loaded (especially important on Android)
-		ecsManager.GetComponent<AudioComponent>(audioEntity).SetAudioAssetPath(audioComp.AudioAssetPath);
-		
-		// The AudioComponent will automatically load and play the audio on awake
+
+		// The AudioComponent will load the asset during UpdateComponent() and play when game enters PLAY_MODE
 	}
 
 	// Initialize systems.
@@ -121,7 +118,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	
+
 	if (mainECS.audioSystem)
 	{
 		mainECS.audioSystem->Update();
@@ -194,7 +191,7 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
 #endif
 
-//std::cout << "drawn\n";
+	//std::cout << "drawn\n";
 }
 
 void SceneInstance::Exit() {

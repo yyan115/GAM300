@@ -200,7 +200,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         }
 
         // Play on Awake
-        ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
+        ImGui::Checkbox("Play On Awake", &audio.PlayOnStart);
 
         // Spatialize
         if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {

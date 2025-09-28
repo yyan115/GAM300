@@ -16,7 +16,7 @@ struct ENGINE_API AudioComponent {
     float Volume{ 1.0f };
     float Pitch{ 1.0f };
     bool Loop{ false };
-    bool PlayOnAwake{ false };
+    bool PlayOnStart{ false };
     bool Spatialize{ false };
     float MinDistance{ 1.0f };
     float MaxDistance{ 100.0f };

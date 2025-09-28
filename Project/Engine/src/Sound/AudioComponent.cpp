@@ -36,9 +36,11 @@ void AudioComponent::PlayOneShot() {
     ChannelHandle oneShotChannel;
     if (Spatialize) {
         oneShotChannel = audioSys.PlayAudioAtPosition(audioAsset, Position, false, Volume, Attenuation);
-    } else if (!BusName.empty()) {
+    }
+    else if (!BusName.empty()) {
         oneShotChannel = audioSys.PlayAudioOnBus(audioAsset, BusName, false, Volume);
-    } else {
+    }
+    else {
         oneShotChannel = audioSys.PlayAudio(audioAsset, false, Volume);
     }
     if (oneShotChannel != 0) {
@@ -68,7 +70,8 @@ void AudioComponent::UnPause() {
         AudioSystem::GetInstance().Resume(CurrentChannel);
         State = AudioSourceState::Playing;
         wasPlayingBeforePause = false;
-    } else if (wasPlayingBeforePause && CurrentChannel == 0) {
+    }
+    else if (wasPlayingBeforePause && CurrentChannel == 0) {
         Play();
     }
 }
@@ -116,7 +119,8 @@ void AudioComponent::SetSpatialize(bool enable) {
         Stop();
         Spatialize = enable;
         Play();
-    } else {
+    }
+    else {
         Spatialize = enable;
     }
 }
@@ -148,18 +152,24 @@ void AudioComponent::SetAudioAssetPath(const std::string& path) {
     audioAsset = nullptr;
     assetLoaded = false;
     State = AudioSourceState::Stopped;
-    if (!AudioAssetPath.empty()) {
-        EnsureAssetLoaded();
-        if (PlayOnAwake && audioAsset) { Play(); }
-    }
+    // Don't load or play immediately - let UpdateComponent handle it based on game state
 }
 
 bool AudioComponent::HasValidAsset() const { return audioAsset != nullptr && assetLoaded; }
 
 void AudioComponent::UpdateComponent() {
+    // Ensure asset is loaded if we have a valid path
+    if (!AudioAssetPath.empty() && !HasValidAsset()) {
+        EnsureAssetLoaded();
+    }
+
     UpdatePlaybackState();
-    if (PlayOnAwake && !IsPlaying() && HasValidAsset() && State == AudioSourceState::Stopped) {
-        Play();
+
+    // Only handle PlayOnAwake if we're in PLAY_MODE
+    if (PlayOnStart && !IsPlaying() && HasValidAsset() && State == AudioSourceState::Stopped) {
+        if (Engine::IsPlayMode()) {
+            Play();
+        }
     }
 }
 
@@ -173,14 +183,16 @@ void AudioComponent::OnTransformChanged(const Vector3D& newPosition) {
 bool AudioComponent::EnsureAssetLoaded() {
     if (assetLoaded && audioAsset) return true;
     if (AudioAssetPath.empty()) return false;
+
     try {
-        // Force synchronous load now that audio should preload
-        audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, true);
+        // Use forceLoad=false to prevent unnecessary reloads during hot-reload
+        audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, false);
         assetLoaded = (audioAsset != nullptr);
         if (!assetLoaded) {
             ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioComponent] Failed to load audio asset: ", AudioAssetPath, "\n");
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioComponent] Exception loading audio asset ", AudioAssetPath, ": ", e.what(), "\n");
         assetLoaded = false;
     }
@@ -206,7 +218,8 @@ void AudioComponent::UpdatePlaybackState() {
         CurrentChannel = 0;
         State = AudioSourceState::Stopped;
         wasPlayingBeforePause = false;
-    } else if (actualState != State) {
+    }
+    else if (actualState != State) {
         State = actualState;
     }
 }
@@ -217,9 +230,11 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     ChannelHandle channel = 0;
     if (Spatialize) {
         channel = audioSys.PlayAudioAtPosition(audioAsset, Position, Loop && !oneShot, Volume, Attenuation);
-    } else if (!BusName.empty()) {
+    }
+    else if (!BusName.empty()) {
         channel = audioSys.PlayAudioOnBus(audioAsset, BusName, Loop && !oneShot, Volume);
-    } else {
+    }
+    else {
         channel = audioSys.PlayAudio(audioAsset, Loop && !oneShot, Volume);
     }
     if (channel != 0) {
