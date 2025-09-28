@@ -12,14 +12,16 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioSystem.hpp"
+#include "Logging.hpp"
 
-void ECSManager::Initialize() {
+void ECSManager::Initialize()
+{
 	entityManager = std::make_unique<EntityManager>();
 	componentManager = std::make_unique<ComponentManager>();
 	systemManager = std::make_unique<SystemManager>();
 
 	// REGISTER ALL COMPONENTS HERE
-	// e.g., 
+	// e.g.,
 	RegisterComponent<Transform>();
 	RegisterComponent<ModelRenderComponent>();
 	RegisterComponent<TextRenderComponent>();
@@ -52,7 +54,7 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<TextRenderComponent>());
 		SetSystemSignature<TextRenderingSystem>(signature);
 	}
-	
+
 	debugDrawSystem = RegisterSystem<DebugDrawSystem>();
 	{
 		Signature signature;
@@ -71,12 +73,13 @@ void ECSManager::Initialize() {
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<LightComponent>()); 
-		SetSystemSignature<LightingSystem>(signature); 
+		signature.set(GetComponentID<LightComponent>());
+		SetSystemSignature<LightingSystem>(signature);
 	}
 }
 
-Entity ECSManager::CreateEntity() {
+Entity ECSManager::CreateEntity()
+{
 	// Register the entity with a new GUID
 	GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
 	GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
@@ -84,31 +87,34 @@ Entity ECSManager::CreateEntity() {
 	return CreateEntityWithGUID(guid);
 }
 
-Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
+Entity ECSManager::CreateEntityWithGUID(const GUID_128 &guid)
+{
 	Entity entity = entityManager->CreateEntity();
 	EntityGUIDRegistry::GetInstance().Register(entity, guid);
-	std::cout << "[ECSManager] Created entity " << entity << ". Total active entities : " << entityManager->GetActiveEntityCount() << std::endl;
+	ENGINE_PRINT("[ECSManager] Created entity ", entity, ". Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
 
 	// Add default components here (e.g. Name, Transform, etc.)
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
 	ecsManager.AddComponent<Transform>(entity, Transform());
 
 	return entity;
 }
 
-void ECSManager::DestroyEntity(Entity entity) {
+void ECSManager::DestroyEntity(Entity entity)
+{
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
-
-	std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
+	ENGINE_PRINT("[ECSManager] Destroyed entity ", entity, ". Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
+	// std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }
 
-void ECSManager::ClearAllEntities() {
+void ECSManager::ClearAllEntities()
+{
 	entityManager->DestroyAllEntities();
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
-
-	std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
+	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
+	// std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }
