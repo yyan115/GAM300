@@ -12,10 +12,6 @@
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
 
-    // choose output path: prefer currentScenePath if available, else use "scene.json"
-    std::string outPath = "Resources/Scene/scene.json";
-    //currentScenePath = "Resources/Scene/scene.json";
-
     // Prepare JSON document
     rapidjson::Document doc;
     doc.SetObject();
@@ -138,7 +134,7 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 
     // Write to file (ensure parent directory exists; fallback to current directory if creation fails)
     {
-        fs::path outPathP(outPath);
+        fs::path outPathP(scenePath);
 
         // Try to create parent directories if needed
         if (outPathP.has_parent_path()) {

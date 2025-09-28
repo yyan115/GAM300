@@ -260,7 +260,7 @@ void GUIManager::RenderMenuBar() {
 				// TODO: New scene functionality
 			}
 			if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
-				std::string filepath = "Resources/Scene/scene.json";
+				std::string filepath = "Resources/Scenes/scene.json";
 				// TEMP
 				if (!std::filesystem::exists(filepath)) {
 					std::cerr << "No saved scene yet! Save scene first!" << std::endl;

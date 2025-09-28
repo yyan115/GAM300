@@ -350,13 +350,22 @@ void AssetManager::CompileAllAssetsForAndroid() {
 		CompileAsset(assetPath, true, true);
 	}
 
+	// Copy scenes to Android resources.
+	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+		if (std::filesystem::is_regular_file(p)) {
+			if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {
+				ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
+			}
+		}
+	}
+
+	// Output the asset manifest for Android.
 	std::filesystem::path manifestFileP(GetAndroidResourcesPath() / "asset_manifest.txt");
 	std::ofstream out(manifestFileP.generic_string());
 	if (!out.is_open()) {
 		std::cerr << "[AssetManager] Failed to open manifest file for writing\n";
 		return;
 	}
-
 	for (auto& p : std::filesystem::recursive_directory_iterator("Resources")) {
 		if (std::filesystem::is_regular_file(p)) {
 			out << p.path().generic_string() << "\n";
@@ -364,8 +373,6 @@ void AssetManager::CompileAllAssetsForAndroid() {
 	}
 
 	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
-
-
 	std::cout << "[AssetManager] Finished compiling assets for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
 }
 
@@ -382,6 +389,15 @@ void AssetManager::CompileAllAssetsForDesktop() {
 			assetPath = pair.second->sourceFilePath;
 		}
 		CompileAsset(assetPath, true);
+	}
+
+	// Copy scenes to resources.
+	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+		if (std::filesystem::is_regular_file(p)) {
+			if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
+				ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+			}
+		}
 	}
 
 	std::cout << "[AssetManager] Finished compiling assets for Desktop." << std::endl << std::endl;

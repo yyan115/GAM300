@@ -184,7 +184,9 @@ private:
 				}
 			}
 
-			std::cout << std::endl;
+			// Copy compiled asset to root project Resources folder also.
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 			return true;
 		}
 
@@ -223,6 +225,9 @@ private:
 					ResourceManager::GetInstance().GetResource<Texture>(filePath);
 				}
 			}
+
+			// Copy compiled asset to root project Resources folder also.
+			FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 
 			return true;
 		}

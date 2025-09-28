@@ -4,7 +4,6 @@
         "guid": "007ebbc8f9d03365-0002c7078200001f",
         "source": "Resources/Shaders/light",
         "compiled": "Resources/Shaders/light.shader",
-        "android_compiled": "Resources/Shaders/light.shader",
-        "last_compiled": "2025-09-28 11:02:31.0269102"
+        "last_compiled": "2025-09-28 15:40:45.2191056"
     }
 }

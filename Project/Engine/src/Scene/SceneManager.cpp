@@ -9,6 +9,7 @@
 #include "rapidjson/prettywriter.h"
 #include <Serialization/Serializer.hpp>
 #include "Logging.hpp"
+#include <Utilities/FileUtilities.hpp>
 
 ENGINE_API SceneManager::~SceneManager() {
 	ExitScene();
@@ -70,7 +71,10 @@ void SceneManager::ExitScene() {
 
 //Simple JSON save scene
 ENGINE_API void SceneManager::SaveScene() {
-	Serializer::SerializeScene(currentScenePath);
+	Serializer::SerializeScene("Resources/Scenes/scene.json");
+	if (FileUtilities::CopyFile("Resources/Scenes/scene.json", (FileUtilities::GetSolutionRootDir() / "Resources/Scenes/scene.json").generic_string())) {
+		ENGINE_LOG_INFO("Copied scene file to root project folder: Resources/Scenes/scene.json");
+	}
 }
 
 void SceneManager::SaveTempScene() {

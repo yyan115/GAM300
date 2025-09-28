@@ -4,7 +4,6 @@
         "guid": "004aa3f07375f523-0002c82c7000000d",
         "source": "Resources/Models/backpack.obj",
         "compiled": "Resources/Models/backpack.mesh",
-        "android_compiled": "Resources/Models/backpack_android.mesh",
-        "last_compiled": "2025-09-28 11:02:30.8835602"
+        "last_compiled": "2025-09-28 15:40:44.5113182"
     }
 }

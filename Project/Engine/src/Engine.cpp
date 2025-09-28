@@ -246,10 +246,6 @@ bool Engine::Initialize() {
                     ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: exception during runtime read/write: " , ex.what() , "\n");
                     reflection_ok = false;
                 }
-                catch (...) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: unknown exception during runtime read/write\n");
-                    reflection_ok = false;
-                }
 
             }
         }
@@ -398,6 +394,7 @@ bool Engine::Initialize() {
                         catch (...) {
                             std::cout << "  -> exception assigning member[" << te.idx << "]\n";
                         }
+                    }
                     if (sdesc->members.size() >= 3) {
                         *reinterpret_cast<float*>(sdesc->members[0].get_ptr(&src)) = 10.0f;
                         *reinterpret_cast<float*>(sdesc->members[1].get_ptr(&src)) = -3.5f;
@@ -445,17 +442,12 @@ bool Engine::Initialize() {
                     if (!match) serialization_ok = false;
                 }
             }
-            catch (const std::exception& ex) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: exception during serialization tests: ",  ex.what(), "\n");
-                serialization_ok = false;
-            }
             catch (...) {
                 ENGINE_PRINT(EngineLogging::LogLevel::Error,
                     "FAIL: unknown error during serialization tests\n");
                 serialization_ok = false;
             }
         }
-
 
         // --- Registry introspection (optional) ---
         ENGINE_PRINT("\n[3] Registry contents (keys):\n");

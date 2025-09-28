@@ -4,8 +4,7 @@
         "guid": "007ebbc8e2b98cee-0002c70782000027",
         "source": "Resources/Textures/awesomeface.png",
         "compiled": "Resources/Textures/awesomeface.dds",
-        "android_compiled": "Resources/Textures/awesomeface_android.ktx",
-        "last_compiled": "2025-09-28 11:02:32.1011440"
+        "last_compiled": "2025-09-28 15:40:45.9173787"
     },
     "TextureMetaData": {
         "id": 0,

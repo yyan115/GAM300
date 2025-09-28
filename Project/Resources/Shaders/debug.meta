@@ -4,7 +4,6 @@
         "guid": "007ebbc8a3492bf5-0002c70782000019",
         "source": "Resources/Shaders/debug",
         "compiled": "Resources/Shaders/debug.shader",
-        "android_compiled": "Resources/Shaders/debug.shader",
-        "last_compiled": "2025-09-28 11:02:30.9936309"
+        "last_compiled": "2025-09-28 15:40:44.8394020"
     }
 }

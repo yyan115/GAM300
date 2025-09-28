@@ -36,7 +36,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
 		NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 		backpackName.name = "dora the explorer";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00349ee72b4ef7cb-0002c93d6c00000b") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -46,7 +46,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
 		NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
 		backpack2Name.name = "ash ketchum";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00349ee72b4ef7cb-0002c93d6c00000b") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -56,14 +56,14 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
 		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
 		backpack3Name.name = "indiana jones";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ GUIDUtilities::ConvertStringToGUID128("00305bf2963148e7-0002b9781e000005"), GUIDUtilities::ConvertStringToGUID128("00349ee72b4ef7cb-0002c93d6c00000b") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
 		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
-		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, GUIDUtilities::ConvertStringToGUID128("00305bf28c15852e-0002b9781c000001"), GUIDUtilities::ConvertStringToGUID128("00349ee76d14c40b-0002c93d6c000017") });
+		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
 		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
 		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
 		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
