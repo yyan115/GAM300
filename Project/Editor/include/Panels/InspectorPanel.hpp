@@ -33,8 +33,6 @@ private:
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
     void DrawSelectedAsset(const GUID_128 &assetGuid);
-    void ApplyMaterialToModel(Entity entity, const GUID_128 &materialGuid);
-    void ApplyMaterialToModelByPath(Entity entity, const std::string &materialPath);
 
     // Lock functionality
     bool inspectorLocked = false;
