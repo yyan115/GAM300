@@ -130,6 +130,7 @@
     <ClCompile Include="src\Utilities\GUID.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
+    <ClCompile Include="src\Sound\AudioComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
