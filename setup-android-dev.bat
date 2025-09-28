@@ -127,6 +127,11 @@ if "%SDK_PATH%"=="" (
 )
 echo.
 
+echo Running Android clean script for fresh start...
+echo.
+call "%~dp0clean-android.bat"
+
+echo.
 echo SUCCESS. Please restart your computer for best results.
 @REM echo Next Steps:
 @REM echo.
