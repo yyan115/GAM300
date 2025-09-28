@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 3,
-        "guid": "00305bf2ba347dad-0002b97826000161",
+        "version": 4,
+        "guid": "007ebbc8dde5048e-0002c7075a000007",
         "source": "Resources/Inter.ttf",
         "compiled": "Resources/Inter.font",
-        "last_compiled": "2025-09-22 12:31:15.788081690"
+        "last_compiled": "2025-09-28 15:40:37.7026113"
     }
 }

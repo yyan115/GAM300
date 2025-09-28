@@ -1,10 +1,11 @@
 {
     "AssetMetaData": {
-        "version": 3,
-        "guid": "00305bf2b42e4dd9-0002b97826000159",
+        "version": 4,
+        "guid": "007ebbc8e2b98cee-0002c70782000027",
         "source": "Resources/Textures/awesomeface.png",
         "compiled": "Resources/Textures/awesomeface.dds",
-        "last_compiled": "2025-09-22 12:31:15.737968954"
+        "android_compiled": "Resources/Textures/awesomeface_android.ktx",
+        "last_compiled": "2025-09-28 15:19:31.3803300"
     },
     "TextureMetaData": {
         "id": 0,

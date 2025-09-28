@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 3,
-        "guid": "00305bf28c15852e-0002b9781c000001",
+        "version": 4,
+        "guid": "007ebbc8ed42b819-0002c7075a000005",
         "source": "Resources/Fonts/Kenney Mini.ttf",
         "compiled": "Resources/Fonts/Kenney Mini.font",
-        "last_compiled": "2025-09-22 12:31:10.600836200"
+        "last_compiled": "2025-09-28 15:40:36.7423575"
     }
 }

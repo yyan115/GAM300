@@ -6,19 +6,15 @@
 #include <ECS/Entity.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Transform/TransformSystem.hpp>
-#include "Utilities/GUID.hpp"
 #include "../GUIManager.hpp"
-#include <Graphics/Material.hpp>
-#include "MaterialInspector.hpp"
 
 /**
  * @brief Inspector panel for viewing and editing properties of selected objects.
- *
+ * 
  * This panel displays detailed information and editable properties for the currently
  * selected entity or object, similar to Unity's Inspector window.
  */
-class InspectorPanel : public EditorPanel
-{
+class InspectorPanel : public EditorPanel {
 public:
     InspectorPanel();
     virtual ~InspectorPanel() = default;
@@ -32,16 +28,5 @@ private:
     void DrawNameComponent(Entity entity);
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
-    void DrawSelectedAsset(const GUID_128 &assetGuid);
-
-    // Lock functionality
-    bool inspectorLocked = false;
-    Entity lockedEntity = static_cast<Entity>(-1);
-    GUID_128 lockedAsset = {0, 0};
-
-    // Cache for currently edited material to persist changes across frames
-    std::shared_ptr<Material> cachedMaterial;
-    std::string cachedMaterialPath;
-    GUID_128 cachedMaterialGuid = {0, 0};
     void DrawAudioComponent(Entity entity);
 };

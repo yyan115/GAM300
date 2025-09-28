@@ -72,6 +72,8 @@ struct Spotlight{
     float quadratic;
 };
 uniform Spotlight spotLight;
+//#define NR_SPOT_LIGHTS 4
+//uniform Spotlight spotLights[NR_SPOT_LIGHTS];
 
 out vec4 FragColor;
 in vec3 Normal;
@@ -204,11 +206,15 @@ void main()
     // Calculate lighting
     vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
     
+    // Point lights loop
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
         result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);    
     
-    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);    
-    
+    // Spotlight loop
+    // for(int i = 0; i < NR_SPOT_LIGHTS; i++)
+    //     result += calculateSpotlight(spotLights[i], norm, FragPos, viewDir); 
+    result += calculateSpotlight(spotLight, norm, FragPos, viewDir);
+
     // Add emissive component
     if (material.hasEmissiveMap) {
         result += vec3(texture(material.emissiveMap, TexCoords)) * material.emissive;

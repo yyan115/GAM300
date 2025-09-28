@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 3,
-        "guid": "00305bf2b0cffa5a-0002b9781c000003",
-        "source": "../../Resources/Models/backpack/ao.jpg",
-        "compiled": "../../Resources/Models/backpack/ao.dds",
-        "last_compiled": "2025-09-28 16:03:17.5847583"
+        "version": 4,
+        "guid": "007ebbc8a6d93f72-0002c7075a00000b",
+        "source": "Resources/Models/backpack/ao.jpg",
+        "compiled": "Resources/Models/backpack/ao.dds",
+        "last_compiled": "2025-09-28 15:40:37.6571721"
     },
     "TextureMetaData": {
         "id": 0,

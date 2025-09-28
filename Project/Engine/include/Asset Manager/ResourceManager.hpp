@@ -6,10 +6,6 @@
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
-#include "Graphics/Material.hpp"
-#include "Graphics/Model/Model.h"
-#include "Graphics/Texture.h"
-#include "Graphics/ShaderClass.h"
 #include "Utilities/FileUtilities.hpp"
 #include "Sound/Audio.hpp"
 #include "Logging.hpp"
@@ -70,9 +66,9 @@ public:
 		else {
 			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 		}
-
+		
 		// Return a shared pointer to the resource (Texture, Model, etc.)
-		std::string resourcePath = assetPath;
+		std::string resourcePath = MetaFilesManager::GetResourceNameFromAssetFile(assetPath);
 		if (!forceLoad) {
 			auto it = resourceMap.find(guid);
 			if (it != resourceMap.end()) {
@@ -102,7 +98,7 @@ public:
 		}
 
 		// Return a shared pointer to the resource (Font).
-		std::string resourcePath = assetPath;
+		std::string resourcePath = MetaFilesManager::GetResourceNameFromAssetFile(assetPath);
 		if (!forceLoad) {
 			auto it = resourceMap.find(guid);
 			if (it != resourceMap.end()) {
@@ -124,12 +120,12 @@ public:
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
-			ENGINE_LOG_ERROR("[ResourceManager] Removed from resource map: " + resourcePath);
+			ENGINE_PRINT("[ResourceManager] Removed from resource map: ", resourcePath, "\n");
 			//std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
 		}
 
 		if (FileUtilities::RemoveFile(resourcePath)) {
-			ENGINE_LOG_ERROR("[ResourceManager] Deleted resource file: " + resourcePath);
+			ENGINE_PRINT("[ResourceManager] Deleted resource file: ", resourcePath, "\n");
 			return true;
 			//if (MetaFilesManager::DeleteMetaFile(assetPath)) {
 			//	std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
@@ -140,7 +136,7 @@ public:
 			//	return false;
 			//}
 		}
-		ENGINE_LOG_ERROR("[ResourceManager] ERROR: Failed to unload resource: " + resourcePath);
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to unload resource: ", resourcePath, "\n");
 		//std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
 		return false;
 	}
@@ -163,11 +159,9 @@ public:
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
 			return UnloadResource<Audio>(guid, assetPath, resourcePath);
 		}
-		else if (materialExtensions.find(extension) != materialExtensions.end()) {
-			return UnloadResource<Material>(guid, assetPath, resourcePath);
-		}
 		else {
-			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");
+			//std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
 		}
 	}
@@ -189,8 +183,7 @@ public:
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
 		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
-		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;
-		else if (GetResourceMap<Material>().find(guid) != GetResourceMap<Material>().end()) return true;
+		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;		
 		return false;
 	}
 
@@ -210,7 +203,6 @@ private:
 	const std::unordered_set<std::string> fontExtensions = { ".font" };
 	const std::unordered_set<std::string> modelExtensions = { ".mesh" };
 	const std::unordered_set<std::string> shaderExtensions = { ".shader" };
-	const std::unordered_set<std::string> materialExtensions = { ".mat" };
 
 	// Supported resource extensions
 	std::unordered_set<std::string> supportedResourceExtensions;
@@ -221,7 +213,6 @@ private:
 		supportedResourceExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 		supportedResourceExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 		supportedResourceExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
-		supportedResourceExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 	};
 
 	/**
@@ -246,7 +237,7 @@ private:
 		if (!reload) {
 			resource = std::make_shared<T>();
 			ENGINE_LOG_DEBUG("resource->LoadResource(resourcePath, assetPath)");
-			if (resource->LoadResource(resourcePath)) {
+			if (resource->LoadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
 				ENGINE_LOG_DEBUG("[ResourceManager] Loaded resource for: " + resourcePath);
@@ -258,7 +249,7 @@ private:
 		}
 		else {
 			resource = GetResource<T>(assetPath);
-			if (resource->ReloadResource(resourcePath)) {
+			if (resource->ReloadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
 				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
@@ -277,7 +268,7 @@ private:
 		std::shared_ptr<Font> font;
 		if (!reload) {
 			font = std::make_shared<Font>();
-			if (font->LoadResource(resourcePath, fontSize)) {
+			if (font->LoadResource(resourcePath, assetPath, fontSize)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
 				std::cout << "[ResourceManager] Loaded resource for: " << resourcePath << std::endl;
@@ -286,7 +277,7 @@ private:
 		}
 		else {
 			font = GetFontResource(assetPath);
-			if (font->ReloadResource(resourcePath)) {
+			if (font->ReloadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
 				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
