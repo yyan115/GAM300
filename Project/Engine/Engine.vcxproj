@@ -38,6 +38,8 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawSystem.hpp" />
     <ClInclude Include="include\Graphics\Lights\LightComponent.hpp" />
@@ -116,6 +118,7 @@
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\Asset Manager\AssetMeta.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />

@@ -95,20 +95,25 @@ void GraphicsManager::Render()
 	// Render all items in the queue
 	for (const auto& renderItem : renderQueue) 
 	{
-		// Cast to ModelRenderItem since that's what we have for now
-		// Later you can add a switch statement for different types
+		// Cast to different component types
 		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
 		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
+		const SpriteRenderComponent* spriteItem = dynamic_cast<const SpriteRenderComponent*>(renderItem.get());
+		const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get());
 
-		if (modelItem) 
+		if (modelItem)
 		{
 			RenderModel(*modelItem);
 		}
-		else if (textItem) 
+		else if (textItem)
 		{
 			RenderText(*textItem);
 		}
-		else if (const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get()))
+		else if (spriteItem)
+		{
+			RenderSprite(*spriteItem);
+		}
+		else if (debugItem)
 		{
 			RenderDebugDraw(*debugItem);
 		}
@@ -416,6 +421,144 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 #endif
+}
+
+void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
+{
+	std::cout << "[DEBUG] RenderSprite called" << std::endl;
+
+	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO) {
+		std::cout << "[DEBUG] RenderSprite early return - visible:" << item.isVisible
+			<< " texture:" << (item.texture ? "OK" : "NULL")
+			<< " shader:" << (item.shader ? "OK" : "NULL")
+			<< " VAO:" << (item.spriteVAO ? "OK" : "NULL") << std::endl;
+		return;
+	}
+
+	std::cout << "[DEBUG] About to render sprite at position: "
+		<< item.position.x << "," << item.position.y << "," << item.position.z << std::endl;
+
+	// Enable blending for sprite transparency
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Activate shader
+	item.shader->Activate();
+	std::cout << "[DEBUG] Shader activated, ID: " << item.shader->ID << std::endl;
+
+	// Set sprite-specific uniforms
+	glm::vec4 spriteColor = glm::vec4(item.color, item.alpha);
+	item.shader->setVec4("spriteColor", spriteColor);
+	item.shader->setVec2("uvOffset", item.uvOffset);
+	item.shader->setVec2("uvScale", item.uvScale);
+	std::cout << "[DEBUG] Uniforms set - color: " << spriteColor.r << "," << spriteColor.g << "," << spriteColor.b << "," << spriteColor.a << std::endl;
+
+	// Set up matrices based on rendering mode
+	if (item.is3D) 
+	{
+		// 3D world space sprite (billboard)
+		glm::mat4 modelMatrix = glm::mat4(1.0f);
+		modelMatrix = glm::translate(modelMatrix, item.position);
+
+		// Optional: Make sprite face camera (billboard effect)
+		if (currentCamera && item.enableBillboard) 
+		{
+			// Create rotation matrix to face camera
+			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
+			glm::vec3 up = currentCamera->Up;
+			glm::vec3 right = glm::normalize(glm::cross(forward, up));
+			up = glm::cross(right, forward);
+
+			glm::mat4 billboardMatrix = glm::mat4(
+				glm::vec4(right, 0.0f),
+				glm::vec4(up, 0.0f),
+				glm::vec4(-forward, 0.0f),
+				glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+			);
+			modelMatrix = modelMatrix * billboardMatrix;
+		}
+
+		// Apply rotation if specified
+		if (item.rotation != 0.0f) 
+		{
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+		}
+
+		// Apply scale
+		modelMatrix = glm::scale(modelMatrix, item.scale);
+
+		Setup3DSpriteMatrices(*item.shader, modelMatrix);
+	}
+	else 
+	{
+		std::cout << "[DEBUG] Setting up 2D matrices" << std::endl;
+		// 2D screen space sprite
+		Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+	}
+
+	// Bind texture
+	glActiveTexture(GL_TEXTURE0);
+	item.texture->Bind(0);
+	item.shader->setInt("spriteTexture", 0);
+	std::cout << "[DEBUG] Texture bound, ID: " << item.texture->ID << std::endl;
+
+	item.spriteVAO->Bind();
+	std::cout << "[DEBUG] About to call glDrawElements" << std::endl;
+	// The SpriteSystem should have already bound the VAO, so just draw
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	// Check for OpenGL errors
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		std::cout << "[DEBUG] OpenGL error after draw: 0x" << std::hex << error << std::endl;
+	}
+	else {
+		std::cout << "[DEBUG] Draw call completed successfully" << std::endl;
+	}
+
+	item.spriteVAO->Unbind();
+	// Unbind texture
+	item.texture->Unbind(0);
+
+	// Disable blending
+	glDisable(GL_BLEND);
+}
+
+void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
+{
+	std::cout << "[DEBUG] Input position: " << position.x << "," << position.y << "," << position.z << std::endl;
+
+	// Use orthographic projection for 2D sprites
+	glm::mat4 projection = glm::ortho(0.0f, (float)RunTimeVar::window.width,
+		0.0f, (float)RunTimeVar::window.height);
+
+	// Create model matrix
+	glm::mat4 model = glm::mat4(1.0f);
+	// Check correct translation components in GLM (column-major)
+	std::cout << "[DEBUG] Identity matrix translation: " << model[3][0] << "," << model[3][1] << "," << model[3][2] << std::endl; 
+	model = glm::translate(model, position);
+	std::cout << "[DEBUG] After translate: " << model[3][0] << "," << model[3][1] << "," << model[3][2] << std::endl;
+
+	// Apply rotation around the center of the sprite
+	if (rotation != 0.0f) 
+	{
+		model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
+		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
+	}
+
+	model = glm::scale(model, scale);
+	std::cout << "[DEBUG] Final matrix translation: " << model[3][0] << "," << model[3][1] << "," << model[3][2] << std::endl;
+	shader.setMat4("projection", projection);
+	shader.setMat4("model", model);
+	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D
+
+	std::cout << "[DEBUG] Model matrix [0][3]: " << model[0][3] << " [1][3]: " << model[1][3] << std::endl; 
+}
+
+void GraphicsManager::Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix)
+{
+	SetupMatrices(shader, modelMatrix);
 }
 
 glm::mat4 GraphicsManager::ConvertMatrix4x4ToGLM(const Matrix4x4& m)

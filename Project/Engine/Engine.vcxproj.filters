@@ -81,6 +81,8 @@
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -131,6 +133,7 @@
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\Sound\AudioComponent.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
