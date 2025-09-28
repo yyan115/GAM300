@@ -417,7 +417,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 		glGetProgramiv(ID, GL_LINK_STATUS, &status);
 		if (status == GL_FALSE) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
-			//std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+#ifndef ANDROID
 			if (CompileToResource(assetPath).empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
 				//std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;

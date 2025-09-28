@@ -59,6 +59,14 @@ Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
 Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
+Resources/Shaders/sprite.frag
+Resources/Shaders/sprite.meta
+Resources/Shaders/sprite.shader
+Resources/Shaders/sprite.vert
+Resources/Shaders/spriteandroid.frag
+Resources/Shaders/spriteandroid.meta
+Resources/Shaders/spriteandroid.shader
+Resources/Shaders/spriteandroid.vert
 Resources/Shaders/text.frag
 Resources/Shaders/text.meta
 Resources/Shaders/text.shader
