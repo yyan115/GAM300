@@ -15,9 +15,10 @@ public:
 	Texture();
 	Texture(const char* texType, GLint slot);
 
-	std::string CompileToResource(const std::string& assetPath) override;
-	bool LoadResource(const std::string& assetPath) override;
-	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
+	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 
 	GLenum GetFormatFromExtension(const std::string& filePath);
 

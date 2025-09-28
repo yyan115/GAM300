@@ -8,6 +8,7 @@
 #include <Transform/TransformComponent.hpp>
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -24,7 +25,7 @@ bool ModelSystem::Initialise()
         modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
     }
 
-    std::cout << "[ModelSystem] Initialized" << std::endl;
+    ENGINE_PRINT("[ModelSystem] Initialized\n");
     return true;
 }
 
@@ -76,5 +77,6 @@ void ModelSystem::Update()
 
 void ModelSystem::Shutdown() 
 {
-    std::cout << "[ModelSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[ModelSystem] Shutdown\n");
+    //std::cout << "[ModelSystem] Shutdown" << std::endl;
 }

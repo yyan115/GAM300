@@ -219,6 +219,7 @@ void serialiseConfig(std::string const& audioFileName, float bgmPercentage, floa
         }
     }
     catch (std::exception const& ex) {
+        ENGINE_PRINT(
         std::cout << "Exception caught: " << ex.what() << "\n";
     }
 }

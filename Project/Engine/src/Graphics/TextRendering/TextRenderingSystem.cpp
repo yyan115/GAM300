@@ -17,7 +17,7 @@ bool TextRenderingSystem::Initialise()
         textComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComp.shaderGUID, shaderPath);
     }
 
-	std::cout << "[TextSystem] Initialized" << std::endl;
+    ENGINE_PRINT("[TextSystem] Initialized\n");
 	return true;
 }
 
@@ -44,5 +44,6 @@ void TextRenderingSystem::Update()
 
 void TextRenderingSystem::Shutdown()
 {
-    std::cout << "[TextSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[TextSystem] Shutdown\n");
+    //std::cout << "[TextSystem] Shutdown" << std::endl;
 }

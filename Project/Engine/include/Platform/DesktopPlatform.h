@@ -17,6 +17,17 @@ private:
     static void ErrorCallback(int error, const char* description);
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void FocusCallback(GLFWwindow* window, int focused);
+
+    // Input callbacks for GLFW
+    static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+    static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+
+    // Helper functions for input mapping
+    static Input::Key GLFWKeyToEngineKey(int glfwKey);
+    static Input::MouseButton GLFWButtonToEngineButton(int glfwButton);
+    static Input::KeyAction GLFWActionToEngineAction(int glfwAction);
     
 public:
     DesktopPlatform();
@@ -49,6 +60,8 @@ public:
 
     // Asset management
     std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) override;
+    std::vector<uint8_t> ReadAsset(const std::string& path) override;
+    bool FileExists(const std::string& path) override;
 
     void* GetNativeWindow() override;
     

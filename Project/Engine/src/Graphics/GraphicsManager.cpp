@@ -7,6 +7,9 @@
 #include <android/log.h>
 #endif
 #include <Transform/TransformSystem.hpp>
+#include <ECS/ECSManager.hpp>
+#include <ECS/ECSRegistry.hpp>
+#include "Logging.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -23,7 +26,8 @@ void GraphicsManager::Shutdown()
 {
 	renderQueue.clear();
 	currentCamera = nullptr;
-	std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
 void GraphicsManager::BeginFrame()
@@ -77,7 +81,8 @@ void GraphicsManager::Render()
 {
 	if (!currentCamera) 
 	{
-		std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
+		//std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
 		return;
 	}
 
@@ -124,6 +129,11 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
 
 	// Apply lighting
+	/*ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
+	if (ecsManager.lightingSystem) 
+	{
+		ecsManager.lightingSystem->ApplyLighting(*item.shader);
+	}*/
 	ApplyLighting(*item.shader);
 
 	// Draw the model
@@ -247,7 +257,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	if (!fontVAO || !fontVBO) 
 	{
-		std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
+		//std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
 	}
@@ -273,7 +284,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	{
 		const Character& ch = item.font->GetCharacter(c);
 		if (ch.textureID == 0) {
-			std::cerr << "Character '" << c << "' has no texture!" << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
+			//std::cerr << "Character '" << c << "' has no texture!" << std::endl;
 			continue;
 		}
 

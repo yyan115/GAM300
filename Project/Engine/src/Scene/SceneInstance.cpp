@@ -11,12 +11,14 @@
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
 #include "Serialization/Serializer.hpp"
+#include "Sound/AudioComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
+#include <Logging.hpp>
 
 void SceneInstance::Initialize() {
 	// Initialize GraphicsManager first
@@ -85,13 +87,41 @@ void SceneInstance::Initialize() {
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
+	// Test Audio
+	{
+		// Initialize AudioSystem
+		if (!AudioSystem::GetInstance().Initialise())
+		{
+			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
+		}
+		else
+		{
+			// Create an entity with AudioComponent
+			Entity audioEntity = ecsManager.CreateEntity();
+			ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+			NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+			audioName.name = "Audio Test Entity";
+			
+			// Add AudioComponent
+			AudioComponent audioComp;
+			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+			audioComp.Volume = 0.8f;
+			audioComp.Loop = false;
+			audioComp.PlayOnAwake = true;
+			audioComp.Spatialize = false;
+			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+			
+			// The AudioComponent will automatically load and play the audio on awake
+		}
+	}
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
 
-	std::cout << "Scene Initialized" << std::endl;
+	ENGINE_PRINT("Scene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
@@ -104,6 +134,11 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
+	
+	if (mainECS.audioSystem)
+	{
+		mainECS.audioSystem->Update();
+	}
 }
 
 void SceneInstance::Draw() {
@@ -176,12 +211,10 @@ void SceneInstance::Draw() {
 }
 
 void SceneInstance::Exit() {
-	// Cleanup code for the test scene
-
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-
-	std::cout << "TestScene Exited" << std::endl;
+	ENGINE_PRINT("TestScene Exited\n");
+	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)
