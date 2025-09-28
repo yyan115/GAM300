@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <queue>
 #include <list>
+#include "Logging.hpp"
 //#include <FileWatch.hpp>
 #include "../Engine.h"
 #include "Utilities/GUID.hpp"
@@ -143,7 +144,8 @@ private:
 			std::shared_ptr<T> asset = std::make_shared<T>();
 			std::string compiledPath = asset->CompileToResource(filePath, forAndroid);
 			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 
@@ -194,7 +196,8 @@ private:
 			Texture texture{ texType, slot };
 			std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 			if (compiledPath.empty()) {
-				std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 

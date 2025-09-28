@@ -7,7 +7,8 @@
 
 bool TextRenderingSystem::Initialise()
 {
-	std::cout << "[TextSystem] Initialized" << std::endl;
+    ENGINE_PRINT("[TextSystem] Initialized\n");
+	//std::cout << "[TextSystem] Initialized" << std::endl;
 	return true;
 }
 
@@ -34,5 +35,6 @@ void TextRenderingSystem::Update()
 
 void TextRenderingSystem::Shutdown()
 {
-    std::cout << "[TextSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[TextSystem] Shutdown\n");
+    //std::cout << "[TextSystem] Shutdown" << std::endl;
 }

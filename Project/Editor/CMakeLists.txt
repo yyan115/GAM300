@@ -55,6 +55,8 @@ target_include_directories(Editor
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui/backends
         ${CMAKE_SOURCE_DIR}/Libraries/FileWatch
+        # FMOD headers needed by Engine dependencies
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
 )
 
 # Link to Engine (shared lib) and Game (static lib)

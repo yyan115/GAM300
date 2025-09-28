@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <Sound/AudioComponent.hpp>
+#include <Sound/AudioSystem.hpp>
 
 InspectorPanel::InspectorPanel() 
     : EditorPanel("Inspector", true) {
@@ -48,26 +50,12 @@ void InspectorPanel::OnImGuiRender() {
                     }
                 }
 
-                //ImGui::Separator();
-
-                //// Add Component button
-                //if (ImGui::Button("Add Component")) {
-                //    ImGui::OpenPopup("AddComponentPopup");
-                //}
-
-                //if (ImGui::BeginPopup("AddComponentPopup")) {
-                //    if (ImGui::MenuItem("Transform")) {
-                //        if (!ecsManager.HasComponent<Transform>(selectedEntity)) {
-                //            ecsManager.AddComponent<Transform>(selectedEntity, Transform{});
-                //        }
-                //    }
-                //    if (ImGui::MenuItem("Name Component")) {
-                //        if (!ecsManager.HasComponent<NameComponent>(selectedEntity)) {
-                //            ecsManager.AddComponent<NameComponent>(selectedEntity, NameComponent{"Entity " + std::to_string(selectedEntity)});
-                //        }
-                //    }
-                //    ImGui::EndPopup();
-                //}
+                // Draw AudioComponent if present
+                if (ecsManager.HasComponent<AudioComponent>(selectedEntity)) {
+                    if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        DrawAudioComponent(selectedEntity);
+                    }
+                }
 
             } catch (const std::exception& e) {
                 ImGui::Text("Error accessing entity: %s", e.what());
@@ -177,5 +165,78 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
         ImGui::PopID();
     } catch (const std::exception& e) {
         ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
+    }
+}
+
+void InspectorPanel::DrawAudioComponent(Entity entity) {
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        AudioComponent& audio = ecsManager.GetComponent<AudioComponent>(entity);
+
+        ImGui::PushID("AudioComponent");
+
+        // Asset path input
+        char buffer[512] = {0};
+        if (!audio.AudioAssetPath.empty()) {
+            strncpy_s(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer)-1);
+        }
+        ImGui::Text("Audio Asset Path");
+        ImGui::SameLine();
+        if (ImGui::InputText("##AudioPath", buffer, sizeof(buffer))) {
+            audio.SetAudioAssetPath(std::string(buffer));
+        }
+
+        // Volume slider
+        float vol = audio.Volume;
+        if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f)) {
+            audio.Volume = vol;
+            //if (audio.Channel) {
+            //    FMOD_Channel_SetVolume(reinterpret_cast<FMOD_CHANNEL*>(0), audio.Volume); // placeholder if needed
+            //}
+        }
+
+        // Loop checkbox
+        if (ImGui::Checkbox("Loop", &audio.Loop)) {
+            // no immediate action; applied at play time
+        }
+
+        // Play on Awake
+        ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
+
+        // Spatialize
+        if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {
+            // toggled
+        }
+
+        // Attenuation
+        float att = audio.Attenuation;
+        if (ImGui::SliderFloat("Attenuation", &att, 0.0f, 10.0f)) {
+            audio.Attenuation = att;
+        }
+
+        // Position (if spatialized)
+        if (audio.Spatialize) {
+            float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
+            if (ImGui::DragFloat3("Position", pos, 0.1f)) {
+                audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
+                // Also update Transform if present
+                if (ecsManager.HasComponent<Transform>(entity)) {
+                    ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });
+                }
+            }
+        }
+
+        // Play/Stop buttons
+        if (ImGui::Button("Play")) {
+            audio.Play();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) {
+            audio.Stop();
+        }
+
+        ImGui::PopID();
+    } catch (const std::exception& e) {
+        ImGui::Text("Error accessing AudioComponent: %s", e.what());
     }
 }

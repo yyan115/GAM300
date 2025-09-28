@@ -10,6 +10,7 @@
 #endif
 #include <Utilities/FileUtilities.hpp>
 #include <Asset Manager/AssetManager.hpp>
+#include "Logging.hpp"
 
 std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const std::string& assetPath, const std::string& resourcePath, const std::string& androidResourcePath, bool forAndroid) {
 	std::string metaFilePath{};
@@ -85,7 +86,7 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 		}
 	}
 
-	std::cout << "[IAsset] Generated base meta file " << metaFilePath << std::endl;
+	ENGINE_PRINT("[IAsset] Generated base meta file ", metaFilePath, "\n");
 
 	MetaFilesManager::AddGUID128Mapping(assetPath, guid128);
 

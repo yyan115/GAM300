@@ -28,6 +28,7 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 
+#include "Logging.hpp"
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
 Texture::Texture(const char* texType, GLint slot) :

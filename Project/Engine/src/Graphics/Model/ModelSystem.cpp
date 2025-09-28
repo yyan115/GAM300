@@ -6,6 +6,7 @@
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Transform/TransformComponent.hpp>
+#include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -13,7 +14,8 @@
 
 bool ModelSystem::Initialise() 
 {
-    std::cout << "[ModelSystem] Initialized" << std::endl;
+    ENGINE_PRINT("[ModelSystem] Initialized\n");
+    //std::cout << "[ModelSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -65,5 +67,6 @@ void ModelSystem::Update()
 
 void ModelSystem::Shutdown() 
 {
-    std::cout << "[ModelSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[ModelSystem] Shutdown\n");
+    //std::cout << "[ModelSystem] Shutdown" << std::endl;
 }

@@ -13,6 +13,11 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+// Forward declarations to avoid including heavy headers
+class Audio;
+class Texture;
+class Model;
+class Shader;
 
 class ENGINE_API ResourceManager {
 public:
@@ -92,11 +97,12 @@ public:
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
-			std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Removed from resource map: ", resourcePath, "\n");
+			//std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
 		}
 
 		if (FileUtilities::RemoveFile(resourcePath)) {
-			std::cout << "[ResourceManager] Deleted resource file: " << resourcePath << std::endl;
+			ENGINE_PRINT("[ResourceManager] Deleted resource file: ", resourcePath, "\n");
 			return true;
 			//if (MetaFilesManager::DeleteMetaFile(assetPath)) {
 			//	std::cout << "[ResourceManager] Deleted meta file for resource: " << resourcePath << std::endl;
@@ -107,8 +113,8 @@ public:
 			//	return false;
 			//}
 		}
-
-		std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to unload resource: ", resourcePath, "\n");
+		//std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
 		return false;
 	}
 
@@ -131,7 +137,8 @@ public:
 			return UnloadResource<Audio>(guid, assetPath, resourcePath);
 		}
 		else {
-			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");
+			//std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
 		}
 	}

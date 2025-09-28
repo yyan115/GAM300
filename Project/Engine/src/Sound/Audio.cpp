@@ -3,6 +3,7 @@
 #include "Sound/Audio.hpp"
 #include "Sound/AudioManager.hpp"
 #include <Asset Manager/AssetManager.hpp>
+#include "Sound/AudioSystem.hpp"
 
 std::string Audio::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	if (!forAndroid)
@@ -24,12 +25,19 @@ std::string Audio::CompileToResource(const std::string& assetPath, bool forAndro
 }
 
 bool Audio::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
-	sound = AudioManager::GetInstance().LoadSound(resourcePath);
+	sound = AudioSystem::GetInstance().CreateSound(assetPath);
 	this->assetPath = resourcePath;
 	return sound != nullptr;
 }
 
 bool Audio::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
+	// If we already have a sound loaded, unload it first
+	if (sound && !this->assetPath.empty()) {
+		AudioSystem::GetInstance().ReleaseSound(sound, this->assetPath);
+		sound = nullptr;
+	}
+
+	// Load the new resource
 	return LoadResource(resourcePath, assetPath);
 }
 
