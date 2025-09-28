@@ -8,7 +8,6 @@ public:
 	GUID_128 guid{};
 	std::string sourceFilePath;
 	std::string compiledFilePath;
-	std::string androidCompiledFilePath;
 	std::chrono::system_clock::time_point lastCompileTime;
 	int version{};
 

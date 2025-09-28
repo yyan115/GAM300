@@ -5,27 +5,22 @@
 #include "imgui.h"
 #include "WindowManager.hpp"
 #include "TimeManager.hpp"
-#include "Asset Manager/MetaFilesManager.hpp"
-#include "Logging.hpp"
 
 
 int main() {
-    ENGINE_PRINT("=== EDITOR BUILD ===");
+    std::cout << "=== EDITOR BUILD ===" << std::endl;
 
     if (!glfwInit()) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW!");
+        std::cerr << "Failed to initialize GLFW!" << std::endl;
         return -1;
     }
 
     Engine::Initialize();
-    // Only need to generate asset meta files in Editor mode.
-    MetaFilesManager::InitializeAssetMetaFiles("Resources");
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window!\n");
-        //std::cerr << "Failed to create GLFW window!" << std::endl;
+        std::cerr << "Faileasdd to create GLFW window!" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -53,9 +48,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
-    MetaFilesManager::CleanupUnusedMetaFiles("Resources");
 
-    ENGINE_PRINT("=== Editor ended ===\n");
-    //std::cout << "=== Editor ended ===" << std::endl;
+    std::cout << "=== Editor ended ===" << std::endl;
     return 0;
 }

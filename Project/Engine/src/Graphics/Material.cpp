@@ -78,7 +78,7 @@ std::optional<std::reference_wrapper<TextureInfo>> Material::GetTextureInfo(Text
 	return textureInfo;
 }
 
-const std::unordered_map<Material::TextureType, std::unique_ptr<TextureInfo>>& Material::GetAllTextureInfo()
+const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>& Material::GetAllTextureInfo()
 {
 	return m_textureInfo;
 }
