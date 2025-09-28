@@ -14,7 +14,6 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/Audio.hpp"
-#include "Graphics/Material.hpp"
 
 class ENGINE_API AssetManager {
 public:
@@ -95,7 +94,6 @@ private:
 	const std::unordered_set<std::string> fontExtensions = { ".ttf" };
 	const std::unordered_set<std::string> modelExtensions = { ".obj", ".fbx" };
 	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };
-	const std::unordered_set<std::string> materialExtensions = { ".mat" };
 	std::unordered_set<std::string> supportedAssetExtensions;
 
 	AssetManager() {
@@ -132,7 +130,7 @@ private:
 
 			std::shared_ptr<AssetMeta> assetMeta = asset->GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMetaMap[guid] = assetMeta;
-			// std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl;
 
 			// If the resource is already loaded, hot-reload the resource.
 			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
@@ -175,7 +173,7 @@ private:
 			std::shared_ptr<AssetMeta> assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
 			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
 			assetMetaMap[guid] = assetMeta;
-			// std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
 
 			// If the resource is already loaded, hot-reload the resource.
 			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {

@@ -67,17 +67,6 @@ std::string Texture::CompileToResource(const std::string& assetPath) {
 	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
 #endif
 
-	// Check if image loading failed
-	if (!bytes) {
-		std::cerr << "[TEXTURE]: Failed to load image: " << assetPath << std::endl;
-		std::cerr << "[TEXTURE]: stbi_failure_reason: " << stbi_failure_reason() << std::endl;
-		std::cerr << "[TEXTURE]: Current working directory: " << std::filesystem::current_path() << std::endl;
-		std::cerr << "[TEXTURE]: File exists check: " << std::filesystem::exists(assetPath) << std::endl;
-		return std::string{}; // Return empty string to indicate failure
-	}
-
-	std::cout << "[TEXTURE]: Successfully loaded image: " << assetPath << " (" << widthImg << "x" << heightImg << ", " << numColCh << " channels)" << std::endl;
-
 	// Dynamically choose the appropriate format.
 	gli::format gliFormat;
 	switch (numColCh)
@@ -129,31 +118,10 @@ bool Texture::LoadResource(const std::string& assetPath) {
 	//std::cout << "[TEXTURE] DEBUG: Meta file found, loading..." << std::endl;
 
 	std::ifstream ifs(metaFilePath);
-	if (!ifs.is_open()) {
-		std::cerr << "[TEXTURE]: Failed to open meta file: " << metaFilePath << std::endl;
-		return false;
-	}
-
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-	ifs.close();
-
-	if (jsonContent.empty()) {
-		std::cerr << "[TEXTURE]: Meta file is empty: " << metaFilePath << std::endl;
-		return false;
-	}
 
 	rapidjson::Document doc;
 	doc.Parse(jsonContent.c_str());
-
-	if (doc.HasParseError()) {
-		std::cerr << "[TEXTURE]: Failed to parse JSON in meta file: " << metaFilePath << std::endl;
-		return false;
-	}
-
-	if (!doc.IsObject() || !doc.HasMember("TextureMetaData") || !doc["TextureMetaData"].IsObject()) {
-		std::cerr << "[TEXTURE]: Invalid JSON structure in meta file: " << metaFilePath << std::endl;
-		return false;
-	}
 
 	const auto& textureMetaData = doc["TextureMetaData"];
 

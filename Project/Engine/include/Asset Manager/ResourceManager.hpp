@@ -6,10 +6,6 @@
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Graphics/TextRendering/Font.hpp"
-#include "Graphics/Material.hpp"
-#include "Graphics/Model/Model.h"
-#include "Graphics/Texture.h"
-#include "Graphics/ShaderClass.h"
 #include "Utilities/FileUtilities.hpp"
 #include "Sound/Audio.hpp"
 
@@ -130,9 +126,6 @@ public:
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
 			return UnloadResource<Audio>(guid, assetPath, resourcePath);
 		}
-		else if (materialExtensions.find(extension) != materialExtensions.end()) {
-			return UnloadResource<Material>(guid, assetPath, resourcePath);
-		}
 		else {
 			std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
@@ -152,8 +145,7 @@ public:
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
 		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
-		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;
-		else if (GetResourceMap<Material>().find(guid) != GetResourceMap<Material>().end()) return true;
+		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;		
 		return false;
 	}
 
@@ -173,7 +165,6 @@ private:
 	const std::unordered_set<std::string> fontExtensions = { ".font" };
 	const std::unordered_set<std::string> modelExtensions = { ".mesh" };
 	const std::unordered_set<std::string> shaderExtensions = { ".shader" };
-	const std::unordered_set<std::string> materialExtensions = { ".mat" };
 
 	// Supported resource extensions
 	std::unordered_set<std::string> supportedResourceExtensions;
@@ -184,7 +175,6 @@ private:
 		supportedResourceExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 		supportedResourceExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 		supportedResourceExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
-		supportedResourceExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 	};
 
 	/**
@@ -220,7 +210,7 @@ private:
 		}
 		else {
 			resource = GetResource<T>(assetPath);
-			if (resource && resource->ReloadResource(assetPath)) {
+			if (resource->ReloadResource(assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
 				std::cout << "[ResourceManager] Reloaded resource for: " << assetPath << std::endl;

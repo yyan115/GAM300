@@ -98,38 +98,18 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 
 GUID_string MetaFilesManager::GetGUIDFromMetaFile(const std::string& metaFilePath) {
 	std::ifstream ifs(metaFilePath);
-	if (!ifs.is_open()) {
-		std::cerr << "[MetaFilesManager] ERROR: Cannot open meta file: " << metaFilePath << std::endl;
-		return "";
-	}
-
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-
-	if (jsonContent.empty()) {
-		std::cerr << "[MetaFilesManager] ERROR: Meta file is empty: " << metaFilePath << std::endl;
-		return "";
-	}
 
 	rapidjson::Document doc;
 	doc.Parse(jsonContent.c_str());
 
-	if (doc.HasParseError()) {
-		std::cerr << "[MetaFilesManager] ERROR: Failed to parse JSON in meta file: " << metaFilePath << std::endl;
-		return "";
-	}
-
-	if (!doc.HasMember("AssetMetaData") || !doc["AssetMetaData"].IsObject()) {
-		std::cerr << "[MetaFilesManager] ERROR: Invalid JSON structure in meta file: " << metaFilePath << std::endl;
-		return "";
-	}
-
 	const auto& assetMetaData = doc["AssetMetaData"];
 
-	if (assetMetaData.HasMember("guid") && assetMetaData["guid"].IsString()) {
+	if (assetMetaData.HasMember("guid")) {
 		return assetMetaData["guid"].GetString();
 	}
 	else {
-		std::cerr << "[MetaFilesManager] ERROR: GUID not found or invalid in meta file: " << metaFilePath << std::endl;
+		std::cerr << "[MetaFilesManager] ERROR: GUID not found in meta file: " << metaFilePath << std::endl;
 		return "";
 	}
 }
@@ -184,12 +164,6 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 GUID_128 MetaFilesManager::GetGUID128FromAssetFile(const std::string& assetPath) {
 	if (assetPathToGUID128.find(assetPath) == assetPathToGUID128.end()) {
 		GUID_string guidStr = GetGUIDFromAssetFile(assetPath);
-		if (guidStr.empty()) {
-			std::cerr << "[MetaFilesManager] ERROR: Failed to get GUID for asset: " << assetPath << std::endl;
-			GUID_128 emptyGuid = { 0, 0 };
-			assetPathToGUID128[assetPath] = emptyGuid;
-			return emptyGuid;
-		}
 		GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
 		assetPathToGUID128[assetPath] = guid128;
 		return guid128;

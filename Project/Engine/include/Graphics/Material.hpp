@@ -5,12 +5,8 @@
 #include <unordered_map>
 #include <optional>
 #include <functional>
-#include <fstream>
-#include <filesystem>
 #include "Texture.h"
 #include "ShaderClass.h"
-#include "Asset Manager/Asset.hpp"
-#include "../Engine.h"
 
 enum class TextureType {
 	NONE = 0,
@@ -24,14 +20,11 @@ enum class TextureType {
 	ROUGHNESS = 16,
 };
 
-class ENGINE_API Material : public IAsset {
+class Material {
 public:
 	Material();
 	Material(const std::string& name);
 	~Material() = default;
-
-	Material(const Material&) = delete;
-	Material& operator=(const Material&) = delete;
 
 	// Basic Material Properties
 	void SetAmbient(const glm::vec3 ambient);
@@ -71,12 +64,6 @@ public:
 	// Apply material to shader
 	void ApplyToShader(Shader& shader) const;
 
-	// IAsset interface
-	std::string CompileToResource(const std::string& assetPath) override;
-	bool LoadResource(const std::string& assetPath) override;
-	bool ReloadResource(const std::string& assetPath) override;
-	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
-
 	// Static factory methods for common materials
 	static std::shared_ptr<Material> CreateDefault();
 	static std::shared_ptr<Material> CreateMetal(const glm::vec3& color);
@@ -106,5 +93,4 @@ private:
 	// Helper methods
 	std::string TextureTypeToString(TextureType type) const;
 	void BindTextures(Shader& shader) const;
-	std::filesystem::path ResolveToProjectRoot(const std::filesystem::path& path);
 };
