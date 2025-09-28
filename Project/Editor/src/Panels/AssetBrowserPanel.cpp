@@ -435,33 +435,41 @@ void AssetBrowserPanel::RenderAssetGrid() {
                              asset.extension == ".jpeg" || asset.extension == ".bmp" ||
                              asset.extension == ".tga" || asset.extension == ".dds");
 
-        // Start drag-and-drop source when dragging (moved before selection logic)
-        if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
-            if (isMaterial) {
-                std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
+            if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
+                if (isMaterial) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
 
-                // Store drag data globally for cross-window transfer
-                g_draggedMaterialGuid = asset.guid;
-                g_draggedMaterialPath = asset.filePath;
+                    // Store drag data globally for cross-window transfer
+                    g_draggedMaterialGuid = asset.guid;
+                    g_draggedMaterialPath = asset.filePath;
 
-                std::cout << "[AssetBrowserPanel] Drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+                    std::cout << "[AssetBrowserPanel] Drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
 
-                // Use a simple payload - just a flag that dragging is active
-                ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
-                ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
-            } else if (isTexture) {
-                std::cout << "[AssetBrowserPanel] Starting drag for texture: " << asset.fileName << std::endl;
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
+                } else if (isTexture) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for texture: " << asset.fileName << std::endl;
 
-                // Send texture path directly
-                ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
-                ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                    // Send texture path directly
+                    ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                }
+
+                ImGui::EndDragDropSource();
+                std::cout << "[AssetBrowserPanel] Drag operation completed" << std::endl;
             }
+        }
 
+        // Start drag-and-drop source when dragging
+        if (!asset.isDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            // Set payload with asset info
+            ImGui::SetDragDropPayload("ASSET_PATH", asset.filePath.c_str(), asset.filePath.size() + 1);
+
+            // Show drag preview
+            ImGui::Text("Dragging: %s", asset.fileName.c_str());
             ImGui::EndDragDropSource();
-            std::cout << "[AssetBrowserPanel] Drag operation completed" << std::endl;
         }
-        }
-
 
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
@@ -519,8 +527,7 @@ void AssetBrowserPanel::RenderAssetGrid() {
             anyItemClickedInGrid = true;
         }
 
-        // Don't select if we're in the middle of a drag operation
-        if (shouldSelect && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+        if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
             std::cout << "[AssetBrowserPanel] Selecting asset: GUID {" << asset.guid.high << ", " << asset.guid.low << "}, File: " << asset.fileName << std::endl;
             SelectAsset(asset.guid, ctrl);
