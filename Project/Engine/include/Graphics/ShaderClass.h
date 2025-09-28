@@ -17,10 +17,10 @@ public:
     //Shader() {};
 	//Shader(const char* vertexFile, const char* fragmentFile);
 
-    std::string CompileToResource(const std::string& path) override;
-    bool LoadResource(const std::string& assetPath) override;
-    bool ReloadResource(const std::string& assetPath) override;
-    std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+    std::string CompileToResource(const std::string& path, bool forAndroid = false) override;
+    bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+    bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+    std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 
 	void Activate();
 	void Delete();

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/LightManager.hpp"
 #include <glm/gtc/constants.hpp>
+#include "Logging.hpp"
 
 LightManager& LightManager::getInstance() 
 {
@@ -48,7 +49,8 @@ void LightManager::removePointLight(size_t index)
     }
     else 
     {
-        std::cerr << "[LightManager] ERROR: Invalid point light index " << index << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[LightManager] ERROR: Invalid point light index " , index, "\n");
+        //std::cerr << "[LightManager] ERROR: Invalid point light index " << index << std::endl;
     }
 }
 
@@ -90,15 +92,19 @@ void LightManager::clearAllLights()
 
 void LightManager::printLightStats() const
 {
-    std::cout << "\n[LightManager] Light Statistics:" << std::endl;
-    std::cout << "  Directional Light: direction(" << directionalLight.direction.x << ", " << directionalLight.direction.y << ", " << directionalLight.direction.z << ")" << std::endl;
+    ENGINE_PRINT("\n[LightManager] Light Statistics:\n");
+    ENGINE_PRINT("  Directional Light: direction(", directionalLight.direction.x, ", ", directionalLight.direction.y, ", ", directionalLight.direction.z, ")\n");
+    ENGINE_PRINT("  Point Lights: " , pointLights.size(), "\n");
+    //std::cout << "\n[LightManager] Light Statistics:" << std::endl;
+    //std::cout << "  Directional Light: direction(" << directionalLight.direction.x << ", " << directionalLight.direction.y << ", " << directionalLight.direction.z << ")" << std::endl;
 
-    std::cout << "  Point Lights: " << pointLights.size() << std::endl;
+    //std::cout << "  Point Lights: " << pointLights.size() << std::endl;
     for (size_t i = 0; i < pointLights.size(); i++) 
     {
         const auto& light = pointLights[i];
-        std::cout << "    Light " << i << ": position(" << light.position.x << ", " << light.position.y << ", " << light.position.z << "), color(" << light.diffuse.x << ", " << light.diffuse.y << ", " << light.diffuse.z << ")" << std::endl;
+        ENGINE_PRINT("    Light ", i, ": position(", light.position.x, ", ", light.position.y, ", ", light.position.z, "), color(", light.diffuse.x, ", ", light.diffuse.y, ", ", light.diffuse.z, ")\n");
+        //std::cout << "    Light " << i << ": position(" << light.position.x << ", " << light.position.y << ", " << light.position.z << "), color(" << light.diffuse.x << ", " << light.diffuse.y << ", " << light.diffuse.z << ")" << std::endl;
     }
-
-    std::cout << "  Spotlight: " << (spotLightEnabled ? "enabled" : "disabled") << " at (" << spotLight.position.x << ", " << spotLight.position.y << ", " << spotLight.position.z << ")" << std::endl; std::cout << std::endl;
+    ENGINE_PRINT("  Spotlight: ", (spotLightEnabled ? "enabled" : "disabled"), " at (", spotLight.position.x, ", ", spotLight.position.y, ", ", spotLight.position.z, ")\n\n");
+    //std::cout << "  Spotlight: " << (spotLightEnabled ? "enabled" : "disabled") << " at (" << spotLight.position.x << ", " << spotLight.position.y << ", " << spotLight.position.z << ")" << std::endl; std::cout << std::endl;
 }
