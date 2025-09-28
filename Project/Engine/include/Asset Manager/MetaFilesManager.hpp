@@ -19,7 +19,7 @@ public:
 
     ENGINE_API static GUID_128 GetGUID128FromAssetFile(const std::string& assetPath);
 
-    static std::string GetResourceNameFromAssetFile(const std::string& assetPath);
+    ENGINE_API static std::string GetResourceNameFromAssetFile(const std::string& assetPath);
 
     ENGINE_API static bool MetaFileUpdated(const std::string& assetPath);
 

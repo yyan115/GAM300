@@ -26,8 +26,36 @@ public:
 	ENGINE_API ~Mesh();
 	void Draw(Shader& shader, const Camera& camera);
 
-	Mesh(const Mesh& other) = delete;  // Prevent copying
-	Mesh& operator=(const Mesh& other) = delete;  // Prevent assignment
+	Mesh(const Mesh& other)
+		: vertices(other.vertices),
+		indices(other.indices),
+		textures(other.textures),
+		material(other.material),
+		vao(),
+		ebo(indices),
+		vaoSetup(other.vaoSetup) {
+		setupMesh();
+	}
+
+	Mesh& operator=(const Mesh& other) {
+		if (this != &other) {
+			// Clean up existing resources
+			vao.Delete();
+			ebo.Delete();
+
+			// Copy data
+			vertices = other.vertices;
+			indices = other.indices;
+			textures = other.textures;
+			material = other.material;
+			vaoSetup = other.vaoSetup;
+
+			// Reconstruct EBO with new indices
+			ebo = EBO(indices);
+			setupMesh();
+		}
+		return *this;
+	}
 
 	Mesh(Mesh&& other) noexcept
 		: vertices(std::move(other.vertices)),
