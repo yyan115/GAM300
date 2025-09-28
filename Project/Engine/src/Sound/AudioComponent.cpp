@@ -165,9 +165,10 @@ void AudioComponent::UpdateComponent() {
 
     UpdatePlaybackState();
 
-    // Only handle PlayOnAwake if we're in PLAY_MODE
+    // Handle PlayOnStart - be more aggressive in PLAY_MODE
     if (PlayOnStart && !IsPlaying() && HasValidAsset() && State == AudioSourceState::Stopped) {
         if (Engine::IsPlayMode()) {
+            ENGINE_PRINT("[AudioComponent] PlayOnStart triggered for: ", AudioAssetPath, "\n");
             Play();
         }
     }

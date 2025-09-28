@@ -8,8 +8,9 @@ public:
 	FMOD_SOUND* sound;
 	std::string assetPath;
 
-	std::string CompileToResource(const std::string& assetPath) override;
-	bool LoadResource(const std::string& assetPath) override;
-	bool ReloadResource(const std::string& assetPath) override;
-	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	// Match IAsset interface
+	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
+	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 };

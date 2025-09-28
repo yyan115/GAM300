@@ -102,18 +102,24 @@ void AudioSystem::Shutdown() {
 void AudioSystem::Update() {
     if (shuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return;
+    // Phase 1: Update FMOD system and internal state (requires lock)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (!system) return;
 
-    // Update FMOD system
-    FMOD_System_Update(system);
+        // Update FMOD system
+        FMOD_System_Update(system);
 
-    // Update channel states and cleanup stopped channels
-    CleanupStoppedChannels();
+        // Update channel states and cleanup stopped channels
+        CleanupStoppedChannels();
+    }
 
-    // NEW: Update all AudioComponents in the ECS
+    // Phase 2: Update audio components (no lock held)
+    // Get all entities with AudioComponents outside of the lock
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    for (const auto& entity : entities) {
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
+    for (const auto& entity : allEntities) {
         if (ecsManager.HasComponent<AudioComponent>(entity)) {
             AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
             audioComp.UpdateComponent();
