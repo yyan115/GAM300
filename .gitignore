@@ -35,10 +35,9 @@ AndroidProject/local.properties
 # Object files
 *.o
 
-# Resource/Meta files
+# Resource files
 *.mesh
 *.shader
 *.font
 *.dds
 *.ktx
-*.meta
