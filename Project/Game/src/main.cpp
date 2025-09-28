@@ -1,11 +1,9 @@
 #include "Engine.h"
 #include "GameManager.h"
 #include <iostream>
-#include "Logging.hpp"
 
 int main() {
-    ENGINE_PRINT("=== GAME BUILD ===\n");
-    //std::cout << "=== GAME BUILD ===" << std::endl;
+    std::cout << "=== GAME BUILD ===" << std::endl;
 
     Engine::Initialize();
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
@@ -23,7 +21,7 @@ int main() {
 
     GameManager::Shutdown();
     Engine::Shutdown();
-    ENGINE_PRINT("=== Game ended ===\n");
-    //std::cout << "=== Game ended ===" << std::endl;
+
+    std::cout << "=== Game ended ===" << std::endl;
     return 0;
 }

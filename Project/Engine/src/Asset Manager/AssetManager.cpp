@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
+#include <thread>
+#include <fstream>
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -17,7 +19,7 @@ void AssetManager::AddToEventQueue(AssetManager::Event event, const std::filesys
 	//	}
 	//}
 	//else {
-	//	compilationQueue.push(assetPath);	
+	//	compilationQueue.push(assetPath);
 	//}
 }
 
@@ -245,6 +247,7 @@ void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 	supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
+	supportedAssetExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 }
 
 std::unordered_set<std::string>& AssetManager::GetSupportedExtensions() {

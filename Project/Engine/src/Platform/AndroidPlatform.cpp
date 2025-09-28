@@ -255,81 +255,36 @@ void AndroidPlatform::SetAssetManager(AAssetManager* manager) {
 
 // Asset management for Android - uses AssetManager API
 std::vector<std::string> AndroidPlatform::ListAssets(const std::string& folder, bool recursive) {
-    if (!assetPaths.empty()) return assetPaths;
+    std::vector<std::string> assetPaths;
+
     if (!assetManager) return assetPaths;
 
-    //// For Android, we need to recursively explore directories using AssetManager
-    //std::function<void(const std::string&)> listAssetsRecursive = [&](const std::string& currentFolder) {
-    //    AAssetDir* assetDir = AAssetManager_openDir(assetManager, currentFolder.c_str());
-    //    if (!assetDir) return;
+    // For Android, we need to recursively explore directories using AssetManager
+    std::function<void(const std::string&)> listAssetsRecursive = [&](const std::string& currentFolder) {
+        AAssetDir* assetDir = AAssetManager_openDir(assetManager, currentFolder.c_str());
+        if (!assetDir) return;
 
-    //    const char* filename;
-    //    while ((filename = AAssetDir_getNextFileName(assetDir)) != nullptr) {
-    //        std::string fullPath = currentFolder.empty() ? filename : currentFolder + "/" + filename;
+        const char* filename;
+        while ((filename = AAssetDir_getNextFileName(assetDir)) != nullptr) {
+            std::string fullPath = currentFolder.empty() ? filename : currentFolder + "/" + filename;
 
-    //        // Check if this is a file by trying to open it
-    //        AAsset* asset = AAssetManager_open(assetManager, fullPath.c_str(), AASSET_MODE_UNKNOWN);
-    //        if (asset) {
-    //            // It's a file
-    //            assetPaths.push_back(fullPath);
-    //            AAsset_close(asset);
-    //        } else if (recursive) {
-    //            // Try as directory for recursive search
-    //            listAssetsRecursive(fullPath);
-    //        }
-    //    }
-
-    //    AAssetDir_close(assetDir);
-    //};
-
-    //listAssetsRecursive(folder);
-
-    AAsset* asset = AAssetManager_open(assetManager, "asset_manifest.txt", AASSET_MODE_BUFFER);
-    if (!asset) return assetPaths;
-
-    off_t size = AAsset_getLength(asset);
-    std::string buffer(size, '\0');
-    AAsset_read(asset, buffer.data(), size);
-    AAsset_close(asset);
-
-    std::istringstream stream(buffer);
-    std::string line;
-    while (std::getline(stream, line)) {
-        if (!line.empty()) {
-            assetPaths.push_back(line);
+            // Check if this is a file by trying to open it
+            AAsset* asset = AAssetManager_open(assetManager, fullPath.c_str(), AASSET_MODE_UNKNOWN);
+            if (asset) {
+                // It's a file
+                assetPaths.push_back(fullPath);
+                AAsset_close(asset);
+            } else if (recursive) {
+                // Try as directory for recursive search
+                listAssetsRecursive(fullPath);
+            }
         }
-    }
 
+        AAssetDir_close(assetDir);
+    };
+
+    listAssetsRecursive(folder);
     return assetPaths;
-}
-
-std::vector<uint8_t> AndroidPlatform::ReadAsset(const std::string& path) {
-    std::vector<uint8_t> data;
-    if (!assetManager) return data;
-
-    AAsset* asset = AAssetManager_open(assetManager, path.c_str(), AASSET_MODE_BUFFER);
-    if (!asset) return data;
-
-    off_t length = AAsset_getLength(asset);
-    data.resize(length);
-
-    int64_t readBytes = AAsset_read(asset, data.data(), length);
-    if (readBytes < 0) {
-        data.clear(); // error
-    }
-
-    AAsset_close(asset);
-    return data;
-}
-
-bool AndroidPlatform::FileExists(const std::string& path) {
-    if (!assetManager) return false;
-    AAsset* asset = AAssetManager_open(assetManager, path.c_str(), AASSET_MODE_UNKNOWN);
-    if (asset) {
-        AAsset_close(asset);
-        return true;
-    }
-    return false;
 }
 
 #endif // ANDROID

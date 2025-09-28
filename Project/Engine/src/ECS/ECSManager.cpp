@@ -12,7 +12,6 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioSystem.hpp"
-#include "Logging.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -88,7 +87,7 @@ Entity ECSManager::CreateEntity() {
 Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	Entity entity = entityManager->CreateEntity();
 	EntityGUIDRegistry::GetInstance().Register(entity, guid);
-	ENGINE_PRINT("[ECSManager] Created entity ", entity, ". Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
+	std::cout << "[ECSManager] Created entity " << entity << ". Total active entities : " << entityManager->GetActiveEntityCount() << std::endl;
 
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -102,14 +101,14 @@ void ECSManager::DestroyEntity(Entity entity) {
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
-	ENGINE_PRINT("[ECSManager] Destroyed entity " , entity , ". Total active entities: " , entityManager->GetActiveEntityCount() , "\n");
-	//std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
+
+	std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }
 
 void ECSManager::ClearAllEntities() {
 	entityManager->DestroyAllEntities();
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
-	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
-	//std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
+
+	std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }

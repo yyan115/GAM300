@@ -9,7 +9,6 @@
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
-#include "Logging.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -26,8 +25,7 @@ void GraphicsManager::Shutdown()
 {
 	renderQueue.clear();
 	currentCamera = nullptr;
-	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
-	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
+	std::cout << "[GraphicsManager] Shutdown" << std::endl;
 }
 
 void GraphicsManager::BeginFrame()
@@ -81,8 +79,7 @@ void GraphicsManager::Render()
 {
 	if (!currentCamera) 
 	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
-		//std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
+		std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
 		return;
 	}
 
@@ -136,8 +133,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	}*/
 	ApplyLighting(*item.shader);
 
-	// Draw the model
-	item.model->Draw(*item.shader, *currentCamera);
+	// Draw the model with entity material
+	item.model->Draw(*item.shader, *currentCamera, item.material);
 
 	//std::cout << "rendered model\n";
 }
@@ -257,8 +254,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	if (!fontVAO || !fontVBO) 
 	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
-		//std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
+		std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
 	}
@@ -284,8 +280,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	{
 		const Character& ch = item.font->GetCharacter(c);
 		if (ch.textureID == 0) {
-			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
-			//std::cerr << "Character '" << c << "' has no texture!" << std::endl;
+			std::cerr << "Character '" << c << "' has no texture!" << std::endl;
 			continue;
 		}
 

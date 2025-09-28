@@ -211,10 +211,12 @@ void SceneInstance::Draw() {
 }
 
 void SceneInstance::Exit() {
+	// Cleanup code for the test scene
+
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-	ENGINE_PRINT("TestScene Exited\n");
-	//std::cout << "TestScene Exited" << std::endl;
+
+	std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)

@@ -44,6 +44,5 @@ void TextRenderingSystem::Update()
 
 void TextRenderingSystem::Shutdown()
 {
-    ENGINE_PRINT("[TextSystem] Shutdown\n");
-    //std::cout << "[TextSystem] Shutdown" << std::endl;
+    std::cout << "[TextSystem] Shutdown" << std::endl;
 }

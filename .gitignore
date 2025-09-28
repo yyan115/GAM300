@@ -5,8 +5,11 @@
 Project/Build
 /Project/.claude
 
-# vcpkg - ignore entire directory (clone fresh for each dev environment)
-Project/vcpkg/
+# vcpkg build artifacts (keep vcpkg source for reproducible builds)
+Project/vcpkg/buildtrees/
+Project/vcpkg/downloads/
+Project/vcpkg/packages/
+Project/vcpkg/installed/
 Project/vcpkg_installed/
 
 # Android Studio

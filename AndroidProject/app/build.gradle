@@ -50,25 +50,25 @@ android {
 }
 
 // Task to copy resources directly via Gradle (more reliable than CMake)
-//task copyResources(type: Copy) {
-    //description 'Copy resources from main project to Android assets'
-    //group 'build'
+task copyResources(type: Copy) {
+    description 'Copy resources from main project to Android assets'
+    group 'build'
 
-    //from '../../Project/Resources'
-    //into 'src/main/assets/Resources'
+    from '../../Project/Resources'
+    into 'src/main/assets/Resources'
 
     // Always run this task
-    //outputs.upToDateWhen { false }
+    outputs.upToDateWhen { false }
 
-    //doFirst {
-       // println "🚀 [Gradle] Copying resources from ../../Project/Resources to src/main/assets/Resources"
-        //delete 'src/main/assets/Resources'
-   // }
+    doFirst {
+        println "🚀 [Gradle] Copying resources from ../../Project/Resources to src/main/assets/Resources"
+        delete 'src/main/assets/Resources'
+    }
 
-    //doLast {
-      //  println "✅ [Gradle] Resources copied successfully"
-    //}
-//}
+    doLast {
+        println "✅ [Gradle] Resources copied successfully"
+    }
+}
 
 // Task to configure CMake for Android if needed
 task configureEngine(type: Exec) {
@@ -112,7 +112,7 @@ task buildEngine(type: Exec) {
     }
 
     // Ensure engine is configured first, then resources are copied
-    dependsOn configureEngine//, copyResources
+    dependsOn configureEngine, copyResources
 }
 
 // Make all native build tasks depend on engine build
@@ -128,15 +128,15 @@ tasks.matching { it.name.startsWith('assemble') }.all {
 }
 
 // Make sure resources are copied before any asset processing
-//tasks.whenTaskAdded { task ->
+tasks.whenTaskAdded { task ->
     // Ensure resources are copied before any asset merging or APK building
-    //if (task.name.contains('merge') && task.name.contains('Assets')) {
-        //task.dependsOn copyResources
-    //}
-    //if (task.name.contains('package') && task.name.contains('Assets')) {
-        //task.dependsOn copyResources
-    //}
-//}
+    if (task.name.contains('merge') && task.name.contains('Assets')) {
+        task.dependsOn copyResources
+    }
+    if (task.name.contains('package') && task.name.contains('Assets')) {
+        task.dependsOn copyResources
+    }
+}
 
 dependencies {
 

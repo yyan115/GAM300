@@ -14,6 +14,7 @@
 #include "Asset Manager/AssetMeta.hpp"
 #include <Graphics/Model/Model.h>
 #include "Graphics/TextRendering/Font.hpp"
+#include "Graphics/Material.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/Audio.hpp"
 
@@ -115,6 +116,7 @@ private:
 	const std::unordered_set<std::string> fontExtensions = { ".ttf" };
 	const std::unordered_set<std::string> modelExtensions = { ".obj", ".fbx" };
 	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };
+	const std::unordered_set<std::string> materialExtensions = { ".mat" };
 	std::unordered_set<std::string> supportedAssetExtensions;
 
 	AssetManager() {
@@ -143,9 +145,9 @@ private:
 		// If the asset is not already loaded, load and store it using the GUID.
 		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			std::shared_ptr<T> asset = std::make_shared<T>();
-			std::string compiledPath = asset->CompileToResource(filePath, forAndroid);
+			std::string compiledPath = asset->CompileToResource(filePath);
 			if (compiledPath.empty()) {
-				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				ENGINE_LOG_ERROR("[AssetManager] ERROR: Failed to compile asset: " + std::string(filePath));
 				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
@@ -156,7 +158,8 @@ private:
 			}
 			else {
 				assetMeta = assetMetaMap.find(guid)->second;
-				assetMeta = asset->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+				// For Android, update the compiled path in the existing meta
+				assetMeta->compiledFilePath = compiledPath;
 			}
 			assetMetaMap[guid] = assetMeta;
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
@@ -197,9 +200,9 @@ private:
 		// If the asset is not already loaded, load and store it using the GUID.
 		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 			Texture texture{ texType, slot };
-			std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
+			std::string compiledPath = texture.CompileToResource(filePath);
 			if (compiledPath.empty()) {
-				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+				ENGINE_LOG_ERROR("[AssetManager] ERROR: Failed to compile asset: " + std::string(filePath));
 				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
@@ -210,9 +213,10 @@ private:
 			}
 			else {
 				assetMeta = assetMetaMap.find(guid)->second;
-				assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+				// For Android, update the compiled path in the existing meta
+				assetMeta->compiledFilePath = compiledPath;
 			}
-			assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
+			assetMeta = texture.ExtendMetaFile(filePath, assetMeta);
 			assetMetaMap[guid] = assetMeta;
 			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
 

@@ -6,6 +6,7 @@ class WindowManager;
 #include <memory>
 #include "Panels/PanelManager.hpp"
 #include <ECS/Entity.hpp>
+#include "Utilities/GUID.hpp"
 
 
 /**
@@ -53,7 +54,19 @@ public:
 	 * @brief Set the currently selected entity.
 	 * @param entity The entity to select, or static_cast<Entity>(-1) to deselect.
 	 */
-	static void SetSelectedEntity(Entity entity) { selectedEntity = entity; }
+	static void SetSelectedEntity(Entity entity) { selectedEntity = entity; selectedAsset = GUID_128{0, 0}; }
+
+	/**
+	 * @brief Get the currently selected asset GUID.
+	 * @return The selected asset GUID, or {0, 0} if none selected.
+	 */
+	static GUID_128 GetSelectedAsset() { return selectedAsset; }
+
+	/**
+	 * @brief Set the currently selected asset.
+	 * @param assetGuid The asset GUID to select.
+	 */
+	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; selectedEntity = static_cast<Entity>(-1); }
 
 private:
 	/**
@@ -79,4 +92,5 @@ private:
 	static std::unique_ptr<PanelManager> panelManager;
 	static bool dockspaceInitialized;
 	static Entity selectedEntity;
+	static GUID_128 selectedAsset;
 };

@@ -6,7 +6,6 @@
 #include "Transform/TransformComponent.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "Asset Manager/ResourceManager.hpp"
-#include "Logging.hpp"
 
 std::vector<DebugDrawData> DebugDrawSystem::debugQueue; 
 
@@ -16,8 +15,8 @@ bool DebugDrawSystem::Initialise()
     debugShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
 
     CreatePrimitiveGeometry();
-    ENGINE_PRINT("[DebugDrawSystem] Initialized", "\n");
-    //std::cout << "[DebugDrawSystem] Initialized" << std::endl;
+
+    std::cout << "[DebugDrawSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -32,8 +31,7 @@ void DebugDrawSystem::Update()
     auto shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
 
     if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Error: Required debug resources are null!\n");
-        //std::cerr << "Error: Required debug resources are null!" << std::endl;
+        std::cerr << "Error: Required debug resources are null!" << std::endl;
         debugQueue.clear();
         return;
     }
@@ -55,8 +53,7 @@ void DebugDrawSystem::Update()
 
 void DebugDrawSystem::Shutdown()
 {
-    ENGINE_PRINT("[DebugDrawSystem] Shutdown\n");
-    //std::cout << "[DebugDrawSystem] Shutdown" << std::endl;
+    std::cout << "[DebugDrawSystem] Shutdown" << std::endl;
 }
 
 void DebugDrawSystem::CreatePrimitiveGeometry()
