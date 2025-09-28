@@ -196,6 +196,15 @@ public:
 #endif
 	}
 
+	template <typename T>
+	std::shared_ptr<T> LoadFromMeta(const GUID_128& guid,
+		const std::string& resourcePath,
+		const std::string& assetPath,
+		bool reload = false)
+	{
+		return LoadResource<T>(guid, resourcePath, assetPath, reload);
+	}
+
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
@@ -226,7 +235,6 @@ private:
 		static std::unordered_map<GUID_128, std::shared_ptr<T>> resourceMap;
 		return resourceMap;
 	}
-
 
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {
