@@ -16,14 +16,12 @@ bool SpriteSystem::Initialise()
 
 void SpriteSystem::Update()
 {
-    std::cout << "[DEBUG] SpriteSystem::Update() called with " << entities.size() << " entities" << std::endl;
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem::Update() called");
 #endif
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
-    std::cout << "[DEBUG] About to process entities..." << std::endl;
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem entities count: %zu", entities.size());
 #endif
@@ -61,18 +59,7 @@ void SpriteSystem::Update()
                     transform.worldMatrix.m.m23);
             }
 
-            if (spriteComponent.isVisible && spriteComponent.texture && spriteComponent.shader)
-            {
-                std::cout << "[DEBUG] Submitting sprite render item" << std::endl;
                 gfxManager.Submit(std::move(spriteRenderItem));
-               
-            }
-            else
-            {
-                std::cout << "[DEBUG] Sprite not rendered - visible:" << spriteComponent.isVisible
-                    << " texture:" << (spriteComponent.texture ? "OK" : "NULL")
-                    << " shader:" << (spriteComponent.shader ? "OK" : "NULL") << std::endl;
-            }
         }
 #ifdef ANDROID
         else {
