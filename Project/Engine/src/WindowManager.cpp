@@ -10,7 +10,6 @@
 
 #include "RunTimeVar.hpp"
 #include "TimeManager.hpp"
-#include <Logging.hpp>
 
 #define UNREFERENCED_PARAMETER(P) (P)
 
@@ -47,22 +46,19 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     // Create platform instance
     platform = CreatePlatform();
     if (!platform) {
-        ENGINE_PRINT("Platform creation failed - abort program!!!\n");
-        //std::cout << "Platform creation failed - abort program!!!" << std::endl;
+        std::cout << "Platform creation failed - abort program!!!" << std::endl;
         return false;
     }
 
     // Initialize platform window
     if (!platform->InitializeWindow(_width, _height, _title)) {
-        ENGINE_PRINT("Platform window initialization failed - abort program!!!\n");
-        //std::cout << "Platform window initialization failed - abort program!!!" << std::endl;
+        std::cout << "Platform window initialization failed - abort program!!!" << std::endl;
         return false;
     }
 
     // Initialize graphics context
     if (!platform->InitializeGraphics()) {
-        ENGINE_PRINT("Platform graphics initialization failed - abort program!!!\n");
-        //std::cout << "Platform graphics initialization failed - abort program!!!" << std::endl;
+        std::cout << "Platform graphics initialization failed - abort program!!!" << std::endl;
         return false;
     }
 
@@ -78,8 +74,7 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     // Desktop: Initialize GLAD (Android uses OpenGL ES directly)
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        ENGINE_PRINT("Failed to initialize GLAD\n");
-        //std::cout << "Failed to initialize GLAD" << std::endl;
+        std::cout << "Failed to initialize GLAD" << std::endl;
         return false;
     }
 #endif
@@ -147,8 +142,7 @@ void WindowManager::Exit() {
 
 void WindowManager::error_cb(int error, char const* description) {
 #ifdef _DEBUG
-    ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW error: ", description, ", ", error, "\n");
-    //std::cerr << "GLFW error: " << description << ", " << error << std::endl;
+    std::cerr << "GLFW error: " << description << ", " << error << std::endl;
 #else
     (void)error;        // Avoid unused parameter warning
     (void)description;  // Avoid unused parameter warning
@@ -159,8 +153,7 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
     UNREFERENCED_PARAMETER(ptr_win);
 
 #ifdef _DEBUG
-    ENGINE_PRINT("fbsize_cb getting called!!!\n");
-    //std::cout << "fbsize_cb getting called!!!" << std::endl;
+    std::cout << "fbsize_cb getting called!!!" << std::endl;
 #endif
     //WindowManager::width = _width;
     //WindowManager::height = _height;

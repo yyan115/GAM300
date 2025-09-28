@@ -1,6 +1,5 @@
 #include "EditorState.hpp"
 #include <iostream>
-#include "Logging.hpp"
 
 // Added includes for ECS and audio control
 #include <ECS/ECSRegistry.hpp>
@@ -26,9 +25,8 @@ void EditorState::SetState(State newState) {
 
         // Log state changes for debugging
         const char* stateNames[] = { "EDIT_MODE", "PLAY_MODE", "PAUSED" };
-        ENGINE_PRINT("[EditorState] State changed from ", stateNames[static_cast<int>(oldState)], " to ", stateNames[static_cast<int>(newState)], "\n");
-        //std::cout << "[EditorState] State changed from " << stateNames[static_cast<int>(oldState)]
-        //          << " to " << stateNames[static_cast<int>(newState)] << std::endl;
+        std::cout << "[EditorState] State changed from " << stateNames[static_cast<int>(oldState)]
+                  << " to " << stateNames[static_cast<int>(newState)] << std::endl;
     }
 }
 
@@ -110,15 +108,13 @@ void EditorState::Stop() {
 void EditorState::SetSelectedEntity(Entity entity) {
     if (selectedEntity != entity) {
         selectedEntity = entity;
-        ENGINE_PRINT("[EditorState] Selected entity: ", entity , "\n");
-        //std::cout << "[EditorState] Selected entity: " << entity << std::endl;
+        std::cout << "[EditorState] Selected entity: " << entity << std::endl;
     }
 }
 
 void EditorState::ClearSelection() {
     if (selectedEntity != INVALID_ENTITY) {
-        //std::cout << "[EditorState] Cleared selection" << std::endl;
-        ENGINE_PRINT("[EditorState] Cleared selection\n");
+        std::cout << "[EditorState] Cleared selection" << std::endl;
         selectedEntity = INVALID_ENTITY;
     }
 }

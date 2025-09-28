@@ -185,8 +185,7 @@ namespace EngineLogging {
             return true;
         }
         catch (const std::exception& ex) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize logging system: ", ex.what(), "\n");
-            //std::cerr << "Failed to initialize logging system: " << ex.what() << std::endl;
+            std::cerr << "Failed to initialize logging system: " << ex.what() << std::endl;
             initialized = true; // Set to true anyway to avoid repeated attempts
             return false;
         }
@@ -246,14 +245,6 @@ namespace EngineLogging {
                 case LogLevel::Critical: logger->critical(message); break;
             }
         }
-    }
-    
-    void PrintOutput(const std::string& message, LogLevel logType, bool toEditor)
-    {
-        if (!toEditor)
-            std::cout << message << std::endl;
-        else
-            LogInternal(logType, message);
     }
 
     // Public logging functions

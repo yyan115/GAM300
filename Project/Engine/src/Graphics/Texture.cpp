@@ -11,7 +11,6 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
-
 #ifdef ANDROID
 #include <GLI/gli.hpp>
 #else
@@ -20,21 +19,13 @@
 #include <filesystem>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
-#ifdef EDITOR
-#include "compressonator.h"
-#endif
-#include "Utilities/FileUtilities.hpp"
-#include <Asset Manager/AssetManager.hpp>
-#include "WindowManager.hpp"
-#include "Platform/IPlatform.h"
 
-#include "Logging.hpp"
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
 Texture::Texture(const char* texType, GLint slot) :
 	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D) {}
 
-std::string Texture::CompileToResource(const std::string& assetPath, bool forAndroid) {
+std::string Texture::CompileToResource(const std::string& assetPath) {
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
@@ -74,154 +65,95 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 #else
 	// On other platforms, load from filesystem
 	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 0);
-	bool needsAlpha = !forAndroid || numColCh > 3;
-	stbi_image_free(bytes);
-	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, needsAlpha ? 4 : 3);
 #endif
 
-	std::string outPath{};
-
-#ifdef EDITOR
-	// Compile the texture first.
-	CMP_Texture srcTexture;
-	srcTexture.dwSize = sizeof(srcTexture);
-	srcTexture.dwWidth = widthImg;
-	srcTexture.dwHeight = heightImg;
-	srcTexture.dwPitch = 0;
-	if (needsAlpha) {
-		// force 4 channels
-		// ensure you actually loaded with 4 channels from stbi_load(..., 4)
-		srcTexture.format = CMP_FORMAT_RGBA_8888;
-		srcTexture.dwDataSize = widthImg * heightImg * 4;
-	}
-	else {
-		// prefer 3 channels to speed up ETC2 RGB
-		// load with stbi_load(..., 3) or convert from 4 to 3
-		srcTexture.format = CMP_FORMAT_RGB_888;
-		srcTexture.dwDataSize = widthImg * heightImg * 3;
-	}
-	srcTexture.pData = bytes;
-
-	CMP_Texture dstTexture;
-	dstTexture.dwSize = sizeof(dstTexture);
-	dstTexture.dwWidth = widthImg;
-	dstTexture.dwHeight = heightImg;
-	dstTexture.dwPitch = 0;
-	dstTexture.format = forAndroid
-		? (needsAlpha ? CMP_FORMAT_ETC2_RGBA : CMP_FORMAT_ETC2_RGB)
-		: CMP_FORMAT_BC3;
-
-	dstTexture.dwDataSize = CMP_CalculateBufferSize(&dstTexture);
-	dstTexture.pData = (CMP_BYTE*)malloc(dstTexture.dwDataSize);
-
-	// Set compression options.
-	CMP_CompressOptions options = { 0 };
-	options.dwSize = sizeof(options);
-
-	// Compress the texture.
-	std::cout << "[Texture] Compressing texture: " << assetPath << std::endl;
-	CMP_ERROR cmp_status;
-	cmp_status = CMP_ConvertTexture(&srcTexture, &dstTexture, &options, nullptr);
-	if (cmp_status != CMP_OK) {
-		std::cerr << "[TEXTURE]: Failed to compress texture." << std::endl;
+	// Check if image loading failed
+	if (!bytes) {
+		std::cerr << "[TEXTURE]: Failed to load image: " << assetPath << std::endl;
+		std::cerr << "[TEXTURE]: stbi_failure_reason: " << stbi_failure_reason() << std::endl;
+		std::cerr << "[TEXTURE]: Current working directory: " << std::filesystem::current_path() << std::endl;
+		std::cerr << "[TEXTURE]: File exists check: " << std::filesystem::exists(assetPath) << std::endl;
+		return std::string{}; // Return empty string to indicate failure
 	}
 
-	// Save the compresed texture to a DDS file.
-	gli::format fmt = gli::FORMAT_UNDEFINED;
-	if (!forAndroid) {
-		fmt = gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16;
-	}
-	else {
-		fmt = needsAlpha ? gli::FORMAT_RGBA_ETC2_UNORM_BLOCK16
-			: gli::FORMAT_RGB_ETC2_UNORM_BLOCK8;
+	std::cout << "[TEXTURE]: Successfully loaded image: " << assetPath << " (" << widthImg << "x" << heightImg << ", " << numColCh << " channels)" << std::endl;
+
+	// Dynamically choose the appropriate format.
+	gli::format gliFormat;
+	switch (numColCh)
+	{
+		case 1:
+			gliFormat = gli::FORMAT_R8_UNORM_PACK8;
+			break;
+		case 2:
+			gliFormat = gli::FORMAT_RG8_UNORM_PACK8;
+			break;
+		case 3:
+			gliFormat = gli::FORMAT_RGB8_UNORM_PACK8;
+			break;
+		case 4:
+			gliFormat = gli::FORMAT_RGBA8_UNORM_PACK8;
+			break;
+		default:
+			stbi_image_free(bytes);
+			std::cerr << "[TEXTURE]: Unsupported number of color channels: " << numColCh << std::endl;
+			return std::string{}; // Unsupported format
 	}
 
-	gli::extent2d extent(dstTexture.dwWidth, dstTexture.dwHeight);
-
-	gli::texture2d tex(fmt, extent, 1); // 1 mip-map level
-	std::memcpy(tex.data(), dstTexture.pData, dstTexture.dwDataSize);
+	// Create GLI texture object.
+	gli::texture2d texture(gliFormat, glm::uvec2(widthImg, heightImg), 1);
+	std::memcpy(texture.data(), bytes, widthImg * heightImg * numColCh);
 
 	// Save the texture to a DDS file.
 	std::filesystem::path p(assetPath);
-
-	if (!forAndroid) {
-		outPath = (p.parent_path() / p.stem()).generic_string() + ".dds";
-		gli::save(tex, outPath);
-
-		// Save to the root project directory as well.
-		p = (FileUtilities::GetSolutionRootDir() / outPath);
-		gli::save(tex, p.generic_string());
-	}
-	else {
-		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + "_android.ktx";
-		// Ensure parent directories exist
-		std::filesystem::path p(outPath);
-		std::filesystem::create_directories(p.parent_path());
-		gli::save(tex, outPath);
-		
-		// TEST CONVERT BACK TO PNG SEE IF IT'S CORRECT.
-		//CMP_Texture dstTexture2;
-		//dstTexture2.dwSize = sizeof(dstTexture2);
-		//dstTexture2.dwWidth = dstTexture.dwWidth;
-		//dstTexture2.dwHeight = dstTexture.dwHeight;
-		//dstTexture2.dwPitch = 0;
-		//dstTexture2.format = srcTexture.format;
-		//dstTexture2.dwDataSize = dstTexture2.dwWidth * dstTexture2.dwHeight * 4;
-		//dstTexture2.pData = (CMP_BYTE*)malloc(dstTexture2.dwDataSize);
-
-		//// Decompress ETC2 - RGBA8
-		//CMP_ERROR status = CMP_ConvertTexture(&dstTexture, &dstTexture2, &options, nullptr);
-		//if (status != CMP_OK) {
-		//	printf("Decompression failed: %d\n", status);
-		//}
-
-		//// Save as PNG (RGBA8 expected)
-		//stbi_write_png((AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string().c_str(),
-		//	dstTexture2.dwWidth, dstTexture2.dwHeight,
-		//	4,                // num channels
-		//	dstTexture2.pData,
-		//	dstTexture2.dwWidth * 4);    // stride in bytes
-	}
+	std::string outPath = (p.parent_path() / p.stem()).generic_string() + ".dds";
+	gli::save(texture, outPath);
 
 	// Free original image data.
 	stbi_image_free(bytes);
-	free(dstTexture.pData);
-#endif
 
 	return outPath;
 }
 
-bool Texture::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
-	ENGINE_LOG_DEBUG("[TEXTURE] Texture::LoadResource()");
-	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
-	IPlatform* platform = WindowManager::GetPlatform();
-	if (!platform) {
-		ENGINE_LOG_DEBUG("[TEXTURE] ERROR: Platform not available for asset discovery!");
-		return false;
-	}
-
-	std::filesystem::path resourcePathFS(resourcePath);
+bool Texture::LoadResource(const std::string& assetPath) {
+	//std::cout << "[TEXTURE] DEBUG: Loading texture resource: " << assetPath << std::endl;
+	std::filesystem::path assetPathFS(assetPath);
 
 	// Load the meta file to get texture parameters
-	std::string metaFilePath = assetPath + ".meta";
-	if (!platform->FileExists(metaFilePath)) {
-		ENGINE_LOG_DEBUG("[TEXTURE]: Meta file not found for texture: " + resourcePath);
+	std::string metaFilePath = assetPathFS.string() + ".meta";
+	//std::cout << "[TEXTURE] DEBUG: Looking for meta file: " << metaFilePath << std::endl;
+	if (!std::filesystem::exists(metaFilePath)) {
+		std::cerr << "[TEXTURE]: Meta file not found for texture: " << assetPath << std::endl;
 		return false;
 	}
-	ENGINE_LOG_DEBUG("[TEXTURE] Meta file exists");
-	std::vector<uint8_t> metaFileData = platform->ReadAsset(metaFilePath);
-	rapidjson::Document doc;
-	if (!metaFileData.empty()) {
-		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
-		doc.ParseStream(ms);
-	}
-	if (doc.HasParseError()) {
-		ENGINE_LOG_DEBUG("[TEXTURE]: Rapidjson parse error: " + metaFilePath);
-	}
-	//std::ifstream ifs(metaFilePath);
-	//std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+	//std::cout << "[TEXTURE] DEBUG: Meta file found, loading..." << std::endl;
 
-	//doc.Parse(jsonContent.c_str());
+	std::ifstream ifs(metaFilePath);
+	if (!ifs.is_open()) {
+		std::cerr << "[TEXTURE]: Failed to open meta file: " << metaFilePath << std::endl;
+		return false;
+	}
+
+	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+	ifs.close();
+
+	if (jsonContent.empty()) {
+		std::cerr << "[TEXTURE]: Meta file is empty: " << metaFilePath << std::endl;
+		return false;
+	}
+
+	rapidjson::Document doc;
+	doc.Parse(jsonContent.c_str());
+
+	if (doc.HasParseError()) {
+		std::cerr << "[TEXTURE]: Failed to parse JSON in meta file: " << metaFilePath << std::endl;
+		return false;
+	}
+
+	if (!doc.IsObject() || !doc.HasMember("TextureMetaData") || !doc["TextureMetaData"].IsObject()) {
+		std::cerr << "[TEXTURE]: Invalid JSON structure in meta file: " << metaFilePath << std::endl;
+		return false;
+	}
 
 	const auto& textureMetaData = doc["TextureMetaData"];
 
@@ -238,14 +170,15 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	}
 
 	// Load the DDS file using GLI
-	if (!platform->FileExists(resourcePath)) {
+	std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".dds";
+	//std::cout << "[TEXTURE] DEBUG: Loading DDS file: " << path << std::endl;
+
+	if (!std::filesystem::exists(path)) {
 		//std::cerr << "[TEXTURE] DEBUG: DDS file does not exist: " << path << std::endl;
 		return false;
 	}
 
-	std::vector<uint8_t> texData = platform->ReadAsset(resourcePath);
-
-	gli::texture texture = gli::load(reinterpret_cast<const char*>(texData.data()), texData.size());
+	gli::texture texture = gli::load(path);
 	//std::cout << "[TEXTURE] DEBUG: GLI texture loaded, empty: " << texture.empty() << ", size: " << texture.size() << std::endl;
 
 	if (texture.empty()) {
@@ -253,25 +186,61 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		return false;
 	}
 
+	void* bytes = texture.data();
+	int widthImg = texture.extent().x;
+	int heightImg = texture.extent().y;
 	//std::cout << "[TEXTURE] DEBUG: Texture dimensions: " << widthImg << "x" << heightImg << std::endl;
 	
-#ifndef ANDROID
 	gli::gl GL(gli::gl::PROFILE_GL33);
-#else
-	gli::gl GL(gli::gl::PROFILE_ES30);
-#endif
 	gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
 	target = GL.translate(texture.target());
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
+	//std::cout << "[TEXTURE] DEBUG: Generated OpenGL texture ID: " << ID << std::endl;
+
+	//// Assigns the texture to a Texture Unit
+	//glActiveTexture(GL_TEXTURE0 + slot);
+	//unit = slot;
+	//glBindTexture(GL_TEXTURE_2D, ID);
+
+	// Only bind to unit if slot is valid
+	//if (unit >= 0)
+	//{
+	//	glActiveTexture(GL_TEXTURE0 + unit);
+	//}
 	glBindTexture(target, ID);
-	glCompressedTexImage2D(target, 0, format.Internal, texture.extent().x, texture.extent().y, 0, texture.size(), texture.data());
+	//std::cout << "[TEXTURE] DEBUG: Bound texture to target: " << target << std::endl;
 
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// Configures the type of algorithm that is used to make the image smaller or bigger
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	//// Generates MipMaps
-	//glGenerateMipmap(target);
+	// Configures the way the texture repeats (if it does at all)
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+#ifndef ANDROID
+	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
+#endif
+
+	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
+	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	// glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, flatColor);
+
+	// Assigns the image to the OpenGL Texture object
+	if (target == GL_TEXTURE_2D) {
+		glTexImage2D(target, 0, format.Internal, widthImg, heightImg, 0, format.External, format.Type, bytes);
+	}
+	else {
+		std::cerr << "[TEXTURE]: Unsupported texture target: " << target << std::endl;
+		return false;
+	}
+
+	// Generates MipMaps
+	glGenerateMipmap(target);
 
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
@@ -280,18 +249,60 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	return true;
 }
 
-bool Texture::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
-	return LoadResource(resourcePath, assetPath);
-}
+bool Texture::ReloadResource(const std::string& assetPath) {
+	// Load the DDS file using GLI
+	std::filesystem::path assetPathFS(assetPath);
+	std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".dds";
 
-std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
-	std::string metaFilePath{};
-	if (!forAndroid) {
-		metaFilePath = assetPath + ".meta";
+	gli::texture texture = gli::load(path);
+	void* bytes = texture.data();
+	int widthImg = texture.extent().x;
+	int heightImg = texture.extent().y;
+
+	gli::gl GL(gli::gl::PROFILE_GL33);
+	gli::gl::format const format = GL.translate(texture.format(), texture.swizzles());
+	target = GL.translate(texture.target());
+
+	glBindTexture(target, ID);
+
+	// Configures the type of algorithm that is used to make the image smaller or bigger
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	// Configures the way the texture repeats (if it does at all)
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+#ifndef ANDROID
+	glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, &format.Swizzles[0]);
+#endif
+
+	// Extra lines in case you choose to use GL_CLAMP_TO_BORDER
+	// float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	// glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, flatColor);
+
+	// Assigns the image to the OpenGL Texture object
+	if (target == GL_TEXTURE_2D) {
+		glTexImage2D(target, 0, format.Internal, widthImg, heightImg, 0, format.External, format.Type, bytes);
 	}
 	else {
-		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPath).generic_string() + ".meta";
+		std::cerr << "[TEXTURE]: Unsupported texture target: " << target << std::endl;
+		return false;
 	}
+
+	// Generates MipMaps
+	glGenerateMipmap(target);
+
+	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
+	glBindTexture(target, 0);
+
+	return true;
+}
+
+std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) {
+	std::string metaFilePath = assetPath + ".meta";
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
@@ -319,30 +330,6 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	std::ofstream metaFile(metaFilePath);
 	metaFile << buffer.GetString();
 	metaFile.close();
-
-	if (!forAndroid) {
-		// Save the meta file in the root project directory as well.
-		try {
-			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / metaFilePath).generic_string(),
-				std::filesystem::copy_options::overwrite_existing);
-		}
-		catch (const std::filesystem::filesystem_error& e) {
-			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-		}
-	}
-	else {
-		// Save the meta file to the build and root directory as well.
-		try {
-			std::string buildMetaPath = assetPath + ".meta";
-			std::filesystem::copy_file(metaFilePath, buildMetaPath,
-				std::filesystem::copy_options::overwrite_existing);
-			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / buildMetaPath).generic_string(),
-				std::filesystem::copy_options::overwrite_existing);
-		}
-		catch (const std::filesystem::filesystem_error& e) {
-			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-		}
-	}
 
 	std::shared_ptr<TextureMeta> metaData = std::make_shared<TextureMeta>();
 	metaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);

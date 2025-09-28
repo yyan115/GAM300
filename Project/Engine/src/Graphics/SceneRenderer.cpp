@@ -8,7 +8,6 @@
 #include "Scene/SceneInstance.hpp"
 #include "WindowManager.hpp"
 #include <iostream>
-#include "Logging.hpp"
 
 // Static member definitions
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
@@ -54,8 +53,7 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
 
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "SceneRenderer: Framebuffer not complete!\n");
-        //std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
+        std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -82,8 +80,7 @@ void SceneRenderer::DeleteSceneFramebuffer()
     if (editorCamera) {
         delete editorCamera;
         editorCamera = nullptr;
-        ENGINE_PRINT("[SceneRenderer] Editor camera deleted\n");
-        //std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
+        std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
     }
 }
 
@@ -121,8 +118,7 @@ void SceneRenderer::RenderScene()
     try {
         Engine::Draw();
     } catch (const std::exception& e) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderScene: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
+        std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
     }
 }
 
@@ -181,7 +177,6 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.EndFrame();
 
     } catch (const std::exception& e) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
+        std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
     }
 }
