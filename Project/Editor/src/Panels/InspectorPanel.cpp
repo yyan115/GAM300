@@ -50,14 +50,14 @@ void InspectorPanel::OnImGuiRender()
 				else
 				{
 					lockedEntity = GUIManager::GetSelectedEntity();
-					lockedAsset = {0, 0};
+					lockedAsset = { 0, 0 };
 				}
 			}
 			else
 			{
 				// Unlock
 				lockedEntity = static_cast<Entity>(-1);
-				lockedAsset = {0, 0};
+				lockedAsset = { 0, 0 };
 			}
 		}
 		if (ImGui::IsItemHovered())
@@ -67,7 +67,7 @@ void InspectorPanel::OnImGuiRender()
 
 		// Determine what to display based on lock state
 		Entity displayEntity = static_cast<Entity>(-1);
-		GUID_128 displayAsset = {0, 0};
+		GUID_128 displayAsset = { 0, 0 };
 
 		if (inspectorLocked)
 		{
@@ -101,7 +101,7 @@ void InspectorPanel::OnImGuiRender()
 			{
 				try
 				{
-					ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+					ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 					auto activeEntities = ecsManager.GetActiveEntities();
 					bool entityExists = std::find(activeEntities.begin(), activeEntities.end(), lockedEntity) != activeEntities.end();
 					if (!entityExists)
@@ -109,7 +109,7 @@ void InspectorPanel::OnImGuiRender()
 						// Locked entity no longer exists, unlock
 						inspectorLocked = false;
 						lockedEntity = static_cast<Entity>(-1);
-						lockedAsset = {0, 0};
+						lockedAsset = { 0, 0 };
 						displayEntity = GUIManager::GetSelectedEntity();
 						displayAsset = GUIManager::GetSelectedAsset();
 					}
@@ -119,7 +119,7 @@ void InspectorPanel::OnImGuiRender()
 					// If there's any error, unlock
 					inspectorLocked = false;
 					lockedEntity = static_cast<Entity>(-1);
-					lockedAsset = {0, 0};
+					lockedAsset = { 0, 0 };
 					displayEntity = GUIManager::GetSelectedEntity();
 					displayAsset = GUIManager::GetSelectedAsset();
 				}
@@ -139,7 +139,7 @@ void InspectorPanel::OnImGuiRender()
 			{
 				std::cout << "[Inspector] Clearing cached material" << std::endl;
 				cachedMaterial.reset();
-				cachedMaterialGuid = {0, 0};
+				cachedMaterialGuid = { 0, 0 };
 				cachedMaterialPath.clear();
 			}
 
@@ -162,18 +162,10 @@ void InspectorPanel::OnImGuiRender()
 				try
 				{
 					// Get the active ECS manager
-					ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+					ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 					ImGui::Text("Entity ID: %u%s", displayEntity, inspectorLocked ? " 🔒" : "");
 					ImGui::Separator();
-					// Draw AudioComponent if present
-					if (ecsManager.HasComponent<AudioComponent>(selectedEntity))
-					{
-						if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen))
-						{
-							DrawAudioComponent(selectedEntity);
-						}
-					}
 
 					// Draw NameComponent if it exists
 					if (ecsManager.HasComponent<NameComponent>(displayEntity))
@@ -209,7 +201,7 @@ void InspectorPanel::OnImGuiRender()
 						}
 					}
 				}
-				catch (const std::exception &e)
+				catch (const std::exception& e)
 				{
 					ImGui::Text("Error accessing entity: %s", e.what());
 				}
@@ -223,8 +215,8 @@ void InspectorPanel::DrawNameComponent(Entity entity)
 {
 	try
 	{
-		ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		NameComponent &nameComponent = ecsManager.GetComponent<NameComponent>(entity);
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		NameComponent& nameComponent = ecsManager.GetComponent<NameComponent>(entity);
 
 		ImGui::PushID("NameComponent");
 
@@ -232,7 +224,7 @@ void InspectorPanel::DrawNameComponent(Entity entity)
 		static std::unordered_map<Entity, std::vector<char>> nameBuffers;
 
 		// Get or create buffer for this entity
-		auto &nameBuffer = nameBuffers[entity];
+		auto& nameBuffer = nameBuffers[entity];
 
 		// Initialize buffer if empty or different from component
 		std::string currentName = nameComponent.name;
@@ -257,7 +249,7 @@ void InspectorPanel::DrawNameComponent(Entity entity)
 
 		ImGui::PopID();
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		ImGui::Text("Error accessing NameComponent: %s", e.what());
 	}
@@ -267,42 +259,42 @@ void InspectorPanel::DrawTransformComponent(Entity entity)
 {
 	try
 	{
-		ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		Transform &transform = ecsManager.GetComponent<Transform>(entity);
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		Transform& transform = ecsManager.GetComponent<Transform>(entity);
 
 		ImGui::PushID("Transform");
 
 		// Position
-		float position[3] = {transform.localPosition.x, transform.localPosition.y, transform.localPosition.z};
+		float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
 		ImGui::Text("Position");
 		ImGui::SameLine();
 		if (ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f"))
 		{
-			ecsManager.transformSystem->SetLocalPosition(entity, {position[0], position[1], position[2]});
+			ecsManager.transformSystem->SetLocalPosition(entity, { position[0], position[1], position[2] });
 		}
 
 		// Rotation
 		Vector3D rotationEuler = transform.localRotation.ToEulerDegrees();
-		float rotation[3] = {rotationEuler.x, rotationEuler.y, rotationEuler.z};
+		float rotation[3] = { rotationEuler.x, rotationEuler.y, rotationEuler.z };
 		ImGui::Text("Rotation");
 		ImGui::SameLine();
 		if (ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.1f"))
 		{
-			ecsManager.transformSystem->SetLocalRotation(entity, {rotation[0], rotation[1], rotation[2]});
+			ecsManager.transformSystem->SetLocalRotation(entity, { rotation[0], rotation[1], rotation[2] });
 		}
 
 		// Scale
-		float scale[3] = {transform.localScale.x, transform.localScale.y, transform.localScale.z};
+		float scale[3] = { transform.localScale.x, transform.localScale.y, transform.localScale.z };
 		ImGui::Text("Scale");
 		ImGui::SameLine();
 		if (ImGui::DragFloat3("##Scale", scale, 0.1f, 0.001f, FLT_MAX, "%.3f"))
 		{
-			ecsManager.transformSystem->SetLocalScale(entity, {scale[0], scale[1], scale[2]});
+			ecsManager.transformSystem->SetLocalScale(entity, { scale[0], scale[1], scale[2] });
 		}
 
 		ImGui::PopID();
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		ImGui::Text("Error accessing Transform: %s", e.what());
 	}
@@ -312,8 +304,8 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 {
 	try
 	{
-		ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		ModelRenderComponent &modelRenderer = ecsManager.GetComponent<ModelRenderComponent>(entity);
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ModelRenderComponent& modelRenderer = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
 		ImGui::PushID("ModelRenderComponent");
 
@@ -337,6 +329,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 			ImGui::Text("Shader: None");
 		}
 
+
 		// Material drag-drop slot like Unity
 		ImGui::Text("Material:");
 		ImGui::SameLine();
@@ -351,7 +344,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 		else if (modelRenderer.model && !modelRenderer.model->meshes.empty())
 		{
 			// Show default material from first mesh
-			auto &defaultMaterial = modelRenderer.model->meshes[0].material;
+			auto& defaultMaterial = modelRenderer.model->meshes[0].material;
 			if (defaultMaterial)
 			{
 				buttonText = defaultMaterial->GetName() + " (default)";
@@ -376,7 +369,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 			// Visual feedback - highlight when dragging over
 			ImGui::SetTooltip("Drop material here to apply to model");
 			// Accept the cross-window drag payload
-			if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG"))
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG"))
 			{
 				std::cout << "[InspectorPanel] Received MATERIAL_DRAG drop - GUID: {" << g_draggedMaterialGuid.high << ", " << g_draggedMaterialGuid.low << "}, Path: " << g_draggedMaterialPath << std::endl;
 
@@ -393,7 +386,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 				}
 
 				// Clear the drag state
-				g_draggedMaterialGuid = {0, 0};
+				g_draggedMaterialGuid = { 0, 0 };
 				g_draggedMaterialPath.clear();
 			}
 			ImGui::EndDragDropTarget();
@@ -401,13 +394,14 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity)
 
 		ImGui::PopID();
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
 	}
 }
 
-void InspectorPanel::DrawSelectedAsset(const GUID_128 &assetGuid)
+
+void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid)
 {
 	try
 	{
@@ -441,7 +435,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128 &assetGuid)
 				else
 				{
 					cachedMaterial.reset();
-					cachedMaterialGuid = {0, 0};
+					cachedMaterialGuid = { 0, 0 };
 					cachedMaterialPath.clear();
 					ImGui::Text("Failed to load material");
 					return;
@@ -456,7 +450,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128 &assetGuid)
 			ImGui::Text("Asset type not supported for editing in Inspector");
 		}
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		ImGui::Text("Error accessing asset: %s", e.what());
 	}
@@ -466,13 +460,13 @@ void InspectorPanel::DrawAudioComponent(Entity entity)
 {
 	try
 	{
-		ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		AudioComponent &audio = ecsManager.GetComponent<AudioComponent>(entity);
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		AudioComponent& audio = ecsManager.GetComponent<AudioComponent>(entity);
 
 		ImGui::PushID("AudioComponent");
 
 		// Asset path input
-		char buffer[512] = {0};
+		char buffer[512] = { 0 };
 		if (!audio.AudioAssetPath.empty())
 		{
 			strncpy_s(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer) - 1);
@@ -519,14 +513,14 @@ void InspectorPanel::DrawAudioComponent(Entity entity)
 		// Position (if spatialized)
 		if (audio.Spatialize)
 		{
-			float pos[3] = {audio.Position.x, audio.Position.y, audio.Position.z};
+			float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
 			if (ImGui::DragFloat3("Position", pos, 0.1f))
 			{
 				audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
 				// Also update Transform if present
 				if (ecsManager.HasComponent<Transform>(entity))
 				{
-					ecsManager.transformSystem->SetLocalPosition(entity, {pos[0], pos[1], pos[2]});
+					ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });
 				}
 			}
 		}
@@ -544,102 +538,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity)
 
 		ImGui::PopID();
 	}
-	catch (const std::exception &e)
-	{
-		ImGui::Text("Error accessing AudioComponent: %s", e.what());
-	}
-}
-ImGui::PopID();
-}
-catch (const std::exception &e)
-{
-	ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
-}
-}
-
-void InspectorPanel::DrawAudioComponent(Entity entity)
-{
-	try
-	{
-		ECSManager &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		AudioComponent &audio = ecsManager.GetComponent<AudioComponent>(entity);
-
-		ImGui::PushID("AudioComponent");
-
-		// Asset path input
-		char buffer[512] = {0};
-		if (!audio.AudioAssetPath.empty())
-		{
-			strncpy_s(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer) - 1);
-		}
-		ImGui::Text("Audio Asset Path");
-		ImGui::SameLine();
-		if (ImGui::InputText("##AudioPath", buffer, sizeof(buffer)))
-		{
-			audio.SetAudioAssetPath(std::string(buffer));
-		}
-
-		// Volume slider
-		float vol = audio.Volume;
-		if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f))
-		{
-			audio.Volume = vol;
-			// if (audio.Channel) {
-			//     FMOD_Channel_SetVolume(reinterpret_cast<FMOD_CHANNEL*>(0), audio.Volume); // placeholder if needed
-			// }
-		}
-
-		// Loop checkbox
-		if (ImGui::Checkbox("Loop", &audio.Loop))
-		{
-			// no immediate action; applied at play time
-		}
-
-		// Play on Awake
-		ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
-
-		// Spatialize
-		if (ImGui::Checkbox("Spatialize", &audio.Spatialize))
-		{
-			// toggled
-		}
-
-		// Attenuation
-		float att = audio.Attenuation;
-		if (ImGui::SliderFloat("Attenuation", &att, 0.0f, 10.0f))
-		{
-			audio.Attenuation = att;
-		}
-
-		// Position (if spatialized)
-		if (audio.Spatialize)
-		{
-			float pos[3] = {audio.Position.x, audio.Position.y, audio.Position.z};
-			if (ImGui::DragFloat3("Position", pos, 0.1f))
-			{
-				audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
-				// Also update Transform if present
-				if (ecsManager.HasComponent<Transform>(entity))
-				{
-					ecsManager.transformSystem->SetLocalPosition(entity, {pos[0], pos[1], pos[2]});
-				}
-			}
-		}
-
-		// Play/Stop buttons
-		if (ImGui::Button("Play"))
-		{
-			audio.Play();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Stop"))
-		{
-			audio.Stop();
-		}
-
-		ImGui::PopID();
-	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		ImGui::Text("Error accessing AudioComponent: %s", e.what());
 	}

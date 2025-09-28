@@ -20,65 +20,63 @@ class ModelRenderComponent;
 
 #ifdef __ANDROID__
 // Custom IOStream for Android AssetManager
-class AndroidIOStream : public Assimp::IOStream
-{
+class AndroidIOStream : public Assimp::IOStream {
 private:
-	std::stringstream m_stream;
-	std::string m_path;
+    std::stringstream m_stream;
+    std::string m_path;
 
 public:
-	AndroidIOStream(const std::string &path, const std::string &content);
-	~AndroidIOStream();
+    AndroidIOStream(const std::string& path, const std::string& content);
+    ~AndroidIOStream();
 
-	size_t Read(void *pvBuffer, size_t pSize, size_t pCount) override;
-	size_t Write(const void *pvBuffer, size_t pSize, size_t pCount) override;
-	aiReturn Seek(size_t pOffset, aiOrigin pOrigin) override;
-	size_t Tell() const override;
-	size_t FileSize() const override;
-	void Flush() override;
+    size_t Read(void* pvBuffer, size_t pSize, size_t pCount) override;
+    size_t Write(const void* pvBuffer, size_t pSize, size_t pCount) override;
+    aiReturn Seek(size_t pOffset, aiOrigin pOrigin) override;
+    size_t Tell() const override;
+    size_t FileSize() const override;
+    void Flush() override;
 };
 
 // Custom IOSystem for Android AssetManager
-class AndroidIOSystem : public Assimp::IOSystem
-{
+class AndroidIOSystem : public Assimp::IOSystem {
 private:
-	std::string m_baseDir;
+    std::string m_baseDir;
 
 public:
-	AndroidIOSystem(const std::string &baseDir);
-	~AndroidIOSystem();
+    AndroidIOSystem(const std::string& baseDir);
+    ~AndroidIOSystem();
 
-	bool Exists(const char *pFile) const override;
-	char getOsSeparator() const override;
-	Assimp::IOStream *Open(const char *pFile, const char *pMode = "rb") override;
-	void Close(Assimp::IOStream *pFile) override;
+    bool Exists(const char* pFile) const override;
+    char getOsSeparator() const override;
+    Assimp::IOStream* Open(const char* pFile, const char* pMode = "rb") override;
+    void Close(Assimp::IOStream* pFile) override;
 };
 #endif
 
-class ENGINE_API Model : public IAsset
-{
+class ENGINE_API Model : public IAsset {
 public:
 	Model();
 	std::vector<Mesh> meshes;
 	std::string directory;
 
 	// Prevent copying since Model contains std::vector<Mesh> and Mesh cannot be copied
-	Model(const Model &) = delete;
-	Model &operator=(const Model &) = delete;
+	Model(const Model&) = delete;
+	Model& operator=(const Model&) = delete;
 
-	// Model(const std::string& filePath);
-	ENGINE_API std::string CompileToResource(const std::string &assetPath, bool forAndroid = false) override;
-	std::string CompileToMesh(const std::string &modelPath, const std::vector<Mesh> &meshesToCompile, bool forAndroid = false);
-	ENGINE_API bool LoadResource(const std::string &resourcePath, const std::string &assetPath = "") override;
-	bool ReloadResource(const std::string &resourcePath, const std::string &assetPath = "") override;
-	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string &assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
-
-	void Draw(Shader &shader, const Camera &camera);
-	void Draw(Shader &shader, const Camera &camera, std::shared_ptr<Material> entityMaterial);
+	//Model(const std::string& filePath);
+    std::string CompileToResource(const std::string& assetPath) override;
+	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile);
+	bool LoadResource(const std::string& assetPath) override;
+	bool ReloadResource(const std::string& assetPath) override;
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData) override;
+	
+	void Draw(Shader& shader, const Camera& camera);
+	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
 
 private:
-	// void loadModel(const std::string& path);
-	void ProcessNode(aiNode *node, const aiScene *scene);
-	Mesh ProcessMesh(aiMesh *mesh, const aiScene *scene);
-	std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial *mat, aiTextureType type, std::string typeName);
+	//void loadModel(const std::string& path);
+	void ProcessNode(aiNode* node, const aiScene* scene);
+	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+	std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+
 };

@@ -9,7 +9,6 @@
 #include <chrono>
 #include <fstream>
 #include <sstream>
-#include "Logging.hpp"
 
 // Static instance pointer for callbacks
 static DesktopPlatform* s_instance = nullptr;
@@ -32,8 +31,7 @@ DesktopPlatform::~DesktopPlatform() {
 
 bool DesktopPlatform::InitializeWindow(int width, int height, const char* title) {
     if (!glfwInit()) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW\n");
-        //std::cerr << "Failed to initialize GLFW" << std::endl;
+        std::cerr << "Failed to initialize GLFW" << std::endl;
         return false;
     }
 
@@ -49,8 +47,7 @@ bool DesktopPlatform::InitializeWindow(int width, int height, const char* title)
     // Create window
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window\n");
-        //std::cerr << "Failed to create GLFW window" << std::endl;
+        std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return false;
     }
@@ -200,8 +197,7 @@ bool DesktopPlatform::InitializeGraphics() {
     
     // Initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLAD\n");
-        //std::cerr << "Failed to initialize GLAD" << std::endl;
+        std::cerr << "Failed to initialize GLAD" << std::endl;
         return false;
     }
     
@@ -245,36 +241,9 @@ std::vector<std::string> DesktopPlatform::ListAssets(const std::string& folder, 
     return assetPaths;
 }
 
-std::vector<uint8_t> DesktopPlatform::ReadAsset(const std::string& path) {
-    std::vector<uint8_t> data;
-    if (!std::filesystem::exists(path)) {
-        return data;
-    }
-
-    std::ifstream ifs(path, std::ios::binary | std::ios::ate);
-    if (!ifs.is_open()) {
-        return data;
-    }
-
-    std::streamsize size = ifs.tellg();
-    ifs.seekg(0, std::ios::beg);
-
-    data.resize(size);
-    if (!ifs.read(reinterpret_cast<char*>(data.data()), size)) {
-        data.clear(); // read failed
-    }
-
-    return data;
-}
-
-bool DesktopPlatform::FileExists(const std::string& path) {
-    return std::filesystem::exists(path);
-}
-
 // Static callback implementations
 void DesktopPlatform::ErrorCallback(int error, const char* description) {
-    ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW Error ", error, ": ", description, "\n");
-    //std::cerr << "GLFW Error " << error << ": " << description << std::endl;
+    std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
 
 void DesktopPlatform::FramebufferSizeCallback(GLFWwindow* window, int width, int height) {

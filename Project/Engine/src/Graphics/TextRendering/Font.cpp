@@ -2,10 +2,6 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Graphics/VAO.h"
 #include "Graphics/VBO.h"
-#include <Asset Manager/AssetManager.hpp>
-#include <Platform/IPlatform.h>
-#include <WindowManager.hpp>
-#include "Logging.hpp"
 
 Font::Font(unsigned int fontSize) : fontSize(fontSize) {}
 
@@ -14,25 +10,22 @@ Font::~Font()
 	Cleanup();
 }
 
-std::string Font::CompileToResource(const std::string& assetPath, bool forAndroid)
+std::string Font::CompileToResource(const std::string& assetPath)
 {
     if (!std::filesystem::exists(assetPath)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] File does not exist: " , assetPath, "\n");
-        //std::cerr << "[Font] File does not exist: " << assetPath << std::endl;
+        std::cerr << "[Font] File does not exist: " << assetPath << std::endl;
         return std::string{};
     }
 
     if (std::filesystem::is_directory(assetPath)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Path is a directory, not a file: ", assetPath, "\n");
-        //std::cerr << "[Font] Path is a directory, not a file: " << assetPath << std::endl;
+        std::cerr << "[Font] Path is a directory, not a file: " << assetPath << std::endl;
         return std::string{};
     }
 
     // Load font data from file and extract raw binary data.
     std::ifstream fontAsset(assetPath, std::ios::binary | std::ios::ate); // Use std::ios::ate to query data size
     if (!fontAsset.is_open()) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Failed to open font asset: ", assetPath, "\n");
-        //std::cerr << "[Font] Failed to open font asset: " << assetPath << std::endl;
+        std::cerr << "[Font] Failed to open font asset: " << assetPath << std::endl;
         return std::string{};
     }
 
@@ -46,106 +39,64 @@ std::string Font::CompileToResource(const std::string& assetPath, bool forAndroi
 
     // Write raw binary data to an output file.
     std::filesystem::path p(assetPath);
-    std::string outPath{};
-    
-    if (!forAndroid) {
-        outPath = (p.parent_path() / p.stem()).generic_string() + ".font";
-    }
-    else {
-        outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + "_android.font";
-    }
-
-    // Ensure parent directories exist
-    p = outPath;
-    std::filesystem::create_directories(p.parent_path());
-    std::ofstream fontResource(outPath, std::ios::binary);
+    std::string outname = (p.parent_path() / p.stem()).generic_string() + ".font";
+    std::ofstream fontResource(outname, std::ios::binary);
     if (!fontResource.is_open()) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Failed to write output font resource: ", outPath, "\n");
-        //std::cerr << "[Font] Failed to write output font resource: " << outname << std::endl;
+        std::cerr << "[Font] Failed to write output font resource: " << outname << std::endl;
         return std::string{};
     }
 
     fontResource.write(reinterpret_cast<const char*>(fontData.data()), size);
     fontResource.close();
 
-    if (!forAndroid) {
-        // Save the mesh file to the root project Resources folder as well.
-        try {
-            std::filesystem::copy_file(outPath, (FileUtilities::GetSolutionRootDir() / outPath).generic_string(),
-                std::filesystem::copy_options::overwrite_existing);
-        }
-        catch (const std::filesystem::filesystem_error& e) {
-            std::cerr << "[FONT] Copy failed: " << e.what() << std::endl;
-        }
-    }
-
-    return outPath;
+    return outname;
 }
 
-bool Font::LoadResource(const std::string& resourcePath, const std::string& assetPath, unsigned int newFontSize, bool setFontSize)
+bool Font::LoadResource(const std::string& assetPath, unsigned int newFontSize, bool setFontSize)
 {
     if (setFontSize)
         fontSize = newFontSize;
     fontAssetPath = assetPath;
-    fontResourcePath = resourcePath;
 
     // Clean up existing font data if any
     Cleanup();
 
-    //// Read the .font resource file as binary.
-    //std::ifstream fontFile(resourcePath, std::ios::binary | std::ios::ate);
-    //if (!fontFile.is_open()) {
-    //    std::cerr << "[Font] Failed to open font asset: " << resourcePath << std::endl;
-    //    return false;
-    //}
+    // Get the .font resource file path.
+    std::filesystem::path assetPathFS(assetPath);
+    std::string path = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".font";
 
-    //std::streamsize size = fontFile.tellg();
-    //fontFile.seekg(0, std::ios::beg); // Return to beginning of file
+    // Read the .font resource file as binary.
+    std::ifstream fontFile(path, std::ios::binary | std::ios::ate);
+    if (!fontFile.is_open()) {
+        std::cerr << "[Font] Failed to open font asset: " << assetPath << std::endl;
+        return false;
+    }
 
-    //// Store font data.
-    //std::vector<unsigned char> fontData(size);
-    //fontFile.read(reinterpret_cast<char*>(fontData.data()), size);
+    std::streamsize size = fontFile.tellg();
+    fontFile.seekg(0, std::ios::beg); // Return to beginning of file
 
-    //fontFile.close();
+    // Store font data.
+    std::vector<unsigned char> fontData(size);
+    fontFile.read(reinterpret_cast<char*>(fontData.data()), size);
+
+    fontFile.close();
 
     // Initialize FreeType
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
     {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Could not initialize FreeType Library\n");
-        //std::cerr << "[Font] Could not initialize FreeType Library" << std::endl;
+        std::cerr << "[Font] Could not initialize FreeType Library" << std::endl;
         return false;
     }
 
     // Load font using font data from the binary file.
-    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
-    IPlatform* platform = WindowManager::GetPlatform();
-    if (!platform) {
-        std::cerr << "[Font] ERROR: Platform not available for asset discovery!" << std::endl;
+    FT_Face face;
+    if (FT_New_Memory_Face(ft, fontData.data(), static_cast<FT_Long>(fontData.size()), 0, &face))
+    {
+        std::cerr << "[Font] Failed to load font resource: " << path << std::endl;
+        FT_Done_FreeType(ft);
         return false;
     }
-
-    buffer = platform->ReadAsset(resourcePath);
-    FT_Face face{};
-    if (!buffer.empty()) {
-        FT_Error error = FT_New_Memory_Face(
-            ft,
-            reinterpret_cast<const FT_Byte*>(buffer.data()),
-            static_cast<FT_Long>(buffer.size()),
-            0,
-            &face
-        );
-
-        if (error) {
-            std::cerr << "[Font] Failed to load font resource: " << resourcePath << std::endl;
-        }
-    }
-    //if (FT_New_Memory_Face(ft, fontData.data(), static_cast<FT_Long>(fontData.size()), 0, &face))
-    //{
-    //    std::cerr << "[Font] Failed to load font resource: " << resourcePath << std::endl;
-    //    FT_Done_FreeType(ft);
-    //    return false;
-    //}
 
     // Sets the font's width and height parameters
     // Setting the width to 0 lets the face dynamically calculate the width based on the given height
@@ -160,8 +111,7 @@ bool Font::LoadResource(const std::string& resourcePath, const std::string& asse
         // Load character glyph
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Failed to load Glyph for character: ", c, "\n");
-            //std::cerr << "[Font] Failed to load Glyph for character: " << c << std::endl;
+            std::cerr << "[Font] Failed to load Glyph for character: " << c << std::endl;
             continue;
         }
 
@@ -215,15 +165,15 @@ bool Font::LoadResource(const std::string& resourcePath, const std::string& asse
 
     textVBO->Unbind();
     textVAO->Unbind();
-    ENGINE_PRINT("[Font] Successfully loaded font resource: ", resourcePath, " (size: ", fontSize,  ")\n");
-    //std::cout << "[Font] Successfully loaded font resource: " << path << " (size: " << fontSize << ")" << std::endl;
+
+    std::cout << "[Font] Successfully loaded font resource: " << path << " (size: " << fontSize << ")" << std::endl;
     return true;
 }
 
-bool Font::ReloadResource(const std::string& resourcePath, const std::string& assetPath)
+bool Font::ReloadResource(const std::string& assetPath)
 {
     // When reloading fonts, don't reset the font size (keep the current font size).
-    return LoadResource(resourcePath, assetPath, 0, false);
+    return LoadResource(assetPath, 0, false);
 }
 
 //bool Font::LoadFont(const std::string& path, unsigned int fontSizeParam)
@@ -328,7 +278,7 @@ void Font::SetFontSize(unsigned int newSize)
 {
     if (newSize != fontSize && !fontAssetPath.empty()) 
     {
-        LoadResource(fontResourcePath, fontAssetPath, newSize);
+        LoadResource(fontAssetPath, newSize);
     }
 }
 
@@ -392,8 +342,8 @@ void Font::Cleanup()
     }
 }
 
-std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
+std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
 {
-    assetPath, currentMetaData, forAndroid;
+    assetPath, currentMetaData;
     return std::shared_ptr<AssetMeta>();
 }
