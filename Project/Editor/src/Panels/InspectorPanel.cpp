@@ -217,7 +217,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         if (audio.Spatialize) {
             float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
             if (ImGui::DragFloat3("Position", pos, 0.1f)) {
-                audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
+                //audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
                 // Also update Transform if present
                 if (ecsManager.HasComponent<Transform>(entity)) {
                     ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });

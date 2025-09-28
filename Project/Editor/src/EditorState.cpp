@@ -2,6 +2,11 @@
 #include <iostream>
 #include "Logging.hpp"
 
+// Added includes for ECS and audio control
+#include <ECS/ECSRegistry.hpp>
+#include <Sound/AudioComponent.hpp>
+#include <Sound/AudioSystem.hpp>
+
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
     return instance;
@@ -42,19 +47,64 @@ void EditorState::Play() {
     State currentState = GetState();
     if (currentState == State::EDIT_MODE) {
         SetState(State::PLAY_MODE);
+
+        // Ensure FMOD global paused flag cleared so audio can play
+        AudioSystem::GetInstance().SetGlobalPaused(false);
+
+        // Iterate all entities in the active ECS manager and trigger PlayOnAwake
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<AudioComponent>(ent)) {
+                AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
+                // If PlayOnAwake is set, ask the component to start (UpdateComponent handles PlayOnAwake)
+                if (ac.PlayOnAwake) {
+                    ac.UpdateComponent();
+                }
+            }
+        }
     } else if (currentState == State::PAUSED) {
         SetState(State::PLAY_MODE);
+
+        // Unpause FMOD and resume components that were paused
+        AudioSystem::GetInstance().SetGlobalPaused(false);
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<AudioComponent>(ent)) {
+                AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
+                ac.UnPause();
+            }
+        }
     }
 }
 
 void EditorState::Pause() {
     if (GetState() == State::PLAY_MODE) {
         SetState(State::PAUSED);
+
+        // Pause FMOD and pause all playing audio components
+        AudioSystem::GetInstance().SetGlobalPaused(true);
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<AudioComponent>(ent)) {
+                AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
+                ac.Pause();
+            }
+        }
     }
 }
 
 void EditorState::Stop() {
     SetState(State::EDIT_MODE);
+
+    // Stop all audio playback in FMOD and reset components
+    AudioSystem::GetInstance().StopAll();
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (auto ent : ecs.GetActiveEntities()) {
+        if (ecs.HasComponent<AudioComponent>(ent)) {
+            AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
+            ac.Stop();
+        }
+    }
 }
 
 void EditorState::SetSelectedEntity(Entity entity) {

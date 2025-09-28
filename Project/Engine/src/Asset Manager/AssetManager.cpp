@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
+#include <Sound/AudioSystem.hpp>
+#include <Sound/Audio.hpp>
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -191,7 +193,6 @@ bool AssetManager::IsExtensionShaderVertFrag(const std::string& extension) const
 }
 
 bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
-	// Get the compiled resource file path from the asset's AssetMeta.
 	std::string assetFilePath = metaFilePath.substr(0, metaFilePath.size() - 5); // Remove ".meta"
 	bool failedToUnload = false;
 	for (const auto& pair : assetMetaMap) {

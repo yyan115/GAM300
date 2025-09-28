@@ -82,30 +82,25 @@ void SceneInstance::Initialize() {
 
 	// Test Audio
 	{
-		// Initialize AudioSystem
-		if (!AudioSystem::GetInstance().Initialise())
-		{
-			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
-		}
-		else
-		{
-			// Create an entity with AudioComponent
-			Entity audioEntity = ecsManager.CreateEntity();
-			ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
-			NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
-			audioName.name = "Audio Test Entity";
-			
-			// Add AudioComponent
-			AudioComponent audioComp;
-			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-			audioComp.Volume = 0.8f;
-			audioComp.Loop = false;
-			audioComp.PlayOnAwake = true;
-			audioComp.Spatialize = false;
-			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-			
-			// The AudioComponent will automatically load and play the audio on awake
-		}
+		// Create an entity with AudioComponent (AudioSystem should be initialized centrally)
+		Entity audioEntity = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+		NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+		audioName.name = "Audio Test Entity";
+		
+		// Add AudioComponent
+		AudioComponent audioComp;
+		audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+		audioComp.Volume = 0.8f;
+		audioComp.Loop = false;
+		audioComp.PlayOnAwake = true;
+		audioComp.Spatialize = false;
+		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+		
+		// Set the audio asset path again to ensure it's loaded (especially important on Android)
+		ecsManager.GetComponent<AudioComponent>(audioEntity).SetAudioAssetPath(audioComp.AudioAssetPath);
+		
+		// The AudioComponent will automatically load and play the audio on awake
 	}
 
 	// Initialize systems.

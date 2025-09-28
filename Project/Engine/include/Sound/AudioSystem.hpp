@@ -22,42 +22,70 @@ using ChannelHandle = uint64_t;
 // Forward declare Audio class from ResourceManager system
 class Audio;
 
+// Audio source states (Unity-like)
+enum class AudioSourceState {
+    Stopped,
+    Playing,
+    Paused
+};
+
 class ENGINE_API AudioSystem : public System {
 public:
     static AudioSystem& GetInstance();
 
-    // Lifecycle
+    // Lifecycle - explicit management only
     bool Initialise();
     void Shutdown();
 
     // Per-frame update - call from main loop
     void Update();
 
-    // Play/stop using ResourceManager Audio assets
+    // Unity-like Play/Stop/Pause API
     ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
-    void Stop(ChannelHandle channel);
-    bool IsPlaying(ChannelHandle channel);
-
-    // Play on a named bus (channel group). Creates the group if it doesn't exist.
-    ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
-    // Create or get a channel group (bus)
-    FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
-
-    // Spatialized playback at position
     ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f);
+    ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
+    
+    void Stop(ChannelHandle channel);
+    void StopAll();
+    void Pause(ChannelHandle channel);
+    void Resume(ChannelHandle channel);
+    
+    // State queries
+    bool IsPlaying(ChannelHandle channel);
+    bool IsPaused(ChannelHandle channel);
+    AudioSourceState GetState(ChannelHandle channel);
+
+    // Channel property setters
+    void SetChannelVolume(ChannelHandle channel, float volume);
+    void SetChannelPitch(ChannelHandle channel, float pitch);
+    void SetChannelLoop(ChannelHandle channel, bool loop);
     void UpdateChannelPosition(ChannelHandle channel, const Vector3D& position);
 
-    // Utility to set pitch on a channel
-    void SetChannelPitch(ChannelHandle channel, float pitch);
-    void SetChannelVolume(ChannelHandle channel, float volume);
+    // Bus (channel group) management
+    FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
+    void SetBusVolume(const std::string& busName, float volume);
+    void SetBusPaused(const std::string& busName, bool paused);
 
-    // New helpers to replace the removed AudioManager: create / release FMOD_SOUND resources.
+    // Global audio settings
+    void SetMasterVolume(float volume);
+    float GetMasterVolume() const;
+    void SetGlobalPaused(bool paused);
+
+    // Resource management helpers
     FMOD_SOUND* CreateSound(const std::string& assetPath);
     void ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath);
 
+    // Create sound from raw memory (useful on Android when reading APK assets into memory)
+    FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
+
+    // Android platform specific
+#ifdef ANDROID
+    void SetAndroidAssetManager(void* assetManager);
+#endif
+
 public:
     AudioSystem();
-    ~AudioSystem() = default;
+    ~AudioSystem() = default; // No automatic shutdown
 
     // Non-copyable
     AudioSystem(const AudioSystem&) = delete;
@@ -67,15 +95,34 @@ private:
     struct ChannelData {
         FMOD_CHANNEL* channel = nullptr;
         ChannelHandle id = 0;
+        AudioSourceState state = AudioSourceState::Stopped;
+        std::string assetPath; // For debugging
     };
 
-    std::mutex mtx;
+    // Thread safety
+    mutable std::mutex mtx;
+    std::atomic<bool> shuttingDown{ false };
+    
+    // FMOD handles
+    FMOD_SYSTEM* system = nullptr;
+    
+    // Channel management
     std::unordered_map<ChannelHandle, ChannelData> channelMap;
+    std::atomic<ChannelHandle> nextChannelHandle{ 1 };
 
     // Channel groups (buses)
     std::unordered_map<std::string, FMOD_CHANNELGROUP*> busMap;
 
-    std::atomic<ChannelHandle> nextChannelHandle{ 1 };
+    // Global settings
+    std::atomic<float> masterVolume{ 1.0f };
+    std::atomic<bool> globalPaused{ false };
 
-    FMOD_SYSTEM* system = nullptr;
+#ifdef ANDROID
+    void* androidAssetManager = nullptr;
+#endif
+
+    // Internal helpers
+    void CleanupStoppedChannels();
+    bool IsChannelValid(ChannelHandle channel);
+    void UpdateChannelState(ChannelHandle channel);
 };
