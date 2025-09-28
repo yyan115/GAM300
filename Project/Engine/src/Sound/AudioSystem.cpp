@@ -15,7 +15,6 @@ AudioSystem& AudioSystem::GetInstance() {
 }
 
 AudioSystem::AudioSystem() : system(nullptr) {}
-AudioSystem::~AudioSystem() { Shutdown(); }
 
 bool AudioSystem::Initialise() {
     std::lock_guard<std::mutex> lock(mtx);

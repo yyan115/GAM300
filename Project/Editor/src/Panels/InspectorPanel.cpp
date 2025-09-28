@@ -9,7 +9,6 @@
 #include <vector>
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
-#include <Sound/AudioSystem.hpp>
 
 InspectorPanel::InspectorPanel() 
     : EditorPanel("Inspector", true) {

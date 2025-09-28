@@ -57,7 +57,7 @@ public:
 
 public:
     AudioSystem();
-    ~AudioSystem();
+    ~AudioSystem() = default;
 
     // Non-copyable
     AudioSystem(const AudioSystem&) = delete;
