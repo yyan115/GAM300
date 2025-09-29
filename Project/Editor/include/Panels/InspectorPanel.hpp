@@ -1,5 +1,6 @@
 #pragma once
 
+#include "imgui.h"
 #include "EditorPanel.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <ECS/NameComponent.hpp>
@@ -22,6 +23,11 @@ public:
     InspectorPanel();
     virtual ~InspectorPanel() = default;
 
+    struct ComponentRemovalRequest {
+        Entity entity;
+        std::string componentType;
+    };
+
     /**
      * @brief Render the inspector panel's ImGui content.
      */
@@ -32,13 +38,24 @@ private:
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
     void DrawAudioComponent(Entity entity);
+    void DrawLightComponents(Entity entity);
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyMaterialToModel(Entity entity, const GUID_128& materialGuid);
     void ApplyMaterialToModelByPath(Entity entity, const std::string& materialPath);
+    void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
+    bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags = 0);
+    void ProcessPendingComponentRemovals();
+
+    // Component addition functionality
+    void DrawAddComponentButton(Entity entity);
+    void AddComponent(Entity entity, const std::string& componentType);
 
     // Lock functionality
     bool inspectorLocked = false;
     Entity lockedEntity = static_cast<Entity>(-1);
+
+    // Component removal queue (processed after ImGui rendering)
+    std::vector<ComponentRemovalRequest> pendingComponentRemovals;
     GUID_128 lockedAsset = {0, 0};
 
     // Cache for currently edited material to persist changes across frames
