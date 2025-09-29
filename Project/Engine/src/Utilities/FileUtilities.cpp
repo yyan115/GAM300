@@ -85,3 +85,8 @@ bool FileUtilities::CopyFile(const std::string& srcPath, const std::string& dstP
 
 	return true;
 }
+
+bool FileUtilities::CopyFileW(const std::string& srcPath, const std::string& dstPath) {
+	return CopyFile(srcPath, dstPath);
+}
+

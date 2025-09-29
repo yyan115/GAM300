@@ -4,6 +4,7 @@
         "guid": "007ebbc8dde5048e-0002c7075a000007",
         "source": "Resources/Inter.ttf",
         "compiled": "Resources/Inter.font",
-        "last_compiled": "2025-09-28 17:46:35.6727954"
+        "android_compiled": "Resources/Inter_android.font",
+        "last_compiled": "2025-09-28 11:01:48.7496266"
     }
 }

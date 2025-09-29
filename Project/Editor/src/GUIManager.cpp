@@ -29,6 +29,7 @@
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
 bool GUIManager::dockspaceInitialized = false;
 Entity GUIManager::selectedEntity = static_cast<Entity>(-1);
+GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 
 void GUIManager::Initialize() {
 	GLFWwindow* window = WindowManager::getWindow();
