@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
 #include <Scene/Scene.hpp>
+#include "Engine.h"
 
-class SceneManager {
+class ENGINE_API SceneManager {
 public:
 	static SceneManager& GetInstance() {
 		static SceneManager instance;

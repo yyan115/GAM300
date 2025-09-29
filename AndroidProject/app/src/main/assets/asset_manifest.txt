@@ -1,5 +1,7 @@
 Resources/Audio/sfx/Test_duck.wav
 Resources/Audio/sfx/Test_duck.wav.meta
+Resources/dora the explorer (1).prefab
+Resources/dora the explorer.prefab
 Resources/Fonts/fa-solid-900.font
 Resources/Fonts/fa-solid-900.ttf
 Resources/Fonts/fa-solid-900.ttf.meta
@@ -13,6 +15,10 @@ Resources/Kenney Mini.font
 Resources/Kenney Mini.ttf
 Resources/Kenney Mini.ttf.meta
 Resources/License.txt
+Resources/Materials/NewMaterial.mat
+Resources/Materials/NewMaterial.mat.meta
+Resources/Materials/test.mat
+Resources/Materials/test.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -39,10 +45,15 @@ Resources/Models/backpack.obj.meta
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
+Resources/Scenes/scene.json
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
+Resources/Shaders/debugandroid.frag
+Resources/Shaders/debugandroid.meta
+Resources/Shaders/debugandroid.shader
+Resources/Shaders/debugandroid.vert
 Resources/Shaders/default.frag
 Resources/Shaders/default.meta
 Resources/Shaders/default.shader

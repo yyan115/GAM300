@@ -2,6 +2,8 @@
 #include "../include/Graphics/IRenderComponent.hpp"
 #include <memory>
 #include <glm/glm.hpp>
+#include "Math/Matrix4x4.hpp"
+#include "Utilities/GUID.hpp"
 
 class Model;
 class Shader;
@@ -9,16 +11,19 @@ class Camera;
 
 class ModelRenderComponent : public IRenderComponent {
 public:
-	std::shared_ptr<Model> model;
-	std::shared_ptr<Shader> shader;
-	glm::mat4 transform;
+	// Serialize these.
+	REFL_SERIALIZABLE
+	GUID_128 modelGUID{};
+	GUID_128 shaderGUID{};
+	Matrix4x4 transform;
 	bool isVisible = true;
 
-	ModelRenderComponent(std::shared_ptr<Model> m, std::shared_ptr<Shader> s)
-		: model(std::move(m)), shader(std::move(s)), transform(), isVisible(true) {}
+	// Don't serialize these.
+	std::shared_ptr<Model> model;
+	std::shared_ptr<Shader> shader;
+
+	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID)
+		: modelGUID(m_GUID), shaderGUID(s_GUID), transform(), isVisible(true) { }
 	ModelRenderComponent() = default;
 	~ModelRenderComponent() = default;
-
-	//int GetRenderOrder() const override { return 100; }
-	//bool IsVisible() const override { return isVisible && model && shader; }
 };

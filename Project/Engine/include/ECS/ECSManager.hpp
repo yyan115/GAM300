@@ -90,6 +90,10 @@ public:
 		return entityManager->GetActiveEntities();
 	}
 
+	std::vector<Entity> GetAllEntities() const {
+		return entityManager->GetAllEntities();
+	}
+
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 
 	std::shared_ptr<TransformSystem> transformSystem;

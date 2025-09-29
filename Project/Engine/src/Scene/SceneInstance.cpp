@@ -10,16 +10,17 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
+#include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#include <Hierarchy/ParentComponent.hpp>
+#include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
 
 void SceneInstance::Initialize() {
-	// Initialization code for the scene
-
 	// Initialize GraphicsManager first
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
@@ -27,49 +28,54 @@ void SceneInstance::Initialize() {
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	// Create a backpack entity with a Renderer component in the main ECS manager
-	Entity backpackEntt = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
-	ecsManager.transformSystem->SetLocalScale(backpackEntt, { .1f, .1f, .1f });
-	ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
-	NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
-	backpackName.name = "dora the explorer";
-	ENGINE_LOG_INFO("Loading resource");
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
+	if (scenePath == "TestScene") {
+		// Create a backpack entity with a Renderer component in the main ECS manager
+		Entity backpackEntt = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
+		ecsManager.transformSystem->SetLocalScale(backpackEntt, { .1f, .1f, .1f });
+		ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
+		NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
+		backpackName.name = "dora the explorer";
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-	Entity backpackEntt2 = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
-	ecsManager.transformSystem->SetLocalScale(backpackEntt2, { .2f, .2f, .2f });
-	ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
-	NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
-	backpack2Name.name = "ash ketchum";
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
+		Entity backpackEntt2 = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(backpackEntt2, { 1, -0.5f, 0 });
+		ecsManager.transformSystem->SetLocalScale(backpackEntt2, { .2f, .2f, .2f });
+		ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
+		NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
+		backpack2Name.name = "ash ketchum";
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-	Entity backpackEntt3 = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
-	ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .5f, .5f, .5f });
-	ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
-	NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
-	backpack3Name.name = "indiana jones";
-	ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default")) });
+		Entity backpackEntt3 = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
+		ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .5f, .5f, .5f });
+		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
+		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
+		backpack3Name.name = "indiana jones";
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
+		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-	// Text entity test
-	Entity text = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(text).name = "Text1";
-	ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-	TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-	TextUtils::SetPosition(textComp, glm::vec3(800, 100, 0));
-	TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+		// Text entity test
+		Entity text = ecsManager.CreateEntity();
+		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
+		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
+		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
+		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
-	Entity text2 = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
-	ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-	TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
-	TextUtils::SetPosition(textComp2, glm::vec3(800, 800, 0));
-	TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+		//Entity text2 = ecsManager.CreateEntity();
+		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
+		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
+		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
+		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+	}
 
 	// Creates light
 	lightShader = std::make_shared<Shader>();
@@ -83,30 +89,39 @@ void SceneInstance::Initialize() {
 
 	// Test Audio
 	{
-		// Create an entity with AudioComponent (AudioSystem should be initialized centrally)
-		Entity audioEntity = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
-		NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
-		audioName.name = "Audio Test Entity";
-
-		// Add AudioComponent - the UpdateComponent() will handle loading when appropriate
-		AudioComponent audioComp;
-		audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-		audioComp.Volume = 0.8f;
-		audioComp.Loop = false;
-		audioComp.PlayOnStart = true;
-		audioComp.Spatialize = false;
-		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-
-		// The AudioComponent will load the asset during UpdateComponent() and play when game enters PLAY_MODE
+		// Initialize AudioSystem
+		if (!AudioSystem::GetInstance().Initialise())
+		{
+			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
+		}
+		else
+		{
+			// Create an entity with AudioComponent
+			Entity audioEntity = ecsManager.CreateEntity();
+			ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+			NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+			audioName.name = "Audio Test Entity";
+			
+			// Add AudioComponent
+			AudioComponent audioComp;
+			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+			audioComp.Volume = 0.8f;
+			audioComp.Loop = false;
+			audioComp.PlayOnAwake = true;
+			audioComp.Spatialize = false;
+			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+			
+			// The AudioComponent will automatically load and play the audio on awake
+		}
 	}
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
+	ecsManager.textSystem->Initialise();
 
-	ENGINE_PRINT("TestScene Initialized\n");
+	ENGINE_PRINT("Scene Initialized\n");
 }
 
 void SceneInstance::Update(double dt) {
@@ -119,7 +134,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-
+	
 	if (mainECS.audioSystem)
 	{
 		mainECS.audioSystem->Update();
@@ -155,11 +170,11 @@ void SceneInstance::Draw() {
 #endif
 	}
 	// Test debug drawing
-	//DebugDrawSystem::DrawCube(glm::vec3(0, 1, 0), glm::vec3(1, 1, 1), glm::vec3(1, 0, 0)); // Red cube above origin
-	//DebugDrawSystem::DrawSphere(glm::vec3(2, 0, 0), 1.0f, glm::vec3(0, 1, 0)); // Green sphere to the right
-	//DebugDrawSystem::DrawLine(glm::vec3(0, 0, 0), glm::vec3(3, 3, 3), glm::vec3(0, 0, 1)); // Blue line diagonal
+	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
+	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
+	//DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
 	//auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
-	//DebugDrawSystem::DrawMeshWireframe(backpackModel, glm::vec3(-2, 0, 0), glm::vec3(1, 1, 0), 0.0f); 
+	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
 	if (mainECS.debugDrawSystem)
@@ -192,7 +207,7 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
 #endif
 
-	//std::cout << "drawn\n";
+//std::cout << "drawn\n";
 }
 
 void SceneInstance::Exit() {

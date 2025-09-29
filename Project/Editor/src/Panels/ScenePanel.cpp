@@ -4,10 +4,13 @@
 #include "EditorInputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/NameComponent.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "EditorState.hpp"
+#include "PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
@@ -242,81 +245,226 @@ void ScenePanel::HandleEntitySelection() {
     }
 }
 
-
-void ScenePanel::OnImGuiRender() {
+void ScenePanel::OnImGuiRender()
+{
     // Update input manager state
     EditorInputManager::Update();
 
-    if (ImGui::Begin(name.c_str(), &isOpen)) {
-
-        // Gizmo controls now handled by PlayControlPanel
+    if (ImGui::Begin(name.c_str(), &isOpen))
+    {
+        ImGui::PushID(this); // unique ID namespace for this panel
 
         // Handle input (but not if ImGuizmo is active)
         HandleKeyboardInput();
 
-        // Store scene area hover state for camera input
         bool isSceneHovered = false;
 
-        // Get the content region size for the scene view
+        // Content size for the scene view
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
         int sceneViewWidth = (int)viewportPanelSize.x;
         int sceneViewHeight = (int)viewportPanelSize.y;
-
-        // Ensure minimum size
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
-        // Render the scene with our editor camera
+        // Render the scene with our editor camera to the framebuffer
         RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
 
-        // Get window position for ImGuizmo (where the scene image starts)
-        ImVec2 imagePos = ImGui::GetCursorScreenPos();
-
-        // Get the texture from SceneRenderer and display it
+        // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
-        if (sceneTexture != 0) {
-            // Use a child window to contain both the image and ImGuizmo
-            ImGui::BeginChild("SceneView", ImVec2((float)sceneViewWidth, (float)sceneViewHeight), false,
-                              ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        if (sceneTexture != 0)
+        {
+            // Child window that contains the scene image and gizmos
+            ImGui::BeginChild(
+                "SceneView##ScenePanel",
+                ImVec2((float)sceneViewWidth, (float)sceneViewHeight),
+                false,
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+            );
 
-            // Get child window position and size
+            // Where to draw
             ImVec2 childPos = ImGui::GetCursorScreenPos();
             ImVec2 childSize = ImGui::GetContentRegionAvail();
 
-            // Draw the scene texture as background
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-            drawList->AddImage(
+            // Draw the scene texture as background (flip V for OpenGL)
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            dl->AddImage(
                 (void*)(intptr_t)sceneTexture,
-                childPos, ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
-                ImVec2(0, 1), ImVec2(1, 0)  // Flip Y coordinate for OpenGL
+                childPos,
+                ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
+                ImVec2(0, 1), ImVec2(1, 0)
             );
 
-            // Check if the child window is hovered (without invisible button interfering)
+            // Hover state for input routing
             isSceneHovered = ImGui::IsWindowHovered();
 
-            // Now handle ImGuizmo within the child window context
+            // ---------- Visual cue when dragging a prefab over the scene ----------
+            if (const ImGuiPayload* active = ImGui::GetDragDropPayload())
+            {
+                if (active->IsDataType("PREFAB_PATH"))
+                {
+                    ImDrawList* dl2 = ImGui::GetWindowDrawList();
+                    // subtle fill + border
+                    dl2->AddRectFilled(
+                        childPos,
+                        ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
+                        IM_COL32(100, 150, 255, 25), 6.0f);
+                    dl2->AddRect(
+                        childPos,
+                        ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
+                        IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+                }
+            }
+            // ---------------------------------------------------------------------
+
+            // Full-size drop target inside the scene child
+            ImGui::SetCursorScreenPos(childPos);
+            ImGui::InvisibleButton("##SceneDropTarget", childSize);
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH"))
+                {
+                    const char* prefabPath = static_cast<const char*>(payload->Data);
+
+                    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                    Entity e = ecs.CreateEntity();
+
+                    // Give a friendly name
+                    {
+                        std::string base = std::filesystem::path(prefabPath).stem().string();
+                        if (ecs.HasComponent<NameComponent>(e))
+                            ecs.GetComponent<NameComponent>(e).name = base;
+                        else
+                            ecs.AddComponent<NameComponent>(e, NameComponent{ base });
+                    }
+
+                    // 1) Instantiate prefab (this may write a Transform from file)
+                    const bool ok = InstantiatePrefabFromFile(ecs, AssetManager::GetInstance(), prefabPath, e);
+                    if (!ok) {
+                        ecs.DestroyEntity(e);
+                        std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
+                    }
+                    else {
+                        // 2) Compute a ray from the cursor inside the scene child
+                        ImVec2 mouse = ImGui::GetMousePos();
+                        float relX = mouse.x - childPos.x;
+                        float relY = mouse.y - childPos.y;
+                        float sceneW = childSize.x;
+                        float sceneH = childSize.y;
+
+                        // Guard: inside the view?
+                        if (relX >= 0 && relX <= sceneW && relY >= 0 && relY <= sceneH)
+                        {
+                            // Build view/proj like you do in selection
+                            float aspect = sceneW / sceneH;
+                            glm::mat4 glmView = editorCamera.GetViewMatrix();
+                            glm::mat4 glmProj = editorCamera.GetProjectionMatrix(aspect);
+
+                            Matrix4x4 view(
+                                glmView[0][0], glmView[1][0], glmView[2][0], glmView[3][0],
+                                glmView[0][1], glmView[1][1], glmView[2][1], glmView[3][1],
+                                glmView[0][2], glmView[1][2], glmView[2][2], glmView[3][2],
+                                glmView[0][3], glmView[1][3], glmView[2][3], glmView[3][3]);
+                            Matrix4x4 proj(
+                                glmProj[0][0], glmProj[1][0], glmProj[2][0], glmProj[3][0],
+                                glmProj[0][1], glmProj[1][1], glmProj[2][1], glmProj[3][1],
+                                glmProj[0][2], glmProj[1][2], glmProj[2][2], glmProj[3][2],
+                                glmProj[0][3], glmProj[1][3], glmProj[2][3], glmProj[3][3]);
+
+                            auto ray = RaycastUtil::ScreenToWorldRay(
+                                relX, relY, sceneW, sceneH, view, proj);
+
+                            // Intersect with plane y = 0
+                            // ray: P = O + t * D
+                            if (std::abs(ray.direction.y) > 1e-6f) {
+                                float t = (0.0f - ray.origin.y) / ray.direction.y;
+                                if (t > 0.0f) {
+                                    Vector3D rayOrigin{ ray.origin.x, ray.origin.y, ray.origin.z };
+                                    Vector3D rayDirection{ ray.direction.x, ray.direction.y, ray.direction.z };
+                                    Vector3D worldPos = rayOrigin + rayDirection * t;
+
+                                    // Ensure a Transform exists, then set world position
+                                    if (!ecs.HasComponent<Transform>(e))
+                                        ecs.AddComponent<Transform>(e, Transform{});
+                                    ecs.transformSystem->SetWorldPosition(e, worldPos);
+                                }
+                            }
+                        }
+
+                        std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath
+                            << " -> entity " << (uint64_t)e << " (position from cursor)\n";
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // Render the ViewGizmo in the top right corner
+            // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // End the child window here
             ImGui::EndChild();
         }
-        else {
+        else
+        {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "Scene View - Framebuffer not ready");
-            ImGui::Text("Size: %dx%d", sceneViewWidth, sceneViewHeight);
+            ImGui::Text("Size: %d x %d", sceneViewWidth, sceneViewHeight);
         }
 
-        // Handle input based on ImGuizmo state (now calculated)
-        bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
-
-        if (canHandleInput) {
+        // Route input to camera/selection when not interacting with gizmos
+        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
+        if (canHandleInput)
+        {
             HandleCameraInput();
             HandleEntitySelection();
         }
+
+        ImGui::PopID();
     }
     ImGui::End();
+}
+
+void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize)
+{
+    // Make the whole scene image a drop target
+    ImGui::SetCursorScreenPos(sceneTopLeft);
+    ImGui::InvisibleButton("##ScenePrefabDropTarget", sceneSize, ImGuiButtonFlags_MouseButtonLeft);
+
+    if (!ImGui::BeginDragDropTarget())
+        return;
+
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH"))
+    {
+        // Payload is a null-terminated C string we set in the Asset Browser
+        const char* pathCStr = static_cast<const char*>(payload->Data);
+        std::filesystem::path prefabPath(pathCStr);
+
+        // Create an entity immediately so the user gets feedback
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        Entity e = ecs.CreateEntity();
+
+        // Give it a friendly name based on the file name
+        std::string displayName = prefabPath.stem().string();
+        if (ecs.HasComponent<NameComponent>(e))
+        {
+            ecs.GetComponent<NameComponent>(e).name = displayName;
+        }
+        else
+        {
+            ecs.AddComponent<NameComponent>(e, NameComponent{ displayName });
+        }
+
+        // TODO (optional): actually instantiate the prefab contents here
+        // AssetManager& assets = AssetManager::GetInstance();
+        // Prefab prefab = assets.LoadPrefab(prefabPath.string()); // your loader
+        // prefab.instantiatePrefab(ecs, static_cast<EntityID>(e));
+
+        // Simple console feedback
+        std::cout << "[ScenePanel] Spawned entity from prefab: " << prefabPath << " -> entity " << (uint64_t)e << "\n";
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {

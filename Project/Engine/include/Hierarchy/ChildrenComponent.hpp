@@ -3,5 +3,6 @@
 #include "../ECS/Entity.hpp"
 
 struct ChildrenComponent {
-	std::set<Entity> children; // Children entity IDs
+	REFL_SERIALIZABLE
+	std::vector<Entity> children; // Children entity IDs
 };

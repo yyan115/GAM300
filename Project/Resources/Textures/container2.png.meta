@@ -4,8 +4,7 @@
         "guid": "007ebbc8e7583900-0002c70782000029",
         "source": "Resources/Textures/container2.png",
         "compiled": "Resources/Textures/container2.dds",
-        "android_compiled": "Resources/Textures/container2_android.ktx",
-        "last_compiled": "2025-09-28 11:02:33.1364561"
+        "last_compiled": "2025-09-28 17:46:42.4869677"
     },
     "TextureMetaData": {
         "id": 0,

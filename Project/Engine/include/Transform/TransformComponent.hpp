@@ -3,6 +3,7 @@
 #include "Quaternion.hpp"
 
 struct Transform {
+	REFL_SERIALIZABLE
 	//Vector3D worldPosition = { 0, 0, 0 };
 	//Vector3D worldScale = { 0, 0, 0 };
 	//Vector3D worldRotation = { 0, 0, 0 };
@@ -23,14 +24,3 @@ struct Transform {
 	~Transform() = default;
 };
 
-//#pragma region Reflection
-//REFL_REGISTER_START(Transform)
-//	REFL_REGISTER_PROPERTY(position)
-//	REFL_REGISTER_PROPERTY(scale)
-//	REFL_REGISTER_PROPERTY(rotation)
-//	REFL_REGISTER_PROPERTY(lastPosition)
-//	REFL_REGISTER_PROPERTY(lastScale)
-//	REFL_REGISTER_PROPERTY(lastRotation)
-//	REFL_REGISTER_PROPERTY(model)
-//REFL_REGISTER_END;
-//#pragma endregion

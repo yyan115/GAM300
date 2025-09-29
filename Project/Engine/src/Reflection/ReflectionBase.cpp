@@ -1,3 +1,14 @@
+/*********************************************************************************
+* @File			ReflectionBase.cpp
+* @Author		Soh Wei Jie, weijie.soh@digipen.edu
+* @Co-Author	-
+* @Date			26/9/2025
+* @Brief		
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
 
@@ -194,5 +205,24 @@ ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<std::string>()
     if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
     return &type_desc;
 }
+
+#ifdef ANDROID
+// primitives.cpp
+template<>
+ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<long long>() {
+    static TypeDescriptor_LongLong type_desc;
+    std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
+    if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+    return &type_desc;
+}
+
+template<>
+ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<unsigned long long>() {
+    static TypeDescriptor_UnsignedLongLong type_desc;
+    std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
+    if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+    return &type_desc;
+}
+#endif
 
 #pragma endregion

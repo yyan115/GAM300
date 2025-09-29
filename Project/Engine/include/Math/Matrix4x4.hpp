@@ -13,6 +13,7 @@
 
 #include "pch.h"
 #include "Math/Vector3D.hpp"
+#include "glm/mat4x4.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -75,6 +76,28 @@ struct ENGINE_API Matrix4x4 {
     float     Determinant() const;
     bool      TryInverse(Matrix4x4& out) const;  // false if singular
     Matrix4x4 Inversed() const;                  // asserts if singular
+
+    // glm conversions
+    inline glm::mat4 ConvertToGLM() const {
+        Matrix4x4 transposed = this->Transposed();
+        glm::mat4 converted(
+            transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03,
+            transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
+            transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
+            transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
+
+        return converted;
+    }
+
+    inline static Matrix4x4 ConvertToMatrix4x4(const glm::mat4& m) {
+        // GLM is column-major, Matrix4x4 is row-major, so we need to transpose
+        Matrix4x4 converted(
+            m[0][0], m[1][0], m[2][0], m[3][0],
+            m[0][1], m[1][1], m[2][1], m[3][1],
+            m[0][2], m[1][2], m[2][2], m[3][2],
+            m[0][3], m[1][3], m[2][3], m[3][3]);
+        return converted;
+    }
 
     // ---- factories ----
     static Matrix4x4 Identity();

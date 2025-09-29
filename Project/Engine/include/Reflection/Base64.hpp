@@ -1,13 +1,9 @@
-// WLVERSE [https://wlverse.web.app]
-// flexbase64.h
-//
 #pragma once
 
-/******************************************************************
-LEGACY - TO BE DELETED
-********************************************************************/
 #include <string>
 #include <vector>
+
+#include "Logging.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -25,7 +21,7 @@ LEGACY - TO BE DELETED
 #endif
 
 // Encodes a vector of bytes to a base64 string.
-ENGINE_API std::string Encode(const std::vector<unsigned char>& data);
+ENGINE_API std::string Base64_Encode(const std::vector<unsigned char>& data);
 
 // Decodes a base64 string to a vector of bytes.
-ENGINE_API std::vector<unsigned char> Decode(const std::string& data);
+ENGINE_API std::vector<unsigned char> Base64_Decode(const std::string& data);
