@@ -34,3 +34,10 @@ AndroidProject/local.properties
 
 # Object files
 *.o
+
+# Resource files
+*.mesh
+*.shader
+*.font
+*.dds
+*.ktx

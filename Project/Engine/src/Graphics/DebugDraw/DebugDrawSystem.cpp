@@ -13,7 +13,7 @@ std::vector<DebugDrawData> DebugDrawSystem::debugQueue;
 bool DebugDrawSystem::Initialise() 
 {
     // Create debug shader (you'll need to create this shader file)
-    debugShader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
+    debugShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
 
     CreatePrimitiveGeometry();
     ENGINE_PRINT("[DebugDrawSystem] Initialized", "\n");
@@ -29,7 +29,7 @@ void DebugDrawSystem::Update()
 
     // Create component and check all pointers are valid
     auto debugComponent = std::make_unique<DebugDrawComponent>();
-    auto shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/debug");
+    auto shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
 
     if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Error: Required debug resources are null!\n");
@@ -244,7 +244,7 @@ void DebugDrawSystem::UpdateTimedCommands(float deltaTime)
     }
 }
 
-void DebugDrawSystem::DrawCube(const glm::vec3& position, const glm::vec3& scale, const glm::vec3& color, float duration)
+void DebugDrawSystem::DrawCube(const Vector3D& position, const Vector3D& scale, const Vector3D& color, float duration)
 {
     DebugDrawData cubeData(DebugDrawType::CUBE);
     cubeData.position = position;
@@ -255,18 +255,18 @@ void DebugDrawSystem::DrawCube(const glm::vec3& position, const glm::vec3& scale
     debugQueue.push_back(cubeData);
 }
 
-void DebugDrawSystem::DrawSphere(const glm::vec3& position, float radius, const glm::vec3& color, float duration)
+void DebugDrawSystem::DrawSphere(const Vector3D& position, float radius, const Vector3D& color, float duration)
 {
     DebugDrawData sphereData(DebugDrawType::SPHERE);
     sphereData.position = position;
-    sphereData.scale = glm::vec3(radius * 2.0f); // Scale by diameter
+    sphereData.scale = Vector3D(radius * 2.0f, radius * 2.0f, radius * 2.0f); // Scale by diameter
     sphereData.color = color;
     sphereData.duration = duration;
 
     debugQueue.push_back(sphereData);
 }
 
-void DebugDrawSystem::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec3& color, float duration, float width)
+void DebugDrawSystem::DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& color, float duration, float width)
 {
     DebugDrawData lineData(DebugDrawType::LINE);
     lineData.position = start;
@@ -278,13 +278,13 @@ void DebugDrawSystem::DrawLine(const glm::vec3& start, const glm::vec3& end, con
     debugQueue.push_back(lineData);
 }
 
-void DebugDrawSystem::DrawMeshWireframe(std::shared_ptr<Model> model, const glm::vec3& position, const glm::vec3& color, float duration)
+void DebugDrawSystem::DrawMeshWireframe(std::shared_ptr<Model> model, const Vector3D& position, const Vector3D& color, float duration)
 {
     if (!model) return;
 
     DebugDrawData meshData(DebugDrawType::MESH_WIREFRAME); 
     meshData.position = position; 
-    meshData.scale = glm::vec3(1.0f); 
+    meshData.scale = Vector3D(1.0f, 1.0f, 1.0f);
     meshData.color = color; 
     meshData.duration = duration; 
     meshData.meshModel = model; 

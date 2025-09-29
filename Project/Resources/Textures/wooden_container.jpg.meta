@@ -1,11 +1,10 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "007ebbc8c4252539-0002c7078200002d",
-        "source": "Resources/Textures/wooden_container.jpg",
-        "compiled": "Resources/Textures/wooden_container.dds",
-        "android_compiled": "Resources/Textures/wooden_container_android.ktx",
-        "last_compiled": "2025-09-28 11:02:20.3622881"
+        "guid": "0010097b1af3b307-0002cc579c000017",
+        "source": "../../Resources/Textures/wooden_container.jpg",
+        "compiled": "../../Resources/Textures/wooden_container.dds",
+        "last_compiled": "2025-09-29 16:18:22.7911324"
     },
     "TextureMetaData": {
         "id": 0,

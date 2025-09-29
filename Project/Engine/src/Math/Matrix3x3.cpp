@@ -15,7 +15,6 @@
 
 #pragma region Reflection
 
-//TODO: Change to actual values and not in an array format
 REFL_REGISTER_START(Matrix3x3)
     REFL_REGISTER_PROPERTY(m.m00)
     REFL_REGISTER_PROPERTY(m.m01)

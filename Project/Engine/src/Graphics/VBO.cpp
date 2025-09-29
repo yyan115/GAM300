@@ -2,6 +2,15 @@
 
 #include "Graphics/VBO.h"
 
+#pragma region Reflection
+//REFL_REGISTER_START(Vertex)
+//	REFL_REGISTER_PROPERTY(position)
+//	REFL_REGISTER_PROPERTY(normal)
+//	REFL_REGISTER_PROPERTY(color)
+//	REFL_REGISTER_PROPERTY(texUV)
+//REFL_REGISTER_END;
+#pragma endregion
+
 // Constructor for static mesh data
 VBO::VBO(std::vector<Vertex>& vertices)
 {

@@ -27,6 +27,29 @@ public:
 	}
 
 	template <typename T>
+	std::shared_ptr<T> GetResourceFromGUID(const GUID_128& guid, const std::string& assetPath) {
+		auto& resourceMap = GetResourceMap<T>();
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			return it->second;
+		}
+		else {
+			return GetResource<T>(assetPath);
+		}
+	}
+
+	std::shared_ptr<Font> GetFontResourceFromGUID(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize) {
+		auto& resourceMap = GetResourceMap<Font>();
+		auto it = resourceMap.find(guid);
+		if (it != resourceMap.end()) {
+			return it->second;
+		}
+		else {
+			return GetFontResource(assetPath, fontSize);
+		}
+	}
+
+	template <typename T>
 	std::shared_ptr<T> GetResource(const std::string& assetPath, bool forceLoad = false) {
 		static_assert(!std::is_same_v<T, Font>,
 			"Calling ResourceManager::GetInstance().GetResource() to get a font is forbidden. Use GetFontResource() instead.");
@@ -91,7 +114,7 @@ public:
 	}
 
 	template <typename T>
-	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
+	bool UnloadResource(GUID_128 guid, const std::string& resourcePath) {
 		// Implementation for unloading the resource
 		auto& resourceMap = GetResourceMap<T>();
 		auto it = resourceMap.find(guid);
@@ -118,23 +141,23 @@ public:
 		return false;
 	}
 
-	bool UnloadResource(GUID_128 guid, const std::string& assetPath, const std::string& resourcePath) {
+	bool UnloadResource(GUID_128 guid, const std::string& resourcePath) {
 		std::filesystem::path p(resourcePath);
 		std::string extension = p.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			return UnloadResource<Texture>(guid, assetPath, resourcePath);
+			return UnloadResource<Texture>(guid, resourcePath);
 		}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			return UnloadResource<Font>(guid, assetPath, resourcePath);
+			return UnloadResource<Font>(guid, resourcePath);
 		}
 		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			return UnloadResource<Model>(guid, assetPath, resourcePath);
+			return UnloadResource<Model>(guid, resourcePath);
 		}
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			return UnloadResource<Shader>(guid, assetPath, resourcePath);
+			return UnloadResource<Shader>(guid, resourcePath);
 		}
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
-			return UnloadResource<Audio>(guid, assetPath, resourcePath);
+			return UnloadResource<Audio>(guid, resourcePath);
 		}
 		else {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");
@@ -173,6 +196,15 @@ public:
 #endif
 	}
 
+	template <typename T>
+	std::shared_ptr<T> LoadFromMeta(const GUID_128& guid,
+		const std::string& resourcePath,
+		const std::string& assetPath,
+		bool reload = false)
+	{
+		return LoadResource<T>(guid, resourcePath, assetPath, reload);
+	}
+
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
@@ -203,7 +235,6 @@ private:
 		static std::unordered_map<GUID_128, std::shared_ptr<T>> resourceMap;
 		return resourceMap;
 	}
-
 
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {

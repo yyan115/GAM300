@@ -4,7 +4,6 @@
         "guid": "007ebbc888e52d7a-0002c7078200001d",
         "source": "Resources/Shaders/defaultandroid",
         "compiled": "Resources/Shaders/defaultandroid.shader",
-        "android_compiled": "Resources/Shaders/defaultandroid.shader",
-        "last_compiled": "2025-09-28 11:02:31.0154445"
+        "last_compiled": "2025-09-29 10:35:54.3436399"
     }
 }

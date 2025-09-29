@@ -5,7 +5,11 @@
 
 # define M_PI           3.14159265358979323846f
 
-struct Quaternion {
+
+struct Quaternion 
+{
+    REFL_SERIALIZABLE
+
     float w; // real part
     float x; // i component
     float y; // j component

@@ -253,6 +253,7 @@ std::vector<uint8_t> DesktopPlatform::ReadAsset(const std::string& path) {
 
     std::ifstream ifs(path, std::ios::binary | std::ios::ate);
     if (!ifs.is_open()) {
+        ifs.close();
         return data;
     }
 
@@ -264,6 +265,7 @@ std::vector<uint8_t> DesktopPlatform::ReadAsset(const std::string& path) {
         data.clear(); // read failed
     }
 
+    ifs.close();
     return data;
 }
 

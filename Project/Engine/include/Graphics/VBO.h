@@ -2,11 +2,12 @@
 #include "OpenGL.h"
 #include <glm/glm.hpp>
 #include <vector>
+#include "Reflection/ReflectionBase.hpp"
 
 #define MaxBoneInfluences 4
 
-
 struct Vertex {
+	//REFL_SERIALIZABLE - I cannot serialize glm
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec3 color;

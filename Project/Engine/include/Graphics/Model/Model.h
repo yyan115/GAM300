@@ -14,6 +14,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../../Engine.h"
 
+class Material;
 
 #ifdef __ANDROID__
 // Custom IOStream for Android AssetManager
@@ -60,18 +61,22 @@ struct BoneInfo
 };
 
 class Model : public IAsset {
+class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;
 
+	Model();
+	virtual ~Model() = default;
 	//Model(const std::string& filePath);
-    ENGINE_API std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
+    std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
 	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile, bool forAndroid = false);
-	ENGINE_API bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
-	ENGINE_API std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
+	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 	
 	void Draw(Shader& shader, const Camera& camera);
+	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
 
 	// Helper functions for Bones
 	auto& GetBoneInfoMap() { return mBoneInfoMap; }

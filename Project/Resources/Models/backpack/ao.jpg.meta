@@ -1,11 +1,10 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "007ebbc8a6d93f72-0002c7075a00000b",
-        "source": "Resources/Models/backpack/ao.jpg",
-        "compiled": "Resources/Models/backpack/ao.dds",
-        "android_compiled": "Resources/Models/backpack/ao_android.ktx",
-        "last_compiled": "2025-09-28 11:01:48.7359034"
+        "guid": "0010097b493ad10e-0002cc57bc00002d",
+        "source": "../../Resources/Models/backpack/ao.jpg",
+        "compiled": "../../Resources/Models/backpack/ao.dds",
+        "last_compiled": "2025-09-29 16:18:41.3240816"
     },
     "TextureMetaData": {
         "id": 0,

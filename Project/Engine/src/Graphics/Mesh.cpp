@@ -8,6 +8,14 @@
 #include <android/log.h>
 #endif
 
+#pragma region Reflection
+REFL_REGISTER_START(Mesh)
+	//REFL_REGISTER_PROPERTY(vertices)
+	REFL_REGISTER_PROPERTY(indices)
+	//REFL_REGISTER_PROPERTY(textures)
+	//REFL_REGISTER_PROPERTY(material)
+REFL_REGISTER_END;
+#pragma endregion
 
 Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures) : vertices(vertices), indices(indices), textures(textures), ebo(indices), vaoSetup(false)
 {

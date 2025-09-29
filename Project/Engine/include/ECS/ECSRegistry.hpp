@@ -29,6 +29,8 @@ public:
 	ECSManager& GetActiveECSManager();
 
 	void RenameECSManager(const std::string& oldName, const std::string& newName) {
+		if (oldName == newName) return;
+
 		assert(ecsManagers.find(oldName) != ecsManagers.end() && "ECSManager with the given old name does not exist.");
 		assert(ecsManagers.find(newName) == ecsManagers.end() && "ECSManager with the given new name already exists.");
 		

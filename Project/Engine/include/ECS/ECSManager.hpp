@@ -10,9 +10,9 @@
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
-#include "Sound/AudioSystem.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
 #include <Graphics/Lights/LightingSystem.hpp>
+#include <Graphics/Sprite/SpriteSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -90,14 +90,18 @@ public:
 		return entityManager->GetActiveEntities();
 	}
 
+	std::vector<Entity> GetAllEntities() const {
+		return entityManager->GetAllEntities();
+	}
+
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 
 	std::shared_ptr<TransformSystem> transformSystem;
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
-	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
+	std::shared_ptr<SpriteSystem> spriteSystem;
 
 private:
 	template <typename T>
