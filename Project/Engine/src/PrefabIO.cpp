@@ -9,6 +9,7 @@
 #include "ECS/NameComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include <ECS/ECSRegistry.hpp>
 
 // --- tiny file helper ---
 static bool ReadFileToString(const std::string& path, std::string& out)
@@ -55,11 +56,11 @@ static std::unordered_map<std::string, ApplyFn> s_apply =
     }},
 };
 
-ENGINE_API bool InstantiatePrefabFromFile(ECSManager& ecs,
-    AssetManager& /*assets*/,
-    const std::string& prefabPath,
-    Entity intoEntity)
+ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
 {
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    Entity intoEntity = ecs.CreateEntity();
+
     std::error_code ec;
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();

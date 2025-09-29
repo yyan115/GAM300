@@ -35,7 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\NameComponentReflection.cpp" />
     <ClCompile Include="src\GUIManager.cpp" />
     <ClCompile Include="src\EditorState.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />

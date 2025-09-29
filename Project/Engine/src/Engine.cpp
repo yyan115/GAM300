@@ -57,213 +57,216 @@ bool Engine::Initialize() {
 
 	//TEST ON ANDROID FOR REFLECTION - IF NOT WORKING, INFORM IMMEDIATELY
 #if 1
-	{
+    {
         bool reflection_ok = true;
         bool serialization_ok = true;
 
-        ENGINE_PRINT("=== Running reflection + serialization single-main test for Matrix4x4 ===\n");
+        ENGINE_PRINT("=== Running reflection + serialization single-main test for Matrix4x4 ===");
 
         // --- Reflection-only checks ---
-        ENGINE_PRINT("\n[1] Reflection metadata + runtime access checks\n");
+        ENGINE_PRINT("[1] Reflection metadata + runtime access checks");
 
-        using T = Matrix4x4;
+        using T = Transform;
         TypeDescriptor* td = nullptr;
         try {
             td = TypeResolver<T>::Get();
         }
         catch (const std::exception& ex) {
-            //std::cout << "ERROR: exception while calling TypeResolver::Get(): " << ex.what() << "\n";
-            ENGINE_PRINT("ERROR: exception while calling TypeResolver::Get(): ", ex.what(), "\n");
+            ENGINE_PRINT("ERROR: exception while calling TypeResolver::Get(): ", ex.what());
         }
         catch (...) {
-            //std::cout << "ERROR: unknown exception calling TypeResolver::Get()\n";
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "ERROR: unknown exception calling TypeResolver::Get()\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "ERROR: unknown exception calling TypeResolver::Get()");
         }
 
         if (!td) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: TypeResolver<Matrix4x4>::Get() returned null. Ensure REFL_REGISTER_START(Matrix4x4) is compiled & linked.\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: TypeResolver<Matrix4x4>::Get() returned null. Ensure REFL_REGISTER_START(Matrix4x4) is compiled & linked.");
             reflection_ok = false;
         }
         else {
-            //std::cout << "Type name: " << td->ToString() << ", size: " << td->size << "\n";
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Type name: ", td, ", size: ", td->size);
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Type name: ", td->ToString().c_str(), ", size: ", td->GetSize());
 
             auto* sdesc = dynamic_cast<TypeDescriptor_Struct*>(td);
             if (!sdesc) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: descriptor is not TypeDescriptor_Struct\n");
-                //std::cout << "FAIL: descriptor is not TypeDescriptor_Struct\n";
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: descriptor is not TypeDescriptor_Struct");
                 reflection_ok = false;
             }
             else {
-                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Member count: ", sdesc->members.size(), "\n");
-                //std::cout << "Member count: " << sdesc->members.size() << "\n";
-                // Print members and basic checks
-                for (size_t i = 0; i < sdesc->members.size(); ++i) {
-                    const auto& m = sdesc->members[i];
+                // copy member list out of the descriptor (GetMembers returns a std::vector copy allocated inside the DLL)
+                auto members = sdesc->GetMembers();
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Member count: ", members.size());
+
+                // Basic metadata checks & printing
+                for (size_t i = 0; i < members.size(); ++i) {
+                    const auto& m = members[i];
                     std::string mname = m.name ? m.name : "<null>";
                     std::string tname = m.type ? m.type->ToString() : "<null-type>";
-                    //std::cout << "  [" << i << "] name='" << mname << "' type='" << tname << "'\n";
-                    ENGINE_PRINT("  [", i, "] name='", mname, "' type='", tname, "'\n");
+                    std::cout << "  [" << i << "] name='" << mname << "' type='" << tname << "'" << std::endl;
 
                     if (!m.type) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member has null TypeDescriptor\n");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member has null TypeDescriptor");
                         reflection_ok = false;
                     }
                     if (tname.find('&') != std::string::npos) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member type contains '&' (strip references in macro). See REFL_REGISTER_PROPERTY fix.\n");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member type contains ampersand. Strip references in macro.");
                         reflection_ok = false;
                     }
                     if (!m.get_ptr) {
-                        ENGINE_PRINT( EngineLogging::LogLevel::Error, "    -> FAIL: member.get_ptr is null\n");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member.get_ptr is null");
                         reflection_ok = false;
                     }
                 }
 
-                // Runtime read/write via get_ptr to prove reflection can access object memory
-                try {
-                    T v{};
-                    auto* floatDesc = TypeResolver<float>::Get();
-                    auto* doubleDesc = TypeResolver<double>::Get();
-                    auto* intDesc = TypeResolver<int>::Get();
-                    auto* uintDesc = TypeResolver<unsigned int>::Get();
-                    auto* int64Desc = TypeResolver<long long>::Get();
-                    auto* uint64Desc = TypeResolver<unsigned long long>::Get();
-                    auto* boolDesc = TypeResolver<bool>::Get();
+                // If metadata appears okay, test runtime assign/read on a temporary object
+                if (reflection_ok) {
+                    try {
+                        T v{}; // object to mutate and test
+                        // Get primitive descriptors that we support for testing
+                        TypeDescriptor* floatDesc = nullptr;
+                        TypeDescriptor* doubleDesc = nullptr;
+                        TypeDescriptor* intDesc = nullptr;
+                        TypeDescriptor* uintDesc = nullptr;
+                        TypeDescriptor* int64Desc = nullptr;
+                        TypeDescriptor* uint64Desc = nullptr;
+                        TypeDescriptor* boolDesc = nullptr;
+                        TypeDescriptor* stringDesc = nullptr;
 
-                    TypeDescriptor* stringDesc = nullptr;
-                    try { stringDesc = TypeResolver<std::string>::Get(); }
-                    catch (...) { /* maybe not registered */ }
+                        try { floatDesc = TypeResolver<float>::Get(); }
+                        catch (...) {}
+                        try { doubleDesc = TypeResolver<double>::Get(); }
+                        catch (...) {}
+                        try { intDesc = TypeResolver<int>::Get(); }
+                        catch (...) {}
+                        try { uintDesc = TypeResolver<unsigned int>::Get(); }
+                        catch (...) {}
+                        try { int64Desc = TypeResolver<long long>::Get(); }
+                        catch (...) {}
+                        try { uint64Desc = TypeResolver<unsigned long long>::Get(); }
+                        catch (...) {}
+                        try { boolDesc = TypeResolver<bool>::Get(); }
+                        catch (...) {}
+                        try { stringDesc = TypeResolver<std::string>::Get(); }
+                        catch (...) {}
 
-                    struct TestEntry {
-                        size_t idx;
-                        const char* name;
-                        std::function<void(void*)> assign;
-                        std::function<bool(void*)> compare;
-                    };
-                    std::vector<TestEntry> tests;
+                        struct RuntimeTest {
+                            size_t idx;
+                            std::string type_name;
+                            std::function<void(void*)> assign;         // assign sample into a single object slot
+                            std::function<bool(void*)> verify_inplace; // verify sample exists at given pointer
+                        };
+                        std::vector<RuntimeTest> runtime_tests;
 
-                    // Build test list by inspecting members
-                    for (size_t i = 0; i < sdesc->members.size(); ++i) {
-                        const auto& m = sdesc->members[i];
-                        if (!m.type || !m.get_ptr) {
-                            std::cout << "    -> skipping member[" << i << "] (null type or no get_ptr)\n";
-                            continue;
-                        }
+                        // Build runtime tests based on members
+                        for (size_t i = 0; i < members.size(); ++i) {
+                            const auto& m = members[i];
+                            if (!m.type || !m.get_ptr) continue;
 
-                        void* addr = m.get_ptr(&v);
+                            if (m.type == floatDesc) {
+                                float sample = 1.2345f + static_cast<float>(i) * 0.5f;
+                                runtime_tests.push_back({
+                                    i, "float",
+                                    [sample](void* p) { *reinterpret_cast<float*>(p) = sample; },
+                                    [sample](void* p) { return std::fabs(static_cast<double>(*reinterpret_cast<float*>(p)) - static_cast<double>(sample)) < 1e-6; }
+                                    });
+                            }
+                            else if (m.type == doubleDesc) {
+                                double sample = 1.2345 + static_cast<double>(i) * 0.5;
+                                runtime_tests.push_back({
+                                    i, "double",
+                                    [sample](void* p) { *reinterpret_cast<double*>(p) = sample; },
+                                    [sample](void* p) { return std::fabs(*reinterpret_cast<double*>(p) - sample) < 1e-9; }
+                                    });
+                            }
+                            else if (m.type == intDesc) {
+                                int sample = static_cast<int>(i) * 7 + 1;
+                                runtime_tests.push_back({
+                                    i, "int",
+                                    [sample](void* p) { *reinterpret_cast<int*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<int*>(p) == sample; }
+                                    });
+                            }
+                            else if (m.type == uintDesc) {
+                                unsigned sample = static_cast<unsigned>(i) * 11u + 3u;
+                                runtime_tests.push_back({
+                                    i, "unsigned",
+                                    [sample](void* p) { *reinterpret_cast<unsigned*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<unsigned*>(p) == sample; }
+                                    });
+                            }
+                            else if (m.type == int64Desc) {
+                                long long sample = static_cast<long long>(i) * 100000000LL + 5LL;
+                                runtime_tests.push_back({
+                                    i, "long long",
+                                    [sample](void* p) { *reinterpret_cast<long long*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<long long*>(p) == sample; }
+                                    });
+                            }
+                            else if (m.type == uint64Desc) {
+                                unsigned long long sample = static_cast<unsigned long long>(i) * 100000000ULL + 9ULL;
+                                runtime_tests.push_back({
+                                    i, "unsigned long long",
+                                    [sample](void* p) { *reinterpret_cast<unsigned long long*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<unsigned long long*>(p) == sample; }
+                                    });
+                            }
+                            else if (m.type == boolDesc) {
+                                bool sample = (i % 2) == 0;
+                                runtime_tests.push_back({
+                                    i, "bool",
+                                    [sample](void* p) { *reinterpret_cast<bool*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<bool*>(p) == sample; }
+                                    });
+                            }
+                            else if (stringDesc && m.type == stringDesc) {
+                                std::string sample = std::string("test_str_") + std::to_string(i);
+                                runtime_tests.push_back({
+                                    i, "std::string",
+                                    [sample](void* p) { *reinterpret_cast<std::string*>(p) = sample; },
+                                    [sample](void* p) { return *reinterpret_cast<std::string*>(p) == sample; }
+                                    });
+                            }
+                        } // end build runtime tests
 
-                        if (m.type == floatDesc) {
-                            float sample = 1.2345f + static_cast<float>(i) * 0.5f;
-                            tests.push_back({
-                                i, "float",
-                                [sample](void* p) { *reinterpret_cast<float*>(p) = sample; },
-                                [sample](void* p) { return std::fabs(static_cast<double>(*reinterpret_cast<float*>(p)) - static_cast<double>(sample)) < 1e-6; }
-                                });
-                        }
-                        else if (m.type == doubleDesc) {
-                            double sample = 1.2345 + static_cast<double>(i) * 0.5;
-                            tests.push_back({
-                                i, "double",
-                                [sample](void* p) { *reinterpret_cast<double*>(p) = sample; },
-                                [sample](void* p) { return std::fabs(*reinterpret_cast<double*>(p) - sample) < 1e-9; }
-                                });
-                        }
-                        else if (m.type == intDesc) {
-                            int sample = static_cast<int>(i) * 7 + 1;
-                            tests.push_back({
-                                i, "int",
-                                [sample](void* p) { *reinterpret_cast<int*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<int*>(p) == sample; }
-                                });
-                        }
-                        else if (m.type == uintDesc) {
-                            unsigned sample = static_cast<unsigned>(i) * 11u + 3u;
-                            tests.push_back({
-                                i, "unsigned",
-                                [sample](void* p) { *reinterpret_cast<unsigned*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<unsigned*>(p) == sample; }
-                                });
-                        }
-                        else if (m.type == int64Desc) {
-                            long long sample = static_cast<long long>(i) * 100000000LL + 5LL;
-                            tests.push_back({
-                                i, "long long",
-                                [sample](void* p) { *reinterpret_cast<long long*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<long long*>(p) == sample; }
-                                });
-                        }
-                        else if (m.type == uint64Desc) {
-                            unsigned long long sample = static_cast<unsigned long long>(i) * 100000000ULL + 9ULL;
-                            tests.push_back({
-                                i, "unsigned long long",
-                                [sample](void* p) { *reinterpret_cast<unsigned long long*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<unsigned long long*>(p) == sample; }
-                                });
-                        }
-                        else if (m.type == boolDesc) {
-                            bool sample = (i % 2) == 0;
-                            tests.push_back({
-                                i, "bool",
-                                [sample](void* p) { *reinterpret_cast<bool*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<bool*>(p) == sample; }
-                                });
-                        }
-                        else if (stringDesc && m.type == stringDesc) {
-                            std::string sample = std::string("test_str_") + std::to_string(i);
-                            tests.push_back({
-                                i, "std::string",
-                                [sample](void* p) { *reinterpret_cast<std::string*>(p) = sample; },
-                                [sample](void* p) { return *reinterpret_cast<std::string*>(p) == sample; }
-                                });
+                        // Run runtime assign/verify tests
+                        bool runtime_ok = true;
+                        if (runtime_tests.empty()) {
+                            std::cout << "    -> WARN: no supported primitive members found; cannot validate runtime read/write" << std::endl;
+                            runtime_ok = false;
                         }
                         else {
-                            std::cout << "    -> skipping member[" << i << "] type='" << m.type->ToString() << "' (unsupported for assignment/comparison)\n";
-                        }
-                    } // end for members
-
-                    // Assign values
-                    for (const auto& te : tests) {
-                        void* addr = sdesc->members[te.idx].get_ptr(&v);
-                        te.assign(addr);
-                    }
-
-                    // Verify assignments in-place (runtime read/write)
-                    bool values_ok = true;
-                    if (tests.empty()) {
-                        std::cout << "    -> WARN: no supported primitive members found; cannot validate values\n";
-                        values_ok = false;
-                    }
-                    else {
-                        for (const auto& te : tests) {
-                            void* addr = sdesc->members[te.idx].get_ptr(&v);
-                            bool ok = false;
-                            try { ok = te.compare(addr); }
-                            catch (...) { ok = false; }
-                            if (!ok) {
-                                values_ok = false;
-                                std::cout << "    -> MISMATCH: member[" << te.idx << "] type=" << te.name << "\n";
+                            for (const auto& rt : runtime_tests) {
+                                void* addr = members[rt.idx].get_ptr(&v);
+                                try {
+                                    rt.assign(addr);                    // write sample
+                                }
+                                catch (...) {
+                                    std::cout << "    -> EXCEPTION assigning member[" << rt.idx << "]" << std::endl;
+                                    runtime_ok = false;
+                                    continue;
+                                }
+                                bool ok = false;
+                                try { ok = rt.verify_inplace(addr); }   // read & compare
+                                catch (...) { ok = false; }
+                                std::cout << "    -> runtime member[" << rt.idx << "] (" << rt.type_name << "): " << (ok ? "OK" : "MISMATCH") << std::endl;
+                                if (!ok) runtime_ok = false;
                             }
                         }
-                        ENGINE_PRINT( EngineLogging::LogLevel::Warn ,"    -> WARN: fewer than 3 members; cannot fully validate values\n");
-                        values_ok = false;
-                    }
-                    ENGINE_PRINT(
-                        EngineLogging::LogLevel::Info, "  Runtime read/write via get_ptr: ", (values_ok ? "OK" : "MISMATCH"), "\n");
-                    if (!values_ok) reflection_ok = false;
-                }
-                catch (const std::exception& ex) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: exception during runtime read/write: " , ex.what() , "\n");
-                    reflection_ok = false;
-                }
 
-            }
-        }
+                        ENGINE_PRINT(EngineLogging::LogLevel::Info, "Runtime read/write via get_ptr status: ", (runtime_ok ? "OK" : "MISMATCH"));
+                        if (!runtime_ok) reflection_ok = false;
+                    }
+                    catch (const std::exception& ex) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: exception during runtime read/write: ", ex.what());
+                        reflection_ok = false;
+                    }
+                } // end if metadata ok
+            } // end else sdesc
+        } // end else td
 
         // --- Serialization checks (uses TypeDescriptor::Serialize / SerializeJson / Deserialize) ---
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "\n[2] Serialization + round-trip checks\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[2] Serialization + round-trip checks");
 
         if (!td) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "SKIP: serialization checks because TypeDescriptor was not available\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "SKIP: serialization checks because TypeDescriptor was not available");
             serialization_ok = false;
         }
         else {
@@ -272,11 +275,13 @@ bool Engine::Initialize() {
                 T src{};
                 auto* sdesc = dynamic_cast<TypeDescriptor_Struct*>(td);
                 if (!sdesc) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Error,"FAIL: not a struct descriptor; cannot serialize\n");
+                    ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: not a struct descriptor; cannot serialize");
                     serialization_ok = false;
                 }
                 else {
-                    // prepare known descriptors (some may throw if not registered; catch that)
+                    auto members = sdesc->GetMembers();
+
+                    // get primitive descriptors
                     TypeDescriptor* floatDesc = nullptr; TypeDescriptor* doubleDesc = nullptr;
                     TypeDescriptor* intDesc = nullptr; TypeDescriptor* uintDesc = nullptr;
                     TypeDescriptor* int64Desc = nullptr; TypeDescriptor* uint64Desc = nullptr;
@@ -299,25 +304,23 @@ bool Engine::Initialize() {
                     try { stringDesc = TypeResolver<std::string>::Get(); }
                     catch (...) {}
 
-                    struct TestEntry {
+                    struct SerTest {
                         size_t idx;
                         std::string type_name;
-                        std::function<void(void*)> assign;
-                        std::function<bool(const void*, const void*)> compare;
+                        std::function<void(void*)> assign; // populate src
+                        std::function<bool(const void*, const void*)> compare; // compare src slot vs dst slot
                     };
-                    std::vector<TestEntry> tests;
+                    std::vector<SerTest> ser_tests;
 
-                    // Build tests for each supported member
-                    for (size_t i = 0; i < sdesc->members.size(); ++i) {
-                        const auto& m = sdesc->members[i];
-                        if (!m.type || !m.get_ptr) {
-                            std::cout << "  -> skipping member[" << i << "] (null type or no get_ptr)\n";
-                            continue;
-                        }
+                    // Build serialization tests
+                    for (size_t i = 0; i < members.size(); ++i) {
+                        const auto& m = members[i];
+                        if (!m.type || !m.get_ptr) continue;
 
                         if (m.type == floatDesc) {
                             float sample = 1.2345f + static_cast<float>(i) * 0.5f;
-                            tests.push_back({ i, "float",
+                            ser_tests.push_back({
+                                i, "float",
                                 [sample](void* p) { *reinterpret_cast<float*>(p) = sample; },
                                 [sample](const void* a, const void* b) {
                                     float va = *reinterpret_cast<const float*>(a);
@@ -328,7 +331,8 @@ bool Engine::Initialize() {
                         }
                         else if (m.type == doubleDesc) {
                             double sample = 1.2345 + static_cast<double>(i) * 0.5;
-                            tests.push_back({ i, "double",
+                            ser_tests.push_back({
+                                i, "double",
                                 [sample](void* p) { *reinterpret_cast<double*>(p) = sample; },
                                 [sample](const void* a, const void* b) {
                                     double va = *reinterpret_cast<const double*>(a);
@@ -339,149 +343,149 @@ bool Engine::Initialize() {
                         }
                         else if (m.type == intDesc) {
                             int sample = static_cast<int>(i) * 7 + 1;
-                            tests.push_back({ i, "int",
+                            ser_tests.push_back({
+                                i, "int",
                                 [sample](void* p) { *reinterpret_cast<int*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const int*>(a) == *reinterpret_cast<const int*>(b);
                                 }
                                 });
                         }
                         else if (m.type == uintDesc) {
                             unsigned sample = static_cast<unsigned>(i) * 11u + 3u;
-                            tests.push_back({ i, "unsigned",
+                            ser_tests.push_back({
+                                i, "unsigned",
                                 [sample](void* p) { *reinterpret_cast<unsigned*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const unsigned*>(a) == *reinterpret_cast<const unsigned*>(b);
                                 }
                                 });
                         }
                         else if (m.type == int64Desc) {
                             long long sample = static_cast<long long>(i) * 1000000LL + 5LL;
-                            tests.push_back({ i, "long long",
+                            ser_tests.push_back({
+                                i, "long long",
                                 [sample](void* p) { *reinterpret_cast<long long*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const long long*>(a) == *reinterpret_cast<const long long*>(b);
                                 }
                                 });
                         }
                         else if (m.type == uint64Desc) {
                             unsigned long long sample = static_cast<unsigned long long>(i) * 1000000ULL + 9ULL;
-                            tests.push_back({ i, "unsigned long long",
+                            ser_tests.push_back({
+                                i, "unsigned long long",
                                 [sample](void* p) { *reinterpret_cast<unsigned long long*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const unsigned long long*>(a) == *reinterpret_cast<const unsigned long long*>(b);
                                 }
                                 });
                         }
                         else if (m.type == boolDesc) {
                             bool sample = (i % 2) == 0;
-                            tests.push_back({ i, "bool",
+                            ser_tests.push_back({
+                                i, "bool",
                                 [sample](void* p) { *reinterpret_cast<bool*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const bool*>(a) == *reinterpret_cast<const bool*>(b);
                                 }
                                 });
                         }
                         else if (stringDesc && m.type == stringDesc) {
                             std::string sample = std::string("test_str_") + std::to_string(i);
-                            tests.push_back({ i, "std::string",
+                            ser_tests.push_back({
+                                i, "std::string",
                                 [sample](void* p) { *reinterpret_cast<std::string*>(p) = sample; },
-                                [sample](const void* a, const void* b) {
+                                [](const void* a, const void* b) {
                                     return *reinterpret_cast<const std::string*>(a) == *reinterpret_cast<const std::string*>(b);
                                 }
                                 });
                         }
-                        else {
-                            std::cout << "  -> skipping member[" << i << "] type='" << m.type->ToString() << "' (unsupported for assignment/comparison)\n";
-                        }
-                    } // for members
+                    } // end build ser_tests
 
-                    // Assign values into src for all tests
-                    for (const auto& te : tests) {
-                        void* addr = sdesc->members[te.idx].get_ptr(&src);
-                        try { te.assign(addr); }
-                        catch (...) {
-                            std::cout << "  -> exception assigning member[" << te.idx << "]\n";
-                        }
+                    // Populate src using tests
+                    for (const auto& st : ser_tests) {
+                        void* addr = members[st.idx].get_ptr(&src);
+                        try { st.assign(addr); }
+                        catch (...) { std::cout << "  -> exception assigning member[" << st.idx << "]" << std::endl; }
                     }
-                    if (sdesc->members.size() >= 3) {
-                        *reinterpret_cast<float*>(sdesc->members[0].get_ptr(&src)) = 10.0f;
-                        *reinterpret_cast<float*>(sdesc->members[1].get_ptr(&src)) = -3.5f;
-                        *reinterpret_cast<float*>(sdesc->members[2].get_ptr(&src)) = 0.25f;
+
+                    // Optionally set canonical floats if available
+                    if (members.size() >= 3) {
+                        try {
+                            *reinterpret_cast<float*>(members[0].get_ptr(&src)) = 10.0f;
+                            *reinterpret_cast<float*>(members[1].get_ptr(&src)) = -3.5f;
+                            *reinterpret_cast<float*>(members[2].get_ptr(&src)) = 0.25f;
+                        }
+                        catch (...) {}
                     }
                     else {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "  WARN: not enough members to populate canonical values\n");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "WARN: not enough members to populate canonical values");
                     }
+
                     // 1) Text Serialize
                     std::stringstream ss;
                     td->Serialize(&src, ss);
                     std::string text_out = ss.str();
-                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "  Text Serialize output: ", text_out + "\n");
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Text Serialize output: ", text_out.c_str());
+
                     // 2) rapidjson SerializeJson -> string
                     rapidjson::Document dout;
                     td->SerializeJson(&src, dout);
                     rapidjson::StringBuffer sb;
                     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
                     dout.Accept(writer);
-                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "  rapidjson Serialize output: ",  sb.GetString(), "\n");
-                    // 3) Round-trip deserialize
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "rapidjson Serialize output: ", sb.GetString());
+
+                    // 3) Round-trip deserialize into dst
                     T dst{};
                     rapidjson::Document din;
                     din.Parse(sb.GetString());
                     td->Deserialize(&dst, din);
 
-                    // Compare tested members
+                    // Compare tested members src vs dst
                     size_t matched = 0;
-                    for (const auto& te : tests) {
-                        const void* a = sdesc->members[te.idx].get_ptr(&src);
-                        const void* b = sdesc->members[te.idx].get_ptr(&dst);
-                        bool ok = false;
-                        try { ok = te.compare(a, b); }
-                        catch (...) { ok = false; }
-                        std::cout << "  member[" << te.idx << "] (" << te.type_name << "): " << (ok ? "MATCH" : "MISMATCH") << "\n";
-                        if (ok) ++matched;
+                    if (ser_tests.empty()) {
+                        std::cout << "WARN: no supported members were tested; ensure primitive descriptors are registered." << std::endl;
+                    }
+                    else {
+                        for (const auto& st : ser_tests) {
+                            const void* a = members[st.idx].get_ptr(&src);
+                            const void* b = members[st.idx].get_ptr(&dst);
+                            bool ok = false;
+                            try { ok = st.compare(a, b); }
+                            catch (...) { ok = false; }
+                            std::cout << "  member[" << st.idx << "] (" << st.type_name << "): " << (ok ? "MATCH" : "MISMATCH") << std::endl;
+                            if (ok) ++matched;
+                        }
                     }
 
-                    bool match = (!tests.empty() && matched == tests.size());
-                    if (tests.empty()) {
-                        std::cout << "  WARN: no supported members were tested; ensure primitive descriptors are registered.\n";
-                    }
-                    std::cout << "  Tested members: " << tests.size() << ", matched: " << matched << "\n";
-                    ENGINE_PRINT("  Round-trip equality: ", (match ? "OK" : "MISMATCH"), "\n");
-                    if (!match) serialization_ok = false;
+                    bool match_all = (!ser_tests.empty() && matched == ser_tests.size());
+                    ENGINE_PRINT("Round-trip equality: ", (match_all ? "OK" : "MISMATCH"));
+                    if (!match_all) serialization_ok = false;
                 }
             }
             catch (...) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error,
-                    "FAIL: unknown error during serialization tests\n");
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "FAIL: unknown error during serialization tests");
                 serialization_ok = false;
             }
         }
 
         // --- Registry introspection (optional) ---
-        ENGINE_PRINT("\n[3] Registry contents (keys):\n");
-
+        ENGINE_PRINT("[3] Registry contents (keys):");
         for (const auto& kv : TypeDescriptor::type_descriptor_lookup()) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "  ", kv.first, "\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "  ", kv.first.c_str());
         }
-        // --- Summary & exit code ---
 
-        ENGINE_PRINT("\n=== SUMMARY ===\n");
-        ENGINE_PRINT(reflection_ok ? EngineLogging::LogLevel::Info : EngineLogging::LogLevel::Error, "Reflection: ", (reflection_ok ? "PASS" : "FAIL"), "\n");
-        ENGINE_PRINT(serialization_ok ? EngineLogging::LogLevel::Info : EngineLogging::LogLevel::Error, "Serialization: ", (serialization_ok ? "PASS" : "FAIL"), "\n");
+        // --- Summary & exit code ---
+        ENGINE_PRINT("=== SUMMARY ===");
+        ENGINE_PRINT(reflection_ok ? EngineLogging::LogLevel::Info : EngineLogging::LogLevel::Error, "Reflection: ", (reflection_ok ? "PASS" : "FAIL"));
+        ENGINE_PRINT(serialization_ok ? EngineLogging::LogLevel::Info : EngineLogging::LogLevel::Error, "Serialization: ", (serialization_ok ? "PASS" : "FAIL"));
 
         if (!reflection_ok) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-                R"(
-                NOTE: if you hit a linker error mentioning GetPrimitiveDescriptor<float&>() or you see member types printed with '&',
-                apply the macro fix to strip references when resolving member types in the macro:
-                Replace the TypeResolver line in REFL_REGISTER_PROPERTY with:
-                  TypeResolver<std::remove_reference_t<decltype(std::declval<T>().VARIABLE)>>::Get()
-                This prevents requesting descriptors for reference types (e.g. float&).
-                )" "\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "NOTE: if you hit a linker error mentioning GetPrimitiveDescriptor<float&>() or you see member types printed with ampersand, apply the macro fix to strip references when resolving member types in the macro: TypeResolver<std::remove_reference_t<decltype(std::declval<T>().VARIABLE)>>::Get()");
         }
-
-	}
+    }
 #endif
 
 	// Note: Scene loading and lighting setup moved to InitializeGraphicsResources()

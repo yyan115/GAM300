@@ -4,10 +4,7 @@
 #include "ECS/ECSManager.hpp"
 #include "Asset Manager/AssetManager.hpp"
 
-ENGINE_API bool InstantiatePrefabFromFile(ECSManager& ecs,
-    AssetManager& assets,
-    const std::string& prefabPath,
-    Entity e);
+ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath);
 
 // NEW: Save an entity to a prefab file using reflection JSON
 ENGINE_API bool SaveEntityToPrefabFile(ECSManager& ecs,

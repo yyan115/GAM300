@@ -172,6 +172,7 @@
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
+    <ClCompile Include="src\Reflection\Base64.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
