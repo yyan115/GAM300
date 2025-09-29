@@ -722,16 +722,17 @@ TypeDescriptor* TypeResolver<GUID_128>::Get()
 template<>
 ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<long long>() {
     static TypeDescriptor_LongLong type_desc;
-    std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-    if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+    // For lines 726 and 734, replace with:
+    const char* desc_name = typeid(type_desc).name();  // Or a hardcoded string like "long long"
+    if (TYPE_DESCRIPTOR_LOOKUP.count(desc_name) == 0) TYPE_DESCRIPTOR_LOOKUP[desc_name] = &type_desc;
     return &type_desc;
 }
 
 template<>
 ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<unsigned long long>() {
     static TypeDescriptor_UnsignedLongLong type_desc;
-    std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-    if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+    const char* desc_name = typeid(type_desc).name();  // Or a hardcoded string like "unsigned long long"
+    if (TYPE_DESCRIPTOR_LOOKUP.count(desc_name) == 0) TYPE_DESCRIPTOR_LOOKUP[desc_name] = &type_desc;
     return &type_desc;
 }
 #endif
