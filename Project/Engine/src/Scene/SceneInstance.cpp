@@ -107,7 +107,7 @@ void SceneInstance::Initialize() {
 			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
 			audioComp.Volume = 0.8f;
 			audioComp.Loop = false;
-			audioComp.PlayOnAwake = true;
+			audioComp.PlayOnStart = true;
 			audioComp.Spatialize = false;
 			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
 			
