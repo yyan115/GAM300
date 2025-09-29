@@ -1,9 +1,10 @@
 #pragma once
 #include "Asset Manager/Asset.hpp"
+#include "../Engine.h"
 
 typedef struct FMOD_SOUND FMOD_SOUND;
 
-class Audio : public IAsset {
+class ENGINE_API Audio : public IAsset {
 public:
 	FMOD_SOUND* sound;
 	std::string assetPath;

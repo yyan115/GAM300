@@ -95,20 +95,25 @@ void GraphicsManager::Render()
 	// Render all items in the queue
 	for (const auto& renderItem : renderQueue) 
 	{
-		// Cast to ModelRenderItem since that's what we have for now
-		// Later you can add a switch statement for different types
+		// Cast to different component types
 		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
 		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
+		const SpriteRenderComponent* spriteItem = dynamic_cast<const SpriteRenderComponent*>(renderItem.get());
+		const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get());
 
-		if (modelItem) 
+		if (modelItem)
 		{
 			RenderModel(*modelItem);
 		}
-		else if (textItem) 
+		else if (textItem)
 		{
 			RenderText(*textItem);
 		}
-		else if (const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get()))
+		else if (spriteItem)
+		{
+			RenderSprite(*spriteItem);
+		}
+		else if (debugItem)
 		{
 			RenderDebugDraw(*debugItem);
 		}
@@ -136,8 +141,8 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	}*/
 	ApplyLighting(*item.shader);
 
-	// Draw the model
-	item.model->Draw(*item.shader, *currentCamera);
+	// Draw the model with entity material
+	item.model->Draw(*item.shader, *currentCamera, item.material);
 
 	//std::cout << "rendered model\n";
 }
@@ -416,6 +421,115 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 #endif
+}
+
+void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
+{
+	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO) 
+	{
+		return;
+	}
+
+	// Enable blending for sprite transparency
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Activate shader
+	item.shader->Activate();
+
+	// Set sprite-specific uniforms
+	glm::vec4 spriteColor = glm::vec4(item.color, item.alpha);
+	item.shader->setVec4("spriteColor", spriteColor);
+	item.shader->setVec2("uvOffset", item.uvOffset);
+	item.shader->setVec2("uvScale", item.uvScale);
+
+	// Set up matrices based on rendering mode
+	if (item.is3D) 
+	{
+		// 3D world space sprite (billboard)
+		glm::mat4 modelMatrix = glm::mat4(1.0f);
+		modelMatrix = glm::translate(modelMatrix, item.position);
+
+		// Optional: Make sprite face camera (billboard effect)
+		if (currentCamera && item.enableBillboard) 
+		{
+			// Create rotation matrix to face camera
+			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
+			glm::vec3 up = currentCamera->Up;
+			glm::vec3 right = glm::normalize(glm::cross(forward, up));
+			up = glm::cross(right, forward);
+
+			glm::mat4 billboardMatrix = glm::mat4(
+				glm::vec4(right, 0.0f),
+				glm::vec4(up, 0.0f),
+				glm::vec4(-forward, 0.0f),
+				glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+			);
+			modelMatrix = modelMatrix * billboardMatrix;
+		}
+
+		// Apply rotation if specified
+		if (item.rotation != 0.0f) 
+		{
+			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+		}
+
+		// Apply scale
+		modelMatrix = glm::scale(modelMatrix, item.scale);
+
+		Setup3DSpriteMatrices(*item.shader, modelMatrix);
+	}
+	else 
+	{
+		// 2D screen space sprite
+		Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+	}
+
+	// Bind texture
+	glActiveTexture(GL_TEXTURE0);
+	item.texture->Bind(0);
+	item.shader->setInt("spriteTexture", 0);
+
+	item.spriteVAO->Bind();
+	// The SpriteSystem should have already bound the VAO, so just draw
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	item.spriteVAO->Unbind();
+	// Unbind texture
+	item.texture->Unbind(0);
+
+	// Disable blending
+	glDisable(GL_BLEND);
+}
+
+void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
+{
+
+	// Use orthographic projection for 2D sprites
+	glm::mat4 projection = glm::ortho(0.0f, (float)RunTimeVar::window.width,
+		0.0f, (float)RunTimeVar::window.height);
+
+	// Create model matrix
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, position);
+
+	// Apply rotation around the center of the sprite
+	if (rotation != 0.0f) 
+	{
+		model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
+		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
+	}
+
+	model = glm::scale(model, scale);
+	shader.setMat4("projection", projection);
+	shader.setMat4("model", model);
+	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D
+}
+
+void GraphicsManager::Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix)
+{
+	SetupMatrices(shader, modelMatrix);
 }
 
 glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)

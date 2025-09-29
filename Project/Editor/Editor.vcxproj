@@ -35,12 +35,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\NameComponentReflection.cpp" />
     <ClCompile Include="src\GUIManager.cpp" />
     <ClCompile Include="src\EditorState.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />
     <ClCompile Include="src\EditorInputManager.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
+    <ClCompile Include="src\Panels\MaterialInspector.cpp" />
     <ClCompile Include="src\RaycastUtil.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Panels\ConsolePanel.cpp" />

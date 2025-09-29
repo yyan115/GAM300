@@ -79,6 +79,17 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, needsAlpha ? 4 : 3);
 #endif
 
+	// Check if image loading failed
+	if (!bytes) {
+		std::cerr << "[TEXTURE]: Failed to load image: " << assetPath << std::endl;
+		std::cerr << "[TEXTURE]: stbi_failure_reason: " << stbi_failure_reason() << std::endl;
+		std::cerr << "[TEXTURE]: Current working directory: " << std::filesystem::current_path() << std::endl;
+		std::cerr << "[TEXTURE]: File exists check: " << std::filesystem::exists(assetPath) << std::endl;
+		return std::string{}; // Return empty string to indicate failure
+	}
+
+	std::cout << "[TEXTURE]: Successfully loaded image: " << assetPath << " (" << widthImg << "x" << heightImg << ", " << numColCh << " channels)" << std::endl;
+
 	std::string outPath{};
 
 #ifdef EDITOR

@@ -11,6 +11,7 @@
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
 #include "DebugDraw/DebugDrawComponent.hpp"
+#include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
@@ -69,4 +70,10 @@ private:
         glm::vec3(-4.0f,  2.0f, -12.0f),
         glm::vec3(0.0f,  0.0f, -1.0f)
     };
+
+    // Sprite rendering methods
+    void RenderSprite(const SpriteRenderComponent& item);
+    void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
+        const glm::vec3& scale, float rotation);
+    void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
 };

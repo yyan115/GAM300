@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Graphics/Material.hpp"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
@@ -154,14 +157,17 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("material.hasRoughnessMap", hasTexture(TextureType::ROUGHNESS));*/
 
 	// Bind each texture type
-	for (const auto& [type, textureInfo] : m_textureInfo)
+	for (auto it = m_textureInfo.begin(); it != m_textureInfo.end(); ++it)
 	{
+		const TextureType& type = it->first;
+		const std::unique_ptr<TextureInfo>& textureInfo = it->second;
+
 		//std::cout << "[MATERIAL] DEBUG: Processing texture type " << (int)type << ", textureInfo valid: " << (textureInfo != nullptr) << std::endl;
 		if (textureInfo) {
 			//std::cout << "[MATERIAL] DEBUG: Texture ID: " << textureInfo->texture->ID << std::endl;
 		}
 
-		if (textureInfo && textureUnit < 16)
+		if (textureInfo && textureInfo->texture && textureUnit < 16)
 		{
 			glActiveTexture(GL_TEXTURE0 + textureUnit);
 			//std::cout << "[MATERIAL] DEBUG: Activating texture unit " << textureUnit << std::endl;
@@ -251,3 +257,169 @@ void Material::DebugPrintProperties() const
 	//std::cout << "  Has Diffuse Map: " << HasTexture(TextureType::DIFFUSE) << std::endl;
 	//std::cout << "  Has Specular Map: " << HasTexture(TextureType::SPECULAR) << std::endl;
 }
+
+// Helper method for path resolution
+std::filesystem::path Material::ResolveToProjectRoot(const std::filesystem::path& path) {
+	std::filesystem::path resolvedPath = path;
+
+	// Convert to absolute path to ensure we save to the correct location
+	if (!resolvedPath.is_absolute()) {
+		// Find the project root directory by looking for Build folder
+		std::filesystem::path projectRoot = std::filesystem::current_path();
+		while (projectRoot.has_parent_path()) {
+			if (std::filesystem::exists(projectRoot / "Build") &&
+				std::filesystem::exists(projectRoot / "Resources")) {
+				break;
+			}
+			projectRoot = projectRoot.parent_path();
+		}
+
+		// Debug logging
+		std::cout << "[Material] DEBUG - Current path: " << std::filesystem::current_path() << std::endl;
+		std::cout << "[Material] DEBUG - Found project root: " << projectRoot << std::endl;
+		std::cout << "[Material] DEBUG - Input path: " << path << std::endl;
+
+		resolvedPath = projectRoot / resolvedPath;
+		std::cout << "[Material] DEBUG - Combined path: " << resolvedPath << std::endl;
+	}
+
+	// Normalize the path to resolve any .. components
+	std::filesystem::path finalPath = std::filesystem::weakly_canonical(resolvedPath);
+	std::cout << "[Material] DEBUG - Final resolved path: " << finalPath << std::endl;
+
+	return finalPath;
+}
+
+std::string Material::CompileToResource(const std::string& assetPath, bool forAndroid) {
+	std::filesystem::path p(assetPath);
+	p = ResolveToProjectRoot(p);
+
+	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
+
+	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
+	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
+	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
+	std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
+	std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
+	std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+
+	std::ofstream materialFile(materialPath, std::ios::binary);
+	if (materialFile.is_open()) {
+		// Write material name
+		size_t nameLength = m_name.size();
+		materialFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
+		materialFile.write(m_name.data(), nameLength);
+
+		// Write basic material properties
+		materialFile.write(reinterpret_cast<const char*>(&m_ambient), sizeof(m_ambient));
+		materialFile.write(reinterpret_cast<const char*>(&m_diffuse), sizeof(m_diffuse));
+		materialFile.write(reinterpret_cast<const char*>(&m_specular), sizeof(m_specular));
+		materialFile.write(reinterpret_cast<const char*>(&m_emissive), sizeof(m_emissive));
+		materialFile.write(reinterpret_cast<const char*>(&m_shininess), sizeof(m_shininess));
+		materialFile.write(reinterpret_cast<const char*>(&m_opacity), sizeof(m_opacity));
+
+		// Write PBR properties
+		materialFile.write(reinterpret_cast<const char*>(&m_metallic), sizeof(m_metallic));
+		materialFile.write(reinterpret_cast<const char*>(&m_roughness), sizeof(m_roughness));
+		materialFile.write(reinterpret_cast<const char*>(&m_ao), sizeof(m_ao));
+
+		// Write texture info
+		size_t textureCount = m_textureInfo.size();
+		materialFile.write(reinterpret_cast<const char*>(&textureCount), sizeof(textureCount));
+		for (auto it = m_textureInfo.begin(); it != m_textureInfo.end(); ++it) {
+			// Write texture type
+			materialFile.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
+			// Write texture path length and path
+			size_t pathLength = it->second->filePath.size();
+			materialFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
+			materialFile.write(it->second->filePath.data(), pathLength);
+		}
+
+		materialFile.close();
+		return materialPath;
+	}
+
+	return std::string{};
+}
+
+bool Material::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
+	std::filesystem::path resourcePathFS;
+
+	if (!resourcePath.empty()) {
+		resourcePathFS = std::filesystem::path(resourcePath);
+	} else {
+		// If no resource path provided, derive it from asset path
+		std::filesystem::path assetPathFS(assetPath);
+		assetPathFS = ResolveToProjectRoot(assetPathFS);
+		resourcePathFS = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".mat";
+	}
+
+	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
+	std::string finalResourcePath = resourcePathFS.generic_string();
+
+	std::cout << "[Material] LOAD - Input path: " << assetPath << std::endl;
+	std::cout << "[Material] LOAD - Computed path: " << finalResourcePath << std::endl;
+	std::cout << "[Material] LOAD - Working directory: " << std::filesystem::current_path() << std::endl;
+
+	std::ifstream materialFile(finalResourcePath, std::ios::binary);
+	if (materialFile.is_open()) {
+		// Read material name
+		size_t nameLength;
+		materialFile.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
+		std::string name(nameLength, '\0');
+		materialFile.read(reinterpret_cast<char*>(&name[0]), nameLength);
+		m_name = name;
+
+		// Read basic material properties
+		materialFile.read(reinterpret_cast<char*>(&m_ambient), sizeof(m_ambient));
+		materialFile.read(reinterpret_cast<char*>(&m_diffuse), sizeof(m_diffuse));
+		materialFile.read(reinterpret_cast<char*>(&m_specular), sizeof(m_specular));
+		materialFile.read(reinterpret_cast<char*>(&m_emissive), sizeof(m_emissive));
+		materialFile.read(reinterpret_cast<char*>(&m_shininess), sizeof(m_shininess));
+		materialFile.read(reinterpret_cast<char*>(&m_opacity), sizeof(m_opacity));
+
+		// Read PBR properties
+		materialFile.read(reinterpret_cast<char*>(&m_metallic), sizeof(m_metallic));
+		materialFile.read(reinterpret_cast<char*>(&m_roughness), sizeof(m_roughness));
+		materialFile.read(reinterpret_cast<char*>(&m_ao), sizeof(m_ao));
+
+		// Read texture info
+		size_t textureCount;
+		materialFile.read(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
+
+		// Clear existing textures
+		m_textureInfo.clear();
+
+		for (size_t i = 0; i < textureCount; ++i) {
+			TextureType textureType;
+			materialFile.read(reinterpret_cast<char*>(&textureType), sizeof(textureType));
+			size_t pathLength;
+			materialFile.read(reinterpret_cast<char*>(&pathLength), sizeof(pathLength));
+			std::string texturePath(pathLength, '\0');
+			materialFile.read(reinterpret_cast<char*>(&texturePath[0]), pathLength);
+
+			// Create texture info with path - defer actual texture loading to when needed
+			// This avoids meta file parsing issues and improves loading performance
+			auto textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
+			m_textureInfo[textureType] = std::move(textureInfo);
+			std::cout << "[Material] Restored texture: " << TextureTypeToString(textureType) << " -> " << texturePath << std::endl;
+		}
+
+		materialFile.close();
+		std::cout << "[Material] Successfully loaded material: " << m_name << " with " << m_textureInfo.size() << " textures" << std::endl;
+		return true;
+	}
+
+	std::cerr << "[Material] Failed to open material file: " << finalResourcePath << std::endl;
+	return false;
+}
+
+bool Material::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
+	return LoadResource(resourcePath, assetPath);
+}
+
+std::shared_ptr<AssetMeta> Material::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+	// Materials don't need extended meta data for now
+	return currentMetaData;
+}
+
