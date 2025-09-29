@@ -762,26 +762,6 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
                 ImGui::EndMenu();
             }
 
-            // Light Components
-            if (ImGui::BeginMenu("Lighting")) {
-                if (!ecsManager.HasComponent<DirectionalLightComponent>(entity)) {
-                    if (ImGui::MenuItem("Directional Light")) {
-                        AddComponent(entity, "DirectionalLightComponent");
-                    }
-                }
-                if (!ecsManager.HasComponent<PointLightComponent>(entity)) {
-                    if (ImGui::MenuItem("Point Light")) {
-                        AddComponent(entity, "PointLightComponent");
-                    }
-                }
-                if (!ecsManager.HasComponent<SpotLightComponent>(entity)) {
-                    if (ImGui::MenuItem("Spot Light")) {
-                        AddComponent(entity, "SpotLightComponent");
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
         } catch (const std::exception& e) {
             ImGui::Text("Error: %s", e.what());
         }

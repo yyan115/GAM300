@@ -84,6 +84,8 @@
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Serialization\Serializer.hpp" />
     <ClInclude Include="src\DebugDrawComponent.hpp" />
     <ClInclude Include="src\DebugDraw\DebugDrawComponent.hpp" />
@@ -174,6 +176,7 @@
     <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\Sound\AudioComponent.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\IRenderComponent.cpp" />

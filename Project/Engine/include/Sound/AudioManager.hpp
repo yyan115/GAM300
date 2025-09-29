@@ -78,11 +78,6 @@ public:
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
 
-    // Android platform specific
-#ifdef ANDROID
-    void SetAndroidAssetManager(void* assetManager);
-#endif
-
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown
@@ -116,10 +111,6 @@ private:
     // Global settings
     std::atomic<float> masterVolume{ 1.0f };
     std::atomic<bool> globalPaused{ false };
-
-#ifdef ANDROID
-    void* androidAssetManager = nullptr;
-#endif
 
     // Internal helpers
     void CleanupStoppedChannels();
