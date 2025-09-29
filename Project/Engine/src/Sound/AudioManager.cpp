@@ -556,7 +556,7 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 }
 
 #ifdef ANDROID
-void AudioSystem::SetAndroidAssetManager(void* assetManager) {
+void AudioManager::SetAndroidAssetManager(void* assetManager) {
     androidAssetManager = assetManager;
 }
 #endif
