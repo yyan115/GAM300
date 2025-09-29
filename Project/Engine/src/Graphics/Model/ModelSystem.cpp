@@ -6,6 +6,8 @@
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Transform/TransformComponent.hpp>
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
 
 #ifdef ANDROID
@@ -14,8 +16,16 @@
 
 bool ModelSystem::Initialise() 
 {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+        std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+        modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+        modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+    }
+
     ENGINE_PRINT("[ModelSystem] Initialized\n");
-    //std::cout << "[ModelSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -49,7 +59,7 @@ void ModelSystem::Update()
            // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting model for entity: %u", entity);
 #endif
             auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
-            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).worldMatrix);
+            modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
 
             gfxManager.Submit(std::move(modelRenderItem));
         }

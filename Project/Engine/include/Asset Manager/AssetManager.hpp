@@ -69,6 +69,23 @@ public:
 	//}
 
 	GUID_128 GetGUID128FromAssetMeta(const std::string& assetPath);
+	
+	template <typename T>
+	std::shared_ptr<T> LoadByGUID(const GUID_128& guid)
+	{
+		auto meta = GetAssetMeta(guid);
+		if (!meta) return nullptr;
+
+		// Ensure compiled resource exists (first touch)
+		if (!std::filesystem::exists(meta->compiledFilePath)) {
+			CompileAsset(meta->sourceFilePath, /*forceCompile=*/true);
+		}
+
+		// Load the resource using the paths from meta
+		return ResourceManager::GetInstance()
+			.LoadFromMeta<T>(guid, meta->compiledFilePath, meta->sourceFilePath);
+	}
+
 	std::shared_ptr<AssetMeta> GetAssetMeta(GUID_128 guid);
 
 	void InitializeSupportedExtensions();
@@ -82,6 +99,7 @@ public:
 	bool HandleMetaFileDeletion(const std::string& metaFilePath);
 	bool HandleResourceFileDeletion(const std::string& resourcePath);
 
+	std::string GetAssetPathFromGUID(const GUID_128 guid);
 	void CompileAllAssetsForAndroid();
 	void CompileAllAssetsForDesktop();
 
@@ -181,9 +199,12 @@ private:
 						}
 					}
 				}
+
+				// Copy compiled asset to root project Resources folder also.
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 			}
 
-			std::cout << std::endl;
 			return true;
 		}
 
@@ -221,6 +242,9 @@ private:
 				else {
 					ResourceManager::GetInstance().GetResource<Texture>(filePath);
 				}
+
+				// Copy compiled asset to root project Resources folder also.
+				FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 			}
 
 			return true;

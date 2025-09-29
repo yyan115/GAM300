@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
+#include "Sound/Audio.hpp"
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -98,6 +99,7 @@ std::string AssetManager::ExtractRelativeAndroidPath(const std::string& fullAndr
 }
 
 void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
+	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
 	std::string metaFilePath = assetPath + ".meta";
@@ -111,11 +113,13 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
 	}
 
+#ifndef ANDROID
 	// Check if the compiled resource file exists. If not, we need to recompile the asset.
 	if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
 		std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
 		CompileAsset(assetPath);
 	}
+#endif
 
 	assetMetaMap[assetMeta->guid] = assetMeta;
 }
@@ -189,23 +193,23 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 		std::filesystem::path filePathObj(assetPath);
 		std::string extension = filePathObj.extension().string();
 		if (textureExtensions.find(extension) != textureExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Texture>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Texture>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (audioExtensions.find(extension) != audioExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Audio>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Audio>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (fontExtensions.find(extension) != fontExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Font>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Font>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (modelExtensions.find(extension) != modelExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Model>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Model>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
-			ResourceManager::GetInstance().UnloadResource<Shader>(guid, assetPath, it->second->compiledFilePath);
+			ResourceManager::GetInstance().UnloadResource<Shader>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
 		else {
@@ -256,6 +260,11 @@ const std::unordered_set<std::string>& AssetManager::GetShaderExtensions() const
 }
 
 bool AssetManager::IsAssetExtensionSupported(const std::string& extension) const {
+	//for (auto& supported : supportedAssetExtensions) {
+	//	ENGINE_LOG_INFO("Extension: " + extension);
+	//	ENGINE_LOG_INFO("Supported: " + supported);
+	//}
+
 	return supportedAssetExtensions.find(extension) != supportedAssetExtensions.end();
 }
 
@@ -272,7 +281,6 @@ bool AssetManager::IsExtensionTexture(const std::string& extension) const {
 }
 
 bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
-	// Get the compiled resource file path from the asset's AssetMeta.
 	std::string assetFilePath = metaFilePath.substr(0, metaFilePath.size() - 5); // Remove ".meta"
 	bool failedToUnload = false;
 	for (const auto& pair : assetMetaMap) {
@@ -280,7 +288,7 @@ bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
 			std::string resourcePath = pair.second->compiledFilePath;
 			GUID_128 guid = pair.first;
 
-			if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
+			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
 				std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
 				return true;
 			}
@@ -303,12 +311,10 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 	bool failedToUnload = false;
 	for (const auto& pair : assetMetaMap) {
 		if (pair.second->compiledFilePath == resourcePath) {
-			std::string assetFilePath = pair.second->sourceFilePath;;
-			std::string metaPath = assetFilePath + ".meta";
 			GUID_128 guid = pair.first;
 
-			if (ResourceManager::GetInstance().UnloadResource(guid, assetFilePath, resourcePath)) {
-				std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaPath << std::endl;
+			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
+				std::cout << "[AssetManager] Successfully deleted resource file: " << resourcePath << std::endl;
 				return true;
 			}
 			else {
@@ -326,6 +332,17 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 	return true;
 }
 
+std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
+	ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
+	auto it = assetMetaMap.find(guid);
+	if (it != assetMetaMap.end()) {
+		return it->second->sourceFilePath;
+	}
+
+	ENGINE_LOG_ERROR("[AssetManager] ERROR: Asset meta with GUID not found.");
+	return "";
+}
+
 void AssetManager::CompileAllAssetsForAndroid() {
 	// SHOULD RUN ON ANOTHER THREAD, TBD
 	std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
@@ -341,13 +358,22 @@ void AssetManager::CompileAllAssetsForAndroid() {
 		CompileAsset(assetPath, true, true);
 	}
 
+	// Copy scenes to Android resources.
+	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+		if (std::filesystem::is_regular_file(p)) {
+			if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {
+				ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
+			}
+		}
+	}
+
+	// Output the asset manifest for Android.
 	std::filesystem::path manifestFileP(GetAndroidResourcesPath() / "asset_manifest.txt");
 	std::ofstream out(manifestFileP.generic_string());
 	if (!out.is_open()) {
 		std::cerr << "[AssetManager] Failed to open manifest file for writing\n";
 		return;
 	}
-
 	for (auto& p : std::filesystem::recursive_directory_iterator("Resources")) {
 		if (std::filesystem::is_regular_file(p)) {
 			out << p.path().generic_string() << "\n";
@@ -355,8 +381,6 @@ void AssetManager::CompileAllAssetsForAndroid() {
 	}
 
 	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
-
-
 	std::cout << "[AssetManager] Finished compiling assets for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
 }
 
@@ -373,6 +397,15 @@ void AssetManager::CompileAllAssetsForDesktop() {
 			assetPath = pair.second->sourceFilePath;
 		}
 		CompileAsset(assetPath, true);
+	}
+
+	// Copy scenes to resources.
+	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+		if (std::filesystem::is_regular_file(p)) {
+			if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
+				ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+			}
+		}
 	}
 
 	std::cout << "[AssetManager] Finished compiling assets for Desktop." << std::endl << std::endl;

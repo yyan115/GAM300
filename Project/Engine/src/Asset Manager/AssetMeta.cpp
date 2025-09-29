@@ -3,6 +3,8 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include <rapidjson/document.h>
 #include "Logging.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver)
 {
@@ -15,11 +17,22 @@ void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath
 
 void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 {
-	std::ifstream ifs(metaFilePath);
-	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-
+	ENGINE_LOG_INFO("PopulateAssetMetaFromFile");
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_LOG_DEBUG("[AssetMeta] ERROR: Platform not available for asset discovery!");
+		return;
+	}
+	std::vector<uint8_t> metaFileData = platform->ReadAsset(metaFilePath);
 	rapidjson::Document doc;
-	doc.Parse(jsonContent.c_str());
+	if (!metaFileData.empty()) {
+		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+		doc.ParseStream(ms);
+	}
+	if (doc.HasParseError()) {
+		ENGINE_LOG_DEBUG("[AssetMeta]: Rapidjson parse error: " + metaFilePath);
+	}
 
 	const auto& assetMetaData = doc["AssetMetaData"];
 	if (assetMetaData.HasMember("version")) {
@@ -44,8 +57,6 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	}
 
 	lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
-
-	ifs.close();
 }
 
 void TextureMeta::PopulateTextureMeta(uint32_t _ID, const std::string& _type, uint32_t _unit)
@@ -59,13 +70,23 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 {
 	AssetMeta::PopulateAssetMetaFromFile(metaFilePath);
 
-	std::ifstream ifs(metaFilePath);
-	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_LOG_DEBUG("[AssetMeta] ERROR: Platform not available for asset discovery!");
+		return;
+	}
+	std::vector<uint8_t> metaFileData = platform->ReadAsset(metaFilePath);
 	rapidjson::Document doc;
-	doc.Parse(jsonContent.c_str());
+	if (!metaFileData.empty()) {
+		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+		doc.ParseStream(ms);
+	}
+	if (doc.HasParseError()) {
+		ENGINE_LOG_DEBUG("[AssetMeta]: Rapidjson parse error: " + metaFilePath);
+	}
 
-	const auto& assetMetaData = doc["AssetMetaData"];
+	const auto& assetMetaData = doc["TextureMetaData"];
 	if (assetMetaData.HasMember("id")) {
 		ID = static_cast<uint32_t>(assetMetaData["id"].GetInt());
 	}
@@ -77,6 +98,4 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	if (assetMetaData.HasMember("unit")) {
 		unit = assetMetaData["unit"].GetInt();
 	}
-
-	ifs.close();
 }

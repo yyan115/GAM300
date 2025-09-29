@@ -69,3 +69,24 @@ bool FileUtilities::RemoveFromSolutionRootDir(const std::string& filePath) {
 	ENGINE_PRINT("[FileUtilities] Successfully deleted file: " , p.generic_string(), "\n");
 	return true;
 }
+
+bool FileUtilities::CopyFile(const std::string& srcPath, const std::string& dstPath) {
+	// Ensure parent directories exist.
+	std::filesystem::path p(dstPath);
+	std::filesystem::create_directories(p.parent_path());
+	try {
+		std::filesystem::copy_file(srcPath, dstPath,
+			std::filesystem::copy_options::overwrite_existing);
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		std::cerr << "[FileUtilities] Copy failed: " << e.what() << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool FileUtilities::CopyFileW(const std::string& srcPath, const std::string& dstPath) {
+	return CopyFile(srcPath, dstPath);
+}
+

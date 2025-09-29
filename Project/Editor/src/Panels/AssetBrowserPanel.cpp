@@ -11,6 +11,16 @@
 #include "Graphics/TextureManager.h"
 #include "Graphics/Material.hpp"
 #include "GUIManager.hpp"
+#include "Prefab.hpp"
+#include "PrefabIO.hpp"
+#include "PrefabComponent.hpp"
+#include "Reflection/ReflectionBase.hpp"
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/NameComponent.hpp"
+#include "Logging.hpp"
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 g_draggedMaterialGuid = {0, 0};
@@ -29,6 +39,43 @@ static constexpr float THUMBNAILBASESIZE = 96.0f;
 static constexpr float THUMBNAILMINSIZE = 48.0f;
 static constexpr float THUMBNAILPADDING = 8.0f;
 static constexpr float LABELHEIGHT = 18.0f;
+
+// Helper: add a component T to the JSON if the entity has it.
+// JSON layout:  { "<TypeName>": { "type": "...", "data": ... } }
+template <typename T>
+static void AddIfHas(ECSManager& ecs, Entity e, rapidjson::Document& doc, const char* jsonKey)
+{
+    if (!ecs.HasComponent<T>(e)) return;
+
+    const T& comp = ecs.GetComponent<T>(e);
+
+    // Use your reflection to serialize to text, then parse into a Value.
+    std::stringstream ss;
+    TypeResolver<T>::Get()->Serialize(&comp, ss);
+
+    rapidjson::Document tmp;
+    tmp.Parse(ss.str().c_str());              // {"type":"...","data":...}
+
+    auto& alloc = doc.GetAllocator();
+    rapidjson::Value key(jsonKey, alloc);
+    rapidjson::Value val(tmp, alloc);         // deep-copy into doc’s allocator
+
+    doc.AddMember(key, val, alloc);
+}
+
+static std::filesystem::path MakeUniquePath(std::filesystem::path p)
+{
+    using namespace std::filesystem;
+    if (!exists(p)) return p;
+    path stem = p.stem();
+    path ext = p.extension();
+    path dir = p.parent_path();
+    int i = 1;
+    for (;; ++i) {
+        path cand = dir / (stem.string() + " (" + std::to_string(i) + ")" + ext.string());
+        if (!exists(cand)) return cand;
+    }
+}
 
 AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128& g, bool isDir)
     : filePath(path), guid(g), isDirectory(isDir) {
@@ -400,92 +447,106 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     ImGui::PopID();
 }
 
-void AssetBrowserPanel::RenderAssetGrid() {
+void AssetBrowserPanel::RenderAssetGrid()
+{
+    ImGui::PushID(this); // unique ID space for this panel
+
+    // Header
     ImGui::Text("Assets in: %s", GetRelativePath(currentDirectory).c_str());
     ImGui::Separator();
 
-    // Use content region width as the source of truth
-    float avail = ImGui::GetContentRegionAvail().x;
-    float pad = THUMBNAILPADDING;
+    // ----------------------- GRID -----------------------
+    const float availX = ImGui::GetContentRegionAvail().x;
+    const float pad = THUMBNAILPADDING;
 
-    // Compute columns from available width using the base thumbnail size,
-    // then compute an even thumbnail size so items fill the row.
-    int cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (THUMBNAILBASESIZE + pad))));
-    float thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
+    int   cols = std::max(1, static_cast<int>(std::floor((availX + pad) / (THUMBNAILBASESIZE + pad))));
+    float thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     if (thumb < THUMBNAILMINSIZE) {
         thumb = THUMBNAILMINSIZE;
-        cols = std::max(1, static_cast<int>(std::floor((avail + pad) / (thumb + pad))));
-        thumb = (avail - pad * (cols - 1)) / static_cast<float>(cols);
+        cols = std::max(1, static_cast<int>(std::floor((availX + pad) / (thumb + pad))));
+        thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     }
 
     bool anyItemClickedInGrid = false;
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
-    for (const auto& asset : currentAssets) {
+    for (const auto& asset : currentAssets)
+    {
         if (!PassesFilter(asset)) continue;
 
         ImGui::BeginGroup();
         ImGui::PushID(asset.filePath.c_str());
 
-        ImGui::Selectable("##cell", false, ImGuiSelectableFlags_None, ImVec2(thumb, thumb + LABELHEIGHT));
-        bool hovered = ImGui::IsItemHovered();
-        bool clicked = ImGui::IsItemClicked();
+        // unified hitbox = thumbnail + label
+        ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
+        const bool hovered = ImGui::IsItemHovered();
+        const bool clicked = ImGui::IsItemClicked();
         bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
+        // drag source: prefab -> scene, material/texture -> inspector
         if (!asset.isDirectory) {
-            bool isMaterial = (asset.extension == ".mat");
-            bool isTexture = (asset.extension == ".png" || asset.extension == ".jpg" ||
-                             asset.extension == ".jpeg" || asset.extension == ".bmp" ||
-                             asset.extension == ".tga" || asset.extension == ".dds");
+            std::string lowerExt = asset.extension;
+            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+            
+            bool isMaterial = (lowerExt == ".mat");
+            bool isTexture = (lowerExt == ".png" || lowerExt == ".jpg" ||
+                             lowerExt == ".jpeg" || lowerExt == ".bmp" ||
+                             lowerExt == ".tga" || lowerExt == ".dds");
+            bool isPrefab = (lowerExt == ".prefab");
 
-        // Start drag-and-drop source when dragging (moved before selection logic)
-        if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
-            if (isMaterial) {
-                std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
+            // Handle drag-drop for various asset types
+            if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
+                if (isMaterial) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
 
-                // Store drag data globally for cross-window transfer
-                g_draggedMaterialGuid = asset.guid;
-                g_draggedMaterialPath = asset.filePath;
+                    // Store drag data globally for cross-window transfer
+                    g_draggedMaterialGuid = asset.guid;
+                    g_draggedMaterialPath = asset.filePath;
 
-                std::cout << "[AssetBrowserPanel] Drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+                    std::cout << "[AssetBrowserPanel] Drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
 
-                // Use a simple payload - just a flag that dragging is active
-                ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
-                ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
-            } else if (isTexture) {
-                std::cout << "[AssetBrowserPanel] Starting drag for texture: " << asset.fileName << std::endl;
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
+                } else if (isTexture) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for texture: " << asset.fileName << std::endl;
 
-                // Send texture path directly
-                ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
-                ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                    // Send texture path directly
+                    ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                }
+
+                ImGui::EndDragDropSource();
+                std::cout << "[AssetBrowserPanel] Drag operation completed" << std::endl;
             }
-
-            ImGui::EndDragDropSource();
-            std::cout << "[AssetBrowserPanel] Drag operation completed" << std::endl;
-        }
+            else if (isPrefab && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
+                    ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
+                        static_cast<int>(absPath.size()) + 1);
+                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
         }
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();
         ImVec2 imgMin = rectMin;
         ImVec2 imgMax = ImVec2(rectMin.x + thumb, rectMin.y + thumb);
+        dl->AddRectFilled(imgMin, imgMax, IM_COL32(80, 80, 80, 255), 4.0f);
+        dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
 
-        // Thumbnail fallback
-        ImU32 bg = IM_COL32(80, 80, 80, 255);
-        ImU32 border = IM_COL32(100, 100, 100, 255);
-        dl->AddRectFilled(imgMin, imgMax, bg, 4.0f);
-        dl->AddRect(imgMin, imgMax, border, 4.0f);
+        // text inside tile
+        std::string shortName = asset.fileName;
+        if (shortName.size() > 12) shortName = shortName.substr(0, 9) + "...";
+        ImVec2 textSize = ImGui::CalcTextSize(shortName.c_str());
+        ImVec2 textPos = ImVec2(imgMin.x + (thumb - textSize.x) * 0.5f,
+            imgMin.y + (thumb - textSize.y) * 0.5f);
+        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), shortName.c_str());
 
-        // Centered short name inside thumbnail
-        std::string name = asset.fileName;
-        const size_t maxChars = 12;
-        if (name.size() > maxChars) name = name.substr(0, maxChars - 3) + "...";
-        ImVec2 textSize = ImGui::CalcTextSize(name.c_str());
-        ImVec2 textPos(imgMin.x + (thumb - textSize.x) * 0.5f, imgMin.y + (thumb - textSize.y) * 0.5f);
-        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), name.c_str());
-
-        // Label below thumbnail
+        // label below
         ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
         ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + thumb);
 
@@ -501,7 +562,6 @@ void AssetBrowserPanel::RenderAssetGrid() {
         } else {
             ImGui::TextWrapped("%s", asset.fileName.c_str());
         }
-
         ImGui::PopTextWrapPos();
 
         // Selection / activation - single click selects, but not during drag operations
@@ -537,6 +597,7 @@ void AssetBrowserPanel::RenderAssetGrid() {
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
 
+        // double click
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
             else std::cout << "[AssetBrowserPanel] Opening asset: "
@@ -544,6 +605,7 @@ void AssetBrowserPanel::RenderAssetGrid() {
                 << std::endl;
         }
 
+        // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             SelectAsset(asset.guid, false);
             ImGui::OpenPopup("AssetContextMenu");
@@ -552,6 +614,7 @@ void AssetBrowserPanel::RenderAssetGrid() {
         ImGui::PopID();
         ImGui::EndGroup();
 
+        // wrap
         ++index;
         if ((index % cols) != 0) ImGui::SameLine(0.0f, pad);
     }
@@ -584,6 +647,61 @@ void AssetBrowserPanel::RenderAssetGrid() {
         ShowCreateAssetMenu();
         ImGui::EndPopup();
     }
+
+    // ---------------- BACKGROUND DROP (scroll-safe, non-blocking) ----------------
+    {
+        ImGuiWindow* win = ImGui::GetCurrentWindow();
+        const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
+
+        const ImGuiPayload* active = ImGui::GetDragDropPayload();
+        const bool entityDragActive = (active && active->IsDataType("HIERARCHY_ENTITY"));
+
+        // Foreground visual (never occluded by items)
+        if (entityDragActive)
+        {
+            ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+            fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+            fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+        }
+
+        // The target itself; no widget created -> scrolling unaffected
+        if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##AssetGridBgDrop")))
+        {
+            if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY",
+                    ImGuiDragDropFlags_AcceptBeforeDelivery))
+            {
+                if (payload->IsDelivery() && payload->DataSize == sizeof(Entity))
+                {
+                    const Entity dropped = *reinterpret_cast<const Entity*>(payload->Data);
+                    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+                    std::string niceName;
+                    if (ecs.HasComponent<NameComponent>(dropped))
+                        niceName = ecs.GetComponent<NameComponent>(dropped).name;
+                    if (niceName.empty())
+                        niceName = "Entity_" + std::to_string(static_cast<uint64_t>(dropped));
+
+                    std::filesystem::path dst =
+                        std::filesystem::path(currentDirectory) / (niceName + ".prefab");
+                    dst = MakeUniquePath(dst);
+
+                    const std::string absDst = std::filesystem::absolute(dst).generic_string();
+                    const bool ok = SaveEntityToPrefabFile(
+                        ecs, AssetManager::GetInstance(), dropped, absDst);
+
+                    if (ok)  std::cout << "[AssetBrowserPanel] Saved prefab: " << absDst << "\n";
+                    else     std::cerr << "[AssetBrowserPanel] Failed to save: " << absDst << "\n";
+
+                    RefreshAssets();
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+    }
+    // -----------------------------------------------------------------------------
+
+    ImGui::PopID();
 }
 
 void AssetBrowserPanel::RefreshAssets() {
@@ -863,8 +981,9 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".obj", ".fbx", ".dae", ".3ds",                    // Models
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
         ".wav", ".mp3", ".ogg",                            // Audio
-        ".ttf", ".otf",                                     // Fonts
-        ".mat"                                             // Materials
+        ".ttf", ".otf",                                    // Fonts
+        ".mat",                                            // Materials
+        ".prefab"                                          // Prefabs
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;

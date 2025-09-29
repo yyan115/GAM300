@@ -4,6 +4,8 @@
 #include "GUIManager.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
+#include <PrefabIO.hpp>
+#include <imgui_internal.h>
 
 SceneHierarchyPanel::SceneHierarchyPanel() 
     : EditorPanel("Scene Hierarchy", true) {
@@ -84,10 +86,38 @@ void SceneHierarchyPanel::OnImGuiRender() {
         ImVec2 avail = ImGui::GetContentRegionAvail();
         if (avail.y > 0) {
             ImGui::InvisibleButton("HierarchyBackground", avail);
+
+            ImGuiWindow* win = ImGui::GetCurrentWindow();
+            const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
+
+            const ImGuiPayload* active = ImGui::GetDragDropPayload();
+            const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
+
+            // Foreground visual (never occluded by items)
+            if (entityDragActive)
+            {
+                ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+                fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+                fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+            }
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
                     Entity dragged = *(Entity*)payload->Data;
                     UnparentEntity(dragged);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
+                    const char* prefabPath = static_cast<const char*>(payload->Data);
+                    const bool ok = InstantiatePrefabFromFile(prefabPath);
+                    if (!ok) {
+                        std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
+                    }
+                    else {
+                        std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath << std::endl;
+                    }
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -96,97 +126,95 @@ void SceneHierarchyPanel::OnImGuiRender() {
     ImGui::End();
 }
 
-void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren) {
+void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
+{
     assert(!entityName.empty() && "Entity name cannot be empty");
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-
-    if (!hasChildren) {
-        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    }
-
-    if (GUIManager::GetSelectedEntity() == entityId) {
-        flags |= ImGuiTreeNodeFlags_Selected;
-    }
+    if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    if (GUIManager::GetSelectedEntity() == entityId) flags |= ImGuiTreeNodeFlags_Selected;
 
     bool opened = false;
 
-    // Check if this entity is being renamed
-    if (renamingEntity == entityId) {
-        // Show input field for renaming
+    if (renamingEntity == entityId)
+    {
         ImGui::SetNextItemWidth(-1.0f);
 
-        // Initialize rename buffer if starting to rename
         if (startRenaming) {
-            renameBuffer.clear();
-            renameBuffer.resize(256, '\0');
-            if (!entityName.empty() && entityName.length() < 255) {
+            renameBuffer.assign(256, '\0');
+            if (!entityName.empty() && entityName.length() < 255)
                 std::copy(entityName.begin(), entityName.end(), renameBuffer.begin());
-            }
             startRenaming = false;
             ImGui::SetKeyboardFocusHere();
         }
 
         if (ImGui::InputText(("##rename" + std::to_string(entityId)).c_str(),
-                           renameBuffer.data(), renameBuffer.size(),
-                           ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-            // Apply rename
+                             renameBuffer.data(), renameBuffer.size(),
+                             ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+        {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
                 if (ecsManager.HasComponent<NameComponent>(entityId)) {
-                    NameComponent& nameComp = ecsManager.GetComponent<NameComponent>(entityId);
+                    auto& nameComp = ecsManager.GetComponent<NameComponent>(entityId);
                     nameComp.name = std::string(renameBuffer.data());
                 }
-            } catch (const std::exception& e) {
-                // Handle error silently or log
-            }
+            } catch (...) {}
             renamingEntity = static_cast<Entity>(-1);
         }
 
-        // Cancel rename on escape or lost focus
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!ImGui::IsItemActive() && !ImGui::IsItemFocused())) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape) ||
+            (!ImGui::IsItemActive() && !ImGui::IsItemFocused()))
+        {
             renamingEntity = static_cast<Entity>(-1);
-        }
-    } else {
-        // Normal tree node display
-        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
-
-        if (ImGui::IsItemClicked()) {
-            GUIManager::SetSelectedEntity(entityId);
         }
     }
+    else
+    {
+        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
+        if (ImGui::IsItemClicked())
+            GUIManager::SetSelectedEntity(entityId);
+    }
 
-    // Context menu for individual entities
-    if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Delete")) {
-            // TODO: Delete entity
+    // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Start a drag from this row?
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        {
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+            {
+                Entity payload = entityId; // ImGui copies this buffer
+                ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &payload, sizeof(Entity));
+                ImGui::Text("Move %s", entityName.c_str());
+                ImGui::Separator();
+                ImGui::Text("%s", entityName.c_str());
+                ImGui::EndDragDropSource();
+            }
         }
-        if (ImGui::MenuItem("Duplicate")) {
-            // TODO: Duplicate entity
+    }
+    // -----------------------------------------------------------------
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            Entity dragged = *(Entity*)payload->Data;
+            ReparentEntity(dragged, entityId);
         }
+        ImGui::EndDragDropTarget();
+    }
+
+    if (ImGui::BeginPopupContextItem())
+    {
+        if (ImGui::MenuItem("Delete"))   { /* TODO */ }
+        if (ImGui::MenuItem("Duplicate")){ /* TODO */ }
         if (ImGui::MenuItem("Rename", "F2")) {
             renamingEntity = entityId;
-            startRenaming = true;
+            startRenaming  = true;
         }
         ImGui::EndPopup();
     }
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    // Drag source
-    if (ImGui::BeginDragDropSource()) {
-        ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entityId, sizeof(Entity));
-        ImGui::Text("Move %s", ecsManager.GetComponent<NameComponent>(entityId).name.c_str());
-        ImGui::EndDragDropSource();
-    }
-
-    // Drop target
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
-            Entity dragged = *(Entity*)payload->Data;
-            ReparentEntity(dragged, entityId); // your logic
-        }
-        ImGui::EndDragDropTarget();
-    }
 
     if (opened && hasChildren) {
         // Child nodes would be drawn here in a real implementation
@@ -225,7 +253,7 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
 
         // Remove the child from the old parent.
         auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
-        auto it = oldPChildCompOpt->get().children.find(draggedEntity);
+        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), draggedEntity);
         ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
 
         // If the old parent has no more children, remove the children component from the old parent.
@@ -240,11 +268,11 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
     // If the parent already has children
     if (ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
 
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
     else {
         ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.insert(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
 
     // Calculate the child's world position, rotation and scale.
@@ -268,7 +296,7 @@ void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
 
         // Update the parent by removing the dragged entity from its children.
         ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
-        auto it = pChildrenComponent.children.find(draggedEntity);
+        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),draggedEntity);
         pChildrenComponent.children.erase(it);
         if (pChildrenComponent.children.empty()) {
             ecsManager.RemoveComponent<ChildrenComponent>(parent);

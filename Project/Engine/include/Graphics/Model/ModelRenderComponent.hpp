@@ -1,25 +1,33 @@
 #pragma once
 #include "../include/Graphics/IRenderComponent.hpp"
 #include "../include/Graphics/Material.hpp"
+#include "Model.h"
 #include <memory>
 #include <glm/glm.hpp>
 #include <vector>
+#include "Math/Matrix4x4.hpp"
+#include "Utilities/GUID.hpp"
 
-class Model;
 class Shader;
 class Camera;
 
 class ModelRenderComponent : public IRenderComponent {
 public:
+	// Serialize these.
+	REFL_SERIALIZABLE
+	GUID_128 modelGUID{};
+	GUID_128 shaderGUID{};
+	Matrix4x4 transform;
+	bool isVisible = true;
+
+	// Don't serialize these.
 	std::shared_ptr<Model> model;
 	std::shared_ptr<Shader> shader;
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;
-	glm::mat4 transform;
-	bool isVisible = true;
 
-	ModelRenderComponent(std::shared_ptr<Model> m, std::shared_ptr<Shader> s)
-		: model(std::move(m)), shader(std::move(s)), transform(), isVisible(true) {}
+	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID)
+		: modelGUID(m_GUID), shaderGUID(s_GUID), transform(), isVisible(true) { }
 	ModelRenderComponent() = default;
 	~ModelRenderComponent() = default;
 

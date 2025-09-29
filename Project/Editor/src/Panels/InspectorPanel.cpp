@@ -20,7 +20,6 @@ extern std::string g_draggedMaterialPath;
 #include <vector>
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
-#include <Sound/AudioSystem.hpp>
 
 InspectorPanel::InspectorPanel()
     : EditorPanel("Inspector", true) {
@@ -31,11 +30,6 @@ void InspectorPanel::OnImGuiRender() {
         // Check for selected asset first (higher priority)
         GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
         
-        // Debug: Print selected asset GUID
-        if (selectedAsset.high != 0 || selectedAsset.low != 0) {
-            std::cout << "[Inspector] Selected asset GUID: {" << selectedAsset.high << ", " << selectedAsset.low << "}" << std::endl;
-        }
-
         // Lock button in the title bar (always visible)
         ImGui::SameLine(ImGui::GetWindowWidth() - 35);
         if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
@@ -353,7 +347,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         }
 
         // Play on Awake
-        ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
+        ImGui::Checkbox("Play On Start", &audio.PlayOnStart);
 
         // Spatialize
         if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {
@@ -370,7 +364,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         if (audio.Spatialize) {
             float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
             if (ImGui::DragFloat3("Position", pos, 0.1f)) {
-                audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
+                /*audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));*/
                 // Also update Transform if present
                 if (ecsManager.HasComponent<Transform>(entity)) {
                     ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });

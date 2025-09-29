@@ -11,6 +11,7 @@
 #include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include "Logging.hpp"
 
+#include "Scene/SceneManager.hpp"
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
@@ -260,10 +261,17 @@ void GUIManager::RenderMenuBar() {
 				// TODO: New scene functionality
 			}
 			if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
-				// TODO: Open scene functionality
+				std::string filepath = "Resources/Scenes/scene.json";
+				// TEMP
+				if (!std::filesystem::exists(filepath)) {
+					std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+				}
+				else {
+					SceneManager::GetInstance().LoadScene(filepath);
+				}
 			}
 			if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-				// TODO: Save scene functionality
+				SceneManager::GetInstance().SaveScene();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Compile Assets for Desktop")) {

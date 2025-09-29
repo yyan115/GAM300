@@ -1,121 +1,161 @@
-/******************************************************************
-LEGACY - TO BE DELETED
-********************************************************************/
-#if 0
+/*********************************************************************************
+* @File         Base64.cpp
+* @Author       Soh Wei Jie, weijie.soh@digipen.edu
+* @Co-Author    -
+* @Date         26/9/2025
+* @Brief        Implements portable, allocation-friendly Base64 encoding and decoding:
+*                  - Base64_Encode: encodes a byte vector to a compact Base64 string.
+*                  - Base64_Decode: decodes a Base64 string into a byte vector with
+*                    whitespace-tolerant parsing, validation and padding support.
+*                  - ValidateBase64: character-level validation after whitespace removal.
+*                  - Internal helpers: whitespace detection and a static encoding table.
+*               Design goals:
+*                  - Safe: performs input validation and logs errors rather than crashing.
+*                  - Portable: no platform-specific APIs, suitable for mobile and embedded.
+*                  - Efficient: reserves output capacity and processes input in 3-byte chunks.
+*                  - Clear error diagnostics via ENGINE_LOG_ERROR on malformed input.
+*
+* Usage notes:
+*    - Exposes ENGINE_API functions Base64_Encode and Base64_Decode.
+*    - Decoding ignores CR/LF/space/tab; however it enforces that the sanitized input
+*      length is a multiple of 4 and that only valid Base64 characters (A-Z,a-z,0-9,+,/)
+*      and '=' padding are used.
+*    - Caller is responsible for including the project's logging macros (ENGINE_LOG_ERROR).
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 #include "pch.h"
-
 #include "Reflection/Base64.hpp"
-
-#include <wincrypt.h> // CryptBinaryToStringA, CryptStringToBinaryA
 
 #pragma region Internal Function
 
-        bool Internal_ValidateBase64(const std::string& data)
-        {
-            // guard
-            if (data.empty()) return false;
+static const char b64_table[] =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+"abcdefghijklmnopqrstuvwxyz"
+"0123456789+/";
 
-            static const std::string base64_chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz"
-                "0123456789+/"
-                ;
+inline bool is_whitespace(char c) {
+    return c == '\r' || c == '\n' || c == ' ' || c == '\t';
+}
 
-            // check if the data is a valid base64 string
-            for (char c : data)
-            {
-                if (base64_chars.find(c) == std::string::npos && c != '=') return false;
-            }
+// validate base64 characters (after whitespace removal)
+bool ValidateBase64(const std::string& s) {
+    if (s.empty()) return false;
 
-            return true;
+    // valid set: A-Z a-z 0-9 + / and = for padding
+    for (char c : s) {
+        if (is_whitespace(c)) continue;
+        unsigned char uc = static_cast<unsigned char>(c);
+        if (uc == '=') continue;
+        bool ok = false;
+        // check table
+        for (int i = 0; i < 64; ++i) {
+            if (b64_table[i] == c) { ok = true; break; }
         }
-
-        std::string Internal_GetErrorMessage()
-        {
-            unsigned long error_code = GetLastError();
-            char* message_buffer = nullptr;
-            unsigned long size = FormatMessageA(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                nullptr, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&message_buffer, 0, nullptr
-            );
-            std::string message(message_buffer, size);
-            LocalFree(message_buffer);
-            return message;
-        }
-
+        if (!ok) return false;
+    }
+    return true;
+}
 #pragma endregion
 
-        ENGINE_API std::string Encode(const std::vector<unsigned char>& data)
-        {
-            // guard
-            if (data.empty()) return "";
+// Public API
+ENGINE_API std::string Base64_Encode(const std::vector<unsigned char>& data)
+{
+    if (data.empty()) return "";
 
-            unsigned long data_size = static_cast<unsigned long>(data.size());
-            unsigned long size = 0;
+    std::string out;
+    out.reserve(((data.size() + 2) / 3) * 4);
 
-            unsigned long flags = CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF;
-
-            // get size
-            if (!CryptBinaryToStringA(data.data(), data_size, flags, nullptr, &size))
-            {
-                Log::Error("Base64 encoding: Failed to get the size of the encoded data. " + Internal_GetErrorMessage());
-                return "";
-            }
-
-            // allocate
-            std::string result(size, '\0');
-
-            // encode
-            if (!CryptBinaryToStringA(data.data(), data_size, flags, &result[0], &size))
-            {
-                Log::Error("Base64 encoding: Failed to encode the data. " + Internal_GetErrorMessage());
-                return "";
-            }
-
-            // CryptBinaryToStringA includes the null terminator in the string.
-            // This removes it.
-            result.pop_back();
-
-            return result;
-        }
-
-        ENGINE_API std::vector<unsigned char> Decode(const std::string& data)
-        {
-            // guard
-            if (data.empty()) return {};
-
-            // validate
-            if (!Internal_ValidateBase64(data))
-            {
-                Log::Error("Base64 decoding: The input data is not a valid base64 string.");
-                return {};
-            }
-
-            unsigned long data_size = static_cast<unsigned long>(data.size() + 1);
-            unsigned long size = 0;
-
-            unsigned long flags = CRYPT_STRING_BASE64;// | CRYPT_STRING_NOCRLF;
-
-            // get size
-            if (!CryptStringToBinaryA(data.c_str(), data_size, flags, nullptr, &size, nullptr, nullptr))
-            {
-                Log::Error("Base64 decoding: Failed to get the size of the decoded data. " + Internal_GetErrorMessage());
-                return {};
-            }
-
-            // allocate
-            std::vector<unsigned char> result(size);
-
-            // decode
-            if (!CryptStringToBinaryA(data.c_str(), data_size, flags, result.data(), &size, nullptr, nullptr))
-            {
-                Log::Error("Base64 decoding: Failed to decode the data. " + Internal_GetErrorMessage());
-                return {};
-            }
-
-            return result;
-        }
-
+    size_t i = 0;
+    const size_t n = data.size();
+    while (i + 2 < n) {
+        uint32_t triple = (uint32_t(data[i]) << 16) | (uint32_t(data[i + 1]) << 8) | uint32_t(data[i + 2]);
+        out.push_back(b64_table[(triple >> 18) & 0x3F]);
+        out.push_back(b64_table[(triple >> 12) & 0x3F]);
+        out.push_back(b64_table[(triple >> 6) & 0x3F]);
+        out.push_back(b64_table[triple & 0x3F]);
+        i += 3;
     }
+
+    size_t rem = n - i;
+    if (rem) {
+        uint32_t triple = uint32_t(data[i]) << 16;
+        if (rem == 2) triple |= uint32_t(data[i + 1]) << 8;
+
+        out.push_back(b64_table[(triple >> 18) & 0x3F]);
+        out.push_back(b64_table[(triple >> 12) & 0x3F]);
+        out.push_back(rem == 2 ? b64_table[(triple >> 6) & 0x3F] : '=');
+        out.push_back('=');
+    }
+
+    return out;
 }
-#endif
+
+ENGINE_API std::vector<unsigned char> Base64_Decode(const std::string& input)
+{
+    if (input.empty()) return {};
+
+    // Remove whitespace characters first.
+    std::string s;
+    s.reserve(input.size());
+    for (char c : input) {
+        if (!is_whitespace(c)) s.push_back(c);
+    }
+
+    // Basic validation
+    if (s.size() % 4 != 0) {
+        ENGINE_LOG_ERROR("Base64 decoding: invalid input length (not a multiple of 4).");
+        return {};
+    }
+    if (!ValidateBase64(s)) {
+        ENGINE_LOG_ERROR("Base64 decoding: invalid characters in input.");
+        return {};
+    }
+
+    // Build reverse lookup table
+    int rev[256];
+    for (int i = 0; i < 256; ++i) rev[i] = -1;
+    for (int i = 0; i < 64; ++i) rev[static_cast<unsigned char>(b64_table[i])] = i;
+
+    // Count padding
+    size_t padding = 0;
+    if (!s.empty()) {
+        if (s[s.size() - 1] == '=') ++padding;
+        if (s.size() > 1 && s[s.size() - 2] == '=') ++padding;
+    }
+
+    std::vector<unsigned char> out;
+    out.reserve((s.size() / 4) * 3 - padding);
+
+    for (size_t i = 0; i < s.size(); i += 4) 
+    {
+        int v0 = (s[i] == '=') ? 0 : rev[static_cast<unsigned char>(s[i])];
+        int v1 = (s[i + 1] == '=') ? 0 : rev[static_cast<unsigned char>(s[i + 1])];
+        int v2 = (s[i + 2] == '=') ? 0 : rev[static_cast<unsigned char>(s[i + 2])];
+        int v3 = (s[i + 3] == '=') ? 0 : rev[static_cast<unsigned char>(s[i + 3])];
+
+        // If s[i+2] is not '=' and v2 < 0 -> invalid. Same for v3.
+        if (v0 < 0 || v1 < 0) {
+            ENGINE_LOG_ERROR("Base64 decoding: invalid character encountered.");
+            return {};
+        }
+        if (s[i + 2] != '=' && v2 < 0) {
+            ENGINE_LOG_ERROR("Base64 decoding: invalid character encountered at position (i+2).");
+            return {};
+        }
+        if (s[i + 3] != '=' && v3 < 0) {
+            ENGINE_LOG_ERROR("Base64 decoding: invalid character encountered at position (i+3).");
+            return {};
+        }
+
+        uint32_t triple = (uint32_t(v0) << 18) | (uint32_t(v1) << 12) | (uint32_t(v2) << 6) | uint32_t(v3);
+
+        out.push_back(static_cast<unsigned char>((triple >> 16) & 0xFF));
+        if (s[i + 2] != '=') out.push_back(static_cast<unsigned char>((triple >> 8) & 0xFF));
+        if (s[i + 3] != '=') out.push_back(static_cast<unsigned char>(triple & 0xFF));
+    }
+
+    return out;
+}

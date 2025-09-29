@@ -18,8 +18,6 @@ int main() {
     }
 
     Engine::Initialize();
-    // Only need to generate asset meta files in Editor mode.
-    MetaFilesManager::InitializeAssetMetaFiles("Resources");
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     GLFWwindow* window = WindowManager::getWindow();

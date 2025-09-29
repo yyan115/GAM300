@@ -7,17 +7,17 @@ void TextUtils::SetText(TextRenderComponent& comp, const std::string& newText)
     comp.text = newText;
 }
 
-void TextUtils::SetColor(TextRenderComponent& comp, const glm::vec3& newColor) 
+void TextUtils::SetColor(TextRenderComponent& comp, const Vector3D& newColor)
 {
     comp.color = newColor;
 }
 
 void TextUtils::SetColor(TextRenderComponent& comp, float r, float g, float b) 
 {
-    comp.color = glm::vec3(r, g, b);
+    comp.color = Vector3D(r, g, b);
 }
 
-void TextUtils::SetPosition(TextRenderComponent& comp, const glm::vec3& newPosition) 
+void TextUtils::SetPosition(TextRenderComponent& comp, const Vector3D& newPosition)
 {
     comp.position = newPosition;
     comp.is3D = false; // Setting 2D position
@@ -25,7 +25,7 @@ void TextUtils::SetPosition(TextRenderComponent& comp, const glm::vec3& newPosit
 
 void TextUtils::SetPosition(TextRenderComponent& comp, float x, float y, float z)
 {
-    comp.position = glm::vec3(x, y, z);
+    comp.position = Vector3D(x, y, z);
     comp.is3D = false; // Setting 2D position
 }
 
@@ -37,23 +37,24 @@ void TextUtils::SetScale(TextRenderComponent& comp, float newScale)
 void TextUtils::SetAlignment(TextRenderComponent& comp, TextRenderComponent::Alignment newAlignment)
 {
     comp.alignment = newAlignment;
+    comp.alignmentInt = static_cast<int>(newAlignment);
 }
 
-void TextUtils::SetWorldTransform(TextRenderComponent& comp, const glm::mat4& newTransform)
+void TextUtils::SetWorldTransform(TextRenderComponent& comp, const Matrix4x4& newTransform)
 {
     comp.transform = newTransform;
     comp.is3D = true; // Automatically set to 3D mode
 }
 
-void TextUtils::SetWorldPosition(TextRenderComponent& comp, const glm::vec3& worldPos) 
+void TextUtils::SetWorldPosition(TextRenderComponent& comp, const Vector3D& worldPos)
 {
-    comp.transform = glm::translate(glm::mat4(1.0f), worldPos);
+    comp.transform = Matrix4x4::Identity().Translate(worldPos.x, worldPos.y, worldPos.z);
     comp.is3D = true;
 }
 
 void TextUtils::SetWorldPosition(TextRenderComponent& comp, float x, float y, float z)
 {
-    SetWorldPosition(comp, glm::vec3(x, y, z));
+    SetWorldPosition(comp, Vector3D(x, y, z));
 }
 
 float TextUtils::GetEstimatedWidth(const TextRenderComponent& comp) 
@@ -112,7 +113,7 @@ void TextUtils::SetScreenAnchor(TextRenderComponent& comp, int screenWidth, int 
     }
 }
 
-glm::vec2 TextUtils::GetTextDimensions(const TextRenderComponent& comp) 
+Vector3D TextUtils::GetTextDimensions(const TextRenderComponent& comp)
 {
-    return glm::vec2(GetEstimatedWidth(comp), GetEstimatedHeight(comp));
+    return Vector3D(GetEstimatedWidth(comp), GetEstimatedHeight(comp), 0);
 }
