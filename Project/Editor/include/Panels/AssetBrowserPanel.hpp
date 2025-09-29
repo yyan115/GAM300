@@ -59,6 +59,8 @@ private:
     std::vector<AssetInfo> currentAssets;
     std::unordered_set<GUID_128> selectedAssets;
     GUID_128 lastSelectedAsset;
+    GUID_128 renamingAsset;
+    std::string renameBuffer;
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };
@@ -97,6 +99,8 @@ private:
     void DeleteAsset(const AssetInfo& asset);
     void RevealInExplorer(const AssetInfo& asset);
     void CopyAssetPath(const AssetInfo& asset);
+    void CreateNewScene(const std::string& directory);
+    void RenameAsset(const AssetInfo& asset, const std::string& newName);
 
     // Utility methods
     std::string GetRelativePath(const std::string& fullPath) const;

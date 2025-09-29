@@ -6,6 +6,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
 #include <imgui_internal.h>
+#include "Scene/SceneManager.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel() 
     : EditorPanel("Scene Hierarchy", true) {
@@ -22,7 +23,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        ImGui::Text("Scene Objects:");
+        ImGui::Text(SceneManager::GetInstance().GetSceneName().c_str());
         ImGui::Separator();
 
         try {

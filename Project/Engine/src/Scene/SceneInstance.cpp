@@ -28,7 +28,7 @@ void SceneInstance::Initialize() {
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	if (scenePath == "TestScene") {
+	if (scenePath == "Resources/Scenes/FakeScene.scene") {
 		// Create a backpack entity with a Renderer component in the main ECS manager
 		Entity backpackEntt = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
@@ -75,6 +75,22 @@ void SceneInstance::Initialize() {
 		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
 		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+
+		// Test Audio
+		// Create an entity with AudioComponent
+		Entity audioEntity = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+		NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+		audioName.name = "Audio Test Entity";
+
+		// Add AudioComponent
+		AudioComponent audioComp;
+		audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+		audioComp.Volume = 0.8f;
+		audioComp.Loop = false;
+		audioComp.PlayOnStart = true;
+		audioComp.Spatialize = false;
+		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
 	}
 
 	// Creates light
@@ -86,23 +102,6 @@ void SceneInstance::Initialize() {
 
 	// Sets camera
 	gfxManager.SetCamera(&camera);
-
-	// Test Audio
-	// Create an entity with AudioComponent
-	Entity audioEntity = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
-	NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
-	audioName.name = "Audio Test Entity";
-			
-	// Add AudioComponent
-	AudioComponent audioComp;
-	audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-	audioComp.Volume = 0.8f;
-	audioComp.Loop = false;
-	audioComp.PlayOnStart = true;
-	audioComp.Spatialize = false;
-	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();

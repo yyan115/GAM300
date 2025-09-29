@@ -17,6 +17,7 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
+#include "Scene/SceneManager.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -445,7 +446,8 @@ void AssetBrowserPanel::RenderAssetGrid()
         thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     }
 
-    bool anyItemClickedInGrid = false;
+    bool anyItemClickedInGrid = false; // on click (on the same frame only)
+    bool anyItemSelectedInGrid = false; // persists as long as item is selected
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
@@ -459,7 +461,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         // unified hitbox = thumbnail + label
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
-        const bool clicked = ImGui::IsItemClicked();
+        const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
 
         // drag source: prefab -> scene
         if (!asset.isDirectory) {
@@ -492,11 +494,43 @@ void AssetBrowserPanel::RenderAssetGrid()
             imgMin.y + (thumb - textSize.y) * 0.5f);
         dl->AddText(textPos, IM_COL32(220, 220, 220, 255), shortName.c_str());
 
-        // label below
-        ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
-        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + thumb);
-        ImGui::TextWrapped("%s", asset.fileName.c_str());
+        // Asset name text below the tile
+        // Change the text to an input text if asset is being renamed.
+        if (renamingAsset == asset.guid) {
+            ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
+            ImGui::PushItemWidth(thumb);
+
+            char buf[256];
+            strncpy_s(buf, asset.fileName.c_str(), sizeof(buf));
+            ImGui::SetKeyboardFocusHere();
+            if (ImGui::InputText("##rename", buf, IM_ARRAYSIZE(buf),
+                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))   
+            {
+                // Commit rename
+                renameBuffer = buf;
+                RenameAsset(asset, renameBuffer);
+                renamingAsset = { 0,0 };
+                RefreshAssets();
+            }
+
+            // Cancel if focus lost
+            if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) &&
+                !anyItemClickedInGrid && ImGui::IsWindowHovered())
+            {
+                renamingAsset = { 0,0 };
+            }
+
+            ImGui::PopItemWidth();
+        }
+        else {
+            ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + thumb);
+            ImGui::TextWrapped("%s", asset.fileName.c_str());
+            ImGui::PopTextWrapPos();
+        }
+
         if (!asset.isDirectory) {
+            // Begin drag drop code for PREFABS
             std::string lowerExt = asset.extension;
             std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
             if (lowerExt == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
@@ -509,7 +543,6 @@ void AssetBrowserPanel::RenderAssetGrid()
                 }
             }
         }
-        ImGui::PopTextWrapPos();
 
         // selection visuals
         if (clicked) {
@@ -517,8 +550,15 @@ void AssetBrowserPanel::RenderAssetGrid()
             anyItemClickedInGrid = true;
         }
         if (IsAssetSelected(asset.guid)) {
+            anyItemSelectedInGrid = true;
             dl->AddRectFilled(rectMin, rectMax, IM_COL32(100, 150, 255, 50));
             dl->AddRect(rectMin, rectMax, IM_COL32(100, 150, 255, 120), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
+            
+            // Handle pressing F2 to rename the asset.
+            if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
+                renamingAsset = asset.guid;
+                renameBuffer = asset.fileName;
+            }
         }
         else if (hovered) {
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
@@ -527,18 +567,22 @@ void AssetBrowserPanel::RenderAssetGrid()
         // double click
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else
+            else {
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
-
+                std::filesystem::path p(asset.fileName);
+                if (p.extension() == ".scene") {
+                    SceneManager::GetInstance().LoadScene(asset.filePath);
+                }
+            }
         }
 
+        ImGui::PopID();
         // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             SelectAsset(asset.guid, false);
             ImGui::OpenPopup("AssetContextMenu");
         }
 
-        ImGui::PopID();
         ImGui::EndGroup();
 
         // wrap
@@ -547,7 +591,9 @@ void AssetBrowserPanel::RenderAssetGrid()
     }
 
     // clear selection by clicking empty space
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemClickedInGrid && ImGui::IsWindowHovered()) {
+    if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && 
+        !anyItemClickedInGrid && ImGui::IsWindowHovered()) 
+    {
         selectedAssets.clear();
         lastSelectedAsset = GUID_128{ 0, 0 };
     }
@@ -615,6 +661,14 @@ void AssetBrowserPanel::RenderAssetGrid()
     }
     // -----------------------------------------------------------------------------
 
+    // Context menu for creating new assets
+    if (!anyItemSelectedInGrid && ImGui::BeginPopupContextWindow()) {
+        if (ImGui::MenuItem("Create Scene")) {
+            CreateNewScene(currentDirectory);
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::PopID();
 }
 
@@ -658,6 +712,10 @@ void AssetBrowserPanel::RefreshAssets() {
                 }
             }
             else {
+                // Don't show Shaders folder.
+                if (entry.path().generic_string().find("Shaders") != std::string::npos) {
+                    continue;
+                }
                 // For directories, generate a simple hash-based GUID using normalized path
                 std::hash<std::string> hasher;
                 size_t hash = hasher(filePath);
@@ -826,8 +884,11 @@ void AssetBrowserPanel::DeleteAsset(const AssetInfo& asset) {
 
 void AssetBrowserPanel::RevealInExplorer(const AssetInfo& asset) {
 #ifdef _WIN32
-    std::string command = "explorer /select,\"" + asset.filePath + "\"";
-    system(command.c_str());
+    std::filesystem::path fullPath = std::filesystem::absolute(asset.filePath);
+    std::wstring path = fullPath.wstring(); // <-- not generic_wstring
+    std::wstring param = L"/select,\"" + path + L"\"";
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", param.c_str(), nullptr, SW_SHOWNORMAL);
+
 #else
     ENGINE_PRINT("[AssetBrowserPanel] Reveal in explorer not implemented for this platform\n");
     //std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
@@ -845,13 +906,46 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
             memcpy(GlobalLock(hMem), relativePath.c_str(), relativePath.size() + 1);
             GlobalUnlock(hMem);
             SetClipboardData(CF_TEXT, hMem);
+            ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
         }
         CloseClipboard();
     }
 #else
-    ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
     //std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
 #endif
+}
+
+void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& newName) {
+    std::filesystem::path oldPath = asset.filePath;
+    std::filesystem::path newPath = oldPath.parent_path() / newName;
+    std::error_code ec;
+    std::filesystem::rename(oldPath, newPath, ec);
+    if (!ec) {
+        RefreshAssets();
+    }
+    else {
+        std::cerr << "Rename failed: " << ec.message() << "\n";
+    }
+}
+
+
+void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
+    std::string newSceneName = "New Scene.scene";
+    std::filesystem::path directoryPath(directory);
+    std::filesystem::path newSceneNamePath(newSceneName);
+    std::filesystem::path newScenePathFull = (directoryPath / newSceneName);
+    std::string stem = newSceneNamePath.stem().generic_string();
+    std::string extension = newSceneNamePath.extension().generic_string();
+
+    int counter = 1;
+    while (std::filesystem::exists(newScenePathFull)) {
+        newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
+    }
+
+    std::ofstream file(newScenePathFull.generic_string());
+    file.close();
+
+    RefreshAssets();
 }
 
 std::string AssetBrowserPanel::GetRelativePath(const std::string& fullPath) const {
@@ -874,7 +968,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
         ".wav", ".mp3", ".ogg",                            // Audio
         ".ttf", ".otf",                                    // Fonts
-        ".prefab"
+        ".prefab", ".scene"
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;
