@@ -123,6 +123,9 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
+	if (mainECS.lightingSystem) {
+		mainECS.lightingSystem->Update();
+	}
 }
 
 void SceneInstance::Draw() {

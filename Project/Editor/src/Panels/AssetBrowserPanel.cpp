@@ -26,6 +26,10 @@
 GUID_128 g_draggedMaterialGuid = {0, 0};
 std::string g_draggedMaterialPath;
 
+// Global drag-drop state for cross-window model dragging
+GUID_128 g_draggedModelGuid = {0, 0};
+std::string g_draggedModelPath;
+
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> g_fallbackGuidToPath;
 
@@ -493,10 +497,12 @@ void AssetBrowserPanel::RenderAssetGrid()
             bool isTexture = (lowerExt == ".png" || lowerExt == ".jpg" ||
                              lowerExt == ".jpeg" || lowerExt == ".bmp" ||
                              lowerExt == ".tga" || lowerExt == ".dds");
+            bool isModel = (lowerExt == ".obj" || lowerExt == ".fbx" ||
+                           lowerExt == ".dae" || lowerExt == ".3ds");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
 
@@ -515,6 +521,18 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Send texture path directly
                     ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                } else if (isModel) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for model: " << asset.fileName << std::endl;
+
+                    // Store drag data globally for cross-window transfer
+                    g_draggedModelGuid = asset.guid;
+                    g_draggedModelPath = asset.filePath;
+
+                    std::cout << "[AssetBrowserPanel] Model drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MODEL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Model: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();

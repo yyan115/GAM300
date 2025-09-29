@@ -6,6 +6,8 @@
 #include "Graphics/SceneRenderer.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/NameComponent.hpp"
+#include "Transform/TransformComponent.hpp"
+#include "Graphics/Lights/LightComponent.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
@@ -104,6 +106,29 @@ void ScenePanel::HandleKeyboardInput() {
             playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
             ENGINE_PRINT("[ScenePanel] R pressed - Switched to Scale mode\n");
             //std::cout << "[ScenePanel] R pressed - Switched to Scale mode" << std::endl;
+        }
+    }
+
+    // Handle Delete key for deleting selected entity (when scene is focused)
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        Entity selectedEntity = GUIManager::GetSelectedEntity();
+        if (selectedEntity != static_cast<Entity>(-1)) {
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
+
+                ENGINE_PRINT("[ScenePanel] Deleting entity: ", entityName, " (ID: ", selectedEntity, ")\n");
+
+                // Clear selection before deleting
+                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+
+                // Delete the entity
+                ecsManager.DestroyEntity(selectedEntity);
+
+                ENGINE_PRINT("[ScenePanel] Entity deleted successfully\n");
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to delete entity: ", e.what(), "\n");
+            }
         }
     }
 }
@@ -456,6 +481,113 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             // Update the entity's transform in the ECS system
             RaycastUtil::SetEntityTransform(selectedEntity, selectedObjectMatrix);
 
+        }
+    }
+
+    // Draw light direction gizmos for selected light entities
+    if (selectedEntity != static_cast<Entity>(-1)) {
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+            // Check if selected entity is a directional light
+            if (ecsManager.HasComponent<DirectionalLightComponent>(selectedEntity)) {
+                DirectionalLightComponent& light = ecsManager.GetComponent<DirectionalLightComponent>(selectedEntity);
+
+                if (light.enabled) {
+                    // Use the SAME matrix that ImGuizmo uses for the selected object
+                    static float selectedObjectMatrix[16];
+                    if (!RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix)) {
+                        memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
+                    }
+
+                    // Create a direction vector matrix for the arrow
+                    float lightDirMatrix[16];
+                    memcpy(lightDirMatrix, selectedObjectMatrix, sizeof(lightDirMatrix));
+
+                    // Transform the light direction by the entity's rotation and add it to position
+                    glm::mat4 entityMat = glm::mat4(
+                        selectedObjectMatrix[0], selectedObjectMatrix[4], selectedObjectMatrix[8], selectedObjectMatrix[12],
+                        selectedObjectMatrix[1], selectedObjectMatrix[5], selectedObjectMatrix[9], selectedObjectMatrix[13],
+                        selectedObjectMatrix[2], selectedObjectMatrix[6], selectedObjectMatrix[10], selectedObjectMatrix[14],
+                        selectedObjectMatrix[3], selectedObjectMatrix[7], selectedObjectMatrix[11], selectedObjectMatrix[15]
+                    );
+
+                    // Apply rotation to light direction
+                    glm::vec4 localDir = glm::vec4(light.direction, 0.0f);
+                    glm::vec4 worldDir = entityMat * localDir;
+                    glm::vec3 normalizedWorldDir = glm::normalize(glm::vec3(worldDir));
+
+                    // Create arrow end position
+                    glm::vec3 entityPos = glm::vec3(entityMat[3]);
+                    glm::vec3 arrowEndPos = entityPos + normalizedWorldDir * 1.5f;
+
+                    // Set the arrow end position in matrix
+                    lightDirMatrix[12] = arrowEndPos.x;
+                    lightDirMatrix[13] = arrowEndPos.y;
+                    lightDirMatrix[14] = arrowEndPos.z;
+
+                    // Use ImDrawList to draw the light direction arrow
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+                    // Get screen positions for custom drawing
+                    ImVec2 windowPos = ImGui::GetWindowPos();
+                    ImVec2 windowSize = ImGui::GetWindowSize();
+
+                    // Transform positions to screen space manually for the arrow
+                    glm::mat4 view = glm::mat4(
+                        viewMatrix[0], viewMatrix[4], viewMatrix[8], viewMatrix[12],
+                        viewMatrix[1], viewMatrix[5], viewMatrix[9], viewMatrix[13],
+                        viewMatrix[2], viewMatrix[6], viewMatrix[10], viewMatrix[14],
+                        viewMatrix[3], viewMatrix[7], viewMatrix[11], viewMatrix[15]
+                    );
+
+                    glm::mat4 proj = glm::mat4(
+                        projMatrix[0], projMatrix[4], projMatrix[8], projMatrix[12],
+                        projMatrix[1], projMatrix[5], projMatrix[9], projMatrix[13],
+                        projMatrix[2], projMatrix[6], projMatrix[10], projMatrix[14],
+                        projMatrix[3], projMatrix[7], projMatrix[11], projMatrix[15]
+                    );
+
+                    glm::vec4 startScreen = proj * view * glm::vec4(entityPos, 1.0f);
+                    glm::vec4 endScreen = proj * view * glm::vec4(arrowEndPos, 1.0f);
+
+                    if (startScreen.w > 0 && endScreen.w > 0) {
+                        // Convert to screen coordinates
+                        ImVec2 startPos = ImVec2(
+                            windowPos.x + (startScreen.x / startScreen.w * 0.5f + 0.5f) * windowSize.x,
+                            windowPos.y + (1.0f - (startScreen.y / startScreen.w * 0.5f + 0.5f)) * windowSize.y
+                        );
+                        ImVec2 endPos = ImVec2(
+                            windowPos.x + (endScreen.x / endScreen.w * 0.5f + 0.5f) * windowSize.x,
+                            windowPos.y + (1.0f - (endScreen.y / endScreen.w * 0.5f + 0.5f)) * windowSize.y
+                        );
+
+                        // Draw arrow
+                        drawList->AddLine(startPos, endPos, IM_COL32(255, 255, 0, 255), 4.0f);
+
+                        // Arrow head
+                        ImVec2 dir = ImVec2(endPos.x - startPos.x, endPos.y - startPos.y);
+                        float len = sqrt(dir.x * dir.x + dir.y * dir.y);
+                        if (len > 0) {
+                            dir.x /= len;
+                            dir.y /= len;
+                            ImVec2 perp = ImVec2(-dir.y, dir.x);
+
+                            ImVec2 head1 = ImVec2(endPos.x - dir.x * 15 + perp.x * 8, endPos.y - dir.y * 15 + perp.y * 8);
+                            ImVec2 head2 = ImVec2(endPos.x - dir.x * 15 - perp.x * 8, endPos.y - dir.y * 15 - perp.y * 8);
+
+                            drawList->AddLine(endPos, head1, IM_COL32(255, 255, 0, 255), 3.0f);
+                            drawList->AddLine(endPos, head2, IM_COL32(255, 255, 0, 255), 3.0f);
+                        }
+
+                        // Light icon at start position
+                        drawList->AddCircleFilled(startPos, 10.0f, IM_COL32(255, 255, 100, 180));
+                        drawList->AddCircle(startPos, 10.0f, IM_COL32(255, 255, 0, 255), 0, 2.0f);
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            // Silently handle any errors in light visualization
         }
     }
 
