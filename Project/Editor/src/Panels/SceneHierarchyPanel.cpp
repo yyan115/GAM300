@@ -4,6 +4,8 @@
 #include "GUIManager.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
+#include <PrefabIO.hpp>
+#include <imgui_internal.h>
 
 SceneHierarchyPanel::SceneHierarchyPanel() 
     : EditorPanel("Scene Hierarchy", true) {
@@ -84,10 +86,38 @@ void SceneHierarchyPanel::OnImGuiRender() {
         ImVec2 avail = ImGui::GetContentRegionAvail();
         if (avail.y > 0) {
             ImGui::InvisibleButton("HierarchyBackground", avail);
+
+            ImGuiWindow* win = ImGui::GetCurrentWindow();
+            const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
+
+            const ImGuiPayload* active = ImGui::GetDragDropPayload();
+            const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
+
+            // Foreground visual (never occluded by items)
+            if (entityDragActive)
+            {
+                ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+                fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+                fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+            }
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
                     Entity dragged = *(Entity*)payload->Data;
                     UnparentEntity(dragged);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
+                    const char* prefabPath = static_cast<const char*>(payload->Data);
+                    const bool ok = InstantiatePrefabFromFile(prefabPath);
+                    if (!ok) {
+                        std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
+                    }
+                    else {
+                        std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath << std::endl;
+                    }
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -152,28 +182,26 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         // Start a drag from this row?
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
-            const bool moveInHierarchy = io.KeyCtrl;   // Ctrl+Drag => move. Else => create prefab.
-
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
             {
-                if (moveInHierarchy)
-                {
-                    ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &entityId, sizeof(Entity));
-                    ImGui::Text("Move %s", entityName.c_str());
-                }
-                else
-                {
-                    Entity payload = entityId; // ImGui copies this buffer
-                    ImGui::SetDragDropPayload("ENTITY_AS_PREFAB", &payload, sizeof(Entity));
-                    ImGui::TextUnformatted("Create Prefab");
-                    ImGui::Separator();
-                    ImGui::Text("%s", entityName.c_str());
-                }
+                Entity payload = entityId; // ImGui copies this buffer
+                ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &payload, sizeof(Entity));
+                ImGui::Text("Move %s", entityName.c_str());
+                ImGui::Separator();
+                ImGui::Text("%s", entityName.c_str());
                 ImGui::EndDragDropSource();
             }
         }
     }
     // -----------------------------------------------------------------
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+            Entity dragged = *(Entity*)payload->Data;
+            ReparentEntity(dragged, entityId);
+        }
+        ImGui::EndDragDropTarget();
+    }
 
     if (ImGui::BeginPopupContextItem())
     {

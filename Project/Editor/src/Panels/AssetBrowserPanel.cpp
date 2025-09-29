@@ -568,7 +568,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
 
         const ImGuiPayload* active = ImGui::GetDragDropPayload();
-        const bool entityDragActive = (active && active->IsDataType("ENTITY_AS_PREFAB"));
+        const bool entityDragActive = (active && active->IsDataType("HIERARCHY_ENTITY"));
 
         // Foreground visual (never occluded by items)
         if (entityDragActive)
@@ -582,7 +582,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##AssetGridBgDrop")))
         {
             if (const ImGuiPayload* payload =
-                ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB",
+                ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY",
                     ImGuiDragDropFlags_AcceptBeforeDelivery))
             {
                 if (payload->IsDelivery() && payload->DataSize == sizeof(Entity))
