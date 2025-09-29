@@ -144,21 +144,28 @@ ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loo
     }
 
     FMOD_CHANNEL* channel = nullptr;
-    FMOD_MODE mode = FMOD_DEFAULT;
-    if (loop) mode |= FMOD_LOOP_NORMAL; 
-    else mode |= FMOD_LOOP_OFF;
 
-    FMOD_Sound_SetMode(audioAsset->sound, mode);
-
+    // Play paused so we can configure the channel before it starts
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlaySound failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
 
+    // Configure per-channel looping explicitly
+    FMOD_MODE channelMode = FMOD_DEFAULT;
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    FMOD_Channel_SetMode(channel, channelMode);
+	std::cout << "loop mode set to: " << (loop ? "FMOD_LOOP_NORMAL" : "FMOD_LOOP_OFF") << std::endl;
+    // Set loop count: -1 == infinite loop, 0 == play once
+    int loopCount = loop ? -1 : 0;
+    FMOD_Channel_SetLoopCount(channel, loopCount);
+
     // Apply volume with master volume
     float finalVolume = volume * masterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
+
+    // Unpause to start playback
     FMOD_Channel_SetPaused(channel, false);
 
     ChannelHandle chId = nextChannelHandle++;
@@ -181,17 +188,19 @@ ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset
     if (!system || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
-    FMOD_MODE mode = FMOD_DEFAULT | FMOD_3D;
-    if (loop) mode |= FMOD_LOOP_NORMAL; 
-    else mode |= FMOD_LOOP_OFF;
 
-    FMOD_Sound_SetMode(audioAsset->sound, mode);
-
+    // Play paused so we can configure the channel before it starts
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
+
+    // Per-channel looping
+    FMOD_MODE channelMode = FMOD_3D;
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    FMOD_Channel_SetMode(channel, channelMode);
+    FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
 
     // Set 3D position
     FMOD_VECTOR pos = { position.x, position.y, position.z };
@@ -200,6 +209,8 @@ ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset
 
     float finalVolume = volume * attenuation * masterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
+
+    // Unpause to start playback
     FMOD_Channel_SetPaused(channel, false);
 
     ChannelHandle chId = nextChannelHandle++;
@@ -225,21 +236,27 @@ ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, con
     if (!group) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
-    FMOD_MODE mode = FMOD_DEFAULT;
-    if (loop) mode |= FMOD_LOOP_NORMAL; 
-    else mode |= FMOD_LOOP_OFF;
 
-    FMOD_Sound_SetMode(audioAsset->sound, mode);
-
+    // Play paused so we can configure the channel
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
 
+    // Attach to bus
     FMOD_Channel_SetChannelGroup(channel, group);
+
+    // Per-channel looping
+    FMOD_MODE channelMode = FMOD_DEFAULT;
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    FMOD_Channel_SetMode(channel, channelMode);
+    FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
+
     float finalVolume = volume * masterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
+
+    // Unpause to start playback
     FMOD_Channel_SetPaused(channel, false);
 
     ChannelHandle chId = nextChannelHandle++;
@@ -483,7 +500,7 @@ FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
             exinfo.length = static_cast<unsigned int>(length);
             
             res = FMOD_System_CreateSound(system, static_cast<const char*>(buffer), 
-                                        FMOD_OPENMEMORY | FMOD_DEFAULT, &exinfo, &sound);
+                                        FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
             AAsset_close(asset);
             
             if (res == FMOD_OK) {
@@ -494,7 +511,7 @@ FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
 #endif
 
     // Fallback to file system loading
-    res = FMOD_System_CreateSound(system, assetPath.c_str(), FMOD_DEFAULT, nullptr, &sound);
+    res = FMOD_System_CreateSound(system, assetPath.c_str(), FMOD_LOOP_OFF, nullptr, &sound);
     if (res != FMOD_OK || !sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: Failed to create sound for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
@@ -517,7 +534,7 @@ FMOD_SOUND* AudioSystem::CreateSoundFromMemory(const void* data, unsigned int le
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.length = length;
 
-    FMOD_RESULT res = FMOD_System_CreateSound(system, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_DEFAULT, &exinfo, &sound);
+    FMOD_RESULT res = FMOD_System_CreateSound(system, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
     if (res != FMOD_OK || !sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: CreateSoundFromMemory failed for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;

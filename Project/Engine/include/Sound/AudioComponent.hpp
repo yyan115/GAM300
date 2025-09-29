@@ -35,6 +35,7 @@ private:
     std::shared_ptr<Audio> audioAsset{ nullptr };
     bool assetLoaded{ false };
     bool wasPlayingBeforePause{ false };
+    bool playOnStartTriggered{ false };
 
 public:
     AudioComponent();

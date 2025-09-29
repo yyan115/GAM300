@@ -55,6 +55,8 @@ void AudioComponent::Stop() {
     }
     State = AudioSourceState::Stopped;
     wasPlayingBeforePause = false;
+    // Reset PlayOnStart trigger when manually stopped
+    playOnStartTriggered = false;
 }
 
 void AudioComponent::Pause() {
@@ -152,7 +154,8 @@ void AudioComponent::SetAudioAssetPath(const std::string& path) {
     audioAsset = nullptr;
     assetLoaded = false;
     State = AudioSourceState::Stopped;
-    // Don't load or play immediately - let UpdateComponent handle it based on game state
+    // Reset PlayOnStart trigger when asset changes
+    playOnStartTriggered = false;
 }
 
 bool AudioComponent::HasValidAsset() const { return audioAsset != nullptr && assetLoaded; }
@@ -165,12 +168,19 @@ void AudioComponent::UpdateComponent() {
 
     UpdatePlaybackState();
 
-    // Handle PlayOnStart - be more aggressive in PLAY_MODE
-    if (PlayOnStart && !IsPlaying() && HasValidAsset() && State == AudioSourceState::Stopped) {
-        if (Engine::IsPlayMode()) {
-            ENGINE_PRINT("[AudioComponent] PlayOnStart triggered for: ", AudioAssetPath, "\n");
-            Play();
+    // Handle PlayOnStart: only auto-play once per enable
+    if (PlayOnStart) {
+        if (!playOnStartTriggered && !IsPlaying() && HasValidAsset() && State == AudioSourceState::Stopped) {
+            if (Engine::IsPlayMode()) {
+                ENGINE_PRINT("[AudioComponent] PlayOnStart triggered for: ", AudioAssetPath, "\n");
+                Play();
+                playOnStartTriggered = true; // Prevent automatic restarts
+            }
         }
+    }
+    else {
+        // If user turned off PlayOnStart via inspector, reset flag
+        playOnStartTriggered = false;
     }
 }
 
