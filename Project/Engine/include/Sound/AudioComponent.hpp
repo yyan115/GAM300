@@ -3,44 +3,77 @@
 #include <string>
 #include <memory>
 #include <iostream>
-#include "Sound/AudioSystem.hpp"
+#include "Sound/AudioManager.hpp"
 #include "Math/Vector3D.hpp"
-#include "Asset Manager/ResourceManager.hpp" // load Audio assets via ResourceManager
+#include "Asset Manager/ResourceManager.hpp"
 
 // Forward declare Audio class to avoid including the header
 class Audio;
 
 struct ENGINE_API AudioComponent {
-    // Public editable properties used by inspector
-    std::string AudioAssetPath; // original asset path under Resources
+    // Unity-like public properties (Inspector editable)
+    std::string AudioAssetPath;
     float Volume{ 1.0f };
+    float Pitch{ 1.0f };
     bool Loop{ false };
-    bool PlayOnAwake{ false };
+    bool PlayOnStart{ false };
     bool Spatialize{ false };
+    float MinDistance{ 1.0f };
+    float MaxDistance{ 100.0f };
     float Attenuation{ 1.0f };
+    bool Mute{ false };
+    int Priority{ 128 }; // Unity-like priority (0-256)
+    std::string BusName; // Channel group assignment
 
-    // Runtime data
-    std::shared_ptr<Audio> audioAsset{ nullptr };
-    ChannelHandle Channel{ 0 };
-
-    // Optional position - when spatialize is enabled inspector / transform system should update this
+    // Runtime state (read-only)
+    ChannelHandle CurrentChannel{ 0 };
+    AudioSourceState State{ AudioSourceState::Stopped };
     Vector3D Position{ 0.0f, 0.0f, 0.0f };
 
+private:
+    // Internal cached asset
+    std::shared_ptr<Audio> audioAsset{ nullptr };
+    bool assetLoaded{ false };
+    bool wasPlayingBeforePause{ false };
+    bool playOnStartTriggered{ false };
+
+public:
     AudioComponent();
     ~AudioComponent();
 
-    // Called when inspector sets a new asset path
-    void SetAudioAssetPath(const std::string& path);
-
+    // Unity-like API
     void Play();
-    void Pause();
+    void PlayOneShot(); // Play without affecting current state
     void Stop();
-
-    // Called every frame (or when transform updates) to keep 3D channel position updated
-    void UpdatePosition(const Vector3D& pos);
-
-    bool IsPlaying();
-
+    void Pause();
+    void UnPause(); // Resume from pause
+    
+    // State queries
+    bool IsPlaying() const;
+    bool IsPaused() const;
+    bool IsStopped() const;
+    
+    // Property setters (with immediate effect if playing)
     void SetVolume(float newVolume);
-    void SetPitch(float pitch);
+    void SetPitch(float newPitch);
+    void SetLoop(bool shouldLoop);
+    void SetMute(bool shouldMute);
+    void SetSpatialize(bool enable);
+    void SetPosition(const Vector3D& pos);
+    void SetBus(const std::string& busName);
+
+    // Asset management
+    void SetAudioAssetPath(const std::string& path);
+    bool HasValidAsset() const;
+    
+    // For ECS system integration
+    void UpdateComponent(); // Called by AudioManager each frame
+    void OnTransformChanged(const Vector3D& newPosition); // Called by transform system
+
+private:
+    // Internal helpers
+    bool EnsureAssetLoaded();
+    void UpdateChannelProperties();
+    void UpdatePlaybackState();
+    ChannelHandle PlayInternal(bool oneShot = false);
 };

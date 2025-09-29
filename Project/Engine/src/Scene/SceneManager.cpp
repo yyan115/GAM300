@@ -3,9 +3,16 @@
 #include <Scene/SceneManager.hpp>
 #include <Scene/SceneInstance.hpp>
 #include <filesystem>
+#include <Hierarchy/ParentComponent.hpp>
+#include <Hierarchy/ChildrenComponent.hpp>
+#include <ECS/NameComponent.hpp>
+#include "rapidjson/prettywriter.h"
+#include <Serialization/Serializer.hpp>
+#include "Logging.hpp"
+#include <Utilities/FileUtilities.hpp>
 #include "Logging.hpp"
 
-SceneManager::~SceneManager() {
+ENGINE_API SceneManager::~SceneManager() {
 	ExitScene();
 }
 
@@ -20,9 +27,10 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-void SceneManager::LoadScene(const std::string& scenePath) {
+ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 	// Exit and clean up the current scene if it exists.
-	if (currentScene) {
+	if (currentScene) 
+    {
 		currentScene->Exit();
 
 		ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
@@ -34,8 +42,8 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 	currentScenePath = scenePath;
 
 	// Deserialize the new scene data.
-	//Serializer::GetInstance().DeserializeScene(scenePath);
-
+	Serializer::DeserializeScene(scenePath);
+    
 	// Initialize the new scene.
 	currentScene->Initialize();
 }
@@ -62,9 +70,12 @@ void SceneManager::ExitScene() {
 	}
 }
 
-void SceneManager::SaveScene() {
-	// Serialize the current scene data.
-	//Serializer::GetInstance().SerializeScene(currentScenePath);
+//Simple JSON save scene
+ENGINE_API void SceneManager::SaveScene() {
+	Serializer::SerializeScene("Resources/Scenes/scene.json");
+	if (FileUtilities::CopyFile("Resources/Scenes/scene.json", (FileUtilities::GetSolutionRootDir() / "Resources/Scenes/scene.json").generic_string())) {
+		ENGINE_LOG_INFO("Copied scene file to root project folder: Resources/Scenes/scene.json");
+	}
 }
 
 void SceneManager::SaveTempScene() {

@@ -10,75 +10,97 @@
 #include "WindowManager.hpp"
 #include "Platform/AndroidPlatform.h"
 #endif
+#include <Utilities/FileUtilities.hpp>
+#include <Asset Manager/AssetManager.hpp>
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+
+//std::string get_file_contents(const char* filename)
+//{
+//#ifdef ANDROID
+//	// On Android, load from assets
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading asset: %s", filename);
+//
+//	auto* platform = WindowManager::GetPlatform();
+//	if (!platform) {
+//		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Platform not available for asset loading");
+//		throw std::runtime_error("Platform not available");
+//	}
+//
+//	AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+//	AAssetManager* assetManager = androidPlatform->GetAssetManager();
+//
+//	if (assetManager) {
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "AssetManager is valid, attempting to open: %s", filename);
+//		// Try to load from Android assets
+//		AAsset* asset = AAssetManager_open(assetManager, filename, AASSET_MODE_BUFFER);
+//		if (asset) {
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "Asset opened successfully: %s", filename);
+//			size_t length = AAsset_getLength(asset);
+//			const char* buffer = (const char*)AAsset_getBuffer(asset);
+//			if (buffer) {
+//				std::string contents(buffer, length);
+//				AAsset_close(asset);
+//				__android_log_print(ANDROID_LOG_INFO, "GAM300", "Successfully loaded asset: %s (%zu bytes)", filename, length);
+//				return contents;
+//			}
+//			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to get buffer for asset: %s", filename);
+//			AAsset_close(asset);
+//		} else {
+//			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to open asset: %s", filename);
+//		}
+//		__android_log_print(ANDROID_LOG_WARN, "GAM300", "Failed to load asset: %s, trying regular file", filename);
+//	} else {
+//		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "AssetManager is null!");
+//	}
+//#endif
+//
+//	std::ifstream in(filename, std::ios::binary);
+//	if (in)
+//	{
+//		std::string contents;
+//		in.seekg(0, std::ios::end);
+//		contents.resize(in.tellg());
+//		in.seekg(0, std::ios::beg);
+//		in.read(&contents[0], contents.size());
+//		in.close();
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Successfully loaded file: %s", filename);
+//#endif
+//		return(contents);
+//	}
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to load file: %s", filename);
+//#endif
+//	std::string error_msg = "Failed to open file: " + std::string(filename);
+//	if (errno != 0) {
+//#ifdef _WIN32
+//		char error_buffer[256];
+//		strerror_s(error_buffer, sizeof(error_buffer), errno);
+//		error_msg += " (Error: " + std::string(error_buffer) + ")";
+//#else
+//		error_msg += " (Error: " + std::string(strerror(errno)) + ")";
+//#endif
+//	}
+//	throw std::runtime_error(error_msg);
+//}
 
 std::string get_file_contents(const char* filename)
 {
-#ifdef ANDROID
-	// On Android, load from assets
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading asset: %s", filename);
-
 	auto* platform = WindowManager::GetPlatform();
 	if (!platform) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Platform not available for asset loading");
 		throw std::runtime_error("Platform not available");
 	}
 
-	AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
-	AAssetManager* assetManager = androidPlatform->GetAssetManager();
+	ENGINE_LOG_INFO("get_file_contents filename: " + std::string{ filename });
+	std::vector<uint8_t> buffer = platform->ReadAsset(filename);
+	if (!buffer.empty()) {
+		std::string contents(buffer.size(), '\0');
+		std::memcpy(&contents[0], buffer.data(), buffer.size());
+		return contents;
+	}
 
-	if (assetManager) {
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "AssetManager is valid, attempting to open: %s", filename);
-		// Try to load from Android assets
-		AAsset* asset = AAssetManager_open(assetManager, filename, AASSET_MODE_BUFFER);
-		if (asset) {
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "Asset opened successfully: %s", filename);
-			size_t length = AAsset_getLength(asset);
-			const char* buffer = (const char*)AAsset_getBuffer(asset);
-			if (buffer) {
-				std::string contents(buffer, length);
-				AAsset_close(asset);
-				__android_log_print(ANDROID_LOG_INFO, "GAM300", "Successfully loaded asset: %s (%zu bytes)", filename, length);
-				return contents;
-			}
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to get buffer for asset: %s", filename);
-			AAsset_close(asset);
-		} else {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to open asset: %s", filename);
-		}
-		__android_log_print(ANDROID_LOG_WARN, "GAM300", "Failed to load asset: %s, trying regular file", filename);
-	} else {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "AssetManager is null!");
-	}
-#endif
-
-	std::ifstream in(filename, std::ios::binary);
-	if (in)
-	{
-		std::string contents;
-		in.seekg(0, std::ios::end);
-		contents.resize(in.tellg());
-		in.seekg(0, std::ios::beg);
-		in.read(&contents[0], contents.size());
-		in.close();
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Successfully loaded file: %s", filename);
-#endif
-		return(contents);
-	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to load file: %s", filename);
-#endif
-	std::string error_msg = "Failed to open file: " + std::string(filename);
-	if (errno != 0) {
-#ifdef _WIN32
-		char error_buffer[256];
-		strerror_s(error_buffer, sizeof(error_buffer), errno);
-		error_msg += " (Error: " + std::string(error_buffer) + ")";
-#else
-		error_msg += " (Error: " + std::string(strerror(errno)) + ")";
-#endif
-	}
-	throw std::runtime_error(error_msg);
+	return "";
 }
 
 bool Shader::SetupShader(const std::string& path) {
@@ -93,8 +115,12 @@ bool Shader::SetupShader(const std::string& path) {
 	}
 #endif
 
-	std::string vertexFile = path + ".vert";
-	std::string fragmentFile = path + ".frag";
+	ENGINE_LOG_INFO("SetupShader path: " + path);
+
+	std::filesystem::path p(path);
+	std::string genericPath = (p.parent_path() / p.stem()).generic_string();
+	std::string vertexFile = genericPath + ".vert";
+	std::string fragmentFile = genericPath + ".frag";
 
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading shader files: %s and %s", vertexFile.c_str(), fragmentFile.c_str());
@@ -227,6 +253,9 @@ bool Shader::SetupShader(const std::string& path) {
 	// check for linking errors
 	GLint linkSuccess = GL_FALSE;
 	glGetProgramiv(ID, GL_LINK_STATUS, &linkSuccess);
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Link status: %d (GL_TRUE=%d)", linkSuccess, GL_TRUE);
+#endif
 	if (linkSuccess != GL_TRUE) {
 		GLint logLength = 0;
 		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &logLength);
@@ -255,7 +284,7 @@ bool Shader::SetupShader(const std::string& path) {
 	return true;
 }
 
-std::string Shader::CompileToResource(const std::string& path) {
+std::string Shader::CompileToResource(const std::string& path, bool forAndroid) {
 	//// Check if glGetProgramBinary is supported first.
 	//GLint supported = 0;
 	//glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &supported);
@@ -266,7 +295,7 @@ std::string Shader::CompileToResource(const std::string& path) {
 	//}
 
 	binarySupported = true;
-
+	std::filesystem::path p(path);
 	if (!SetupShader(path)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
 		//std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
@@ -280,9 +309,16 @@ std::string Shader::CompileToResource(const std::string& path) {
 	glGetProgramBinary(ID, binaryLength, nullptr, &binaryFormat, binaryData.data());
 
 	// Save the binary code to a file.
-	std::filesystem::path p(path);
-	std::string shaderPath = (p.parent_path() / p.stem()).generic_string() + ".shader";
+	std::string shaderPath{}; 
+	
+	if (!forAndroid)
+		shaderPath = (p.parent_path() / p.stem()).generic_string() + ".shader";
+	else
+		shaderPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + ".shader";
 
+	// Ensure parent directories exist
+	p = shaderPath;
+	std::filesystem::create_directories(p.parent_path());
 	std::ofstream shaderFile(shaderPath, std::ios::binary);
 	if (shaderFile.is_open()) {
 		// Write the binary format to the file.
@@ -292,37 +328,85 @@ std::string Shader::CompileToResource(const std::string& path) {
 		// Write the binary code to the file.
 		shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
 		shaderFile.close();
-		return shaderPath;
+
+		if (forAndroid) {
+			// Copy the .vert and .frag source files as well for fallback.
+			try {
+				std::string vertPath = path + ".vert";
+				std::string androidVertPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / vertPath).generic_string();
+				std::string fragPath = path + ".frag";
+				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
+				std::filesystem::copy_file(vertPath, androidVertPath,
+					std::filesystem::copy_options::overwrite_existing);
+				std::filesystem::copy_file(fragPath, androidFragPath,
+					std::filesystem::copy_options::overwrite_existing);
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+			}
+
+			return shaderPath;
+		}
+	}
+
+	if (!forAndroid) {
+		// Save the binary code to the root project folder as well.
+		p = (FileUtilities::GetSolutionRootDir() / shaderPath);
+		shaderFile.open(p.generic_string(), std::ios::binary);
+		if (shaderFile.is_open()) {
+			// Write the binary format to the file.
+			shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
+			// Write the binary length to the file.
+			shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
+			// Write the binary code to the file.
+			shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
+			shaderFile.close();
+			return shaderPath;
+		}
 	}
 
 	return std::string{};
 }
 
-bool Shader::LoadResource(const std::string& assetPath)
+bool Shader::LoadResource(const std::string& resourcePath, const std::string& assetPath)
 {
+	assetPath;
 	if (!binarySupported) {
 		// Fallback to regular shader compilation if binary is not supported.
-		if (!SetupShader(assetPath)) {
+		if (!SetupShader(resourcePath)) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting load.\n");
-			//std::cerr << "[SHADER]: Shader compilation failed. Aborting load." << std::endl;
 			return false;
 		}
 
 		return true;
 	}
 
-	std::filesystem::path assetPathFS(assetPath);
-	std::string resourcePath = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".shader";
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		std::cerr << "[SHADER] ERROR: Platform not available for asset discovery!" << std::endl;
+		return false;
+	}
 
-	std::ifstream shaderFile(resourcePath, std::ios::binary);
-	if (shaderFile.is_open()) {
-		// Read the binary format from the file.
-		shaderFile.read(reinterpret_cast<char*>(&binaryFormat), sizeof(binaryFormat));
-		// Read the binary length from the file.
-		shaderFile.read(reinterpret_cast<char*>(&binaryLength), sizeof(binaryLength));
+	std::vector<uint8_t> fileData = platform->ReadAsset(resourcePath);
+	if (!fileData.empty()) {
+		size_t offset = 0;
+
+		// Read binaryFormat (GLuint)
+		if (offset + sizeof(binaryFormat) > fileData.size()) return false;
+		std::memcpy(&binaryFormat, fileData.data() + offset, sizeof(binaryFormat));
+		offset += sizeof(binaryFormat);
+
+		// Read binaryLength (GLsizei)
+		if (offset + sizeof(binaryLength) > fileData.size()) return false;
+		std::memcpy(&binaryLength, fileData.data() + offset, sizeof(binaryLength));
+		offset += sizeof(binaryLength);
+
+		// Read binaryData
+		if (offset + binaryLength > fileData.size()) return false;
 		binaryData.resize(binaryLength);
-		// Read the binary code from the file.
-		shaderFile.read(reinterpret_cast<char*>(binaryData.data()), binaryLength);
+		std::memcpy(binaryData.data(), fileData.data() + offset, binaryLength);
+		offset += binaryLength;
 
 		// Create a new shader program.
 		ID = glCreateProgram();
@@ -333,25 +417,60 @@ bool Shader::LoadResource(const std::string& assetPath)
 		glGetProgramiv(ID, GL_LINK_STATUS, &status);
 		if (status == GL_FALSE) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
-			//std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+#ifndef ANDROID
 			if (CompileToResource(assetPath).empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
 				//std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
 				return false;
 			}
-
-			return LoadResource(assetPath);
+#else
+			if (!SetupShader(assetPath)) {
+				ENGINE_LOG_INFO("[SHADER]: Android shader setup failed. Aborting load.");
+				return false;
+			}
+			else return true;
+#endif
+			return LoadResource(resourcePath);
 		}
 
 		return true;
 	}
+	//std::ifstream shaderFile(resourcePath, std::ios::binary);
+	//if (shaderFile.is_open()) {
+	//	// Read the binary format from the file.
+	//	shaderFile.read(reinterpret_cast<char*>(&binaryFormat), sizeof(binaryFormat));
+	//	// Read the binary length from the file.
+	//	shaderFile.read(reinterpret_cast<char*>(&binaryLength), sizeof(binaryLength));
+	//	binaryData.resize(binaryLength);
+	//	// Read the binary code from the file.
+	//	shaderFile.read(reinterpret_cast<char*>(binaryData.data()), binaryLength);
+
+	//	// Create a new shader program.
+	//	ID = glCreateProgram();
+	//	glProgramBinary(ID, binaryFormat, binaryData.data(), binaryLength);
+
+	//	// Check if the program was successfully loaded.
+	//	GLint status = 0;
+	//	glGetProgramiv(ID, GL_LINK_STATUS, &status);
+	//	if (status == GL_FALSE) {
+	//		std::cerr << "[SHADER]: Failed to load shader program from binary. Recompiling shader..." << std::endl;
+	//		if (CompileToResource(resourcePath).empty()) {
+	//			std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
+	//			return false;
+	//		}
+
+	//		return LoadResource(resourcePath);
+	//	}
+
+	//	return true;
+	//}
 	else {
 		std::cerr << "[SHADER]: Shader file not found: " << resourcePath << ", attempting to compile from source" << std::endl;
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_WARN, "GAM300", "[SHADER]: Shader file not found: %s, attempting to compile from source", resourcePath.c_str());
 #endif
 		// Fallback to regular shader compilation if binary file is not found
-		if (!SetupShader(assetPath)) {
+		if (!SetupShader(resourcePath)) {
 			std::cerr << "[SHADER]: Shader compilation from source failed. Aborting load." << std::endl;
 #ifdef ANDROID
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[SHADER]: Shader compilation from source failed. Aborting load.");
@@ -361,19 +480,19 @@ bool Shader::LoadResource(const std::string& assetPath)
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER]: Successfully compiled shader from source: %s", assetPath.c_str());
 #endif
-		std::cout << "[SHADER]: Successfully compiled shader from source: " << assetPath << std::endl;
+		std::cout << "[SHADER]: Successfully compiled shader from source: " << resourcePath << std::endl;
 		return true;
 	}
 }
 
-bool Shader::ReloadResource(const std::string& assetPath)
+bool Shader::ReloadResource(const std::string& resourcePath, const std::string& assetPath)
 {
-	return LoadResource(assetPath);
+	return LoadResource(resourcePath, assetPath);
 }
 
-std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData)
+std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
-	assetPath, currentMetaData;
+	assetPath, currentMetaData, forAndroid;
 	return std::shared_ptr<AssetMeta>();
 }
 

@@ -9,7 +9,6 @@
 #include <vector>
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
-#include <Sound/AudioSystem.hpp>
 
 InspectorPanel::InspectorPanel() 
     : EditorPanel("Inspector", true) {
@@ -201,7 +200,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         }
 
         // Play on Awake
-        ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
+        ImGui::Checkbox("Play On Start", &audio.PlayOnStart);
 
         // Spatialize
         if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {
@@ -218,7 +217,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
         if (audio.Spatialize) {
             float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
             if (ImGui::DragFloat3("Position", pos, 0.1f)) {
-                audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));
+                /*audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));*/
                 // Also update Transform if present
                 if (ecsManager.HasComponent<Transform>(entity)) {
                     ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });
@@ -235,8 +234,10 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
             audio.Stop();
         }
 
-        ImGui::PopID();
-    } catch (const std::exception& e) {
-        ImGui::Text("Error accessing AudioComponent: %s", e.what());
-    }
+		ImGui::PopID();
+	}
+	catch (const std::exception& e)
+	{
+		ImGui::Text("Error accessing AudioComponent: %s", e.what());
+	}
 }

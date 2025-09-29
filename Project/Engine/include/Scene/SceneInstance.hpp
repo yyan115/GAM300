@@ -12,6 +12,7 @@ public:
 	~SceneInstance() override = default;
 
 	void Initialize() override;
+
 	void Update(double dt) override;
 	void Draw() override;
 	void Exit() override;

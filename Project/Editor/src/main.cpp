@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "WindowManager.hpp"
 #include "TimeManager.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
 #include "Logging.hpp"
 
 
@@ -50,6 +51,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
+    MetaFilesManager::CleanupUnusedMetaFiles("Resources");
 
     ENGINE_PRINT("=== Editor ended ===\n");
     //std::cout << "=== Editor ended ===" << std::endl;

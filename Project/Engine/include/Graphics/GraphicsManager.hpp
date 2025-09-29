@@ -37,7 +37,6 @@ public:
     // Main rendering
     void Render();
 
-    glm::mat4 ConvertMatrix4x4ToGLM(const Matrix4x4& m);
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -50,7 +49,6 @@ private:
     void ApplyLighting(Shader& shader);
     void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
     
-    Matrix4x4 ConvertGLMToMatrix4x4(const glm::mat4& m);
     glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
 
     // Private text rendering methods

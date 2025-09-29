@@ -13,6 +13,14 @@
 #include "pch.h"
 #include "Math/Vector3D.hpp"
 
+#pragma region Reflection
+REFL_REGISTER_START(Vector3D)
+	REFL_REGISTER_PROPERTY(x)
+	REFL_REGISTER_PROPERTY(y)
+	REFL_REGISTER_PROPERTY(z)
+REFL_REGISTER_END
+#pragma endregion
+
 // Indexing
 float& Vector3D::operator[](int i)
 {
@@ -151,11 +159,3 @@ Vector3D operator*(float scalar, const Vector3D& v) { return v * scalar; }
 std::ostream& operator<<(std::ostream& os, const Vector3D& v) {
 	return os << '(' << v.x << ", " << v.y << ", " << v.z << ')';
 }
-
-#pragma region Reflection
-REFL_REGISTER_START(Vector3D)
-	REFL_REGISTER_PROPERTY(x)
-	REFL_REGISTER_PROPERTY(y)
-	REFL_REGISTER_PROPERTY(z)
-REFL_REGISTER_END
-#pragma endregion
