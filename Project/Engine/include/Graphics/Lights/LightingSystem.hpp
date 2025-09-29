@@ -5,6 +5,7 @@
 struct DirectionalLightComponent;
 struct PointLightComponent;
 struct SpotLightComponent;
+class Camera;
 
 class LightingSystem : public System {
 public:

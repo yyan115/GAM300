@@ -460,10 +460,11 @@ void MetaFilesManager::CleanupUnusedMetaFiles(const std::string& rootAssetFolder
 			rapidjson::Document doc;
 			doc.Parse(jsonContent.c_str());
 
-			if (!doc.HasMember("AssetMetaData")) {
-				// Meta file is outdated and should be deleted and re-generated on next launch if still needed.
+			if (!doc.IsObject()) {
 				FileUtilities::RemoveFile(metaPath);
+				continue;
 			}
+
 			const auto& assetMetaData = doc["AssetMetaData"];
 			if (assetMetaData.HasMember("source")) {
 				std::string sourceFilePath = assetMetaData["source"].GetString();
