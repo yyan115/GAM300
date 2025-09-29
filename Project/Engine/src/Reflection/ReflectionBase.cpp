@@ -249,23 +249,82 @@ void TypeDescriptor_Struct::Serialize(const void* obj, std::ostream& os) const
 
 void TypeDescriptor_Struct::Deserialize(void* obj, const rapidjson::Value& value) const
 {
+    // Validate target object
+    if (!obj)
+    {
+        std::stringstream ss;
+        ss << "Null target object passed to Deserialize for struct '" << (GetName() ? GetName() : "") << "'";
+        throw std::runtime_error(ss.str());
+    }
+
+    // Validate JSON shape
     if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsArray())
     {
         throw std::runtime_error(std::string("Malformed JSON while deserializing struct '") + (GetName() ? GetName() : "") + "'");
     }
+
     const auto& arr = value["data"].GetArray();
     const TypeDescriptor_Struct_Impl* impl = SImplConst(this);
     size_t expected = impl ? impl->members.size() : 0;
-    if (arr.Size() != expected)
+
+    // Size mismatch -> fail fast with clear message
+    if (static_cast<size_t>(arr.Size()) != expected)
     {
         std::stringstream ss;
-        ss << "Array size mismatch while deserializing struct '" << (GetName() ? GetName() : "") << "' : expected " << expected << " got " << arr.Size();
+        ss << "Array size mismatch while deserializing struct '" << (GetName() ? GetName() : "")
+            << "' : expected " << expected << " got " << arr.Size();
         throw std::runtime_error(ss.str());
     }
-    for (rapidjson::SizeType i = 0; i < arr.Size(); i++)
+
+    // Nothing to do if no members
+    if (!impl || impl->members.empty()) return;
+
+    // Per-member guarded deserialization
+    for (rapidjson::SizeType i = 0; i < arr.Size(); ++i)
     {
-        void* member_addr = impl->members[i].get_ptr(obj);
-        impl->members[i].type->Deserialize(member_addr, arr[i]);
+        const TypeDescriptor_Struct::Member& member = impl->members[i];
+
+        // Check member TypeDescriptor exists
+        if (!member.type)
+        {
+            std::stringstream ss;
+            ss << "Missing TypeDescriptor for member index " << i << " of struct '" << (GetName() ? GetName() : "") << "'";
+            throw std::runtime_error(ss.str());
+        }
+
+        // Resolve member pointer into the target object
+        void* member_addr = nullptr;
+        try
+        {
+            member_addr = member.get_ptr(obj);
+        }
+        catch (const std::exception& e)
+        {
+            std::stringstream ss;
+            ss << "Exception while obtaining pointer for member '" << member.name << "' (index " << i
+                << ") of struct '" << (GetName() ? GetName() : "") << "': " << e.what();
+            throw std::runtime_error(ss.str());
+        }
+        if (!member_addr)
+        {
+            std::stringstream ss;
+            ss << "Member pointer is null for member '" << member.name << "' (index " << i
+                << ") while deserializing struct '" << (GetName() ? GetName() : "") << "'";
+            throw std::runtime_error(ss.str());
+        }
+
+        // Deserialize the member and add context on error
+        try
+        {
+            member.type->Deserialize(member_addr, arr[i]);
+        }
+        catch (const std::exception& e)
+        {
+            std::stringstream ss;
+            ss << "Error deserializing member '" << member.name << "' (index " << i
+                << ") of struct '" << (GetName() ? GetName() : "") << "': " << e.what();
+            throw std::runtime_error(ss.str());
+        }
     }
 }
 
@@ -556,7 +615,7 @@ void TypeDescriptor_StdSharedPtr<void>::Serialize(const void* obj, std::ostream&
     // The contract: first sizeof(uint64_t) bytes hold the payload size (little-endian)
     uint64_t data_size = 0;
     std::memcpy(&data_size, ptr, sizeof(uint64_t));
-    uint64_t le_size = ToLittleEndian_u64(data_size);
+    //uint64_t le_size = ToLittleEndian_u64(data_size);
 
     uint8_t* byte_ptr = static_cast<uint8_t*>(ptr);
     std::vector<uint8_t> data(byte_ptr, byte_ptr + sizeof(uint64_t) + static_cast<size_t>(data_size));
