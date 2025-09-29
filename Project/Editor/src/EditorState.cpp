@@ -4,8 +4,8 @@
 
 // Added includes for ECS and audio control
 #include <ECS/ECSRegistry.hpp>
-#include <Sound/AudioComponent.hpp>
-#include <Sound/AudioSystem.hpp>
+#include "Sound/AudioComponent.hpp"
+#include "Sound/AudioManager.hpp"
 
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
@@ -49,7 +49,7 @@ void EditorState::Play() {
         SetState(State::PLAY_MODE);
 
         // Ensure FMOD global paused flag cleared so audio can play
-        AudioSystem::GetInstance().SetGlobalPaused(false);
+        AudioManager::GetInstance().SetGlobalPaused(false);
 
         // Iterate all entities in the active ECS manager and trigger PlayOnAwake
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -66,7 +66,7 @@ void EditorState::Play() {
         SetState(State::PLAY_MODE);
 
         // Unpause FMOD and resume components that were paused
-        AudioSystem::GetInstance().SetGlobalPaused(false);
+        AudioManager::GetInstance().SetGlobalPaused(false);
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<AudioComponent>(ent)) {
@@ -82,7 +82,7 @@ void EditorState::Pause() {
         SetState(State::PAUSED);
 
         // Pause FMOD and pause all playing audio components
-        AudioSystem::GetInstance().SetGlobalPaused(true);
+        AudioManager::GetInstance().SetGlobalPaused(true);
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<AudioComponent>(ent)) {
@@ -97,7 +97,7 @@ void EditorState::Stop() {
     SetState(State::EDIT_MODE);
 
     // Stop all audio playback in FMOD and reset components
-    AudioSystem::GetInstance().StopAll();
+    AudioManager::GetInstance().StopAll();
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     for (auto ent : ecs.GetActiveEntities()) {
         if (ecs.HasComponent<AudioComponent>(ent)) {

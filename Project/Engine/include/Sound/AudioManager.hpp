@@ -29,9 +29,9 @@ enum class AudioSourceState {
     Paused
 };
 
-class ENGINE_API AudioSystem : public System {
+class ENGINE_API AudioManager : public System {
 public:
-    static AudioSystem& GetInstance();
+    static AudioManager& GetInstance();
 
     // Lifecycle - explicit management only
     bool Initialise();
@@ -84,12 +84,12 @@ public:
 #endif
 
 public:
-    AudioSystem();
-    ~AudioSystem() = default; // No automatic shutdown
+    AudioManager();
+    ~AudioManager() = default; // No automatic shutdown
 
     // Non-copyable
-    AudioSystem(const AudioSystem&) = delete;
-    AudioSystem& operator=(const AudioSystem&) = delete;
+    AudioManager(const AudioManager&) = delete;
+    AudioManager& operator=(const AudioManager&) = delete;
 
 private:
     struct ChannelData {

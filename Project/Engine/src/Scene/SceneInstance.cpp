@@ -88,32 +88,21 @@ void SceneInstance::Initialize() {
 	gfxManager.SetCamera(&camera);
 
 	// Test Audio
-	{
-		// Initialize AudioSystem
-		if (!AudioSystem::GetInstance().Initialise())
-		{
-			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
-		}
-		else
-		{
-			// Create an entity with AudioComponent
-			Entity audioEntity = ecsManager.CreateEntity();
-			ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
-			NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
-			audioName.name = "Audio Test Entity";
+	// Create an entity with AudioComponent
+	Entity audioEntity = ecsManager.CreateEntity();
+	ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+	NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+	audioName.name = "Audio Test Entity";
 			
-			// Add AudioComponent
-			AudioComponent audioComp;
-			audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-			audioComp.Volume = 0.8f;
-			audioComp.Loop = false;
-			audioComp.PlayOnStart = true;
-			audioComp.Spatialize = false;
-			ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-			
-			// The AudioComponent will automatically load and play the audio on awake
-		}
-	}
+	// Add AudioComponent
+	AudioComponent audioComp;
+	audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
+	audioComp.Volume = 0.8f;
+	audioComp.Loop = false;
+	audioComp.PlayOnStart = true;
+	audioComp.Spatialize = false;
+	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
@@ -134,11 +123,6 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	
-	if (mainECS.audioSystem)
-	{
-		mainECS.audioSystem->Update();
-	}
 }
 
 void SceneInstance::Draw() {

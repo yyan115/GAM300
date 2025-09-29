@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
-#include <Sound/AudioSystem.hpp>
-#include <Sound/Audio.hpp>
+#include "Sound/Audio.hpp"
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL

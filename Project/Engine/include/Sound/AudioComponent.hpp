@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 #include <iostream>
-#include "Sound/AudioSystem.hpp"
+#include "Sound/AudioManager.hpp"
 #include "Math/Vector3D.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 
@@ -67,7 +67,7 @@ public:
     bool HasValidAsset() const;
     
     // For ECS system integration
-    void UpdateComponent(); // Called by AudioSystem each frame
+    void UpdateComponent(); // Called by AudioManager each frame
     void OnTransformChanged(const Vector3D& newPosition); // Called by transform system
 
 private:

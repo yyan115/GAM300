@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Sound/Audio.hpp"
 #include <Asset Manager/AssetManager.hpp>
-#include "Sound/AudioSystem.hpp"
+#include "Sound/AudioManager.hpp"
 #include "Logging.hpp"
 #include <filesystem>
 #include <fstream>
@@ -66,11 +66,11 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
 
     // Clean up existing sound if any
     if (sound) {
-        AudioSystem::GetInstance().ReleaseSound(sound, this->assetPath);
+        AudioManager::GetInstance().ReleaseSound(sound, this->assetPath);
         sound = nullptr;
     }
 
-    AudioSystem& audioSys = AudioSystem::GetInstance();
+    AudioManager& audioSys = AudioManager::GetInstance();
 
 #ifdef ANDROID
     // On Android, try to load from APK assets first using platform abstraction
@@ -149,7 +149,7 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
 bool Audio::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
     // Release existing sound if any
     if (sound && !this->assetPath.empty()) {
-        AudioSystem::GetInstance().ReleaseSound(sound, this->assetPath);
+        AudioManager::GetInstance().ReleaseSound(sound, this->assetPath);
         sound = nullptr;
     }
 

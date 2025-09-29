@@ -19,7 +19,7 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
-#include <Sound/AudioSystem.hpp>
+#include "Sound/AudioManager.hpp"
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -48,13 +48,11 @@ bool Engine::Initialize() {
 
 	// Platform-specific asset initialization
 #ifndef __ANDROID__
-	// Desktop platforms: Initialize assets immediately (filesystem-based)
-	MetaFilesManager::InitializeAssetMetaFiles("Resources");
-	// Initialize AudioSystem on desktop now that platform assets are available
-	if (!AudioSystem::GetInstance().Initialise()) {
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize AudioSystem\n");
+	// Initialize AudioManager on desktop now that platform assets are available
+	if (!AudioManager::GetInstance().Initialise()) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize AudioManager\n");
 	} else {
-		ENGINE_PRINT("[Engine] AudioSystem initialized\n");
+		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
 #endif
 	// Android: Asset initialization happens in JNI after AssetManager is set
@@ -495,15 +493,15 @@ bool Engine::Initialize() {
 
 	// Test Audio
 	/*{
-		if (!AudioSystem::GetInstance().Initialise())
+		if (!AudioManager::GetInstance().Initialise())
 		{
-			ENGINE_LOG_ERROR("Failed to initialize AudioSystem");
+			ENGINE_LOG_ERROR("Failed to initialize AudioManager");
 		}
 		else
 		{
-			AudioHandle h = AudioSystem::GetInstance().LoadAudio("Resources/Audio/sfx/Test_duck.wav");
+			AudioHandle h = AudioManager::GetInstance().LoadAudio("Resources/Audio/sfx/Test_duck.wav");
 			if (h != 0) {
-				AudioSystem::GetInstance().Play(h, false, 0.5f);
+				AudioManager::GetInstance().Play(h, false, 0.5f);
 			}
 		}
 	}*/
@@ -576,7 +574,7 @@ void Engine::Update() {
 
 
 		// Test Audio
-		AudioSystem::GetInstance().Update();
+		AudioManager::GetInstance().Update();
 	}
 }
 
@@ -671,7 +669,7 @@ void Engine::EndDraw() {
 
 void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
-	AudioSystem::GetInstance().Shutdown();
+	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 

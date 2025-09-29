@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Sound/AudioSystem.hpp"
+#include "Sound/AudioManager.hpp"
 #include "Sound/Audio.hpp"
 #include <fmod.h>
 #include <fmod_errors.h>
@@ -16,14 +16,14 @@
 #include <android/asset_manager.h>
 #endif
 
-AudioSystem& AudioSystem::GetInstance() {
-    static AudioSystem inst;
+AudioManager& AudioManager::GetInstance() {
+    static AudioManager inst;
     return inst;
 }
 
-AudioSystem::AudioSystem() : system(nullptr) {}
+AudioManager::AudioManager() : system(nullptr) {}
 
-bool AudioSystem::Initialise() {
+bool AudioManager::Initialise() {
     std::lock_guard<std::mutex> lock(mtx);
     if (system) return true;
 
@@ -31,24 +31,24 @@ bool AudioSystem::Initialise() {
 
     FMOD_RESULT result = FMOD_System_Create(&system, FMOD_VERSION);
     if (result != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: FMOD_System_Create failed: ", FMOD_ErrorString(result), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Create failed: ", FMOD_ErrorString(result), "\n");
         system = nullptr;
         return false;
     }
 
     result = FMOD_System_Init(system, 512, FMOD_INIT_NORMAL, nullptr);
     if (result != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: FMOD_System_Init failed: ", FMOD_ErrorString(result), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Init failed: ", FMOD_ErrorString(result), "\n");
         FMOD_System_Release(system);
         system = nullptr;
         return false;
     }
 
-    ENGINE_PRINT("[AudioSystem] FMOD initialized successfully.\n");
+    ENGINE_PRINT("[AudioManager] FMOD initialized successfully.\n");
     return true;
 }
 
-void AudioSystem::Shutdown() {
+void AudioManager::Shutdown() {
     // Use atomic exchange to ensure shutdown runs only once
     if (shuttingDown.exchange(true)) {
         return; // Already shutting down or shut down
@@ -96,10 +96,10 @@ void AudioSystem::Shutdown() {
         FMOD_System_Release(sys);
     }
 
-    ENGINE_PRINT("[AudioSystem] Shutdown complete.\n");
+    ENGINE_PRINT("[AudioManager] Shutdown complete.\n");
 }
 
-void AudioSystem::Update() {
+void AudioManager::Update() {
     if (shuttingDown.load()) return;
 
     // Phase 1: Update FMOD system and internal state (requires lock)
@@ -134,12 +134,12 @@ void AudioSystem::Update() {
     }
 }
 
-ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
+ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
     if (shuttingDown.load() || globalPaused.load()) return 0;
 
     std::lock_guard<std::mutex> lock(mtx);
     if (!system || !audioAsset || !audioAsset->sound) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlayAudio called with invalid parameters.\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAudio called with invalid parameters.\n");
         return 0;
     }
 
@@ -148,7 +148,7 @@ ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loo
     // Play paused so we can configure the channel before it starts
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlaySound failed: ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlaySound failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
 
@@ -181,7 +181,7 @@ ChannelHandle AudioSystem::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loo
     return chId;
 }
 
-ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
+ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
     if (shuttingDown.load() || globalPaused.load()) return 0;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -192,7 +192,7 @@ ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset
     // Play paused so we can configure the channel before it starts
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
 
@@ -226,7 +226,7 @@ ChannelHandle AudioSystem::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset
     return chId;
 }
 
-ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
+ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
     if (shuttingDown.load() || globalPaused.load()) return 0;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -240,7 +240,7 @@ ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, con
     // Play paused so we can configure the channel
     FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
         return 0;
     }
 
@@ -272,7 +272,7 @@ ChannelHandle AudioSystem::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, con
     return chId;
 }
 
-void AudioSystem::Stop(ChannelHandle channel) {
+void AudioManager::Stop(ChannelHandle channel) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -286,7 +286,7 @@ void AudioSystem::Stop(ChannelHandle channel) {
     channelMap.erase(it);
 }
 
-void AudioSystem::StopAll() {
+void AudioManager::StopAll() {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -299,7 +299,7 @@ void AudioSystem::StopAll() {
     channelMap.clear();
 }
 
-void AudioSystem::Pause(ChannelHandle channel) {
+void AudioManager::Pause(ChannelHandle channel) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -310,7 +310,7 @@ void AudioSystem::Pause(ChannelHandle channel) {
     it->second.state = AudioSourceState::Paused;
 }
 
-void AudioSystem::Resume(ChannelHandle channel) {
+void AudioManager::Resume(ChannelHandle channel) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -321,7 +321,7 @@ void AudioSystem::Resume(ChannelHandle channel) {
     it->second.state = AudioSourceState::Playing;
 }
 
-bool AudioSystem::IsPlaying(ChannelHandle channel) {
+bool AudioManager::IsPlaying(ChannelHandle channel) {
     if (shuttingDown.load()) return false;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -333,7 +333,7 @@ bool AudioSystem::IsPlaying(ChannelHandle channel) {
     return playing != 0 && it->second.state == AudioSourceState::Playing;
 }
 
-bool AudioSystem::IsPaused(ChannelHandle channel) {
+bool AudioManager::IsPaused(ChannelHandle channel) {
     if (shuttingDown.load()) return false;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -343,7 +343,7 @@ bool AudioSystem::IsPaused(ChannelHandle channel) {
     return it->second.state == AudioSourceState::Paused;
 }
 
-AudioSourceState AudioSystem::GetState(ChannelHandle channel) {
+AudioSourceState AudioManager::GetState(ChannelHandle channel) {
     if (shuttingDown.load()) return AudioSourceState::Stopped;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -354,7 +354,7 @@ AudioSourceState AudioSystem::GetState(ChannelHandle channel) {
     return it->second.state;
 }
 
-void AudioSystem::SetChannelVolume(ChannelHandle channel, float volume) {
+void AudioManager::SetChannelVolume(ChannelHandle channel, float volume) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -365,7 +365,7 @@ void AudioSystem::SetChannelVolume(ChannelHandle channel, float volume) {
     FMOD_Channel_SetVolume(it->second.channel, finalVolume);
 }
 
-void AudioSystem::SetChannelPitch(ChannelHandle channel, float pitch) {
+void AudioManager::SetChannelPitch(ChannelHandle channel, float pitch) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -375,7 +375,7 @@ void AudioSystem::SetChannelPitch(ChannelHandle channel, float pitch) {
     FMOD_Channel_SetPitch(it->second.channel, pitch);
 }
 
-void AudioSystem::SetChannelLoop(ChannelHandle channel, bool loop) {
+void AudioManager::SetChannelLoop(ChannelHandle channel, bool loop) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -386,7 +386,7 @@ void AudioSystem::SetChannelLoop(ChannelHandle channel, bool loop) {
     FMOD_Channel_SetMode(it->second.channel, mode);
 }
 
-void AudioSystem::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
+void AudioManager::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -398,7 +398,7 @@ void AudioSystem::UpdateChannelPosition(ChannelHandle channel, const Vector3D& p
     FMOD_Channel_Set3DAttributes(it->second.channel, &pos, &vel);
 }
 
-FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
+FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
     auto it = busMap.find(busName);
     if (it != busMap.end()) return it->second;
 
@@ -407,7 +407,7 @@ FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
     FMOD_CHANNELGROUP* group = nullptr;
     FMOD_RESULT res = FMOD_System_CreateChannelGroup(system, busName.c_str(), &group);
     if (res != FMOD_OK || !group) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: Failed to create bus ", busName, ": ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create bus ", busName, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
     }
 
@@ -415,7 +415,7 @@ FMOD_CHANNELGROUP* AudioSystem::GetOrCreateBus(const std::string& busName) {
     return group;
 }
 
-void AudioSystem::SetBusVolume(const std::string& busName, float volume) {
+void AudioManager::SetBusVolume(const std::string& busName, float volume) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -425,7 +425,7 @@ void AudioSystem::SetBusVolume(const std::string& busName, float volume) {
     FMOD_ChannelGroup_SetVolume(it->second, volume);
 }
 
-void AudioSystem::SetBusPaused(const std::string& busName, bool paused) {
+void AudioManager::SetBusPaused(const std::string& busName, bool paused) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -435,7 +435,7 @@ void AudioSystem::SetBusPaused(const std::string& busName, bool paused) {
     FMOD_ChannelGroup_SetPaused(it->second, paused);
 }
 
-void AudioSystem::SetMasterVolume(float volume) {
+void AudioManager::SetMasterVolume(float volume) {
     masterVolume.store(volume);
     
     if (shuttingDown.load()) return;
@@ -453,11 +453,11 @@ void AudioSystem::SetMasterVolume(float volume) {
     }
 }
 
-float AudioSystem::GetMasterVolume() const {
+float AudioManager::GetMasterVolume() const {
     return masterVolume.load();
 }
 
-void AudioSystem::SetGlobalPaused(bool paused) {
+void AudioManager::SetGlobalPaused(bool paused) {
     globalPaused.store(paused);
     
     if (shuttingDown.load()) return;
@@ -473,12 +473,12 @@ void AudioSystem::SetGlobalPaused(bool paused) {
     }
 }
 
-FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
+FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
     if (shuttingDown.load()) return nullptr;
 
     std::lock_guard<std::mutex> lock(mtx);
     if (!system) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: CreateSound called but system not initialized.\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSound called but system not initialized.\n");
         return nullptr;
     }
 
@@ -513,19 +513,19 @@ FMOD_SOUND* AudioSystem::CreateSound(const std::string& assetPath) {
     // Fallback to file system loading
     res = FMOD_System_CreateSound(system, assetPath.c_str(), FMOD_LOOP_OFF, nullptr, &sound);
     if (res != FMOD_OK || !sound) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: Failed to create sound for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create sound for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
     }
 
     return sound;
 }
 
-FMOD_SOUND* AudioSystem::CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath) {
+FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath) {
     if (shuttingDown.load() || !data || length == 0) return nullptr;
 
     std::lock_guard<std::mutex> lock(mtx);
     if (!system) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: CreateSoundFromMemory called but system not initialized.\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory called but system not initialized.\n");
         return nullptr;
     }
 
@@ -536,14 +536,14 @@ FMOD_SOUND* AudioSystem::CreateSoundFromMemory(const void* data, unsigned int le
 
     FMOD_RESULT res = FMOD_System_CreateSound(system, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
     if (res != FMOD_OK || !sound) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: CreateSoundFromMemory failed for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory failed for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
     }
 
     return sound;
 }
 
-void AudioSystem::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
+void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
     if (shuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(mtx);
@@ -551,7 +551,7 @@ void AudioSystem::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) 
 
     FMOD_RESULT res = FMOD_Sound_Release(sound);
     if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioSystem] ERROR: Failed to release sound ", assetPath, ": ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to release sound ", assetPath, ": ", FMOD_ErrorString(res), "\n");
     }
 }
 
@@ -561,7 +561,7 @@ void AudioSystem::SetAndroidAssetManager(void* assetManager) {
 }
 #endif
 
-void AudioSystem::CleanupStoppedChannels() {
+void AudioManager::CleanupStoppedChannels() {
     std::vector<ChannelHandle> toErase;
     
     for (auto& kv : channelMap) {
@@ -581,12 +581,12 @@ void AudioSystem::CleanupStoppedChannels() {
     }
 }
 
-bool AudioSystem::IsChannelValid(ChannelHandle channel) {
+bool AudioManager::IsChannelValid(ChannelHandle channel) {
     auto it = channelMap.find(channel);
     return it != channelMap.end() && it->second.channel != nullptr;
 }
 
-void AudioSystem::UpdateChannelState(ChannelHandle channel) {
+void AudioManager::UpdateChannelState(ChannelHandle channel) {
     auto it = channelMap.find(channel);
     if (it == channelMap.end() || !it->second.channel) return;
 

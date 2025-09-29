@@ -8,7 +8,7 @@ AudioComponent::AudioComponent() {}
 
 AudioComponent::~AudioComponent() {
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().Stop(CurrentChannel);
+        AudioManager::GetInstance().Stop(CurrentChannel);
         CurrentChannel = 0;
     }
     audioAsset = nullptr;
@@ -20,7 +20,7 @@ void AudioComponent::Play() {
         return;
     }
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().Stop(CurrentChannel);
+        AudioManager::GetInstance().Stop(CurrentChannel);
         CurrentChannel = 0;
     }
     CurrentChannel = PlayInternal();
@@ -32,7 +32,7 @@ void AudioComponent::Play() {
 
 void AudioComponent::PlayOneShot() {
     if (Mute || !EnsureAssetLoaded()) return;
-    AudioSystem& audioSys = AudioSystem::GetInstance();
+    AudioManager& audioSys = AudioManager::GetInstance();
     ChannelHandle oneShotChannel;
     if (Spatialize) {
         oneShotChannel = audioSys.PlayAudioAtPosition(audioAsset, Position, false, Volume, Attenuation);
@@ -50,7 +50,7 @@ void AudioComponent::PlayOneShot() {
 
 void AudioComponent::Stop() {
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().Stop(CurrentChannel);
+        AudioManager::GetInstance().Stop(CurrentChannel);
         CurrentChannel = 0;
     }
     State = AudioSourceState::Stopped;
@@ -61,7 +61,7 @@ void AudioComponent::Stop() {
 
 void AudioComponent::Pause() {
     if (CurrentChannel != 0 && IsPlaying()) {
-        AudioSystem::GetInstance().Pause(CurrentChannel);
+        AudioManager::GetInstance().Pause(CurrentChannel);
         State = AudioSourceState::Paused;
         wasPlayingBeforePause = true;
     }
@@ -69,7 +69,7 @@ void AudioComponent::Pause() {
 
 void AudioComponent::UnPause() {
     if (CurrentChannel != 0 && IsPaused()) {
-        AudioSystem::GetInstance().Resume(CurrentChannel);
+        AudioManager::GetInstance().Resume(CurrentChannel);
         State = AudioSourceState::Playing;
         wasPlayingBeforePause = false;
     }
@@ -80,7 +80,7 @@ void AudioComponent::UnPause() {
 
 bool AudioComponent::IsPlaying() const {
     if (CurrentChannel == 0) return false;
-    return AudioSystem::GetInstance().IsPlaying(CurrentChannel) && State == AudioSourceState::Playing;
+    return AudioManager::GetInstance().IsPlaying(CurrentChannel) && State == AudioSourceState::Playing;
 }
 
 bool AudioComponent::IsPaused() const { return State == AudioSourceState::Paused; }
@@ -90,28 +90,28 @@ bool AudioComponent::IsStopped() const { return State == AudioSourceState::Stopp
 void AudioComponent::SetVolume(float newVolume) {
     Volume = std::clamp(newVolume, 0.0f, 1.0f);
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
+        AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     }
 }
 
 void AudioComponent::SetPitch(float newPitch) {
     Pitch = std::clamp(newPitch, 0.1f, 3.0f);
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().SetChannelPitch(CurrentChannel, Pitch);
+        AudioManager::GetInstance().SetChannelPitch(CurrentChannel, Pitch);
     }
 }
 
 void AudioComponent::SetLoop(bool shouldLoop) {
     Loop = shouldLoop;
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().SetChannelLoop(CurrentChannel, Loop);
+        AudioManager::GetInstance().SetChannelLoop(CurrentChannel, Loop);
     }
 }
 
 void AudioComponent::SetMute(bool shouldMute) {
     Mute = shouldMute;
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
+        AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     }
 }
 
@@ -147,7 +147,7 @@ void AudioComponent::SetAudioAssetPath(const std::string& path) {
         return;
     }
     if (CurrentChannel != 0) {
-        AudioSystem::GetInstance().Stop(CurrentChannel);
+        AudioManager::GetInstance().Stop(CurrentChannel);
         CurrentChannel = 0;
     }
     AudioAssetPath = path;
@@ -187,7 +187,7 @@ void AudioComponent::UpdateComponent() {
 void AudioComponent::OnTransformChanged(const Vector3D& newPosition) {
     Position = newPosition;
     if (CurrentChannel != 0 && Spatialize) {
-        AudioSystem::GetInstance().UpdateChannelPosition(CurrentChannel, Position);
+        AudioManager::GetInstance().UpdateChannelPosition(CurrentChannel, Position);
     }
 }
 
@@ -212,7 +212,7 @@ bool AudioComponent::EnsureAssetLoaded() {
 
 void AudioComponent::UpdateChannelProperties() {
     if (CurrentChannel == 0) return;
-    AudioSystem& audioSys = AudioSystem::GetInstance();
+    AudioManager& audioSys = AudioManager::GetInstance();
     audioSys.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     audioSys.SetChannelPitch(CurrentChannel, Pitch);
     audioSys.SetChannelLoop(CurrentChannel, Loop);
@@ -224,7 +224,7 @@ void AudioComponent::UpdatePlaybackState() {
         if (State != AudioSourceState::Stopped) { State = AudioSourceState::Stopped; }
         return;
     }
-    AudioSourceState actualState = AudioSystem::GetInstance().GetState(CurrentChannel);
+    AudioSourceState actualState = AudioManager::GetInstance().GetState(CurrentChannel);
     if (actualState == AudioSourceState::Stopped && State != AudioSourceState::Stopped) {
         CurrentChannel = 0;
         State = AudioSourceState::Stopped;
@@ -237,7 +237,7 @@ void AudioComponent::UpdatePlaybackState() {
 
 ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     if (!EnsureAssetLoaded()) { return 0; }
-    AudioSystem& audioSys = AudioSystem::GetInstance();
+    AudioManager& audioSys = AudioManager::GetInstance();
     ChannelHandle channel = 0;
     if (Spatialize) {
         channel = audioSys.PlayAudioAtPosition(audioAsset, Position, Loop && !oneShot, Volume, Attenuation);
