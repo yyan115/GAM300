@@ -63,8 +63,6 @@ private:
     std::vector<AssetInfo> currentAssets;
     std::unordered_set<GUID_128> selectedAssets;
     GUID_128 lastSelectedAsset;
-    GUID_128 renamingAsset;
-    std::string renameBuffer;
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };

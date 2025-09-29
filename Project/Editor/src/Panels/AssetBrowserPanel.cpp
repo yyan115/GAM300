@@ -608,12 +608,6 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (selected) {
             dl->AddRectFilled(rectMin, rectMax, IM_COL32(100, 150, 255, 50));
             dl->AddRect(rectMin, rectMax, IM_COL32(100, 150, 255, 120), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
-            
-            // Handle pressing F2 to rename the asset.
-            if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
-                renamingAsset = asset.guid;
-                renameBuffer = asset.fileName;
-            }
         }
         else if (hovered) {
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
