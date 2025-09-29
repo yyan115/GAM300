@@ -124,4 +124,7 @@ private:
 
     // Tree rendering helper
     void RenderDirectoryNode(const std::filesystem::path& directory, const std::string& displayName);
+
+    // Icon retrieval
+    std::string GetAssetIcon(const AssetInfo& asset) const;
 };
