@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include "Utilities/FileUtilities.hpp"
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -72,77 +74,27 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
 
     AudioManager& audioSys = AudioManager::GetInstance();
 
-#ifdef ANDROID
-    // On Android, try to load from APK assets first using platform abstraction
+    // NEW: Use platform abstraction to read asset data (works on Android via AndroidPlatform::ReadAsset)
     IPlatform* platform = WindowManager::GetPlatform();
-    if (platform) {
-        AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
-        AAssetManager* assetMgr = androidPlatform->GetAssetManager();
-        if (assetMgr) {
-            AAsset* asset = AAssetManager_open(assetMgr, resourcePath.c_str(), AASSET_MODE_BUFFER);
-            if (asset) {
-                off_t length = AAsset_getLength(asset);
-                const void* buffer = AAsset_getBuffer(asset);
-                if (buffer && length > 0) {
-                    sound = audioSys.CreateSoundFromMemory(buffer, static_cast<unsigned int>(length), this->assetPath);
-                }
-                AAsset_close(asset);
-
-                if (sound) {
-                    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Audio] Successfully loaded audio from APK memory: %s", resourcePath.c_str());
-                    ENGINE_PRINT("[Audio] Successfully loaded (memory): ", resourcePath, "\n");
-                    return true;
-                }
-            } else {
-                __android_log_print(ANDROID_LOG_WARN, "GAM300", "[Audio] AAssetManager_open failed for: %s", resourcePath.c_str());
-            }
-        }
-    }
-#endif
-    // Resolve path - check multiple locations to ensure the file is found
-    std::string pathToUse = resourcePath;
-
-    try {
-        // If the path doesn't exist as-is, try solution root + resourcePath
-        if (!std::filesystem::exists(pathToUse)) {
-            std::filesystem::path candidate;
-
-            // Try solution root path + resourcePath
-            const auto& solRoot = FileUtilities::GetSolutionRootDir();
-            if (!solRoot.empty()) {
-                candidate = solRoot / resourcePath;
-                if (std::filesystem::exists(candidate)) {
-                    pathToUse = candidate.generic_string();
-                    ENGINE_PRINT("[Audio] Resolved resource via solution root: ", pathToUse, "\n");
-                }
-            }
-
-            // If still not found, try exe directory + resourcePath
-            if (!std::filesystem::exists(pathToUse)) {
-                candidate = std::filesystem::current_path() / resourcePath;
-                if (std::filesystem::exists(candidate)) {
-                    pathToUse = candidate.generic_string();
-                    ENGINE_PRINT("[Audio] Resolved resource via current_path: ", pathToUse, "\n");
-                }
-            }
-
-            if (!std::filesystem::exists(pathToUse)) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Resource not found at any location: ", resourcePath, "\n");
-            }
-        }
-    }
-    catch (const std::exception& ex) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Path resolution error: ", ex.what(), "\n");
-    }
-
-    // Use the resolved path with FMOD
-    sound = audioSys.CreateSound(pathToUse);
-    if (!sound) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Failed to create FMOD sound for: ", pathToUse, "\n");
+    if (!platform) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] ERROR: Platform not available for asset loading.\n");
         return false;
     }
 
-    ENGINE_PRINT("[Audio] Successfully loaded: ", pathToUse, "\n");
+    std::vector<uint8_t> audioData = platform->ReadAsset(resourcePath);
+    if (audioData.empty()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] ERROR: Failed to read asset data for: ", resourcePath, "\n");
+        return false;
+    }
+
+    // Create sound from memory (FMOD handles it)
+    sound = audioSys.CreateSoundFromMemory(audioData.data(), audioData.size(), this->assetPath);
+    if (!sound) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Failed to create FMOD sound for: ", resourcePath, "\n");
+        return false;
+    }
+
+    ENGINE_PRINT("[Audio] Successfully loaded: ", resourcePath, "\n");
     return true;
 }
 

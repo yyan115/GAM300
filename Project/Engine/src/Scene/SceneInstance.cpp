@@ -207,9 +207,9 @@ void SceneInstance::Initialize() {
 			
 	// Add AudioComponent
 	AudioComponent audioComp;
-	audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-	audioComp.Volume = 0.8f;
-	audioComp.Loop = false;
+	audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+	audioComp.Volume = 0.3f;
+	audioComp.Loop = true;
 	audioComp.PlayOnStart = true;
 	audioComp.Spatialize = false;
 	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
