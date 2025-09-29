@@ -14,6 +14,9 @@
 #ifdef ANDROID
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <fmod/fmod.h>
+#include <fmod/fmod_errors.h>
+#include <fmod/fmod_android.h>
 #endif
 
 AudioManager& AudioManager::GetInstance() {
@@ -146,9 +149,9 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
+    FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);  // Play paused
     if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlaySound failed: ", FMOD_ErrorString(res), "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
         return 0;
     }
 
@@ -166,7 +169,10 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
-    FMOD_Channel_SetPaused(channel, false);
+    res = FMOD_Channel_SetPaused(channel, false);  // Ensure unpaused
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] Failed to unpause channel: %s\n", FMOD_ErrorString(res));
+    }
 
     ChannelHandle chId = nextChannelHandle++;
     ChannelData chd;
@@ -556,7 +562,7 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 }
 
 #ifdef ANDROID
-void AudioSystem::SetAndroidAssetManager(void* assetManager) {
+void AudioManager::SetAndroidAssetManager(void* assetManager) {
     androidAssetManager = assetManager;
 }
 #endif
