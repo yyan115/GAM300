@@ -4,7 +4,24 @@
 * @Author		Soh Wei Jie, weijie.soh@digipen.edu
 * @Co-Author	-
 * @Date			26/9/2025
-* @Brief
+* @Brief        Implements the engine's reflection and persistence building blocks:
+*                   - TypeDescriptor base and concrete descriptors for user structs, STL containers
+*                     (std::vector, std::unordered_map, std::pair), std::shared_ptr, and a GUID_128 type.
+*                   - TypeResolver machinery to obtain descriptors for reflected and primitive types,
+*                     with lazy resolution support for templated containers.
+*                   - JSON serialization/deserialization designed around rapidjson (Writer + Document),
+*                     producing compact JSON for storage and network interchange.
+*                   - Thread-safe type registry protected by a mutex; registration macros
+*                     (REFL_SERIALIZABLE / REFL_REGISTER_START / REFL_REGISTER_PROPERTY / REFL_REGISTER_END)
+*                     to declare reflection for user types.
+*                   - Portable persistence helpers (little-endian conversion), alignment macro, and
+*                     Base64 encoding/decoding used to serialize opaque shared_ptr<void> blobs (expects
+*                     a size-prefix contract).
+*                   - Mobile-friendly behavior: avoids global namespace pollution, throws descriptive
+*                     exceptions for malformed input or resolution failures (rather than asserts),
+*                     and guards descriptor registration to be safe on resource-constrained platforms.
+*                   Usage notes: user types must call InitReflection via the provided macros to register
+*                   members; TypeResolver will return primitive descriptors for non-reflected types.
 *
 * Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
 * of this file or its contents without the prior written consent of DigiPen
@@ -75,61 +92,56 @@ static inline uint64_t FromLittleEndian_u64(uint64_t v)
 struct DefaultResolver;
 struct TypeDescriptor_Struct;
 
+// ---------- TypeDescriptor (PIMPL) ----------
+// Exported type must not contain STL members directly to avoid C4251.
+// We therefore keep an opaque Impl* pointer here and provide accessor APIs.
+// ctor/dtor and Impl are implemented in the .cpp so all STL allocations happen
+// inside the DLL.
 struct ENGINE_API TypeDescriptor
-{ // Note: KEEP macro usage for user types. Do NOT auto-inject reflection into internal runtime types unless intentionally desired.
-  // CHANGE: removed FLX_REFL_SERIALIZABLE here in order to avoid unnecessary static Reflection members on core descriptors.
+{
     using json = rapidjson::Value;
 
-    std::string name;
-    size_t size;
+    // opaque impl pointer (defined in ReflectionBase.cpp)
+    struct Impl;
+    Impl* pImpl;
 
-    // CHANGE: Protect lookup map mutations with a mutex.
-    static std::unordered_map<std::string, TypeDescriptor*>& type_descriptor_lookup()
-    {
-        static std::unordered_map<std::string, TypeDescriptor*> s_map;
-        return s_map;
-    }
+    // ctor/dtor are defined in the .cpp (so allocations/deallocations occur inside DLL)
+    TypeDescriptor(const std::string& name_, size_t size_);
+    virtual ~TypeDescriptor();
 
-    // Mutex guarding writes to TYPE_DESCRIPTOR_LOOKUP
-    static std::mutex& descriptor_registry_mutex()
-    {
-        static std::mutex s_mutex;
-        return s_mutex;
-    }
+    // non-copyable to avoid accidental cross-CRT copies of internal state
+    TypeDescriptor(const TypeDescriptor&) = delete;
+    TypeDescriptor& operator=(const TypeDescriptor&) = delete;
 
-#define TYPE_DESCRIPTOR_LOOKUP TypeDescriptor::type_descriptor_lookup()
+    // minimal accessors to avoid exposing std::string in the header
+    const char* GetName() const;
+    void SetName(const char* name);
+    size_t GetSize() const;
+    void SetSize(size_t s);
 
-    TypeDescriptor(const std::string& name_, size_t size_) : name{ name_ }, size{ size_ } {}
-    virtual ~TypeDescriptor() {}
-
-    bool operator<(const TypeDescriptor& other) const { return name < other.name; }
-    virtual std::string ToString() const { return name; }
+    bool operator<(const TypeDescriptor& other) const { return std::string(GetName()) < std::string(other.GetName()); }
+    virtual std::string ToString() const { return std::string(GetName() ? GetName() : ""); }
 
     virtual void Dump(const void* obj, std::ostream& os = std::cout, int indent_level = 0) const = 0;
     virtual void Serialize(const void* obj, std::ostream& out) const = 0;
 
-    // CHANGE: Use rapidjson::Writer for efficient JSON emission on mobile; keep the same method signature.
-    virtual void SerializeJson(const void* obj, rapidjson::Document& out) const
-    {
-        rapidjson::StringBuffer sb;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-        // Default approach: produce a compact JSON string using the writer, then parse into Document.
-        // Sub-classes can implement WriteJson(writer) helpers for more efficient direct Value building.
-        // For backward compatibility, call Serialize into a string stream and parse — but this was inefficient.
-        // Here we provide a light-weight wrapper that uses the textual Serialize as a fallback but prefer writer in overrides.
-        std::stringstream ss;
-        Serialize(obj, ss);
-        // Parse the generated string into the Document.
-        out.Parse(ss.str().c_str());
-    }
+    // CHANGE: Provide SerializeJson adaptor (can be overridden)
+    virtual void SerializeJson(const void* obj, rapidjson::Document& out) const;
 
     virtual void Deserialize(void* obj, const json& value) const = 0;
+
+    // Registry helpers (function bodies may be implemented inline; they return references to TU-local statics)
+    static std::unordered_map<std::string, TypeDescriptor*>& type_descriptor_lookup();
+    static std::mutex& descriptor_registry_mutex();
 };
 
-// Declare primitive descriptors (implementation assumed in primitives.cpp)
+#define TYPE_DESCRIPTOR_LOOKUP TypeDescriptor::type_descriptor_lookup()
+
+// Forward-declare primitive descriptor getter
 template <typename T>
 ENGINE_API TypeDescriptor* GetPrimitiveDescriptor();
 
+// DefaultResolver unchanged in behavior (relies on T::Reflection detection)
 struct DefaultResolver
 {
     template <typename T> static char func(decltype(&T::Reflection));
@@ -148,81 +160,36 @@ template <typename T>
 struct TypeResolver { static TypeDescriptor* Get() { return DefaultResolver::Get<T>(); } };
 
 // -------------------------------------------------------------
-// TypeDescriptor for user-defined structs/classes.
-// CHANGE: TypeDescriptor_Struct now accepts an initializer that MUST call init(this) where init performs member registration.
-// We add basic runtime checks and avoid raw asserts that crash on mobile. Instead we throw exceptions with descriptive messages.
-// We also require standard-layout types for offsetof-based registrations.
+// TypeDescriptor for user-defined structs/classes (PIMPL friendly).
+// Member contains only PODs / pointers so it can be used in header safely.
+// The actual vector<Member> storage is kept inside the .cpp via a struct_impl pointer.
 // -------------------------------------------------------------
-struct TypeDescriptor_Struct : TypeDescriptor
+struct ENGINE_API TypeDescriptor_Struct : TypeDescriptor
 {
+    // opaque pointer to struct-specific implementation (allocated in .cpp)
+    // keep as void* to remain ABI-stable (POD pointer)
+    void* struct_impl = nullptr;
+
     struct Member { const char* name; /*size_t offset;*/ TypeDescriptor* type; void* (*get_ptr)(void*); };
 
-    std::vector<Member> members;
+    // construct by passing an init function (macros will use this)
+    TypeDescriptor_Struct(void (*init)(TypeDescriptor_Struct*));
+    virtual ~TypeDescriptor_Struct();
 
-    TypeDescriptor_Struct(void (*init)(TypeDescriptor_Struct*)) : TypeDescriptor{ "", 0 }
-    {
-        init(this);
-    }
+    // API used by macros to set name/size/members without exposing std::vector
+    void SetMembers(const std::initializer_list<Member>& members);
+    std::vector<Member> GetMembers() const; // returns a copy (uses std::vector allocated inside dll)
 
-    TypeDescriptor_Struct(const char* n, size_t s, const std::initializer_list<Member>& init)
-        : TypeDescriptor{ n, s }, members{ init } {
-    }
-
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        os << name << "\n" << std::string(4 * indent_level, ' ') << "{\n";
-        for (const Member& member : members)
-        {
-            os << std::string(4 * (indent_level + 1), ' ') << member.name << " = ";
-            void* member_addr = member.get_ptr(const_cast<void*>(obj));
-            member.type->Dump(member_addr, os, indent_level + 1);
-            os << "\n";
-        }
-        os << std::string(4 * indent_level, ' ') << "}\n";
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        os << R"({"type":")" << name << R"(","data":[)";
-        bool first = true;
-        for (const Member& member : members)
-        {
-            if (!first) os << ",";
-            first = false;
-            void* member_addr = member.get_ptr(const_cast<void*>(obj));
-            member.type->Serialize(member_addr, os);
-        }
-        os << "]}";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsArray())
-        {
-            throw std::runtime_error("Malformed JSON while deserializing struct '" + name + "'");
-        }
-        const auto& arr = value["data"].GetArray();
-
-        // CHANGE: instead of hard assert on size, do a runtime check and provide a useful error message.
-        if (arr.Size() != members.size())
-        {
-            std::stringstream ss;
-            ss << "Array size mismatch while deserializing struct '" << name << "' : expected " << members.size() << " got " << arr.Size();
-            throw std::runtime_error(ss.str());
-        }
-
-        for (rapidjson::SizeType i = 0; i < members.size(); i++)
-        {
-            void* member_addr = members[i].get_ptr(obj);
-            members[i].type->Deserialize(member_addr, arr[i]);
-        }
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 // -------------------------------------------------------------
-// std::vector specialization
-// CHANGE: set name to a unique representation using item_type->ToString()
-// -------------------------------------------------------------
+// std::vector specialization (descriptor). This class contains function pointers and
+// a TypeDescriptor* but does not hold std::vector as a direct data member in the header.
+// It will call SetName(...) when the item_type is resolved so that no std::string member exists
+// in the exported base class layout.
 struct TypeDescriptor_StdVector : TypeDescriptor
 {
     using ResolverFn = TypeDescriptor * (*)();
@@ -253,18 +220,19 @@ struct TypeDescriptor_StdVector : TypeDescriptor
             return &vec[index];
             };
 
-        // Try eager resolve now (optional)
+        // Try eager resolve now (optional). If item_type is resolved we set a proper name.
         item_type = resolver();
         if (item_type)
         {
-            this->name = std::string("std::vector<") + item_type->ToString() + ">";
+            // call SetName to record the fully-qualified name into the TypeDescriptor impl
+            this->SetName((std::string("std::vector<") + item_type->ToString() + ">").c_str());
             std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-            if (TYPE_DESCRIPTOR_LOOKUP.count(this->name) == 0) TYPE_DESCRIPTOR_LOOKUP[this->name] = this;
+            if (TYPE_DESCRIPTOR_LOOKUP.count(this->ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[this->ToString()] = this;
         }
         else
         {
-            // keep placeholder name; will compute once resolved
-            this->name = "std::vector<unresolved>";
+            // keep a placeholder name; will compute once resolved
+            this->SetName("std::vector<unresolved>");
         }
     }
 
@@ -277,14 +245,12 @@ private:
         item_type = resolver();
         if (!item_type)
         {
-            // final attempt: maybe a primitive or reflected type wasn't registered yet
-            // produce an error with helpful diagnostic
             throw std::runtime_error("TypeDescriptor_StdVector: failed to resolve item type for vector; ensure the item type is reflected or a primitive.");
         }
         // set the final name and register
-        this->name = std::string("std::vector<") + item_type->ToString() + ">";
+        this->SetName((std::string("std::vector<") + item_type->ToString() + ">").c_str());
         std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-        if (TYPE_DESCRIPTOR_LOOKUP.count(this->name) == 0) TYPE_DESCRIPTOR_LOOKUP[this->name] = this;
+        if (TYPE_DESCRIPTOR_LOOKUP.count(this->ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[this->ToString()] = this;
     }
 
 public:
@@ -294,51 +260,9 @@ public:
         return std::string("std::vector<") + item_type->ToString() + ">";
     }
 
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        if (!item_type) const_cast<TypeDescriptor_StdVector*>(this)->EnsureResolvedForUse();
-        size_t num_items = get_size(obj);
-        os << "\n" << ToString();
-        if (num_items == 0) { os << "{}\n"; return; }
-        os << "\n" << std::string(4 * indent_level, ' ') << "{\n";
-        for (size_t index = 0; index < num_items; ++index)
-        {
-            os << std::string(4 * (indent_level + 1), ' ') << "[" << index << "]\n" << std::string(4 * (indent_level + 1), ' ');
-            item_type->Dump(get_item(obj, index), os, indent_level + 1);
-            os << "\n";
-        }
-        os << std::string(4 * indent_level, ' ') << "}\n";
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        if (!item_type) const_cast<TypeDescriptor_StdVector*>(this)->EnsureResolvedForUse();
-        size_t num_items = get_size(obj);
-        if (num_items == 0)
-        {
-            os << R"({"type":")" << ToString() << R"(","data":[]})";
-            return;
-        }
-        os << R"({"type":")" << ToString() << R"(","data":[)";
-        for (size_t index = 0; index < num_items; ++index)
-        {
-            item_type->Serialize(get_item(obj, index), os);
-            if (index < num_items - 1) os << ",";
-        }
-        os << "]}";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (!item_type) const_cast<TypeDescriptor_StdVector*>(this)->EnsureResolvedForUse();
-        if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsArray())
-            throw std::runtime_error("Malformed JSON while deserializing std::vector");
-        const auto& arr = value["data"].GetArray();
-        for (rapidjson::SizeType i = 0; i < arr.Size(); ++i)
-        {
-            item_type->Deserialize(set_item(obj, i), arr[i]);
-        }
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template <typename T>
@@ -347,16 +271,15 @@ struct TypeResolver<std::vector<T>>
     static TypeDescriptor* Get()
     {
         static TypeDescriptor_StdVector type_desc{ (T*) nullptr };
-        // CHANGE: guard registry writes with mutex
         std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.ToString()] = &type_desc;
         return &type_desc;
     }
 };
 
 // -------------------------------------------------------------
 // std::unordered_map<KeyType, ValueType> specialization
-// -------------------------------------------------------------
+// (keeps pointer fields only in header)
 template <typename KeyType, typename ValueType>
 struct TypeDescriptor_StdUnorderedMap : TypeDescriptor
 {
@@ -368,60 +291,14 @@ struct TypeDescriptor_StdUnorderedMap : TypeDescriptor
         , key_type{ TypeResolver<KeyType>::Get() }
         , value_type{ TypeResolver<ValueType>::Get() }
     {
-        this->name = std::string("std::unordered_map<") + key_type->ToString() + ", " + value_type->ToString() + ">";
+        this->SetName((std::string("std::unordered_map<") + key_type->ToString() + ", " + value_type->ToString() + ">").c_str());
     }
 
     virtual std::string ToString() const override { return std::string("std::unordered_map<") + key_type->ToString() + ", " + value_type->ToString() + ">"; }
 
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        const auto& map = *(const std::unordered_map<KeyType, ValueType>*)obj;
-        os << "\n" << std::string(4 * indent_level, ' ') << ToString() << "\n" << std::string(4 * indent_level, ' ') << "{\n";
-        for (const auto& pair : map)
-        {
-            os << std::string(4 * (indent_level + 1), ' ');
-            key_type->Dump(&pair.first, os, indent_level + 1);
-            os << ": ";
-            value_type->Dump(&pair.second, os, indent_level + 1);
-            os << "\n";
-        }
-        os << std::string(4 * indent_level, ' ') << "}\n";
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        const auto& map = *(const std::unordered_map<KeyType, ValueType>*)obj;
-        os << R"({"type":")" << ToString() << R"(","data":[)";
-        bool first = true;
-        for (const auto& pair : map)
-        {
-            if (!first) os << ",";
-            first = false;
-            os << "[";
-            key_type->Serialize(&pair.first, os);
-            os << ",";
-            value_type->Serialize(&pair.second, os);
-            os << "]";
-        }
-        os << "]}";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsArray())
-        {
-            throw std::runtime_error("Malformed JSON while deserializing std::unordered_map");
-        }
-        std::unordered_map<KeyType, ValueType>& map = *(std::unordered_map<KeyType, ValueType>*)obj;
-        const auto& arr = value["data"].GetArray();
-        for (rapidjson::SizeType i = 0; i < arr.Size(); i++)
-        {
-            KeyType key; ValueType val;
-            key_type->Deserialize(&key, arr[i][0]);
-            value_type->Deserialize(&val, arr[i][1]);
-            map[key] = val;
-        }
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template <typename KeyType, typename ValueType>
@@ -431,14 +308,13 @@ struct TypeResolver<std::unordered_map<KeyType, ValueType>>
     {
         static TypeDescriptor_StdUnorderedMap<KeyType, ValueType> type_desc{ (std::unordered_map<KeyType, ValueType>*)nullptr };
         std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.ToString()] = &type_desc;
         return &type_desc;
     }
 };
 
 // -------------------------------------------------------------
-// std::shared_ptr<T> specialization
-// -------------------------------------------------------------
+// std::shared_ptr<T> specialization (keeps only pointers in header)
 template <typename T>
 struct TypeDescriptor_StdSharedPtr : TypeDescriptor
 {
@@ -448,40 +324,14 @@ struct TypeDescriptor_StdSharedPtr : TypeDescriptor
         : TypeDescriptor{ "std::shared_ptr<>", sizeof(std::shared_ptr<T>) }
         , item_type{ TypeResolver<T>::Get() }
     {
-        this->name = std::string("std::shared_ptr<") + item_type->ToString() + ">";
+        this->SetName((std::string("std::shared_ptr<") + item_type->ToString() + ">").c_str());
     }
 
     virtual std::string ToString() const override { return std::string("std::shared_ptr<") + item_type->ToString() + ">"; }
 
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<T>*>(obj);
-        if (shared_ptr)
-        {
-            os << "\n" << ToString() << "\n" << std::string(4 * indent_level, ' ') << "{\n" << std::string(4 * (indent_level + 1), ' ');
-            item_type->Dump(shared_ptr.get(), os, indent_level + 1);
-            os << "\n" << std::string(4 * indent_level, ' ') << "}\n";
-        }
-        else { os << "null"; }
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<T>*>(obj);
-        if (shared_ptr) item_type->Serialize(shared_ptr.get(), os);
-        else os << "null";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (value.IsNull()) { *reinterpret_cast<std::shared_ptr<T>*>(obj) = nullptr; }
-        else
-        {
-            std::shared_ptr<T> sp = std::make_shared<T>();
-            item_type->Deserialize(sp.get(), value);
-            *reinterpret_cast<std::shared_ptr<T>*>(obj) = sp;
-        }
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template <>
@@ -491,63 +341,14 @@ struct TypeDescriptor_StdSharedPtr<void> : TypeDescriptor
     TypeDescriptor_StdSharedPtr(void*)
         : TypeDescriptor{ "std::shared_ptr<>", sizeof(std::shared_ptr<void>) }, item_type{ nullptr }
     {
-        this->name = std::string("std::shared_ptr<void>");
+        this->SetName("std::shared_ptr<void>");
     }
 
     virtual std::string ToString() const override { return "std::shared_ptr<void>"; }
 
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<void>*>(obj);
-        if (shared_ptr)
-        {
-            os << "\n" << ToString() << "\n" << std::string(4 * indent_level, ' ') << "{\n" << std::string(4 * (indent_level + 1), ' ') << shared_ptr.get() << "\n" << std::string(4 * indent_level, ' ') << "}\n";
-        }
-        else { os << "null"; }
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        const auto& shared_ptr = *reinterpret_cast<const std::shared_ptr<void>*>(obj);
-        if (!shared_ptr) { os << "null"; return; }
-
-        void* ptr = shared_ptr.get();
-        uint64_t data_size = *static_cast<uint64_t*>(ptr); // NOTE: caller MUST ensure pointer layout matches this contract
-        uint64_t le_size = ToLittleEndian_u64(data_size);
-
-        uint8_t* byte_ptr = static_cast<uint8_t*>(ptr);
-        std::vector<uint8_t> data(byte_ptr, byte_ptr + sizeof(uint64_t) + static_cast<size_t>(data_size));
-        std::string serialized_data = Base64_Encode(data);
-
-        os << R"({"type":")" << ToString() << R"(","data":")" << serialized_data << R"("})";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (value.IsNull()) { *reinterpret_cast<std::shared_ptr<void>*>(obj) = nullptr; return; }
-        if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsString())
-        {
-            throw std::runtime_error("Malformed JSON for std::shared_ptr<void>");
-        }
-
-        std::string data = value["data"].GetString();
-        std::vector<uint8_t> decoded = Base64_Decode(data);
-        if (decoded.size() < sizeof(uint64_t)) throw std::runtime_error("Decoded shared_ptr<void> too small");
-
-        // Read size prefix (little-endian)
-        uint64_t stored_size = 0;
-        memcpy(&stored_size, decoded.data(), sizeof(uint64_t));
-        uint64_t data_size = FromLittleEndian_u64(stored_size);
-
-        if (decoded.size() != sizeof(uint64_t) + data_size) throw std::runtime_error("Decoded shared_ptr<void> length mismatch");
-
-        // Allocate memory and copy
-        void* ptr = new uint8_t[sizeof(uint64_t) + static_cast<size_t>(data_size)];
-        memcpy(ptr, decoded.data(), decoded.size());
-
-        std::shared_ptr<void> sp(ptr, [](void* p) { delete[] reinterpret_cast<uint8_t*>(p); });
-        *reinterpret_cast<std::shared_ptr<void>*>(obj) = sp;
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template <typename T>
@@ -557,7 +358,7 @@ struct TypeResolver<std::shared_ptr<T>>
     {
         static TypeDescriptor_StdSharedPtr type_desc{ (T*) nullptr };
         std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.ToString()] = &type_desc;
         return &type_desc;
     }
 };
@@ -576,42 +377,14 @@ struct TypeDescriptor_StdPair : TypeDescriptor
         , first_type{ TypeResolver<FirstType>::Get() }
         , second_type{ TypeResolver<SecondType>::Get() }
     {
-        this->name = std::string("std::pair<") + first_type->ToString() + ", " + second_type->ToString() + ">";
+        this->SetName((std::string("std::pair<") + first_type->ToString() + ", " + second_type->ToString() + ">").c_str());
     }
 
     virtual std::string ToString() const override { return std::string("std::pair<") + first_type->ToString() + ", " + second_type->ToString() + ">"; }
 
-    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override
-    {
-        const auto& pair = *(const std::pair<FirstType, SecondType>*)obj;
-        os << "\n" << std::string(4 * indent_level, ' ') << ToString() << "\n" << std::string(4 * indent_level, ' ') << "{\n" << std::string(4 * (indent_level + 1), ' ');
-        first_type->Dump(&pair.first, os, indent_level + 1);
-        os << ",\n" << std::string(4 * (indent_level + 1), ' ');
-        second_type->Dump(&pair.second, os, indent_level + 1);
-        os << "\n" << std::string(4 * indent_level, ' ') << "}\n";
-    }
-
-    virtual void Serialize(const void* obj, std::ostream& os) const override
-    {
-        const auto& pair = *(const std::pair<FirstType, SecondType>*)obj;
-        os << R"({"type":")" << ToString() << R"(","data":[)";
-        first_type->Serialize(&pair.first, os);
-        os << ",";
-        second_type->Serialize(&pair.second, os);
-        os << "]}";
-    }
-
-    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override
-    {
-        if (!value.IsObject() || !value.HasMember("data") || !value["data"].IsArray())
-        {
-            throw std::runtime_error("Malformed JSON while deserializing std::pair");
-        }
-        const auto& arr = value["data"].GetArray();
-        if (arr.Size() != 2) throw std::runtime_error("std::pair expects array of size 2");
-        first_type->Deserialize(&((std::pair<FirstType, SecondType>*)obj)->first, arr[0]);
-        second_type->Deserialize(&((std::pair<FirstType, SecondType>*)obj)->second, arr[1]);
-    }
+    virtual void Dump(const void* obj, std::ostream& os, int indent_level) const override;
+    virtual void Serialize(const void* obj, std::ostream& os) const override;
+    virtual void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template <typename FirstType, typename SecondType>
@@ -621,35 +394,23 @@ struct TypeResolver<std::pair<FirstType, SecondType>>
     {
         static TypeDescriptor_StdPair<FirstType, SecondType> type_desc{ (std::pair<FirstType, SecondType>*)nullptr };
         std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex());
-        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.name) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.name] = &type_desc;
+        if (TYPE_DESCRIPTOR_LOOKUP.count(type_desc.ToString()) == 0) TYPE_DESCRIPTOR_LOOKUP[type_desc.ToString()] = &type_desc;
         return &type_desc;
     }
 };
 
 struct TypeDescriptor_GUID128 : TypeDescriptor {
-    TypeDescriptor_GUID128() : TypeDescriptor("GUID_128", sizeof(GUID_128)) {}
+    TypeDescriptor_GUID128();
+    virtual ~TypeDescriptor_GUID128() = default;
 
-    void Dump(const void* obj, std::ostream& os, int) const override {
-        os << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj));
-    }
-
-    void Serialize(const void* obj, std::ostream& os) const override {
-        os << "\"" << GUIDUtilities::ConvertGUID128ToString(*reinterpret_cast<const GUID_128*>(obj)) << "\"";
-    }
-
-    void Deserialize(void* obj, const rapidjson::Value& value) const override {
-        if (!value.IsString()) throw std::runtime_error("GUID_128 must be a string");
-        *reinterpret_cast<GUID_128*>(obj) = GUIDUtilities::ConvertStringToGUID128(value.GetString());
-    }
+    void Dump(const void* obj, std::ostream& os, int) const override;
+    void Serialize(const void* obj, std::ostream& os) const override;
+    void Deserialize(void* obj, const rapidjson::Value& value) const override;
 };
 
 template<> struct TypeResolver<GUID_128> {
-    static TypeDescriptor* Get() {
-        static TypeDescriptor_GUID128 type_desc;
-        return &type_desc;
-    }
+    static TypeDescriptor* Get();
 };
-
 
 #pragma endregion
 
@@ -666,21 +427,20 @@ template<> struct TypeResolver<GUID_128> {
   void TYPE::InitReflection(TypeDescriptor_Struct* type_desc) \
   { \
     using T = TYPE; \
-    type_desc->name = #TYPE; \
-    type_desc->size = sizeof(T); \
-    type_desc->members = {
+    type_desc->SetName(#TYPE); \
+    type_desc->SetSize(sizeof(T)); \
+    type_desc->SetMembers({
 
 #define REFL_REGISTER_PROPERTY(VARIABLE) \
-  { \
+  TypeDescriptor_Struct::Member{ \
     #VARIABLE, \
     TypeResolver<decltype(T::VARIABLE)>::Get(), \
-    /* captureless lambda -> converts to function pointer */ \
     +[](void* obj) -> void* { return & (static_cast<T*>(obj)->VARIABLE); } \
   },
 
 #define REFL_REGISTER_END \
-    }; \
+    }); \
     { std::lock_guard<std::mutex> lock(TypeDescriptor::descriptor_registry_mutex()); \
-      TypeDescriptor::type_descriptor_lookup()[type_desc->name] = type_desc; } \
+      TypeDescriptor::type_descriptor_lookup()[std::string(type_desc->GetName())] = type_desc; } \
   }
 #pragma endregion
