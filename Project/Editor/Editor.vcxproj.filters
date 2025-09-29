@@ -17,7 +17,6 @@
     <ClCompile Include="src\Panels\PlayControlPanel.cpp" />
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
-    <ClCompile Include="include\NameComponentReflection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
