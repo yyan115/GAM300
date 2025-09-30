@@ -46,7 +46,6 @@ private:
 
     // Private model rendering methods
     void RenderModel(const ModelRenderComponent& item);
-    void ApplyLighting(Shader& shader);
     void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
     
     glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);

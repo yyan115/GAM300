@@ -180,12 +180,6 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Render the scene
         gfxManager.Render();
 
-        // Draw light cubes using the static editor camera (not the game camera)
-        SceneInstance* currentScene = static_cast<SceneInstance*>(SceneManager::GetInstance().GetCurrentScene());
-        if (currentScene) {
-            currentScene->DrawLightCubes(*editorCamera);
-        }
-
         // End frame
         gfxManager.EndFrame();
 

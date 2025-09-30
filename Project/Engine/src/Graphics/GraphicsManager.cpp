@@ -139,55 +139,11 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
 	}
-	//ApplyLighting(*item.shader);
 
 	// Draw the model with entity material
 	item.model->Draw(*item.shader, *currentCamera, item.material);
 
 	//std::cout << "rendered model\n";
-}
-
-void GraphicsManager::ApplyLighting(Shader& shader)
-{
-	// Moved directly from your ModelSystem::applyLighting method
-	LightManager& lightManager = LightManager::getInstance();
-
-	// Apply directional light
-	const auto& dirLight = lightManager.getDirectionalLight();
-	shader.setVec3("dirLight.direction", dirLight.direction);
-	shader.setVec3("dirLight.ambient", dirLight.ambient);
-	shader.setVec3("dirLight.diffuse", dirLight.diffuse);
-	shader.setVec3("dirLight.specular", dirLight.specular);
-
-	// Apply point lights
-	const auto& pointLights = lightManager.getPointLights();
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) 
-	{
-		std::string base = "pointLights[" + std::to_string(i) + "]";
-		shader.setVec3(base + ".position", pointLights[i].position);
-		shader.setVec3(base + ".ambient", pointLights[i].ambient);
-		shader.setVec3(base + ".diffuse", pointLights[i].diffuse);
-		shader.setVec3(base + ".specular", pointLights[i].specular);
-		shader.setFloat(base + ".constant", pointLights[i].constant);
-		shader.setFloat(base + ".linear", pointLights[i].linear);
-		shader.setFloat(base + ".quadratic", pointLights[i].quadratic);
-	}
-
-	// Apply spotlight
-	if (lightManager.isSpotLightEnabled() && currentCamera) 
-	{
-		const auto& spotLight = lightManager.getSpotLight();
-		shader.setVec3("spotLight.position", currentCamera->Position);
-		shader.setVec3("spotLight.direction", currentCamera->Front);
-		shader.setVec3("spotLight.ambient", spotLight.ambient);
-		shader.setVec3("spotLight.diffuse", spotLight.diffuse);
-		shader.setVec3("spotLight.specular", spotLight.specular);
-		shader.setFloat("spotLight.constant", spotLight.constant);
-		shader.setFloat("spotLight.linear", spotLight.linear);
-		shader.setFloat("spotLight.quadratic", spotLight.quadratic);
-		shader.setFloat("spotLight.cutOff", spotLight.cutOff);
-		shader.setFloat("spotLight.outerCutOff", spotLight.outerCutOff);
-	}
 }
 
 void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix)

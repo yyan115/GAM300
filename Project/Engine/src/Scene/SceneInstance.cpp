@@ -113,7 +113,8 @@ void SceneInstance::Initialize() {
 
 			// Create a directional light (sun)
 			Entity sunLight = ecsManager.CreateEntity();
-			ecsManager.AddComponent<NameComponent>(sunLight, NameComponent{ "Sun" });
+			NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
+			sunName.name = "Sun";
 			ecsManager.AddComponent<Transform>(sunLight, Transform{});
 
 			DirectionalLightComponent sunLightComp;
@@ -136,8 +137,14 @@ void SceneInstance::Initialize() {
 			for (size_t i = 0; i < pointLightPositions.size(); i++) 
 			{
 				Entity pointLight = ecsManager.CreateEntity();
-				ecsManager.AddComponent<NameComponent>(pointLight, NameComponent{ "Point Light " + std::to_string(i) });
+				NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
+				pointLightName.name = "Point Light " + std::to_string(i);
 				ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
+				ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
+				// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+				
+				// Test Model
+				ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 
 				PointLightComponent pointLightComp;
 				pointLightComp.ambient = glm::vec3(0.05f);
@@ -154,8 +161,11 @@ void SceneInstance::Initialize() {
 
 			// Create a spot light that follows the camera
 			Entity spotLight = ecsManager.CreateEntity();
-			ecsManager.AddComponent<NameComponent>(spotLight, NameComponent{ "Camera Flashlight" });
+			NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
+			spotLightName.name = "Flashlight";
 			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f});
+			//ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
+			// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
 			SpotLightComponent spotLightComp;
 			spotLightComp.direction = camera.Front;
@@ -286,11 +296,6 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.Render() completed");
 #endif
 
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call DrawLightCubes()");
-#endif
-	// 5. Draw light cubes manually (temporary - you can make this a system later)
-	DrawLightCubes();
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
