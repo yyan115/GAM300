@@ -1,14 +1,10 @@
+#include "pch.h"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include <algorithm>
-#include <iostream>
-#include <cstring>
-#include <cmath>
-#include <fstream>
-#include <unordered_map>
 #include "Asset Manager/AssetManager.hpp"
-#include "Graphics/TextureManager.h"
+#include "Asset Manager/MetaFilesManager.hpp"
+#include "Graphics/Texture.h"
 #include "Graphics/Material.hpp"
 #include "GUIManager.hpp"
 #include "Prefab.hpp"
@@ -22,7 +18,9 @@
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
 #include "Scene/SceneManager.hpp"
+#include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
+#include <FileWatch.hpp>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 DraggedMaterialGuid = {0, 0};
@@ -107,9 +105,14 @@ AssetBrowserPanel::AssetBrowserPanel()
 
     // Initialize file watcher for hot-reloading
     InitializeFileWatcher();
+    
+    // Always expand Resources folder by default (Unity behavior)
+    expandedDirectories.insert(rootAssetDirectory);
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
+    // Clean up thumbnail cache
+    ClearThumbnailCache();
     // FileWatch destructor will handle cleanup automatically
 }
 
@@ -175,8 +178,23 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
             AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
+            
+            // Invalidate thumbnail cache for modified textures (Unity behavior)
+            if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
+                if (MetaFilesManager::MetaFileExists(fullPath)) {
+                    GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
+                    RemoveThumbnailFromCache(guid);
+                }
+            }
         }
         else if (event == filewatch::Event::removed) {
+            // Remove from thumbnail cache before unloading
+            if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
+                if (MetaFilesManager::MetaFileExists(fullPath)) {
+                    GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
+                    RemoveThumbnailFromCache(guid);
+                }
+            }
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_old) {
@@ -253,6 +271,11 @@ void AssetBrowserPanel::OnImGuiRender() {
     if (refreshPending.exchange(false)) {
         // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
+    }
+    
+    // Sync directory tree if needed (Unity behavior)
+    if (needsTreeSync) {
+        SyncTreeWithCurrentDirectory();
     }
 
     // Handle F2 key for renaming
@@ -451,6 +474,7 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     }
     catch (const std::exception&) {
         // Ignore errors for inaccessible directories
+        return;
     }
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -459,23 +483,39 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     }
 
     // Highlight if this is the current directory
-    if (std::filesystem::path(directory).generic_string() == currentDirectory) {
+    std::string dirPathStr = std::filesystem::path(directory).generic_string();
+    if (dirPathStr == currentDirectory) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
     // Use unique ID per node for consistent state storage
-    std::string nodeId = directory.generic_string();
+    std::string nodeId = dirPathStr;
 
-    // Check if the tree node is currently open (persisted across frames)
+    // Check if this directory should be expanded
+    bool shouldExpand = expandedDirectories.find(dirPathStr) != expandedDirectories.end();
+    
+    // Set the icon based on the current tree state (check ImGui's internal state)
     ImGuiID id = ImGui::GetID(nodeId.c_str());
-    bool isOpen = ImGui::GetStateStorage()->GetBool(id, false);
-
-    // Set the icon based on the open state
-    std::string icon = isOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER_CLOSED;
+    bool isCurrentlyOpen = ImGui::GetStateStorage()->GetBool(id, shouldExpand);
+    std::string icon = isCurrentlyOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER_CLOSED;
     std::string label = icon + " " + displayName;
+
+    // Apply default open state if directory should be expanded (only once, not always)
+    if (shouldExpand) {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    }
 
     // Use TreeNodeEx with fixed str_id for consistent state, and dynamic label
     bool nodeOpen = ImGui::TreeNodeEx(nodeId.c_str(), flags, "%s", label.c_str());
+
+    // Update expanded state based on actual tree node state
+    // Only update if the state changed (user clicked arrow)
+    bool wasExpanded = expandedDirectories.find(dirPathStr) != expandedDirectories.end();
+    if (nodeOpen && !wasExpanded) {
+        expandedDirectories.insert(dirPathStr);
+    } else if (!nodeOpen && wasExpanded) {
+        expandedDirectories.erase(dirPathStr);
+    }
 
     // Handle selection
     if (ImGui::IsItemClicked()) {
@@ -612,30 +652,68 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImVec2 imgMin = rectMin;
         ImVec2 imgMax = ImVec2(rectMin.x + thumb, rectMin.y + thumb);
 
-        // Remove the filled rectangle to make the background transparent.
-        //dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
-
-        // Get icon for asset type
-        std::string icon = GetAssetIcon(asset);
-
-        // Calculate scaled font size to make the icon close to 'thumb' size
-        ImFont* font = ImGui::GetFont();  // Get the current font (assumes FontAwesome is loaded)
-        ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());  // Size at default font size
-        float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;  // Scale based on height (assuming square-ish icon)
-        scale *= 0.8f;  // Reduce scale by 20% to prevent icons from being too large
-        float font_size = ImGui::GetFontSize() * scale;  // Scaled font size
-
-        // Calculate icon size at the new font size
-        ImVec2 iconSize = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, icon.c_str());
-
-        // Center the icon in the thumbnail area
-        ImVec2 iconPos = ImVec2(
-            imgMin.x + (thumb - iconSize.x) * 0.5f,
-            imgMin.y + (thumb - iconSize.y) * 0.5f
-        );
-
-        // Draw the icon with the scaled font size
-        dl->AddText(font, font_size, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+        // Check if this is a texture asset and render thumbnail
+        std::string lowerExt = asset.extension;
+        std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+        bool isTextureAsset = (lowerExt == ".png" || lowerExt == ".jpg" || 
+                              lowerExt == ".jpeg" || lowerExt == ".bmp" || 
+                              lowerExt == ".tga" || lowerExt == ".dds");
+        
+        if (isTextureAsset && !asset.isDirectory) {
+            // Unity-like: Show actual texture thumbnail instead of icon
+            uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
+            
+            if (textureId != 0) {
+                // Add subtle border for texture thumbnails
+                dl->AddRect(imgMin, imgMax, IM_COL32(80, 80, 80, 120), 4.0f, ImDrawFlags_RoundCornersAll, 1.0f);
+                
+                // Calculate UV coordinates to maintain aspect ratio (centered crop)
+                // For simplicity, we use full texture here (Unity does smart cropping)
+                ImVec2 uv0(0.0f, 0.0f);
+                ImVec2 uv1(1.0f, 1.0f);
+                
+                // Add padding to the thumbnail to create a border effect
+                float padding = 4.0f;
+                ImVec2 texMin = ImVec2(imgMin.x + padding, imgMin.y + padding);
+                ImVec2 texMax = ImVec2(imgMax.x - padding, imgMax.y - padding);
+                
+                // Draw the texture
+                dl->AddImage(
+                    (ImTextureID)(intptr_t)textureId,
+                    texMin, texMax,
+                    uv0, uv1,
+                    IM_COL32(255, 255, 255, 255)
+                );
+            } else {
+                // Fallback to icon if texture failed to load
+                std::string icon = GetAssetIcon(asset);
+                ImFont* font = ImGui::GetFont();
+                ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());
+                float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;
+                scale *= 0.8f;
+                float fontSize = ImGui::GetFontSize() * scale;
+                ImVec2 iconSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, icon.c_str());
+                ImVec2 iconPos = ImVec2(
+                    imgMin.x + (thumb - iconSize.x) * 0.5f,
+                    imgMin.y + (thumb - iconSize.y) * 0.5f
+                );
+                dl->AddText(font, fontSize, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+            }
+        } else {
+            // For non-texture assets, draw icon (existing behavior)
+            std::string icon = GetAssetIcon(asset);
+            ImFont* font = ImGui::GetFont();
+            ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());
+            float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;
+            scale *= 0.8f;
+            float fontSize = ImGui::GetFontSize() * scale;
+            ImVec2 iconSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, icon.c_str());
+            ImVec2 iconPos = ImVec2(
+                imgMin.x + (thumb - iconSize.x) * 0.5f,
+                imgMin.y + (thumb - iconSize.y) * 0.5f
+            );
+            dl->AddText(font, fontSize, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+        }
 
 
         // label below
@@ -896,10 +974,17 @@ void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
     std::string normalizedPath = std::filesystem::path(directory).generic_string();
 
     if (std::filesystem::exists(normalizedPath) && std::filesystem::is_directory(normalizedPath)) {
-        currentDirectory = normalizedPath;
-        selectedAssets.clear();
-        lastSelectedAsset = GUID_128{ 0, 0 };
-        RefreshAssets(); // Immediate refresh when navigating
+        // Only refresh and update if directory actually changed
+        if (currentDirectory != normalizedPath) {
+            currentDirectory = normalizedPath;
+            selectedAssets.clear();
+            lastSelectedAsset = GUID_128{ 0, 0 };
+            RefreshAssets(); // Only refresh when directory changes
+            
+            // Sync directory tree (Unity behavior)
+            EnsureDirectoryExpanded(normalizedPath);
+            needsTreeSync = true;
+        }
     }
 }
 
@@ -1076,6 +1161,9 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
             if (std::filesystem::exists(metaFile)) {
                 std::filesystem::remove(metaFile);
             }
+            
+            // Remove from thumbnail cache if it was a texture
+            RemoveThumbnailFromCache(assetToDelete.guid);
         }
 
         // Remove from selection if it was selected
@@ -1415,4 +1503,93 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     }
 
     return ICON_FA_FILE; // Default file icon
+}
+
+// ============================================================================
+// Thumbnail Management (Unity-like)
+// ============================================================================
+
+uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath) {
+    // Create cache key from GUID (use high 64 bits as key for simplicity)
+    uint64_t cacheKey = guid.high ^ guid.low;
+    
+    // Check if thumbnail already exists in cache
+    auto it = thumbnailCache.find(cacheKey);
+    if (it != thumbnailCache.end()) {
+        return it->second;
+    }
+
+    // Load texture using AssetManager and ResourceManager (GUID-based)
+    std::shared_ptr<Texture> texture = nullptr;
+    
+    // Check if asset is compiled
+    if (AssetManager::GetInstance().IsAssetCompiled(guid)) {
+        // Load using GUID through AssetManager
+        texture = AssetManager::GetInstance().LoadByGUID<Texture>(guid);
+    } else {
+        // Compile and load the asset
+        AssetManager::GetInstance().CompileTexture(assetPath, "diffuse", -1, false);
+        texture = AssetManager::GetInstance().LoadByGUID<Texture>(guid);
+    }
+
+    if (texture && texture->ID != 0) {
+        // Cache the texture ID for future use
+        thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->ID);
+        return static_cast<uint32_t>(texture->ID);
+    }
+
+    return 0; // Return 0 if failed to load
+}
+
+void AssetBrowserPanel::ClearThumbnailCache() {
+    // Note: We don't delete the OpenGL textures here because they're managed
+    // by the ResourceManager. We just clear our GUID->ID mapping.
+    thumbnailCache.clear();
+}
+
+void AssetBrowserPanel::RemoveThumbnailFromCache(const GUID_128& guid) {
+    // Create cache key from GUID
+    uint64_t cacheKey = guid.high ^ guid.low;
+    
+    auto it = thumbnailCache.find(cacheKey);
+    if (it != thumbnailCache.end()) {
+        thumbnailCache.erase(it);
+    }
+}
+
+// ============================================================================
+// Directory Tree Synchronization
+// ============================================================================
+
+void AssetBrowserPanel::EnsureDirectoryExpanded(const std::string& directoryPath) {
+    // Expand all parent directories up to and including the target directory
+    std::filesystem::path targetPath(directoryPath);
+    std::filesystem::path rootPath(rootAssetDirectory);
+    
+    // Build list of all parent directories from root to target
+    std::vector<std::string> pathsToExpand;
+    std::filesystem::path currentPath = targetPath;
+    
+    while (currentPath != rootPath && currentPath.has_parent_path()) {
+        pathsToExpand.push_back(currentPath.generic_string());
+        currentPath = currentPath.parent_path();
+    }
+    
+    // Add root path
+    pathsToExpand.push_back(rootPath.generic_string());
+    
+    // Reverse to go from root to target
+    std::reverse(pathsToExpand.begin(), pathsToExpand.end());
+    
+    // Add all paths to expanded directories set
+    // This will be applied on next frame with ImGuiCond_Once
+    for (const auto& path : pathsToExpand) {
+        expandedDirectories.insert(path);
+    }
+}
+
+void AssetBrowserPanel::SyncTreeWithCurrentDirectory() {
+    // This ensures the current directory's parents are expanded
+    EnsureDirectoryExpanded(currentDirectory);
+    needsTreeSync = false;
 }
