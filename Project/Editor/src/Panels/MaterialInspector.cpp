@@ -18,13 +18,89 @@
 #include <commdlg.h>
 #endif
 
-void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, const std::string& assetPath) {
+// Helper function to draw color component with input fields and color picker
+static bool DrawColorComponent(const char* label, float color[3], const char* popupId) {
+    bool changed = false;
+
+    ImGui::Text("%s", label);
+    ImGui::SameLine();
+
+    // Create unique IDs using the label
+    std::string rId = std::string("##r_") + label;
+    std::string gId = std::string("##g_") + label;
+    std::string bId = std::string("##b_") + label;
+    std::string colorId = std::string("##color_") + label;
+
+    // R input field
+    float r = color[0] * 255.0f;
+    ImGui::PushItemWidth(50);
+    if (ImGui::DragFloat(rId.c_str(), &r, 1.0f, 0.0f, 255.0f, "%.0f")) {
+        color[0] = r / 255.0f;
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::Text("G:");
+    ImGui::SameLine();
+
+    // G input field
+    float g = color[1] * 255.0f;
+    ImGui::PushItemWidth(50);
+    if (ImGui::DragFloat(gId.c_str(), &g, 1.0f, 0.0f, 255.0f, "%.0f")) {
+        color[1] = g / 255.0f;
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::Text("B:");
+    ImGui::SameLine();
+
+    // B input field
+    float b = color[2] * 255.0f;
+    ImGui::PushItemWidth(50);
+    if (ImGui::DragFloat(bId.c_str(), &b, 1.0f, 0.0f, 255.0f, "%.0f")) {
+        color[2] = b / 255.0f;
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Color picker button
+    if (ImGui::ColorButton(colorId.c_str(), ImVec4(color[0], color[1], color[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
+        ImGui::OpenPopup(popupId);
+    }
+
+    // Color picker popup
+    if (ImGui::BeginPopup(popupId)) {
+        if (ImGui::ColorPicker3("Color", color)) {
+            changed = true;
+        }
+        ImGui::EndPopup();
+    }
+
+    return changed;
+}
+
+void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, const std::string& assetPath, bool showLockButton, bool* isLocked, std::function<void()> lockCallback) {
     if (!material) return;
 
     bool materialChanged = false;
 
     // Colors section - Unity style
-    if (ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen)) {
+    bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
+
+    // Add lock button on the same line as Colors header if requested
+    if (showLockButton && isLocked && lockCallback) {
+        ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+        if (ImGui::Button(*isLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+            lockCallback();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(*isLocked ? "Unlock Inspector" : "Lock Inspector");
+        }
+    }
+
+    if (colorsOpen) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
 
@@ -32,108 +108,27 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         glm::vec3 ambient = material->GetAmbient();
         float ambientColor[3] = { ambient.r, ambient.g, ambient.b };
 
-        ImGui::Text("Ambient");
-        ImGui::SameLine();
-        ImGui::Text("R: %.0f", ambientColor[0] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##ambient_r", ImVec4(ambientColor[0], 0, 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("ambient_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("G: %.0f", ambientColor[1] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##ambient_g", ImVec4(0, ambientColor[1], 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("ambient_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("B: %.0f", ambientColor[2] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##ambient_b", ImVec4(0, 0, ambientColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("ambient_color_picker");
-        }
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##ambient_full", ImVec4(ambientColor[0], ambientColor[1], ambientColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("ambient_color_picker");
-        }
-
-        if (ImGui::BeginPopup("ambient_color_picker")) {
-            if (ImGui::ColorPicker3("Ambient Color", ambientColor)) {
-                material->SetAmbient(glm::vec3(ambientColor[0], ambientColor[1], ambientColor[2]));
-                materialChanged = true;
-            }
-            ImGui::EndPopup();
+        if (DrawColorComponent("Ambient", ambientColor, "ambient_color_picker")) {
+            material->SetAmbient(glm::vec3(ambientColor[0], ambientColor[1], ambientColor[2]));
+            materialChanged = true;
         }
 
         // Diffuse color row
         glm::vec3 diffuse = material->GetDiffuse();
         float diffuseColor[3] = { diffuse.r, diffuse.g, diffuse.b };
 
-        ImGui::Text("Diffuse");
-        ImGui::SameLine();
-        ImGui::Text("R: %.0f", diffuseColor[0] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##diffuse_r", ImVec4(diffuseColor[0], 0, 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("diffuse_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("G: %.0f", diffuseColor[1] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##diffuse_g", ImVec4(0, diffuseColor[1], 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("diffuse_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("B: %.0f", diffuseColor[2] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##diffuse_b", ImVec4(0, 0, diffuseColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("diffuse_color_picker");
-        }
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##diffuse_full", ImVec4(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("diffuse_color_picker");
-        }
-
-        if (ImGui::BeginPopup("diffuse_color_picker")) {
-            if (ImGui::ColorPicker3("Diffuse Color", diffuseColor)) {
-                material->SetDiffuse(glm::vec3(diffuseColor[0], diffuseColor[1], diffuseColor[2]));
-                materialChanged = true;
-            }
-            ImGui::EndPopup();
+        if (DrawColorComponent("Diffuse", diffuseColor, "diffuse_color_picker")) {
+            material->SetDiffuse(glm::vec3(diffuseColor[0], diffuseColor[1], diffuseColor[2]));
+            materialChanged = true;
         }
 
         // Specular color row
         glm::vec3 specular = material->GetSpecular();
         float specularColor[3] = { specular.r, specular.g, specular.b };
 
-        ImGui::Text("Specular");
-        ImGui::SameLine();
-        ImGui::Text("R: %.0f", specularColor[0] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##specular_r", ImVec4(specularColor[0], 0, 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("specular_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("G: %.0f", specularColor[1] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##specular_g", ImVec4(0, specularColor[1], 0, 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("specular_color_picker");
-        }
-        ImGui::SameLine();
-        ImGui::Text("B: %.0f", specularColor[2] * 255);
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##specular_b", ImVec4(0, 0, specularColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("specular_color_picker");
-        }
-        ImGui::SameLine();
-        if (ImGui::ColorButton("##specular_full", ImVec4(specularColor[0], specularColor[1], specularColor[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-            ImGui::OpenPopup("specular_color_picker");
-        }
-
-        if (ImGui::BeginPopup("specular_color_picker")) {
-            if (ImGui::ColorPicker3("Specular Color", specularColor)) {
-                material->SetSpecular(glm::vec3(specularColor[0], specularColor[1], specularColor[2]));
-                materialChanged = true;
-            }
-            ImGui::EndPopup();
+        if (DrawColorComponent("Specular", specularColor, "specular_color_picker")) {
+            material->SetSpecular(glm::vec3(specularColor[0], specularColor[1], specularColor[2]));
+            materialChanged = true;
         }
 
         // Shininess row
@@ -184,8 +179,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
 
             // Calculate sizes for Unity-like layout
             float availableWidth = ImGui::GetContentRegionAvail().x;
-            float removeButtonWidth = 20.0f;
-            float selectButtonWidth = 20.0f;
+            float removeButtonWidth = 35.0f;
+            float selectButtonWidth = 35.0f;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
@@ -222,23 +217,26 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 ImGui::EndDragDropTarget();
             }
 
-            // Remove button (X)
+            // Remove button (X) - centered
             ImGui::SameLine();
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
             std::string removeButtonLabel = std::string(ICON_FA_XMARK) + "##remove_" + name;
-            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, 0))) {
+            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
                 // Remove the texture
                 material->RemoveTexture(type);
                 materialChanged = true;
                 std::cout << "[MaterialInspector] Removed " << name << " texture" << std::endl;
             }
+            ImGui::PopStyleVar();
             if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("Remove texture");
             }
 
-            // Select button (folder icon)
+            // Select button (folder icon) - centered
             ImGui::SameLine();
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f)); // Center text in button
             std::string selectButtonLabel = std::string(ICON_FA_FOLDER_OPEN) + "##select_" + name;
-            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, 0))) {
+            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
                 // Open file dialog
                 #ifdef _WIN32
                     // Store current working directory to restore it later
@@ -284,6 +282,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     std::cout << "[MaterialInspector] File dialog not implemented for this platform" << std::endl;
                 #endif
             }
+            ImGui::PopStyleVar(); // Pop ButtonTextAlign style
             if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("Select texture file");
             }

@@ -45,15 +45,13 @@ bool Engine::Initialize() {
 	// WOON LI TEST CODE
 	InputManager::Initialize();
 
-	// Platform-specific asset initialization
-#ifndef __ANDROID__
 	// Initialize AudioManager on desktop now that platform assets are available
 	if (!AudioManager::GetInstance().Initialise()) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize AudioManager\n");
 	} else {
 		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
-#endif
+
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
 	//TEST ON ANDROID FOR REFLECTION - IF NOT WORKING, INFORM IMMEDIATELY
@@ -533,9 +531,9 @@ bool Engine::InitializeGraphicsResources() {
 }
 
 bool Engine::InitializeAssets() {
-	// Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
-	//MetaFilesManager::InitializeAssetMetaFiles("Resources");
-	return true;
+    // Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
+    // MetaFilesManager::InitializeAssetMetaFiles("Resources");  // Uncomment if needed
+    return true;
 }
 
 void Engine::Update() {

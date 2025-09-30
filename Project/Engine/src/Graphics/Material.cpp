@@ -266,20 +266,38 @@ std::filesystem::path Material::ResolveToProjectRoot(const std::filesystem::path
 	if (!resolvedPath.is_absolute()) {
 		// Find the project root directory by looking for Build folder
 		std::filesystem::path projectRoot = std::filesystem::current_path();
+		std::filesystem::path foundProjectRoot;
+
 		while (projectRoot.has_parent_path()) {
 			if (std::filesystem::exists(projectRoot / "Build") &&
 				std::filesystem::exists(projectRoot / "Resources")) {
+				foundProjectRoot = projectRoot;
 				break;
 			}
 			projectRoot = projectRoot.parent_path();
 		}
+
+		// If we didn't find a project root, use current directory as fallback
+		if (foundProjectRoot.empty()) {
+			foundProjectRoot = std::filesystem::current_path();
+		}
+
+		projectRoot = foundProjectRoot;
 
 		// Debug logging
 		std::cout << "[Material] DEBUG - Current path: " << std::filesystem::current_path() << std::endl;
 		std::cout << "[Material] DEBUG - Found project root: " << projectRoot << std::endl;
 		std::cout << "[Material] DEBUG - Input path: " << path << std::endl;
 
-		resolvedPath = projectRoot / resolvedPath;
+		// For relative paths, resolve them from current directory first
+		if (resolvedPath.is_relative()) {
+			// Resolve relative to current working directory
+			resolvedPath = std::filesystem::current_path() / resolvedPath;
+			std::cout << "[Material] DEBUG - Resolved from current: " << resolvedPath << std::endl;
+		} else {
+			// For absolute paths, combine with project root
+			resolvedPath = projectRoot / resolvedPath;
+		}
 		std::cout << "[Material] DEBUG - Combined path: " << resolvedPath << std::endl;
 	}
 

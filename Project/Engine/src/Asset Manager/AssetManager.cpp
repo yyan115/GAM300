@@ -358,8 +358,8 @@ void AssetManager::CompileAllAssetsForAndroid() {
 		CompileAsset(assetPath, true, true);
 	}
 
+	// Copy scenes to Android resources.
 	if (std::filesystem::exists("Resources/Scenes")) {
-		// Copy scenes to Android resources.
 		for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
 			if (std::filesystem::is_regular_file(p)) {
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {

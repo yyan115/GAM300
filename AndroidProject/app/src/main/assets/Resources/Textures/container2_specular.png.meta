@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "007ebbc8c90800f6-0002c7078200002b",
+        "guid": "0063f3bfca96451d-0002cd9798000033",
         "source": "Resources/Textures/container2_specular.png",
         "compiled": "Resources/Textures/container2_specular.dds",
         "android_compiled": "Resources/Textures/container2_specular_android.ktx",
-        "last_compiled": "2025-09-28 20:11:34.7481684"
+        "last_compiled": "2025-09-30 03:46:52.5653593"
     },
     "TextureMetaData": {
         "id": 0,

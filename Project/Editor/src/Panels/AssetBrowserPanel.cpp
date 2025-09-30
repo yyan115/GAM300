@@ -21,10 +21,15 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
+#include <IconsFontAwesome6.h>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 g_draggedMaterialGuid = {0, 0};
 std::string g_draggedMaterialPath;
+
+// Global drag-drop state for cross-window model dragging
+GUID_128 g_draggedModelGuid = {0, 0};
+std::string g_draggedModelPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> g_fallbackGuidToPath;
@@ -85,8 +90,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("../../Resources")
-    , rootAssetDirectory("../../Resources")
+    , currentDirectory("Resources")
+    , rootAssetDirectory("Resources")
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets
@@ -259,6 +264,17 @@ void AssetBrowserPanel::OnImGuiRender() {
         StartRenameAsset(lastSelectedAsset);
     }
 
+    // Handle Delete key for deleting
+    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_Delete) && !selectedAssets.empty()) {
+        // Find the selected asset and trigger delete confirmation
+        for (const auto& asset : currentAssets) {
+            if (IsAssetSelected(asset.guid)) {
+                DeleteAsset(asset);
+                break; // Delete the first selected asset
+            }
+        }
+    }
+
     // Handle rename confirmation/cancellation
     if (isRenaming) {
         if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
@@ -308,6 +324,43 @@ void AssetBrowserPanel::OnImGuiRender() {
         ImGui::EndChild();
     }
     ImGui::End();
+
+    // Delete confirmation popup
+    if (showDeleteConfirmation) {
+        ImGui::OpenPopup("Delete Asset");
+        showDeleteConfirmation = false; // Only open once
+    }
+
+    if (ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to delete this file?");
+        ImGui::Separator();
+        ImGui::Text("File: %s", assetToDelete.fileName.c_str());
+        ImGui::Text("Path: %s", assetToDelete.filePath.c_str());
+        ImGui::Separator();
+
+        // Center the buttons
+        float buttonWidth = 60.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float totalWidth = buttonWidth * 2 + spacing;
+        float offset = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+        if (offset > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
+        if (ImGui::Button("Yes", ImVec2(buttonWidth, 0))) {
+            ConfirmDeleteAsset();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(buttonWidth, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        // Close with Escape key
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 void AssetBrowserPanel::RenderToolbar() {
@@ -315,7 +368,7 @@ void AssetBrowserPanel::RenderToolbar() {
     ImGui::Text("Path:");
     ImGui::SameLine();
 
-    if (ImGui::SmallButton("Resources")) {
+    if (ImGui::SmallButton(ICON_FA_HOUSE " Resources")) {
         NavigateToDirectory(rootAssetDirectory);
     }
 
@@ -335,18 +388,21 @@ void AssetBrowserPanel::RenderToolbar() {
         ImGui::PopID();
     }
 
-    // Toolbar buttons
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 200.0f);
+    ImVec2 button1Size = ImGui::CalcTextSize(ICON_FA_FOLDER_PLUS " New Folder");
+    ImVec2 button2Size = ImGui::CalcTextSize(ICON_FA_FILE_IMPORT " Import");
+    float totalButtonWidth = button1Size.x + button2Size.x + ImGui::GetStyle().ItemSpacing.x;  // Include spacing
 
-    ImGui::SameLine();
-    if (ImGui::Button("New Folder")) {
+    // Position buttons at the right end of the available space (after breadcrumbs)
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::SameLine(availWidth - totalButtonWidth);
+
+    if (ImGui::Button(ICON_FA_FOLDER_PLUS " New Folder")) {
         std::string newFolderPath = currentDirectory + "/New Folder";
         EnsureDirectoryExists(newFolderPath);
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Import")) {
+    if (ImGui::Button(ICON_FA_FILE_IMPORT " Import")) {
         // TODO: Implement import dialog
     }
 
@@ -360,7 +416,7 @@ void AssetBrowserPanel::RenderToolbar() {
 #endif
     searchBuffer[sizeof(searchBuffer) - 1] = '\0';
 
-    if (ImGui::InputTextWithHint("##Search", "Search assets...", searchBuffer, sizeof(searchBuffer))) {
+    if (ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search assets...", searchBuffer, sizeof(searchBuffer))) {
         searchQuery = searchBuffer;
     }
 
@@ -410,10 +466,19 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    // Use unique ID per node to avoid duplicate-label issues
+    // Use unique ID per node for consistent state storage
     std::string nodeId = directory.generic_string();
-    ImGui::PushID(nodeId.c_str());
-    bool nodeOpen = ImGui::TreeNodeEx(displayName.c_str(), flags);
+
+    // Check if the tree node is currently open (persisted across frames)
+    ImGuiID id = ImGui::GetID(nodeId.c_str());
+    bool isOpen = ImGui::GetStateStorage()->GetBool(id, false);
+
+    // Set the icon based on the open state
+    std::string icon = isOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER_CLOSED;
+    std::string label = icon + " " + displayName;
+
+    // Use TreeNodeEx with fixed str_id for consistent state, and dynamic label
+    bool nodeOpen = ImGui::TreeNodeEx(nodeId.c_str(), flags, "%s", label.c_str());
 
     // Handle selection
     if (ImGui::IsItemClicked()) {
@@ -444,7 +509,6 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
         }
         ImGui::TreePop();
     }
-    ImGui::PopID();
 }
 
 void AssetBrowserPanel::RenderAssetGrid()
@@ -482,6 +546,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked();
+        const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
         bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
         // drag source: prefab -> scene, material/texture -> inspector
@@ -493,10 +558,12 @@ void AssetBrowserPanel::RenderAssetGrid()
             bool isTexture = (lowerExt == ".png" || lowerExt == ".jpg" ||
                              lowerExt == ".jpeg" || lowerExt == ".bmp" ||
                              lowerExt == ".tga" || lowerExt == ".dds");
+            bool isModel = (lowerExt == ".obj" || lowerExt == ".fbx" ||
+                           lowerExt == ".dae" || lowerExt == ".3ds");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
 
@@ -515,6 +582,18 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Send texture path directly
                     ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                } else if (isModel) {
+                    std::cout << "[AssetBrowserPanel] Starting drag for model: " << asset.fileName << std::endl;
+
+                    // Store drag data globally for cross-window transfer
+                    g_draggedModelGuid = asset.guid;
+                    g_draggedModelPath = asset.filePath;
+
+                    std::cout << "[AssetBrowserPanel] Model drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MODEL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Model: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -535,16 +614,32 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImVec2 rectMax = ImGui::GetItemRectMax();
         ImVec2 imgMin = rectMin;
         ImVec2 imgMax = ImVec2(rectMin.x + thumb, rectMin.y + thumb);
-        dl->AddRectFilled(imgMin, imgMax, IM_COL32(80, 80, 80, 255), 4.0f);
-        dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
 
-        // text inside tile
-        std::string shortName = asset.fileName;
-        if (shortName.size() > 12) shortName = shortName.substr(0, 9) + "...";
-        ImVec2 textSize = ImGui::CalcTextSize(shortName.c_str());
-        ImVec2 textPos = ImVec2(imgMin.x + (thumb - textSize.x) * 0.5f,
-            imgMin.y + (thumb - textSize.y) * 0.5f);
-        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), shortName.c_str());
+        // Remove the filled rectangle to make the background transparent.
+        //dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
+
+        // Get icon for asset type
+        std::string icon = GetAssetIcon(asset);
+
+        // Calculate scaled font size to make the icon close to 'thumb' size
+        ImFont* font = ImGui::GetFont();  // Get the current font (assumes FontAwesome is loaded)
+        ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());  // Size at default font size
+        float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;  // Scale based on height (assuming square-ish icon)
+        scale *= 0.8f;  // Reduce scale by 20% to prevent icons from being too large
+        float font_size = ImGui::GetFontSize() * scale;  // Scaled font size
+
+        // Calculate icon size at the new font size
+        ImVec2 iconSize = font->CalcTextSizeA(font_size, FLT_MAX, 0.0f, icon.c_str());
+
+        // Center the icon in the thumbnail area
+        ImVec2 iconPos = ImVec2(
+            imgMin.x + (thumb - iconSize.x) * 0.5f,
+            imgMin.y + (thumb - iconSize.y) * 0.5f
+        );
+
+        // Draw the icon with the scaled font size
+        dl->AddText(font, font_size, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+
 
         // label below
         ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
@@ -564,10 +659,10 @@ void AssetBrowserPanel::RenderAssetGrid()
         }
         ImGui::PopTextWrapPos();
 
-        // Selection / activation - single click selects, but not during drag operations
+        // Selection / activation - mouse release selects, but not during drag operations
         bool shouldSelect = false;
-        if (clicked) {
-            // Check if mouse moved significantly during this click (indicating a drag)
+        if (released) {
+            // Check if mouse moved significantly during the click-drag-release cycle
             ImVec2 dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             float dragDistance = sqrtf(dragDelta.x * dragDelta.x + dragDelta.y * dragDelta.y);
             float dragThreshold = 5.0f; // pixels
@@ -581,8 +676,8 @@ void AssetBrowserPanel::RenderAssetGrid()
             anyItemClickedInGrid = true;
         }
 
-        // Don't select if we're in the middle of a drag operation
-        if (shouldSelect && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+        // Select asset if shouldSelect is true (already accounts for drag distance)
+        if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
             std::cout << "[AssetBrowserPanel] Selecting asset: GUID {" << asset.guid.high << ", " << asset.guid.low << "}, File: " << asset.fileName << std::endl;
             SelectAsset(asset.guid, ctrl);
@@ -872,34 +967,48 @@ bool AssetBrowserPanel::IsAssetSelected(const GUID_128& guid) const {
 }
 
 void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
-    if (ImGui::MenuItem("Open")) {
+    if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open")) {
         std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
     }
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Reveal in Explorer")) {
+    if (ImGui::MenuItem(ICON_FA_EYE " Reveal in Explorer")) {
         RevealInExplorer(asset);
     }
 
-    if (ImGui::MenuItem("Copy Path")) {
+    if (ImGui::MenuItem(ICON_FA_CLIPBOARD " Copy Path")) {
         CopyAssetPath(asset);
     }
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Delete", nullptr, false, !asset.isDirectory)) {
-        DeleteAsset(asset);
+
+    // Create submenu with delete option
+    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
+        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
+            CreateNewMaterial();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
+            CreateNewFolder();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
+            DeleteAsset(asset);
+        }
+
+        ImGui::EndMenu();
     }
 }
 
 void AssetBrowserPanel::ShowCreateAssetMenu() {
-    if (ImGui::BeginMenu("Create")) {
-        if (ImGui::MenuItem("Material")) {
+    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
+        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
             CreateNewMaterial();
         }
 
-        if (ImGui::MenuItem("Folder")) {
+        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
             CreateNewFolder();
         }
 
@@ -916,18 +1025,38 @@ void AssetBrowserPanel::HandleDragAndDrop(const AssetInfo& asset) {
 }
 
 void AssetBrowserPanel::DeleteAsset(const AssetInfo& asset) {
+    // Store the asset to delete and show confirmation popup
+    assetToDelete = asset;
+    showDeleteConfirmation = true;
+}
+
+void AssetBrowserPanel::ConfirmDeleteAsset() {
     try {
-        if (asset.isDirectory) {
-            std::filesystem::remove_all(asset.filePath);
+        if (assetToDelete.isDirectory) {
+            std::filesystem::remove_all(assetToDelete.filePath);
+            std::cout << "[AssetBrowserPanel] Deleted directory: " << assetToDelete.filePath << std::endl;
         }
         else {
-            std::filesystem::remove(asset.filePath);
+            std::filesystem::remove(assetToDelete.filePath);
+            std::cout << "[AssetBrowserPanel] Deleted file: " << assetToDelete.filePath << std::endl;
+
             // Also remove meta file
-            std::string metaFile = asset.filePath + ".meta";
+            std::string metaFile = assetToDelete.filePath + ".meta";
             if (std::filesystem::exists(metaFile)) {
                 std::filesystem::remove(metaFile);
+                std::cout << "[AssetBrowserPanel] Deleted meta file: " << metaFile << std::endl;
             }
         }
+
+        // Remove from selection if it was selected
+        selectedAssets.erase(assetToDelete.guid);
+        if (lastSelectedAsset.high == assetToDelete.guid.high && lastSelectedAsset.low == assetToDelete.guid.low) {
+            GUIManager::SetSelectedAsset(GUID_128{0, 0});
+            lastSelectedAsset = GUID_128{0, 0};
+        }
+
+        // Refresh the asset list
+        RefreshAssets();
     }
     catch (const std::exception& e) {
         std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;
@@ -1153,4 +1282,37 @@ void AssetBrowserPanel::ConfirmRename() {
 
     CancelRename();
     QueueRefresh();
+}
+
+std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
+    if (asset.isDirectory) {
+        return ICON_FA_FOLDER;
+    }
+
+    std::string lowerExt = asset.extension;
+    std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+
+    if (lowerExt == ".png" || lowerExt == ".jpg" || lowerExt == ".jpeg" || lowerExt == ".bmp" || lowerExt == ".tga" || lowerExt == ".dds") {
+        return ICON_FA_IMAGE;
+    }
+    else if (lowerExt == ".obj" || lowerExt == ".fbx" || lowerExt == ".dae" || lowerExt == ".3ds") {
+        return ICON_FA_CUBE;
+    }
+    else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
+        return ICON_FA_CODE;
+    }
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+        return ICON_FA_VOLUME_HIGH;
+    }
+    else if (lowerExt == ".ttf" || lowerExt == ".otf") {
+        return ICON_FA_FONT;
+    }
+    else if (lowerExt == ".mat") {
+        return ICON_FA_PAINTBRUSH;
+    }
+    else if (lowerExt == ".prefab") {
+        return ICON_FA_CUBES;
+    }
+
+    return ICON_FA_FILE; // Default file icon
 }

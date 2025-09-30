@@ -213,9 +213,9 @@ void SceneInstance::Initialize() {
 			
 	// Add AudioComponent
 	AudioComponent audioComp;
-	audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-	audioComp.Volume = 0.8f;
-	audioComp.Loop = false;
+	audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+	audioComp.Volume = 0.3f;
+	audioComp.Loop = true;
 	audioComp.PlayOnStart = true;
 	audioComp.Spatialize = false;
 	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
@@ -225,8 +225,8 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
-	ecsManager.spriteSystem->Initialise();
 	ecsManager.textSystem->Initialise();
+	ecsManager.spriteSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -272,8 +272,8 @@ void SceneInstance::Draw() {
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
 	}
-	if (mainECS.spriteSystem)
-	{
+
+	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
 	// Test debug drawing

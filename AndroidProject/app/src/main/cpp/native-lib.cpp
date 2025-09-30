@@ -13,6 +13,14 @@
 #include "Platform/AndroidPlatform.h"
 #include "Platform/IPlatform.h"
 
+// NEW: Add FMOD includes for Android-specific functions and types
+#include <fmod/fmod_android.h>
+#include <fmod/fmod_errors.h>
+#include <fmod/fmod.h>
+
+// NEW: Add include for AudioManager (relative path from Engine/include)
+#include "Sound/AudioManager.hpp"
+
 #define LOG_TAG "GAM300"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -28,14 +36,24 @@ Java_com_gam300_game_MainActivity_stringFromJNI(JNIEnv* env, jobject /* this */)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject /* this */, jobject assetManager, jint width, jint height) {
+Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject assetManager, jint width, jint height) {
     LOGI("Initializing GAM300 Engine: %dx%d", width, height);
 
     if (!engineInitialized) {
         // Get native AssetManager and set it in the platform FIRST
         AAssetManager* nativeAssetManager = AAssetManager_fromJava(env, assetManager);
 
-        // Initialize Engine (but skip asset loading for now)
+        // NEW: Initialize FMOD for Android JNI (required before any FMOD calls)
+        JavaVM* jvm;
+        env->GetJavaVM(&jvm);
+        FMOD_RESULT fmodResult = FMOD_Android_JNI_Init(jvm, thiz);  // Pass 'thiz' (the Java activity) as the second argument
+        if (fmodResult != FMOD_OK) {
+            LOGE("FMOD_Android_JNI_Init failed: %s", FMOD_ErrorString(fmodResult));
+            return;  // Abort if FMOD init fails
+        }
+        LOGI("FMOD JNI initialized successfully");
+
+        // Initialize Engine (includes AudioManager::Initialise())
         Engine::Initialize();
 
         // Set the AssetManager in the Android platform BEFORE asset loading

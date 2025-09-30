@@ -3,6 +3,7 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "ECS/NameComponent.hpp"
 #include <Transform/TransformComponent.hpp>
+#include <Math/Vector3D.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
@@ -97,7 +98,14 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
-	ecsManager.AddComponent<Transform>(entity, Transform());
+
+	Transform defaultTransform;
+	defaultTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+	defaultTransform.localScale = Vector3D(1.0f, 1.0f, 1.0f);
+	defaultTransform.localRotation = Quaternion();
+	defaultTransform.isDirty = true;
+
+	ecsManager.AddComponent<Transform>(entity, defaultTransform);
 
 	return entity;
 }
