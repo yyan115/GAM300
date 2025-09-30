@@ -154,6 +154,7 @@ void SceneInstance::Initialize() {
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
+	ecsManager.spriteSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -200,6 +201,10 @@ void SceneInstance::Draw() {
 #ifdef ANDROID
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
+	}
+
+	if (mainECS.spriteSystem) {
+		mainECS.spriteSystem->Update();
 	}
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
