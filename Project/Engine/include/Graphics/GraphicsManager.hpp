@@ -3,7 +3,6 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "IRenderComponent.hpp"
-#include "Graphics/LightManager.hpp"
 #include "Graphics/Camera.h"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Model/Model.h"

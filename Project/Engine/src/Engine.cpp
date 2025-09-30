@@ -2,7 +2,6 @@
 
 #include "Graphics/OpenGL.h"
 #include "Platform/Platform.h"
-#include "Graphics/LightManager.hpp"
 
 #ifdef ANDROID
 #include <EGL/egl.h>
@@ -528,35 +527,6 @@ bool Engine::InitializeGraphicsResources() {
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
-
-	// ---Set Up Lighting---
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-	// Set up directional light
-	lightManager.setDirectionalLight(
-		glm::vec3(-0.2f, -1.0f, -0.3f),
-		glm::vec3(0.4f, 0.4f, 0.4f)
-	);
-
-	// Add point lights
-	glm::vec3 lightPositions[] = {
-		glm::vec3(0.7f,  0.2f,  2.0f),
-		glm::vec3(2.3f, -3.3f, -4.0f),
-		glm::vec3(-4.0f,  2.0f, -12.0f),
-		glm::vec3(0.0f,  0.0f, -3.0f)
-	};
-
-	for (int i = 0; i < 4; i++)
-	{
-		lightManager.addPointLight(lightPositions[i], glm::vec3(0.8f, 0.8f, 0.8f));
-	}
-
-	// Set up spotlight
-	lightManager.setSpotLight(
-		glm::vec3(0.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(1.0f, 1.0f, 1.0f)
-	);
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
