@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "007ebbc8a6d93f72-0002c7075a00000b",
+        "guid": "0063f3bff207ade4-0002cd976e00000b",
         "source": "Resources/Models/backpack/ao.jpg",
         "compiled": "Resources/Models/backpack/ao.dds",
         "android_compiled": "Resources/Models/backpack/ao_android.ktx",
-        "last_compiled": "2025-09-28 20:10:46.2366873"
+        "last_compiled": "2025-09-30 03:45:04.9586552"
     },
     "TextureMetaData": {
         "id": 0,

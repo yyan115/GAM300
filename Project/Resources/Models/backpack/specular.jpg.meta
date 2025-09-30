@@ -1,10 +1,11 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "0010097b14549e46-0002cc57b4000029",
-        "source": "../../Resources/Models/backpack/specular.jpg",
-        "compiled": "../../Resources/Models/backpack/specular.dds",
-        "last_compiled": "2025-09-29 16:18:43.9182713"
+        "guid": "0063f3bffb4a028d-0002cd977a000011",
+        "source": "Resources/Models/backpack/specular.jpg",
+        "compiled": "Resources/Models/backpack/specular.dds",
+        "android_compiled": "Resources/Models/backpack/specular_android.ktx",
+        "last_compiled": "2025-09-30 03:46:24.3935734"
     },
     "TextureMetaData": {
         "id": 0,

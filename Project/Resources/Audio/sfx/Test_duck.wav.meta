@@ -1,9 +1,10 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "0010097b4596f96a-0002cc579c00000f",
-        "source": "../../Resources/Audio/sfx/Test_duck.wav",
-        "compiled": "../../Resources/Audio/sfx/Test_duck.wav",
-        "last_compiled": "2025-09-29 16:18:22.1020821"
+        "guid": "0063f3bfa8740fcf-0002cd976e000003",
+        "source": "Resources/Audio/sfx/Test_duck.wav",
+        "compiled": "Resources/Audio/sfx/Test_duck.wav",
+        "android_compiled": "Resources/Audio/sfx/Test_duck.wav",
+        "last_compiled": "2025-09-30 03:45:04.9777338"
     }
 }
