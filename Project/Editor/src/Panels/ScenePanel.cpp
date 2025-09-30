@@ -711,9 +711,8 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
             previewEntity = ecsManager.CreateEntity();
 
-            // Update the existing name component (CreateEntity already adds one)
             if (ecsManager.HasComponent<NameComponent>(previewEntity)) {
-                ecsManager.GetComponent<NameComponent>(previewEntity).name = "__PREVIEW_TEMP__";
+                ecsManager.GetComponent<NameComponent>(previewEntity).name = "PREVIEW";
             }
 
             // Add ModelRenderComponent with semi-transparent material
@@ -816,9 +815,9 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             // Then spawn the real entity
             Entity realEntity = SpawnModelEntity(previewPosition);
             if (realEntity != static_cast<Entity>(-1)) {
-                std::cout << "[ScenePanel] Successfully spawned entity " << realEntity << std::endl;
+                ENGINE_PRINT("[ScenePanel] Successfully spawned entity ", realEntity, "\n");
             } else {
-                std::cout << "[ScenePanel] ERROR: SpawnModelEntity returned invalid entity" << std::endl;
+                ENGINE_PRINT("[ScenePanel] ERROR: SpawnModelEntity returned invalid entity\n");
             }
 
             isDraggingModel = false;
@@ -894,21 +893,10 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
         std::string entityName = modelPath.stem().string();
 
         Entity newEntity = ecsManager.CreateEntity();
-        std::cout << "[SpawnModelEntity] Created entity: " << newEntity << std::endl;
 
         // Update the existing name component (CreateEntity already adds one)
         if (ecsManager.TryGetComponent<NameComponent>(newEntity).has_value()) {
             ecsManager.GetComponent<NameComponent>(newEntity).name = entityName;
-            std::cout << "[SpawnModelEntity] Set NameComponent to: " << entityName << std::endl;
-        } else {
-            std::cout << "[SpawnModelEntity] ERROR: Entity " << newEntity << " has no NameComponent!" << std::endl;
-        }
-
-        // Debug: Check if entity has ParentComponent (shouldn't for root entities)
-        if (ecsManager.TryGetComponent<ParentComponent>(newEntity).has_value()) {
-            std::cout << "[SpawnModelEntity] WARNING: Entity " << newEntity << " has ParentComponent!" << std::endl;
-        } else {
-            std::cout << "[SpawnModelEntity] Entity " << newEntity << " is a root entity (no ParentComponent)" << std::endl;
         }
 
         // Set position from raycast (CreateEntity already adds Transform component)
@@ -919,88 +907,30 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
             transform.isDirty = true;
         }
 
-        // Add ModelRenderComponent (check if it doesn't already exist)
+        // Add ModelRenderComponent
         if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
             ModelRenderComponent modelRenderer;
             modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
             modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
 
-            std::cout << "[SpawnModelEntity] Model resource: " << (modelRenderer.model ? "LOADED" : "NULL") << std::endl;
-            std::cout << "[SpawnModelEntity] Shader resource: " << (modelRenderer.shader ? "LOADED" : "NULL") << std::endl;
-
             if (modelRenderer.model && modelRenderer.shader) {
-                std::cout << "[SpawnModelEntity] Model pointer: " << modelRenderer.model << std::endl;
-                std::cout << "[SpawnModelEntity] Shader pointer: " << modelRenderer.shader << std::endl;
-
                 ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);
-
-                // Verify the component was added successfully
-                if (ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
-                    std::cout << "[SpawnModelEntity] ModelRenderComponent added successfully to entity " << newEntity << std::endl;
-
-                    // Additional verification - check the component data
-                    ModelRenderComponent& addedComponent = ecsManager.GetComponent<ModelRenderComponent>(newEntity);
-                    std::cout << "[SpawnModelEntity] Component model pointer: " << addedComponent.model << std::endl;
-                    std::cout << "[SpawnModelEntity] Component shader pointer: " << addedComponent.shader << std::endl;
-                } else {
-                    std::cout << "[SpawnModelEntity] ERROR: ModelRenderComponent not found after adding to entity " << newEntity << std::endl;
-                    ecsManager.DestroyEntity(newEntity);
-                    return static_cast<Entity>(-1);
-                }
 
                 // Select the newly created entity
                 GUIManager::SetSelectedEntity(newEntity);
 
-                // Force refresh of SceneHierarchyPanel to ensure it shows the new entity immediately
-                auto hierarchyPanelPtr = GUIManager::GetPanelManager().GetPanel("Scene Hierarchy");
-                if (hierarchyPanelPtr) {
-                    auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
-                    if (hierarchyPanel) {
-                        hierarchyPanel->MarkForRefresh();
-                        std::cout << "[SpawnModelEntity] Triggered SceneHierarchyPanel refresh for entity " << newEntity << std::endl;
-                    }
-                }
-
-                std::cout << "[SpawnModelEntity] Entity " << newEntity << " fully set up and selected" << std::endl;
+                ENGINE_PRINT("[ScenePanel] Spawned model entity ", entityName, " (ID: ", newEntity, ")\n");
+                return newEntity;
             } else {
-                std::cout << "[ScenePanel] Failed to load model or shader for spawned entity" << std::endl;
+                ENGINE_PRINT("[ScenePanel] Failed to load model or shader for spawned entity\n");
                 ecsManager.DestroyEntity(newEntity);
                 return static_cast<Entity>(-1);
             }
-        } else {
-            // ModelRenderComponent already exists, just select the entity
-            GUIManager::SetSelectedEntity(newEntity);
-
-            // Still trigger hierarchy refresh to ensure visibility
-            auto hierarchyPanelPtr = GUIManager::GetPanelManager().GetPanel("Scene Hierarchy");
-            if (hierarchyPanelPtr) {
-                auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
-                if (hierarchyPanel) {
-                    hierarchyPanel->MarkForRefresh();
-                    std::cout << "[SpawnModelEntity] Triggered SceneHierarchyPanel refresh for existing ModelRenderComponent entity " << newEntity << std::endl;
-                }
-            }
-
-            std::cout << "[SpawnModelEntity] Entity " << newEntity << " already has ModelRenderComponent, selected" << std::endl;
         }
 
-        // Final verification - check if entity is still valid and in active entities
-        std::vector<Entity> activeEntities = ecsManager.GetActiveEntities();
-        bool entityFound = false;
-        for (Entity activeEntity : activeEntities) {
-            if (activeEntity == newEntity) {
-                entityFound = true;
-                break;
-            }
-        }
-
-        if (entityFound) {
-            std::cout << "[SpawnModelEntity] SUCCESS: Entity " << newEntity << " is active and valid" << std::endl;
-            return newEntity;
-        } else {
-            std::cout << "[SpawnModelEntity] ERROR: Entity " << newEntity << " was created but not found in active entities!" << std::endl;
-            return static_cast<Entity>(-1);
-        }
+        // Entity already has ModelRenderComponent (shouldn't happen for new entities)
+        GUIManager::SetSelectedEntity(newEntity);
+        return newEntity;
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error spawning model entity: ", e.what(), "\n");
         return static_cast<Entity>(-1);

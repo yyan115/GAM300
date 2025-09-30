@@ -26,12 +26,6 @@ void SceneHierarchyPanel::MarkForRefresh() {
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
-    // Check if refresh is needed (from entity creation)
-    if (needsRefresh) {
-        needsRefresh = false;
-        std::cout << "[Hierarchy] Refreshing due to entity creation" << std::endl;
-    }
-
     if (ImGui::Begin(name.c_str(), &isOpen)) {
         // Handle F2 key for renaming selected entity
         if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2)) {
@@ -74,42 +68,23 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
             // Always get fresh entity list to ensure we see newly created entities
             std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
-            std::cout << "[Hierarchy] Rendering with " << allEntities.size() << " active entities" << std::endl;
-
-            // Debug: Check for any recently created entities that might be missing
-            for (const auto& entity : allEntities) {
-                if (entity >= 8) {  // Check recently created entities
-                    std::cout << "[Hierarchy] Found recently created entity: " << entity;
-                    if (ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
-                        std::string name = ecsManager.GetComponent<NameComponent>(entity).name;
-                        std::cout << " (name: " << name << ")";
-                    }
-                    if (ecsManager.TryGetComponent<ModelRenderComponent>(entity).has_value()) {
-                        std::cout << " (has ModelRenderComponent)";
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
-            std::cout << "[Hierarchy] Total active entities: " << allEntities.size() << " - IDs: ";
-            for (const auto& e : allEntities) {
-                std::cout << e << " ";
-            }
-            std::cout << std::endl;
 
             // Draw entity nodes starting from root entities, in a depth-first manner.
             for (const auto& entity : allEntities) {
+                // Only draw root entities (entities without a parent)
                 if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
                     // Check if entity has NameComponent before accessing it
                     if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
-                        std::cout << "[Hierarchy] Entity " << entity << " has no NameComponent, skipping" << std::endl;
                         continue;
                     }
                     std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
-                    std::cout << "[Hierarchy] Drawing entity " << entity << ": " << entityName << std::endl;
+
+                    // Skip PREVIEW entities (used for drag-and-drop preview)
+                    if (entityName == "PREVIEW") {
+                        continue;
+                    }
+
                     DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
-                } else {
-                    std::cout << "[Hierarchy] Entity " << entity << " has ParentComponent, skipping (not a root entity)" << std::endl;
                 }
             }
 
