@@ -73,6 +73,10 @@ private:
     char renameBuffer[256]{ 0 };
     GUID_128 renamingAsset;
 
+    // Delete confirmation state
+    bool showDeleteConfirmation{ false };
+    AssetInfo assetToDelete;
+
     // UI methods
     void RenderToolbar();
     void RenderFolderTree();
@@ -105,6 +109,7 @@ private:
 
     // File operations
     void DeleteAsset(const AssetInfo& asset);
+    void ConfirmDeleteAsset();
     void RevealInExplorer(const AssetInfo& asset);
     void CopyAssetPath(const AssetInfo& asset);
 
