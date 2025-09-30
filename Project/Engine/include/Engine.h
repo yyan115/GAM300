@@ -1,11 +1,5 @@
 #pragma once
 
-// #ifdef ENGINE_EXPORTS
-// #define ENGINE_API __declspec(dllexport)
-// #else
-// #define ENGINE_API __declspec(dllimport)
-// #endif
-
 // Cross-platform API export/import macros
 #ifdef _WIN32
     #ifdef ENGINE_EXPORTS
@@ -33,6 +27,8 @@ enum class GameState {
 class ENGINE_API Engine {
 public:
     static bool Initialize();
+    static bool InitializeAssets(); // Android-specific delayed asset loading
+    static bool InitializeGraphicsResources();
     static void Update();
 
     // Rendering phases

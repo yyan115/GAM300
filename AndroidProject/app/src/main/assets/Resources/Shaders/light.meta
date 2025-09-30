@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 4,
+        "guid": "007ebbc8f9d03365-0002c7078200001f",
+        "source": "Resources/Shaders/light",
+        "compiled": "Resources/Shaders/light.shader",
+        "android_compiled": "Resources/Shaders/light.shader",
+        "last_compiled": "2025-09-28 20:11:31.7778994"
+    }
+}

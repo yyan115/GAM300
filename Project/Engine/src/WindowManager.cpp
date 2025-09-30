@@ -10,6 +10,7 @@
 
 #include "RunTimeVar.hpp"
 #include "TimeManager.hpp"
+#include <Logging.hpp>
 
 #define UNREFERENCED_PARAMETER(P) (P)
 
@@ -46,24 +47,29 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     // Create platform instance
     platform = CreatePlatform();
     if (!platform) {
-        std::cout << "Platform creation failed - abort program!!!" << std::endl;
+        ENGINE_PRINT("Platform creation failed - abort program!!!\n");
+        //std::cout << "Platform creation failed - abort program!!!" << std::endl;
         return false;
     }
 
     // Initialize platform window
     if (!platform->InitializeWindow(_width, _height, _title)) {
-        std::cout << "Platform window initialization failed - abort program!!!" << std::endl;
+        ENGINE_PRINT("Platform window initialization failed - abort program!!!\n");
+        //std::cout << "Platform window initialization failed - abort program!!!" << std::endl;
         return false;
     }
 
     // Initialize graphics context
     if (!platform->InitializeGraphics()) {
-        std::cout << "Platform graphics initialization failed - abort program!!!" << std::endl;
+        ENGINE_PRINT("Platform graphics initialization failed - abort program!!!\n");
+        //std::cout << "Platform graphics initialization failed - abort program!!!" << std::endl;
         return false;
     }
 
-    // Make context current
+#ifndef ANDROID
+    // Make context current (Android will do this later when surface is set)
     platform->MakeContextCurrent();
+#endif
 
     // Get platform window handle for compatibility
     ptrWindow = static_cast<PlatformWindow>(platform->GetNativeWindow());
@@ -72,7 +78,8 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
     // Desktop: Initialize GLAD (Android uses OpenGL ES directly)
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        ENGINE_PRINT("Failed to initialize GLAD\n");
+        //std::cout << "Failed to initialize GLAD" << std::endl;
         return false;
     }
 #endif
@@ -140,7 +147,8 @@ void WindowManager::Exit() {
 
 void WindowManager::error_cb(int error, char const* description) {
 #ifdef _DEBUG
-    std::cerr << "GLFW error: " << description << ", " << error << std::endl;
+    ENGINE_PRINT(EngineLogging::LogLevel::Error, "GLFW error: ", description, ", ", error, "\n");
+    //std::cerr << "GLFW error: " << description << ", " << error << std::endl;
 #else
     (void)error;        // Avoid unused parameter warning
     (void)description;  // Avoid unused parameter warning
@@ -151,7 +159,8 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
     UNREFERENCED_PARAMETER(ptr_win);
 
 #ifdef _DEBUG
-    std::cout << "fbsize_cb getting called!!!" << std::endl;
+    ENGINE_PRINT("fbsize_cb getting called!!!\n");
+    //std::cout << "fbsize_cb getting called!!!" << std::endl;
 #endif
     //WindowManager::width = _width;
     //WindowManager::height = _height;
@@ -227,4 +236,8 @@ void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
     }
+}
+
+IPlatform* WindowManager::GetPlatform() {
+    return platform;
 }

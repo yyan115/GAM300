@@ -1,84 +1,119 @@
-/*********************************************************************************
-* @File			AudioManager.hpp
-* @Author		Ernest Ho, h.yonghengernest@digipen.edu
-* @Co-Author	-
-* @Date			17/9/2025
-* @Brief		This is the Declaration of Audio Manager Class
-*
-* Copyright (C) 20xx DigiPen Institute of Technology. Reproduction or disclosure
-* of this file or its contents without the prior written consent of DigiPen
-* Institute of Technology is prohibited.
-*********************************************************************************/
 #pragma once
 
-#include "pch.h"
+#include <string>
+#include <unordered_map>
+#include <memory>
+#include <mutex>
+#include <atomic>
+#include <vector>
+#include "Math/Vector3D.hpp"
+#include "ECS/SystemManager.hpp"
 
-struct FMOD_SYSTEM;
-struct FMOD_SOUND;
-struct FMOD_CHANNEL;
-struct FMOD_CHANNELGROUP;
+// Forward declarations for FMOD types to keep header lightweight
+typedef struct FMOD_SYSTEM FMOD_SYSTEM;
+typedef struct FMOD_SOUND FMOD_SOUND;
+typedef struct FMOD_CHANNEL FMOD_CHANNEL;
+typedef struct FMOD_CHANNELGROUP FMOD_CHANNELGROUP;
 
-class AudioManager
-{
+// Simple handles used by the engine to refer to audio and playback channels.
+using AudioHandle = uint64_t;
+using ChannelHandle = uint64_t;
+
+// Forward declare Audio class from ResourceManager system
+class Audio;
+
+// Audio source states (Unity-like)
+enum class AudioSourceState {
+    Stopped,
+    Playing,
+    Paused
+};
+
+class ENGINE_API AudioManager : public System {
 public:
-	
-	// Static access to the singleton instance
-	static bool StaticInitalize();     // calls instance().initialize()
-    static void StaticShutdown();       // calls instance().shutdown()
-    static void StaticUpdate();         // calls instance().update()
+    static AudioManager& GetInstance();
 
-    // (Optional static helpers if you want to use the same style elsewhere)
-    static bool StaticLoadSound(const std::string& name, const std::string& file, bool loop=false);
-    static bool StaticPlaySound(const std::string& name, float vol=1.f, float pitch=1.f);
-    static void StaticStopAllSounds();
-    static void StaticSetMasterVolume(float v);
+    // Lifecycle - explicit management only
+    bool Initialise();
+    void Shutdown();
 
-	AudioManager();
-	~AudioManager();
+    // Per-frame update - call from main loop
+    void Update();
 
-	// Initialize and cleanup
-	bool Initialize();
-	void Shutdown();
-	void Update(); // Call this every frame
+    // Unity-like Play/Stop/Pause API
+    ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
+    ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f);
+    ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
+    
+    void Stop(ChannelHandle channel);
+    void StopAll();
+    void Pause(ChannelHandle channel);
+    void Resume(ChannelHandle channel);
+    
+    // State queries
+    bool IsPlaying(ChannelHandle channel);
+    bool IsPaused(ChannelHandle channel);
+    AudioSourceState GetState(ChannelHandle channel);
 
-	// Sound loading and management
-	bool LoadSound(const std::string& name, const std::string& filePath, bool loop = false);
-	void UnloadSound(const std::string& name);
-	void UnloadAllSounds();
+    // Channel property setters
+    void SetChannelVolume(ChannelHandle channel, float volume);
+    void SetChannelPitch(ChannelHandle channel, float pitch);
+    void SetChannelLoop(ChannelHandle channel, bool loop);
+    void UpdateChannelPosition(ChannelHandle channel, const Vector3D& position);
 
-	// Sound playback
-	bool PlaySound(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
-	//bool PlaySound3D(const std::string& name, float x, float y, float z, float volume = 1.0f);
-	void StopSound(const std::string& name);
-	void StopAllSounds();
-	void PauseSound(const std::string& name, bool pause = true);
-	void PauseAllSounds(bool pause = true);
+    // Bus (channel group) management
+    FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
+    void SetBusVolume(const std::string& busName, float volume);
+    void SetBusPaused(const std::string& busName, bool paused);
 
-	// Volume and pitch control
-	void SetMasterVolume(float volume);
-	void SetSoundVolume(const std::string& name, float volume);
-	void SetSoundPitch(const std::string& name, float pitch);
+    // Global audio settings
+    void SetMasterVolume(float volume);
+    float GetMasterVolume() const;
+    void SetGlobalPaused(bool paused);
 
-	// 3D audio settings
-	//void SetListenerPosition(float x, float y, float z);
-	//void SetListenerOrientation(float forwardX, float forwardY, float forwardZ, float upX, float upY, float upZ);
+    // Resource management helpers
+    FMOD_SOUND* CreateSound(const std::string& assetPath);
+    void ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath);
 
-	// Utility functions
-	bool IsSoundLoaded(const std::string& name) const;
-	bool IsSoundPlaying(const std::string& name) const;
-	std::vector<std::string> GetLoadedSounds() const;
+    // Create sound from raw memory (useful on Android when reading APK assets into memory)
+    FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
+
+public:
+    AudioManager();
+    ~AudioManager() = default; // No automatic shutdown
+
+    // Non-copyable
+    AudioManager(const AudioManager&) = delete;
+    AudioManager& operator=(const AudioManager&) = delete;
 
 private:
-	static AudioManager& Instance() {
-		static AudioManager instance;
-		return instance;
-	}
+    struct ChannelData {
+        FMOD_CHANNEL* channel = nullptr;
+        ChannelHandle id = 0;
+        AudioSourceState state = AudioSourceState::Stopped;
+        std::string assetPath; // For debugging
+    };
 
-	FMOD_SYSTEM* mSystem;
-	std::unordered_map<std::string, FMOD_SOUND*> mSounds;
-	std::unordered_map<std::string, FMOD_CHANNEL*> mChannels;
-	
-	// Helper functions
-	std::string GetFullPath(const std::string& fileName) const;
-	void CheckFMODError(int result, const std::string& operation) const;
+    // Thread safety
+    mutable std::mutex mtx;
+    std::atomic<bool> shuttingDown{ false };
+    
+    // FMOD handles
+    FMOD_SYSTEM* system = nullptr;
+    
+    // Channel management
+    std::unordered_map<ChannelHandle, ChannelData> channelMap;
+    std::atomic<ChannelHandle> nextChannelHandle{ 1 };
+
+    // Channel groups (buses)
+    std::unordered_map<std::string, FMOD_CHANNELGROUP*> busMap;
+
+    // Global settings
+    std::atomic<float> masterVolume{ 1.0f };
+    std::atomic<bool> globalPaused{ false };
+
+    // Internal helpers
+    void CleanupStoppedChannels();
+    bool IsChannelValid(ChannelHandle channel);
+    void UpdateChannelState(ChannelHandle channel);
 };

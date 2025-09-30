@@ -8,6 +8,12 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "src/*.c"
 )
 
+# Remove unused/broken source files
+list(REMOVE_ITEM ENGINE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/RenderSystem.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TestScene.cpp"
+)
+
 file(GLOB_RECURSE ENGINE_HEADERS
     "include/*.h"
     "include/*.hpp"
@@ -66,7 +72,8 @@ if(ANDROID)
     set(SPDLOG_LIBRARY "${ANDROID_LIBS_DIR}/libspdlog.a")
     set(FREETYPE_LIBRARY "${ANDROID_LIBS_DIR}/libfreetype.a")
     set(ASSIMP_LIBRARY "${ANDROID_LIBS_DIR}/libassimp.so")
-    
+    set(FMOD_LIBRARY "${ANDROID_LIBS_DIR}/libfmod.so")
+
     # Verify all library files exist
     if(NOT EXISTS ${SPDLOG_LIBRARY})
         message(FATAL_ERROR "spdlog library not found: ${SPDLOG_LIBRARY}")
@@ -77,11 +84,15 @@ if(ANDROID)
     if(NOT EXISTS ${ASSIMP_LIBRARY})
         message(FATAL_ERROR "assimp library not found: ${ASSIMP_LIBRARY}")
     endif()
-    
+    if(NOT EXISTS ${FMOD_LIBRARY})
+        message(FATAL_ERROR "fmod library not found: ${FMOD_LIBRARY}")
+    endif()
+
     message(STATUS "Found Android prebuilt libraries:")
     message(STATUS "  spdlog: ${SPDLOG_LIBRARY}")
     message(STATUS "  freetype: ${FREETYPE_LIBRARY}")
     message(STATUS "  assimp: ${ASSIMP_LIBRARY}")
+    message(STATUS "  fmod: ${FMOD_LIBRARY}")
 else()
     # Desktop builds (Linux/Windows) use vcpkg packages
     find_package(assimp CONFIG REQUIRED)
@@ -91,29 +102,18 @@ else()
     find_package(glm CONFIG REQUIRED)
     find_package(spdlog CONFIG REQUIRED)
     find_package(RapidJSON CONFIG REQUIRED)
-	
-	
-# Build Jolt from source in this project (desktop only)
-# Force static so there's no Jolt.dll at runtime
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(JPH_OBJECT_STREAM OFF CACHE BOOL "" FORCE)
-set(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
-set(JPH_PROFILE_ENABLED OFF CACHE BOOL "" FORCE)
-
-# Bring Jolt into the build graph
-add_subdirectory(${CMAKE_SOURCE_DIR}/../Libraries/joltphysics)
-
-
+    find_package(gli CONFIG REQUIRED)
+endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
 target_include_directories(Engine
-    PUBLIC 
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/include
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -126,6 +126,8 @@ if(ANDROID)
             ${ANDROID_HEADERS_DIR}/assimp     # Assimp specific path
             ${ANDROID_HEADERS_DIR}/spdlog     # spdlog specific path
             ${ANDROID_HEADERS_DIR}/freetype2  # freetype specific path
+            ${ANDROID_HEADERS_DIR}/fmod       # FMOD headers for Android
+            ${ANDROID_HEADERS_DIR}/GLI        # GLI headers for Android
     )
 endif()
 
@@ -143,6 +145,7 @@ if(ANDROID)
             ${SPDLOG_LIBRARY}
             ${FREETYPE_LIBRARY}
             ${ASSIMP_LIBRARY}
+            ${FMOD_LIBRARY}
             # Android system libraries
             log  # Android log library
             android  # Android NDK library
@@ -162,19 +165,32 @@ else()
             glad::glad
             spdlog::spdlog
             rapidjson
-		Jolt
-		
+            Jolt
+            gli
     )
-if (WIN32)
-      add_custom_command(TARGET Engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:Jolt>
-                $<TARGET_FILE_DIR:Engine>)
-    endif()
-    
-    # Linux-specific system libraries
+
+    # Platform-specific FMOD and system libraries
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_link_libraries(Engine PRIVATE ${CMAKE_DL_LIBS} pthread)
+        # Find FMOD library - try different possible names
+        find_library(FMOD_LIBRARY
+            NAMES fmod libfmod.so.14.9 libfmod.so.14 libfmod.so
+            PATHS ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64
+            NO_DEFAULT_PATH
+        )
+        if(FMOD_LIBRARY)
+            target_link_libraries(Engine PRIVATE
+                ${CMAKE_DL_LIBS}
+                pthread
+                ${FMOD_LIBRARY}
+            )
+            message(STATUS "Found FMOD library: ${FMOD_LIBRARY}")
+        else()
+            message(FATAL_ERROR "FMOD library not found")
+        endif()
+    elseif(WIN32)
+        target_link_libraries(Engine PRIVATE
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
+        )
     endif()
 endif()
 
@@ -182,5 +198,5 @@ endif()
 set_target_properties(Engine PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
     BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "\$ORIGIN"
+    INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64"
 )

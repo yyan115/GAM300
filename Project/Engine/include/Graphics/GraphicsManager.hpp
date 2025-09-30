@@ -11,6 +11,7 @@
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
 #include "DebugDraw/DebugDrawComponent.hpp"
+#include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
 
 class GraphicsManager {
@@ -36,7 +37,6 @@ public:
     // Main rendering
     void Render();
 
-    glm::mat4 ConvertMatrix4x4ToGLM(const Matrix4x4& m);
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -49,7 +49,6 @@ private:
     void ApplyLighting(Shader& shader);
     void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
     
-    Matrix4x4 ConvertGLMToMatrix4x4(const glm::mat4& m);
     glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
 
     // Private text rendering methods
@@ -69,6 +68,12 @@ private:
         glm::vec3(0.7f,  0.2f,  2.0f),
         glm::vec3(2.3f, -3.3f, -4.0f),
         glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3(0.0f,  0.0f, -3.0f)
+        glm::vec3(0.0f,  0.0f, -1.0f)
     };
+
+    // Sprite rendering methods
+    void RenderSprite(const SpriteRenderComponent& item);
+    void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
+        const glm::vec3& scale, float rotation);
+    void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
 };

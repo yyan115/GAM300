@@ -9,11 +9,11 @@
 * of this file or its contents without the prior written consent of DigiPen 
 * Institute of Technology is prohibited. 
 *********************************************************************************/
-
 #pragma once
 
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
+#include "glm/vec3.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -95,6 +95,13 @@ struct ENGINE_API Vector3D
 
 	static Vector3D Lerp(const Vector3D& a, const Vector3D& b, float t);
 
+	inline glm::vec3 ConvertToGLM() const {
+		return glm::vec3(x, y, z);
+	}
+
+	static inline Vector3D ConvertGLMToVector3D(const glm::vec3& v) {
+		return Vector3D(v.x, v.y, v.z);
+	}
 };
 
 typedef Vector3D Vec3;

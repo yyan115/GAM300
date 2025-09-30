@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 4,
+        "guid": "0010097b169841a3-0002cc579c000019",
+        "source": "../../Resources/Textures/container2.png",
+        "compiled": "../../Resources/Textures/container2.dds",
+        "last_compiled": "2025-09-29 16:18:23.0104975"
+    },
+    "TextureMetaData": {
+        "id": 0,
+        "type": "diffuse",
+        "unit": -1
+    }
+}

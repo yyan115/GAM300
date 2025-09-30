@@ -13,6 +13,7 @@
 
 #include "pch.h"
 #include "Math/Vector3D.hpp"
+#include "glm/mat4x4.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -30,9 +31,15 @@
 #endif
 
 struct ENGINE_API Matrix4x4 {
-    //REFL_SERIALIZABLE
+    REFL_SERIALIZABLE
     // Row-major storage: m[row][col]
-    float m[4][4];
+    struct Matrix
+    {
+        float m00, m01, m02, m03;
+        float m10, m11, m12, m13;
+        float m20, m21, m22, m23;
+        float m30, m31, m32, m33;
+	}m;
 
     // ---- ctors ----
     Matrix4x4(); // identity
@@ -42,8 +49,9 @@ struct ENGINE_API Matrix4x4 {
         float m30, float m31, float m32, float m33);
 
     // ---- element access ----
-    float* operator[](int r) { return m[r]; }
-    const float* operator[](int r) const { return m[r]; }
+    float& operator()(int r, int s);
+    const float& operator()(int r, int c) const;
+
 
     // ---- arithmetic ----
     Matrix4x4  operator+(const Matrix4x4& rhs) const;
@@ -69,6 +77,28 @@ struct ENGINE_API Matrix4x4 {
     bool      TryInverse(Matrix4x4& out) const;  // false if singular
     Matrix4x4 Inversed() const;                  // asserts if singular
 
+    // glm conversions
+    inline glm::mat4 ConvertToGLM() const {
+        Matrix4x4 transposed = this->Transposed();
+        glm::mat4 converted(
+            transposed.m.m00, transposed.m.m01, transposed.m.m02, transposed.m.m03,
+            transposed.m.m10, transposed.m.m11, transposed.m.m12, transposed.m.m13,
+            transposed.m.m20, transposed.m.m21, transposed.m.m22, transposed.m.m23,
+            transposed.m.m30, transposed.m.m31, transposed.m.m32, transposed.m.m33);
+
+        return converted;
+    }
+
+    inline static Matrix4x4 ConvertToMatrix4x4(const glm::mat4& m) {
+        // GLM is column-major, Matrix4x4 is row-major, so we need to transpose
+        Matrix4x4 converted(
+            m[0][0], m[1][0], m[2][0], m[3][0],
+            m[0][1], m[1][1], m[2][1], m[3][1],
+            m[0][2], m[1][2], m[2][2], m[3][2],
+            m[0][3], m[1][3], m[2][3], m[3][3]);
+        return converted;
+    }
+
     // ---- factories ----
     static Matrix4x4 Identity();
     static Matrix4x4 Zero();
@@ -91,6 +121,13 @@ struct ENGINE_API Matrix4x4 {
     // fovY in radians, aspect = width/height, zNear>0, zFar>zNear
     static Matrix4x4 PerspectiveFovRH(float fovY, float aspect, float zNear, float zFar);
     static Matrix4x4 OrthoRH(float left, float right, float bottom, float top, float zNear, float zFar);
+
+    // Extract translation, scale, rotation from world matrix
+    static Vector3D ExtractTranslation(const Matrix4x4& m);
+    static Vector3D ExtractScale(const Matrix4x4& m);
+    static Vector3D ExtractRotation(const Matrix4x4& m);
+
+    static Matrix4x4 RemoveScale(const Matrix4x4& m);
 };
 
 // left scalar

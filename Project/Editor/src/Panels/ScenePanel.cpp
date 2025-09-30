@@ -4,15 +4,21 @@
 #include "EditorInputManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/NameComponent.hpp"
+#include "Transform/TransformComponent.hpp"
+#include "Graphics/Lights/LightComponent.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "EditorState.hpp"
+#include "PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include "Logging.hpp"
 
 // Don't include Graphics headers here due to OpenGL conflicts
 // We'll use RaycastUtil to get entity transforms instead
@@ -48,11 +54,13 @@ void ScenePanel::HandleKeyboardInput() {
         if (playControlPanel->HasToolSelected() && playControlPanel->IsNormalPanMode()) {
             // Already in pan mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
-            std::cout << "[ScenePanel] Q pressed - Deselected all tools" << std::endl;
+            ENGINE_PRINT("[ScenePanel] Q pressed - Deselected all tools\n");
+            //std::cout << "[ScenePanel] Q pressed - Deselected all tools" << std::endl;
         } else {
             // Not in pan mode, switch to pan
             playControlPanel->SetNormalPanMode(true);
-            std::cout << "[ScenePanel] Q pressed - Switched to Pan mode" << std::endl;
+            ENGINE_PRINT("[ScenePanel] Q pressed - Switched to Pan mode\n");
+            //std::cout << "[ScenePanel] Q pressed - Switched to Pan mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(1)) {
@@ -60,12 +68,14 @@ void ScenePanel::HandleKeyboardInput() {
         if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::TRANSLATE) {
             // Already in translate mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
-            std::cout << "[ScenePanel] W pressed - Deselected all tools" << std::endl;
+            ENGINE_PRINT("[ScenePanel] W pressed - Deselected all tools\n");
+            //std::cout << "[ScenePanel] W pressed - Deselected all tools" << std::endl;
         } else {
             // Not in translate mode, switch to translate
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::TRANSLATE);
-            std::cout << "[ScenePanel] W pressed - Switched to Translate mode" << std::endl;
+            ENGINE_PRINT("[ScenePanel] W pressed - Switched to Translate mode\n");
+            //std::cout << "[ScenePanel] W pressed - Switched to Translate mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(2)) {
@@ -73,12 +83,14 @@ void ScenePanel::HandleKeyboardInput() {
         if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::ROTATE) {
             // Already in rotate mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
-            std::cout << "[ScenePanel] E pressed - Deselected all tools" << std::endl;
+            ENGINE_PRINT("[ScenePanel] E pressed - Deselected all tools\n");
+            //std::cout << "[ScenePanel] E pressed - Deselected all tools" << std::endl;
         } else {
             // Not in rotate mode, switch to rotate
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::ROTATE);
-            std::cout << "[ScenePanel] E pressed - Switched to Rotate mode" << std::endl;
+            ENGINE_PRINT("[ScenePanel] E pressed - Switched to Rotate mode\n");
+            //std::cout << "[ScenePanel] E pressed - Switched to Rotate mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(3)) {
@@ -86,12 +98,37 @@ void ScenePanel::HandleKeyboardInput() {
         if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::SCALE) {
             // Already in scale mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
-            std::cout << "[ScenePanel] R pressed - Deselected all tools" << std::endl;
+            ENGINE_PRINT("[ScenePanel] R pressed - Deselected all tools\n");
+            //std::cout << "[ScenePanel] R pressed - Deselected all tools" << std::endl;
         } else {
             // Not in scale mode, switch to scale
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
-            std::cout << "[ScenePanel] R pressed - Switched to Scale mode" << std::endl;
+            ENGINE_PRINT("[ScenePanel] R pressed - Switched to Scale mode\n");
+            //std::cout << "[ScenePanel] R pressed - Switched to Scale mode" << std::endl;
+        }
+    }
+
+    // Handle Delete key for deleting selected entity (when scene is focused)
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        Entity selectedEntity = GUIManager::GetSelectedEntity();
+        if (selectedEntity != static_cast<Entity>(-1)) {
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
+
+                ENGINE_PRINT("[ScenePanel] Deleting entity: ", entityName, " (ID: ", selectedEntity, ")\n");
+
+                // Clear selection before deleting
+                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+
+                // Delete the entity
+                ecsManager.DestroyEntity(selectedEntity);
+
+                ENGINE_PRINT("[ScenePanel] Entity deleted successfully\n");
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to delete entity: ", e.what(), "\n");
+            }
         }
     }
 }
@@ -214,95 +251,145 @@ void ScenePanel::HandleEntitySelection() {
             if (hit.hit) {
                 // Entity found, select it
                 GUIManager::SetSelectedEntity(hit.entity);
-                std::cout << "[ScenePanel] Raycast hit entity " << hit.entity
-                          << " at distance " << hit.distance << std::endl;
+                ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
+                    , " at distance ", hit.distance, "\n");
+                //std::cout << "[ScenePanel] Raycast hit entity " << hit.entity
+                //          << " at distance " << hit.distance << std::endl;
             } else {
                 // No entity hit, clear selection
                 GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                std::cout << "[ScenePanel] Raycast missed - cleared selection" << std::endl;
+                ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
+                //std::cout << "[ScenePanel] Raycast missed - cleared selection" << std::endl;
             }
+            ENGINE_PRINT("[ScenePanel] Mouse clicked at (" , relativeX , ", " , relativeY
+                , ") in scene bounds (", sceneWidth, "x", sceneHeight, ")\n"); 
 
-            std::cout << "[ScenePanel] Mouse clicked at (" << relativeX << ", " << relativeY
-                      << ") in scene bounds (" << sceneWidth << "x" << sceneHeight << ")" << std::endl;
+            //std::cout << "[ScenePanel] Mouse clicked at (" << relativeX << ", " << relativeY
+            //          << ") in scene bounds (" << sceneWidth << "x" << sceneHeight << ")" << std::endl;
         }
     }
 }
 
-
-void ScenePanel::OnImGuiRender() {
+void ScenePanel::OnImGuiRender()
+{
     // Update input manager state
     EditorInputManager::Update();
 
-    if (ImGui::Begin(name.c_str(), &isOpen)) {
-
-        // Gizmo controls now handled by PlayControlPanel
+    if (ImGui::Begin(name.c_str(), &isOpen))
+    {
+        // Make every widget in this panel have a unique ID namespace
+        ImGui::PushID(this); // <--- NEW
 
         // Handle input (but not if ImGuizmo is active)
         HandleKeyboardInput();
 
-        // Store scene area hover state for camera input
         bool isSceneHovered = false;
 
-        // Get the content region size for the scene view
+        // Content size for the scene view
         ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
         int sceneViewWidth = (int)viewportPanelSize.x;
         int sceneViewHeight = (int)viewportPanelSize.y;
-
-        // Ensure minimum size
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
-        // Render the scene with our editor camera
+        // Render the scene with our editor camera to the framebuffer
         RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
 
-        // Get window position for ImGuizmo (where the scene image starts)
-        ImVec2 imagePos = ImGui::GetCursorScreenPos();
-
-        // Get the texture from SceneRenderer and display it
+        // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
-        if (sceneTexture != 0) {
-            // Use a child window to contain both the image and ImGuizmo
-            ImGui::BeginChild("SceneView", ImVec2((float)sceneViewWidth, (float)sceneViewHeight), false,
-                              ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        if (sceneTexture != 0)
+        {
+            // Child window that contains the scene image and gizmos
+            ImGui::BeginChild(
+                "SceneView##ScenePanel", // <--- UNIQUE NAME
+                ImVec2((float)sceneViewWidth, (float)sceneViewHeight),
+                false,
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+            );
 
-            // Get child window position and size
+            // Where to draw
             ImVec2 childPos = ImGui::GetCursorScreenPos();
             ImVec2 childSize = ImGui::GetContentRegionAvail();
 
-            // Draw the scene texture as background
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-            drawList->AddImage(
+            // Draw the scene texture as background (flip V for OpenGL)
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            dl->AddImage(
                 (void*)(intptr_t)sceneTexture,
-                childPos, ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
-                ImVec2(0, 1), ImVec2(1, 0)  // Flip Y coordinate for OpenGL
+                childPos,
+                ImVec2(childPos.x + childSize.x, childPos.y + childSize.y),
+                ImVec2(0, 1), ImVec2(1, 0)
             );
 
-            // Check if the child window is hovered (without invisible button interfering)
+            // Hover state for input routing
             isSceneHovered = ImGui::IsWindowHovered();
 
-            // Now handle ImGuizmo within the child window context
+            // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // Render the ViewGizmo in the top right corner
+            // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // End the child window here
             ImGui::EndChild();
         }
-        else {
+        else
+        {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "Scene View - Framebuffer not ready");
-            ImGui::Text("Size: %dx%d", sceneViewWidth, sceneViewHeight);
+            ImGui::Text("Size: %d x %d", sceneViewWidth, sceneViewHeight);
         }
 
-        // Handle input based on ImGuizmo state (now calculated)
-        bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
-
-        if (canHandleInput) {
+        // Route input to camera/selection when not interacting with gizmos
+        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
+        if (canHandleInput)
+        {
             HandleCameraInput();
             HandleEntitySelection();
         }
+
+        ImGui::PopID(); // <--- NEW
     }
     ImGui::End();
+}
+
+void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize)
+{
+    // Make the whole scene image a drop target
+    ImGui::SetCursorScreenPos(sceneTopLeft);
+    ImGui::InvisibleButton("##ScenePrefabDropTarget", sceneSize, ImGuiButtonFlags_MouseButtonLeft);
+
+    if (!ImGui::BeginDragDropTarget())
+        return;
+
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH"))
+    {
+        // Payload is a null-terminated C string we set in the Asset Browser
+        const char* pathCStr = static_cast<const char*>(payload->Data);
+        std::filesystem::path prefabPath(pathCStr);
+
+        // Create an entity immediately so the user gets feedback
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        Entity e = ecs.CreateEntity();
+
+        // Give it a friendly name based on the file name
+        std::string displayName = prefabPath.stem().string();
+        if (ecs.HasComponent<NameComponent>(e))
+        {
+            ecs.GetComponent<NameComponent>(e).name = displayName;
+        }
+        else
+        {
+            ecs.AddComponent<NameComponent>(e, NameComponent{ displayName });
+        }
+
+        // TODO (optional): actually instantiate the prefab contents here
+        // AssetManager& assets = AssetManager::GetInstance();
+        // Prefab prefab = assets.LoadPrefab(prefabPath.string()); // your loader
+        // prefab.instantiatePrefab(ecs, static_cast<EntityID>(e));
+
+        // Simple console feedback
+        std::cout << "[ScenePanel] Spawned entity from prefab: " << prefabPath << " -> entity " << (uint64_t)e << "\n";
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
@@ -321,7 +408,8 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
         // This gives us proper Unity-style editor controls
 
     } catch (const std::exception& e) {
-        std::cerr << "Exception in RenderSceneWithEditorCamera: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in RenderSceneWithEditorCamera: ", e.what(), "\n");
+        //std::cerr << "Exception in RenderSceneWithEditorCamera: " << e.what() << std::endl;
     }
 }
 
@@ -393,6 +481,113 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             // Update the entity's transform in the ECS system
             RaycastUtil::SetEntityTransform(selectedEntity, selectedObjectMatrix);
 
+        }
+    }
+
+    // Draw light direction gizmos for selected light entities
+    if (selectedEntity != static_cast<Entity>(-1)) {
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+            // Check if selected entity is a directional light
+            if (ecsManager.HasComponent<DirectionalLightComponent>(selectedEntity)) {
+                DirectionalLightComponent& light = ecsManager.GetComponent<DirectionalLightComponent>(selectedEntity);
+
+                if (light.enabled) {
+                    // Use the SAME matrix that ImGuizmo uses for the selected object
+                    static float selectedObjectMatrix[16];
+                    if (!RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix)) {
+                        memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
+                    }
+
+                    // Create a direction vector matrix for the arrow
+                    float lightDirMatrix[16];
+                    memcpy(lightDirMatrix, selectedObjectMatrix, sizeof(lightDirMatrix));
+
+                    // Transform the light direction by the entity's rotation and add it to position
+                    glm::mat4 entityMat = glm::mat4(
+                        selectedObjectMatrix[0], selectedObjectMatrix[4], selectedObjectMatrix[8], selectedObjectMatrix[12],
+                        selectedObjectMatrix[1], selectedObjectMatrix[5], selectedObjectMatrix[9], selectedObjectMatrix[13],
+                        selectedObjectMatrix[2], selectedObjectMatrix[6], selectedObjectMatrix[10], selectedObjectMatrix[14],
+                        selectedObjectMatrix[3], selectedObjectMatrix[7], selectedObjectMatrix[11], selectedObjectMatrix[15]
+                    );
+
+                    // Apply rotation to light direction
+                    glm::vec4 localDir = glm::vec4(light.direction, 0.0f);
+                    glm::vec4 worldDir = entityMat * localDir;
+                    glm::vec3 normalizedWorldDir = glm::normalize(glm::vec3(worldDir));
+
+                    // Create arrow end position
+                    glm::vec3 entityPos = glm::vec3(entityMat[3]);
+                    glm::vec3 arrowEndPos = entityPos + normalizedWorldDir * 1.5f;
+
+                    // Set the arrow end position in matrix
+                    lightDirMatrix[12] = arrowEndPos.x;
+                    lightDirMatrix[13] = arrowEndPos.y;
+                    lightDirMatrix[14] = arrowEndPos.z;
+
+                    // Use ImDrawList to draw the light direction arrow
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+                    // Get screen positions for custom drawing
+                    ImVec2 windowPos = ImGui::GetWindowPos();
+                    ImVec2 windowSize = ImGui::GetWindowSize();
+
+                    // Transform positions to screen space manually for the arrow
+                    glm::mat4 view = glm::mat4(
+                        viewMatrix[0], viewMatrix[4], viewMatrix[8], viewMatrix[12],
+                        viewMatrix[1], viewMatrix[5], viewMatrix[9], viewMatrix[13],
+                        viewMatrix[2], viewMatrix[6], viewMatrix[10], viewMatrix[14],
+                        viewMatrix[3], viewMatrix[7], viewMatrix[11], viewMatrix[15]
+                    );
+
+                    glm::mat4 proj = glm::mat4(
+                        projMatrix[0], projMatrix[4], projMatrix[8], projMatrix[12],
+                        projMatrix[1], projMatrix[5], projMatrix[9], projMatrix[13],
+                        projMatrix[2], projMatrix[6], projMatrix[10], projMatrix[14],
+                        projMatrix[3], projMatrix[7], projMatrix[11], projMatrix[15]
+                    );
+
+                    glm::vec4 startScreen = proj * view * glm::vec4(entityPos, 1.0f);
+                    glm::vec4 endScreen = proj * view * glm::vec4(arrowEndPos, 1.0f);
+
+                    if (startScreen.w > 0 && endScreen.w > 0) {
+                        // Convert to screen coordinates
+                        ImVec2 startPos = ImVec2(
+                            windowPos.x + (startScreen.x / startScreen.w * 0.5f + 0.5f) * windowSize.x,
+                            windowPos.y + (1.0f - (startScreen.y / startScreen.w * 0.5f + 0.5f)) * windowSize.y
+                        );
+                        ImVec2 endPos = ImVec2(
+                            windowPos.x + (endScreen.x / endScreen.w * 0.5f + 0.5f) * windowSize.x,
+                            windowPos.y + (1.0f - (endScreen.y / endScreen.w * 0.5f + 0.5f)) * windowSize.y
+                        );
+
+                        // Draw arrow
+                        drawList->AddLine(startPos, endPos, IM_COL32(255, 255, 0, 255), 4.0f);
+
+                        // Arrow head
+                        ImVec2 dir = ImVec2(endPos.x - startPos.x, endPos.y - startPos.y);
+                        float len = sqrt(dir.x * dir.x + dir.y * dir.y);
+                        if (len > 0) {
+                            dir.x /= len;
+                            dir.y /= len;
+                            ImVec2 perp = ImVec2(-dir.y, dir.x);
+
+                            ImVec2 head1 = ImVec2(endPos.x - dir.x * 15 + perp.x * 8, endPos.y - dir.y * 15 + perp.y * 8);
+                            ImVec2 head2 = ImVec2(endPos.x - dir.x * 15 - perp.x * 8, endPos.y - dir.y * 15 - perp.y * 8);
+
+                            drawList->AddLine(endPos, head1, IM_COL32(255, 255, 0, 255), 3.0f);
+                            drawList->AddLine(endPos, head2, IM_COL32(255, 255, 0, 255), 3.0f);
+                        }
+
+                        // Light icon at start position
+                        drawList->AddCircleFilled(startPos, 10.0f, IM_COL32(255, 255, 100, 180));
+                        drawList->AddCircle(startPos, 10.0f, IM_COL32(255, 255, 0, 255), 0, 2.0f);
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            // Silently handle any errors in light visualization
         }
     }
 

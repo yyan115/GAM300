@@ -6,34 +6,77 @@
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Transform/TransformComponent.hpp>
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
+#include "Logging.hpp"
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 bool ModelSystem::Initialise() 
 {
-    std::cout << "[ModelSystem] Initialized" << std::endl;
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+        std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+        modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+        modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+    }
+
+    ENGINE_PRINT("[ModelSystem] Initialized\n");
     return true;
 }
 
-void ModelSystem::Update() 
+void ModelSystem::Update()
 {
+#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() called");
+#endif
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
+#endif
 
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
     {
+#ifdef ANDROID
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
+#endif
         auto& modelComponent = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
+#ifdef ANDROID
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, model=%p, shader=%p",
+         //                 entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
+#endif
         if (modelComponent.isVisible && modelComponent.model && modelComponent.shader)
         {
+#ifdef ANDROID
+           // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting model for entity: %u", entity);
+#endif
             auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
-            modelRenderItem->transform = gfxManager.ConvertMatrix4x4ToGLM(ecsManager.GetComponent<Transform>(entity).model);
+            modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
 
             gfxManager.Submit(std::move(modelRenderItem));
         }
+#ifdef ANDROID
+        else {
+            //__android_log_print(ANDROID_LOG_WARN, "GAM300", "Entity %u: model not visible or missing components - isVisible=%d, model=%p, shader=%p",
+                       //       entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
+        }
+#endif
     }
+#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");
+#endif
 }
 
 void ModelSystem::Shutdown() 
 {
-    std::cout << "[ModelSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[ModelSystem] Shutdown\n");
+    //std::cout << "[ModelSystem] Shutdown" << std::endl;
 }

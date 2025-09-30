@@ -3,6 +3,7 @@
 #include "../Graphics/OpenGL.h"
 #include "../Input/Keys.h"
 #include <string>
+#include <vector>
 
 // Abstract platform interface
 class IPlatform {
@@ -36,10 +37,13 @@ public:
     
     // OpenGL context
     virtual bool InitializeGraphics() = 0;
-    virtual void MakeContextCurrent() = 0;
-    
-    // Window state management methods already declared above
-    
+    virtual bool MakeContextCurrent() = 0;
+        
+    // Asset management
+    virtual std::vector<std::string> ListAssets(const std::string& folder, bool recursive = true) = 0;
+    virtual std::vector<uint8_t> ReadAsset(const std::string& path) = 0;
+    virtual bool FileExists(const std::string& path) = 0;
+
     // Platform-specific getters (if needed by other systems)
     virtual void* GetNativeWindow() = 0;
 };

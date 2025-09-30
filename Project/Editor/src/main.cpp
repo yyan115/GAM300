@@ -5,32 +5,36 @@
 #include "imgui.h"
 #include "WindowManager.hpp"
 #include "TimeManager.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
+#include "Logging.hpp"
 
 
 int main() {
-    std::cout << "=== EDITOR BUILD ===" << std::endl;
+    ENGINE_PRINT("=== EDITOR BUILD ===");
 
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW!");
         return -1;
     }
 
     Engine::Initialize();
+    Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
-        std::cerr << "Faileasdd to create GLFW window!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window!\n");
+        //std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
-    
+
     GameManager::Initialize();
 	GUIManager::Initialize();
 
     while (Engine::IsRunning()) {
         //Update deltaTime at start of Frame
-        TimeManager::UpdateDeltaTime();
+        //TimeManager::UpdateDeltaTime();
 
         Engine::Update();
         GameManager::Update();
@@ -47,7 +51,9 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
+    MetaFilesManager::CleanupUnusedMetaFiles("Resources");
 
-    std::cout << "=== Editor ended ===" << std::endl;
+    ENGINE_PRINT("=== Editor ended ===\n");
+    //std::cout << "=== Editor ended ===" << std::endl;
     return 0;
 }

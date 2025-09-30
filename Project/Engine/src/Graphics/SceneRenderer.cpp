@@ -8,6 +8,7 @@
 #include "Scene/SceneInstance.hpp"
 #include "WindowManager.hpp"
 #include <iostream>
+#include "Logging.hpp"
 
 // Static member definitions
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
@@ -53,7 +54,8 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
 
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "SceneRenderer: Framebuffer not complete!\n");
+        //std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -80,7 +82,8 @@ void SceneRenderer::DeleteSceneFramebuffer()
     if (editorCamera) {
         delete editorCamera;
         editorCamera = nullptr;
-        std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
+        ENGINE_PRINT("[SceneRenderer] Editor camera deleted\n");
+        //std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
     }
 }
 
@@ -118,7 +121,8 @@ void SceneRenderer::RenderScene()
     try {
         Engine::Draw();
     } catch (const std::exception& e) {
-        std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderScene: ", e.what(), "\n");
+        //std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
     }
 }
 
@@ -143,8 +147,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         editorCamera->Zoom = cameraZoom;
 
         // Get the ECS manager and graphics manager
-        ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager("TestScene");
+        ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+        mainECS.transformSystem->Update();
 
         // Set the static editor camera (this won't be updated by input)
         gfxManager.SetCamera(editorCamera);
@@ -154,13 +160,18 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.Clear();
 
         // Update model system for rendering (without input-based updates)
-        if (mainECS.modelSystem) {
+        if (mainECS.modelSystem) 
+        {
             mainECS.modelSystem->Update();
         }
 		if (mainECS.textSystem)
 		{
 			mainECS.textSystem->Update();
 		}
+        if (mainECS.spriteSystem)
+        {
+            mainECS.spriteSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();
@@ -175,6 +186,7 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.EndFrame();
 
     } catch (const std::exception& e) {
-        std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
+        //std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
     }
 }

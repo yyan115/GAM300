@@ -1,5 +1,5 @@
 #pragma once
-#include "Asset Manager/GUID.hpp"
+#include "Utilities/GUID.hpp"
 #include <string>
 #include <chrono>
 
@@ -8,6 +8,7 @@ public:
 	GUID_128 guid{};
 	std::string sourceFilePath;
 	std::string compiledFilePath;
+	std::string androidCompiledFilePath;
 	std::chrono::system_clock::time_point lastCompileTime;
 	int version{};
 

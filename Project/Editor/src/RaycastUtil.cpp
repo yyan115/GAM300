@@ -10,6 +10,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Math/Vector3D.hpp"
+#include "Logging.hpp"
 
 RaycastUtil::Ray RaycastUtil::ScreenToWorldRay(float mouseX, float mouseY,
                                               float screenWidth, float screenHeight,
@@ -63,13 +64,13 @@ bool RaycastUtil::RayAABBIntersection(const Ray& ray, const AABB& aabb, float& d
 RaycastUtil::AABB RaycastUtil::CreateAABBFromTransform(const Matrix4x4& transform,
                                                      const glm::vec3& modelSize) {
     // Extract translation from transform matrix (last column)
-    glm::vec3 translation(transform.m[0][3], transform.m[1][3], transform.m[2][3]);
+    glm::vec3 translation(transform.m.m03, transform.m.m13, transform.m.m23);
 
     // Extract scale from transform matrix (length of basis vectors)
     glm::vec3 scale;
-    scale.x = sqrt(transform.m[0][0]*transform.m[0][0] + transform.m[1][0]*transform.m[1][0] + transform.m[2][0]*transform.m[2][0]);
-    scale.y = sqrt(transform.m[0][1]*transform.m[0][1] + transform.m[1][1]*transform.m[1][1] + transform.m[2][1]*transform.m[2][1]);
-    scale.z = sqrt(transform.m[0][2]*transform.m[0][2] + transform.m[1][2]*transform.m[1][2] + transform.m[2][2]*transform.m[2][2]);
+    scale.y = sqrt(transform.m.m01*transform.m.m01 + transform.m.m11*transform.m.m11 + transform.m.m21*transform.m.m21);
+    scale.z = sqrt(transform.m.m02*transform.m.m02 + transform.m.m12*transform.m.m12 + transform.m.m22*transform.m.m22);
+    scale.x = sqrt(transform.m.m00*transform.m.m00 + transform.m.m10*transform.m.m10 + transform.m.m20*transform.m.m20);
 
     // Create AABB around the transformed model
     glm::vec3 halfSize = (modelSize * scale) * 0.5f;
@@ -85,8 +86,11 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
         ECSRegistry& registry = ECSRegistry::GetInstance();
         ECSManager& ecsManager = registry.GetActiveECSManager();
 
-        std::cout << "[RaycastUtil] Ray origin: (" << ray.origin.x << ", " << ray.origin.y << ", " << ray.origin.z
-                  << ") direction: (" << ray.direction.x << ", " << ray.direction.y << ", " << ray.direction.z << ")" << std::endl;
+        ENGINE_PRINT("[RaycastUtil] Ray origin: (" , ray.origin.x , ", " , ray.origin.y , ", " , ray.origin.z
+            , ") direction: (" , ray.direction.x , ", " , ray.direction.y , ", " , ray.direction.z , ")\n");
+
+        //std::cout << "[RaycastUtil] Ray origin: (" << ray.origin.x << ", " << ray.origin.y << ", " << ray.origin.z
+        //          << ") direction: (" << ray.direction.x << ", " << ray.direction.y << ", " << ray.direction.z << ")" << std::endl;
 
         int entitiesWithComponent = 0;
 
@@ -101,14 +105,20 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
                 auto& transform = ecsManager.GetComponent<Transform>(entity);
 
                 entitiesWithComponent++;
-                std::cout << "[RaycastUtil] Found entity " << entity << " with Transform component" << std::endl;
+                ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
+                //std::cout << "[RaycastUtil] Found entity " << entity << " with Transform component" << std::endl;
 
                 // Create AABB from the entity's transform
-                AABB entityAABB = CreateAABBFromTransform(transform.model);
+                AABB entityAABB = CreateAABBFromTransform(transform.worldMatrix);
 
-                std::cout << "[RaycastUtil] Entity " << entity << " AABB: min("
-                          << entityAABB.min.x << ", " << entityAABB.min.y << ", " << entityAABB.min.z
-                          << ") max(" << entityAABB.max.x << ", " << entityAABB.max.y << ", " << entityAABB.max.z << ")" << std::endl;
+                ENGINE_PRINT("[RaycastUtil] Entity ", entity, " AABB: min("
+                    , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
+                    , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+
+
+                //std::cout << "[RaycastUtil] Entity " << entity << " AABB: min("
+                //          << entityAABB.min.x << ", " << entityAABB.min.y << ", " << entityAABB.min.z
+                //          << ") max(" << entityAABB.max.x << ", " << entityAABB.max.y << ", " << entityAABB.max.z << ")" << std::endl;
 
                 // Test ray intersection
                 float distance;
@@ -122,15 +132,17 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
                     }
                 }
             } catch (const std::exception& e) {
-                std::cerr << "[RaycastUtil] Error processing entity " << entity << ": " << e.what() << std::endl;
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error processing entity ", entity, ": ", e.what(), "\n");
+                //std::cerr << "[RaycastUtil] Error processing entity " << entity << ": " << e.what() << std::endl;
                 continue;
             }
         }
-
-        std::cout << "[RaycastUtil] Tested " << entitiesWithComponent << " entities with Transform components" << std::endl;
+        ENGINE_PRINT("[RaycastUtil] Tested " , entitiesWithComponent , " entities with Transform components\n");
+        //std::cout << "[RaycastUtil] Tested " << entitiesWithComponent << " entities with Transform components" << std::endl;
 
     } catch (const std::exception& e) {
-        std::cerr << "[RaycastUtil] Error during raycast: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n"); 
+        //std::cerr << "[RaycastUtil] Error during raycast: " << e.what() << std::endl;
     }
 
     return closestHit;
@@ -148,15 +160,16 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
 
             // Convert Matrix4x4 to column-major float array for ImGuizmo (GLM format)
             // Matrix4x4 is row-major, ImGuizmo expects column-major
-            outMatrix[0]  = transform.model.m[0][0]; outMatrix[4]  = transform.model.m[0][1]; outMatrix[8]  = transform.model.m[0][2]; outMatrix[12] = transform.model.m[0][3];
-            outMatrix[1]  = transform.model.m[1][0]; outMatrix[5]  = transform.model.m[1][1]; outMatrix[9]  = transform.model.m[1][2]; outMatrix[13] = transform.model.m[1][3];
-            outMatrix[2]  = transform.model.m[2][0]; outMatrix[6]  = transform.model.m[2][1]; outMatrix[10] = transform.model.m[2][2]; outMatrix[14] = transform.model.m[2][3];
-            outMatrix[3]  = transform.model.m[3][0]; outMatrix[7]  = transform.model.m[3][1]; outMatrix[11] = transform.model.m[3][2]; outMatrix[15] = transform.model.m[3][3];
+            outMatrix[0]  = transform.worldMatrix.m.m00; outMatrix[4]  = transform.worldMatrix.m.m01; outMatrix[8]  = transform.worldMatrix.m.m02; outMatrix[12] = transform.worldMatrix.m.m03;
+            outMatrix[1]  = transform.worldMatrix.m.m10; outMatrix[5]  = transform.worldMatrix.m.m11; outMatrix[9]  = transform.worldMatrix.m.m12; outMatrix[13] = transform.worldMatrix.m.m13;
+            outMatrix[2]  = transform.worldMatrix.m.m20; outMatrix[6]  = transform.worldMatrix.m.m21; outMatrix[10] = transform.worldMatrix.m.m22; outMatrix[14] = transform.worldMatrix.m.m23;
+            outMatrix[3]  = transform.worldMatrix.m.m30; outMatrix[7]  = transform.worldMatrix.m.m31; outMatrix[11] = transform.worldMatrix.m.m32; outMatrix[15] = transform.worldMatrix.m.m33;
 
             return true;
         }
     } catch (const std::exception& e) {
-        std::cerr << "[RaycastUtil] Error getting transform for entity " << entity << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error getting transform for entity ", entity, ": ", e.what(), "\n");
+        //std::cerr << "[RaycastUtil] Error getting transform for entity " << entity << ": " << e.what() << std::endl;
     }
 
     return false;
@@ -175,33 +188,37 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             // Convert column-major float array (ImGuizmo/GLM format) to row-major Matrix4x4
             // ImGuizmo provides column-major, Matrix4x4 is row-major
             Matrix4x4 newMatrix;
-            newMatrix.m[0][0] = matrix[0];  newMatrix.m[0][1] = matrix[4];  newMatrix.m[0][2] = matrix[8];   newMatrix.m[0][3] = matrix[12];
-            newMatrix.m[1][0] = matrix[1];  newMatrix.m[1][1] = matrix[5];  newMatrix.m[1][2] = matrix[9];   newMatrix.m[1][3] = matrix[13];
-            newMatrix.m[2][0] = matrix[2];  newMatrix.m[2][1] = matrix[6];  newMatrix.m[2][2] = matrix[10];  newMatrix.m[2][3] = matrix[14];
-            newMatrix.m[3][0] = matrix[3];  newMatrix.m[3][1] = matrix[7];  newMatrix.m[3][2] = matrix[11];  newMatrix.m[3][3] = matrix[15];
+            newMatrix.m.m00 = matrix[0];  newMatrix.m.m01 = matrix[4];  newMatrix.m.m02 = matrix[8];   newMatrix.m.m03 = matrix[12];
+            newMatrix.m.m10 = matrix[1];  newMatrix.m.m11 = matrix[5];  newMatrix.m.m12 = matrix[9];   newMatrix.m.m13 = matrix[13];
+            newMatrix.m.m20 = matrix[2];  newMatrix.m.m21 = matrix[6];  newMatrix.m.m22 = matrix[10];  newMatrix.m.m23 = matrix[14];
+            newMatrix.m.m30 = matrix[3];  newMatrix.m.m31 = matrix[7];  newMatrix.m.m32 = matrix[11];  newMatrix.m.m33 = matrix[15];
 
             // Extract transform components properly
-            Vector3D newPosition(newMatrix.m[0][3], newMatrix.m[1][3], newMatrix.m[2][3]);
+            Vector3D newPosition(newMatrix.m.m03, newMatrix.m.m13, newMatrix.m.m23);
 
             // Extract scale from the matrix
             Vector3D newScale;
-            newScale.x = sqrt(newMatrix.m[0][0]*newMatrix.m[0][0] + newMatrix.m[1][0]*newMatrix.m[1][0] + newMatrix.m[2][0]*newMatrix.m[2][0]);
-            newScale.y = sqrt(newMatrix.m[0][1]*newMatrix.m[0][1] + newMatrix.m[1][1]*newMatrix.m[1][1] + newMatrix.m[2][1]*newMatrix.m[2][1]);
-            newScale.z = sqrt(newMatrix.m[0][2]*newMatrix.m[0][2] + newMatrix.m[1][2]*newMatrix.m[1][2] + newMatrix.m[2][2]*newMatrix.m[2][2]);
+            newScale.x = sqrt(newMatrix.m.m00*newMatrix.m.m00 + newMatrix.m.m10*newMatrix.m.m10 + newMatrix.m.m20*newMatrix.m.m20);
+            newScale.y = sqrt(newMatrix.m.m01*newMatrix.m.m01 + newMatrix.m.m11*newMatrix.m.m11 + newMatrix.m.m21*newMatrix.m.m21);
+            newScale.z = sqrt(newMatrix.m.m02*newMatrix.m.m02 + newMatrix.m.m12*newMatrix.m.m12 + newMatrix.m.m22*newMatrix.m.m22);
 
             // Update all components to stay in sync
-            transform.position = newPosition;
-            transform.scale = newScale;  // Make sure scale is updated too
-            transform.model = newMatrix;
+            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+            ecsManager.transformSystem->SetWorldScale(entity, newScale);
 
-            // Update last known values to prevent TransformSystem from recalculating
-            transform.lastPosition = newPosition;
-            transform.lastScale = newScale;
+            //transform.position = newPosition;
+            //transform.scale = newScale;  // Make sure scale is updated too
+            //transform.worldMatrix = newMatrix;
+
+            //// Update last known values to prevent TransformSystem from recalculating
+            //transform.lastPosition = newPosition;
+            //transform.lastScale = newScale;
 
             return true;
         }
     } catch (const std::exception& e) {
-        std::cerr << "[RaycastUtil] Error setting transform for entity " << entity << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error setting transform for entity ", entity, ": ", e.what(), "\n");
+        //std::cerr << "[RaycastUtil] Error setting transform for entity " << entity << ": " << e.what() << std::endl;
     }
 
     return false;

@@ -11,6 +11,8 @@
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
 #include "../Engine.h"  // For ENGINE_API macro
+#include <Graphics/Lights/LightingSystem.hpp>
+#include <Graphics/Sprite/SpriteSystem.hpp>
 
 class PhysicsSystem;
 class ENGINE_API ECSManager {
@@ -21,6 +23,7 @@ public:
 	void Initialize();
 
 	Entity CreateEntity();
+	Entity CreateEntityWithGUID(const GUID_128& guid);
 
 	void DestroyEntity(Entity entity);
 
@@ -88,6 +91,10 @@ public:
 		return entityManager->GetActiveEntities();
 	}
 
+	std::vector<Entity> GetAllEntities() const {
+		return entityManager->GetAllEntities();
+	}
+
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 
 	std::shared_ptr<TransformSystem> transformSystem;
@@ -95,6 +102,8 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<PhysicsSystem> physicsSystem;
+	std::shared_ptr<LightingSystem> lightingSystem;
+	std::shared_ptr<SpriteSystem> spriteSystem;
 
 private:
 	template <typename T>

@@ -81,3 +81,11 @@ std::vector<Entity> EntityManager::GetActiveEntities() const {
 	}
 	return entities;
 }
+
+std::vector<Entity> EntityManager::GetAllEntities() const {
+	std::vector<Entity> entities;
+	for (Entity entity = 0; entity < activeEntityCount; ++entity) {
+		entities.push_back(entity);
+	}
+	return entities;
+}
