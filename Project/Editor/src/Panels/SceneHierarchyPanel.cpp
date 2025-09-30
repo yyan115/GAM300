@@ -7,6 +7,13 @@
 #include <PrefabIO.hpp>
 #include <imgui_internal.h>
 #include "Scene/SceneManager.hpp"
+#include <Transform/TransformComponent.hpp>
+#include <Graphics/Model/ModelRenderComponent.hpp>
+#include <Graphics/Lights/LightComponent.hpp>
+#include <Sound/AudioComponent.hpp>
+#include <Utilities/GUID.hpp>
+#include <Asset Manager/AssetManager.hpp>
+#include <Asset Manager/ResourceManager.hpp>
 
 SceneHierarchyPanel::SceneHierarchyPanel() 
     : EditorPanel("Scene Hierarchy", true) {
@@ -20,6 +27,29 @@ void SceneHierarchyPanel::OnImGuiRender() {
             if (selectedEntity != static_cast<Entity>(-1)) {
                 renamingEntity = selectedEntity;
                 startRenaming = true;
+            }
+        }
+
+        // Handle Delete key for deleting selected entity
+        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+            Entity selectedEntity = GUIManager::GetSelectedEntity();
+            if (selectedEntity != static_cast<Entity>(-1)) {
+                try {
+                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                    std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
+
+                    std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
+
+                    // Clear selection before deleting
+                    GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+
+                    // Delete the entity
+                    ecsManager.DestroyEntity(selectedEntity);
+
+                    std::cout << "[SceneHierarchy] Entity deleted successfully" << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "[SceneHierarchy] Failed to delete entity: " << e.what() << std::endl;
+                }
             }
         }
 
@@ -71,13 +101,17 @@ void SceneHierarchyPanel::OnImGuiRender() {
         // Context menu for creating new objects
         if (ImGui::BeginPopupContextWindow()) {
             if (ImGui::MenuItem("Create Empty")) {
-                // TODO: Create new empty entity
+                Entity newEntity = CreateEmptyEntity();
+                GUIManager::SetSelectedEntity(newEntity);
             }
             if (ImGui::MenuItem("Create Cube")) {
-                // TODO: Create cube primitive
+                Entity newEntity = CreateCubeEntity();
+                GUIManager::SetSelectedEntity(newEntity);
             }
-            if (ImGui::MenuItem("Create Sphere")) {
-                // TODO: Create sphere primitive
+            ImGui::Separator();
+            if (ImGui::MenuItem("Create Camera")) {
+                Entity newEntity = CreateCameraEntity();
+                GUIManager::SetSelectedEntity(newEntity);
             }
             ImGui::EndPopup();
         }
@@ -332,4 +366,87 @@ void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nes
 
 void SceneHierarchyPanel::AddNestedChildren(Entity entity, std::set<Entity>& nestedChildren) {
     nestedChildren.insert(entity);
+}
+
+Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& name) {
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        Entity newEntity = ecsManager.CreateEntity();
+
+        // Update the name (NameComponent and Transform are already added by CreateEntity)
+        if (ecsManager.HasComponent<NameComponent>(newEntity)) {
+            ecsManager.GetComponent<NameComponent>(newEntity).name = name;
+        }
+
+        std::cout << "[SceneHierarchy] Created empty entity '" << name << "' with ID " << newEntity << std::endl;
+        return newEntity;
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Failed to create empty entity: " << e.what() << std::endl;
+        return static_cast<Entity>(-1);
+    }
+}
+
+Entity SceneHierarchyPanel::CreateCubeEntity() {
+    Entity cubeEntity = CreateEmptyEntity("Cube");
+    if (cubeEntity == static_cast<Entity>(-1)) return cubeEntity;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Add ModelRenderComponent for cube with cube.obj model
+        ModelRenderComponent cubeRenderer; // Uses default constructor
+
+        // Load the cube model using direct file path
+        std::string modelPath = "Resources/Models/cube.obj";
+        cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
+
+        if (cubeRenderer.model) {
+            std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
+        } else {
+            std::cerr << "[SceneHierarchy] Failed to load cube model from: " << modelPath << std::endl;
+        }
+
+        // Load the default shader using direct file path
+        std::string shaderPath = "Resources/Shaders/default";
+        cubeRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+
+        if (cubeRenderer.shader) {
+            std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;
+        } else {
+            std::cerr << "[SceneHierarchy] Failed to load default shader from: " << shaderPath << std::endl;
+        }
+
+        ecsManager.AddComponent<ModelRenderComponent>(cubeEntity, cubeRenderer);
+
+        // Set cube scale to 0.1,0.1,0.1
+        if (ecsManager.HasComponent<Transform>(cubeEntity)) {
+            Transform& transform = ecsManager.GetComponent<Transform>(cubeEntity);
+            transform.localScale = Vector3D(0.1f, 0.1f, 0.1f);
+            transform.isDirty = true; // Mark for update
+            std::cout << "[SceneHierarchy] Set cube scale to 0.1,0.1,0.1" << std::endl;
+        }
+
+        std::cout << "[SceneHierarchy] Created cube entity with ID " << cubeEntity << std::endl;
+        return cubeEntity;
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Failed to create cube entity: " << e.what() << std::endl;
+        return static_cast<Entity>(-1);
+    }
+}
+
+Entity SceneHierarchyPanel::CreateCameraEntity() {
+    Entity cameraEntity = CreateEmptyEntity("Camera");
+    if (cameraEntity == static_cast<Entity>(-1)) return cameraEntity;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // TODO: Add CameraComponent when it exists
+        // For now just create empty entity with transform
+        std::cout << "[SceneHierarchy] Created camera entity with ID " << cameraEntity << " (Camera component not implemented yet)" << std::endl;
+        return cameraEntity;
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Failed to create camera entity: " << e.what() << std::endl;
+        return static_cast<Entity>(-1);
+    }
 }

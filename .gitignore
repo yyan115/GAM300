@@ -5,6 +5,9 @@
 Project/Build
 /Project/.claude
 
+# Ignore claude
+.claude
+
 # vcpkg - ignore entire directory (clone fresh for each dev environment)
 Project/vcpkg/
 Project/vcpkg_installed/

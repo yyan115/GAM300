@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Graphics/LightManager.hpp"
 #include "Graphics/Model/ModelSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>

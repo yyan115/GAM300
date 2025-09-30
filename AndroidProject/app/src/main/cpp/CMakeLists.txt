@@ -130,6 +130,14 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
     ${GAME_SOURCES}
 )
 
+# Copy the main JNI library to jniLibs after build (must come AFTER add_library)
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
+    COMMENT "Copying libgam300android.so to jniLibs"
+    VERBATIM
+)
+
 # Include engine headers + Android library headers + Game headers
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ENGINE_PROJECT_DIR}/Engine/include

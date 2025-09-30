@@ -10,7 +10,7 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
-//#include <Graphics/Lights/LightComponent.hpp>
+#include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
 
@@ -61,115 +61,128 @@ void SceneInstance::Initialize() {
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-	// SPRITE
-	Entity sprite = ecsManager.CreateEntity();
-	NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
-	spriteName.name = "sprite_test";
-	// Load resources first
-	auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
-	auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
-	// Add component with constructor parameters
-	ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
-	// Get reference and configure
-	auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite); 
-	spriteComponent.is3D = false;  // 2D screen space
-	spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
-	spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
-	spriteComponent.isVisible = true;
+		// SPRITE
+		Entity sprite = ecsManager.CreateEntity();
+		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
+		spriteName.name = "sprite_test";
+		// Load resources first
+		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
+		// Add component with constructor parameters
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
+		// Get reference and configure
+		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite); 
+		spriteComponent.is3D = false;  // 2D screen space
+		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
+		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
+		spriteComponent.isVisible = true;
 
-	// With billboard effect
-	Entity sprite3D = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(sprite3D, { 2.0f, 1.0f, 0.0f });  // World coordinates
-	ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
-	ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
-	NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
-	spriteName3D.name = "sprite_3d_test";
-	auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
-	auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
-	ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
-	auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
-	spriteComponent3D.is3D = true;
-	spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
-	spriteComponent3D.isVisible = true;
+		// With billboard effect
+		Entity sprite3D = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { 2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
+		spriteName3D.name = "sprite_3d_test";
+		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
+		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
+		spriteComponent3D.is3D = true;
+		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3D.isVisible = true;
 	
-	// Without billboard effect
-	Entity sprite3DFlat = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
-	ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
-	ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
-	NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
-	spriteName3D.name = "sprite_3d_flat_test";
-	ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
-	auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
-	spriteComponent3DFlat.is3D = true;
-	spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
-	spriteComponent3DFlat.isVisible = true;
-	spriteComponent3DFlat.enableBillboard = false;
+		// Without billboard effect
+		Entity sprite3DFlat = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
+		spriteName3D.name = "sprite_3d_flat_test";
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
+		spriteComponent3DFlat.is3D = true;
+		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3DFlat.isVisible = true;
+		spriteComponent3DFlat.enableBillboard = false;
 	
-	// Initialize lighting system and create light entities
-	//if (ecsManager.lightingSystem) {
-	//	ecsManager.lightingSystem->Initialise();
+		// Initialize lighting system and create light entities
+		if (ecsManager.lightingSystem) 
+		{
+			ecsManager.lightingSystem->Initialise();
 
-	//	// Create a directional light (sun)
-	//	Entity sunLight = ecsManager.CreateEntity();
-	//	ecsManager.AddComponent<NameComponent>(sunLight, NameComponent{ "Sun" });
-	//	ecsManager.AddComponent<Transform>(sunLight, Transform{});
+			// Create a directional light (sun)
+			Entity sunLight = ecsManager.CreateEntity();
+			NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
+			sunName.name = "Sun";
+			ecsManager.AddComponent<Transform>(sunLight, Transform{});
 
-	//	DirectionalLightComponent sunLightComp;
-	//	sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-	//	sunLightComp.ambient = glm::vec3(0.05f);
-	//	sunLightComp.diffuse = glm::vec3(0.4f);
-	//	sunLightComp.specular = glm::vec3(0.5f);
-	//	sunLightComp.enabled = true;
-	//	ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+			DirectionalLightComponent sunLightComp;
+			sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+			sunLightComp.ambient = glm::vec3(0.05f);
+			sunLightComp.diffuse = glm::vec3(0.4f);
+			sunLightComp.specular = glm::vec3(0.5f);
+			sunLightComp.enabled = true;
+			ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+			ecsManager.lightingSystem->RegisterEntity(sunLight);
 
-	//	// Create point lights
-	//	std::vector<glm::vec3> pointLightPositions = {
-	//		glm::vec3(0.7f,  0.2f,  2.0f),
-	//		glm::vec3(2.3f, -3.3f, -4.0f),
-	//		glm::vec3(-4.0f,  2.0f, -12.0f),
-	//		glm::vec3(0.0f,  0.0f, -3.0f)
-	//	};
+			// Create point lights
+			std::vector<Vector3D> pointLightPositions = {
+				Vector3D(0.7f,  0.2f,  2.0f),
+				Vector3D(2.3f, -3.3f, -4.0f),
+				Vector3D(-4.0f,  2.0f, -12.0f),
+				Vector3D(0.0f,  0.0f, -3.0f)
+			};
 
-	//	for (size_t i = 0; i < pointLightPositions.size(); i++) {
-	//		Entity pointLight = ecsManager.CreateEntity();
-	//		ecsManager.AddComponent<NameComponent>(pointLight,
-	//			NameComponent{ "Point Light " + std::to_string(i) });
+			for (size_t i = 0; i < pointLightPositions.size(); i++) 
+			{
+				Entity pointLight = ecsManager.CreateEntity();
+				NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
+				pointLightName.name = "Point Light " + std::to_string(i);
+				ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
+				ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
+				// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+				
+				// Test Model
+				ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 
-	//		Transform lightTransform;
-	//		lightTransform.position = { pointLightPositions[i].x, pointLightPositions[i].y, pointLightPositions[i].z };
-	//		ecsManager.AddComponent<Transform>(pointLight, lightTransform);
+				PointLightComponent pointLightComp;
+				pointLightComp.ambient = glm::vec3(0.05f);
+				pointLightComp.diffuse = glm::vec3(0.8f);
+				pointLightComp.specular = glm::vec3(1.0f);
+				pointLightComp.constant = 1.0f;
+				pointLightComp.linear = 0.09f;
+				pointLightComp.quadratic = 0.032f;
+				pointLightComp.enabled = true;
+				ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+				ecsManager.lightingSystem->RegisterEntity(pointLight); 
+				
+			}
 
-	//		PointLightComponent pointLightComp;
-	//		pointLightComp.ambient = glm::vec3(0.05f);
-	//		pointLightComp.diffuse = glm::vec3(0.8f);
-	//		pointLightComp.specular = glm::vec3(1.0f);
-	//		pointLightComp.constant = 1.0f;
-	//		pointLightComp.linear = 0.09f;
-	//		pointLightComp.quadratic = 0.032f;
-	//		pointLightComp.enabled = true;
-	//		ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+			// Create a spot light that follows the camera
+			Entity spotLight = ecsManager.CreateEntity();
+			NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
+			spotLightName.name = "Flashlight";
+			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f});
+			//ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
+			// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
-	//	}
+			SpotLightComponent spotLightComp;
+			spotLightComp.direction = camera.Front;
+			spotLightComp.ambient = glm::vec3(0.0f);
+			spotLightComp.diffuse = glm::vec3(1.0f);
+			spotLightComp.specular = glm::vec3(1.0f);
+			spotLightComp.constant = 1.0f;
+			spotLightComp.linear = 0.09f;
+			spotLightComp.quadratic = 0.032f;
+			spotLightComp.cutOff = 0.976f;
+			spotLightComp.outerCutOff = 0.966f;
+			spotLightComp.enabled = true;
+			ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+			ecsManager.lightingSystem->RegisterEntity(spotLight);
+		}
 
-	//	// Create a spot light that follows the camera
-	//	Entity spotLight = ecsManager.CreateEntity();
-	//	ecsManager.AddComponent<NameComponent>(spotLight, NameComponent{ "Camera Flashlight" });
-	//	ecsManager.AddComponent<Transform>(spotLight, Transform{});
-
-	//	SpotLightComponent spotLightComp;
-	//	spotLightComp.direction = camera.Front;
-	//	spotLightComp.ambient = glm::vec3(0.0f);
-	//	spotLightComp.diffuse = glm::vec3(1.0f);
-	//	spotLightComp.specular = glm::vec3(1.0f);
-	//	spotLightComp.constant = 1.0f;
-	//	spotLightComp.linear = 0.09f;
-	//	spotLightComp.quadratic = 0.032f;
-	//	spotLightComp.cutOff = 0.976f;
-	//	spotLightComp.outerCutOff = 0.966f;
-	//	spotLightComp.enabled = true;
-	//	ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
-	//}
+		std::cout << "[Scene] Lighting system entity count: " << ecsManager.lightingSystem->entities.size() << std::endl; 
 
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
@@ -218,8 +231,8 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->Initialise();
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
-	ecsManager.spriteSystem->Initialise();
 	ecsManager.textSystem->Initialise();
+	ecsManager.spriteSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -234,7 +247,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	//mainECS.lightingSystem->Update();
+	mainECS.lightingSystem->Update();
 }
 
 void SceneInstance::Draw() {
@@ -265,8 +278,8 @@ void SceneInstance::Draw() {
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
 	}
-	if (mainECS.spriteSystem)
-	{
+
+	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
 	// Test debug drawing
@@ -289,11 +302,6 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.Render() completed");
 #endif
 
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call DrawLightCubes()");
-#endif
-	// 5. Draw light cubes manually (temporary - you can make this a system later)
-	DrawLightCubes();
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
@@ -349,93 +357,4 @@ void SceneInstance::processInput(float deltaTime)
 	lastY = ypos;
 
 	camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void SceneInstance::DrawLightCubes()
-{
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - checking lightShader");
-#endif
-
-	// Check if lightShader is valid (asset loading might have failed on Android)
-	if (!lightShader) {
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "DrawLightCubes() - lightShader is null, skipping");
-#endif
-		return;
-	}
-
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - lightShader is valid");
-#endif
-
-	// Get light positions from LightManager instead of renderSystem
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - about to loop through %zu lights", pointLights.size());
-#endif
-
-	// Draw light cubes at point light positions
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - processing light %zu", i);
-#endif
-		lightShader->Activate();
-
-		// Set up matrices for light cube
-		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pointLights[i].position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f)); // Make them smaller
-
-		// Set up view and projection matrices
-		glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(
-			glm::radians(camera.Zoom),
-			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
-			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
-			0.1f, 100.0f
-		);
-
-		lightShader->setMat4("model", lightModel);
-		lightShader->setMat4("view", view);
-		lightShader->setMat4("projection", projection);
-		//lightShader->setVec3("lightColor", pointLights[i].diffuse); // Use light color
-
-		lightCubeMesh->Draw(*lightShader, camera);
-	}
-}
-
-void SceneInstance::DrawLightCubes(const Camera& cameraOverride)
-{
-	// Get light positions from LightManager instead of renderSystem
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-
-	// Draw light cubes at point light positions
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
-		lightShader->Activate();
-
-		// Set up matrices for light cube
-		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pointLights[i].position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f)); // Make them smaller
-
-		// Set up view and projection matrices using the override camera
-		glm::mat4 view = cameraOverride.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(
-			glm::radians(cameraOverride.Zoom),
-			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
-			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
-			0.1f, 100.0f
-		);
-
-		lightShader->setMat4("model", lightModel);
-		lightShader->setMat4("view", view);
-		lightShader->setMat4("projection", projection);
-		//lightShader->setVec3("lightColor", pointLights[i].diffuse); // Use light color
-
-		lightCubeMesh->Draw(*lightShader, cameraOverride);
-	}
 }

@@ -83,7 +83,6 @@
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\Graphics\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
-    <ClInclude Include="include\Graphics\LightManager.hpp" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\Model\Model.h" />
     <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
@@ -192,7 +191,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Graphics\EBO.cpp" />
-    <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Graphics\Mesh.cpp" />
     <ClCompile Include="src\Graphics\Model\Model.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />

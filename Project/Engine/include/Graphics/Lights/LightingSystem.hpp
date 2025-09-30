@@ -9,14 +9,12 @@ class Camera;
 
 class LightingSystem : public System {
 public:
-    int MAX_POINT_LIGHTS = 4;
-    int MAX_SPOT_LIGHTS = 1;
+    int MAX_POINT_LIGHTS = 32;
+    int MAX_SPOT_LIGHTS = 16;
 
     LightingSystem() = default;
     ~LightingSystem() = default;
 
-    void SetMaxPointLights(int maxPoints) { MAX_POINT_LIGHTS = maxPoints; }
-    void SetMaxSpotLights(int maxSpots) { MAX_SPOT_LIGHTS = maxSpots; }
     int GetMaxPointLights() const { return MAX_POINT_LIGHTS; }
     int GetMaxSpotLights() const { return MAX_SPOT_LIGHTS; }
 
@@ -62,4 +60,11 @@ private:
     } spotLightData;
 
     void CollectLightData();
+
+public:
+    void RegisterEntity(Entity entity) 
+    {
+        entities.insert(entity);
+    }
+
 };

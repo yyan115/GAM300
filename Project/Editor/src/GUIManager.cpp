@@ -255,78 +255,78 @@ void GUIManager::CreateDockspace() {
 }
 
 void GUIManager::RenderMenuBar() {
-	if (ImGui::BeginMainMenuBar()) {
-		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
-				// TODO: New scene functionality
-			}
-			//if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
-			//	std::string filepath = "Resources/Scenes/TestScene.scene";
-			//	// TEMP
-			//	if (!std::filesystem::exists(filepath)) {
-			//		std::cerr << "No saved scene yet! Save scene first!" << std::endl;
-			//	}
-			//	else {
-			//		SceneManager::GetInstance().LoadScene(filepath);
-			//	}
-			//}
-			if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-				SceneManager::GetInstance().SaveScene();
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Compile Assets for Desktop")) {
-				AssetManager::GetInstance().CompileAllAssetsForDesktop();
-			}
-			if (ImGui::MenuItem("Compile Assets for Android")) {
-				AssetManager::GetInstance().CompileAllAssetsForAndroid();
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Exit", "Alt+F4")) {
-				// TODO: Exit application
-			}
-			ImGui::EndMenu();
-		}
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            // if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
+            //     // TODO: New scene functionality
+            // }
+            // if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
+            //     std::string filepath = "Resources/Scenes/scene.json";
+            //     // TEMP
+            //     if (!std::filesystem::exists(filepath)) {
+            //         std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+            //     }
+            //     else {
+            //         SceneManager::GetInstance().LoadScene(filepath);
+            //     }
+            // }
+            if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) {
+                SceneManager::GetInstance().SaveScene();
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
+                AssetManager::GetInstance().CompileAllAssetsForDesktop();
+            }
+            if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
+                AssetManager::GetInstance().CompileAllAssetsForAndroid();
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
+                // TODO: Exit application
+            }
+            ImGui::EndMenu();
+        }
 
-		if (ImGui::BeginMenu("Edit")) {
-			if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
-				// TODO: Undo functionality
-			}
-			if (ImGui::MenuItem("Redo", "Ctrl+Y")) {
-				// TODO: Redo functionality
-			}
-			ImGui::EndMenu();
-		}
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Undo", "Ctrl+Z")) {
+                // TODO: Undo functionality
+            }
+            if (ImGui::MenuItem(ICON_FA_ROTATE_RIGHT " Redo", "Ctrl+Y")) {
+                // TODO: Redo functionality
+            }
+            ImGui::EndMenu();
+        }
 
-		if (ImGui::BeginMenu("View")) {
-			if (ImGui::MenuItem("Reset Layout")) {
-				// Reset to default docking layout
-				dockspaceInitialized = false;
-			}
-			ImGui::EndMenu();
-		}
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem(ICON_FA_ROTATE " Reset Layout")) {
+                // Reset to default docking layout
+                dockspaceInitialized = false;
+            }
+            ImGui::EndMenu();
+        }
 
-		if (ImGui::BeginMenu("Window")) {
-			if (panelManager) {
-				// Panel toggles
-				for (const auto& panel : panelManager->GetAllPanels()) {
-					bool isOpen = panel->IsOpen();
-					if (ImGui::MenuItem(panel->GetName().c_str(), nullptr, &isOpen)) {
-						panel->SetOpen(isOpen);
-					}
-				}
-			}
-			ImGui::EndMenu();
-		}
+        if (ImGui::BeginMenu("Window")) {
+            if (panelManager) {
+                // Panel toggles
+                for (const auto& panel : panelManager->GetAllPanels()) {
+                    bool isOpen = panel->IsOpen();
+                    if (ImGui::MenuItem(panel->GetName().c_str(), nullptr, &isOpen)) {
+                        panel->SetOpen(isOpen);
+                    }
+                }
+            }
+            ImGui::EndMenu();
+        }
 
-		if (ImGui::BeginMenu("Help")) {
-			if (ImGui::MenuItem("About")) {
-				// TODO: About dialog
-			}
-			ImGui::EndMenu();
-		}
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " About")) {
+                // TODO: About dialog
+            }
+            ImGui::EndMenu();
+        }
 
-		ImGui::EndMainMenuBar();
-	}
+        ImGui::EndMainMenuBar();
+    }
 }
 
 void GUIManager::CreateEditorTheme() {

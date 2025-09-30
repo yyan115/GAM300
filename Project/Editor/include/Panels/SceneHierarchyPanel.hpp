@@ -29,6 +29,11 @@ private:
     void TraverseHierarchy(Entity entity, std::set<Entity>& nestedChildren, std::function<void(Entity, std::set<Entity>&)> addNestedChildren);
     void AddNestedChildren(Entity entity, std::set<Entity>& nestedChildren);
 
+    // Entity creation functions
+    Entity CreateEmptyEntity(const std::string& name = "Empty Entity");
+    Entity CreateCubeEntity();
+    Entity CreateCameraEntity();
+
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);
     std::vector<char> renameBuffer;
