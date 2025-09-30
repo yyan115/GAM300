@@ -454,10 +454,6 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	if (ebo == 0) {
 		ENGINE_LOG_ERROR("VAO %d has no EBO bound!" + std::to_string(item.spriteVAO->ID));
 	}
-	GLint enabled = 0;
-	glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &enabled);
-	ENGINE_LOG_DEBUG("Attrib 0 enabled? %d" + std::to_string(enabled));
-
 
 	// The SpriteSystem should have already bound the VAO, so just draw
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
