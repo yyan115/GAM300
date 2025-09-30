@@ -17,12 +17,16 @@
 #include <glm/glm.hpp>
 
 // Global drag-drop state for cross-window material dragging (declared in AssetBrowserPanel.cpp)
-extern GUID_128 g_draggedMaterialGuid;
-extern std::string g_draggedMaterialPath;
+extern GUID_128 DraggedMaterialGuid;
+extern std::string DraggedMaterialPath;
 
 // Global drag-drop state for cross-window model dragging (declared in AssetBrowserPanel.cpp)
-extern GUID_128 g_draggedModelGuid;
-extern std::string g_draggedModelPath;
+extern GUID_128 DraggedModelGuid;
+extern std::string DraggedModelPath;
+
+// Global drag-drop state for cross-window audio dragging (declared in AssetBrowserPanel.cpp)
+extern GUID_128 DraggedAudioGuid;
+extern std::string DraggedAudioPath;
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -313,14 +317,12 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
             ImGui::SetTooltip("Drop .obj, .fbx, .dae, or .3ds model here");
             // Accept the cross-window drag payload
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
-                std::cout << "[InspectorPanel] Received MODEL_DRAG drop - GUID: {" << g_draggedModelGuid.high << ", " << g_draggedModelGuid.low << "}, Path: " << g_draggedModelPath << std::endl;
-
                 // Apply the model to the ModelRenderComponent
-                ApplyModelToRenderer(entity, g_draggedModelGuid, g_draggedModelPath);
+                ApplyModelToRenderer(entity, DraggedModelGuid, DraggedModelPath);
 
                 // Clear the drag state
-                g_draggedModelGuid = {0, 0};
-                g_draggedModelPath.clear();
+                DraggedModelGuid = {0, 0};
+                DraggedModelPath.clear();
             }
             ImGui::EndDragDropTarget();
         }
@@ -364,20 +366,16 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
             ImGui::SetTooltip("Drop material here to apply to model");
             // Accept the cross-window drag payload
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG")) {
-                std::cout << "[InspectorPanel] Received MATERIAL_DRAG drop - GUID: {" << g_draggedMaterialGuid.high << ", " << g_draggedMaterialGuid.low << "}, Path: " << g_draggedMaterialPath << std::endl;
-
                 // Try GUID first, then fallback to path
-                if (g_draggedMaterialGuid.high != 0 || g_draggedMaterialGuid.low != 0) {
-                    std::cout << "[InspectorPanel] Using GUID for material loading" << std::endl;
-                    MaterialInspector::ApplyMaterialToModel(entity, g_draggedMaterialGuid);
+                if (DraggedMaterialGuid.high != 0 || DraggedMaterialGuid.low != 0) {
+                    MaterialInspector::ApplyMaterialToModel(entity, DraggedMaterialGuid);
                 } else {
-                    std::cout << "[InspectorPanel] Using path for material loading: " << g_draggedMaterialPath << std::endl;
-                    MaterialInspector::ApplyMaterialToModelByPath(entity, g_draggedMaterialPath);
+                    MaterialInspector::ApplyMaterialToModelByPath(entity, DraggedMaterialPath);
                 }
 
                 // Clear the drag state
-                g_draggedMaterialGuid = {0, 0};
-                g_draggedMaterialPath.clear();
+                DraggedMaterialGuid = {0, 0};
+                DraggedMaterialPath.clear();
             }
             ImGui::EndDragDropTarget();
         }
@@ -395,15 +393,42 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
 
         ImGui::PushID("AudioComponent");
 
-        // Asset path input (Unity: Clip)
-        char buffer[512] = {0};
-        if (!audio.Clip.empty()) {
-            strncpy_s(buffer, sizeof(buffer), audio.Clip.c_str(), sizeof(buffer)-1);
-        }
-        ImGui::Text("Clip");
+        // Audio Clip drag-drop slot (Unity-style)
+        ImGui::Text("Clip:");
         ImGui::SameLine();
-        if (ImGui::InputText("##AudioClip", buffer, sizeof(buffer))) {
-            audio.SetClip(std::string(buffer));
+
+        // Create audio slot button showing current clip
+        std::string audioButtonText;
+        if (!audio.Clip.empty()) {
+            std::filesystem::path clipPath(audio.Clip);
+            audioButtonText = clipPath.filename().string();
+        } else {
+            audioButtonText = "None (Audio Clip)";
+        }
+
+        // Create the audio slot button
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::Button(audioButtonText.c_str(), ImVec2(buttonWidth, 30.0f));
+
+        // Audio clip drag-drop target
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
+                // Use global drag data set by AssetBrowserPanel
+                audio.SetClip(DraggedAudioPath);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Right-click to clear
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !audio.Clip.empty()) {
+            ImGui::OpenPopup("ClearAudioClip");
+        }
+
+        if (ImGui::BeginPopup("ClearAudioClip")) {
+            if (ImGui::MenuItem("Clear Clip")) {
+                audio.SetClip("");
+            }
+            ImGui::EndPopup();
         }
 
         // Volume slider

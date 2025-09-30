@@ -25,15 +25,19 @@
 #include <IconsFontAwesome6.h>
 
 // Global drag-drop state for cross-window material dragging
-GUID_128 g_draggedMaterialGuid = {0, 0};
-std::string g_draggedMaterialPath;
+GUID_128 DraggedMaterialGuid = {0, 0};
+std::string DraggedMaterialPath;
 
 // Global drag-drop state for cross-window model dragging
-GUID_128 g_draggedModelGuid = {0, 0};
-std::string g_draggedModelPath;
+GUID_128 DraggedModelGuid = {0, 0};
+std::string DraggedModelPath;
+
+// Global drag-drop state for cross-window audio dragging
+GUID_128 DraggedAudioGuid = {0, 0};
+std::string DraggedAudioPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
-static std::unordered_map<uint64_t, std::string> g_fallbackGuidToPath;
+static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 
 #ifdef _WIN32
 #include <windows.h>
@@ -103,8 +107,6 @@ AssetBrowserPanel::AssetBrowserPanel()
 
     // Initialize file watcher for hot-reloading
     InitializeFileWatcher();
-
-    std::cout << "[AssetBrowserPanel] Initialized with root directory: " << rootAssetDirectory << std::endl;
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
@@ -120,11 +122,9 @@ void AssetBrowserPanel::InitializeFileWatcher() {
                 OnFileChanged(path, event);
             }
         );
-
-        std::cout << "[AssetBrowserPanel] File watcher initialized for: " << rootAssetDirectory << std::endl;
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to initialize file watcher: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to initialize file watcher: ", e.what(), "\n");
     }
 }
 
@@ -174,19 +174,15 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
-            // std::cout << "[AssetWatcher] Detected change in asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
             AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
         }
         else if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] Detected removal of asset: " << fullPath << ". Unloading..." << std::endl;
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_old) {
-            std::cout << "[AssetWatcher] Detected rename (old name) of asset: " << fullPath << ". Unloading..." << std::endl;
             AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_new) {
-            // std::cout << "[AssetWatcher] Detected rename (new name) of asset: " << fullPath << ". Adding to compilation queue..." << std::endl;
             AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
         }
 
@@ -194,7 +190,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
     else if (AssetManager::GetInstance().IsExtensionMetaFile(extension)) {
         if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] WARNING: Detected removal of .meta file: " << fullPath << ". Deleting associated resource..." << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Detected removal of .meta file: ", fullPath, "\n");
             AssetManager::GetInstance().HandleMetaFileDeletion(fullPath);
 
             QueueRefresh();
@@ -202,7 +198,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
     else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
         if (event == filewatch::Event::removed) {
-            std::cout << "[AssetWatcher] WARNING: Detected removal of resource file: " << fullPath << ". Deleting associated meta file..." << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Detected removal of resource file: ", fullPath, "\n");
             AssetManager::GetInstance().HandleResourceFileDeletion(fullPath);
 
             QueueRefresh();
@@ -562,44 +558,43 @@ void AssetBrowserPanel::RenderAssetGrid()
                              lowerExt == ".tga" || lowerExt == ".dds");
             bool isModel = (lowerExt == ".obj" || lowerExt == ".fbx" ||
                            lowerExt == ".dae" || lowerExt == ".3ds");
+            bool isAudio = (lowerExt == ".wav" || lowerExt == ".ogg" ||
+                           lowerExt == ".mp3" || lowerExt == ".flac");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
-                    std::cout << "[AssetBrowserPanel] Starting drag for material: " << asset.fileName << std::endl;
-
                     // Store drag data globally for cross-window transfer
-                    g_draggedMaterialGuid = asset.guid;
-                    g_draggedMaterialPath = asset.filePath;
-
-                    std::cout << "[AssetBrowserPanel] Drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+                    DraggedMaterialGuid = asset.guid;
+                    DraggedMaterialPath = asset.filePath;
 
                     // Use a simple payload - just a flag that dragging is active
                     ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
                 } else if (isTexture) {
-                    std::cout << "[AssetBrowserPanel] Starting drag for texture: " << asset.fileName << std::endl;
-
                     // Send texture path directly
                     ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
                 } else if (isModel) {
-                    std::cout << "[AssetBrowserPanel] Starting drag for model: " << asset.fileName << std::endl;
-
                     // Store drag data globally for cross-window transfer
-                    g_draggedModelGuid = asset.guid;
-                    g_draggedModelPath = asset.filePath;
-
-                    std::cout << "[AssetBrowserPanel] Model drag data - GUID: {" << asset.guid.high << ", " << asset.guid.low << "}, Path: " << asset.filePath << std::endl;
+                    DraggedModelGuid = asset.guid;
+                    DraggedModelPath = asset.filePath;
 
                     // Use a simple payload - just a flag that dragging is active
                     ImGui::SetDragDropPayload("MODEL_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Model: %s", asset.fileName.c_str());
+                } else if (isAudio) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedAudioGuid = asset.guid;
+                    DraggedAudioPath = asset.filePath;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
-                std::cout << "[AssetBrowserPanel] Drag operation completed" << std::endl;
             }
             else if (isPrefab && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
@@ -695,7 +690,6 @@ void AssetBrowserPanel::RenderAssetGrid()
         // Select asset if shouldSelect is true (already accounts for drag distance)
         if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
-            std::cout << "[AssetBrowserPanel] Selecting asset: GUID {" << asset.guid.high << ", " << asset.guid.low << "}, File: " << asset.fileName << std::endl;
             SelectAsset(asset.guid, ctrl);
         }
 
@@ -864,9 +858,7 @@ void AssetBrowserPanel::RefreshAssets() {
                     guid.low = static_cast<uint64_t>(hash >> 32);
                     
                     // Store the mapping from GUID to file path for the Inspector to use
-                    g_fallbackGuidToPath[guid.high] = filePath;
-                    
-                    std::cout << "[AssetBrowserPanel] Generated fallback GUID for " << filePath << ": {" << guid.high << ", " << guid.low << "}" << std::endl;
+                    FallbackGuidToPath[guid.high] = filePath;
                 }
             }
             else {
@@ -894,7 +886,7 @@ void AssetBrowserPanel::RefreshAssets() {
 
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Error refreshing assets: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error refreshing assets: ", e.what(), "\n");
     }
 
     UpdateBreadcrumbs();
@@ -1083,7 +1075,6 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
             std::string metaFile = assetToDelete.filePath + ".meta";
             if (std::filesystem::exists(metaFile)) {
                 std::filesystem::remove(metaFile);
-                std::cout << "[AssetBrowserPanel] Deleted meta file: " << metaFile << std::endl;
             }
         }
 
@@ -1098,7 +1089,7 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
         RefreshAssets();
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to delete asset: ", e.what(), "\n");
     }
 }
 
@@ -1235,13 +1226,13 @@ void AssetBrowserPanel::EnsureDirectoryExists(const std::string& directory) {
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Failed to create directory " << directory << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to create directory ", directory, ": ", e.what(), "\n");
     }
 }
 
 std::string AssetBrowserPanel::GetFallbackGuidFilePath(const GUID_128& guid) {
-    auto it = g_fallbackGuidToPath.find(guid.high);
-    if (it != g_fallbackGuidToPath.end()) {
+    auto it = FallbackGuidToPath.find(guid.high);
+    if (it != FallbackGuidToPath.end()) {
         return it->second;
     }
     return ""; // Return empty string if not found
@@ -1279,13 +1270,12 @@ void AssetBrowserPanel::CreateNewMaterial() {
 
             // Refresh the asset browser to show the new material
             QueueRefresh();
-            std::cout << "[AssetBrowserPanel] Queued refresh after creating material" << std::endl;
         } else {
-            std::cerr << "[AssetBrowserPanel] Failed to create material file: " << materialPath << std::endl;
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to create material file: ", materialPath, "\n");
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Error creating material: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error creating material: ", e.what(), "\n");
     }
 }
 
@@ -1313,7 +1303,7 @@ void AssetBrowserPanel::CreateNewFolder() {
         QueueRefresh();
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Error creating folder: " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error creating folder: ", e.what(), "\n");
     }
 }
 
@@ -1383,7 +1373,7 @@ void AssetBrowserPanel::ConfirmRename() {
                 }
             }
             catch (const std::exception& e) {
-                std::cerr << "[AssetBrowserPanel] Error renaming asset: " << e.what() << std::endl;
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error renaming asset: ", e.what(), "\n");
             }
 
             break;
