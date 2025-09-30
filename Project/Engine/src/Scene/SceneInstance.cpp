@@ -209,10 +209,10 @@ void SceneInstance::Initialize() {
 				
 		// Add AudioComponent
 		AudioComponent audioComp;
-		audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+		audioComp.Clip = "Resources/Audio/sfx/start menu bgm.ogg";
 		audioComp.Volume = 0.3f;
 		audioComp.Loop = true;
-		audioComp.PlayOnStart = true;
+		audioComp.PlayOnAwake = true;
 		audioComp.Spatialize = false;
 		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
 	}
@@ -248,6 +248,11 @@ void SceneInstance::Update(double dt) {
 	// Update systems.
 	mainECS.transformSystem->Update();
 	mainECS.lightingSystem->Update();
+
+	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
+	if (mainECS.audioSystem) {
+		mainECS.audioSystem->Update((float)dt);
+	}
 }
 
 void SceneInstance::Draw() {

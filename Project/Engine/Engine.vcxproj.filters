@@ -122,6 +122,7 @@
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Sound\AudioSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -185,6 +186,7 @@
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
+    <ClCompile Include="src\Sound\AudioSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

@@ -80,6 +80,13 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<SpriteRenderComponent>());
 		SetSystemSignature<SpriteSystem>(signature);
 	}
+
+	audioSystem = RegisterSystem<AudioSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<AudioComponent>());
+		SetSystemSignature<AudioSystem>(signature);
+	}
 }
 
 Entity ECSManager::CreateEntity() {
