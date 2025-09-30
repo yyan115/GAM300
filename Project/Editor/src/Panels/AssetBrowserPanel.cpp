@@ -498,6 +498,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked();
+        const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
         bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
         // drag source: prefab -> scene, material/texture -> inspector
@@ -610,10 +611,10 @@ void AssetBrowserPanel::RenderAssetGrid()
         }
         ImGui::PopTextWrapPos();
 
-        // Selection / activation - single click selects, but not during drag operations
+        // Selection / activation - mouse release selects, but not during drag operations
         bool shouldSelect = false;
-        if (clicked) {
-            // Check if mouse moved significantly during this click (indicating a drag)
+        if (released) {
+            // Check if mouse moved significantly during the click-drag-release cycle
             ImVec2 dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             float dragDistance = sqrtf(dragDelta.x * dragDelta.x + dragDelta.y * dragDelta.y);
             float dragThreshold = 5.0f; // pixels
@@ -627,8 +628,8 @@ void AssetBrowserPanel::RenderAssetGrid()
             anyItemClickedInGrid = true;
         }
 
-        // Don't select if we're in the middle of a drag operation
-        if (shouldSelect && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+        // Select asset if shouldSelect is true (already accounts for drag distance)
+        if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
             std::cout << "[AssetBrowserPanel] Selecting asset: GUID {" << asset.guid.high << ", " << asset.guid.low << "}, File: " << asset.fileName << std::endl;
             SelectAsset(asset.guid, ctrl);
