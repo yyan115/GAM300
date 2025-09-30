@@ -27,8 +27,8 @@
 #include "Logging.hpp"
 
 // External globals for model drag-drop from AssetBrowserPanel
-extern GUID_128 g_draggedModelGuid;
-extern std::string g_draggedModelPath;
+extern GUID_128 DraggedModelGuid;
+extern std::string DraggedModelPath;
 
 // Don't include Graphics headers here due to OpenGL conflicts
 // We'll use RaycastUtil to get entity transforms instead
@@ -703,8 +703,8 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
     // Start drag when MODEL_DRAG payload is over the scene and mouse is down
     if (isModelPayloadActive && isMouseDown && isHovering && !isDraggingModel) {
         isDraggingModel = true;
-        previewModelGUID = g_draggedModelGuid;
-        previewModelPath = g_draggedModelPath;
+        previewModelGUID = DraggedModelGuid;
+        previewModelPath = DraggedModelPath;
 
         // Create preview entity
         try {
