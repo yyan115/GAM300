@@ -37,29 +37,6 @@ void InspectorPanel::OnImGuiRender() {
     if (ImGui::Begin(name.c_str(), &isOpen)) {
         // Check for selected asset first (higher priority)
         GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
-        
-        // Lock button in the title bar (always visible)
-        ImGui::SameLine(ImGui::GetWindowWidth() - 35);
-        if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
-            inspectorLocked = !inspectorLocked;
-            if (inspectorLocked) {
-                // Lock to current content (entity or asset)
-                if (selectedAsset.high != 0 || selectedAsset.low != 0) {
-                    lockedAsset = selectedAsset;
-                    lockedEntity = static_cast<Entity>(-1);
-                } else {
-                    lockedEntity = GUIManager::GetSelectedEntity();
-                    lockedAsset = {0, 0};
-                }
-            } else {
-                // Unlock
-                lockedEntity = static_cast<Entity>(-1);
-                lockedAsset = {0, 0};
-            }
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
-        }
 
 		// Determine what to display based on lock state
 		Entity displayEntity = static_cast<Entity>(-1);
@@ -122,6 +99,30 @@ void InspectorPanel::OnImGuiRender() {
 
             if (displayEntity == static_cast<Entity>(-1)) {
                 ImGui::Text("No object selected");
+
+                // Lock button on the same line
+                ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+                if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+                    inspectorLocked = !inspectorLocked;
+                    if (inspectorLocked) {
+                        // Lock to current content (entity or asset)
+                        if (selectedAsset.high != 0 || selectedAsset.low != 0) {
+                            lockedAsset = selectedAsset;
+                            lockedEntity = static_cast<Entity>(-1);
+                        } else {
+                            lockedEntity = GUIManager::GetSelectedEntity();
+                            lockedAsset = {0, 0};
+                        }
+                    } else {
+                        // Unlock
+                        lockedEntity = static_cast<Entity>(-1);
+                        lockedAsset = {0, 0};
+                    }
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+                }
+
                 ImGui::Text("Select an object in the Scene Hierarchy or an asset in the Asset Browser to view its properties");
                 if (inspectorLocked) {
                     ImGui::Text("Inspector is locked but no valid content is selected.");
@@ -131,7 +132,30 @@ void InspectorPanel::OnImGuiRender() {
                     // Get the active ECS manager
                     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-                    ImGui::Text("Entity ID: %u%s", displayEntity, inspectorLocked ? " 🔒" : "");
+                    ImGui::Text("Entity ID: %u", displayEntity);
+
+                    // Lock button on the same line
+                    ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+                    if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+                        inspectorLocked = !inspectorLocked;
+                        if (inspectorLocked) {
+                            // Lock to current content (entity or asset)
+                            if (selectedAsset.high != 0 || selectedAsset.low != 0) {
+                                lockedAsset = selectedAsset;
+                                lockedEntity = static_cast<Entity>(-1);
+                            } else {
+                                lockedEntity = GUIManager::GetSelectedEntity();
+                                lockedAsset = {0, 0};
+                            }
+                        } else {
+                            // Unlock
+                            lockedEntity = static_cast<Entity>(-1);
+                            lockedAsset = {0, 0};
+                        }
+                    }
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+                    }
                     ImGui::Separator();
 
                     // Draw NameComponent if it exists
@@ -537,6 +561,30 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
             sourceFilePath = AssetBrowserPanel::GetFallbackGuidFilePath(assetGuid);
             if (sourceFilePath.empty()) {
                 ImGui::Text("Asset not found - no metadata or fallback path available");
+
+                // Lock button on the same line
+                GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
+                ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+                if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+                    inspectorLocked = !inspectorLocked;
+                    if (inspectorLocked) {
+                        // Lock to current content (entity or asset)
+                        if (selectedAsset.high != 0 || selectedAsset.low != 0) {
+                            lockedAsset = selectedAsset;
+                            lockedEntity = static_cast<Entity>(-1);
+                        } else {
+                            lockedEntity = GUIManager::GetSelectedEntity();
+                            lockedAsset = {0, 0};
+                        }
+                    } else {
+                        // Unlock
+                        lockedEntity = static_cast<Entity>(-1);
+                        lockedAsset = {0, 0};
+                    }
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+                }
                 return;
             }
             std::cout << "[Inspector] Found fallback path: " << sourceFilePath << std::endl;
@@ -548,6 +596,9 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
         std::filesystem::path assetPath(sourceFilePath);
         std::string extension = assetPath.extension().string();
 
+        // Get selected asset for lock callback
+        GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
+
         // Handle different asset types
         if (extension == ".mat") {
             // Check if we have a cached material for this asset
@@ -555,7 +606,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
                 // Convert to absolute path to avoid path resolution issues
                 std::filesystem::path absolutePath = std::filesystem::absolute(sourceFilePath);
                 std::string absolutePathStr = absolutePath.string();
-                
+
                 // Load material and cache it
                 std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
                 std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
@@ -573,8 +624,19 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
                 }
             }
 
-            // Use cached material
-            MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath);
+            // Use cached material with lock button
+            auto lockCallback = [this, selectedAsset]() {
+                inspectorLocked = !inspectorLocked;
+                if (inspectorLocked) {
+                    lockedAsset = selectedAsset;
+                    lockedEntity = static_cast<Entity>(-1);
+                } else {
+                    lockedEntity = static_cast<Entity>(-1);
+                    lockedAsset = {0, 0};
+                }
+            };
+
+            MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath, true, &inspectorLocked, lockCallback);
         } else {
             ImGui::Text("Asset type not supported for editing in Inspector");
         }
