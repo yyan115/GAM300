@@ -90,8 +90,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("../../Resources")
-    , rootAssetDirectory("../../Resources")
+    , currentDirectory("/Resources")
+    , rootAssetDirectory("/Resources")
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets

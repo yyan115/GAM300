@@ -33,6 +33,16 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            jniDebuggable true
+        }
+    }
+
+    // Ensure native libraries are packaged in the APK
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11

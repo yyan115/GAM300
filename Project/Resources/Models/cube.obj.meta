@@ -1,9 +1,10 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "0068bf5177bc76fe-0002cc3f7c000001",
+        "guid": "0063f3bf818f96d9-0002cd9792000017",
         "source": "Resources/Models/cube.obj",
         "compiled": "Resources/Models/cube.mesh",
-        "last_compiled": "2025-09-29 15:52:04.6266282"
+        "android_compiled": "Resources/Models/cube_android.mesh",
+        "last_compiled": "2025-09-30 03:45:06.8804576"
     }
 }

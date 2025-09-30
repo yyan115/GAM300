@@ -75,6 +75,51 @@ void SceneInstance::Initialize() {
 		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
 		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+
+		// SPRITE
+		Entity sprite = ecsManager.CreateEntity();
+		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
+		spriteName.name = "sprite_test";
+		// Load resources first
+		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		// Add component with constructor parameters
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
+		// Get reference and configure
+		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite);
+		spriteComponent.is3D = false;  // 2D screen space
+		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
+		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
+		spriteComponent.isVisible = true;
+
+		// With billboard effect
+		Entity sprite3D = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { 2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
+		spriteName3D.name = "sprite_3d_test";
+		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
+		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
+		spriteComponent3D.is3D = true;
+		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3D.isVisible = true;
+
+		// Without billboard effect
+		Entity sprite3DFlat = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
+		spriteName3D.name = "sprite_3d_flat_test";
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
+		spriteComponent3DFlat.is3D = true;
+		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3DFlat.isVisible = true;
+		spriteComponent3DFlat.enableBillboard = false;
 	}
 
 	// Creates light
