@@ -23,113 +23,59 @@ void LightingSystem::Shutdown()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
-    std::cout << "[LightingSystem] ApplyLighting called" << std::endl;
-    std::cout << "[LightingSystem] Has directional light: " << directionalLightData.hasDirectionalLight << std::endl;
-    std::cout << "[LightingSystem] Point lights count: " << pointLightData.positions.size() << std::endl;
-    std::cout << "[LightingSystem] Spot lights count: " << spotLightData.positions.size() << std::endl;
-
-    // Apply directional light from collected data
+    // Apply directional light
     if (directionalLightData.hasDirectionalLight)
     {
-        std::cout << "[LightingSystem] Dir Light - diffuse: ("
-            << directionalLightData.diffuse.x << ", "
-            << directionalLightData.diffuse.y << ", "
-            << directionalLightData.diffuse.z << ")" << std::endl;
-
         shader.setVec3("dirLight.direction", directionalLightData.direction);
         shader.setVec3("dirLight.ambient", directionalLightData.ambient);
         shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
         shader.setVec3("dirLight.specular", directionalLightData.specular);
     }
-    else 
+    else
     {
-        // Disable directional light if none exists
         shader.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
         shader.setVec3("dirLight.ambient", glm::vec3(0.0f));
         shader.setVec3("dirLight.diffuse", glm::vec3(0.0f));
         shader.setVec3("dirLight.specular", glm::vec3(0.0f));
     }
 
-    // Apply point lights from collected data
-    for (int i = 0; i < MAX_POINT_LIGHTS; i++) 
+    // Send counts to shader so it only processes active lights
+    shader.setInt("numPointLights", static_cast<int>(pointLightData.positions.size()));
+    shader.setInt("numSpotLights", static_cast<int>(spotLightData.positions.size()));
+
+    // Only loop through and set active point lights
+    for (size_t i = 0; i < pointLightData.positions.size(); i++)
     {
         std::string base = "pointLights[" + std::to_string(i) + "]";
-
-        if (i < pointLightData.positions.size()) 
-        {
-            // Active point light from ECS data
-            shader.setVec3(base + ".position", pointLightData.positions[i]);
-            shader.setVec3(base + ".ambient", pointLightData.ambient[i]);
-            shader.setVec3(base + ".diffuse", pointLightData.diffuse[i]);
-            shader.setVec3(base + ".specular", pointLightData.specular[i]);
-            shader.setFloat(base + ".constant", pointLightData.constant[i]);
-            shader.setFloat(base + ".linear", pointLightData.linear[i]);
-            shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
-        }
-        else 
-        {
-            // Disabled point light
-            shader.setVec3(base + ".position", glm::vec3(0.0f));
-            shader.setVec3(base + ".ambient", glm::vec3(0.0f));
-            shader.setVec3(base + ".diffuse", glm::vec3(0.0f));
-            shader.setVec3(base + ".specular", glm::vec3(0.0f));
-            shader.setFloat(base + ".constant", 1.0f);
-            shader.setFloat(base + ".linear", 0.0f);
-            shader.setFloat(base + ".quadratic", 0.0f);
-        }
-
-    }
-    // Debug first point light
-    if (pointLightData.positions.size() > 0) {
-        std::cout << "[LightingSystem] Point Light 0 - position: ("
-            << pointLightData.positions[0].x << ", "
-            << pointLightData.positions[0].y << ", "
-            << pointLightData.positions[0].z << ")" << std::endl;
-        std::cout << "[LightingSystem] Point Light 0 - diffuse: ("
-            << pointLightData.diffuse[0].x << ", "
-            << pointLightData.diffuse[0].y << ", "
-            << pointLightData.diffuse[0].z << ")" << std::endl;
+        shader.setVec3(base + ".position", pointLightData.positions[i]);
+        shader.setVec3(base + ".ambient", pointLightData.ambient[i]);
+        shader.setVec3(base + ".diffuse", pointLightData.diffuse[i]);
+        shader.setVec3(base + ".specular", pointLightData.specular[i]);
+        shader.setFloat(base + ".constant", pointLightData.constant[i]);
+        shader.setFloat(base + ".linear", pointLightData.linear[i]);
+        shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
     }
 
-    // Apply spot lights from collected data
-    for (int i = 0; i < MAX_SPOT_LIGHTS; i++) 
+    // Only loop through and set active spot lights
+    for (size_t i = 0; i < spotLightData.positions.size(); i++)
     {
         std::string base = "spotLights[" + std::to_string(i) + "]";
-
-        if (i < spotLightData.positions.size()) {
-
-            // Active spot light from ECS data
-            shader.setVec3(base + ".position", spotLightData.positions[i]);
-            shader.setVec3(base + ".direction", spotLightData.directions[i]);
-            shader.setVec3(base + ".ambient", spotLightData.ambient[i]);
-            shader.setVec3(base + ".diffuse", spotLightData.diffuse[i]);
-            shader.setVec3(base + ".specular", spotLightData.specular[i]);
-            shader.setFloat(base + ".constant", spotLightData.constant[i]);
-            shader.setFloat(base + ".linear", spotLightData.linear[i]);
-            shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
-            shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
-            shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
-        }
-        else 
-        {
-            // Disabled spot light
-            shader.setVec3(base + ".position", glm::vec3(0.0f));
-            shader.setVec3(base + ".direction", glm::vec3(0.0f, 0.0f, -1.0f));
-            shader.setVec3(base + ".ambient", glm::vec3(0.0f));
-            shader.setVec3(base + ".diffuse", glm::vec3(0.0f));
-            shader.setVec3(base + ".specular", glm::vec3(0.0f));
-            shader.setFloat(base + ".constant", 1.0f);
-            shader.setFloat(base + ".linear", 0.0f);
-            shader.setFloat(base + ".quadratic", 0.0f);
-            shader.setFloat(base + ".cutOff", 0.0f);
-            shader.setFloat(base + ".outerCutOff", 0.0f);
-        }
+        shader.setVec3(base + ".position", spotLightData.positions[i]);
+        shader.setVec3(base + ".direction", spotLightData.directions[i]);
+        shader.setVec3(base + ".ambient", spotLightData.ambient[i]);
+        shader.setVec3(base + ".diffuse", spotLightData.diffuse[i]);
+        shader.setVec3(base + ".specular", spotLightData.specular[i]);
+        shader.setFloat(base + ".constant", spotLightData.constant[i]);
+        shader.setFloat(base + ".linear", spotLightData.linear[i]);
+        shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
+        shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
+        shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
     }
 }
 
 void LightingSystem::CollectLightData()
 {
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // Clear previous frame data
     pointLightData.positions.clear();
@@ -142,7 +88,6 @@ void LightingSystem::CollectLightData()
 
     directionalLightData.hasDirectionalLight = false;
 
-    // Clear spot light data
     spotLightData.positions.clear();
     spotLightData.directions.clear();
     spotLightData.ambient.clear();
@@ -154,16 +99,13 @@ void LightingSystem::CollectLightData()
     spotLightData.cutOff.clear();
     spotLightData.outerCutOff.clear();
 
-    // Go through all entities with light components
-    for (const auto& entity : entities) 
+    for (const auto& entity : entities)
     {
-
-        // Collect directional lights (just take the first one)
-        if (ecsManager.HasComponent<DirectionalLightComponent>(entity)) 
+        // Collect directional light (first one only)
+        if (ecsManager.HasComponent<DirectionalLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<DirectionalLightComponent>(entity);
-
-            if (light.enabled && !directionalLightData.hasDirectionalLight) 
+            if (light.enabled && !directionalLightData.hasDirectionalLight)
             {
                 directionalLightData.hasDirectionalLight = true;
                 directionalLightData.direction = light.direction;
@@ -173,56 +115,80 @@ void LightingSystem::CollectLightData()
             }
         }
 
-        // Collect point lights (up to max)
-        if (ecsManager.HasComponent<PointLightComponent>(entity)) 
+        // Collect point lights with limit warning
+        if (ecsManager.HasComponent<PointLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<PointLightComponent>(entity);
 
-            if (light.enabled && pointLightData.positions.size() < MAX_POINT_LIGHTS) 
+            if (light.enabled)
             {
-                // Get position from transform
-                glm::vec3 position(0.0f);
-                if (ecsManager.HasComponent<Transform>(entity)) 
+                if (pointLightData.positions.size() < MAX_POINT_LIGHTS)
                 {
-                    auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
-                }
+                    glm::vec3 position(0.0f);
+                    if (ecsManager.HasComponent<Transform>(entity))
+                    {
+                        auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+                    }
 
-                pointLightData.positions.push_back(position);
-                pointLightData.ambient.push_back(light.ambient);
-                pointLightData.diffuse.push_back(light.diffuse);
-                pointLightData.specular.push_back(light.specular);
-                pointLightData.constant.push_back(light.constant);
-                pointLightData.linear.push_back(light.linear);
-                pointLightData.quadratic.push_back(light.quadratic);
+                    pointLightData.positions.push_back(position);
+                    pointLightData.ambient.push_back(light.ambient);
+                    pointLightData.diffuse.push_back(light.diffuse);
+                    pointLightData.specular.push_back(light.specular);
+                    pointLightData.constant.push_back(light.constant);
+                    pointLightData.linear.push_back(light.linear);
+                    pointLightData.quadratic.push_back(light.quadratic);
+                }
+                else
+                {
+                    // Only warn once when limit is hit
+                    static bool pointLightWarningShown = false;
+                    if (!pointLightWarningShown) {
+                        std::cout << "[LightingSystem] Warning: Maximum point lights (" << MAX_POINT_LIGHTS
+                            << ") reached. Additional point lights will be ignored." << std::endl;
+                        pointLightWarningShown = true;
+                    }
+                }
             }
         }
 
-        // Collect spot lights (up to max)
-        if (ecsManager.HasComponent<SpotLightComponent>(entity)) 
+        // Collect spot lights with limit warning
+        if (ecsManager.HasComponent<SpotLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<SpotLightComponent>(entity);
 
-            if (light.enabled && spotLightData.positions.size() < MAX_SPOT_LIGHTS) 
+            if (light.enabled)
             {
-                // Get position from transform
-                glm::vec3 position(0.0f, 0.f, 3.f);
-                if (ecsManager.HasComponent<Transform>(entity)) 
+                if (spotLightData.positions.size() < MAX_SPOT_LIGHTS)
                 {
-                    auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
-                }
+                    glm::vec3 position(0.f);
+                    if (ecsManager.HasComponent<Transform>(entity))
+                    {
+                        auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+                    }
 
-                spotLightData.positions.push_back(position);
-                spotLightData.directions.push_back(light.direction);
-                spotLightData.ambient.push_back(light.ambient);
-                spotLightData.diffuse.push_back(light.diffuse);
-                spotLightData.specular.push_back(light.specular);
-                spotLightData.constant.push_back(light.constant);
-                spotLightData.linear.push_back(light.linear);
-                spotLightData.quadratic.push_back(light.quadratic);
-                spotLightData.cutOff.push_back(light.cutOff);
-                spotLightData.outerCutOff.push_back(light.outerCutOff);
+                    spotLightData.positions.push_back(position);
+                    spotLightData.directions.push_back(light.direction);
+                    spotLightData.ambient.push_back(light.ambient);
+                    spotLightData.diffuse.push_back(light.diffuse);
+                    spotLightData.specular.push_back(light.specular);
+                    spotLightData.constant.push_back(light.constant);
+                    spotLightData.linear.push_back(light.linear);
+                    spotLightData.quadratic.push_back(light.quadratic);
+                    spotLightData.cutOff.push_back(light.cutOff);
+                    spotLightData.outerCutOff.push_back(light.outerCutOff);
+                }
+                else
+                {
+                    // Only warn once when limit is hit
+                    static bool spotLightWarningShown = false;
+                    if (!spotLightWarningShown) {
+                        std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
+                            << ") reached. Additional spot lights will be ignored." << std::endl;
+                        spotLightWarningShown = true;
+                    }
+                }
             }
         }
     }

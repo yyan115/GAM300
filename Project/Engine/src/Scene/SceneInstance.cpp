@@ -107,7 +107,8 @@ void SceneInstance::Initialize() {
 		spriteComponent3DFlat.enableBillboard = false;
 	
 		// Initialize lighting system and create light entities
-		if (ecsManager.lightingSystem) {
+		if (ecsManager.lightingSystem) 
+		{
 			ecsManager.lightingSystem->Initialise();
 
 			// Create a directional light (sun)
@@ -117,8 +118,8 @@ void SceneInstance::Initialize() {
 
 			DirectionalLightComponent sunLightComp;
 			sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-			sunLightComp.ambient = glm::vec3(0.05f);  // Increased from 0.05 for better visibility
-			sunLightComp.diffuse = glm::vec3(0.4f);  // Increased from 0.4 for brighter lighting
+			sunLightComp.ambient = glm::vec3(0.05f);
+			sunLightComp.diffuse = glm::vec3(0.4f);
 			sunLightComp.specular = glm::vec3(0.5f);
 			sunLightComp.enabled = true;
 			ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
@@ -132,14 +133,10 @@ void SceneInstance::Initialize() {
 				Vector3D(0.0f,  0.0f, -3.0f)
 			};
 
-			for (size_t i = 0; i < pointLightPositions.size(); i++) {
+			for (size_t i = 0; i < pointLightPositions.size(); i++) 
+			{
 				Entity pointLight = ecsManager.CreateEntity();
-				ecsManager.AddComponent<NameComponent>(pointLight,
-					NameComponent{ "Point Light " + std::to_string(i) });
-
-				/*Transform lightTransform;
-				lightTransform.localPosition = { pointLightPositions[i].x, pointLightPositions[i].y, pointLightPositions[i].z };
-				ecsManager.AddComponent<Transform>(pointLight, lightTransform);*/
+				ecsManager.AddComponent<NameComponent>(pointLight, NameComponent{ "Point Light " + std::to_string(i) });
 				ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
 
 				PointLightComponent pointLightComp;
@@ -152,15 +149,13 @@ void SceneInstance::Initialize() {
 				pointLightComp.enabled = true;
 				ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
 				ecsManager.lightingSystem->RegisterEntity(pointLight); 
+				
 			}
 
 			// Create a spot light that follows the camera
 			Entity spotLight = ecsManager.CreateEntity();
 			ecsManager.AddComponent<NameComponent>(spotLight, NameComponent{ "Camera Flashlight" });
-			//Transform lightTransform;
-			/*lightTransform.localPosition = { camera.Position.x, camera.Position.y, camera.Position.z};
-			ecsManager.AddComponent<Transform>(spotLight, lightTransform);*/
-			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ camera.Position.x, camera.Position.y, camera.Position.z});
+			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f});
 
 			SpotLightComponent spotLightComp;
 			spotLightComp.direction = camera.Front;
