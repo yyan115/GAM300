@@ -1001,7 +1001,7 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open")) {
         std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
     }
-    if (ImGui::MenuItem("Rename")) {
+    if (ImGui::MenuItem(ICON_FA_FILE_PEN " Rename")) {
         StartRenameAsset(lastSelectedAsset);
         std::cout << "[AssetBrowserPanel] Renaming: " << asset.fileName << std::endl;
     }
@@ -1047,7 +1047,7 @@ void AssetBrowserPanel::ShowCreateAssetMenu() {
             CreateNewFolder();
         }
 
-        if (ImGui::MenuItem("Scene")) {
+        if (ImGui::MenuItem(ICON_FA_GLOBE " Scene")) {
             CreateNewScene(currentDirectory);
         }
 
