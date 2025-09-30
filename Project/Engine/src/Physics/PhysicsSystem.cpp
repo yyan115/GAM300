@@ -109,7 +109,7 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-		JPH::RVec3Arg pos = JPH::RVec3(tr.position.x, tr.position.y, tr.position.z);
+		JPH::RVec3Arg pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
@@ -159,7 +159,7 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        JPH::RVec3 pos = JPH::RVec3(tr.position.x, tr.position.y, tr.position.z);
+        JPH::RVec3 pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
@@ -167,8 +167,9 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
         if (rb.motion == Motion::Dynamic) {
             JPH::RVec3 p; JPH::Quat r;
             bi.GetPositionAndRotation(rb.id, p, r);
-			tr.position = Vector3D(p.GetX(), p.GetY(), p.GetZ());
-			tr.rotation = Vector3D(r.GetX(), r.GetY(), r.GetZ());
+			tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
+			tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
+            tr.isDirty = true;
         }
     }
 }

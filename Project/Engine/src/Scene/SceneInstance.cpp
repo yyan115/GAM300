@@ -65,9 +65,9 @@ void SceneInstance::Initialize() {
 		ecsManager.AddComponent<RigidBodyComponent>(physicsBoxObj, RigidBodyComponent{});
 		ecsManager.AddComponent<ColliderComponent>(physicsBoxObj, ColliderComponent{});
 		Transform& physicsTransform = ecsManager.GetComponent<Transform>(physicsBoxObj);
-		physicsTransform.position = { 0.5f, 2.5f, 0 };
-		physicsTransform.scale = { .1f, .1f, .1f };
-		physicsTransform.rotation = { 0, 0, 0 };
+		physicsTransform.localPosition = { 0.5f, 5.5f, 0 };
+		physicsTransform.localScale = { .4f, .4f, .4f };
+		physicsTransform.localRotation = { 0, 0, 0, 0 };
 
 		RigidBodyComponent& rb = ecsManager.GetComponent<RigidBodyComponent>(physicsBoxObj);
 		rb.motion = Motion::Dynamic;
@@ -81,8 +81,8 @@ void SceneInstance::Initialize() {
 		col.layer = Layers::MOVING;
 		col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
-		ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default") });
+		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+
 		
 		// ---- FLOOR (static, invisible) ----
 		Entity floor = ecsManager.CreateEntity();
@@ -92,9 +92,9 @@ void SceneInstance::Initialize() {
 
 		// Transform: center the floor at y = 0 (top surface near y = +0.5 since half-extent is 0.5)
 		auto& floorTr = ecsManager.GetComponent<Transform>(floor);
-		floorTr.position = { 0.0f, -0.5f, 0.0f };
-		floorTr.rotation = { 0, 0, 0 };
-		floorTr.scale = { 1, 1, 1 }; // render-only; physics size comes from the shape
+		floorTr.localPosition = { 0.0f, -0.5f, 0.0f };
+		floorTr.localRotation = { 0, 0, 0, 0 };
+		floorTr.localScale = { 1, 1, 1 }; // render-only; physics size comes from the shape
 
 		auto& floorRb = ecsManager.GetComponent<RigidBodyComponent>(floor);
 		floorRb.motion = Motion::Static;
@@ -183,9 +183,9 @@ void SceneInstance::Update(double dt) {
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
-	mainECS.transformSystem->update();
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
 	mainECS.physicsSystem->physicsSyncBack(mainECS);
+	mainECS.transformSystem->Update();
 	if (mainECS.lightingSystem) {
 		mainECS.lightingSystem->Update();
 	}
