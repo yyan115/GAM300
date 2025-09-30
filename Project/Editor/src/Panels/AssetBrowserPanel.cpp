@@ -21,6 +21,7 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
+#include "Scene/SceneManager.hpp"
 #include <IconsFontAwesome6.h>
 
 // Global drag-drop state for cross-window material dragging
@@ -531,7 +532,8 @@ void AssetBrowserPanel::RenderAssetGrid()
         thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     }
 
-    bool anyItemClickedInGrid = false;
+    bool anyItemClickedInGrid = false; // on click (on the same frame only)
+    bool anyItemSelectedInGrid = false; // persists as long as item is selected
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
@@ -545,7 +547,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         // unified hitbox = thumbnail + label
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
-        const bool clicked = ImGui::IsItemClicked();
+        const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
         const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
         bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
@@ -657,7 +659,21 @@ void AssetBrowserPanel::RenderAssetGrid()
         } else {
             ImGui::TextWrapped("%s", asset.fileName.c_str());
         }
-        ImGui::PopTextWrapPos();
+
+        if (!asset.isDirectory) {
+            // Begin drag drop code for PREFABS
+            std::string lowerExt = asset.extension;
+            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+            if (lowerExt == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
+                    ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
+                        static_cast<int>(absPath.size()) + 1);
+                    ImGui::Text("Prefab: %s", asset.fileName.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+        }
 
         // Selection / activation - mouse release selects, but not during drag operations
         bool shouldSelect = false;
@@ -695,18 +711,26 @@ void AssetBrowserPanel::RenderAssetGrid()
         // double click
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else std::cout << "[AssetBrowserPanel] Opening asset: "
-                << "GUID(high=" << asset.guid.high << ", low=" << asset.guid.low << ")"
-                << std::endl;
+            else {
+                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
+                std::filesystem::path p(asset.fileName);
+
+                // Open scene confirmation dialogue.
+                if (p.extension() == ".scene") {
+                    OpenScene(asset);
+                }
+            }
         }
 
+        ShowOpenSceneConfirmation();
+
+        ImGui::PopID();
         // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             SelectAsset(asset.guid, false);
             ImGui::OpenPopup("AssetContextMenu");
         }
 
-        ImGui::PopID();
         ImGui::EndGroup();
 
         // wrap
@@ -715,11 +739,14 @@ void AssetBrowserPanel::RenderAssetGrid()
     }
 
     // Only clear selection if not dragging (to avoid interfering with drag operations)
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemClickedInGrid && ImGui::IsWindowHovered() && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+    if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && 
+    !anyItemClickedInGrid && ImGui::IsWindowHovered() && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) 
+    {
         selectedAssets.clear();
         lastSelectedAsset = GUID_128{ 0, 0 };
         // Clear the globally selected asset for the Inspector
         GUIManager::SetSelectedAsset(GUID_128{0, 0});
+        CancelRename();
     }
 
     // Right-click context menu for empty space (create new assets)
@@ -843,6 +870,10 @@ void AssetBrowserPanel::RefreshAssets() {
                 }
             }
             else {
+                // Don't show Shaders folder.
+                if (entry.path().generic_string().find("Shaders") != std::string::npos) {
+                    continue;
+                }
                 // For directories, generate a simple hash-based GUID using normalized path
                 std::hash<std::string> hasher;
                 size_t hash = hasher(filePath);
@@ -970,6 +1001,10 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open")) {
         std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
     }
+    if (ImGui::MenuItem(ICON_FA_FILE_PEN " Rename")) {
+        StartRenameAsset(lastSelectedAsset);
+        std::cout << "[AssetBrowserPanel] Renaming: " << asset.fileName << std::endl;
+    }
 
     ImGui::Separator();
 
@@ -1010,6 +1045,10 @@ void AssetBrowserPanel::ShowCreateAssetMenu() {
 
         if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
             CreateNewFolder();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_GLOBE " Scene")) {
+            CreateNewScene(currentDirectory);
         }
 
         ImGui::EndMenu();
@@ -1065,8 +1104,11 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
 
 void AssetBrowserPanel::RevealInExplorer(const AssetInfo& asset) {
 #ifdef _WIN32
-    std::string command = "explorer /select,\"" + asset.filePath + "\"";
-    system(command.c_str());
+    std::filesystem::path fullPath = std::filesystem::absolute(asset.filePath);
+    std::wstring path = fullPath.wstring(); // <-- not generic_wstring
+    std::wstring param = L"/select,\"" + path + L"\"";
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", param.c_str(), nullptr, SW_SHOWNORMAL);
+
 #else
     std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
 #endif
@@ -1083,12 +1125,79 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
             memcpy(GlobalLock(hMem), relativePath.c_str(), relativePath.size() + 1);
             GlobalUnlock(hMem);
             SetClipboardData(CF_TEXT, hMem);
+            ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
         }
         CloseClipboard();
     }
 #else
     std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
 #endif
+}
+
+void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& newName) {
+    std::filesystem::path oldPath = asset.filePath;
+    std::filesystem::path newPath = oldPath.parent_path() / newName;
+    std::error_code ec;
+    std::filesystem::rename(oldPath, newPath, ec);
+    if (!ec) {
+        RefreshAssets();
+    }
+    else {
+        std::cerr << "Rename failed: " << ec.message() << "\n";
+    }
+}
+
+
+void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
+    std::string newSceneName = "New Scene.scene";
+    std::filesystem::path directoryPath(directory);
+    std::filesystem::path newSceneNamePath(newSceneName);
+    std::filesystem::path newScenePathFull = (directoryPath / newSceneName);
+    std::string stem = newSceneNamePath.stem().generic_string();
+    std::string extension = newSceneNamePath.extension().generic_string();
+
+    int counter = 1;
+    while (std::filesystem::exists(newScenePathFull)) {
+        newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
+    }
+
+    std::ofstream file(newScenePathFull.generic_string());
+    file.close();
+
+    RefreshAssets();
+}
+
+void AssetBrowserPanel::OpenScene(const AssetInfo& _selectedScene) {
+    isOpeningScene = true;
+    selectedScene = _selectedScene;
+    ImGui::OpenPopup("Open Scene?");
+}
+
+void AssetBrowserPanel::ShowOpenSceneConfirmation() {
+    if (ImGui::BeginPopupModal("Open Scene?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        // Center it on the main viewport
+        ImGui::SetWindowPos(
+            ImVec2(ImGui::GetMainViewport()->GetCenter().x,
+                ImGui::GetMainViewport()->GetCenter().y),
+            ImGuiCond_Appearing); // only when it first appears
+
+        std::string text = "Do you want to open " + selectedScene.fileName + "?\nUnsaved changes will be lost.";
+        ImGui::Text(text.c_str());
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            SceneManager::GetInstance().LoadScene(selectedScene.filePath);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(120, 0))) {
+            // Cancel
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 std::string AssetBrowserPanel::GetRelativePath(const std::string& fullPath) const {
@@ -1112,7 +1221,8 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".wav", ".mp3", ".ogg",                            // Audio
         ".ttf", ".otf",                                    // Fonts
         ".mat",                                            // Materials
-        ".prefab"                                          // Prefabs
+        ".prefab",                                         // Prefabs
+        ".scene"                                           // Scenes
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;

@@ -257,19 +257,19 @@ void GUIManager::CreateDockspace() {
 void GUIManager::RenderMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
-                // TODO: New scene functionality
-            }
-            if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
-                std::string filepath = "Resources/Scenes/scene.json";
-                // TEMP
-                if (!std::filesystem::exists(filepath)) {
-                    std::cerr << "No saved scene yet! Save scene first!" << std::endl;
-                }
-                else {
-                    SceneManager::GetInstance().LoadScene(filepath);
-                }
-            }
+            // if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
+            //     // TODO: New scene functionality
+            // }
+            // if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
+            //     std::string filepath = "Resources/Scenes/scene.json";
+            //     // TEMP
+            //     if (!std::filesystem::exists(filepath)) {
+            //         std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+            //     }
+            //     else {
+            //         SceneManager::GetInstance().LoadScene(filepath);
+            //     }
+            // }
             if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) {
                 SceneManager::GetInstance().SaveScene();
             }

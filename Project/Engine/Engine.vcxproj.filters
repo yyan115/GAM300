@@ -39,7 +39,6 @@
     <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
     <ClInclude Include="include\Asset Manager\MetaFilesManager.hpp" />
     <ClInclude Include="include\Scene\SceneInstance.hpp" />
-    <ClInclude Include="include\Graphics\LightManager.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
     <ClInclude Include="include\Graphics\Material.hpp" />
@@ -143,7 +142,6 @@
     <ClCompile Include="src\Math\Matrix4x4.cpp" />
     <ClCompile Include="src\Math\Matrix3x3.cpp" />
     <ClCompile Include="src\WindowManager.cpp" />
-    <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />

@@ -35,6 +35,7 @@ void SpriteSystem::Update()
         auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
         spriteComponent.spriteVAO = spriteVAO.get();
+        spriteComponent.spriteEBO = spriteEBO.get();
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, texture=%p, shader=%p",
         //                 entity, spriteComponent.isVisible, spriteComponent.texture.get(), spriteComponent.shader.get());

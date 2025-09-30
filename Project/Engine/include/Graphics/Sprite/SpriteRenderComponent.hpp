@@ -6,6 +6,7 @@
 class Texture;
 class Shader;
 class VAO;
+class EBO;
 
 class SpriteRenderComponent : public IRenderComponent {
 public:
@@ -36,6 +37,7 @@ public:
     }
 
     VAO* spriteVAO = nullptr;
+    EBO* spriteEBO = nullptr;
 
     SpriteRenderComponent() = default;
     ~SpriteRenderComponent() = default;

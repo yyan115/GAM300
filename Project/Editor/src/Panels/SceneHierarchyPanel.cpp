@@ -8,6 +8,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
 #include <imgui_internal.h>
+#include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
@@ -64,7 +65,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        ImGui::Text("Scene Objects:");
+        ImGui::Text(SceneManager::GetInstance().GetSceneName().c_str());
         ImGui::Separator();
 
         try {

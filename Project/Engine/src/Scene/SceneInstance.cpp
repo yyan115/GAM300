@@ -10,6 +10,7 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
+#include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
 
@@ -28,7 +29,7 @@ void SceneInstance::Initialize() {
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	if (scenePath == "TestScene") {
+	if (scenePath == "Resources/Scenes/FakeScene.scene") {
 		// Create a backpack entity with a Renderer component in the main ECS manager
 		Entity backpackEntt = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(backpackEntt, { 0, 0, 0 });
@@ -60,33 +61,17 @@ void SceneInstance::Initialize() {
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-		// Text entity test
-		Entity text = ecsManager.CreateEntity();
-		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
-		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
-		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
-		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
-
-		//Entity text2 = ecsManager.CreateEntity();
-		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
-		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
-		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
-		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
-
 		// SPRITE
 		Entity sprite = ecsManager.CreateEntity();
 		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
 		spriteName.name = "sprite_test";
 		// Load resources first
 		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
-		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
 		// Add component with constructor parameters
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
 		// Get reference and configure
-		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite);
+		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite); 
 		spriteComponent.is3D = false;  // 2D screen space
 		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
 		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
@@ -106,7 +91,7 @@ void SceneInstance::Initialize() {
 		spriteComponent3D.is3D = true;
 		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3D.isVisible = true;
-
+	
 		// Without billboard effect
 		Entity sprite3DFlat = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
@@ -120,6 +105,116 @@ void SceneInstance::Initialize() {
 		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3DFlat.isVisible = true;
 		spriteComponent3DFlat.enableBillboard = false;
+	
+		// Initialize lighting system and create light entities
+		if (ecsManager.lightingSystem) 
+		{
+			ecsManager.lightingSystem->Initialise();
+
+			// Create a directional light (sun)
+			Entity sunLight = ecsManager.CreateEntity();
+			NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
+			sunName.name = "Sun";
+			ecsManager.AddComponent<Transform>(sunLight, Transform{});
+
+			DirectionalLightComponent sunLightComp;
+			sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+			sunLightComp.ambient = glm::vec3(0.05f);
+			sunLightComp.diffuse = glm::vec3(0.4f);
+			sunLightComp.specular = glm::vec3(0.5f);
+			sunLightComp.enabled = true;
+			ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+			ecsManager.lightingSystem->RegisterEntity(sunLight);
+
+			// Create point lights
+			std::vector<Vector3D> pointLightPositions = {
+				Vector3D(0.7f,  0.2f,  2.0f),
+				Vector3D(2.3f, -3.3f, -4.0f),
+				Vector3D(-4.0f,  2.0f, -12.0f),
+				Vector3D(0.0f,  0.0f, -3.0f)
+			};
+
+			for (size_t i = 0; i < pointLightPositions.size(); i++) 
+			{
+				Entity pointLight = ecsManager.CreateEntity();
+				NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
+				pointLightName.name = "Point Light " + std::to_string(i);
+				ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
+				ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
+				// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+				
+				// Test Model
+				ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+
+				PointLightComponent pointLightComp;
+				pointLightComp.ambient = glm::vec3(0.05f);
+				pointLightComp.diffuse = glm::vec3(0.8f);
+				pointLightComp.specular = glm::vec3(1.0f);
+				pointLightComp.constant = 1.0f;
+				pointLightComp.linear = 0.09f;
+				pointLightComp.quadratic = 0.032f;
+				pointLightComp.enabled = true;
+				ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+				ecsManager.lightingSystem->RegisterEntity(pointLight); 
+				
+			}
+
+			// Create a spot light that follows the camera
+			Entity spotLight = ecsManager.CreateEntity();
+			NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
+			spotLightName.name = "Flashlight";
+			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f});
+			//ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
+			// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+
+			SpotLightComponent spotLightComp;
+			spotLightComp.direction = camera.Front;
+			spotLightComp.ambient = glm::vec3(0.0f);
+			spotLightComp.diffuse = glm::vec3(1.0f);
+			spotLightComp.specular = glm::vec3(1.0f);
+			spotLightComp.constant = 1.0f;
+			spotLightComp.linear = 0.09f;
+			spotLightComp.quadratic = 0.032f;
+			spotLightComp.cutOff = 0.976f;
+			spotLightComp.outerCutOff = 0.966f;
+			spotLightComp.enabled = true;
+			ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+			ecsManager.lightingSystem->RegisterEntity(spotLight);
+		}
+
+		std::cout << "[Scene] Lighting system entity count: " << ecsManager.lightingSystem->entities.size() << std::endl; 
+
+		// Text entity test
+		Entity text = ecsManager.CreateEntity();
+		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
+		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
+		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
+		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
+
+		//Entity text2 = ecsManager.CreateEntity();
+		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
+		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
+		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
+		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
+		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+
+		// Test Audio
+		// Create an entity with AudioComponent
+		Entity audioEntity = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
+		NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
+		audioName.name = "Audio Test Entity";
+				
+		// Add AudioComponent
+		AudioComponent audioComp;
+		audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+		audioComp.Volume = 0.3f;
+		audioComp.Loop = true;
+		audioComp.PlayOnStart = true;
+		audioComp.Spatialize = false;
+		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
 	}
 
 	// Creates light
@@ -131,23 +226,6 @@ void SceneInstance::Initialize() {
 
 	// Sets camera
 	gfxManager.SetCamera(&camera);
-
-	// Test Audio
-	// Create an entity with AudioComponent
-	Entity audioEntity = ecsManager.CreateEntity();
-	ecsManager.transformSystem->SetLocalPosition(audioEntity, { 0, 0, 0 });
-	NameComponent& audioName = ecsManager.GetComponent<NameComponent>(audioEntity);
-	audioName.name = "Audio Test Entity";
-			
-	// Add AudioComponent
-	AudioComponent audioComp;
-	audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
-	audioComp.Volume = 0.3f;
-	audioComp.Loop = true;
-	audioComp.PlayOnStart = true;
-	audioComp.Spatialize = false;
-	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
-
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
@@ -169,9 +247,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	if (mainECS.lightingSystem) {
-		mainECS.lightingSystem->Update();
-	}
+	mainECS.lightingSystem->Update();
 }
 
 void SceneInstance::Draw() {
@@ -227,11 +303,6 @@ void SceneInstance::Draw() {
 #endif
 
 #ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call DrawLightCubes()");
-#endif
-	// 5. Draw light cubes manually (temporary - you can make this a system later)
-	DrawLightCubes();
-#ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
 
@@ -286,93 +357,4 @@ void SceneInstance::processInput(float deltaTime)
 	lastY = ypos;
 
 	camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void SceneInstance::DrawLightCubes()
-{
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - checking lightShader");
-#endif
-
-	// Check if lightShader is valid (asset loading might have failed on Android)
-	if (!lightShader) {
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "DrawLightCubes() - lightShader is null, skipping");
-#endif
-		return;
-	}
-
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - lightShader is valid");
-#endif
-
-	// Get light positions from LightManager instead of renderSystem
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - about to loop through %zu lights", pointLights.size());
-#endif
-
-	// Draw light cubes at point light positions
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
-#ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() - processing light %zu", i);
-#endif
-		lightShader->Activate();
-
-		// Set up matrices for light cube
-		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pointLights[i].position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f)); // Make them smaller
-
-		// Set up view and projection matrices
-		glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(
-			glm::radians(camera.Zoom),
-			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
-			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
-			0.1f, 100.0f
-		);
-
-		lightShader->setMat4("model", lightModel);
-		lightShader->setMat4("view", view);
-		lightShader->setMat4("projection", projection);
-		//lightShader->setVec3("lightColor", pointLights[i].diffuse); // Use light color
-
-		lightCubeMesh->Draw(*lightShader, camera);
-	}
-}
-
-void SceneInstance::DrawLightCubes(const Camera& cameraOverride)
-{
-	// Get light positions from LightManager instead of renderSystem
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-
-	// Draw light cubes at point light positions
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) {
-		lightShader->Activate();
-
-		// Set up matrices for light cube
-		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::translate(lightModel, pointLights[i].position);
-		lightModel = glm::scale(lightModel, glm::vec3(0.2f)); // Make them smaller
-
-		// Set up view and projection matrices using the override camera
-		glm::mat4 view = cameraOverride.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(
-			glm::radians(cameraOverride.Zoom),
-			//(float)WindowManager::GetWindowWidth() / (float)WindowManager::GetWindowHeight(),
-			(float)RunTimeVar::window.width / (float)RunTimeVar::window.height,
-			0.1f, 100.0f
-		);
-
-		lightShader->setMat4("model", lightModel);
-		lightShader->setMat4("view", view);
-		lightShader->setMat4("projection", projection);
-		//lightShader->setVec3("lightColor", pointLights[i].diffuse); // Use light color
-
-		lightCubeMesh->Draw(*lightShader, cameraOverride);
-	}
 }

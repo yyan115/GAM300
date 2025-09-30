@@ -10,6 +10,14 @@ VAO::VAO()
 	//glGenVertexArrays(1, &ID);
 }
 
+VAO::~VAO()
+{
+	if (ID != 0) 
+	{
+		Delete();
+	}
+}
+
 void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
 {
 	VBO.Bind();
