@@ -1,10 +1,11 @@
 {
     "AssetMetaData": {
         "version": 4,
-        "guid": "0010097b294bb0e3-0002cc57aa000023",
-        "source": "../../Resources/Models/backpack/roughness.jpg",
-        "compiled": "../../Resources/Models/backpack/roughness.dds",
-        "last_compiled": "2025-09-29 16:18:31.8310546"
+        "guid": "0063f3bff54f8b8d-0002cd978e000015",
+        "source": "Resources/Models/backpack/roughness.jpg",
+        "compiled": "Resources/Models/backpack/roughness.dds",
+        "android_compiled": "Resources/Models/backpack/roughness_android.ktx",
+        "last_compiled": "2025-09-30 03:46:48.5828249"
     },
     "TextureMetaData": {
         "id": 0,

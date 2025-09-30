@@ -90,8 +90,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("../../Resources")
-    , rootAssetDirectory("../../Resources")
+    , currentDirectory("Resources")
+    , rootAssetDirectory("Resources")
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets
@@ -264,6 +264,17 @@ void AssetBrowserPanel::OnImGuiRender() {
         StartRenameAsset(lastSelectedAsset);
     }
 
+    // Handle Delete key for deleting
+    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_Delete) && !selectedAssets.empty()) {
+        // Find the selected asset and trigger delete confirmation
+        for (const auto& asset : currentAssets) {
+            if (IsAssetSelected(asset.guid)) {
+                DeleteAsset(asset);
+                break; // Delete the first selected asset
+            }
+        }
+    }
+
     // Handle rename confirmation/cancellation
     if (isRenaming) {
         if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
@@ -313,6 +324,43 @@ void AssetBrowserPanel::OnImGuiRender() {
         ImGui::EndChild();
     }
     ImGui::End();
+
+    // Delete confirmation popup
+    if (showDeleteConfirmation) {
+        ImGui::OpenPopup("Delete Asset");
+        showDeleteConfirmation = false; // Only open once
+    }
+
+    if (ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to delete this file?");
+        ImGui::Separator();
+        ImGui::Text("File: %s", assetToDelete.fileName.c_str());
+        ImGui::Text("Path: %s", assetToDelete.filePath.c_str());
+        ImGui::Separator();
+
+        // Center the buttons
+        float buttonWidth = 60.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float totalWidth = buttonWidth * 2 + spacing;
+        float offset = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+        if (offset > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
+        if (ImGui::Button("Yes", ImVec2(buttonWidth, 0))) {
+            ConfirmDeleteAsset();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(buttonWidth, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        // Close with Escape key
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 void AssetBrowserPanel::RenderToolbar() {
@@ -498,6 +546,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked();
+        const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
         bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
         // drag source: prefab -> scene, material/texture -> inspector
@@ -610,10 +659,10 @@ void AssetBrowserPanel::RenderAssetGrid()
         }
         ImGui::PopTextWrapPos();
 
-        // Selection / activation - single click selects, but not during drag operations
+        // Selection / activation - mouse release selects, but not during drag operations
         bool shouldSelect = false;
-        if (clicked) {
-            // Check if mouse moved significantly during this click (indicating a drag)
+        if (released) {
+            // Check if mouse moved significantly during the click-drag-release cycle
             ImVec2 dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             float dragDistance = sqrtf(dragDelta.x * dragDelta.x + dragDelta.y * dragDelta.y);
             float dragThreshold = 5.0f; // pixels
@@ -627,8 +676,8 @@ void AssetBrowserPanel::RenderAssetGrid()
             anyItemClickedInGrid = true;
         }
 
-        // Don't select if we're in the middle of a drag operation
-        if (shouldSelect && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+        // Select asset if shouldSelect is true (already accounts for drag distance)
+        if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
             std::cout << "[AssetBrowserPanel] Selecting asset: GUID {" << asset.guid.high << ", " << asset.guid.low << "}, File: " << asset.fileName << std::endl;
             SelectAsset(asset.guid, ctrl);
@@ -934,8 +983,22 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem(ICON_FA_TRASH " Delete", nullptr, false, !asset.isDirectory)) {
-        DeleteAsset(asset);
+
+    // Create submenu with delete option
+    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
+        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
+            CreateNewMaterial();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
+            CreateNewFolder();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
+            DeleteAsset(asset);
+        }
+
+        ImGui::EndMenu();
     }
 }
 
@@ -962,18 +1025,38 @@ void AssetBrowserPanel::HandleDragAndDrop(const AssetInfo& asset) {
 }
 
 void AssetBrowserPanel::DeleteAsset(const AssetInfo& asset) {
+    // Store the asset to delete and show confirmation popup
+    assetToDelete = asset;
+    showDeleteConfirmation = true;
+}
+
+void AssetBrowserPanel::ConfirmDeleteAsset() {
     try {
-        if (asset.isDirectory) {
-            std::filesystem::remove_all(asset.filePath);
+        if (assetToDelete.isDirectory) {
+            std::filesystem::remove_all(assetToDelete.filePath);
+            std::cout << "[AssetBrowserPanel] Deleted directory: " << assetToDelete.filePath << std::endl;
         }
         else {
-            std::filesystem::remove(asset.filePath);
+            std::filesystem::remove(assetToDelete.filePath);
+            std::cout << "[AssetBrowserPanel] Deleted file: " << assetToDelete.filePath << std::endl;
+
             // Also remove meta file
-            std::string metaFile = asset.filePath + ".meta";
+            std::string metaFile = assetToDelete.filePath + ".meta";
             if (std::filesystem::exists(metaFile)) {
                 std::filesystem::remove(metaFile);
+                std::cout << "[AssetBrowserPanel] Deleted meta file: " << metaFile << std::endl;
             }
         }
+
+        // Remove from selection if it was selected
+        selectedAssets.erase(assetToDelete.guid);
+        if (lastSelectedAsset.high == assetToDelete.guid.high && lastSelectedAsset.low == assetToDelete.guid.low) {
+            GUIManager::SetSelectedAsset(GUID_128{0, 0});
+            lastSelectedAsset = GUID_128{0, 0};
+        }
+
+        // Refresh the asset list
+        RefreshAssets();
     }
     catch (const std::exception& e) {
         std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;

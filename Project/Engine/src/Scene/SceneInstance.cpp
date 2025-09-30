@@ -136,6 +136,51 @@ void SceneInstance::Initialize() {
 		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
 		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
 		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
+
+		// SPRITE
+		Entity sprite = ecsManager.CreateEntity();
+		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
+		spriteName.name = "sprite_test";
+		// Load resources first
+		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		// Add component with constructor parameters
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
+		// Get reference and configure
+		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite);
+		spriteComponent.is3D = false;  // 2D screen space
+		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
+		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
+		spriteComponent.isVisible = true;
+
+		// With billboard effect
+		Entity sprite3D = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { 2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
+		spriteName3D.name = "sprite_3d_test";
+		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
+		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
+		spriteComponent3D.is3D = true;
+		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3D.isVisible = true;
+
+		// Without billboard effect
+		Entity sprite3DFlat = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
+		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
+		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
+		NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
+		spriteName3D.name = "sprite_3d_flat_test";
+		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
+		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
+		spriteComponent3DFlat.is3D = true;
+		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3DFlat.isVisible = true;
+		spriteComponent3DFlat.enableBillboard = false;
 	}
 
 	// Creates light
@@ -157,9 +202,9 @@ void SceneInstance::Initialize() {
 			
 	// Add AudioComponent
 	AudioComponent audioComp;
-	audioComp.AudioAssetPath = "Resources/Audio/sfx/Test_duck.wav";
-	audioComp.Volume = 0.8f;
-	audioComp.Loop = false;
+	audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+	audioComp.Volume = 0.3f;
+	audioComp.Loop = true;
 	audioComp.PlayOnStart = true;
 	audioComp.Spatialize = false;
 	ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
@@ -170,6 +215,7 @@ void SceneInstance::Initialize() {
 	ecsManager.modelSystem->Initialise();
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
+	ecsManager.spriteSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -218,6 +264,10 @@ void SceneInstance::Draw() {
 #ifdef ANDROID
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
+	}
+
+	if (mainECS.spriteSystem) {
+		mainECS.spriteSystem->Update();
 	}
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin

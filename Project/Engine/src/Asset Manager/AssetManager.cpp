@@ -359,10 +359,12 @@ void AssetManager::CompileAllAssetsForAndroid() {
 	}
 
 	// Copy scenes to Android resources.
-	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
-		if (std::filesystem::is_regular_file(p)) {
-			if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {
-				ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
+	if (std::filesystem::exists("Resources/Scenes")) {
+		for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+			if (std::filesystem::is_regular_file(p)) {
+				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {
+					ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
+				}
 			}
 		}
 	}
@@ -400,10 +402,12 @@ void AssetManager::CompileAllAssetsForDesktop() {
 	}
 
 	// Copy scenes to resources.
-	for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
-		if (std::filesystem::is_regular_file(p)) {
-			if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
-				ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+	if (std::filesystem::exists("Resources/Scenes")) {
+		for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+			if (std::filesystem::is_regular_file(p)) {
+				if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
+					ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+				}
 			}
 		}
 	}
