@@ -26,11 +26,13 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
-	RegisterComponent<LightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<SpriteRenderComponent>();
+	RegisterComponent<DirectionalLightComponent>();
+	RegisterComponent<PointLightComponent>();
+	RegisterComponent<SpotLightComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -54,7 +56,7 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<TextRenderComponent>());
 		SetSystemSignature<TextRenderingSystem>(signature);
 	}
-	
+
 	debugDrawSystem = RegisterSystem<DebugDrawSystem>();
 	{
 		Signature signature;
@@ -65,8 +67,10 @@ void ECSManager::Initialize() {
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<LightComponent>()); 
-		SetSystemSignature<LightingSystem>(signature); 
+		signature.set(GetComponentID<DirectionalLightComponent>());
+		signature.set(GetComponentID<PointLightComponent>());
+		signature.set(GetComponentID<SpotLightComponent>());
+		SetSystemSignature<LightingSystem>(signature);
 	}
 
 	spriteSystem = RegisterSystem<SpriteSystem>();
