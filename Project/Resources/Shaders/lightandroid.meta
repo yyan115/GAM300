@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 4,
-        "guid": "007ebbc8e65a43c9-0002c70782000021",
-        "source": "Resources/Shaders/lightandroid",
-        "compiled": "Resources/Shaders/lightandroid.shader",
-        "last_compiled": "2025-09-29 10:35:54.4721528"
-    }
-}

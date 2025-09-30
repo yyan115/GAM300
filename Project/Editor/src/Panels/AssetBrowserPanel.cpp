@@ -86,8 +86,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("../../Resources")
-    , rootAssetDirectory("../../Resources")
+    , currentDirectory("Resources")
+    , rootAssetDirectory("Resources")
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets
@@ -619,11 +619,15 @@ void AssetBrowserPanel::RenderAssetGrid()
             else {
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
                 std::filesystem::path p(asset.fileName);
+
+                // Open scene confirmation dialogue.
                 if (p.extension() == ".scene") {
-                    SceneManager::GetInstance().LoadScene(asset.filePath);
+                    OpenScene(asset);
                 }
             }
         }
+
+        ShowOpenSceneConfirmation();
 
         ImGui::PopID();
         // context menu
@@ -647,6 +651,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         lastSelectedAsset = GUID_128{ 0, 0 };
         // Clear the globally selected asset for the Inspector
         GUIManager::SetSelectedAsset(GUID_128{0, 0});
+        CancelRename();
     }
 
     // Right-click context menu for empty space (create new assets)
@@ -901,6 +906,10 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     if (ImGui::MenuItem("Open")) {
         std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
     }
+    if (ImGui::MenuItem("Rename")) {
+        StartRenameAsset(lastSelectedAsset);
+        std::cout << "[AssetBrowserPanel] Renaming: " << asset.fileName << std::endl;
+    }
 
     ImGui::Separator();
 
@@ -1027,6 +1036,39 @@ void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
     file.close();
 
     RefreshAssets();
+}
+
+void AssetBrowserPanel::OpenScene(const AssetInfo& _selectedScene) {
+    isOpeningScene = true;
+    selectedScene = _selectedScene;
+    ImGui::OpenPopup("Open Scene?");
+}
+
+void AssetBrowserPanel::ShowOpenSceneConfirmation() {
+    if (ImGui::BeginPopupModal("Open Scene?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        // Center it on the main viewport
+        ImGui::SetWindowPos(
+            ImVec2(ImGui::GetMainViewport()->GetCenter().x,
+                ImGui::GetMainViewport()->GetCenter().y),
+            ImGuiCond_Appearing); // only when it first appears
+
+        std::string text = "Do you want to open " + selectedScene.fileName + "?\nUnsaved changes will be lost.";
+        ImGui::Text(text.c_str());
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            SceneManager::GetInstance().LoadScene(selectedScene.filePath);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(120, 0))) {
+            // Cancel
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 std::string AssetBrowserPanel::GetRelativePath(const std::string& fullPath) const {

@@ -63,6 +63,8 @@ private:
     std::vector<AssetInfo> currentAssets;
     std::unordered_set<GUID_128> selectedAssets;
     GUID_128 lastSelectedAsset;
+    bool isOpeningScene = false;
+    AssetInfo selectedScene;
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };
@@ -107,12 +109,16 @@ private:
     void DeleteAsset(const AssetInfo& asset);
     void RevealInExplorer(const AssetInfo& asset);
     void CopyAssetPath(const AssetInfo& asset);
-    void CreateNewScene(const std::string& directory);
     void RenameAsset(const AssetInfo& asset, const std::string& newName);
 
     // Asset creation
     void CreateNewMaterial();
     void CreateNewFolder();
+
+    // Scene operations
+    void CreateNewScene(const std::string& directory);
+    void OpenScene(const AssetInfo& selectedScene);
+    void ShowOpenSceneConfirmation();
 
     // Rename functionality
     void StartRenameAsset(const GUID_128& guid);
