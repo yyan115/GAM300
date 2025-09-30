@@ -1,13 +1,18 @@
 #include "pch.h"
 #include "Panels/ScenePanel.hpp"
 #include "Panels/PlayControlPanel.hpp"
+#include "Panels/SceneHierarchyPanel.hpp"
 #include "EditorInputManager.hpp"
-#include "Graphics/GraphicsManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Hierarchy/ParentComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
+#include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Graphics/Material.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
@@ -18,7 +23,12 @@
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
+
+// External globals for model drag-drop from AssetBrowserPanel
+extern GUID_128 g_draggedModelGuid;
+extern std::string g_draggedModelPath;
 
 // Don't include Graphics headers here due to OpenGL conflicts
 // We'll use RaycastUtil to get entity transforms instead
@@ -329,6 +339,9 @@ void ScenePanel::OnImGuiRender()
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
 
+            // Handle model drag-and-drop (must be inside child window)
+            HandleModelDragDrop((float)sceneViewWidth, (float)sceneViewHeight);
+
             ImGui::EndChild();
         }
         else
@@ -337,8 +350,13 @@ void ScenePanel::OnImGuiRender()
             ImGui::Text("Size: %d x %d", sceneViewWidth, sceneViewHeight);
         }
 
-        // Route input to camera/selection when not interacting with gizmos
-        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing();
+        // Render model preview overlay if dragging
+        if (isDraggingModel) {
+            RenderModelPreview((float)sceneViewWidth, (float)sceneViewHeight);
+        }
+
+        // Route input to camera/selection when not interacting with gizmos or dragging
+        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing() && !isDraggingModel;
         if (canHandleInput)
         {
             HandleCameraInput();
@@ -670,5 +688,321 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
         editorCamera.Yaw = newYaw;
         editorCamera.Pitch = newPitch;
         editorCamera.Distance = newDistance;
+    }
+}
+
+void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
+    // Check if there's an active MODEL_DRAG operation
+    const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+    bool isModelPayloadActive = (payload != nullptr && payload->IsDataType("MODEL_DRAG"));
+    bool isMouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+    // Check if we're hovering over this window
+    bool isHovering = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+    // Start drag when MODEL_DRAG payload is over the scene and mouse is down
+    if (isModelPayloadActive && isMouseDown && isHovering && !isDraggingModel) {
+        isDraggingModel = true;
+        previewModelGUID = g_draggedModelGuid;
+        previewModelPath = g_draggedModelPath;
+
+        // Create preview entity
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+            previewEntity = ecsManager.CreateEntity();
+
+            // Update the existing name component (CreateEntity already adds one)
+            if (ecsManager.HasComponent<NameComponent>(previewEntity)) {
+                ecsManager.GetComponent<NameComponent>(previewEntity).name = "__PREVIEW_TEMP__";
+            }
+
+            // Add ModelRenderComponent with semi-transparent material
+            ModelRenderComponent previewRenderer;
+            previewRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
+            previewRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+
+            // Create ghost material
+            auto ghostMaterial = std::make_shared<Material>();
+            ghostMaterial->SetDiffuse(glm::vec3(0.7f, 1.0f, 0.7f)); // Green tint
+            ghostMaterial->SetOpacity(0.5f);
+            previewRenderer.material = ghostMaterial;
+
+            ecsManager.AddComponent<ModelRenderComponent>(previewEntity, previewRenderer);
+
+            ENGINE_PRINT("[ScenePanel] Started dragging model: ", previewModelPath, "\n");
+        } catch (const std::exception& e) {
+            ENGINE_PRINT("[ScenePanel] Failed to create preview entity: ", e.what(), "\n");
+            isDraggingModel = false;
+        }
+    }
+
+    // Handle dragging state FIRST (before cleanup)
+    if (isDraggingModel) {
+        // Get mouse position relative to scene window
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+
+        float relativeX = mousePos.x - (windowPos.x + contentMin.x);
+        float relativeY = mousePos.y - (windowPos.y + contentMin.y);
+
+        // Perform raycast to find preview position
+        if (relativeX >= 0 && relativeX <= sceneWidth && relativeY >= 0 && relativeY <= sceneHeight) {
+            float aspectRatio = sceneWidth / sceneHeight;
+            glm::mat4 glmViewMatrix = editorCamera.GetViewMatrix();
+            glm::mat4 glmProjMatrix = editorCamera.GetProjectionMatrix(aspectRatio);
+
+            // Convert to Matrix4x4 for raycast
+            Matrix4x4 viewMatrix(
+                glmViewMatrix[0][0], glmViewMatrix[1][0], glmViewMatrix[2][0], glmViewMatrix[3][0],
+                glmViewMatrix[0][1], glmViewMatrix[1][1], glmViewMatrix[2][1], glmViewMatrix[3][1],
+                glmViewMatrix[0][2], glmViewMatrix[1][2], glmViewMatrix[2][2], glmViewMatrix[3][2],
+                glmViewMatrix[0][3], glmViewMatrix[1][3], glmViewMatrix[2][3], glmViewMatrix[3][3]
+            );
+            Matrix4x4 projMatrix(
+                glmProjMatrix[0][0], glmProjMatrix[1][0], glmProjMatrix[2][0], glmProjMatrix[3][0],
+                glmProjMatrix[0][1], glmProjMatrix[1][1], glmProjMatrix[2][1], glmProjMatrix[3][1],
+                glmProjMatrix[0][2], glmProjMatrix[1][2], glmProjMatrix[2][2], glmProjMatrix[3][2],
+                glmProjMatrix[0][3], glmProjMatrix[1][3], glmProjMatrix[2][3], glmProjMatrix[3][3]
+            );
+
+            RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(
+                relativeX, relativeY,
+                sceneWidth, sceneHeight,
+                viewMatrix, projMatrix
+            );
+
+            // Raycast against scene to find placement position (exclude preview entity)
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity);
+
+            if (hit.hit) {
+                // Hit an object - place on surface
+                previewPosition = hit.point;
+                previewValidPlacement = true;
+            } else {
+                // No hit - place at fixed distance from camera
+                previewPosition = ray.origin + ray.direction * 5.0f;
+                previewValidPlacement = true;
+            }
+
+            // Update preview entity position
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (previewEntity != static_cast<Entity>(-1) && ecsManager.HasComponent<Transform>(previewEntity)) {
+                    Transform& transform = ecsManager.GetComponent<Transform>(previewEntity);
+                    transform.localPosition = Vector3D(previewPosition.x, previewPosition.y, previewPosition.z);
+                    transform.localScale = Vector3D(0.1f, 0.1f, 0.1f);
+                    transform.isDirty = true;
+                }
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to update preview position: ", e.what(), "\n");
+            }
+        }
+
+        // Check if mouse released to spawn entity (only if over scene panel)
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && isHovering) {
+            // IMPORTANT: Delete preview entity FIRST, before spawning the real entity
+            // This avoids a bug where destroying entity N also destroys entity N+1
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (previewEntity != static_cast<Entity>(-1)) {
+                    ecsManager.DestroyEntity(previewEntity);
+                    previewEntity = static_cast<Entity>(-1);
+                }
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
+            }
+
+            // Then spawn the real entity
+            Entity realEntity = SpawnModelEntity(previewPosition);
+            if (realEntity != static_cast<Entity>(-1)) {
+                std::cout << "[ScenePanel] Successfully spawned entity " << realEntity << std::endl;
+            } else {
+                std::cout << "[ScenePanel] ERROR: SpawnModelEntity returned invalid entity" << std::endl;
+            }
+
+            isDraggingModel = false;
+        }
+
+        // Cancel drag on ESC
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            ENGINE_PRINT("[ScenePanel] Drag cancelled\n");
+
+            // Delete preview entity
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (previewEntity != static_cast<Entity>(-1)) {
+                    ecsManager.DestroyEntity(previewEntity);
+                    previewEntity = static_cast<Entity>(-1);
+                }
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
+            }
+
+            isDraggingModel = false;
+        }
+    }
+
+    // Cleanup: Stop drag if MODEL_DRAG payload is gone or mouse is released
+    if ((!isModelPayloadActive || !isMouseDown) && isDraggingModel) {
+        ENGINE_PRINT("[ScenePanel] Drag ended - cleaning up preview\n");
+
+        // Delete preview entity
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+            if (previewEntity != static_cast<Entity>(-1)) {
+                ecsManager.DestroyEntity(previewEntity);
+                previewEntity = static_cast<Entity>(-1);
+            }
+        } catch (const std::exception& e) {
+            ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
+        }
+
+        isDraggingModel = false;
+    }
+}
+
+void ScenePanel::RenderModelPreview(float sceneWidth, float sceneHeight) {
+    // Preview entity is now automatically rendered by the ECS rendering system
+    // This function can be used for additional visual feedback if needed
+
+    // Update material color based on valid placement
+    if (previewEntity != static_cast<Entity>(-1)) {
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+            if (ecsManager.HasComponent<ModelRenderComponent>(previewEntity)) {
+                ModelRenderComponent& renderer = ecsManager.GetComponent<ModelRenderComponent>(previewEntity);
+                if (renderer.material) {
+                    // Update color based on placement validity
+                    renderer.material->SetDiffuse(previewValidPlacement ?
+                        glm::vec3(0.7f, 1.0f, 0.7f) :  // Green tint for valid
+                        glm::vec3(1.0f, 0.7f, 0.7f));   // Red tint for invalid
+                }
+            }
+        } catch (const std::exception& e) {
+            ENGINE_PRINT("[ScenePanel] Error updating preview material: ", e.what(), "\n");
+        }
+    }
+}
+
+Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Create entity with name from model file
+        std::filesystem::path modelPath(previewModelPath);
+        std::string entityName = modelPath.stem().string();
+
+        Entity newEntity = ecsManager.CreateEntity();
+        std::cout << "[SpawnModelEntity] Created entity: " << newEntity << std::endl;
+
+        // Update the existing name component (CreateEntity already adds one)
+        if (ecsManager.TryGetComponent<NameComponent>(newEntity).has_value()) {
+            ecsManager.GetComponent<NameComponent>(newEntity).name = entityName;
+            std::cout << "[SpawnModelEntity] Set NameComponent to: " << entityName << std::endl;
+        } else {
+            std::cout << "[SpawnModelEntity] ERROR: Entity " << newEntity << " has no NameComponent!" << std::endl;
+        }
+
+        // Debug: Check if entity has ParentComponent (shouldn't for root entities)
+        if (ecsManager.TryGetComponent<ParentComponent>(newEntity).has_value()) {
+            std::cout << "[SpawnModelEntity] WARNING: Entity " << newEntity << " has ParentComponent!" << std::endl;
+        } else {
+            std::cout << "[SpawnModelEntity] Entity " << newEntity << " is a root entity (no ParentComponent)" << std::endl;
+        }
+
+        // Set position from raycast (CreateEntity already adds Transform component)
+        if (ecsManager.TryGetComponent<Transform>(newEntity).has_value()) {
+            Transform& transform = ecsManager.GetComponent<Transform>(newEntity);
+            transform.localPosition = Vector3D(position.x, position.y, position.z);
+            transform.localScale = Vector3D(0.1f, 0.1f, 0.1f); // Same as cube
+            transform.isDirty = true;
+        }
+
+        // Add ModelRenderComponent (check if it doesn't already exist)
+        if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
+            ModelRenderComponent modelRenderer;
+            modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
+            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+
+            std::cout << "[SpawnModelEntity] Model resource: " << (modelRenderer.model ? "LOADED" : "NULL") << std::endl;
+            std::cout << "[SpawnModelEntity] Shader resource: " << (modelRenderer.shader ? "LOADED" : "NULL") << std::endl;
+
+            if (modelRenderer.model && modelRenderer.shader) {
+                std::cout << "[SpawnModelEntity] Model pointer: " << modelRenderer.model << std::endl;
+                std::cout << "[SpawnModelEntity] Shader pointer: " << modelRenderer.shader << std::endl;
+
+                ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);
+
+                // Verify the component was added successfully
+                if (ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
+                    std::cout << "[SpawnModelEntity] ModelRenderComponent added successfully to entity " << newEntity << std::endl;
+
+                    // Additional verification - check the component data
+                    ModelRenderComponent& addedComponent = ecsManager.GetComponent<ModelRenderComponent>(newEntity);
+                    std::cout << "[SpawnModelEntity] Component model pointer: " << addedComponent.model << std::endl;
+                    std::cout << "[SpawnModelEntity] Component shader pointer: " << addedComponent.shader << std::endl;
+                } else {
+                    std::cout << "[SpawnModelEntity] ERROR: ModelRenderComponent not found after adding to entity " << newEntity << std::endl;
+                    ecsManager.DestroyEntity(newEntity);
+                    return static_cast<Entity>(-1);
+                }
+
+                // Select the newly created entity
+                GUIManager::SetSelectedEntity(newEntity);
+
+                // Force refresh of SceneHierarchyPanel to ensure it shows the new entity immediately
+                auto hierarchyPanelPtr = GUIManager::GetPanelManager().GetPanel("Scene Hierarchy");
+                if (hierarchyPanelPtr) {
+                    auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
+                    if (hierarchyPanel) {
+                        hierarchyPanel->MarkForRefresh();
+                        std::cout << "[SpawnModelEntity] Triggered SceneHierarchyPanel refresh for entity " << newEntity << std::endl;
+                    }
+                }
+
+                std::cout << "[SpawnModelEntity] Entity " << newEntity << " fully set up and selected" << std::endl;
+            } else {
+                std::cout << "[ScenePanel] Failed to load model or shader for spawned entity" << std::endl;
+                ecsManager.DestroyEntity(newEntity);
+                return static_cast<Entity>(-1);
+            }
+        } else {
+            // ModelRenderComponent already exists, just select the entity
+            GUIManager::SetSelectedEntity(newEntity);
+
+            // Still trigger hierarchy refresh to ensure visibility
+            auto hierarchyPanelPtr = GUIManager::GetPanelManager().GetPanel("Scene Hierarchy");
+            if (hierarchyPanelPtr) {
+                auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
+                if (hierarchyPanel) {
+                    hierarchyPanel->MarkForRefresh();
+                    std::cout << "[SpawnModelEntity] Triggered SceneHierarchyPanel refresh for existing ModelRenderComponent entity " << newEntity << std::endl;
+                }
+            }
+
+            std::cout << "[SpawnModelEntity] Entity " << newEntity << " already has ModelRenderComponent, selected" << std::endl;
+        }
+
+        // Final verification - check if entity is still valid and in active entities
+        std::vector<Entity> activeEntities = ecsManager.GetActiveEntities();
+        bool entityFound = false;
+        for (Entity activeEntity : activeEntities) {
+            if (activeEntity == newEntity) {
+                entityFound = true;
+                break;
+            }
+        }
+
+        if (entityFound) {
+            std::cout << "[SpawnModelEntity] SUCCESS: Entity " << newEntity << " is active and valid" << std::endl;
+            return newEntity;
+        } else {
+            std::cout << "[SpawnModelEntity] ERROR: Entity " << newEntity << " was created but not found in active entities!" << std::endl;
+            return static_cast<Entity>(-1);
+        }
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error spawning model entity: ", e.what(), "\n");
+        return static_cast<Entity>(-1);
     }
 }

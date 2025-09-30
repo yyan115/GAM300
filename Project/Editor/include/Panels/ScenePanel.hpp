@@ -2,8 +2,12 @@
 
 #include "EditorPanel.hpp"
 #include "EditorCamera.hpp"
+#include "EditorState.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "Utilities/GUID.hpp"
+#include <memory>
+#include <string>
 
 /**
  * @brief Scene editing panel with ImGuizmo integration.
@@ -37,11 +41,22 @@ private:
 
     // Matrix storage for ImGuizmo
     float identityMatrix[16];
-    
+
+    // Model drag-and-drop preview state
+    bool isDraggingModel = false;
+    GUID_128 previewModelGUID = {0, 0};
+    std::string previewModelPath;
+    glm::vec3 previewPosition = glm::vec3(0.0f);
+    bool previewValidPlacement = true;
+    Entity previewEntity = static_cast<Entity>(-1);
+
     void InitializeMatrices();
     void HandleKeyboardInput();
     void HandleCameraInput();
     void HandleEntitySelection();
+    void HandleModelDragDrop(float sceneWidth, float sceneHeight);
+    void RenderModelPreview(float sceneWidth, float sceneHeight);
+    Entity SpawnModelEntity(const glm::vec3& position);
     void RenderSceneWithEditorCamera(int width, int height);
     void HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight);
     void RenderViewGizmo(float sceneWidth, float sceneHeight);

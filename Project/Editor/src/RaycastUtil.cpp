@@ -78,7 +78,7 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromTransform(const Matrix4x4& transfor
     return AABB(translation - halfSize, translation + halfSize);
 }
 
-RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
+RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity) {
     RaycastHit closestHit;
 
     try {
@@ -96,6 +96,11 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray) {
 
         // Test against entities 0-50, looking for Transform components
         for (Entity entity = 0; entity <= 50; ++entity) {
+            // Skip excluded entity (e.g., preview entity)
+            if (entity == excludeEntity) {
+                continue;
+            }
+
             // Check if entity has Transform component
             if (!ecsManager.HasComponent<Transform>(entity)) {
                 continue;  // Skip if entity has no transform

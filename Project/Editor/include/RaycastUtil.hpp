@@ -68,9 +68,10 @@ public:
     /**
      * @brief Perform raycast against all entities in the scene.
      * @param ray The ray to cast
+     * @param excludeEntity Optional entity to exclude from raycast (e.g., preview entities)
      * @return The closest hit entity, or INVALID_ENTITY if no hit
      */
-    static RaycastHit RaycastScene(const Ray& ray);
+    static RaycastHit RaycastScene(const Ray& ray, Entity excludeEntity = INVALID_ENTITY);
 
     /**
      * @brief Get transform matrix for an entity (avoids including Graphics headers in ScenePanel).
