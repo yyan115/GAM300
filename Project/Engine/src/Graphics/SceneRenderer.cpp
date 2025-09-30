@@ -172,6 +172,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         {
             mainECS.spriteSystem->Update();
         }
+        if (mainECS.lightingSystem)
+        {
+            mainECS.lightingSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();

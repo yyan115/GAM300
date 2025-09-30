@@ -117,18 +117,19 @@ void SceneInstance::Initialize() {
 
 			DirectionalLightComponent sunLightComp;
 			sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-			sunLightComp.ambient = glm::vec3(0.05f);
-			sunLightComp.diffuse = glm::vec3(0.4f);
+			sunLightComp.ambient = glm::vec3(0.05f);  // Increased from 0.05 for better visibility
+			sunLightComp.diffuse = glm::vec3(0.4f);  // Increased from 0.4 for brighter lighting
 			sunLightComp.specular = glm::vec3(0.5f);
 			sunLightComp.enabled = true;
 			ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+			ecsManager.lightingSystem->RegisterEntity(sunLight);
 
 			// Create point lights
-			std::vector<glm::vec3> pointLightPositions = {
-				glm::vec3(0.7f,  0.2f,  2.0f),
-				glm::vec3(2.3f, -3.3f, -4.0f),
-				glm::vec3(-4.0f,  2.0f, -12.0f),
-				glm::vec3(0.0f,  0.0f, -3.0f)
+			std::vector<Vector3D> pointLightPositions = {
+				Vector3D(0.7f,  0.2f,  2.0f),
+				Vector3D(2.3f, -3.3f, -4.0f),
+				Vector3D(-4.0f,  2.0f, -12.0f),
+				Vector3D(0.0f,  0.0f, -3.0f)
 			};
 
 			for (size_t i = 0; i < pointLightPositions.size(); i++) {
@@ -136,9 +137,10 @@ void SceneInstance::Initialize() {
 				ecsManager.AddComponent<NameComponent>(pointLight,
 					NameComponent{ "Point Light " + std::to_string(i) });
 
-				Transform lightTransform;
+				/*Transform lightTransform;
 				lightTransform.localPosition = { pointLightPositions[i].x, pointLightPositions[i].y, pointLightPositions[i].z };
-				ecsManager.AddComponent<Transform>(pointLight, lightTransform);
+				ecsManager.AddComponent<Transform>(pointLight, lightTransform);*/
+				ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
 
 				PointLightComponent pointLightComp;
 				pointLightComp.ambient = glm::vec3(0.05f);
@@ -149,13 +151,16 @@ void SceneInstance::Initialize() {
 				pointLightComp.quadratic = 0.032f;
 				pointLightComp.enabled = true;
 				ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
-
+				ecsManager.lightingSystem->RegisterEntity(pointLight); 
 			}
 
 			// Create a spot light that follows the camera
 			Entity spotLight = ecsManager.CreateEntity();
 			ecsManager.AddComponent<NameComponent>(spotLight, NameComponent{ "Camera Flashlight" });
-			ecsManager.AddComponent<Transform>(spotLight, Transform{});
+			//Transform lightTransform;
+			/*lightTransform.localPosition = { camera.Position.x, camera.Position.y, camera.Position.z};
+			ecsManager.AddComponent<Transform>(spotLight, lightTransform);*/
+			ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ camera.Position.x, camera.Position.y, camera.Position.z});
 
 			SpotLightComponent spotLightComp;
 			spotLightComp.direction = camera.Front;
@@ -169,7 +174,10 @@ void SceneInstance::Initialize() {
 			spotLightComp.outerCutOff = 0.966f;
 			spotLightComp.enabled = true;
 			ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+			ecsManager.lightingSystem->RegisterEntity(spotLight);
 		}
+
+		std::cout << "[Scene] Lighting system entity count: " << ecsManager.lightingSystem->entities.size() << std::endl; 
 
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
@@ -228,7 +236,7 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	//mainECS.lightingSystem->Update();
+	mainECS.lightingSystem->Update();
 }
 
 void SceneInstance::Draw() {

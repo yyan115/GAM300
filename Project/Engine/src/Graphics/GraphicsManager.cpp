@@ -134,12 +134,12 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
 
 	// Apply lighting
-	/*ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
 	if (ecsManager.lightingSystem) 
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
-	}*/
-	ApplyLighting(*item.shader);
+	}
+	//ApplyLighting(*item.shader);
 
 	// Draw the model with entity material
 	item.model->Draw(*item.shader, *currentCamera, item.material);

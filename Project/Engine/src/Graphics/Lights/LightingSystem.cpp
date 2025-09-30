@@ -23,9 +23,19 @@ void LightingSystem::Shutdown()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
+    std::cout << "[LightingSystem] ApplyLighting called" << std::endl;
+    std::cout << "[LightingSystem] Has directional light: " << directionalLightData.hasDirectionalLight << std::endl;
+    std::cout << "[LightingSystem] Point lights count: " << pointLightData.positions.size() << std::endl;
+    std::cout << "[LightingSystem] Spot lights count: " << spotLightData.positions.size() << std::endl;
+
     // Apply directional light from collected data
-    if (directionalLightData.hasDirectionalLight) 
+    if (directionalLightData.hasDirectionalLight)
     {
+        std::cout << "[LightingSystem] Dir Light - diffuse: ("
+            << directionalLightData.diffuse.x << ", "
+            << directionalLightData.diffuse.y << ", "
+            << directionalLightData.diffuse.z << ")" << std::endl;
+
         shader.setVec3("dirLight.direction", directionalLightData.direction);
         shader.setVec3("dirLight.ambient", directionalLightData.ambient);
         shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
@@ -67,6 +77,18 @@ void LightingSystem::ApplyLighting(Shader& shader)
             shader.setFloat(base + ".linear", 0.0f);
             shader.setFloat(base + ".quadratic", 0.0f);
         }
+
+    }
+    // Debug first point light
+    if (pointLightData.positions.size() > 0) {
+        std::cout << "[LightingSystem] Point Light 0 - position: ("
+            << pointLightData.positions[0].x << ", "
+            << pointLightData.positions[0].y << ", "
+            << pointLightData.positions[0].z << ")" << std::endl;
+        std::cout << "[LightingSystem] Point Light 0 - diffuse: ("
+            << pointLightData.diffuse[0].x << ", "
+            << pointLightData.diffuse[0].y << ", "
+            << pointLightData.diffuse[0].z << ")" << std::endl;
     }
 
     // Apply spot lights from collected data
@@ -184,11 +206,11 @@ void LightingSystem::CollectLightData()
             if (light.enabled && spotLightData.positions.size() < MAX_SPOT_LIGHTS) 
             {
                 // Get position from transform
-                glm::vec3 position(0.0f);
+                glm::vec3 position(0.0f, 0.f, 3.f);
                 if (ecsManager.HasComponent<Transform>(entity)) 
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);;
+                    position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
                 }
 
                 spotLightData.positions.push_back(position);
