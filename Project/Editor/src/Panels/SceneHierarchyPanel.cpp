@@ -395,13 +395,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         // Add ModelRenderComponent for cube with cube.obj model
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
-        // Set cube model GUID and load the model
-        GUID_128 cubeModelGuid = GUIDUtilities::ConvertStringToGUID128("0068bf5177bc76fe-0002cc3f7c000001");
-        cubeRenderer.modelGUID = cubeModelGuid;
-
-        // Load the cube model
-        std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(cubeModelGuid);
-        cubeRenderer.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(cubeModelGuid, modelPath);
+        // Load the cube model using direct file path
+        std::string modelPath = "Resources/Models/cube.obj";
+        cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
 
         if (cubeRenderer.model) {
             std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
@@ -409,18 +405,14 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
             std::cerr << "[SceneHierarchy] Failed to load cube model from: " << modelPath << std::endl;
         }
 
-        // Set default shader for rendering
-        GUID_128 defaultShaderGuid = GUIDUtilities::ConvertStringToGUID128("007ebbc8de41468e-0002c7078200001b");
-        cubeRenderer.shaderGUID = defaultShaderGuid;
-
-        // Load the shader
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(defaultShaderGuid);
-        cubeRenderer.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(defaultShaderGuid, shaderPath);
+        // Load the default shader using direct file path
+        std::string shaderPath = "Resources/Shaders/default";
+        cubeRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 
         if (cubeRenderer.shader) {
-            std::cout << "[SceneHierarchy] Default shader loaded successfully" << std::endl;
+            std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;
         } else {
-            std::cerr << "[SceneHierarchy] Failed to load default shader" << std::endl;
+            std::cerr << "[SceneHierarchy] Failed to load default shader from: " << shaderPath << std::endl;
         }
 
         ecsManager.AddComponent<ModelRenderComponent>(cubeEntity, cubeRenderer);
