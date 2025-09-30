@@ -4,7 +4,6 @@
         "guid": "0063f3bffd1ee7d0-0002cd9796000027",
         "source": "Resources/Shaders/sprite",
         "compiled": "Resources/Shaders/sprite.shader",
-        "android_compiled": "Resources/Shaders/sprite.shader",
-        "last_compiled": "2025-09-30 03:46:48.9084310"
+        "last_compiled": "2025-09-30 12:08:29.9542733"
     }
 }

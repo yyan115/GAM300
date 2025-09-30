@@ -65,8 +65,8 @@ void SceneInstance::Initialize() {
 		ecsManager.AddComponent<RigidBodyComponent>(physicsBoxObj, RigidBodyComponent{});
 		ecsManager.AddComponent<ColliderComponent>(physicsBoxObj, ColliderComponent{});
 		Transform& physicsTransform = ecsManager.GetComponent<Transform>(physicsBoxObj);
-		physicsTransform.localPosition = { 0.5f, 5.5f, 0 };
-		physicsTransform.localScale = { .4f, .4f, .4f };
+		physicsTransform.localPosition = { 0.5f, 60.5f, 0 };
+		physicsTransform.localScale = { .8f, .8f, .8f };
 		physicsTransform.localRotation = { 0, 0, 0, 0 };
 
 		RigidBodyComponent& rb = ecsManager.GetComponent<RigidBodyComponent>(physicsBoxObj);
