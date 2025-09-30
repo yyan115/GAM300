@@ -26,7 +26,7 @@ void AudioComponent::Play() {
 
 void AudioComponent::PlayDelayed(float delay) {
     // TODO: Implement delayed playback (requires timing system)
-    ENGINE_PRINT(EngineLogging::LogLevel::Warning, "[AudioComponent] PlayDelayed not yet implemented\\n");
+    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayDelayed not yet implemented\n");
     Play();
 }
 
@@ -55,7 +55,7 @@ void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
 
 void AudioComponent::PlayScheduled(double time) {
     // TODO: Implement scheduled playback
-    ENGINE_PRINT(EngineLogging::LogLevel::Warning, "[AudioComponent] PlayScheduled not yet implemented\\n");
+    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayScheduled not yet implemented\n");
     Play();
 }
 

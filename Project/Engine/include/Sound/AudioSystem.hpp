@@ -12,7 +12,7 @@ public:
 
     // System lifecycle
     void Update(float deltaTime);
-    void OnEntityDestroyed(Entity entity) override;
+    void OnEntityDestroyed(Entity entity);
     
 private:
     // Track entities that need position updates

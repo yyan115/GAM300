@@ -395,15 +395,15 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
 
         ImGui::PushID("AudioComponent");
 
-        // Asset path input
+        // Asset path input (Unity: Clip)
         char buffer[512] = {0};
-        if (!audio.AudioAssetPath.empty()) {
-            strncpy_s(buffer, audio.AudioAssetPath.c_str(), sizeof(buffer)-1);
+        if (!audio.Clip.empty()) {
+            strncpy_s(buffer, sizeof(buffer), audio.Clip.c_str(), sizeof(buffer)-1);
         }
-        ImGui::Text("Audio Asset Path");
+        ImGui::Text("Clip");
         ImGui::SameLine();
-        if (ImGui::InputText("##AudioPath", buffer, sizeof(buffer))) {
-            audio.SetAudioAssetPath(std::string(buffer));
+        if (ImGui::InputText("##AudioClip", buffer, sizeof(buffer))) {
+            audio.SetClip(std::string(buffer));
         }
 
         // Volume slider
@@ -420,18 +420,18 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
             // no immediate action; applied at play time
         }
 
-        // Play on Awake
-        ImGui::Checkbox("Play On Start", &audio.PlayOnStart);
+        // Play on Awake (Unity naming)
+        ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
 
         // Spatialize
         if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {
             // toggled
         }
 
-        // Attenuation
-        float att = audio.Attenuation;
-        if (ImGui::SliderFloat("Attenuation", &att, 0.0f, 10.0f)) {
-            audio.Attenuation = att;
+        // Spatial Blend (Unity naming)
+        float blend = audio.SpatialBlend;
+        if (ImGui::SliderFloat("Spatial Blend", &blend, 0.0f, 1.0f)) {
+            audio.SetSpatialBlend(blend);
         }
 
         // Position (if spatialized)

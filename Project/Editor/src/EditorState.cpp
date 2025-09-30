@@ -57,7 +57,7 @@ void EditorState::Play() {
             if (ecs.HasComponent<AudioComponent>(ent)) {
                 AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
                 // If PlayOnAwake is set, ask the component to start (UpdateComponent handles PlayOnAwake)
-                if (ac.PlayOnStart) {
+                if (ac.PlayOnAwake) {
                     ac.UpdateComponent();
                 }
             }
