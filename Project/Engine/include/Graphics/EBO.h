@@ -15,6 +15,8 @@ public:
 	// Copy constructor
 	EBO(const EBO& other) : indices(other.indices), isSetup(false), ID(0) {}
 
+	~EBO();
+
 	// Copy assignment
 	EBO& operator=(const EBO& other) {
 		if (this != &other) {

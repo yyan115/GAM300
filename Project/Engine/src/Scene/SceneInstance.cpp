@@ -179,13 +179,6 @@ void SceneInstance::Initialize() {
 		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
 		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
 		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
-
-		//Entity text2 = ecsManager.CreateEntity();
-		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
-		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
-		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
-		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
 	}
 
 	// Creates light
