@@ -49,9 +49,9 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
         ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
-#ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Assimp loading failed: %s", importer.GetErrorString());
-#endif
+//#ifdef __ANDROID__
+//		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Assimp loading failed: %s", importer.GetErrorString());
+//#endif
         return std::string{};
 	}
 
@@ -891,7 +891,7 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
 void Model::Draw(Shader& shader, const Camera& camera)
 {
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 
 	// Ensure OpenGL context is current for Android
 	auto platform = WindowManager::GetPlatform();
@@ -900,7 +900,7 @@ void Model::Draw(Shader& shader, const Camera& camera)
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to make OpenGL context current for model drawing");
 			return;
 		}
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");
+		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
 	}
 
 	// Validate shader
@@ -919,7 +919,7 @@ void Model::Draw(Shader& shader, const Camera& camera)
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu - vertices=%zu, indices=%zu", i+1, meshes.size(), meshes[i].vertices.size(), meshes[i].indices.size());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu - vertices=%zu, indices=%zu", i+1, meshes.size(), meshes[i].vertices.size(), meshes[i].indices.size());
 
 		// Validate mesh before drawing
 		if (meshes[i].vertices.empty()) {
@@ -935,26 +935,26 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		meshes[i].Draw(shader, camera);
 
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu", i+1, meshes.size());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu", i+1, meshes.size());
 #endif
 	}
 
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw completed successfully");
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw completed successfully");
 #endif
 }
 
 void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial)
 {
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
+//#endif
 
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu with entity material", i+1, meshes.size());
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu with entity material", i+1, meshes.size());
+//#endif
 		// Use entity material if available, otherwise use mesh default
 		std::shared_ptr<Material> meshMaterial = entityMaterial ? entityMaterial : meshes[i].material;
 		if (meshMaterial && meshMaterial != meshes[i].material) {
@@ -967,14 +967,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 			meshes[i].Draw(shader, camera);
 		}
 
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu with entity material", i+1, meshes.size());
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu with entity material", i+1, meshes.size());
+//#endif
 	}
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
+//#endif
 }
 
 #ifdef __ANDROID__
@@ -984,12 +984,11 @@ std::string get_file_contents(const char* filename);
 // AndroidIOStream implementation
 AndroidIOStream::AndroidIOStream(const std::string& path, const std::string& content)
     : m_path(path), m_stream(content) {
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOStream] Created stream for: %s (%d bytes)",
-                        path.c_str(), (int)content.size());
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOStream] Created stream for: %s (%d bytes)", path.c_str(), (int)content.size());
 }
 
 AndroidIOStream::~AndroidIOStream() {
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOStream] Destroyed stream for: %s", m_path.c_str());
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOStream] Destroyed stream for: %s", m_path.c_str());
 }
 
 size_t AndroidIOStream::Read(void* pvBuffer, size_t pSize, size_t pCount) {
@@ -1036,19 +1035,18 @@ void AndroidIOStream::Flush() {
 
 // AndroidIOSystem implementation
 AndroidIOSystem::AndroidIOSystem(const std::string& baseDir) : m_baseDir(baseDir) {
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Created with base dir: %s", baseDir.c_str());
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Created with base dir: %s", baseDir.c_str());
 }
 
 AndroidIOSystem::~AndroidIOSystem() {
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Destroyed");
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Destroyed");
 }
 
 bool AndroidIOSystem::Exists(const char* pFile) const {
     std::string fullPath = m_baseDir + "/" + std::string(pFile);
     std::string content = get_file_contents(fullPath.c_str());
     bool exists = !content.empty();
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Exists check for: %s -> %s",
-                        fullPath.c_str(), exists ? "true" : "false");
+   // __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Exists check for: %s -> %s", fullPath.c_str(), exists ? "true" : "false");
     return exists;
 }
 
@@ -1058,8 +1056,7 @@ char AndroidIOSystem::getOsSeparator() const {
 
 Assimp::IOStream* AndroidIOSystem::Open(const char* pFile, const char* pMode) {
     std::string fullPath = m_baseDir + "/" + std::string(pFile);
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Opening file: %s (mode: %s)",
-                        fullPath.c_str(), pMode);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Opening file: %s (mode: %s)", fullPath.c_str(), pMode);
 
     std::string content = get_file_contents(fullPath.c_str());
     if (content.empty()) {
@@ -1067,13 +1064,12 @@ Assimp::IOStream* AndroidIOSystem::Open(const char* pFile, const char* pMode) {
         return nullptr;
     }
 
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Successfully loaded file: %s (%d bytes)",
-                        fullPath.c_str(), (int)content.size());
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Successfully loaded file: %s (%d bytes)", fullPath.c_str(), (int)content.size());
     return new AndroidIOStream(fullPath, content);
 }
 
 void AndroidIOSystem::Close(Assimp::IOStream* pFile) {
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Closing stream");
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[AndroidIOSystem] Closing stream");
     delete pFile;
 }
 #endif

@@ -20,6 +20,10 @@
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
 
+#ifdef ANDROID
+#include "Input/VirtualControls.hpp"
+#endif
+
 namespace TEMP {
 	std::string windowTitle = "GAM300";
 }
@@ -526,6 +530,12 @@ bool Engine::InitializeGraphicsResources() {
 	SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
 
+#ifdef ANDROID
+    // Initialize virtual controls for Android
+    VirtualControls::Initialize();
+    ENGINE_LOG_INFO("Virtual controls initialized");
+#endif
+
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
 }
@@ -613,14 +623,18 @@ void Engine::Draw() {
 
     try {
         SceneManager::GetInstance().DrawScene();
+        
+        // Render virtual controls on top of everything (Android only)
+        VirtualControls::Render(surfaceWidth, surfaceHeight);
+        
     } catch (const std::exception& e) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
     }
+    
 #else
     SceneManager::GetInstance().DrawScene();
-    //std::cout << "drawn scene\n";
 #endif
 }
 

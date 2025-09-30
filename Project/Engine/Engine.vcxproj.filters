@@ -123,6 +123,7 @@
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
+    <ClInclude Include="include\Input\VirtualControls.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
+    <ClCompile Include="src\Input\VirtualControls.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

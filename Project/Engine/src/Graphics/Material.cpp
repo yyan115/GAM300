@@ -105,10 +105,10 @@ const std::string& Material::GetName() const
 
 void Material::ApplyToShader(Shader& shader) const
 {
-#ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Applying material %s - diffuse:(%.2f,%.2f,%.2f) ambient:(%.2f,%.2f,%.2f)",
-		m_name.c_str(), m_diffuse.x, m_diffuse.y, m_diffuse.z, m_ambient.x, m_ambient.y, m_ambient.z);
-#endif
+//#ifdef __ANDROID__
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Applying material %s - diffuse:(%.2f,%.2f,%.2f) ambient:(%.2f,%.2f,%.2f)",
+//		m_name.c_str(), m_diffuse.x, m_diffuse.y, m_diffuse.z, m_ambient.x, m_ambient.y, m_ambient.z);
+//#endif
 	// Apply basic material properties
 	shader.setVec3("material.ambient", m_ambient);
 	shader.setVec3("material.diffuse", m_diffuse);
@@ -141,10 +141,10 @@ void Material::BindTextures(Shader& shader) const
 	//std::cout << "[MATERIAL] DEBUG: Texture flags - diffuse:" << hasDiffuse << " specular:" << hasSpecular << " normal:" << hasNormal << " emissive:" << hasEmissive << std::endl;
 	//std::cout << "[MATERIAL] DEBUG: Total texture info entries: " << m_textureInfo.size() << std::endl;
 
-#ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
-		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
-#endif
+//#ifdef __ANDROID__
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
+//		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
+//#endif
 
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);

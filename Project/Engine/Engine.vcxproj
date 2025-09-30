@@ -56,6 +56,7 @@
     <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
+    <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
@@ -172,6 +173,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
+    <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
