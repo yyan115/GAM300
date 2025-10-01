@@ -4,6 +4,7 @@
 #include "Panels/SceneHierarchyPanel.hpp"
 #include "EditorInputManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
@@ -412,6 +413,9 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
 
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
+        // Set viewport size in GraphicsManager for correct aspect ratio
+        GraphicsManager::GetInstance().SetViewportSize(width, height);
+
         // Pass our editor camera data to the rendering system
         SceneRenderer::BeginSceneRender(width, height);
         SceneRenderer::RenderSceneForEditor(

@@ -51,13 +51,31 @@ void SpriteSystem::Update()
             spriteRenderItem->spriteVAO = spriteVAO.get();
 
             // For 3D sprites, update position from transform component
-            if (spriteComponent.is3D && ecsManager.HasComponent<Transform>(entity)) 
+            if (spriteComponent.is3D && ecsManager.HasComponent<Transform>(entity))
             {
                 auto& transform = ecsManager.GetComponent<Transform>(entity);
-                // Convert world matrix to position (you might want to extract scale/rotation too)
+
+                // Extract position from world matrix
                 spriteRenderItem->position = glm::vec3(transform.worldMatrix.m.m03,
                     transform.worldMatrix.m.m13,
                     transform.worldMatrix.m.m23);
+
+                // Extract scale from world matrix (length of basis vectors)
+                float scaleX = sqrt(transform.worldMatrix.m.m00 * transform.worldMatrix.m.m00 +
+                                   transform.worldMatrix.m.m10 * transform.worldMatrix.m.m10 +
+                                   transform.worldMatrix.m.m20 * transform.worldMatrix.m.m20);
+                float scaleY = sqrt(transform.worldMatrix.m.m01 * transform.worldMatrix.m.m01 +
+                                   transform.worldMatrix.m.m11 * transform.worldMatrix.m.m11 +
+                                   transform.worldMatrix.m.m21 * transform.worldMatrix.m.m21);
+                float scaleZ = sqrt(transform.worldMatrix.m.m02 * transform.worldMatrix.m.m02 +
+                                   transform.worldMatrix.m.m12 * transform.worldMatrix.m.m12 +
+                                   transform.worldMatrix.m.m22 * transform.worldMatrix.m.m22);
+
+                // Multiply Transform scale with sprite's own scale
+                spriteRenderItem->scale = glm::vec3(scaleX, scaleY, scaleZ) * spriteComponent.scale;
+
+                // Note: Rotation is handled by billboard or can be extracted if needed
+                // For now, sprite rotation is kept separate from Transform rotation
             }
 
                 gfxManager.Submit(std::move(spriteRenderItem));

@@ -66,6 +66,15 @@ public:
                                        const glm::vec3& modelSize = glm::vec3(1.0f));
 
     /**
+     * @brief Create AABB from sprite position and scale.
+     * @param position The sprite's position
+     * @param scale The sprite's scale
+     * @param is3D Whether the sprite is in world space (true) or screen space (false)
+     * @return AABB in world space (or screen space for 2D sprites)
+     */
+    static AABB CreateAABBFromSprite(const glm::vec3& position, const glm::vec3& scale, bool is3D);
+
+    /**
      * @brief Perform raycast against all entities in the scene.
      * @param ray The ray to cast
      * @param excludeEntity Optional entity to exclude from raycast (e.g., preview entities)

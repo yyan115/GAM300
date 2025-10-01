@@ -12,8 +12,9 @@
 #include "DebugDraw/DebugDrawComponent.hpp"
 #include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
+#include "Engine.h"  // For ENGINE_API macro
 
-class GraphicsManager {
+class ENGINE_API GraphicsManager {
 public:
 	static GraphicsManager& GetInstance();
 
@@ -29,6 +30,10 @@ public:
     // Camera management
     void SetCamera(Camera* camera);
     Camera* GetCurrentCamera() const { return currentCamera; }
+
+    // Viewport management (for editor/scene panel rendering with correct aspect ratio)
+    void SetViewportSize(int width, int height);
+    void GetViewportSize(int& width, int& height) const;
 
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
@@ -57,6 +62,10 @@ private:
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
+
+    // Viewport dimensions for proper aspect ratio (set by editor/scene panel)
+    int viewportWidth = 0;
+    int viewportHeight = 0;
 
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);

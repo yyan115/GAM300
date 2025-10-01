@@ -69,6 +69,18 @@ void GraphicsManager::SetCamera(Camera* camera)
 	currentCamera = camera;
 }
 
+void GraphicsManager::SetViewportSize(int width, int height)
+{
+	viewportWidth = width;
+	viewportHeight = height;
+}
+
+void GraphicsManager::GetViewportSize(int& width, int& height) const
+{
+	width = viewportWidth;
+	height = viewportHeight;
+}
+
 void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 {
 	if (renderItem && renderItem->isVisible)
@@ -155,19 +167,15 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		glm::mat4 view = currentCamera->GetViewMatrix();
 		shader.setMat4("view", view);
 
-		// Get window dimensions with safety checks
-		//int windowWidth = WindowManager::GetWindowWidth();
-		//int windowHeight = WindowManager::GetWindowHeight();
+		// Use viewport dimensions if set (for editor/scene panel), otherwise fallback to window dimensions
+		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
 
 		// Prevent division by zero and ensure minimum dimensions
-		//if (windowWidth <= 0) windowWidth = 1;
-		//if (windowHeight <= 0) windowHeight = 1;
+		if (renderWidth <= 0) renderWidth = 1;
+		if (renderHeight <= 0) renderHeight = 1;
 
-		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
-		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
-
-
-		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+		float aspectRatio = (float)renderWidth / (float)renderHeight;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
@@ -400,14 +408,14 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec2("uvScale", item.uvScale);
 
 	// Set up matrices based on rendering mode
-	if (item.is3D) 
+	if (item.is3D)
 	{
 		// 3D world space sprite (billboard)
 		glm::mat4 modelMatrix = glm::mat4(1.0f);
 		modelMatrix = glm::translate(modelMatrix, item.position);
 
 		// Optional: Make sprite face camera (billboard effect)
-		if (currentCamera && item.enableBillboard) 
+		if (currentCamera && item.enableBillboard)
 		{
 			// Create rotation matrix to face camera
 			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
@@ -425,12 +433,16 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		}
 
 		// Apply rotation if specified
-		if (item.rotation != 0.0f) 
+		if (item.rotation != 0.0f)
 		{
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 
-		// Apply scale
+		// Center the sprite BEFORE scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
+		// This makes the position represent the center instead of bottom-left corner
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
+
+		// Apply scale AFTER centering
 		modelMatrix = glm::scale(modelMatrix, item.scale);
 
 		Setup3DSpriteMatrices(*item.shader, modelMatrix);
