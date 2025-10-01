@@ -89,9 +89,6 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
         ENGINE_PRINT("[RaycastUtil] Ray origin: (" , ray.origin.x , ", " , ray.origin.y , ", " , ray.origin.z
             , ") direction: (" , ray.direction.x , ", " , ray.direction.y , ", " , ray.direction.z , ")\n");
 
-        //std::cout << "[RaycastUtil] Ray origin: (" << ray.origin.x << ", " << ray.origin.y << ", " << ray.origin.z
-        //          << ") direction: (" << ray.direction.x << ", " << ray.direction.y << ", " << ray.direction.z << ")" << std::endl;
-
         int entitiesWithComponent = 0;
 
         // Test against entities 0-50, looking for Transform components
@@ -111,7 +108,6 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
 
                 entitiesWithComponent++;
                 ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
-                //std::cout << "[RaycastUtil] Found entity " << entity << " with Transform component" << std::endl;
 
                 // Create AABB from the entity's transform
                 AABB entityAABB = CreateAABBFromTransform(transform.worldMatrix);
@@ -120,10 +116,6 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                     , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
                     , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
 
-
-                //std::cout << "[RaycastUtil] Entity " << entity << " AABB: min("
-                //          << entityAABB.min.x << ", " << entityAABB.min.y << ", " << entityAABB.min.z
-                //          << ") max(" << entityAABB.max.x << ", " << entityAABB.max.y << ", " << entityAABB.max.z << ")" << std::endl;
 
                 // Test ray intersection
                 float distance;
@@ -138,16 +130,13 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                 }
             } catch (const std::exception& e) {
                 ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error processing entity ", entity, ": ", e.what(), "\n");
-                //std::cerr << "[RaycastUtil] Error processing entity " << entity << ": " << e.what() << std::endl;
                 continue;
             }
         }
         ENGINE_PRINT("[RaycastUtil] Tested " , entitiesWithComponent , " entities with Transform components\n");
-        //std::cout << "[RaycastUtil] Tested " << entitiesWithComponent << " entities with Transform components" << std::endl;
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n"); 
-        //std::cerr << "[RaycastUtil] Error during raycast: " << e.what() << std::endl;
     }
 
     return closestHit;
@@ -174,7 +163,6 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
         }
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error getting transform for entity ", entity, ": ", e.what(), "\n");
-        //std::cerr << "[RaycastUtil] Error getting transform for entity " << entity << ": " << e.what() << std::endl;
     }
 
     return false;
@@ -223,7 +211,6 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
         }
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error setting transform for entity ", entity, ": ", e.what(), "\n");
-        //std::cerr << "[RaycastUtil] Error setting transform for entity " << entity << ": " << e.what() << std::endl;
     }
 
     return false;

@@ -161,7 +161,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
         }
     }
     catch (const std::exception& e) {
-        std::cerr << "[AssetBrowserPanel] Filesystem check error for " << fullPath << ": " << e.what() << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Filesystem check error for ", fullPath, ": ", e.what(), "\n");
     }
 
     // Only process valid asset files
@@ -884,8 +884,8 @@ void AssetBrowserPanel::RenderAssetGrid()
                     const bool ok = SaveEntityToPrefabFile(
                         ecs, AssetManager::GetInstance(), dropped, absDst);
 
-                    if (ok)  std::cout << "[AssetBrowserPanel] Saved prefab: " << absDst << "\n";
-                    else     std::cerr << "[AssetBrowserPanel] Failed to save: " << absDst << "\n";
+                    if (ok) ENGINE_PRINT("[AssetBrowserPanel] Saved prefab: ", absDst, "\n");
+                    else ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to save: " , absDst, "\n");
 
                     RefreshAssets();
                 }
@@ -1076,11 +1076,11 @@ bool AssetBrowserPanel::IsAssetSelected(const GUID_128& guid) const {
 
 void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open")) {
-        std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] Opening: ", asset.fileName, "\n");
     }
     if (ImGui::MenuItem(ICON_FA_FILE_PEN " Rename")) {
         StartRenameAsset(lastSelectedAsset);
-        std::cout << "[AssetBrowserPanel] Renaming: " << asset.fileName << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] Renaming: ", asset.fileName, "\n");
     }
 
     ImGui::Separator();
@@ -1150,11 +1150,11 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
     try {
         if (assetToDelete.isDirectory) {
             std::filesystem::remove_all(assetToDelete.filePath);
-            std::cout << "[AssetBrowserPanel] Deleted directory: " << assetToDelete.filePath << std::endl;
+            ENGINE_PRINT("[AssetBrowserPanel] Deleted directory: ", assetToDelete.filePath, "\n");
         }
         else {
             std::filesystem::remove(assetToDelete.filePath);
-            std::cout << "[AssetBrowserPanel] Deleted file: " << assetToDelete.filePath << std::endl;
+            ENGINE_PRINT("[AssetBrowserPanel] Deleted file: ", assetToDelete.filePath, "\n");
 
             // Also remove meta file
             std::string metaFile = assetToDelete.filePath + ".meta";
@@ -1189,7 +1189,7 @@ void AssetBrowserPanel::RevealInExplorer(const AssetInfo& asset) {
     ShellExecuteW(nullptr, L"open", L"explorer.exe", param.c_str(), nullptr, SW_SHOWNORMAL);
 
 #else
-    std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Reveal in explorer not implemented for this platform", "\n");
 #endif
 }
 
@@ -1209,7 +1209,7 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
         CloseClipboard();
     }
 #else
-    std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
 #endif
 }
 
@@ -1222,7 +1222,7 @@ void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& n
         RefreshAssets();
     }
     else {
-        std::cerr << "Rename failed: " << ec.message() << "\n";
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Rename failed: ", ec.message(), "\n");
     }
 }
 
@@ -1351,7 +1351,7 @@ void AssetBrowserPanel::CreateNewMaterial() {
         std::string compiledPath = material->CompileToResource(materialPath);
 
         if (!compiledPath.empty()) {
-            std::cout << "[AssetBrowserPanel] Created new material: " << materialPath << std::endl;
+            ENGINE_PRINT("[AssetBrowserPanel] Created new material: ", materialPath, "\n");\
 
             // Compile the asset through the AssetManager to create proper meta files
             AssetManager::GetInstance().CompileAsset<Material>(materialPath, true);
@@ -1385,7 +1385,7 @@ void AssetBrowserPanel::CreateNewFolder() {
 
     try {
         std::filesystem::create_directory(folderPath);
-        std::cout << "[AssetBrowserPanel] Created new folder: " << folderPath << std::endl;
+        ENGINE_PRINT("[AssetBrowserPanel] Created new folder: ", folderPath, "\n");
 
         // Refresh the asset browser to show the new folder
         QueueRefresh();
@@ -1456,8 +1456,7 @@ void AssetBrowserPanel::ConfirmRename() {
                         newMetaPath += ".meta";
                         std::filesystem::rename(oldMetaPath, newMetaPath);
                     }
-
-                    std::cout << "[AssetBrowserPanel] Renamed: " << oldPath << " -> " << newPath << std::endl;
+                    ENGINE_PRINT("[AssetBrowserPanel] Renamed: ", oldPath, " -> ", newPath, "\n");
                 }
             }
             catch (const std::exception& e) {

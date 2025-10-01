@@ -12,7 +12,6 @@ bool GameManager::initialized = false;
 void GameManager::Initialize() {
     if (!initialized) {
         ENGINE_PRINT("GameManager initialized!\n");
-        //std::cout << "GameManager initialized!" << std::endl;
 
         initialized = true;
     }
@@ -25,7 +24,6 @@ void GameManager::Update() {
 void GameManager::Shutdown() {
     if (initialized) {
         ENGINE_PRINT("GameManager shut down!\n");
-        //std::cout << "GameManager shut down!" << std::endl;
         initialized = false;
     }
 }
