@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <Logging.hpp>
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
@@ -285,25 +286,25 @@ std::filesystem::path Material::ResolveToProjectRoot(const std::filesystem::path
 		projectRoot = foundProjectRoot;
 
 		// Debug logging
-		std::cout << "[Material] DEBUG - Current path: " << std::filesystem::current_path() << std::endl;
-		std::cout << "[Material] DEBUG - Found project root: " << projectRoot << std::endl;
-		std::cout << "[Material] DEBUG - Input path: " << path << std::endl;
+		ENGINE_PRINT("[Material] DEBUG - Current path: " , std::filesystem::current_path(), "\n");
+		ENGINE_PRINT("[Material] DEBUG - Found project root: ", projectRoot, "\n");
+		ENGINE_PRINT("[Material] DEBUG - Input path: " , path, "\n");
 
 		// For relative paths, resolve them from current directory first
 		if (resolvedPath.is_relative()) {
 			// Resolve relative to current working directory
 			resolvedPath = std::filesystem::current_path() / resolvedPath;
-			std::cout << "[Material] DEBUG - Resolved from current: " << resolvedPath << std::endl;
+			ENGINE_PRINT("[Material] DEBUG - Resolved from current: ", resolvedPath, "\n");
 		} else {
 			// For absolute paths, combine with project root
 			resolvedPath = projectRoot / resolvedPath;
 		}
-		std::cout << "[Material] DEBUG - Combined path: " << resolvedPath << std::endl;
+		ENGINE_PRINT("[Material] DEBUG - Combined path: " , resolvedPath, "\n");
 	}
 
 	// Normalize the path to resolve any .. components
 	std::filesystem::path finalPath = std::filesystem::weakly_canonical(resolvedPath);
-	std::cout << "[Material] DEBUG - Final resolved path: " << finalPath << std::endl;
+	ENGINE_PRINT("[Material] DEBUG - Final resolved path: " , finalPath, "\n");
 
 	return finalPath;
 }
@@ -314,12 +315,13 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 
-	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
-	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
-	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
-	std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
-	std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
-	std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
+	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
+	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");
+	ENGINE_PRINT("[Material] SAVE - Material name: ", m_name, "\n");
+	ENGINE_PRINT("[Material] SAVE - Number of textures: ", m_textureInfo.size(), "\n");
+	ENGINE_PRINT("[Material] SAVE - Ambient: (", m_ambient.x, ", ", m_ambient.y, ", ", m_ambient.z, ")\n");
+
 
 	std::ofstream materialFile(materialPath, std::ios::binary);
 	if (materialFile.is_open()) {
@@ -375,9 +377,10 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
 	std::string finalResourcePath = resourcePathFS.generic_string();
 
-	std::cout << "[Material] LOAD - Input path: " << assetPath << std::endl;
-	std::cout << "[Material] LOAD - Computed path: " << finalResourcePath << std::endl;
-	std::cout << "[Material] LOAD - Working directory: " << std::filesystem::current_path() << std::endl;
+	ENGINE_PRINT("[Material] LOAD - Input path: ", assetPath, "\n");
+	ENGINE_PRINT("[Material] LOAD - Computed path: ", finalResourcePath, "\n");
+	ENGINE_PRINT("[Material] LOAD - Working directory: ", std::filesystem::current_path(), "\n");
+
 
 	std::ifstream materialFile(finalResourcePath, std::ios::binary);
 	if (materialFile.is_open()) {
@@ -420,15 +423,14 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 			// This avoids meta file parsing issues and improves loading performance
 			auto textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
 			m_textureInfo[textureType] = std::move(textureInfo);
-			std::cout << "[Material] Restored texture: " << TextureTypeToString(textureType) << " -> " << texturePath << std::endl;
+			ENGINE_PRINT("[Material] Restored texture: ", TextureTypeToString(textureType), " -> ", texturePath, "\n");
 		}
 
 		materialFile.close();
-		std::cout << "[Material] Successfully loaded material: " << m_name << " with " << m_textureInfo.size() << " textures" << std::endl;
+		ENGINE_PRINT("[Material] Successfully loaded material: ", m_name, " with ", m_textureInfo.size(), " textures\n");
 		return true;
 	}
-
-	std::cerr << "[Material] Failed to open material file: " << finalResourcePath << std::endl;
+	ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Material] Failed to open material file: " , finalResourcePath, "\n");
 	return false;
 }
 

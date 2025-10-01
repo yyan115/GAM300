@@ -519,7 +519,7 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
                     std::filesystem::copy_options::overwrite_existing);
             }
             catch (const std::filesystem::filesystem_error& e) {
-                std::cerr << "[MODEL] Copy failed: " << e.what() << std::endl;
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Copy failed: ", e.what(), "\n");
             }
         }
 
@@ -540,7 +540,7 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
     // Use platform abstraction to get asset list (works on Windows, Linux, Android)
     IPlatform* platform = WindowManager::GetPlatform();
     if (!platform) {
-        std::cerr << "[SHADER] ERROR: Platform not available for asset discovery!" << std::endl;
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER] ERROR: Platform not available for asset discovery!", "\n");
         return false;
     }
 
@@ -677,7 +677,6 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                         // Add other cases as needed
                     default:
                         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-                        //std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
                         texture->type = "unknown";
                         break;
                     }

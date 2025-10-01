@@ -163,7 +163,6 @@ private:
 			std::string compiledPath = asset->CompileToResource(filePath, forAndroid);
 			if (compiledPath.empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
-				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 
@@ -176,12 +175,12 @@ private:
 				assetMeta = asset->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
 			}
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			ENGINE_PRINT("[AssetManager] Compiled asset: " , filePath , " to " , compiledPath, "\n\n");
 
 			if (!forAndroid) {
 				// If the resource is already loaded, hot-reload the resource.
 				if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
-					std::cout << "[AssetManager] Resource is already loaded - hot-reloading the resource: " << compiledPath << std::endl;
+					ENGINE_PRINT("[AssetManager] Resource is already loaded - hot-reloading the resource: ", compiledPath, "\n");
 					if constexpr (std::is_same_v<T, Font>) {
 						ResourceManager::GetInstance().GetFontResource(filePath, 0, true);
 					}
@@ -218,7 +217,6 @@ private:
 			std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 			if (compiledPath.empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
-				//std::cerr << "[AssetManager] ERROR: Failed to compile asset: " << filePath << std::endl;
 				return false;
 			}
 
@@ -232,7 +230,7 @@ private:
 			}
 			assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
 			assetMetaMap[guid] = assetMeta;
-			std::cout << "[AssetManager] Compiled asset: " << filePath << " to " << compiledPath << std::endl << std::endl;
+			ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath , " to ", compiledPath, "\n\n");
 
 			if (!forAndroid) {
 				// If the resource is already loaded, hot-reload the resource.

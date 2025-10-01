@@ -66,12 +66,10 @@ void ScenePanel::HandleKeyboardInput() {
             // Already in pan mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
             ENGINE_PRINT("[ScenePanel] Q pressed - Deselected all tools\n");
-            //std::cout << "[ScenePanel] Q pressed - Deselected all tools" << std::endl;
         } else {
             // Not in pan mode, switch to pan
             playControlPanel->SetNormalPanMode(true);
             ENGINE_PRINT("[ScenePanel] Q pressed - Switched to Pan mode\n");
-            //std::cout << "[ScenePanel] Q pressed - Switched to Pan mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(1)) {
@@ -80,13 +78,11 @@ void ScenePanel::HandleKeyboardInput() {
             // Already in translate mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
             ENGINE_PRINT("[ScenePanel] W pressed - Deselected all tools\n");
-            //std::cout << "[ScenePanel] W pressed - Deselected all tools" << std::endl;
         } else {
             // Not in translate mode, switch to translate
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::TRANSLATE);
             ENGINE_PRINT("[ScenePanel] W pressed - Switched to Translate mode\n");
-            //std::cout << "[ScenePanel] W pressed - Switched to Translate mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(2)) {
@@ -95,13 +91,11 @@ void ScenePanel::HandleKeyboardInput() {
             // Already in rotate mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
             ENGINE_PRINT("[ScenePanel] E pressed - Deselected all tools\n");
-            //std::cout << "[ScenePanel] E pressed - Deselected all tools" << std::endl;
         } else {
             // Not in rotate mode, switch to rotate
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::ROTATE);
             ENGINE_PRINT("[ScenePanel] E pressed - Switched to Rotate mode\n");
-            //std::cout << "[ScenePanel] E pressed - Switched to Rotate mode" << std::endl;
         }
     }
     if (EditorInputManager::IsGizmoShortcutPressed(3)) {
@@ -110,13 +104,11 @@ void ScenePanel::HandleKeyboardInput() {
             // Already in scale mode, deselect all tools
             playControlPanel->SetNormalPanMode(false);
             ENGINE_PRINT("[ScenePanel] R pressed - Deselected all tools\n");
-            //std::cout << "[ScenePanel] R pressed - Deselected all tools" << std::endl;
         } else {
             // Not in scale mode, switch to scale
             playControlPanel->SetNormalPanMode(false);
             playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
             ENGINE_PRINT("[ScenePanel] R pressed - Switched to Scale mode\n");
-            //std::cout << "[ScenePanel] R pressed - Switched to Scale mode" << std::endl;
         }
     }
 
@@ -264,19 +256,14 @@ void ScenePanel::HandleEntitySelection() {
                 GUIManager::SetSelectedEntity(hit.entity);
                 ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
                     , " at distance ", hit.distance, "\n");
-                //std::cout << "[ScenePanel] Raycast hit entity " << hit.entity
-                //          << " at distance " << hit.distance << std::endl;
             } else {
                 // No entity hit, clear selection
                 GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                 ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
-                //std::cout << "[ScenePanel] Raycast missed - cleared selection" << std::endl;
             }
             ENGINE_PRINT("[ScenePanel] Mouse clicked at (" , relativeX , ", " , relativeY
                 , ") in scene bounds (", sceneWidth, "x", sceneHeight, ")\n"); 
 
-            //std::cout << "[ScenePanel] Mouse clicked at (" << relativeX << ", " << relativeY
-            //          << ") in scene bounds (" << sceneWidth << "x" << sceneHeight << ")" << std::endl;
         }
     }
 }
@@ -405,7 +392,7 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
         // prefab.instantiatePrefab(ecs, static_cast<EntityID>(e));
 
         // Simple console feedback
-        std::cout << "[ScenePanel] Spawned entity from prefab: " << prefabPath << " -> entity " << (uint64_t)e << "\n";
+        ENGINE_PRINT("[ScenePanel] Spawned entity from prefab: ", prefabPath, " -> entity ", (uint64_t)e, "\n");
     }
 
     ImGui::EndDragDropTarget();

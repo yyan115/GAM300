@@ -69,7 +69,7 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 				std::filesystem::copy_options::overwrite_existing);
 		}
 		catch (const std::filesystem::filesystem_error& e) {
-			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
 		}
 	}
 	else {
@@ -82,7 +82,7 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 				std::filesystem::copy_options::overwrite_existing);
 		}
 		catch (const std::filesystem::filesystem_error& e) {
-			std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
 		}
 	}
 
