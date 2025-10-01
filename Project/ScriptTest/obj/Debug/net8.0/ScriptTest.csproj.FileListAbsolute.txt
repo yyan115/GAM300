@@ -1,0 +1,14 @@
+D:\GAM300\Project\ScriptTest\bin\Debug\net8.0\ScriptTest.deps.json
+D:\GAM300\Project\ScriptTest\bin\Debug\net8.0\ScriptTest.runtimeconfig.json
+D:\GAM300\Project\ScriptTest\bin\Debug\net8.0\ScriptTest.dll
+D:\GAM300\Project\ScriptTest\bin\Debug\net8.0\ScriptTest.pdb
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.GeneratedMSBuildEditorConfig.editorconfig
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.AssemblyInfoInputs.cache
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.AssemblyInfo.cs
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.csproj.CoreCompileInputs.cache
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.sourcelink.json
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.dll
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\refint\ScriptTest.dll
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.pdb
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ScriptTest.genruntimeconfig.cache
+D:\GAM300\Project\ScriptTest\obj\Debug\net8.0\ref\ScriptTest.dll

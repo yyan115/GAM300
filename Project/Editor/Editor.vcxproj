@@ -51,6 +51,7 @@
     <ClCompile Include="src\Panels\GamePanel.cpp" />
     <ClCompile Include="src\Panels\PlayControlPanel.cpp" />
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
+    <ClCompile Include="src\testScript.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
@@ -258,7 +259,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\GAM300\Project\Libraries\dotnet_host\inc;$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -273,7 +274,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\GAM300\Project\Libraries\dotnet_host\inc;$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -295,7 +296,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\GAM300\Project\Libraries\dotnet_host\inc;$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -312,7 +313,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\GAM300\Project\Libraries\dotnet_host\inc;$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

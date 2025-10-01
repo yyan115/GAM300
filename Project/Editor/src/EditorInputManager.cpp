@@ -1,6 +1,7 @@
 #include "EditorInputManager.hpp"
 #include <algorithm>
 
+
 // Static member definitions
 EditorInputManager::MouseState EditorInputManager::mouseState;
 EditorInputManager::KeyboardState EditorInputManager::keyboardState;
