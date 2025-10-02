@@ -635,8 +635,8 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
                 // Load material and cache it
                 std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
                 std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
-                cachedMaterial = std::make_shared<Material>();
-                if (cachedMaterial->LoadResource(absolutePathStr, "")) {
+                cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
+                if (cachedMaterial) {
                     cachedMaterialGuid = assetGuid;
                     cachedMaterialPath = sourceFilePath;
                     std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;

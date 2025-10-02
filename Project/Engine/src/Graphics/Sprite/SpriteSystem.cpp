@@ -9,13 +9,19 @@
 
 bool SpriteSystem::Initialise()
 {
+#ifndef ANDROID
     InitializeSpriteQuad();
+#endif
 	std::cout << "[SpriteSystem] Initialized" << std::endl;
 	return true;
 }
 
 void SpriteSystem::Update()
 {
+#ifdef ANDROID
+    InitializeSpriteQuad(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
+#endif
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem::Update() called");
 #endif
@@ -83,6 +89,7 @@ void SpriteSystem::Shutdown()
 void SpriteSystem::InitializeSpriteQuad()
 {
     if (spriteQuadInitialized) return;
+    ENGINE_LOG_INFO("InitializeSpriteQuad");
 
     // Define a unit quad (0,0 to 1,1) with texture coordinates - only 4 vertices
     float vertices[] = {
@@ -99,16 +106,16 @@ void SpriteSystem::InitializeSpriteQuad()
         2, 3, 0   // Second triangle (bottom-right, bottom-left, top-left)
     };
 
-    // Create EBO using your existing class
-    spriteEBO = std::make_unique<EBO>(indices);
+
+    spriteVAO = std::make_unique<VAO>();
+    spriteVAO->Bind();
 
     // Use your VBO class for vertex data
     spriteVBO = std::make_unique<VBO>(sizeof(vertices), GL_STATIC_DRAW);
     spriteVBO->UpdateData(vertices, sizeof(vertices));
 
-    spriteVAO = std::make_unique<VAO>();
-    spriteVAO->Bind();
-
+    // Create EBO using your existing class
+    spriteEBO = std::make_unique<EBO>(indices);
     // Bind EBO to VAO before setting up vertex attributes
     spriteEBO->Bind();
 
@@ -118,9 +125,16 @@ void SpriteSystem::InitializeSpriteQuad()
     // Texture coordinate attribute  
     spriteVAO->LinkAttrib(*spriteVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-    spriteVAO->Unbind();
     spriteVBO->Unbind();
-    spriteEBO->Unbind();
+    spriteVAO->Unbind();
+    //spriteEBO->Unbind();
+
+    spriteVAO->Bind();
+    GLint eboBinding = 0;
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboBinding);
+    assert(eboBinding != 0 && "VAO has no EBO bound after setup");
+    spriteVAO->Unbind();
+
 
     spriteQuadInitialized = true;
 

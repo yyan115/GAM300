@@ -79,6 +79,10 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 
 void GraphicsManager::Render()
 {
+	if (auto* platform = WindowManager::GetPlatform()) {
+		platform->MakeContextCurrent();
+	}
+
 	if (!currentCamera) 
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
@@ -447,7 +451,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setInt("spriteTexture", 0);
 
 	item.spriteVAO->Bind();
-	item.spriteEBO->Bind();
+	//item.spriteEBO->Bind();
 
 	GLint ebo = 0;
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &ebo);

@@ -404,7 +404,12 @@ std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr
         if (AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1)) {
 			// Use the original texture path - ResourceManager will handle finding the compiled DDS
 			//std::cout << "[MODEL] DEBUG: Compiled texture successfully, loading with original path: " << texturePath << std::endl;
+#ifndef ANDROID
 		    texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+#else
+            texturePath = texturePath.substr(texturePath.find("Resources"));
+            texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+#endif
 		    //std::cout << "[MODEL] DEBUG: Loaded texture resource, valid: " << (texture != nullptr) << std::endl;
 		    if (texture) {
 		        //std::cout << "[MODEL] DEBUG: Texture ID: " << texture->ID << ", type: " << texture->type << std::endl;
@@ -447,7 +452,9 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
         meshPath = (p.parent_path() / p.stem()).generic_string() + ".mesh";
     }
     else {
-        meshPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + "_android.mesh";
+        std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+        assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+        meshPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mesh";
     }
 
     // Ensure parent directories exist
@@ -512,16 +519,16 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
 
 		meshFile.close();
 
-        if (!forAndroid) {
-            // Save the mesh file to the root project Resources folder as well.
-            try {
-                std::filesystem::copy_file(meshPath, (FileUtilities::GetSolutionRootDir() / meshPath).generic_string(),
-                    std::filesystem::copy_options::overwrite_existing);
-            }
-            catch (const std::filesystem::filesystem_error& e) {
-                std::cerr << "[MODEL] Copy failed: " << e.what() << std::endl;
-            }
-        }
+        //if (!forAndroid) {
+        //    // Save the mesh file to the root project Resources folder as well.
+        //    try {
+        //        std::filesystem::copy_file(meshPath, (FileUtilities::GetSolutionRootDir() / meshPath).generic_string(),
+        //            std::filesystem::copy_options::overwrite_existing);
+        //    }
+        //    catch (const std::filesystem::filesystem_error& e) {
+        //        std::cerr << "[MODEL] Copy failed: " << e.what() << std::endl;
+        //    }
+        //}
 
         return meshPath;
     }
@@ -650,12 +657,18 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 size_t pathLength;
                 std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
                 offset += sizeof(pathLength);
-                std::string texturePath(pathLength, '\0');
-                std::memcpy(&texturePath[0], buffer.data() + offset, pathLength);
+                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
+                // strip trailing nulls
+                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
                 offset += pathLength;
 
                 // Load texture via Resource Manager
+#ifndef ANDROID
                 std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+#else
+                texturePath = texturePath.substr(texturePath.find("Resources"));
+                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+#endif
                 if (texture) {
                     std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
                     material->SetTexture(texType, std::move(textureInfo));

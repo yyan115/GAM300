@@ -31,9 +31,9 @@ public:
 
     ENGINE_API static bool DeleteMetaFile(const std::string& assetPath);
 
-    ENGINE_API static void CleanupUnusedMetaFiles(const std::string& rootAssetFolder);
+    ENGINE_API static void CleanupUnusedMetaFiles();
 
-    static constexpr int CURRENT_METADATA_VERSION = 4;
+    static constexpr int CURRENT_METADATA_VERSION = 5;
 
 private:
     /**

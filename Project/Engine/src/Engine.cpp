@@ -523,11 +523,15 @@ bool Engine::Initialize() {
 }
 
 bool Engine::InitializeGraphicsResources() {
+#ifndef ANDROID
+    MetaFilesManager::InitializeAssetMetaFiles("../../Resources"); // Root project resources folder for desktop
+#else
+    MetaFilesManager::InitializeAssetMetaFiles("Resources"); // Root project resources folder for Android
+#endif
 	ENGINE_LOG_INFO("Initializing graphics resources...");
-    MetaFilesManager::InitializeAssetMetaFiles("Resources");
 
-	// Load test scene
-	SceneManager::GetInstance().LoadTestScene();
+	// Load empty scene
+    SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
 
 #ifdef ANDROID
