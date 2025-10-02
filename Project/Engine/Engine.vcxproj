@@ -38,6 +38,10 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawSystem.hpp" />
     <ClInclude Include="include\Graphics\Lights\LightComponent.hpp" />
@@ -54,6 +58,7 @@
     <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
+    <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
@@ -79,9 +84,8 @@
     <ClInclude Include="include\ECS\System.hpp" />
     <ClInclude Include="include\ECS\SystemManager.hpp" />
     <ClInclude Include="include\Engine.h" />
-    <ClInclude Include="include\Graphics\Camera.h" />
+    <ClInclude Include="include\Graphics\Camera\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
-    <ClInclude Include="include\Graphics\LightManager.hpp" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\Model\Model.h" />
     <ClInclude Include="include\Graphics\Model\ModelSystem.hpp" />
@@ -97,8 +101,9 @@
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Serialization\Serializer.hpp" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
-    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
@@ -151,6 +156,7 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
@@ -160,6 +166,8 @@
     <ClCompile Include="src\Graphics\IRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
@@ -169,9 +177,11 @@
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
+    <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
+    <ClCompile Include="src\Reflection\Base64.cpp" />
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
@@ -188,7 +198,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Graphics\EBO.cpp" />
-    <ClCompile Include="src\Graphics\LightManager.cpp" />
     <ClCompile Include="src\Graphics\Mesh.cpp" />
     <ClCompile Include="src\Graphics\Model\Model.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelSystem.cpp" />
@@ -208,10 +217,11 @@
     </ClCompile>
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Sound\AudioComponent.cpp" />
-    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Sound\Audio.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
     <ClCompile Include="src\TransformSystem.cpp" />

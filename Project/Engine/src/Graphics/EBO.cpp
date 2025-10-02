@@ -12,6 +12,14 @@ EBO::EBO(std::vector<GLuint>& indices) : indices(indices), isSetup(false), ID(0)
 	// Don't create OpenGL buffers here - defer until first bind when we have context
 }
 
+EBO::~EBO()
+{
+	if (ID != 0) 
+	{
+		Delete();
+	}
+}
+
 void EBO::Bind()
 {
 	if (!isSetup && ID == 0) {

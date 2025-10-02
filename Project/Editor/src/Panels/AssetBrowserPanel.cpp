@@ -1,12 +1,12 @@
+#include "pch.h"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include <algorithm>
-#include <iostream>
-#include <cstring>
-#include <cmath>
 #include "Asset Manager/AssetManager.hpp"
-#include "Graphics/TextureManager.h"
+#include "Asset Manager/MetaFilesManager.hpp"
+#include "Graphics/Texture.h"
+#include "Graphics/Material.hpp"
+#include "GUIManager.hpp"
 #include "Prefab.hpp"
 #include "PrefabIO.hpp"
 #include "PrefabComponent.hpp"
@@ -17,6 +17,25 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
+#include "Scene/SceneManager.hpp"
+#include "Utilities/GUID.hpp"
+#include <IconsFontAwesome6.h>
+#include <FileWatch.hpp>
+
+// Global drag-drop state for cross-window material dragging
+GUID_128 DraggedMaterialGuid = {0, 0};
+std::string DraggedMaterialPath;
+
+// Global drag-drop state for cross-window model dragging
+GUID_128 DraggedModelGuid = {0, 0};
+std::string DraggedModelPath;
+
+// Global drag-drop state for cross-window audio dragging
+GUID_128 DraggedAudioGuid = {0, 0};
+std::string DraggedAudioPath;
+
+// Global fallback GUID to file path mapping for assets without proper meta files
+static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 
 #ifdef _WIN32
 #include <windows.h>
@@ -74,8 +93,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("Resources")
-    , rootAssetDirectory("Resources")
+    , currentDirectory(AssetManager::GetInstance().GetRootAssetDirectory())
+    , rootAssetDirectory(AssetManager::GetInstance().GetRootAssetDirectory())
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets
@@ -86,12 +105,14 @@ AssetBrowserPanel::AssetBrowserPanel()
 
     // Initialize file watcher for hot-reloading
     InitializeFileWatcher();
-
-    ENGINE_PRINT("[AssetBrowserPanel] Initialized with root directory: ", rootAssetDirectory, "\n");
-    //std::cout << "[AssetBrowserPanel] Initialized with root directory: " << rootAssetDirectory << std::endl;
+    
+    // Always expand Resources folder by default (Unity behavior)
+    expandedDirectories.insert(rootAssetDirectory);
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
+    // Clean up thumbnail cache
+    ClearThumbnailCache();
     // FileWatch destructor will handle cleanup automatically
 }
 
@@ -104,12 +125,9 @@ void AssetBrowserPanel::InitializeFileWatcher() {
                 OnFileChanged(path, event);
             }
         );
-        ENGINE_PRINT("[AssetBrowserPanel] File watcher initialized for: ", rootAssetDirectory, "\n");
-        //std::cout << "[AssetBrowserPanel] File watcher initialized for: " << rootAssetDirectory << std::endl;
     }
     catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to initialize file watcher: ", e.what(), "\n");
-        //std::cerr << "[AssetBrowserPanel] Failed to initialize file watcher: " << e.what() << std::endl;
     }
 }
 
@@ -128,8 +146,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     case filewatch::Event::renamed_old: eventStr = "RENAMED_OLD"; break;
     case filewatch::Event::renamed_new: eventStr = "RENAMED_NEW"; break;
     }
-    ENGINE_PRINT("[AssetBrowserPanel] File ", eventStr, ": ", relativePath, "\n");
-    //std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
+
+    // std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
 
     // Build full path from rootAssetDirectory + relativePath
     std::filesystem::path fullPathPath = std::filesystem::path(rootAssetDirectory) / relativePath;
@@ -144,7 +162,6 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
     catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Filesystem check error for ", fullPath, ": ", e.what(), "\n");
-        //std::cerr << "[AssetBrowserPanel] Filesystem check error for " << fullPath << ": " << e.what() << std::endl;
     }
 
     // Only process valid asset files
@@ -155,42 +172,54 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
 
     // Handle different file events
-    if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+    if (AssetManager::GetInstance().IsAssetExtensionSupported(extension) && !AssetManager::GetInstance().IsExtensionMaterial(extension)) {
         // Sleep this thread for a while to allow the OS to finish the file operation.
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        if (event == filewatch::Event::added) {
-            ENGINE_PRINT("[AssetWatcher] Detected addition of asset: ", fullPath, ". Adding to compilation queue...\n");
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::added, fullPathObj);
-        }
-        else if (event == filewatch::Event::modified) {
-            ENGINE_PRINT("[AssetWatcher] Detected change in asset: ", fullPath, ". Adding to compilation queue...\n");
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
+        if (event == filewatch::Event::modified || event == filewatch::Event::added) {
+            if (event == filewatch::Event::modified)
+                AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
+            else
+                AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::added, fullPathObj);
+            
+            // Invalidate thumbnail cache for modified textures (Unity behavior)
+            //if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
+            //    if (MetaFilesManager::MetaFileExists(fullPath)) {
+            //        GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
+            //        RemoveThumbnailFromCache(guid);
+            //    }
+            //}
         }
         else if (event == filewatch::Event::removed) {
-            ENGINE_PRINT("[AssetWatcher] Detected removal of asset: ", fullPath, ". Unloading...\n");
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::removed, fullPath);
+            // Remove from thumbnail cache before unloading
+            if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
+                if (MetaFilesManager::MetaFileExists(fullPath)) {
+                    GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
+                    RemoveThumbnailFromCache(guid);
+                }
+            }
+            AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_old) {
-            ENGINE_PRINT("[AssetWatcher] Detected rename (old name) of asset: ", fullPath, ". Unloading...\n");
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_old, fullPath);
+            AssetManager::GetInstance().UnloadAsset(fullPath);
         }
         else if (event == filewatch::Event::renamed_new) {
-            ENGINE_PRINT("[AssetWatcher] Detected rename (new name) of asset: ", fullPath, ". Adding to compilation queue...\n");
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_new, fullPathObj);
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
         }
+
         QueueRefresh();
     }
     else if (AssetManager::GetInstance().IsExtensionMetaFile(extension)) {
         if (event == filewatch::Event::removed) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetWatcher] WARNING: Detected removal of .meta file: ", fullPath, ". Deleting associated resource...\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Detected removal of .meta file: ", fullPath, "\n");
             AssetManager::GetInstance().HandleMetaFileDeletion(fullPath);
+
             QueueRefresh();
         }
     }
     else if (ResourceManager::GetInstance().IsResourceExtensionSupported(extension)) {
         if (event == filewatch::Event::removed) {
-            ENGINE_PRINT("[AssetWatcher] WARNING: Detected removal of resource file: " ,fullPath , ". Deleting associated meta file...\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Detected removal of resource file: ", fullPath, "\n");
             AssetManager::GetInstance().HandleResourceFileDeletion(fullPath);
 
             QueueRefresh();
@@ -243,8 +272,40 @@ void AssetBrowserPanel::QueueRefresh() {
 void AssetBrowserPanel::OnImGuiRender() {
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
-        ENGINE_PRINT("[AssetBrowserPanel] Refreshing assets due to file changes.\n"); 
+        // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
+    }
+    
+    // Sync directory tree if needed (Unity behavior)
+    if (needsTreeSync) {
+        SyncTreeWithCurrentDirectory();
+    }
+
+    // Handle F2 key for renaming
+    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_F2) && !selectedAssets.empty()) {
+        // Start renaming the last selected asset
+        StartRenameAsset(lastSelectedAsset);
+    }
+
+    // Handle Delete key for deleting
+    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_Delete) && !selectedAssets.empty()) {
+        // Find the selected asset and trigger delete confirmation
+        for (const auto& asset : currentAssets) {
+            if (IsAssetSelected(asset.guid)) {
+                DeleteAsset(asset);
+                break; // Delete the first selected asset
+            }
+        }
+    }
+
+    // Handle rename confirmation/cancellation
+    if (isRenaming) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+            ConfirmRename();
+        }
+        else if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            CancelRename();
+        }
     }
 
     if (ImGui::Begin(name.c_str(), &isOpen)) {
@@ -286,6 +347,43 @@ void AssetBrowserPanel::OnImGuiRender() {
         ImGui::EndChild();
     }
     ImGui::End();
+
+    // Delete confirmation popup
+    if (showDeleteConfirmation) {
+        ImGui::OpenPopup("Delete Asset");
+        showDeleteConfirmation = false; // Only open once
+    }
+
+    if (ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Are you sure you want to delete this file?");
+        ImGui::Separator();
+        ImGui::Text("File: %s", assetToDelete.fileName.c_str());
+        ImGui::Text("Path: %s", assetToDelete.filePath.c_str());
+        ImGui::Separator();
+
+        // Center the buttons
+        float buttonWidth = 60.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float totalWidth = buttonWidth * 2 + spacing;
+        float offset = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+        if (offset > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
+        if (ImGui::Button("Yes", ImVec2(buttonWidth, 0))) {
+            ConfirmDeleteAsset();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(buttonWidth, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        // Close with Escape key
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 void AssetBrowserPanel::RenderToolbar() {
@@ -293,7 +391,7 @@ void AssetBrowserPanel::RenderToolbar() {
     ImGui::Text("Path:");
     ImGui::SameLine();
 
-    if (ImGui::SmallButton("Resources")) {
+    if (ImGui::SmallButton(ICON_FA_HOUSE " Resources")) {
         NavigateToDirectory(rootAssetDirectory);
     }
 
@@ -313,18 +411,21 @@ void AssetBrowserPanel::RenderToolbar() {
         ImGui::PopID();
     }
 
-    // Toolbar buttons
-    ImGui::SameLine();
-    ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 200.0f);
+    ImVec2 button1Size = ImGui::CalcTextSize(ICON_FA_FOLDER_PLUS " New Folder");
+    ImVec2 button2Size = ImGui::CalcTextSize(ICON_FA_FILE_IMPORT " Import");
+    float totalButtonWidth = button1Size.x + button2Size.x + ImGui::GetStyle().ItemSpacing.x;  // Include spacing
 
-    ImGui::SameLine();
-    if (ImGui::Button("New Folder")) {
+    // Position buttons at the right end of the available space (after breadcrumbs)
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::SameLine(availWidth - totalButtonWidth);
+
+    if (ImGui::Button(ICON_FA_FOLDER_PLUS " New Folder")) {
         std::string newFolderPath = currentDirectory + "/New Folder";
         EnsureDirectoryExists(newFolderPath);
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Import")) {
+    if (ImGui::Button(ICON_FA_FILE_IMPORT " Import")) {
         // TODO: Implement import dialog
     }
 
@@ -338,14 +439,14 @@ void AssetBrowserPanel::RenderToolbar() {
 #endif
     searchBuffer[sizeof(searchBuffer) - 1] = '\0';
 
-    if (ImGui::InputTextWithHint("##Search", "Search assets...", searchBuffer, sizeof(searchBuffer))) {
+    if (ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search assets...", searchBuffer, sizeof(searchBuffer))) {
         searchQuery = searchBuffer;
     }
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(120.0f);
 
-    const char* assetTypeNames[] = { "All", "Textures", "Models", "Shaders", "Audio", "Fonts" };
+    const char* assetTypeNames[] = { "All", "Textures", "Models", "Shaders", "Audio", "Fonts", "Materials" };
     int currentTypeIndex = static_cast<int>(selectedAssetType);
     if (ImGui::Combo("##Filter", &currentTypeIndex, assetTypeNames, IM_ARRAYSIZE(assetTypeNames))) {
         selectedAssetType = static_cast<AssetType>(currentTypeIndex);
@@ -376,6 +477,7 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     }
     catch (const std::exception&) {
         // Ignore errors for inaccessible directories
+        return;
     }
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -384,14 +486,39 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
     }
 
     // Highlight if this is the current directory
-    if (std::filesystem::path(directory).generic_string() == currentDirectory) {
+    std::string dirPathStr = std::filesystem::path(directory).generic_string();
+    if (dirPathStr == currentDirectory) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    // Use unique ID per node to avoid duplicate-label issues
-    std::string nodeId = directory.generic_string();
-    ImGui::PushID(nodeId.c_str());
-    bool nodeOpen = ImGui::TreeNodeEx(displayName.c_str(), flags);
+    // Use unique ID per node for consistent state storage
+    std::string nodeId = dirPathStr;
+
+    // Check if this directory should be expanded
+    bool shouldExpand = expandedDirectories.find(dirPathStr) != expandedDirectories.end();
+    
+    // Set the icon based on the current tree state (check ImGui's internal state)
+    ImGuiID id = ImGui::GetID(nodeId.c_str());
+    bool isCurrentlyOpen = ImGui::GetStateStorage()->GetBool(id, shouldExpand);
+    std::string icon = isCurrentlyOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER_CLOSED;
+    std::string label = icon + " " + displayName;
+
+    // Apply default open state if directory should be expanded (only once, not always)
+    if (shouldExpand) {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    }
+
+    // Use TreeNodeEx with fixed str_id for consistent state, and dynamic label
+    bool nodeOpen = ImGui::TreeNodeEx(nodeId.c_str(), flags, "%s", label.c_str());
+
+    // Update expanded state based on actual tree node state
+    // Only update if the state changed (user clicked arrow)
+    bool wasExpanded = expandedDirectories.find(dirPathStr) != expandedDirectories.end();
+    if (nodeOpen && !wasExpanded) {
+        expandedDirectories.insert(dirPathStr);
+    } else if (!nodeOpen && wasExpanded) {
+        expandedDirectories.erase(dirPathStr);
+    }
 
     // Handle selection
     if (ImGui::IsItemClicked()) {
@@ -404,7 +531,7 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
             try {
                 std::vector<std::filesystem::path> subdirectories;
                 for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-                    if (entry.is_directory()) {
+                    if (entry.is_directory() && entry.path().generic_string().find("Shaders") == std::string::npos) {
                         subdirectories.push_back(entry.path());
                     }
                 }
@@ -422,7 +549,6 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
         }
         ImGui::TreePop();
     }
-    ImGui::PopID();
 }
 
 void AssetBrowserPanel::RenderAssetGrid()
@@ -445,7 +571,8 @@ void AssetBrowserPanel::RenderAssetGrid()
         thumb = (availX - pad * (cols - 1)) / static_cast<float>(cols);
     }
 
-    bool anyItemClickedInGrid = false;
+    bool anyItemClickedInGrid = false; // on click (on the same frame only)
+    bool anyItemSelectedInGrid = false; // persists as long as item is selected
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
@@ -459,13 +586,60 @@ void AssetBrowserPanel::RenderAssetGrid()
         // unified hitbox = thumbnail + label
         ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
         const bool hovered = ImGui::IsItemHovered();
-        const bool clicked = ImGui::IsItemClicked();
+        const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
+        const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+        bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
-        // drag source: prefab -> scene
+        // drag source: prefab -> scene, material/texture -> inspector
         if (!asset.isDirectory) {
             std::string lowerExt = asset.extension;
             std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
-            if (lowerExt == ".prefab" && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            
+            bool isMaterial = (lowerExt == ".mat");
+            bool isTexture = (lowerExt == ".png" || lowerExt == ".jpg" ||
+                             lowerExt == ".jpeg" || lowerExt == ".bmp" ||
+                             lowerExt == ".tga" || lowerExt == ".dds");
+            bool isModel = (lowerExt == ".obj" || lowerExt == ".fbx" ||
+                           lowerExt == ".dae" || lowerExt == ".3ds");
+            bool isAudio = (lowerExt == ".wav" || lowerExt == ".ogg" ||
+                           lowerExt == ".mp3" || lowerExt == ".flac");
+            bool isPrefab = (lowerExt == ".prefab");
+
+            // Handle drag-drop for various asset types
+            if ((isMaterial || isTexture || isModel || isAudio) && ImGui::BeginDragDropSource()) {
+                if (isMaterial) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedMaterialGuid = asset.guid;
+                    DraggedMaterialPath = asset.filePath;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MATERIAL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Material: %s", asset.fileName.c_str());
+                } else if (isTexture) {
+                    // Send texture path directly
+                    ImGui::SetDragDropPayload("TEXTURE_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Texture: %s", asset.fileName.c_str());
+                } else if (isModel) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedModelGuid = asset.guid;
+                    DraggedModelPath = asset.filePath;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("MODEL_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Model: %s", asset.fileName.c_str());
+                } else if (isAudio) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedAudioGuid = asset.guid;
+                    DraggedAudioPath = asset.filePath;
+
+                    // Use a simple payload - just a flag that dragging is active
+                    ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
+                    ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
+                }
+
+                ImGui::EndDragDropSource();
+            }
+            else if (isPrefab && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
                     ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
@@ -475,28 +649,95 @@ void AssetBrowserPanel::RenderAssetGrid()
                 }
             }
         }
-
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();
         ImVec2 imgMin = rectMin;
         ImVec2 imgMax = ImVec2(rectMin.x + thumb, rectMin.y + thumb);
-        dl->AddRectFilled(imgMin, imgMax, IM_COL32(80, 80, 80, 255), 4.0f);
-        dl->AddRect(imgMin, imgMax, IM_COL32(100, 100, 100, 255), 4.0f);
 
-        // text inside tile
-        std::string shortName = asset.fileName;
-        if (shortName.size() > 12) shortName = shortName.substr(0, 9) + "...";
-        ImVec2 textSize = ImGui::CalcTextSize(shortName.c_str());
-        ImVec2 textPos = ImVec2(imgMin.x + (thumb - textSize.x) * 0.5f,
-            imgMin.y + (thumb - textSize.y) * 0.5f);
-        dl->AddText(textPos, IM_COL32(220, 220, 220, 255), shortName.c_str());
+        // Check if this is a texture asset and render thumbnail
+        std::string lowerExt = asset.extension;
+        std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+        bool isTextureAsset = (lowerExt == ".png" || lowerExt == ".jpg" || 
+                              lowerExt == ".jpeg" || lowerExt == ".bmp" || 
+                              lowerExt == ".tga" || lowerExt == ".dds");
+        
+        if (isTextureAsset && !asset.isDirectory) {
+            // Unity-like: Show actual texture thumbnail instead of icon
+            uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
+            
+            if (textureId != 0) {
+                // Add subtle border for texture thumbnails
+                dl->AddRect(imgMin, imgMax, IM_COL32(80, 80, 80, 120), 4.0f, ImDrawFlags_RoundCornersAll, 1.0f);
+                
+                // Calculate UV coordinates to maintain aspect ratio (centered crop)
+                // For simplicity, we use full texture here (Unity does smart cropping)
+                ImVec2 uv0(0.0f, 0.0f);
+                ImVec2 uv1(1.0f, 1.0f);
+                
+                // Add padding to the thumbnail to create a border effect
+                float padding = 4.0f;
+                ImVec2 texMin = ImVec2(imgMin.x + padding, imgMin.y + padding);
+                ImVec2 texMax = ImVec2(imgMax.x - padding, imgMax.y - padding);
+                
+                // Draw the texture
+                dl->AddImage(
+                    (ImTextureID)(intptr_t)textureId,
+                    texMin, texMax,
+                    uv0, uv1,
+                    IM_COL32(255, 255, 255, 255)
+                );
+            } else {
+                // Fallback to icon if texture failed to load
+                std::string icon = GetAssetIcon(asset);
+                ImFont* font = ImGui::GetFont();
+                ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());
+                float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;
+                scale *= 0.8f;
+                float fontSize = ImGui::GetFontSize() * scale;
+                ImVec2 iconSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, icon.c_str());
+                ImVec2 iconPos = ImVec2(
+                    imgMin.x + (thumb - iconSize.x) * 0.5f,
+                    imgMin.y + (thumb - iconSize.y) * 0.5f
+                );
+                dl->AddText(font, fontSize, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+            }
+        } else {
+            // For non-texture assets, draw icon (existing behavior)
+            std::string icon = GetAssetIcon(asset);
+            ImFont* font = ImGui::GetFont();
+            ImVec2 defaultIconSize = ImGui::CalcTextSize(icon.c_str());
+            float scale = (defaultIconSize.y > 0.0f) ? (thumb / defaultIconSize.y) : 1.0f;
+            scale *= 0.8f;
+            float fontSize = ImGui::GetFontSize() * scale;
+            ImVec2 iconSize = font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, icon.c_str());
+            ImVec2 iconPos = ImVec2(
+                imgMin.x + (thumb - iconSize.x) * 0.5f,
+                imgMin.y + (thumb - iconSize.y) * 0.5f
+            );
+            dl->AddText(font, fontSize, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+        }
+
 
         // label below
         ImGui::SetCursorScreenPos(ImVec2(imgMin.x, imgMax.y));
         ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + thumb);
-        ImGui::TextWrapped("%s", asset.fileName.c_str());
+
+        // Check if this asset is being renamed
+        if (isRenaming && asset.guid.high == renamingAsset.high && asset.guid.low == renamingAsset.low) {
+            // Show text input for renaming
+            ImGui::SetNextItemWidth(thumb);
+            if (ImGui::InputText("##Rename", renameBuffer, sizeof(renameBuffer),
+                               ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                ConfirmRename();
+            }
+            ImGui::SetKeyboardFocusHere(-1); // Focus the input
+        } else {
+            ImGui::TextWrapped("%s", asset.fileName.c_str());
+        }
+
         if (!asset.isDirectory) {
+            // Begin drag drop code for PREFABS
             std::string lowerExt = asset.extension;
             std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
             if (lowerExt == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
@@ -509,14 +750,32 @@ void AssetBrowserPanel::RenderAssetGrid()
                 }
             }
         }
-        ImGui::PopTextWrapPos();
 
-        // selection visuals
+        // Selection / activation - mouse release selects, but not during drag operations
+        bool shouldSelect = false;
+        if (released) {
+            // Check if mouse moved significantly during the click-drag-release cycle
+            ImVec2 dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+            float dragDistance = sqrtf(dragDelta.x * dragDelta.x + dragDelta.y * dragDelta.y);
+            float dragThreshold = 5.0f; // pixels
+            if (dragDistance < dragThreshold) {
+                shouldSelect = true;
+            }
+        }
+
+        // Mark that an item was clicked (for preventing empty space deselection)
         if (clicked) {
-            SelectAsset(asset.guid, io.KeyCtrl);
             anyItemClickedInGrid = true;
         }
-        if (IsAssetSelected(asset.guid)) {
+
+        // Select asset if shouldSelect is true (already accounts for drag distance)
+        if (shouldSelect) {
+            bool ctrl = io.KeyCtrl;
+            SelectAsset(asset.guid, ctrl);
+        }
+
+        bool selected = IsAssetSelected(asset.guid);
+        if (selected) {
             dl->AddRectFilled(rectMin, rectMax, IM_COL32(100, 150, 255, 50));
             dl->AddRect(rectMin, rectMax, IM_COL32(100, 150, 255, 120), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
@@ -524,35 +783,60 @@ void AssetBrowserPanel::RenderAssetGrid()
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
 
-        // double click
-        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else
-                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
-
-        }
-
+        ImGui::PopID();
         // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             SelectAsset(asset.guid, false);
             ImGui::OpenPopup("AssetContextMenu");
         }
 
-        ImGui::PopID();
         ImGui::EndGroup();
 
         // wrap
         ++index;
         if ((index % cols) != 0) ImGui::SameLine(0.0f, pad);
+
+        // double click
+        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            if (asset.isDirectory) {
+                pendingNavigation = asset.filePath;
+                //break;
+            }
+            else {
+                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
+                std::filesystem::path p(asset.fileName);
+
+                // Open scene confirmation dialogue.
+                if (p.extension() == ".scene") {
+                    OpenScene(asset);
+                }
+            }
+        }
+
+    }
+    
+    ShowOpenSceneConfirmation();
+    if (!pendingNavigation.empty()) {
+        NavigateToDirectory(pendingNavigation);
     }
 
-    // clear selection by clicking empty space
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemClickedInGrid && ImGui::IsWindowHovered()) {
+    // Only clear selection if not dragging (to avoid interfering with drag operations)
+    if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && 
+    !anyItemClickedInGrid && ImGui::IsWindowHovered() && !ImGui::IsMouseDragging(ImGuiMouseButton_Left)) 
+    {
         selectedAssets.clear();
         lastSelectedAsset = GUID_128{ 0, 0 };
+        // Clear the globally selected asset for the Inspector
+        GUIManager::SetSelectedAsset(GUID_128{0, 0});
+        CancelRename();
     }
 
-    // context menu
+    // Right-click context menu for empty space (create new assets)
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !anyItemClickedInGrid && ImGui::IsWindowHovered()) {
+        ImGui::OpenPopup("CreateAssetMenu");
+    }
+
+    // Context menu for selected assets
     if (ImGui::BeginPopup("AssetContextMenu")) {
         AssetInfo* contextAsset = nullptr;
         for (auto& a : currentAssets) {
@@ -562,13 +846,19 @@ void AssetBrowserPanel::RenderAssetGrid()
         ImGui::EndPopup();
     }
 
+    // Context menu for creating new assets
+    if (ImGui::BeginPopup("CreateAssetMenu")) {
+        ShowCreateAssetMenu();
+        ImGui::EndPopup();
+    }
+
     // ---------------- BACKGROUND DROP (scroll-safe, non-blocking) ----------------
     {
         ImGuiWindow* win = ImGui::GetCurrentWindow();
         const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
 
         const ImGuiPayload* active = ImGui::GetDragDropPayload();
-        const bool entityDragActive = (active && active->IsDataType("ENTITY_AS_PREFAB"));
+        const bool entityDragActive = (active && active->IsDataType("HIERARCHY_ENTITY"));
 
         // Foreground visual (never occluded by items)
         if (entityDragActive)
@@ -582,7 +872,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##AssetGridBgDrop")))
         {
             if (const ImGuiPayload* payload =
-                ImGui::AcceptDragDropPayload("ENTITY_AS_PREFAB",
+                ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY",
                     ImGuiDragDropFlags_AcceptBeforeDelivery))
             {
                 if (payload->IsDelivery() && payload->DataSize == sizeof(Entity))
@@ -604,8 +894,8 @@ void AssetBrowserPanel::RenderAssetGrid()
                     const bool ok = SaveEntityToPrefabFile(
                         ecs, AssetManager::GetInstance(), dropped, absDst);
 
-                    if (ok)  std::cout << "[AssetBrowserPanel] Saved prefab: " << absDst << "\n";
-                    else     std::cerr << "[AssetBrowserPanel] Failed to save: " << absDst << "\n";
+                    if (ok) ENGINE_PRINT("[AssetBrowserPanel] Saved prefab: ", absDst, "\n");
+                    else ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to save: " , absDst, "\n");
 
                     RefreshAssets();
                 }
@@ -648,16 +938,22 @@ void AssetBrowserPanel::RefreshAssets() {
                 // Get or generate GUID using normalized filePath
                 if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
                     guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
-                }
-                else {
-                    // For directories, generate a simple hash-based GUID using normalized path
+                } else {
+                    // Fallback: Generate a hash-based GUID if no meta file or meta file is outdated
                     std::hash<std::string> hasher;
                     size_t hash = hasher(filePath);
                     guid.high = static_cast<uint64_t>(hash);
                     guid.low = static_cast<uint64_t>(hash >> 32);
+                    
+                    // Store the mapping from GUID to file path for the Inspector to use
+                    FallbackGuidToPath[guid.high] = filePath;
                 }
             }
             else {
+                // Don't show Shaders folder.
+                if (entry.path().generic_string().find("Shaders") != std::string::npos) {
+                    continue;
+                }
                 // For directories, generate a simple hash-based GUID using normalized path
                 std::hash<std::string> hasher;
                 size_t hash = hasher(filePath);
@@ -679,7 +975,6 @@ void AssetBrowserPanel::RefreshAssets() {
     }
     catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error refreshing assets: ", e.what(), "\n");
-        //std::cerr << "[AssetBrowserPanel] Error refreshing assets: " << e.what() << std::endl;
     }
 
     UpdateBreadcrumbs();
@@ -689,11 +984,20 @@ void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
     std::string normalizedPath = std::filesystem::path(directory).generic_string();
 
     if (std::filesystem::exists(normalizedPath) && std::filesystem::is_directory(normalizedPath)) {
-        currentDirectory = normalizedPath;
-        selectedAssets.clear();
-        lastSelectedAsset = GUID_128{ 0, 0 };
-        RefreshAssets(); // Immediate refresh when navigating
+        // Only refresh and update if directory actually changed
+        if (currentDirectory != normalizedPath) {
+            currentDirectory = normalizedPath;
+            selectedAssets.clear();
+            lastSelectedAsset = GUID_128{ 0, 0 };
+            RefreshAssets(); // Only refresh when directory changes
+            
+            // Sync directory tree (Unity behavior)
+            EnsureDirectoryExpanded(normalizedPath);
+            needsTreeSync = true;
+        }
     }
+
+    pendingNavigation.clear();
 }
 
 void AssetBrowserPanel::UpdateBreadcrumbs() {
@@ -751,6 +1055,9 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
         return AssetType::Fonts;
     }
+    else if (lowerExt == ".mat") {
+        return AssetType::Materials;
+    }
 
     return AssetType::All;
 }
@@ -762,10 +1069,16 @@ void AssetBrowserPanel::SelectAsset(const GUID_128& guid, bool multiSelect) {
 
     if (selectedAssets.count(guid)) {
         selectedAssets.erase(guid);
+        // If deselecting the last selected asset, clear global selection
+        if (lastSelectedAsset.high == guid.high && lastSelectedAsset.low == guid.low) {
+            GUIManager::SetSelectedAsset(GUID_128{0, 0});
+        }
     }
     else {
         selectedAssets.insert(guid);
         lastSelectedAsset = guid;
+        // Set the globally selected asset for the Inspector
+        GUIManager::SetSelectedAsset(guid);
     }
 }
 
@@ -774,25 +1087,60 @@ bool AssetBrowserPanel::IsAssetSelected(const GUID_128& guid) const {
 }
 
 void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
-    if (ImGui::MenuItem("Open")) {
+    if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open")) {
         ENGINE_PRINT("[AssetBrowserPanel] Opening: ", asset.fileName, "\n");
-        //std::cout << "[AssetBrowserPanel] Opening: " << asset.fileName << std::endl;
+    }
+    if (ImGui::MenuItem(ICON_FA_FILE_PEN " Rename")) {
+        StartRenameAsset(lastSelectedAsset);
+        ENGINE_PRINT("[AssetBrowserPanel] Renaming: ", asset.fileName, "\n");
     }
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Reveal in Explorer")) {
+    if (ImGui::MenuItem(ICON_FA_EYE " Reveal in Explorer")) {
         RevealInExplorer(asset);
     }
 
-    if (ImGui::MenuItem("Copy Path")) {
+    if (ImGui::MenuItem(ICON_FA_CLIPBOARD " Copy Path")) {
         CopyAssetPath(asset);
     }
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Delete", nullptr, false, !asset.isDirectory)) {
-        DeleteAsset(asset);
+
+    // Create submenu with delete option
+    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
+        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
+            CreateNewMaterial();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
+            CreateNewFolder();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
+            DeleteAsset(asset);
+        }
+
+        ImGui::EndMenu();
+    }
+}
+
+void AssetBrowserPanel::ShowCreateAssetMenu() {
+    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
+        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
+            CreateNewMaterial();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
+            CreateNewFolder();
+        }
+
+        if (ImGui::MenuItem(ICON_FA_GLOBE " Scene")) {
+            CreateNewScene(currentDirectory);
+        }
+
+        ImGui::EndMenu();
     }
 }
 
@@ -805,32 +1153,55 @@ void AssetBrowserPanel::HandleDragAndDrop(const AssetInfo& asset) {
 }
 
 void AssetBrowserPanel::DeleteAsset(const AssetInfo& asset) {
+    // Store the asset to delete and show confirmation popup
+    assetToDelete = asset;
+    showDeleteConfirmation = true;
+}
+
+void AssetBrowserPanel::ConfirmDeleteAsset() {
     try {
-        if (asset.isDirectory) {
-            std::filesystem::remove_all(asset.filePath);
+        if (assetToDelete.isDirectory) {
+            std::filesystem::remove_all(assetToDelete.filePath);
+            ENGINE_PRINT("[AssetBrowserPanel] Deleted directory: ", assetToDelete.filePath, "\n");
         }
         else {
-            std::filesystem::remove(asset.filePath);
+            std::filesystem::remove(assetToDelete.filePath);
+            ENGINE_PRINT("[AssetBrowserPanel] Deleted file: ", assetToDelete.filePath, "\n");
+
             // Also remove meta file
-            std::string metaFile = asset.filePath + ".meta";
+            std::string metaFile = assetToDelete.filePath + ".meta";
             if (std::filesystem::exists(metaFile)) {
                 std::filesystem::remove(metaFile);
             }
+            
+            // Remove from thumbnail cache if it was a texture
+            RemoveThumbnailFromCache(assetToDelete.guid);
         }
+
+        // Remove from selection if it was selected
+        selectedAssets.erase(assetToDelete.guid);
+        if (lastSelectedAsset.high == assetToDelete.guid.high && lastSelectedAsset.low == assetToDelete.guid.low) {
+            GUIManager::SetSelectedAsset(GUID_128{0, 0});
+            lastSelectedAsset = GUID_128{0, 0};
+        }
+
+        // Refresh the asset list
+        RefreshAssets();
     }
     catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to delete asset: ", e.what(), "\n");
-        //std::cerr << "[AssetBrowserPanel] Failed to delete asset: " << e.what() << std::endl;
     }
 }
 
 void AssetBrowserPanel::RevealInExplorer(const AssetInfo& asset) {
 #ifdef _WIN32
-    std::string command = "explorer /select,\"" + asset.filePath + "\"";
-    system(command.c_str());
+    std::filesystem::path fullPath = std::filesystem::absolute(asset.filePath);
+    std::wstring path = fullPath.wstring(); // <-- not generic_wstring
+    std::wstring param = L"/select,\"" + path + L"\"";
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", param.c_str(), nullptr, SW_SHOWNORMAL);
+
 #else
-    ENGINE_PRINT("[AssetBrowserPanel] Reveal in explorer not implemented for this platform\n");
-    //std::cout << "[AssetBrowserPanel] Reveal in explorer not implemented for this platform" << std::endl;
+    ENGINE_PRINT("[AssetBrowserPanel] Reveal in explorer not implemented for this platform", "\n");
 #endif
 }
 
@@ -845,13 +1216,79 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
             memcpy(GlobalLock(hMem), relativePath.c_str(), relativePath.size() + 1);
             GlobalUnlock(hMem);
             SetClipboardData(CF_TEXT, hMem);
+            ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
         }
         CloseClipboard();
     }
 #else
     ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
-    //std::cout << "[AssetBrowserPanel] Copy to clipboard: " << relativePath << std::endl;
 #endif
+}
+
+void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& newName) {
+    std::filesystem::path oldPath = asset.filePath;
+    std::filesystem::path newPath = oldPath.parent_path() / newName;
+    std::error_code ec;
+    std::filesystem::rename(oldPath, newPath, ec);
+    if (!ec) {
+        RefreshAssets();
+    }
+    else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Rename failed: ", ec.message(), "\n");
+    }
+}
+
+
+void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
+    std::string newSceneName = "New Scene.scene";
+    std::filesystem::path directoryPath(directory);
+    std::filesystem::path newSceneNamePath(newSceneName);
+    std::filesystem::path newScenePathFull = (directoryPath / newSceneName);
+    std::string stem = newSceneNamePath.stem().generic_string();
+    std::string extension = newSceneNamePath.extension().generic_string();
+
+    int counter = 1;
+    while (std::filesystem::exists(newScenePathFull)) {
+        newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
+    }
+
+    std::ofstream file(newScenePathFull.generic_string());
+    file.close();
+
+    RefreshAssets();
+}
+
+void AssetBrowserPanel::OpenScene(const AssetInfo& _selectedScene) {
+    isOpeningScene = true;
+    selectedScene = _selectedScene;
+    ImGui::OpenPopup("Open Scene?");
+}
+
+void AssetBrowserPanel::ShowOpenSceneConfirmation() {
+    if (ImGui::BeginPopupModal("Open Scene?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        // Center it on the main viewport
+        ImGui::SetWindowPos(
+            ImVec2(ImGui::GetMainViewport()->GetCenter().x,
+                ImGui::GetMainViewport()->GetCenter().y),
+            ImGuiCond_Appearing); // only when it first appears
+
+        std::string text = "Do you want to open " + selectedScene.fileName + "?\nUnsaved changes will be lost.";
+        ImGui::Text(text.c_str());
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            SceneManager::GetInstance().LoadScene(selectedScene.filePath);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", ImVec2(120, 0))) {
+            // Cancel
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 std::string AssetBrowserPanel::GetRelativePath(const std::string& fullPath) const {
@@ -874,7 +1311,9 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
         ".wav", ".mp3", ".ogg",                            // Audio
         ".ttf", ".otf",                                    // Fonts
-        ".prefab"
+        ".mat",                                            // Materials
+        ".prefab",                                         // Prefabs
+        ".scene"                                           // Scenes
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;
@@ -888,6 +1327,273 @@ void AssetBrowserPanel::EnsureDirectoryExists(const std::string& directory) {
     }
     catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to create directory ", directory, ": ", e.what(), "\n");
-        //std::cerr << "[AssetBrowserPanel] Failed to create directory " << directory << ": " << e.what() << std::endl;
     }
+}
+
+std::string AssetBrowserPanel::GetFallbackGuidFilePath(const GUID_128& guid) {
+    auto it = FallbackGuidToPath.find(guid.high);
+    if (it != FallbackGuidToPath.end()) {
+        return it->second;
+    }
+    return ""; // Return empty string if not found
+}
+
+void AssetBrowserPanel::CreateNewMaterial() {
+    // Generate a unique name for the new material
+    std::string baseName = "NewMaterial";
+    std::string materialName = baseName;
+    int counter = 1;
+
+    // Find a unique name
+    std::string materialPath;
+    do {
+        materialPath = currentDirectory + "/" + materialName + ".mat";
+        if (!std::filesystem::exists(materialPath)) {
+            break;
+        }
+        materialName = baseName + std::to_string(counter++);
+    } while (counter < 1000); // Safety limit
+
+    try {
+        // Create a new default material
+        auto material = Material::CreateDefault();
+        material->SetName(materialName);
+
+        // Write the material file directly (not using the asset system for creation)
+        std::string compiledPath = material->CompileToResource(materialPath);
+
+        if (!compiledPath.empty()) {
+            ENGINE_PRINT("[AssetBrowserPanel] Created new material: ", materialPath, "\n");\
+
+            // Compile the asset through the AssetManager to create proper meta files
+            AssetManager::GetInstance().CompileAsset<Material>(materialPath, true);
+
+            // Refresh the asset browser to show the new material
+            QueueRefresh();
+        } else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to create material file: ", materialPath, "\n");
+        }
+    }
+    catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error creating material: ", e.what(), "\n");
+    }
+}
+
+void AssetBrowserPanel::CreateNewFolder() {
+    // Generate a unique name for the new folder
+    std::string baseName = "NewFolder";
+    std::string folderName = baseName;
+    int counter = 1;
+
+    // Find a unique name
+    std::string folderPath;
+    do {
+        folderPath = currentDirectory + "/" + folderName;
+        if (!std::filesystem::exists(folderPath)) {
+            break;
+        }
+        folderName = baseName + std::to_string(counter++);
+    } while (counter < 1000); // Safety limit
+
+    try {
+        std::filesystem::create_directory(folderPath);
+        ENGINE_PRINT("[AssetBrowserPanel] Created new folder: ", folderPath, "\n");
+
+        // Refresh the asset browser to show the new folder
+        QueueRefresh();
+    }
+    catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error creating folder: ", e.what(), "\n");
+    }
+}
+
+void AssetBrowserPanel::StartRenameAsset(const GUID_128& guid) {
+    // Find the asset being renamed
+    for (const auto& asset : currentAssets) {
+        if (asset.guid.high == guid.high && asset.guid.low == guid.low) {
+            isRenaming = true;
+            renamingAsset = guid;
+
+            // Set up the rename buffer with the current filename (without extension for files, full name for folders)
+            if (asset.isDirectory) {
+                strncpy_s(renameBuffer, asset.fileName.c_str(), sizeof(renameBuffer) - 1);
+            } else {
+                // For files, keep the extension but allow renaming the base name
+                std::filesystem::path path(asset.fileName);
+                std::string baseName = path.stem().string();
+                strncpy_s(renameBuffer, baseName.c_str(), sizeof(renameBuffer) - 1);
+            }
+            break;
+        }
+    }
+}
+
+void AssetBrowserPanel::CancelRename() {
+    isRenaming = false;
+    renamingAsset = GUID_128{ 0, 0 };
+    memset(renameBuffer, 0, sizeof(renameBuffer));
+}
+
+void AssetBrowserPanel::ConfirmRename() {
+    if (!isRenaming || strlen(renameBuffer) == 0) {
+        CancelRename();
+        return;
+    }
+
+    // Find the asset being renamed
+    for (const auto& asset : currentAssets) {
+        if (asset.guid.high == renamingAsset.high && asset.guid.low == renamingAsset.low) {
+            try {
+                std::filesystem::path oldPath(asset.filePath);
+                std::filesystem::path newPath;
+
+                if (asset.isDirectory) {
+                    // For directories, rename the entire folder
+                    newPath = oldPath.parent_path() / renameBuffer;
+                } else {
+                    // For files, keep the extension but change the base name
+                    std::filesystem::path extension = oldPath.extension();
+                    newPath = oldPath.parent_path() / (std::string(renameBuffer) + extension.string());
+                }
+
+                // Perform the rename
+                if (oldPath != newPath && std::filesystem::exists(oldPath)) {
+                    std::filesystem::rename(oldPath, newPath);
+
+                    // Also rename the .meta file if it exists
+                    std::filesystem::path oldMetaPath = oldPath;
+                    oldMetaPath += ".meta";
+                    if (std::filesystem::exists(oldMetaPath)) {
+                        std::filesystem::path newMetaPath = newPath;
+                        newMetaPath += ".meta";
+                        std::filesystem::rename(oldMetaPath, newMetaPath);
+                    }
+                    ENGINE_PRINT("[AssetBrowserPanel] Renamed: ", oldPath, " -> ", newPath, "\n");
+                }
+            }
+            catch (const std::exception& e) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error renaming asset: ", e.what(), "\n");
+            }
+
+            break;
+        }
+    }
+
+    CancelRename();
+    QueueRefresh();
+}
+
+std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
+    if (asset.isDirectory) {
+        return ICON_FA_FOLDER;
+    }
+
+    std::string lowerExt = asset.extension;
+    std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+
+    if (lowerExt == ".png" || lowerExt == ".jpg" || lowerExt == ".jpeg" || lowerExt == ".bmp" || lowerExt == ".tga" || lowerExt == ".dds") {
+        return ICON_FA_IMAGE;
+    }
+    else if (lowerExt == ".obj" || lowerExt == ".fbx" || lowerExt == ".dae" || lowerExt == ".3ds") {
+        return ICON_FA_CUBE;
+    }
+    else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
+        return ICON_FA_CODE;
+    }
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+        return ICON_FA_VOLUME_HIGH;
+    }
+    else if (lowerExt == ".ttf" || lowerExt == ".otf") {
+        return ICON_FA_FONT;
+    }
+    else if (lowerExt == ".mat") {
+        return ICON_FA_PAINTBRUSH;
+    }
+    else if (lowerExt == ".prefab") {
+        return ICON_FA_CUBES;
+    }
+
+    return ICON_FA_FILE; // Default file icon
+}
+
+// ============================================================================
+// Thumbnail Management (Unity-like)
+// ============================================================================
+
+uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath) {
+    // Create cache key from GUID (use high 64 bits as key for simplicity)
+    uint64_t cacheKey = guid.high ^ guid.low;
+    
+    // Check if thumbnail already exists in cache
+    //auto it = thumbnailCache.find(cacheKey);
+    //if (it != thumbnailCache.end()) {
+    //    return it->second;
+    //}
+
+    // Load texture using AssetManager and ResourceManager (GUID-based)
+    std::shared_ptr<Texture> texture = nullptr;
+    
+    // Get the texture from ResourceManager.
+    texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(guid, assetPath);
+
+    if (texture && texture->ID != 0) {
+        // Cache the texture ID for future use
+        thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->ID);
+        return static_cast<uint32_t>(texture->ID);
+    }
+
+    return 0; // Return 0 if failed to load
+}
+
+void AssetBrowserPanel::ClearThumbnailCache() {
+    // Note: We don't delete the OpenGL textures here because they're managed
+    // by the ResourceManager. We just clear our GUID->ID mapping.
+    thumbnailCache.clear();
+}
+
+void AssetBrowserPanel::RemoveThumbnailFromCache(const GUID_128& guid) {
+    // Create cache key from GUID
+    uint64_t cacheKey = guid.high ^ guid.low;
+    
+    auto it = thumbnailCache.find(cacheKey);
+    if (it != thumbnailCache.end()) {
+        thumbnailCache.erase(it);
+    }
+}
+
+// ============================================================================
+// Directory Tree Synchronization
+// ============================================================================
+
+void AssetBrowserPanel::EnsureDirectoryExpanded(const std::string& directoryPath) {
+    // Expand all parent directories up to and including the target directory
+    std::filesystem::path targetPath(directoryPath);
+    std::filesystem::path rootPath(rootAssetDirectory);
+    
+    // Build list of all parent directories from root to target
+    std::vector<std::string> pathsToExpand;
+    std::filesystem::path currentPath = targetPath;
+    
+    while (currentPath != rootPath && currentPath.has_parent_path()) {
+        pathsToExpand.push_back(currentPath.generic_string());
+        currentPath = currentPath.parent_path();
+    }
+    
+    // Add root path
+    pathsToExpand.push_back(rootPath.generic_string());
+    
+    // Reverse to go from root to target
+    std::reverse(pathsToExpand.begin(), pathsToExpand.end());
+    
+    // Add all paths to expanded directories set
+    // This will be applied on next frame with ImGuiCond_Once
+    for (const auto& path : pathsToExpand) {
+        expandedDirectories.insert(path);
+    }
+}
+
+void AssetBrowserPanel::SyncTreeWithCurrentDirectory() {
+    // This ensures the current directory's parents are expanded
+    EnsureDirectoryExpanded(currentDirectory);
+    needsTreeSync = false;
 }

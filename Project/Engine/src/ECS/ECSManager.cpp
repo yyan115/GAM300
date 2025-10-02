@@ -3,6 +3,7 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "ECS/NameComponent.hpp"
 #include <Transform/TransformComponent.hpp>
+#include <Math/Vector3D.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
@@ -11,9 +12,6 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
-#include "Sound/AudioSystem.hpp"
-#include "Physics/RigidbodyComponent.hpp"
-#include "Physics/ColliderComponent.hpp"
 #include "Logging.hpp"
 
 void ECSManager::Initialize() {
@@ -28,12 +26,14 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
-	RegisterComponent<LightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
-	RegisterComponent<RigidbodyComponent>();
-	RegisterComponent<ColliderComponent>();
+	RegisterComponent<SpriteRenderComponent>();
+	RegisterComponent<DirectionalLightComponent>();
+	RegisterComponent<PointLightComponent>();
+	RegisterComponent<SpotLightComponent>();
+	RegisterComponent<ParticleComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -57,7 +57,7 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<TextRenderComponent>());
 		SetSystemSignature<TextRenderingSystem>(signature);
 	}
-	
+
 	debugDrawSystem = RegisterSystem<DebugDrawSystem>();
 	{
 		Signature signature;
@@ -65,28 +65,34 @@ void ECSManager::Initialize() {
 		SetSystemSignature<DebugDrawSystem>(signature);
 	}
 
-	// Audio system
+	lightingSystem = RegisterSystem<LightingSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<DirectionalLightComponent>());
+		signature.set(GetComponentID<PointLightComponent>());
+		signature.set(GetComponentID<SpotLightComponent>());
+		SetSystemSignature<LightingSystem>(signature);
+	}
+
+	spriteSystem = RegisterSystem<SpriteSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<SpriteRenderComponent>());
+		SetSystemSignature<SpriteSystem>(signature);
+	}
+
+	particleSystem = RegisterSystem<ParticleSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<ParticleComponent>());
+		SetSystemSignature<ParticleSystem>(signature);
+	}
+	
 	audioSystem = RegisterSystem<AudioSystem>();
 	{
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
 		SetSystemSignature<AudioSystem>(signature);
-	}
-
-	lightingSystem = RegisterSystem<LightingSystem>();
-	{
-		Signature signature;
-		signature.set(GetComponentID<LightComponent>());
-		SetSystemSignature<LightingSystem>(signature);
-	}
-
-	// Physics system
-	physicsSystem = RegisterSystem<PhysicsSystem>();
-	{
-		Signature signature;
-		signature.set(GetComponentID<RigidbodyComponent>());
-		// Physics system processes entities with rigidbody components
-		SetSystemSignature<PhysicsSystem>(signature);
 	}
 }
 
@@ -106,7 +112,14 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
-	ecsManager.AddComponent<Transform>(entity, Transform());
+
+	Transform defaultTransform;
+	defaultTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+	defaultTransform.localScale = Vector3D(1.0f, 1.0f, 1.0f);
+	defaultTransform.localRotation = Quaternion();
+	defaultTransform.isDirty = true;
+
+	ecsManager.AddComponent<Transform>(entity, defaultTransform);
 
 	return entity;
 }
@@ -116,7 +129,6 @@ void ECSManager::DestroyEntity(Entity entity) {
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
 	ENGINE_PRINT("[ECSManager] Destroyed entity " , entity , ". Total active entities: " , entityManager->GetActiveEntityCount() , "\n");
-	//std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }
 
 void ECSManager::ClearAllEntities() {
@@ -124,5 +136,4 @@ void ECSManager::ClearAllEntities() {
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
 	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
-	//std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }

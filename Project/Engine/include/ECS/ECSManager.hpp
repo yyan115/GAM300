@@ -10,10 +10,11 @@
 #include <Graphics/Model/ModelSystem.hpp>
 #include <Graphics/TextRendering/TextRenderingSystem.hpp>
 #include <Graphics/DebugDraw/DebugDrawSystem.hpp>
-#include "Sound/AudioSystem.hpp"
-#include <Physics/PhysicsSystem.hpp>
 #include "../Engine.h"  // For ENGINE_API macro
 #include <Graphics/Lights/LightingSystem.hpp>
+#include <Graphics/Sprite/SpriteSystem.hpp>
+#include <Graphics/Particle/ParticleSystem.hpp>
+#include <Sound/AudioSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -101,9 +102,10 @@ public:
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
-	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
-	std::shared_ptr<PhysicsSystem> physicsSystem;
+	std::shared_ptr<SpriteSystem> spriteSystem;
+	std::shared_ptr<ParticleSystem> particleSystem;
+	std::shared_ptr<AudioSystem> audioSystem;
 
 private:
 	template <typename T>

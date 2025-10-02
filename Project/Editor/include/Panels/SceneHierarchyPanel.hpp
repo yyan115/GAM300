@@ -22,6 +22,11 @@ public:
      */
     void OnImGuiRender() override;
 
+    /**
+     * @brief Mark the hierarchy panel as needing a refresh.
+     */
+    void MarkForRefresh();
+
 private:
     void DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren = false);
     void ReparentEntity(Entity draggedEntity, Entity targetParent);
@@ -29,8 +34,17 @@ private:
     void TraverseHierarchy(Entity entity, std::set<Entity>& nestedChildren, std::function<void(Entity, std::set<Entity>&)> addNestedChildren);
     void AddNestedChildren(Entity entity, std::set<Entity>& nestedChildren);
 
+    // Entity creation functions
+    Entity CreateEmptyEntity(const std::string& name = "Empty Entity");
+    Entity CreateCubeEntity();
+    Entity CreateCameraEntity();
+
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);
     std::vector<char> renameBuffer;
     bool startRenaming = false;
+
+    // Force refresh mechanism
+    bool needsRefresh = false;
+
 };

@@ -11,7 +11,6 @@ bool FileUtilities::RemoveFile(const std::string& filePath) {
 	std::filesystem::path p(filePath);
 	if (std::filesystem::exists(p) == false) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] WARNING: Attempted to delete non-existent file: ", p.generic_string(), "\n");
-		//std::cerr << "[FileUtilities] WARNING: Attempted to delete non-existent file: " << p.generic_string() << std::endl;
 		return true; // Consider it a success since the file doesn't exist.
 	}
 
@@ -19,11 +18,11 @@ bool FileUtilities::RemoveFile(const std::string& filePath) {
 	bool success = std::filesystem::remove(p, ec);
 	if (!success || ec) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] ERROR: Failed to delete file: " , p.generic_string() , " (" , ec.message() , ")\n");
-		//std::cerr << "[FileUtilities] ERROR: Failed to delete file: " << p.generic_string() << " (" << ec.message() << ")" << std::endl;
 		return false;
 	}
+	ENGINE_PRINT("[FileUtilities] Successfully deleted file: ", p.generic_string(), "\n");
 
-	std::cout << "[FileUtilities] Successfully deleted file: " << p.generic_string() << std::endl;
+	//std::cout << "[FileUtilities] Successfully deleted file: " << p.generic_string() << std::endl;
 
 	// Then remove the file from the solution root folder to update all future builds.
 	return RemoveFromSolutionRootDir(filePath);
@@ -55,14 +54,14 @@ const std::filesystem::path& FileUtilities::GetSolutionRootDir() {
 bool FileUtilities::RemoveFromSolutionRootDir(const std::string& filePath) {
 	std::filesystem::path p(GetSolutionRootDir() / filePath);
 	if (std::filesystem::exists(p) == false) {
-		std::cerr << "[FileUtilities] WARNING: Attempted to delete non-existent file: " << p.generic_string() << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] WARNING: Attempted to delete non-existent file: ", p.generic_string(), "\n");
 		return true; // Consider it a success since the file doesn't exist.
 	}
 
 	std::error_code ec;
 	bool success = std::filesystem::remove(p, ec);
 	if (!success || ec) {
-		std::cerr << "[FileUtilities] ERROR: Failed to delete file: " << p.generic_string() << " (" << ec.message() << ")" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] ERROR: Failed to delete file: ", p.generic_string(), " (", ec.message(), ")", "\n");
 		return false;
 	}
 
@@ -79,9 +78,14 @@ bool FileUtilities::CopyFile(const std::string& srcPath, const std::string& dstP
 			std::filesystem::copy_options::overwrite_existing);
 	}
 	catch (const std::filesystem::filesystem_error& e) {
-		std::cerr << "[FileUtilities] Copy failed: " << e.what() << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] Copy failed: ", e.what(), "\n");
 		return false;
 	}
 
 	return true;
 }
+
+bool FileUtilities::CopyFileW(const std::string& srcPath, const std::string& dstPath) {
+	return CopyFile(srcPath, dstPath);
+}
+

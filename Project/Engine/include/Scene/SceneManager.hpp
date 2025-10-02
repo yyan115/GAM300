@@ -34,6 +34,8 @@ public:
 	// Get the current scene (returns null if no scene is loaded)
 	IScene* GetCurrentScene() { return currentScene.get(); }
 
+	std::string GetSceneName() const;
+
 private:
 	SceneManager() = default;
 
@@ -41,4 +43,5 @@ private:
 
 	std::unique_ptr<IScene> currentScene = nullptr;
 	std::string currentScenePath;
+	std::string currentSceneName;
 };

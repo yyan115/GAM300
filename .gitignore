@@ -5,6 +5,9 @@
 Project/Build
 /Project/.claude
 
+# Ignore claude
+.claude
+
 # vcpkg - ignore entire directory (clone fresh for each dev environment)
 Project/vcpkg/
 Project/vcpkg_installed/
@@ -41,3 +44,4 @@ AndroidProject/local.properties
 *.font
 *.dds
 *.ktx
+*.meta

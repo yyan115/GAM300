@@ -8,6 +8,7 @@
 #include <android/asset_manager.h>
 #include <android/log.h>
 #include <EGL/egl.h>
+#include "Input/VirtualControls.hpp"
 
 class AndroidPlatform : public IPlatform {
 private:
@@ -72,7 +73,10 @@ public:
     ENGINE_API void SetNativeWindow(ANativeWindow* nativeWindow);
     ENGINE_API void SetAssetManager(AAssetManager* manager);
     ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
-    void HandleInputEvent(/* Android input event parameters */);
+    
+    // Input handling methods
+    ENGINE_API void HandleTouchEvent(int action, float x, float y);
+    ENGINE_API void HandleKeyEvent(int keyCode, int action);
 };
 
 #endif // ANDROID

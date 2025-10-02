@@ -3,21 +3,28 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "IRenderComponent.hpp"
-#include "Graphics/LightManager.hpp"
-#include "Graphics/Camera.h"
+#include "Graphics/Camera/Camera.h"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Model/Model.h"
 #include "Model/ModelRenderComponent.hpp"
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
 #include "DebugDraw/DebugDrawComponent.hpp"
+#include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
+#include "Engine.h"  // For ENGINE_API macro
+#include "Particle/ParticleComponent.hpp"
 
-class GraphicsManager {
+class ENGINE_API GraphicsManager {
 public:
+	enum class ViewMode {
+		VIEW_3D,      // 3D mode - show 3D models and 3D sprites
+		VIEW_2D       // 2D mode - show 2D sprites only in screen space
+	};
+
 	static GraphicsManager& GetInstance();
 
-	// Initialization 
+	// Initialization
 	bool Initialize(int window_width, int window_height);
 	void Shutdown();
 
@@ -29,6 +36,20 @@ public:
     // Camera management
     void SetCamera(Camera* camera);
     Camera* GetCurrentCamera() const { return currentCamera; }
+
+    // Viewport management (for editor/scene panel rendering with correct aspect ratio)
+    void SetViewportSize(int width, int height);
+    void GetViewportSize(int& width, int& height) const;
+
+    // View mode management (2D/3D toggle)
+    void SetViewMode(ViewMode mode) { viewMode = mode; }
+    ViewMode GetViewMode() const { return viewMode; }
+    bool Is3DMode() const { return viewMode == ViewMode::VIEW_3D; }
+    bool Is2DMode() const { return viewMode == ViewMode::VIEW_2D; }
+
+    // Editor rendering flag (to distinguish editor from game rendering)
+    void SetRenderingForEditor(bool isEditor) { isRenderingForEditor = isEditor; }
+    bool IsRenderingForEditor() const { return isRenderingForEditor; }
 
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
@@ -45,7 +66,6 @@ private:
 
     // Private model rendering methods
     void RenderModel(const ModelRenderComponent& item);
-    void ApplyLighting(Shader& shader);
     void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
     
     glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
@@ -59,14 +79,25 @@ private:
     int screenWidth = 0;
     int screenHeight = 0;
 
+    // Viewport dimensions for proper aspect ratio (set by editor/scene panel)
+    int viewportWidth = 0;
+    int viewportHeight = 0;
+
+    // View mode state (2D/3D toggle)
+    ViewMode viewMode = ViewMode::VIEW_3D;
+
+    // Flag to indicate if currently rendering for editor (vs game)
+    bool isRenderingForEditor = false;
+
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);
 
-    // Remove later
-    glm::vec3 pointLightPositions[4] = {
-        glm::vec3(0.7f,  0.2f,  2.0f),
-        glm::vec3(2.3f, -3.3f, -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3(0.0f,  0.0f, -1.0f)
-    };
+    // Particle
+    void RenderParticles(const ParticleComponent& item);
+
+    // Sprite rendering methods
+    void RenderSprite(const SpriteRenderComponent& item);
+    void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
+        const glm::vec3& scale, float rotation);
+    void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
 };

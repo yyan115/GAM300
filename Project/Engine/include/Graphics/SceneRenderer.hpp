@@ -75,11 +75,13 @@ public:
      * @param cameraFront Camera front vector
      * @param cameraUp Camera up vector
      * @param cameraZoom Camera zoom/FOV
+     * @param orthoZoomLevel Orthographic zoom level for 2D mode
      */
     static void RenderSceneForEditor(const glm::vec3& cameraPos,
                                    const glm::vec3& cameraFront,
                                    const glm::vec3& cameraUp,
-                                   float cameraZoom);
+                                   float cameraZoom,
+                                   float orthoZoomLevel = 1.0f);
 
 private:
     // Static framebuffer data

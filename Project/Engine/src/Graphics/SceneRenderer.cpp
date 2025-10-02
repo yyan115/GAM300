@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Graphics/SceneRenderer.hpp"
-#include "Graphics/Camera.h"
+#include "Graphics/Camera/Camera.h"
 #include "Engine.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -55,7 +55,6 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "SceneRenderer: Framebuffer not complete!\n");
-        //std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -83,7 +82,6 @@ void SceneRenderer::DeleteSceneFramebuffer()
         delete editorCamera;
         editorCamera = nullptr;
         ENGINE_PRINT("[SceneRenderer] Editor camera deleted\n");
-        //std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
     }
 }
 
@@ -122,7 +120,6 @@ void SceneRenderer::RenderScene()
         Engine::Draw();
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderScene: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
     }
 }
 
@@ -132,7 +129,7 @@ void SceneRenderer::RenderSceneForEditor()
     RenderSceneForEditor(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
 }
 
-void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom)
+void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom, float orthoZoomLevel)
 {
     try {
         // Initialize static editor camera if not already done
@@ -145,10 +142,14 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         editorCamera->Front = cameraFront;
         editorCamera->Up = cameraUp;
         editorCamera->Zoom = cameraZoom;
+        editorCamera->OrthoZoomLevel = orthoZoomLevel;
 
         // Get the ECS manager and graphics manager
         ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+        // Mark that we're rendering for the editor (for view mode filtering)
+        gfxManager.SetRenderingForEditor(true);
 
         mainECS.transformSystem->Update();
 
@@ -160,28 +161,37 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         gfxManager.Clear();
 
         // Update model system for rendering (without input-based updates)
-        if (mainECS.modelSystem) {
+        if (mainECS.modelSystem) 
+        {
             mainECS.modelSystem->Update();
         }
 		if (mainECS.textSystem)
 		{
 			mainECS.textSystem->Update();
 		}
+        if (mainECS.spriteSystem)
+        {
+            mainECS.spriteSystem->Update();
+        }
+        if (mainECS.lightingSystem)
+        {
+            mainECS.lightingSystem->Update();
+        }
+        if (mainECS.particleSystem)
+        {
+            mainECS.particleSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();
 
-        // Draw light cubes using the static editor camera (not the game camera)
-        SceneInstance* currentScene = static_cast<SceneInstance*>(SceneManager::GetInstance().GetCurrentScene());
-        if (currentScene) {
-            currentScene->DrawLightCubes(*editorCamera);
-        }
-
         // End frame
         gfxManager.EndFrame();
 
+        // Reset editor rendering flag
+        gfxManager.SetRenderingForEditor(false);
+
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
     }
 }

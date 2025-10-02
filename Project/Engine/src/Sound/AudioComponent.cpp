@@ -2,112 +2,299 @@
 #include "Engine.h"
 #include "Sound/AudioComponent.hpp"
 #include "Sound/Audio.hpp"
+#include "Logging.hpp"
 
-// Define the constructor out-of-line to reduce header dependencies and recompile time.
 AudioComponent::AudioComponent() {}
 
 AudioComponent::~AudioComponent() {
-    // Ensure we stop any playing channels
-    if (Channel) {
-        AudioSystem::GetInstance().Stop(Channel);
-        Channel = 0;
-    }
-    // audioAsset will be automatically cleaned up by shared_ptr
-    audioAsset = nullptr;
-}
-
-void AudioComponent::SetAudioAssetPath(const std::string& path) {
-    if (path == AudioAssetPath) return;
-
-    // Stop current audio if playing
-    if (Channel) {
-        AudioSystem::GetInstance().Stop(Channel);
-        Channel = 0;
-    }
-
-    AudioAssetPath = path;
-    audioAsset = nullptr;
-
-    if (!AudioAssetPath.empty()) {
-        // Preload the audio asset synchronously when the path is set
-        audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, true);
-        if (!audioAsset) {
-            std::cerr << "[AudioComponent] ERROR: Failed to load audio asset: " << AudioAssetPath << std::endl;
-        }
-        // If configured to play on awake, attempt to play now (Play will use the preloaded asset)
-        if (PlayOnAwake && audioAsset) {
-            Play();
-        }
-    }
+    StopInternal();
+    CachedAudioAsset = nullptr;
 }
 
 void AudioComponent::Play() {
-    // Load the asset lazily via ResourceManager if not already loaded
-    if (!audioAsset && !AudioAssetPath.empty()) {
-        // Force load so editor/Inspector playback works immediately
-        audioAsset = ResourceManager::GetInstance().GetResource<Audio>(AudioAssetPath, true);
-        if (!audioAsset) {
-            std::cerr << "[AudioComponent] ERROR: Failed to load audio asset: " << AudioAssetPath << std::endl;
-            return;
-        }
-    }
-
-    if (!audioAsset) {
-        std::cerr << "[AudioComponent] ERROR: No audio asset to play." << std::endl;
-        return;
-    }
-
-    // Ensure the AudioSystem (FMOD) is initialized before attempting to play.
-    AudioSystem& AudioSys = AudioSystem::GetInstance();
-    if (!AudioSys.Initialise()) {
-        std::cerr << "[AudioComponent] ERROR: AudioSystem failed to initialize." << std::endl;
-        return;
-    }
-
-    if (Spatialize) {
-        Channel = AudioSys.PlayAudioAtPosition(audioAsset, Position, Loop, Volume, Attenuation);
-    }
-    else {
-        Channel = AudioSys.PlayAudio(audioAsset, Loop, Volume);
+    if (Mute) return;
+    if (GetIsPlaying()) return;
+    
+    StopInternal();
+    CurrentChannel = PlayInternal();
+    if (CurrentChannel != 0) {
+        IsPlaying = true;
+        IsPaused = false;
+        WasPlayingBeforePause = false;
     }
 }
 
-void AudioComponent::Pause() {
-    if (Channel) {
-        // FMOD doesn't have a direct pause, so we stop for simplicity
-        // In a more complete implementation, you might want to track pause state
-        AudioSystem::GetInstance().Stop(Channel);
-        Channel = 0;
+void AudioComponent::PlayDelayed(float delay) {
+    // TODO: Implement delayed playback (requires timing system)
+    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayDelayed not yet implemented\n");
+    Play();
+}
+
+void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
+    if (Mute) return;
+    
+    std::shared_ptr<Audio> clipToPlay = clip ? clip : CachedAudioAsset;
+    if (!clipToPlay && !EnsureAssetLoaded()) return;
+    if (!clipToPlay) clipToPlay = CachedAudioAsset;
+    
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    ChannelHandle oneShotChannel;
+    
+    if (Spatialize) {
+        oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend);
+    } else if (!OutputAudioMixerGroup.empty()) {
+        oneShotChannel = audioMgr.PlayAudioOnBus(clipToPlay, OutputAudioMixerGroup, false, Volume);
+    } else {
+        oneShotChannel = audioMgr.PlayAudio(clipToPlay, false, Volume);
     }
+    
+    if (oneShotChannel != 0) {
+        audioMgr.SetChannelPitch(oneShotChannel, Pitch);
+    }
+}
+
+void AudioComponent::PlayScheduled(double time) {
+    // TODO: Implement scheduled playback
+    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayScheduled not yet implemented\n");
+    Play();
 }
 
 void AudioComponent::Stop() {
-    if (Channel) {
-        AudioSystem::GetInstance().Stop(Channel);
-        Channel = 0;
+    StopInternal();
+    IsPlaying = false;
+    IsPaused = false;
+    WasPlayingBeforePause = false;
+    PlayOnAwakeTriggered = false;  // Reset for next enable
+}
+
+void AudioComponent::Pause() {
+    if (CurrentChannel != 0 && GetIsPlaying()) {
+        AudioManager::GetInstance().Pause(CurrentChannel);
+        IsPlaying = false;
+        IsPaused = true;
+        WasPlayingBeforePause = true;
     }
 }
 
-void AudioComponent::UpdatePosition(const Vector3D& pos) {
-    Position = pos;
-    if (Spatialize && Channel) {
-        AudioSystem::GetInstance().UpdateChannelPosition(Channel, Position);
+void AudioComponent::UnPause() {
+    if (CurrentChannel != 0 && GetIsPaused()) {
+        AudioManager::GetInstance().Resume(CurrentChannel);
+        IsPlaying = true;
+        IsPaused = false;
+        WasPlayingBeforePause = false;
+    } else if (WasPlayingBeforePause && CurrentChannel == 0) {
+        Play();
     }
 }
 
-bool AudioComponent::IsPlaying() {
-    return Channel != 0 && AudioSystem::GetInstance().IsPlaying(Channel);
+bool AudioComponent::GetIsPlaying() const {
+    if (CurrentChannel == 0) return false;
+    return AudioManager::GetInstance().IsPlaying(CurrentChannel);
+}
+
+bool AudioComponent::GetIsPaused() const {
+    return IsPaused;
+}
+
+AudioSourceState AudioComponent::GetState() const {
+    if (CurrentChannel == 0) return AudioSourceState::Stopped;
+    return AudioManager::GetInstance().GetState(CurrentChannel);
 }
 
 void AudioComponent::SetVolume(float newVolume) {
-    Volume = newVolume;
-    if (Channel) {
-        AudioSystem::GetInstance().SetChannelVolume(Channel, Volume);
+    Volume = std::clamp(newVolume, 0.0f, 1.0f);
+    if (CurrentChannel != 0) {
+        AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     }
 }
 
-void AudioComponent::SetPitch(float pitch) {
-    if (Channel) {
-        AudioSystem::GetInstance().SetChannelPitch(Channel, pitch);
+void AudioComponent::SetPitch(float newPitch) {
+    Pitch = std::clamp(newPitch, 0.1f, 3.0f);
+    if (CurrentChannel != 0) {
+        AudioManager::GetInstance().SetChannelPitch(CurrentChannel, Pitch);
+    }
+}
+
+void AudioComponent::SetLoop(bool shouldLoop) {
+    Loop = shouldLoop;
+    if (CurrentChannel != 0) {
+        AudioManager::GetInstance().SetChannelLoop(CurrentChannel, Loop);
+    }
+}
+
+void AudioComponent::SetMute(bool shouldMute) {
+    Mute = shouldMute;
+    if (CurrentChannel != 0) {
+        AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
+    }
+}
+
+void AudioComponent::SetSpatialize(bool enable) {
+    bool wasPlaying = GetIsPlaying();
+    if (wasPlaying && Spatialize != enable) {
+        Stop();
+        Spatialize = enable;
+        Play();
+    } else {
+        Spatialize = enable;
+    }
+}
+
+void AudioComponent::SetSpatialBlend(float blend) {
+    SpatialBlend = std::clamp(blend, 0.0f, 1.0f);
+    // Apply attenuation based on spatial blend
+    if (CurrentChannel != 0 && Spatialize) {
+        UpdateChannelProperties();
+    }
+}
+
+void AudioComponent::SetOutputAudioMixerGroup(const std::string& groupName) {
+    if (OutputAudioMixerGroup != groupName) {
+        bool wasPlaying = GetIsPlaying();
+        if (wasPlaying) { Stop(); }
+        OutputAudioMixerGroup = groupName;
+        if (wasPlaying) { Play(); }
+    }
+}
+
+void AudioComponent::SetPosition(const Vector3D& pos) {
+    Position = pos;
+    OnTransformChanged(pos);
+}
+
+void AudioComponent::OnTransformChanged(const Vector3D& newPosition) {
+    Position = newPosition;
+    if (CurrentChannel != 0 && Spatialize) {
+        AudioManager::GetInstance().UpdateChannelPosition(CurrentChannel, Position);
+    }
+}
+
+void AudioComponent::SetClip(const std::string& clipPath) {
+    // Only reload if path changed or asset not loaded
+    if (clipPath == Clip && AssetLoaded && CachedAudioAsset) {
+        return;
+    }
+    
+    StopInternal();
+    Clip = clipPath;
+    CachedAudioAsset = nullptr;
+    AssetLoaded = false;
+    IsPlaying = false;
+    IsPaused = false;
+    PlayOnAwakeTriggered = false;  // Reset for new clip
+}
+
+void AudioComponent::SetClip(std::shared_ptr<Audio> clip) {
+    StopInternal();
+    CachedAudioAsset = clip;
+    AssetLoaded = (clip != nullptr);
+    Clip = clip ? clip->assetPath : "";
+    IsPlaying = false;
+    IsPaused = false;
+    PlayOnAwakeTriggered = false;
+}
+
+bool AudioComponent::HasValidClip() const {
+    return CachedAudioAsset != nullptr && AssetLoaded;
+}
+
+void AudioComponent::UpdateComponent() {
+    // Ensure asset is loaded if we have a valid path
+    if (!Clip.empty() && !HasValidClip()) {
+        EnsureAssetLoaded();
+    }
+
+    UpdatePlaybackState();
+
+    // Handle PlayOnAwake: Unity-style auto-play behavior
+    if (PlayOnAwake) {
+        if (!PlayOnAwakeTriggered && !GetIsPlaying() && HasValidClip() && !IsPlaying) {
+            if (Engine::IsPlayMode()) {
+                Play();
+                PlayOnAwakeTriggered = true;
+            }
+        }
+    } else {
+        // Reset flag if PlayOnAwake disabled
+        PlayOnAwakeTriggered = false;
+    }
+}
+
+bool AudioComponent::EnsureAssetLoaded() {
+    if (AssetLoaded && CachedAudioAsset) return true;
+    if (Clip.empty()) return false;
+
+    try {
+        CachedAudioAsset = ResourceManager::GetInstance().GetResource<Audio>(Clip, false);
+        AssetLoaded = (CachedAudioAsset != nullptr);
+        if (!AssetLoaded) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioComponent] Failed to load audio clip: ", Clip, "\\n");
+        }
+    } catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioComponent] Exception loading audio clip ", Clip, ": ", e.what(), "\\n");
+        AssetLoaded = false;
+    }
+    return AssetLoaded;
+}
+
+void AudioComponent::UpdateChannelProperties() {
+    if (CurrentChannel == 0) return;
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    audioMgr.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
+    audioMgr.SetChannelPitch(CurrentChannel, Pitch);
+    audioMgr.SetChannelLoop(CurrentChannel, Loop);
+    if (Spatialize) {
+        audioMgr.UpdateChannelPosition(CurrentChannel, Position);
+    }
+}
+
+void AudioComponent::UpdatePlaybackState() {
+    if (CurrentChannel == 0) {
+        if (IsPlaying || IsPaused) {
+            IsPlaying = false;
+            IsPaused = false;
+        }
+        return;
+    }
+    
+    AudioSourceState actualState = AudioManager::GetInstance().GetState(CurrentChannel);
+    if (actualState == AudioSourceState::Stopped) {
+        CurrentChannel = 0;
+        IsPlaying = false;
+        IsPaused = false;
+        WasPlayingBeforePause = false;
+    } else {
+        IsPlaying = (actualState == AudioSourceState::Playing);
+        IsPaused = (actualState == AudioSourceState::Paused);
+    }
+}
+
+ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
+    if (!EnsureAssetLoaded()) return 0;
+    
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    ChannelHandle channel = 0;
+    
+    if (Spatialize) {
+        channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend);
+    } else if (!OutputAudioMixerGroup.empty()) {
+        channel = audioMgr.PlayAudioOnBus(CachedAudioAsset, OutputAudioMixerGroup, Loop && !oneShot, Volume);
+    } else {
+        channel = audioMgr.PlayAudio(CachedAudioAsset, Loop && !oneShot, Volume);
+    }
+    
+    if (channel != 0) {
+        audioMgr.SetChannelPitch(channel, Pitch);
+        if (Mute) {
+            audioMgr.SetChannelVolume(channel, 0.0f);
+        }
+    }
+    return channel;
+}
+
+void AudioComponent::StopInternal() {
+    if (CurrentChannel != 0) {
+        AudioManager::GetInstance().Stop(CurrentChannel);
+        CurrentChannel = 0;
     }
 }

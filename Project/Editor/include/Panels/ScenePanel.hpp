@@ -2,8 +2,12 @@
 
 #include "EditorPanel.hpp"
 #include "EditorCamera.hpp"
+#include "EditorState.hpp"
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "Utilities/GUID.hpp"
+#include <memory>
+#include <string>
 
 /**
  * @brief Scene editing panel with ImGuizmo integration.
@@ -22,6 +26,23 @@ public:
      */
     void OnImGuiRender() override;
 
+    /**
+     * @brief Reposition camera for 2D/3D mode switching
+     * @param target The target position to look at
+     */
+    void SetCameraTarget(const glm::vec3& target);
+
+    /**
+     * @brief Reset camera zoom to default (1.0)
+     */
+    void ResetCameraZoom() { editorCamera.OrthoZoomLevel = 1.0f; }
+
+    /**
+     * @brief Set camera zoom level
+     * @param zoom Zoom level (1.0 = normal, >1.0 = zoomed out, <1.0 = zoomed in)
+     */
+    void SetCameraZoom(float zoom) { editorCamera.OrthoZoomLevel = zoom; }
+
 private:
     void AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize);
 
@@ -37,14 +58,26 @@ private:
 
     // Matrix storage for ImGuizmo
     float identityMatrix[16];
-    
+
+    // Model drag-and-drop preview state
+    bool isDraggingModel = false;
+    GUID_128 previewModelGUID = {0, 0};
+    std::string previewModelPath;
+    glm::vec3 previewPosition = glm::vec3(0.0f);
+    bool previewValidPlacement = true;
+    Entity previewEntity = static_cast<Entity>(-1);
+
     void InitializeMatrices();
     void HandleKeyboardInput();
     void HandleCameraInput();
     void HandleEntitySelection();
+    void HandleModelDragDrop(float sceneWidth, float sceneHeight);
+    void RenderModelPreview(float sceneWidth, float sceneHeight);
+    Entity SpawnModelEntity(const glm::vec3& position);
     void RenderSceneWithEditorCamera(int width, int height);
     void HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight);
     void RenderViewGizmo(float sceneWidth, float sceneHeight);
+    void DrawGameViewportIndicator();
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);

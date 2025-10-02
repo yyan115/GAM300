@@ -1,15 +1,16 @@
 #pragma once
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
-#include "Graphics/Camera.h"
+#include "Graphics/Camera/Camera.h"
 #include "Graphics/VAO.h"
 #include "Graphics/VBO.h"
 #include "Graphics/EBO.h"
 #include "DebugDrawComponent.hpp"
+#include "Engine.h"  // For ENGINE_API macro
 
 class Model;
 
-class DebugDrawSystem : public System {
+class ENGINE_API DebugDrawSystem : public System {
 public:
     DebugDrawSystem() = default;
     ~DebugDrawSystem() = default;
