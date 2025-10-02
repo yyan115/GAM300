@@ -212,10 +212,9 @@ void SceneInstance::Initialize() {
 		// Test Particle
 		Entity particleEntity = ecsManager.CreateEntity();
 		ecsManager.GetComponent<NameComponent>(particleEntity).name = "Test Particles";
-
 		ecsManager.AddComponent<ParticleComponent>(particleEntity, ParticleComponent{});
 		auto& particleComp = ecsManager.GetComponent<ParticleComponent>(particleEntity);
-		ecsManager.transformSystem->SetLocalPosition(particleEntity, { 0, 1, 0 }); // Used to set emitterPosition variable
+		ecsManager.transformSystem->SetLocalPosition(particleEntity, { 0, 1, -3 }); // Used to set emitterPosition variable
 		particleComp.emissionRate = 50.0f;
 		particleComp.maxParticles = 1000;
 		particleComp.particleLifetime = 2.0f;
@@ -226,19 +225,11 @@ void SceneInstance::Initialize() {
 		particleComp.initialVelocity = glm::vec3(0, 2.0f, 0);
 		particleComp.velocityRandomness = 1.0f;
 		particleComp.gravity = glm::vec3(0, -2.0f, 0);
-
 		// Load resources
-		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesome_face.png");
+		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
 		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
 
 	}
-
-	// Creates light
-	lightShader = std::make_shared<Shader>();
-	lightShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("light"));
-	//lightShader->LoadAsset("Resources/Shaders/light");
-	std::vector<std::shared_ptr<Texture>> emptyTextures = {};
-	lightCubeMesh = std::make_shared<Mesh>(lightVertices, lightIndices, emptyTextures);
 
 	// Sets camera
 	gfxManager.SetCamera(&camera);
@@ -249,6 +240,7 @@ void SceneInstance::Initialize() {
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
 	ecsManager.spriteSystem->Initialise();
+	ecsManager.particleSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -264,6 +256,7 @@ void SceneInstance::Update(double dt) {
 	// Update systems.
 	mainECS.transformSystem->Update();
 	mainECS.lightingSystem->Update();
+
 }
 
 void SceneInstance::Draw() {
@@ -297,6 +290,10 @@ void SceneInstance::Draw() {
 
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
+	}
+	if (mainECS.particleSystem)
+	{
+		mainECS.particleSystem->Update();
 	}
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin

@@ -1,9 +1,12 @@
 /* Start Header ************************************************************************/
 /*!
 \file       ParticleSystem.cpp
-\author     TAN SHUN ZHI, Tomy, t.shunzhitomy, 2301341, t.shunzhitomy@digipen.edu (90%)
+\author     TAN SHUN ZHI, Tomy, t.shunzhitomy, 2301341, t.shunzhitomy@digipen.edu
 \date       Oct 2, 2025
-\brief      
+\brief      Implementation of the particle system for GPU-instanced particle rendering.
+            Manages particle emission, physics simulation, lifetime tracking, and
+            OpenGL buffer management for efficient rendering of large particle effects.
+            Supports configurable emission rates, velocities, colors, sizes, and gravity.
 
 Copyright (C) 2025 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
@@ -19,6 +22,19 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/EBO.h"
 #include "TimeManager.hpp"
 
+/******************************************************************************/
+/*!
+\fn         bool ParticleSystem::Initialise()
+\brief      Initializes the particle system for all entities with particle components
+
+\details    Sets up OpenGL buffers (VAO, VBO, EBO) for instanced rendering of particles.
+            Creates quad geometry and configures vertex attributes for both per-vertex
+            (position, UV) and per-instance (position, color, size, rotation) data.
+            Reserves memory for particle pools based on maxParticles setting.
+
+\return     bool - Returns true if initialization is successful
+*/
+/******************************************************************************/
 bool ParticleSystem::Initialise() 
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -89,6 +105,19 @@ bool ParticleSystem::Initialise()
     return true;
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp)
+\brief      Initializes a single particle component's rendering resources
+
+\details    Helper function that sets up VAO, VBO, and EBO for a particle component.
+            Configures quad geometry with position and UV attributes, and sets up
+            instance buffer for per-particle data. Used for runtime particle system
+            creation.
+
+\param      particleComp - Reference to the particle component to initialize
+*/
+/******************************************************************************/
 void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp) 
 {
     particleComp.particleVAO = new VAO();
@@ -129,6 +158,22 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
     particleComp.particles.reserve(particleComp.maxParticles);
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::Update()
+\brief      Main update loop for all particle systems
+
+\details    Iterates through all entities with particle components and performs:
+            - Particle physics updates (velocity, position, lifetime)
+            - Particle emission based on emission rate
+            - Dead particle removal
+            - Instance buffer updates with current particle data
+            - Submission of render data to GraphicsManager
+            Also initializes any uninitialized particle components added at runtime.
+
+\note       Only processes visible particle systems that are actively emitting
+*/
+/******************************************************************************/
 void ParticleSystem::Update()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -179,6 +224,17 @@ void ParticleSystem::Update()
     }
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::Shutdown()
+\brief      Cleans up all particle system resources
+
+\details    Deallocates all OpenGL buffers (VAO, VBO, EBO) for each particle
+            component and sets pointers to nullptr to prevent dangling references.
+            Should be called before destroying the particle system.
+*/
+/******************************************************************************/
+
 void ParticleSystem::Shutdown()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -210,6 +266,20 @@ void ParticleSystem::Shutdown()
     }
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
+\brief      Updates physics and visual properties of all particles in a component
+
+\details    Applies gravity to particle velocities, updates positions based on
+            velocity, decrements particle lifetime, and interpolates size and color
+            between start and end values based on normalized lifetime (0 = birth, 1 = death).
+
+\param      comp - Reference to the particle component to update
+\param      dt - Delta time in seconds since last frame
+*/
+/******************************************************************************/
+
 void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
 {
     for (auto& particle : comp.particles) 
@@ -228,6 +298,20 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
     }
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
+\brief      Spawns new particles based on emission rate and settings
+
+\details    Accumulates emission time and spawns particles at regular intervals
+            determined by emission rate. Each new particle is initialized with
+            emitter position, start properties (size, color), random rotation,
+            and initial velocity with randomness applied. Respects maxParticles limit.
+
+\param      comp - Reference to the particle component to emit from
+\param      dt - Delta time in seconds since last frame
+*/
+/******************************************************************************/
 void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
 {
     comp.timeSinceEmission += dt;
@@ -258,6 +342,17 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
     }
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::RemoveDeadParticles(ParticleComponent& comp)
+\brief      Removes particles that have exceeded their lifetime
+
+\details    Uses erase-remove idiom to efficiently remove all particles with
+            life <= 0.0f from the particle vector, maintaining contiguous memory.
+
+\param      comp - Reference to the particle component to clean up
+*/
+/******************************************************************************/
 void ParticleSystem::RemoveDeadParticles(ParticleComponent& comp)
 {
     comp.particles.erase(
@@ -267,6 +362,18 @@ void ParticleSystem::RemoveDeadParticles(ParticleComponent& comp)
     );
 }
 
+/******************************************************************************/
+/*!
+\fn         void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
+\brief      Uploads current particle data to GPU instance buffer
+
+\details    Builds an array of ParticleInstanceData from active particles containing
+            position, color, size, and rotation for each particle, then updates the
+            instance VBO for use in instanced rendering. Early exits if no particles exist.
+
+\param      comp - Reference to the particle component whose buffer needs updating
+*/
+/******************************************************************************/
 void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
 {
     if (comp.particles.empty()) return;
