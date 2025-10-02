@@ -74,7 +74,8 @@ void SceneInstance::Initialize() {
 		// Add component with constructor parameters
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
 		// Get reference and configure
-		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite); 
+		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite);
+		spriteComponent.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent.is3D = false;  // 2D screen space
 		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
 		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
@@ -91,7 +92,10 @@ void SceneInstance::Initialize() {
 		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
+		spriteComponent3D.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent3D.is3D = true;
+		spriteComponent3D.position = glm::vec3(2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
+		spriteComponent3D.saved3DPosition = glm::vec3(2.0f, 1.0f, 0.0f);  // Initialize saved position
 		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3D.isVisible = true;
 	
@@ -104,7 +108,10 @@ void SceneInstance::Initialize() {
 		spriteName3D.name = "sprite_3d_flat_test";
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
+		spriteComponent3DFlat.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent3DFlat.is3D = true;
+		spriteComponent3DFlat.position = glm::vec3(-2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
+		spriteComponent3DFlat.saved3DPosition = glm::vec3(-2.0f, 1.0f, 0.0f);  // Initialize saved position
 		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3DFlat.isVisible = true;
 		spriteComponent3DFlat.enableBillboard = false;

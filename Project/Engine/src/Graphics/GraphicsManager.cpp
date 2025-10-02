@@ -511,12 +511,13 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 
-		// Center the sprite BEFORE scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
-		// This makes the position represent the center instead of bottom-left corner
-		modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
-
-		// Apply scale AFTER centering
+		// Apply scale first
 		modelMatrix = glm::scale(modelMatrix, item.scale);
+
+		// Center the sprite AFTER scaling: offset by half the scaled size
+		// The quad is 0,0 to 1,1, so after scaling it's 0,0 to scale.x,scale.y
+		// Offset by -scale/2 to center it
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
 
 		Setup3DSpriteMatrices(*item.shader, modelMatrix);
 	}
@@ -536,11 +537,11 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 				modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 			}
 
-			// Center the sprite BEFORE scaling
-			modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
-
-			// Apply scale AFTER centering
+			// Apply scale first
 			modelMatrix = glm::scale(modelMatrix, item.scale);
+
+			// Center the sprite AFTER scaling
+			modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
 
 			Setup3DSpriteMatrices(*item.shader, modelMatrix);
 		} else {
@@ -590,14 +591,17 @@ void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& pos
 	model = glm::translate(model, position);
 
 	// Apply rotation around the center of the sprite
-	if (rotation != 0.0f) 
+	if (rotation != 0.0f)
 	{
-		model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
 		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
 	}
 
+	// Apply scale first
 	model = glm::scale(model, scale);
+
+	// Center the sprite AFTER scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
+	// This makes the position represent the center instead of the corner
+	model = glm::translate(model, glm::vec3(-0.5f, -0.5f, 0.0f));
 	shader.setMat4("projection", projection);
 	shader.setMat4("model", model);
 	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D

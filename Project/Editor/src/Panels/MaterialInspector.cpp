@@ -1,5 +1,6 @@
 #include "Panels/MaterialInspector.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include "EditorComponents.hpp"
 #include "imgui.h"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Texture.h>
@@ -184,20 +185,21 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
-            // Texture display field (drag-drop target)
+            // Texture display field (drag-drop target) - Unity style
             std::string textureDisplay;
             if (currentPath.empty()) {
-                textureDisplay = "None (Drag texture here)";
+                textureDisplay = "None (Texture)";
             } else {
                 // Show just the filename for cleaner display
                 std::filesystem::path pathObj(currentPath);
                 textureDisplay = pathObj.filename().string();
             }
 
-            ImGui::Button(textureDisplay.c_str(), ImVec2(textureFieldWidth, 0));
+            // Unity-style drag-drop slot
+            EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
-            // Drag-drop target for textures
-            if (ImGui::BeginDragDropTarget()) {
+            // Drag-drop target for textures with visual feedback
+            if (EditorComponents::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
                     // Extract texture path from payload
                     const char* texturePath = (const char*)payload->Data;
@@ -214,7 +216,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     materialChanged = true;
                     std::cout << "[MaterialInspector] Successfully set texture path on material: " << assetPathStr << std::endl;
                 }
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
             }
 
             // Remove button (X) - centered
