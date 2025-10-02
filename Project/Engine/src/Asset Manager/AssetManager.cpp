@@ -98,6 +98,10 @@ std::string AssetManager::ExtractRelativeAndroidPath(const std::string& fullAndr
 	return fullAndroidPath.substr(canonicalAndroidResourcesPath.generic_string().length() + 1);
 }
 
+int AssetManager::GetAssetMetaMapSize() {
+	return static_cast<int>(assetMetaMap.size());
+}
+
 void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
@@ -351,19 +355,30 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 	return "";
 }
 
-void AssetManager::CompileAllAssetsForAndroid() {
-	// SHOULD RUN ON ANOTHER THREAD, TBD
+std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
+	// THIS RUNS ON A SEPARATE THREAD.
 	std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
+	numCompiledAssets = 0;
+	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
 		if (ResourceManager::GetInstance().IsExtensionShader(p.extension().generic_string())) {
+			// Skip compiling shaders because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath + ".vert";
+			remainingPaths.push_back(assetPath);
+			continue;
+		}
+		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
+			// SKip compiling meshes because they must be compiled on the main OpenGL thread.
+			remainingPaths.push_back(assetPath);
+			continue;
 		}
 		else {
 			assetPath = pair.second->sourceFilePath;
+			CompileAsset(assetPath, true, true);
+			++numCompiledAssets;
 		}
-		CompileAsset(assetPath, true, true);
 	}
 
 	// Copy scenes to Android resources.
@@ -385,7 +400,7 @@ void AssetManager::CompileAllAssetsForAndroid() {
 	std::ofstream out(manifestFileP.generic_string());
 	if (!out.is_open()) {
 		std::cerr << "[AssetManager] Failed to open manifest file for writing\n";
-		return;
+		return std::vector<std::string>{};
 	}
 	for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory)) {
 		// Only copy the file if it is one of the recognised asset file extensions.
@@ -400,22 +415,33 @@ void AssetManager::CompileAllAssetsForAndroid() {
 	}
 
 	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
-	std::cout << "[AssetManager] Finished compiling assets for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
+	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
+
+	return remainingPaths;
 }
 
-void AssetManager::CompileAllAssetsForDesktop() {
-	// SHOULD RUN ON ANOTHER THREAD, TBD
+std::vector<std::string> AssetManager::CompileAllAssetsForDesktop() {
+	// THIS RUNS ON A SEPARATE THREAD.
 	std::cout << "[AssetManager] Starting compile all assets for Desktop..." << std::endl;
+	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
 		if (ResourceManager::GetInstance().IsExtensionShader(p.extension().generic_string())) {
+			// Skip compiling shaders because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath + ".vert";
+			remainingPaths.push_back(assetPath);
+			continue;
+		}
+		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
+			// SKip compiling meshes because they must be compiled on the main OpenGL thread.
+			remainingPaths.push_back(assetPath);
+			continue;
 		}
 		else {
 			assetPath = pair.second->sourceFilePath;
+			CompileAsset(assetPath, true);
 		}
-		CompileAsset(assetPath, true);
 	}
 
 	//// Copy scenes to resources.
@@ -429,7 +455,8 @@ void AssetManager::CompileAllAssetsForDesktop() {
 	//	}
 	//}
 
-	std::cout << "[AssetManager] Finished compiling assets for Desktop." << std::endl << std::endl;
+	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Desktop." << std::endl << std::endl;
+	return remainingPaths;
 }
 
 void AssetManager::SetRootAssetDirectory(const std::string& _rootAssetsFolder) {

@@ -271,11 +271,15 @@ void GUIManager::RenderMenuBar() {
                 SceneManager::GetInstance().SaveScene();
             }
             ImGui::Separator();
-            if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
-                AssetManager::GetInstance().CompileAllAssetsForDesktop();
-            }
+    //        if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
+				//AssetManager::GetInstance().desktopAssetCompilationFuture = std::async(std::launch::async, [] {
+				//	return AssetManager::GetInstance().CompileAllAssetsForDesktop();
+				//});
+    //        }
             if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
-                AssetManager::GetInstance().CompileAllAssetsForAndroid();
+				AssetManager::GetInstance().androidAssetCompilationFuture = std::async(std::launch::async, [] {
+					return AssetManager::GetInstance().CompileAllAssetsForAndroid();
+				});
             }
             ImGui::Separator();
             if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
@@ -324,6 +328,30 @@ void GUIManager::RenderMenuBar() {
 
         ImGui::EndMainMenuBar();
     }
+
+	if (AssetManager::GetInstance().androidAssetCompilationFuture.valid() &&
+		AssetManager::GetInstance().androidAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidAssetCompilationFuture.get();
+		ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
+		for (const auto& path : remainingToCompile) {
+			AssetManager::GetInstance().CompileAsset(path, true, true);
+		}
+	}
+	else if (AssetManager::GetInstance().androidAssetCompilationFuture.valid() &&
+		AssetManager::GetInstance().androidAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout)
+	{
+		float fraction = (float)AssetManager::GetInstance().numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
+		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
+		ImGui::ProgressBar(fraction, ImVec2(-1, 0), overlay.c_str());
+	}
+	//if (AssetManager::GetInstance().desktopAssetCompilationFuture.valid() &&
+	//	AssetManager::GetInstance().desktopAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+	//	std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidAssetCompilationFuture.get();
+	//	ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
+	//	for (const auto& path : remainingToCompile) {
+	//		AssetManager::GetInstance().CompileAsset(path, true, false);
+	//	}
+	//}
 }
 
 void GUIManager::CreateEditorTheme() {

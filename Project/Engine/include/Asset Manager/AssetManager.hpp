@@ -16,6 +16,7 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/Audio.hpp"
+#include <future>
 
 class ENGINE_API AssetManager {
 public:
@@ -100,8 +101,8 @@ public:
 	bool HandleResourceFileDeletion(const std::string& resourcePath);
 
 	std::string GetAssetPathFromGUID(const GUID_128 guid);
-	void CompileAllAssetsForAndroid();
-	void CompileAllAssetsForDesktop();
+	std::vector<std::string> CompileAllAssetsForAndroid();
+	std::vector<std::string> CompileAllAssetsForDesktop();
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);
 	std::string GetRootAssetDirectory() const;
@@ -119,6 +120,12 @@ public:
 
 	const std::filesystem::path& GetAndroidResourcesPath();
 	std::string ExtractRelativeAndroidPath(const std::string& fullAndroidPath);
+
+	// Handle 'Compile All Assets'
+	std::future<std::vector<std::string>> androidAssetCompilationFuture;
+	std::future<std::vector<std::string>> desktopAssetCompilationFuture;
+	int numCompiledAssets = 0;
+	int GetAssetMetaMapSize();
 
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;

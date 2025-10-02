@@ -183,6 +183,10 @@ public:
 		return shaderExtensions.find(extension) != shaderExtensions.end();
 	}
 
+	bool IsExtensionMesh(const std::string& extension) const {
+		return modelExtensions.find(extension) != modelExtensions.end();
+	}
+
 	bool IsResourceLoaded(const GUID_128& guid) {
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
