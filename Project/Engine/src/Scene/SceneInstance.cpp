@@ -13,7 +13,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
-
+#include "Graphics/Particle/ParticleComponent.hpp"
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -193,13 +193,6 @@ void SceneInstance::Initialize() {
 		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
 		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
-		//Entity text2 = ecsManager.CreateEntity();
-		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
-		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
-		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
-		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
-
 		// Test Audio
 		// Create an entity with AudioComponent
 		Entity audioEntity = ecsManager.CreateEntity();
@@ -215,6 +208,29 @@ void SceneInstance::Initialize() {
 		audioComp.PlayOnStart = true;
 		audioComp.Spatialize = false;
 		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+
+		// Test Particle
+		Entity particleEntity = ecsManager.CreateEntity();
+		ecsManager.GetComponent<NameComponent>(particleEntity).name = "Test Particles";
+
+		ecsManager.AddComponent<ParticleComponent>(particleEntity, ParticleComponent{});
+		auto& particleComp = ecsManager.GetComponent<ParticleComponent>(particleEntity);
+		ecsManager.transformSystem->SetLocalPosition(particleEntity, { 0, 1, 0 }); // Used to set emitterPosition variable
+		particleComp.emissionRate = 50.0f;
+		particleComp.maxParticles = 1000;
+		particleComp.particleLifetime = 2.0f;
+		particleComp.startSize = 0.2f;
+		particleComp.endSize = 0.05f;
+		particleComp.startColor = glm::vec4(1.0f, 0.8f, 0.2f, 1.0f);  // Orange
+		particleComp.endColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);    // Red fade out
+		particleComp.initialVelocity = glm::vec3(0, 2.0f, 0);
+		particleComp.velocityRandomness = 1.0f;
+		particleComp.gravity = glm::vec3(0, -2.0f, 0);
+
+		// Load resources
+		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesome_face.png");
+		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
+
 	}
 
 	// Creates light

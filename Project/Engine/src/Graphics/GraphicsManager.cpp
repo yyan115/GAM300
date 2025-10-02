@@ -24,9 +24,12 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 
 void GraphicsManager::Shutdown()
 {
+	ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
+
 	renderQueue.clear();
 	currentCamera = nullptr;
-	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	mainECS.spriteSystem->Shutdown();
+	mainECS.particleSystem->Shutdown();
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
@@ -37,7 +40,7 @@ void GraphicsManager::BeginFrame()
 
 void GraphicsManager::EndFrame()
 {
-
+	
 }
 
 void GraphicsManager::Clear(float r, float g, float b, float a)

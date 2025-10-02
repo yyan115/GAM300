@@ -13,6 +13,7 @@
 #include "../Engine.h"  // For ENGINE_API macro
 #include <Graphics/Lights/LightingSystem.hpp>
 #include <Graphics/Sprite/SpriteSystem.hpp>
+#include <Graphics/Particle/ParticleSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -102,6 +103,7 @@ public:
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
+	std::shared_ptr<ParticleSystem> particleSystem;
 
 private:
 	template <typename T>

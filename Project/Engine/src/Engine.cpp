@@ -19,6 +19,7 @@
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -644,6 +645,7 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }
 

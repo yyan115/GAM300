@@ -150,6 +150,17 @@ void ParticleSystem::Update()
         // Update particle physics
         UpdateParticles(particleComp, dt);
 
+        // Get emitter position from Transform component
+        if (ecsManager.HasComponent<Transform>(entity))
+        {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            particleComp.emitterPosition = glm::vec3(
+                transform.worldMatrix.m.m03,
+                transform.worldMatrix.m.m13,
+                transform.worldMatrix.m.m23
+            );
+        }
+
         // Emit new particles
         if (particleComp.isEmitting) 
         {
