@@ -58,6 +58,7 @@
     <ClInclude Include="include\Hierarchy\ChildrenComponent.hpp" />
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
+    <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Logging.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
@@ -102,6 +103,7 @@
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
     <ClInclude Include="include\Transform\TransformComponent.hpp" />
@@ -174,6 +176,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
+    <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
@@ -214,6 +217,7 @@
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Sound\AudioComponent.cpp" />

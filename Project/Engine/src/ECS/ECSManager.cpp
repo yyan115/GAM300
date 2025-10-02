@@ -87,6 +87,13 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<ParticleComponent>());
 		SetSystemSignature<ParticleSystem>(signature);
 	}
+	
+	audioSystem = RegisterSystem<AudioSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<AudioComponent>());
+		SetSystemSignature<AudioSystem>(signature);
+	}
 }
 
 Entity ECSManager::CreateEntity() {
@@ -122,7 +129,6 @@ void ECSManager::DestroyEntity(Entity entity) {
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
 	ENGINE_PRINT("[ECSManager] Destroyed entity " , entity , ". Total active entities: " , entityManager->GetActiveEntityCount() , "\n");
-	//std::cout << "[ECSManager] Destroyed entity " << entity << ". Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }
 
 void ECSManager::ClearAllEntities() {
@@ -130,5 +136,4 @@ void ECSManager::ClearAllEntities() {
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
 	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
-	//std::cout << "[ECSManager] Cleared all entities. Total active entities: " << entityManager->GetActiveEntityCount() << std::endl;
 }

@@ -2,6 +2,8 @@
 #include "imgui.h"
 #include "pch.h"
 #include "GUIManager.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/NameComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
@@ -15,8 +17,12 @@
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
 
-SceneHierarchyPanel::SceneHierarchyPanel() 
+SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
+}
+
+void SceneHierarchyPanel::MarkForRefresh() {
+    needsRefresh = true;
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
@@ -60,11 +66,25 @@ void SceneHierarchyPanel::OnImGuiRender() {
             // Get the active ECS manager
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
+            // Always get fresh entity list to ensure we see newly created entities
+            std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
             // Draw entity nodes starting from root entities, in a depth-first manner.
-            for (const auto& entity : ecsManager.GetActiveEntities()) {
-                if (!ecsManager.HasComponent<ParentComponent>(entity)) {
+            for (const auto& entity : allEntities) {
+                // Only draw root entities (entities without a parent)
+                if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+                    // Check if entity has NameComponent before accessing it
+                    if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                        continue;
+                    }
                     std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
-                    DrawEntityNode(entityName, entity, ecsManager.HasComponent<ChildrenComponent>(entity));
+
+                    // Skip PREVIEW entities (used for drag-and-drop preview)
+                    if (entityName == "PREVIEW") {
+                        continue;
+                    }
+
+                    DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                 }
             }
 
@@ -88,7 +108,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             //    DrawEntityNode(entityName, entity, hasChildren);
             //}
 
-            if (ecsManager.GetActiveEntities().empty()) {
+            if (allEntities.empty()) {
                 ImGui::Text("No entities in scene");
             }
         }
@@ -160,6 +180,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
     }
     ImGui::End();
 }
+
 
 void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
 {
@@ -379,6 +400,7 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& name) {
         }
 
         std::cout << "[SceneHierarchy] Created empty entity '" << name << "' with ID " << newEntity << std::endl;
+
         return newEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create empty entity: " << e.what() << std::endl;

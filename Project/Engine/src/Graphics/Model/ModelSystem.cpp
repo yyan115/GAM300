@@ -77,5 +77,4 @@ void ModelSystem::Update()
 void ModelSystem::Shutdown() 
 {
     ENGINE_PRINT("[ModelSystem] Shutdown\n");
-    //std::cout << "[ModelSystem] Shutdown" << std::endl;
 }

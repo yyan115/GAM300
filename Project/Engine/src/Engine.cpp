@@ -21,6 +21,10 @@
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 
+#ifdef ANDROID
+#include "Input/VirtualControls.hpp"
+#endif
+
 namespace TEMP {
 	std::string windowTitle = "GAM300";
 }
@@ -35,7 +39,6 @@ bool Engine::Initialize() {
 	// Initialize logging system first
 	if (!EngineLogging::Initialize()) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize logging system!\n");
-		//std::cerr << "[Engine] Failed to initialize logging system!" << std::endl;
 		return false;
 	}
 	SetGameState(GameState::PLAY_MODE);
@@ -100,7 +103,7 @@ bool Engine::Initialize() {
                     const auto& m = members[i];
                     std::string mname = m.name ? m.name : "<null>";
                     std::string tname = m.type ? m.type->ToString() : "<null-type>";
-                    std::cout << "  [" << i << "] name='" << mname << "' type='" << tname << "'" << std::endl;
+                    ENGINE_PRINT("  [", i, "] name='", mname, "' type='", tname, "'\n");
 
                     if (!m.type) {
                         ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member has null TypeDescriptor");
@@ -229,7 +232,7 @@ bool Engine::Initialize() {
                         // Run runtime assign/verify tests
                         bool runtime_ok = true;
                         if (runtime_tests.empty()) {
-                            std::cout << "    -> WARN: no supported primitive members found; cannot validate runtime read/write" << std::endl;
+                            ENGINE_PRINT("    -> WARN: no supported primitive members found; cannot validate runtime read/write\n");
                             runtime_ok = false;
                         }
                         else {
@@ -239,14 +242,14 @@ bool Engine::Initialize() {
                                     rt.assign(addr);                    // write sample
                                 }
                                 catch (...) {
-                                    std::cout << "    -> EXCEPTION assigning member[" << rt.idx << "]" << std::endl;
+                                    ENGINE_PRINT("    -> EXCEPTION assigning member[" , rt.idx, "]\n");
                                     runtime_ok = false;
                                     continue;
                                 }
                                 bool ok = false;
                                 try { ok = rt.verify_inplace(addr); }   // read & compare
                                 catch (...) { ok = false; }
-                                std::cout << "    -> runtime member[" << rt.idx << "] (" << rt.type_name << "): " << (ok ? "OK" : "MISMATCH") << std::endl;
+                                ENGINE_PRINT("    -> runtime member[" , rt.idx , "] (" , rt.type_name , "): " , (ok ? "OK" : "MISMATCH\n"));
                                 if (!ok) runtime_ok = false;
                             }
                         }
@@ -407,7 +410,7 @@ bool Engine::Initialize() {
                     for (const auto& st : ser_tests) {
                         void* addr = members[st.idx].get_ptr(&src);
                         try { st.assign(addr); }
-                        catch (...) { std::cout << "  -> exception assigning member[" << st.idx << "]" << std::endl; }
+                        catch (...) {ENGINE_PRINT("  -> exception assigning member[", st.idx, "]\n");}
                     }
 
                     // Optionally set canonical floats if available
@@ -446,7 +449,7 @@ bool Engine::Initialize() {
                     // Compare tested members src vs dst
                     size_t matched = 0;
                     if (ser_tests.empty()) {
-                        std::cout << "WARN: no supported members were tested; ensure primitive descriptors are registered." << std::endl;
+                        ENGINE_PRINT("WARN: no supported members were tested; ensure primitive descriptors are registered.\n");
                     }
                     else {
                         for (const auto& st : ser_tests) {
@@ -455,7 +458,7 @@ bool Engine::Initialize() {
                             bool ok = false;
                             try { ok = st.compare(a, b); }
                             catch (...) { ok = false; }
-                            std::cout << "  member[" << st.idx << "] (" << st.type_name << "): " << (ok ? "MATCH" : "MISMATCH") << std::endl;
+                            ENGINE_PRINT("  member[", st.idx, "] (", st.type_name, "): ", (ok ? "MATCH" : "MISMATCH\n"));
                             if (ok) ++matched;
                         }
                     }
@@ -513,9 +516,7 @@ bool Engine::Initialize() {
 	// Add some test logging messages
 	ENGINE_LOG_WARN("This is a test warning message");
 	ENGINE_LOG_ERROR("This is a test error message");
-	
-    std::cout << "test\n";
-    
+	    
 	return true;
 }
 
@@ -526,6 +527,12 @@ bool Engine::InitializeGraphicsResources() {
 	// Load test scene
 	SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
+
+#ifdef ANDROID
+    // Initialize virtual controls for Android
+    VirtualControls::Initialize();
+    ENGINE_LOG_INFO("Virtual controls initialized");
+#endif
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
@@ -544,10 +551,6 @@ void Engine::Update() {
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
-
-
-		// Test Audio
-		AudioManager::GetInstance().Update();
 	}
 }
 
@@ -618,14 +621,18 @@ void Engine::Draw() {
 
     try {
         SceneManager::GetInstance().DrawScene();
+        
+        // Render virtual controls on top of everything (Android only)
+        VirtualControls::Render(surfaceWidth, surfaceHeight);
+        
     } catch (const std::exception& e) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
     }
+    
 #else
     SceneManager::GetInstance().DrawScene();
-    //std::cout << "drawn scene\n";
 #endif
 }
 

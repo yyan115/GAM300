@@ -3,6 +3,7 @@
 #include <Input/InputManager.hpp>
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
+#include <cmath>
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include "TimeManager.hpp"
@@ -20,6 +21,8 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
+
+Entity fpsText;
 
 void SceneInstance::Initialize() {
 	// Initialize GraphicsManager first
@@ -181,8 +184,7 @@ void SceneInstance::Initialize() {
 			ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
 			ecsManager.lightingSystem->RegisterEntity(spotLight);
 		}
-
-		std::cout << "[Scene] Lighting system entity count: " << ecsManager.lightingSystem->entities.size() << std::endl; 
+		ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
@@ -202,12 +204,20 @@ void SceneInstance::Initialize() {
 				
 		// Add AudioComponent
 		AudioComponent audioComp;
-		audioComp.AudioAssetPath = "Resources/Audio/sfx/start menu bgm.ogg";
+		audioComp.Clip = "Resources/Audio/sfx/start menu bgm.ogg";
 		audioComp.Volume = 0.3f;
 		audioComp.Loop = true;
-		audioComp.PlayOnStart = true;
+		audioComp.PlayOnAwake = true;
 		audioComp.Spatialize = false;
 		ecsManager.AddComponent<AudioComponent>(audioEntity, audioComp);
+
+		// Add FPS text (mainly for android to see FPS)
+		fpsText = ecsManager.CreateEntity();
+		ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+		ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+		TextUtils::SetPosition(fpsTextComp, Vector3D(0, 0, 0));
+		TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
 
 		// Test Particle
 		Entity particleEntity = ecsManager.CreateEntity();
@@ -230,7 +240,7 @@ void SceneInstance::Initialize() {
 		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
 
 	}
-
+	
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
@@ -251,12 +261,20 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
+	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	//fpsTextComponent.text = TimeManager::GetFps();
+	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 	mainECS.transformSystem->Update();
 	mainECS.lightingSystem->Update();
 
+	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
+	if (mainECS.audioSystem) {
+		mainECS.audioSystem->Update((float)dt);
+	}
 }
 
 void SceneInstance::Draw() {
@@ -335,7 +353,6 @@ void SceneInstance::Exit() {
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	ENGINE_PRINT("TestScene Exited\n");
-	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)
@@ -353,21 +370,44 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKey(Input::Key::D))
 		camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
 
-	float xpos = (float)InputManager::GetMouseX();
-	float ypos = (float)InputManager::GetMouseY();
-
-	if (firstMouse)
+	// MADE IT so that you must drag to look around
+	// 
+	// Only process mouse look when left mouse button is held down
+	if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
 	{
+		float xpos = (float)InputManager::GetMouseX();
+		float ypos = (float)InputManager::GetMouseY();
+
+		// Reset firstMouse when starting a new mouse drag (fixes touch jump on Android)
+		// Check for large jumps in mouse position which indicates a new touch
+		if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT) || firstMouse)
+		{
+			firstMouse = false;
+			lastX = xpos;
+			lastY = ypos;
+			return; // Skip this frame to prevent jump
+		}
+
+		// Also check for large position jumps (indicates finger lifted and touched elsewhere) - fixed jumps on desktop also as a side effect (intended to be ifdef)
+		float positionJump = sqrt((xpos - lastX) * (xpos - lastX) + (ypos - lastY) * (ypos - lastY));
+		if (positionJump > 100.0f) // Threshold for detecting new touch
+		{
+			lastX = xpos;
+			lastY = ypos;
+			return; // Skip this frame to prevent jump
+		}
+
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
 		lastX = xpos;
 		lastY = ypos;
-		firstMouse = false;
+
+		camera.ProcessMouseMovement(xoffset, yoffset);
 	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-	lastX = xpos;
-	lastY = ypos;
-
-	camera.ProcessMouseMovement(xoffset, yoffset);
+	else
+	{
+		// When mouse button is released, reset for next touch
+		firstMouse = true;
+	}
 }

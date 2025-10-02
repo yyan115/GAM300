@@ -14,6 +14,7 @@
 #include <Graphics/Lights/LightingSystem.hpp>
 #include <Graphics/Sprite/SpriteSystem.hpp>
 #include <Graphics/Particle/ParticleSystem.hpp>
+#include <Sound/AudioSystem.hpp>
 
 class ENGINE_API ECSManager {
 public:
@@ -104,6 +105,7 @@ public:
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;
+	std::shared_ptr<AudioSystem> audioSystem;
 
 private:
 	template <typename T>

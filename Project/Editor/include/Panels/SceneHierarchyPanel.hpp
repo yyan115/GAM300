@@ -22,6 +22,11 @@ public:
      */
     void OnImGuiRender() override;
 
+    /**
+     * @brief Mark the hierarchy panel as needing a refresh.
+     */
+    void MarkForRefresh();
+
 private:
     void DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren = false);
     void ReparentEntity(Entity draggedEntity, Entity targetParent);
@@ -38,4 +43,8 @@ private:
     Entity renamingEntity = static_cast<Entity>(-1);
     std::vector<char> renameBuffer;
     bool startRenaming = false;
+
+    // Force refresh mechanism
+    bool needsRefresh = false;
+
 };

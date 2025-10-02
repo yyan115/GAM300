@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.MotionEvent;
+import android.view.KeyEvent;
 import android.util.Log;
 import android.widget.TextView;
 import org.fmod.FMOD;
@@ -67,6 +69,56 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         );
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (engineReady) {
+            int action = event.getActionMasked();
+            float x = event.getX();
+            float y = event.getY();
+            
+            // Convert to Android action constants that match our C++ code
+            int actionCode;
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    actionCode = 0; // ACTION_DOWN
+                    break;
+                case MotionEvent.ACTION_UP:
+                    actionCode = 1; // ACTION_UP
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    actionCode = 2; // ACTION_MOVE
+                    break;
+                default:
+                    return super.onTouchEvent(event);
+            }
+            
+            // Call native method
+            onTouchEvent(actionCode, x, y);
+            Log.d(TAG, "Touch event: action=" + action + ", pos=(" + x + ", " + y + ")");
+            return true;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (engineReady) {
+            onKeyEvent(keyCode, 0); // 0 = KEY_DOWN
+            Log.d(TAG, "Key down: " + keyCode);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (engineReady) {
+            onKeyEvent(keyCode, 1); // 1 = KEY_UP
+            Log.d(TAG, "Key up: " + keyCode);
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -150,4 +202,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public native void setSurface(Surface surface);
     public native void renderFrame();
     public native void destroyEngine();
+    
+    // Input handling native methods
+    public native void onTouchEvent(int action, float x, float y);
+    public native void onKeyEvent(int keyCode, int action);
 }

@@ -155,3 +155,25 @@ Java_com_gam300_game_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */)
         LOGI("Engine and GameManager destroyed");
     }
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_gam300_game_MainActivity_onTouchEvent(JNIEnv* env, jobject /* this */, jint action, jfloat x, jfloat y) {
+    if (engineInitialized) {
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (platform) {
+            AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<float>(x), static_cast<float>(y));
+        }
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_gam300_game_MainActivity_onKeyEvent(JNIEnv* env, jobject /* this */, jint keyCode, jint action) {
+    if (engineInitialized) {
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (platform) {
+            AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            androidPlatform->HandleKeyEvent(static_cast<int>(keyCode), static_cast<int>(action));
+        }
+    }
+}

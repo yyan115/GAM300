@@ -2,26 +2,19 @@ Resources/Audio/sfx/start menu bgm.ogg
 Resources/Audio/sfx/start menu bgm.ogg.meta
 Resources/Audio/sfx/Test_duck.wav
 Resources/Audio/sfx/Test_duck.wav.meta
-Resources/dora the explorer.prefab
 Resources/Fonts/fa-solid-900.font
 Resources/Fonts/fa-solid-900.ttf
 Resources/Fonts/fa-solid-900.ttf.meta
 Resources/Fonts/Kenney Mini.font
 Resources/Fonts/Kenney Mini.ttf
 Resources/Fonts/Kenney Mini.ttf.meta
-Resources/indiana jones.prefab
 Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
 Resources/Kenney Mini.font
-Resources/Kenney Mini.ttf
-Resources/Kenney Mini.ttf.meta
 Resources/License.txt
 Resources/Materials/NewMaterial.mat
-Resources/Materials/NewMaterial.mat.meta
-Resources/Materials/NewMaterial1.mat
 Resources/Materials/test.mat
-Resources/Materials/test.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -32,7 +25,6 @@ Resources/Models/backpack/backpack.obj.meta
 Resources/Models/backpack/diffuse.dds
 Resources/Models/backpack/diffuse.jpg
 Resources/Models/backpack/diffuse.jpg.meta
-Resources/Models/backpack/imgui.ini
 Resources/Models/backpack/normal.dds
 Resources/Models/backpack/normal.png
 Resources/Models/backpack/normal.png.meta
@@ -44,8 +36,6 @@ Resources/Models/backpack/specular.dds
 Resources/Models/backpack/specular.jpg
 Resources/Models/backpack/specular.jpg.meta
 Resources/Models/backpack.mesh
-Resources/Models/backpack.obj
-Resources/Models/backpack.obj.meta
 Resources/Models/cube.mesh
 Resources/Models/cube.mtl
 Resources/Models/cube.obj
@@ -58,14 +48,11 @@ Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
 Resources/Scenes/Empty Scene.scene
 Resources/Scenes/FakeScene.scene
+Resources/Scenes/scene.json
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
-Resources/Shaders/debugandroid.frag
-Resources/Shaders/debugandroid.meta
-Resources/Shaders/debugandroid.shader
-Resources/Shaders/debugandroid.vert
 Resources/Shaders/default.frag
 Resources/Shaders/default.meta
 Resources/Shaders/default.shader

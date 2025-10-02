@@ -7,7 +7,7 @@
 #include <atomic>
 #include <vector>
 #include "Math/Vector3D.hpp"
-#include "ECS/SystemManager.hpp"
+#include "Engine.h"
 
 // Forward declarations for FMOD types to keep header lightweight
 typedef struct FMOD_SYSTEM FMOD_SYSTEM;
@@ -29,7 +29,9 @@ enum class AudioSourceState {
     Paused
 };
 
-class ENGINE_API AudioManager : public System {
+// AudioManager: Unity-style singleton backend for FMOD system management
+// Handles low-level audio operations, channel management, and global audio state
+class ENGINE_API AudioManager {
 public:
     static AudioManager& GetInstance();
 
@@ -88,29 +90,29 @@ public:
 
 private:
     struct ChannelData {
-        FMOD_CHANNEL* channel = nullptr;
-        ChannelHandle id = 0;
-        AudioSourceState state = AudioSourceState::Stopped;
-        std::string assetPath; // For debugging
+        FMOD_CHANNEL* Channel = nullptr;
+        ChannelHandle Id = 0;
+        AudioSourceState State = AudioSourceState::Stopped;
+        std::string AssetPath; // For debugging
     };
 
     // Thread safety
-    mutable std::mutex mtx;
-    std::atomic<bool> shuttingDown{ false };
+    mutable std::mutex Mutex;
+    std::atomic<bool> ShuttingDown{ false };
     
     // FMOD handles
-    FMOD_SYSTEM* system = nullptr;
+    FMOD_SYSTEM* System = nullptr;
     
     // Channel management
-    std::unordered_map<ChannelHandle, ChannelData> channelMap;
-    std::atomic<ChannelHandle> nextChannelHandle{ 1 };
+    std::unordered_map<ChannelHandle, ChannelData> ChannelMap;
+    std::atomic<ChannelHandle> NextChannelHandle{ 1 };
 
     // Channel groups (buses)
-    std::unordered_map<std::string, FMOD_CHANNELGROUP*> busMap;
+    std::unordered_map<std::string, FMOD_CHANNELGROUP*> BusMap;
 
     // Global settings
-    std::atomic<float> masterVolume{ 1.0f };
-    std::atomic<bool> globalPaused{ false };
+    std::atomic<float> MasterVolume{ 1.0f };
+    std::atomic<bool> GlobalPaused{ false };
 
     // Internal helpers
     void CleanupStoppedChannels();
