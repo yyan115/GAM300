@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Panels/PlayControlPanel.hpp"
+#include "Panels/ScenePanel.hpp"
+#include "Panels/GamePanel.hpp"
 #include "EditorState.hpp"
 #include "GUIManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
+#include "RunTimeVar.hpp"
 #include "imgui.h"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
@@ -205,7 +209,7 @@ void PlayControlPanel::RenderTransformTools() {
     }
     
     ImGui::SameLine();
-    
+
     // Scale tool (Scale icon)
     bool isScaleActive = (hasToolSelected && !isNormalPanMode && gizmoOperation == ImGuizmo::SCALE);
     if (isScaleActive) {
@@ -226,6 +230,75 @@ void PlayControlPanel::RenderTransformTools() {
     if (isScaleActive) {
         ImGui::PopStyleColor(2);
     }
-    
+
+    // Add separator and 2D/3D mode toggle
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(20.0f, 0.0f)); // Spacing
+    ImGui::SameLine();
+
+    // 2D/3D view mode toggle
+    EditorState& editorState = EditorState::GetInstance();
+    bool is3DMode = editorState.Is3DMode();
+
+    if (is3DMode) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.3f, 1.0f)); // Green for 3D
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.4f, 1.0f));
+    } else {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f)); // Blue for 2D
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.9f, 1.0f));
+    }
+
+    const char* viewModeText = is3DMode ? ICON_FA_CUBE " 3D" : ICON_FA_SQUARE " 2D";
+    if (ImGui::Button(viewModeText, ImVec2(60.0f, toolButtonHeight))) {
+        // Determine the NEW mode we're switching TO
+        bool switchingTo2D = is3DMode;  // If currently 3D, we're switching TO 2D
+
+        // Toggle between 2D and 3D mode
+        EditorState::ViewMode newMode = is3DMode ? EditorState::ViewMode::VIEW_2D : EditorState::ViewMode::VIEW_3D;
+        editorState.SetViewMode(newMode);
+
+        // Sync with GraphicsManager
+        GraphicsManager::ViewMode gfxMode = is3DMode ? GraphicsManager::ViewMode::VIEW_2D : GraphicsManager::ViewMode::VIEW_3D;
+        GraphicsManager::GetInstance().SetViewMode(gfxMode);
+
+        // Reposition camera based on NEW mode
+        auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
+        if (scenePanelPtr) {
+            auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
+            if (scenePanel) {
+                if (switchingTo2D) {  // Switching TO 2D mode
+                    // Center camera on the game viewport rectangle
+                    // Get game resolution to center the camera
+                    int gameWidth = RunTimeVar::window.width;
+                    int gameHeight = RunTimeVar::window.height;
+
+                    // Try to get GamePanel for actual target resolution
+                    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+                    if (gamePanelPtr) {
+                        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+                        if (gamePanel) {
+                            gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+                        }
+                    }
+
+                    // Center camera at the middle of the game viewport
+                    float centerX = gameWidth / 2.0f;
+                    float centerY = gameHeight / 2.0f;
+                    scenePanel->SetCameraTarget(glm::vec3(centerX, centerY, 0.0f));
+
+                    // Set zoom to show the full rectangle (zoom out more)
+                    // OrthoZoomLevel: 1.0 = 1:1 pixel mapping, larger = zoomed out more
+                    // To fit a 1920x1080 game viewport in the scene view, we need to zoom out
+                    // We'll set it to 2.5 to show the rectangle with some padding
+                    scenePanel->SetCameraZoom(2.5f);
+                } else {  // Switching TO 3D mode
+                    // Move camera to origin (where 3D objects are)
+                    scenePanel->SetCameraTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+                }
+            }
+        }
+    }
+    ImGui::PopStyleColor(2);
+
     ImGui::PopStyleVar(); // FramePadding
 }

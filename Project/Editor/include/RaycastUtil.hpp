@@ -66,6 +66,15 @@ public:
                                        const glm::vec3& modelSize = glm::vec3(1.0f));
 
     /**
+     * @brief Create AABB from sprite position and scale.
+     * @param position The sprite's position
+     * @param scale The sprite's scale
+     * @param is3D Whether the sprite is in world space (true) or screen space (false)
+     * @return AABB in world space (or screen space for 2D sprites)
+     */
+    static AABB CreateAABBFromSprite(const glm::vec3& position, const glm::vec3& scale, bool is3D);
+
+    /**
      * @brief Perform raycast against all entities in the scene.
      * @param ray The ray to cast
      * @param excludeEntity Optional entity to exclude from raycast (e.g., preview entities)
@@ -77,17 +86,19 @@ public:
      * @brief Get transform matrix for an entity (avoids including Graphics headers in ScenePanel).
      * @param entity The entity to get transform for
      * @param outMatrix Output array of 16 floats for the transform matrix
+     * @param is2DMode Whether we're in 2D view mode (allows 2D sprite manipulation)
      * @return true if entity has transform, false otherwise
      */
-    static bool GetEntityTransform(Entity entity, float outMatrix[16]);
+    static bool GetEntityTransform(Entity entity, float outMatrix[16], bool is2DMode = false);
 
     /**
      * @brief Set transform matrix for an entity (avoids including Graphics headers in ScenePanel).
      * @param entity The entity to set transform for
      * @param matrix Input array of 16 floats for the transform matrix
+     * @param is2DMode Whether we're in 2D view mode (allows 2D sprite manipulation)
      * @return true if entity transform was updated successfully, false otherwise
      */
-    static bool SetEntityTransform(Entity entity, const float matrix[16]);
+    static bool SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode = false);
 
 
 private:

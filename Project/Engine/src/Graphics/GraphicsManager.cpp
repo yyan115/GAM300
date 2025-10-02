@@ -72,6 +72,18 @@ void GraphicsManager::SetCamera(Camera* camera)
 	currentCamera = camera;
 }
 
+void GraphicsManager::SetViewportSize(int width, int height)
+{
+	viewportWidth = width;
+	viewportHeight = height;
+}
+
+void GraphicsManager::GetViewportSize(int& width, int& height) const
+{
+	width = viewportWidth;
+	height = viewportHeight;
+}
+
 void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 {
 	if (renderItem && renderItem->isVisible)
@@ -176,36 +188,56 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 {
 	shader.setMat4("model", modelMatrix);
 
-	if (currentCamera) 
+	if (currentCamera)
 	{
-		glm::mat4 view = currentCamera->GetViewMatrix();
-		shader.setMat4("view", view);
-
-		// Get window dimensions with safety checks
-		//int windowWidth = WindowManager::GetWindowWidth();
-		//int windowHeight = WindowManager::GetWindowHeight();
+		// Use viewport dimensions if set (for editor/scene panel), otherwise fallback to window dimensions
+		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
 
 		// Prevent division by zero and ensure minimum dimensions
-		//if (windowWidth <= 0) windowWidth = 1;
-		//if (windowHeight <= 0) windowHeight = 1;
+		if (renderWidth <= 0) renderWidth = 1;
+		if (renderHeight <= 0) renderHeight = 1;
 
-		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
-		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
-
-
-		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+		float aspectRatio = (float)renderWidth / (float)renderHeight;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
 		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
 
-		glm::mat4 projection = glm::perspective(
-			glm::radians(currentCamera->Zoom),
-			aspectRatio,
-			0.1f, 100.0f
-		);
-		shader.setMat4("projection", projection);
+		glm::mat4 view;
+		glm::mat4 projection;
 
+		// In 2D editor mode, use orthographic projection with camera position as center
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use identity view matrix for 2D (camera doesn't rotate)
+			view = glm::mat4(1.0f);
+
+			// Create orthographic projection centered on camera's XY position
+			// The camera position represents the center of the view in pixel space
+			// Apply OrthoZoomLevel to the viewport size (1.0 = normal, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
+			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
+			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
+			float halfWidth = viewWidth * 0.5f;
+			float halfHeight = viewHeight * 0.5f;
+			float left = currentCamera->Position.x - halfWidth;
+			float right = currentCamera->Position.x + halfWidth;
+			float bottom = currentCamera->Position.y - halfHeight;
+			float top = currentCamera->Position.y + halfHeight;
+
+			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
+
+		} else {
+			// 3D mode or game mode: use perspective projection
+			view = currentCamera->GetViewMatrix();
+			projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				aspectRatio,
+				0.1f, 100.0f
+			);
+		}
+
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
 		shader.setVec3("cameraPos", currentCamera->Position);
 	}
 }
@@ -479,7 +511,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 {
-	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO) 
+	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO)
 	{
 		return;
 	}
@@ -498,14 +530,14 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec2("uvScale", item.uvScale);
 
 	// Set up matrices based on rendering mode
-	if (item.is3D) 
+	if (item.is3D)
 	{
 		// 3D world space sprite (billboard)
 		glm::mat4 modelMatrix = glm::mat4(1.0f);
 		modelMatrix = glm::translate(modelMatrix, item.position);
 
 		// Optional: Make sprite face camera (billboard effect)
-		if (currentCamera && item.enableBillboard) 
+		if (currentCamera && item.enableBillboard)
 		{
 			// Create rotation matrix to face camera
 			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
@@ -523,20 +555,48 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		}
 
 		// Apply rotation if specified
-		if (item.rotation != 0.0f) 
+		if (item.rotation != 0.0f)
 		{
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 
-		// Apply scale
+		// Apply scale first
 		modelMatrix = glm::scale(modelMatrix, item.scale);
+
+		// Center the sprite AFTER scaling: offset by half the scaled size
+		// The quad is 0,0 to 1,1, so after scaling it's 0,0 to scale.x,scale.y
+		// Offset by -scale/2 to center it
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
 
 		Setup3DSpriteMatrices(*item.shader, modelMatrix);
 	}
-	else 
+	else
 	{
 		// 2D screen space sprite
-		Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+		// When rendering for editor in 2D mode, use the editor camera's projection (pixel-based orthographic)
+		// Otherwise, use the standard window-based projection for game/runtime
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use the editor camera's view/projection matrices (already set up)
+			// Render the sprite like a 3D sprite but in 2D space
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			modelMatrix = glm::translate(modelMatrix, item.position);
+
+			// Apply rotation
+			if (item.rotation != 0.0f) {
+				modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+
+			// Apply scale first
+			modelMatrix = glm::scale(modelMatrix, item.scale);
+
+			// Center the sprite AFTER scaling
+			modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
+
+			Setup3DSpriteMatrices(*item.shader, modelMatrix);
+		} else {
+			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
+			Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+		}
 	}
 
 	// Bind texture
@@ -569,22 +629,28 @@ void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& pos
 {
 
 	// Use orthographic projection for 2D sprites
-	glm::mat4 projection = glm::ortho(0.0f, (float)RunTimeVar::window.width,
-		0.0f, (float)RunTimeVar::window.height);
+	// Use viewport dimensions (render target size) instead of window dimensions
+	GLint renderWidth = (RunTimeVar::window.viewportWidth > 0) ? RunTimeVar::window.viewportWidth : RunTimeVar::window.width;
+	GLint renderHeight = (RunTimeVar::window.viewportHeight > 0) ? RunTimeVar::window.viewportHeight : RunTimeVar::window.height;
+	glm::mat4 projection = glm::ortho(0.0f, (float)renderWidth,
+		0.0f, (float)renderHeight);
 
 	// Create model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);
 
 	// Apply rotation around the center of the sprite
-	if (rotation != 0.0f) 
+	if (rotation != 0.0f)
 	{
-		model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
 		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
 	}
 
+	// Apply scale first
 	model = glm::scale(model, scale);
+
+	// Center the sprite AFTER scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
+	// This makes the position represent the center instead of the corner
+	model = glm::translate(model, glm::vec3(-0.5f, -0.5f, 0.0f));
 	shader.setMat4("projection", projection);
 	shader.setMat4("model", model);
 	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D

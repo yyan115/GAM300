@@ -2,8 +2,10 @@
 #include "Panels/ScenePanel.hpp"
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
+#include "Panels/GamePanel.hpp"
 #include "EditorInputManager.hpp"
 #include "Graphics/SceneRenderer.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
@@ -25,6 +27,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
+#include "RunTimeVar.hpp"
 
 // External globals for model drag-drop from AssetBrowserPanel
 extern GUID_128 DraggedModelGuid;
@@ -35,7 +38,84 @@ extern std::string DraggedModelPath;
 
 ScenePanel::ScenePanel()
     : EditorPanel("Scene", true), editorCamera(glm::vec3(0.0f, 0.0f, 0.0f), 5.0f) {
+    // Initialize camera at origin
+    // This works for 3D mode (models at origin are visible)
+    // For 2D mode, user needs to pan to find 2D sprites (they use pixel coordinates like 25, 700)
     InitializeMatrices();
+}
+
+void ScenePanel::SetCameraTarget(const glm::vec3& target) {
+    editorCamera.Target = target;
+
+    // Check if we're in 2D mode
+    EditorState& editorState = EditorState::GetInstance();
+    bool is2DMode = editorState.Is2DMode();
+
+    if (is2DMode) {
+        // In 2D mode, position the camera AT the target for orthographic projection
+        // The Z position doesn't matter for orthographic, but we keep it back for consistency
+        editorCamera.Position = glm::vec3(target.x, target.y, target.z + 5.0f);
+    } else {
+        // In 3D mode, reset distance to a reasonable value if it got too large
+        if (editorCamera.Distance > 10.0f) {
+            editorCamera.Distance = 5.0f;
+        }
+
+        // Let UpdateCameraVectors() calculate the correct position using spherical coordinates
+        editorCamera.UpdateCameraVectors();
+    }
+}
+
+void ScenePanel::DrawGameViewportIndicator() {
+    // Get the game resolution from GamePanel (this updates when user changes resolution)
+    int gameWidth = RunTimeVar::window.width;
+    int gameHeight = RunTimeVar::window.height;
+
+    // Try to get the GamePanel to read its target resolution
+    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+    auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+    if (gamePanel) {
+        gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+    }
+
+    // For 2D games, the game viewport uses pixel coordinates from (0, 0) to (width, height)
+    // Origin (0,0) is at bottom-left, typical OpenGL convention
+    // World space corners of the game viewport
+    float gameWidthF = static_cast<float>(gameWidth);
+    float gameHeightF = static_cast<float>(gameHeight);
+    glm::vec3 worldTopLeft(0.0f, gameHeightF, 0.0f);
+    glm::vec3 worldTopRight(gameWidthF, gameHeightF, 0.0f);
+    glm::vec3 worldBottomRight(gameWidthF, 0.0f, 0.0f);
+    glm::vec3 worldBottomLeft(0.0f, 0.0f, 0.0f);
+
+    // Convert world space to screen space using editor camera
+    auto worldToScreen = [this](const glm::vec3& worldPos) -> ImVec2 {
+        // For 2D orthographic: screen_x = (world_x - camera_target_x) / zoom + viewport_center
+        // EditorCamera orthographic projection centers around Target, not Position
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+        float screenX = ((worldPos.x - editorCamera.Target.x) / editorCamera.OrthoZoomLevel) + viewportSize.x * 0.5f;
+        float screenY = ((editorCamera.Target.y - worldPos.y) / editorCamera.OrthoZoomLevel) + viewportSize.y * 0.5f;
+
+        ImVec2 windowPos = ImGui::GetCursorScreenPos();
+        return ImVec2(windowPos.x + screenX, windowPos.y + screenY);
+    };
+
+    // Convert corners to screen space
+    ImVec2 screenTopLeft = worldToScreen(worldTopLeft);
+    ImVec2 screenTopRight = worldToScreen(worldTopRight);
+    ImVec2 screenBottomRight = worldToScreen(worldBottomRight);
+    ImVec2 screenBottomLeft = worldToScreen(worldBottomLeft);
+
+    // Draw the rectangle using ImGui
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImU32 color = IM_COL32(180, 180, 180, 255); // Light gray (Unity-style)
+    float thickness = 2.0f;
+
+    drawList->AddLine(screenTopLeft, screenTopRight, color, thickness);
+    drawList->AddLine(screenTopRight, screenBottomRight, color, thickness);
+    drawList->AddLine(screenBottomRight, screenBottomLeft, color, thickness);
+    drawList->AddLine(screenBottomLeft, screenTopLeft, color, thickness);
 }
 
 void ScenePanel::InitializeMatrices() {
@@ -161,11 +241,21 @@ void ScenePanel::HandleCameraInput() {
     auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
     auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
     bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
-    
+
     if (isNormalPanMode) {
         isMiddleMousePressed = isLeftMousePressed;
-        isLeftMousePressed = false; 
-        isAltPressed = false; 
+        isLeftMousePressed = false;
+        isAltPressed = false;
+    }
+
+    // Set base pan sensitivity based on view mode
+    EditorState& editorState = EditorState::GetInstance();
+    bool is2DMode = editorState.Is2DMode();
+
+    if (is2DMode) {
+        editorCamera.PanSensitivity = 0.8f; // Base sensitivity for 2D (will be scaled by zoom in ProcessInput)
+    } else {
+        editorCamera.PanSensitivity = 0.005f; // Slower panning in 3D mode
     }
 
     editorCamera.ProcessInput(
@@ -176,7 +266,8 @@ void ScenePanel::HandleCameraInput() {
         isMiddleMousePressed,
         mouseDelta.x,
         -mouseDelta.y,  // Invert Y for standard camera behavior
-        scrollDelta
+        scrollDelta,
+        is2DMode
     );
 }
 
@@ -220,11 +311,22 @@ void ScenePanel::HandleEntitySelection() {
 
             // Perform proper raycasting for entity selection
             EditorState& editorState = EditorState::GetInstance();
+            bool is2DMode = editorState.Is2DMode();
 
-            // Get camera matrices
+            // Get camera matrices based on mode
             float aspectRatio = sceneWidth / sceneHeight;
-            glm::mat4 glmViewMatrix = editorCamera.GetViewMatrix();
-            glm::mat4 glmProjMatrix = editorCamera.GetProjectionMatrix(aspectRatio);
+            glm::mat4 glmViewMatrix;
+            glm::mat4 glmProjMatrix;
+
+            if (is2DMode) {
+                // Use 2D orthographic matrices for 2D mode
+                glmViewMatrix = editorCamera.Get2DViewMatrix();
+                glmProjMatrix = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight);
+            } else {
+                // Use 3D perspective matrices for 3D mode
+                glmViewMatrix = editorCamera.GetViewMatrix();
+                glmProjMatrix = editorCamera.GetProjectionMatrix(aspectRatio);
+            }
 
             // Convert GLM matrices to Matrix4x4 for raycast
             Matrix4x4 viewMatrix(
@@ -317,6 +419,12 @@ void ScenePanel::OnImGuiRender()
                 ImVec2(0, 1), ImVec2(1, 0)
             );
 
+            // In 2D mode, draw game viewport bounds indicator (like Unity)
+            EditorState& editorState = EditorState::GetInstance();
+            if (editorState.Is2DMode()) {
+                DrawGameViewportIndicator();
+            }
+
             // Hover state for input routing
             isSceneHovered = ImGui::IsWindowHovered();
 
@@ -399,13 +507,17 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
 
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
+        // Set viewport size in GraphicsManager for correct aspect ratio
+        GraphicsManager::GetInstance().SetViewportSize(width, height);
+
         // Pass our editor camera data to the rendering system
         SceneRenderer::BeginSceneRender(width, height);
         SceneRenderer::RenderSceneForEditor(
             editorCamera.Position,
             editorCamera.Front,
             editorCamera.Up,
-            editorCamera.Zoom
+            editorCamera.Zoom,
+            editorCamera.OrthoZoomLevel
         );
         SceneRenderer::EndSceneRender();
 
@@ -460,7 +572,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
     bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
     ImGuizmo::OPERATION gizmoOperation = playControlPanel ? playControlPanel->GetGizmoOperation() : ImGuizmo::TRANSLATE;
-    
+
     // Only show gizmo when an entity is selected AND not in normal pan mode
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
@@ -468,7 +580,9 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
         static float selectedObjectMatrix[16];
 
         // Get transform using RaycastUtil helper to avoid OpenGL header conflicts
-        if (!RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix)) {
+        bool hasTransform = RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix);
+
+        if (!hasTransform) {
             // Fallback to identity if entity doesn't have transform
             memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
         }

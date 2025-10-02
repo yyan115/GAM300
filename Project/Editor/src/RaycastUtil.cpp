@@ -5,10 +5,13 @@
 #include <optional>
 #include <cmath>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 
 // Include ECS system from Engine (using configured include paths)
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Math/Vector3D.hpp"
 #include "Logging.hpp"
 
@@ -78,6 +81,17 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromTransform(const Matrix4x4& transfor
     return AABB(translation - halfSize, translation + halfSize);
 }
 
+RaycastUtil::AABB RaycastUtil::CreateAABBFromSprite(const glm::vec3& position, const glm::vec3& scale, bool is3D) {
+    glm::vec3 halfSize = scale * 0.5f;
+
+    // For both 2D and 3D sprites, position is now the center (after rendering fix)
+    // The sprite quad is 0,0 to 1,1, and we offset by -0.5,-0.5 in the shader to center it
+    glm::vec3 center = position;
+
+    // Create AABB around the sprite's center
+    return AABB(center - halfSize, center + halfSize);
+}
+
 RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity) {
     RaycastHit closestHit;
 
@@ -91,41 +105,69 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
 
         int entitiesWithComponent = 0;
 
-        // Test against entities 0-50, looking for Transform components
+        // Test against entities 0-50, looking for Transform components OR SpriteRenderComponents
         for (Entity entity = 0; entity <= 50; ++entity) {
             // Skip excluded entity (e.g., preview entity)
             if (entity == excludeEntity) {
                 continue;
             }
 
-            // Check if entity has Transform component
-            if (!ecsManager.HasComponent<Transform>(entity)) {
-                continue;  // Skip if entity has no transform
-            }
+            AABB entityAABB(glm::vec3(0.0f), glm::vec3(0.0f));
+            bool hasValidAABB = false;
 
             try {
-                auto& transform = ecsManager.GetComponent<Transform>(entity);
+                // First, check if entity has SpriteRenderComponent (prioritize sprites for better selection)
+                if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+                    auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
-                entitiesWithComponent++;
-                ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
+                    entitiesWithComponent++;
+                    ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with SpriteRenderComponent (is3D=", sprite.is3D, ")\n");
 
-                // Create AABB from the entity's transform
-                AABB entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    // Get sprite position from Transform if it exists, otherwise use sprite's position
+                    glm::vec3 spritePosition = sprite.position;
+                    if (ecsManager.HasComponent<Transform>(entity)) {
+                        auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        spritePosition = glm::vec3(transform.worldMatrix.m.m03,
+                                                   transform.worldMatrix.m.m13,
+                                                   transform.worldMatrix.m.m23);
+                    }
 
-                ENGINE_PRINT("[RaycastUtil] Entity ", entity, " AABB: min("
-                    , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
-                    , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+                    // Create AABB from the sprite's position and scale
+                    entityAABB = CreateAABBFromSprite(spritePosition, sprite.scale, sprite.is3D);
+                    hasValidAABB = true;
 
+                    ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Sprite) AABB: min("
+                        , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
+                        , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+                }
+                // Second, check if entity has Transform component (for 3D models without sprites)
+                else if (ecsManager.HasComponent<Transform>(entity)) {
+                    auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-                // Test ray intersection
-                float distance;
-                if (RayAABBIntersection(ray, entityAABB, distance)) {
-                    // Check if this is the closest hit
-                    if (!closestHit.hit || distance < closestHit.distance) {
-                        closestHit.hit = true;
-                        closestHit.entity = entity;
-                        closestHit.distance = distance;
-                        closestHit.point = ray.origin + ray.direction * distance;
+                    entitiesWithComponent++;
+                    ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
+
+                    // Create AABB from the entity's transform
+                    entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    hasValidAABB = true;
+
+                    ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Transform) AABB: min("
+                        , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
+                        , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+                }
+
+                // Test ray intersection if we have a valid AABB
+                if (hasValidAABB) {
+                    float distance;
+                    if (RayAABBIntersection(ray, entityAABB, distance)) {
+                        ENGINE_PRINT("[RaycastUtil] Ray hit entity " , entity , " at distance " , distance , "\n");
+
+                        // Update closest hit if this is closer
+                        if (!closestHit.hit || distance < closestHit.distance) {
+                            closestHit.hit = true;
+                            closestHit.entity = entity;
+                            closestHit.distance = distance;
+                        }
                     }
                 }
             } catch (const std::exception& e) {
@@ -136,13 +178,13 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
         ENGINE_PRINT("[RaycastUtil] Tested " , entitiesWithComponent , " entities with Transform components\n");
 
     } catch (const std::exception& e) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n"); 
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n");
     }
 
     return closestHit;
 }
 
-bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
+bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16], bool is2DMode) {
     try {
         // Get the active ECS manager
         ECSRegistry& registry = ECSRegistry::GetInstance();
@@ -161,6 +203,46 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
 
             return true;
         }
+        // If no Transform, check for SpriteRenderComponent (for sprites without Transform)
+        else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't provide transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't provide transform for 3D sprites in 2D mode
+            }
+
+            // Note: This case should rarely happen since 3D sprites typically have Transform components
+            // But if a 3D sprite exists without Transform, use sprite properties
+
+            // For 3D sprites: position is already the center (used directly in TRS transform)
+            // Build a transform matrix from position, scale, and rotation
+            // Create a TRS (Translation * Rotation * Scale) matrix
+
+            // Convert rotation from degrees to radians
+            float rotationRadians = glm::radians(sprite.rotation);
+
+            // Create transformation matrices
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), sprite.position);
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z axis
+            glm::mat4 scale = glm::scale(glm::mat4(1.0f), sprite.scale);
+
+            // Combine: TRS order
+            glm::mat4 transformMatrix = translation * rotation * scale;
+
+            // Convert glm::mat4 (column-major) to column-major float array for ImGuizmo
+            // GLM is already column-major, so we can directly copy
+            const float* matrixPtr = glm::value_ptr(transformMatrix);
+            for (int i = 0; i < 16; ++i) {
+                outMatrix[i] = matrixPtr[i];
+            }
+
+            return true;
+        }
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error getting transform for entity ", entity, ": ", e.what(), "\n");
     }
@@ -168,7 +250,7 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
     return false;
 }
 
-bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
+bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode) {
     try {
         // Get the active ECS manager
         ECSRegistry& registry = ECSRegistry::GetInstance();
@@ -186,18 +268,32 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             newMatrix.m.m20 = matrix[2];  newMatrix.m.m21 = matrix[6];  newMatrix.m.m22 = matrix[10];  newMatrix.m.m23 = matrix[14];
             newMatrix.m.m30 = matrix[3];  newMatrix.m.m31 = matrix[7];  newMatrix.m.m32 = matrix[11];  newMatrix.m.m33 = matrix[15];
 
-            // Extract transform components properly
-            Vector3D newPosition(newMatrix.m.m03, newMatrix.m.m13, newMatrix.m.m23);
+            // Extract transform components properly using glm decomposition
+            glm::mat4 glmMatrix = glm::make_mat4(matrix);
 
-            // Extract scale from the matrix
-            Vector3D newScale;
-            newScale.x = sqrt(newMatrix.m.m00*newMatrix.m.m00 + newMatrix.m.m10*newMatrix.m.m10 + newMatrix.m.m20*newMatrix.m.m20);
-            newScale.y = sqrt(newMatrix.m.m01*newMatrix.m.m01 + newMatrix.m.m11*newMatrix.m.m11 + newMatrix.m.m21*newMatrix.m.m21);
-            newScale.z = sqrt(newMatrix.m.m02*newMatrix.m.m02 + newMatrix.m.m12*newMatrix.m.m12 + newMatrix.m.m22*newMatrix.m.m22);
+            glm::vec3 position;
+            glm::vec3 scale;
+            glm::quat rotation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(glmMatrix, scale, rotation, position, skew, perspective);
+
+            // Convert glm vectors to Vector3D
+            Vector3D newPosition(position.x, position.y, position.z);
+            Vector3D newScale(scale.x, scale.y, scale.z);
+
+            // Convert quaternion to Euler angles (in radians, then to degrees)
+            glm::vec3 eulerRadians = glm::eulerAngles(rotation);
+            Vector3D newRotation(
+                glm::degrees(eulerRadians.x),
+                glm::degrees(eulerRadians.y),
+                glm::degrees(eulerRadians.z)
+            );
 
             // Update all components to stay in sync
             ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
             ecsManager.transformSystem->SetWorldScale(entity, newScale);
+            ecsManager.transformSystem->SetWorldRotation(entity, newRotation);
 
             //transform.position = newPosition;
             //transform.scale = newScale;  // Make sure scale is updated too
@@ -206,6 +302,43 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             //// Update last known values to prevent TransformSystem from recalculating
             //transform.lastPosition = newPosition;
             //transform.lastScale = newScale;
+
+            return true;
+        }
+        // If no Transform, check for SpriteRenderComponent
+        else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't apply transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't apply transform for 3D sprites in 2D mode
+            }
+
+            // Convert column-major float array (ImGuizmo/GLM format) to glm::mat4
+            glm::mat4 transformMatrix;
+            const float* matrixPtr = matrix;
+            transformMatrix = glm::make_mat4(matrixPtr);
+
+            // Decompose the matrix to get position, rotation, and scale
+            glm::vec3 position;
+            glm::vec3 scale;
+            glm::quat rotation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(transformMatrix, scale, rotation, position, skew, perspective);
+
+            // Convert quaternion to Euler angles (in radians)
+            glm::vec3 eulerAngles = glm::eulerAngles(rotation);
+
+            // For 3D sprites, position is already the center (no conversion needed)
+            // Update sprite properties directly
+            sprite.position = position;
+            sprite.scale = scale;
+            sprite.rotation = glm::degrees(eulerAngles.z); // Convert back to degrees and use Z rotation
 
             return true;
         }

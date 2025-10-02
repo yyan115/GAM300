@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\EditorComponents.cpp" />
     <ClCompile Include="src\GUIManager.cpp" />
     <ClCompile Include="src\EditorState.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />
@@ -54,6 +55,7 @@
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\EditorComponents.hpp" />
     <ClInclude Include="include\GUIManager.hpp" />
     <ClInclude Include="include\EditorState.hpp" />
     <ClInclude Include="include\EditorCamera.hpp" />
