@@ -849,6 +849,26 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
                 ImGui::EndMenu();
             }
 
+            // Lighting Components
+            if (ImGui::BeginMenu("Lighting")) {
+                if (!ecsManager.HasComponent<DirectionalLightComponent>(entity)) {
+                    if (ImGui::MenuItem("Directional Light")) {
+                        AddComponent(entity, "DirectionalLightComponent");
+                    }
+                }
+                if (!ecsManager.HasComponent<PointLightComponent>(entity)) {
+                    if (ImGui::MenuItem("Point Light")) {
+                        AddComponent(entity, "PointLightComponent");
+                    }
+                }
+                if (!ecsManager.HasComponent<SpotLightComponent>(entity)) {
+                    if (ImGui::MenuItem("Spot Light")) {
+                        AddComponent(entity, "SpotLightComponent");
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
         } catch (const std::exception& e) {
             ImGui::Text("Error: %s", e.what());
         }
@@ -887,17 +907,82 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
         }
         else if (componentType == "DirectionalLightComponent") {
             DirectionalLightComponent component;
+            // Set reasonable default values (matching SceneInstance.cpp)
+            component.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+            component.ambient = glm::vec3(0.05f);
+            component.diffuse = glm::vec3(0.4f);
+            component.specular = glm::vec3(0.5f);
+            component.enabled = true;
+
             ecsManager.AddComponent<DirectionalLightComponent>(entity, component);
+
+            // Ensure entity has a Transform component
+            if (!ecsManager.HasComponent<Transform>(entity)) {
+                Transform transform;
+                ecsManager.AddComponent<Transform>(entity, transform);
+            }
+
+            // Register entity with lighting system
+            if (ecsManager.lightingSystem) {
+                ecsManager.lightingSystem->RegisterEntity(entity);
+            }
+
             std::cout << "[Inspector] Added DirectionalLightComponent to entity " << entity << std::endl;
         }
         else if (componentType == "PointLightComponent") {
             PointLightComponent component;
+            // Set reasonable default values (matching SceneInstance.cpp)
+            component.ambient = glm::vec3(0.05f);
+            component.diffuse = glm::vec3(0.8f);
+            component.specular = glm::vec3(1.0f);
+            component.constant = 1.0f;
+            component.linear = 0.09f;
+            component.quadratic = 0.032f;
+            component.enabled = true;
+
             ecsManager.AddComponent<PointLightComponent>(entity, component);
+
+            // Ensure entity has a Transform component for positioning
+            if (!ecsManager.HasComponent<Transform>(entity)) {
+                Transform transform;
+                ecsManager.AddComponent<Transform>(entity, transform);
+                std::cout << "[Inspector] Added Transform component for PointLight positioning" << std::endl;
+            }
+
+            // Register entity with lighting system
+            if (ecsManager.lightingSystem) {
+                ecsManager.lightingSystem->RegisterEntity(entity);
+            }
+
             std::cout << "[Inspector] Added PointLightComponent to entity " << entity << std::endl;
         }
         else if (componentType == "SpotLightComponent") {
             SpotLightComponent component;
+            // Set reasonable default values (matching SceneInstance.cpp)
+            component.direction = glm::vec3(0.0f, 0.0f, -1.0f);
+            component.ambient = glm::vec3(0.0f);
+            component.diffuse = glm::vec3(1.0f);
+            component.specular = glm::vec3(1.0f);
+            component.constant = 1.0f;
+            component.linear = 0.09f;
+            component.quadratic = 0.032f;
+            component.cutOff = 0.976f;      // cos(12.5 degrees)
+            component.outerCutOff = 0.966f; // cos(15 degrees)
+            component.enabled = true;
+
             ecsManager.AddComponent<SpotLightComponent>(entity, component);
+
+            // Ensure entity has a Transform component
+            if (!ecsManager.HasComponent<Transform>(entity)) {
+                Transform transform;
+                ecsManager.AddComponent<Transform>(entity, transform);
+            }
+
+            // Register entity with lighting system
+            if (ecsManager.lightingSystem) {
+                ecsManager.lightingSystem->RegisterEntity(entity);
+            }
+
             std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
         }
         else {

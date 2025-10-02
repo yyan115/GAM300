@@ -57,7 +57,8 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
 
     if (!isWindowHovered) return;
 
-    if (isAltPressed && isLeftMousePressed) {
+    // Only allow camera rotation in 3D mode
+    if (isAltPressed && isLeftMousePressed && !is2DMode) {
         Yaw -= mouseDeltaX * OrbitSensitivity;
         Pitch -= mouseDeltaY * OrbitSensitivity;
 
