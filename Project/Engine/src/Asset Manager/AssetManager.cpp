@@ -345,7 +345,7 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
-	ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
+	//ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 		return it->second->sourceFilePath;
