@@ -3,7 +3,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "IRenderComponent.hpp"
-#include "Graphics/Camera.h"
+#include "Graphics/Camera/Camera.h"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Model/Model.h"
 #include "Model/ModelRenderComponent.hpp"
@@ -13,6 +13,7 @@
 #include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
 #include "Engine.h"  // For ENGINE_API macro
+#include "Particle/ParticleComponent.hpp"
 
 class ENGINE_API GraphicsManager {
 public:
@@ -91,13 +92,8 @@ private:
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);
 
-    // Remove later
-    glm::vec3 pointLightPositions[4] = {
-        glm::vec3(0.7f,  0.2f,  2.0f),
-        glm::vec3(2.3f, -3.3f, -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3(0.0f,  0.0f, -1.0f)
-    };
+    // Particle
+    void RenderParticles(const ParticleComponent& item);
 
     // Sprite rendering methods
     void RenderSprite(const SpriteRenderComponent& item);

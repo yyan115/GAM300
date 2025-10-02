@@ -13,7 +13,6 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Logging.hpp"
-#include <Graphics/Sprite/SpriteRenderComponent.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -34,6 +33,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<DirectionalLightComponent>();
 	RegisterComponent<PointLightComponent>();
 	RegisterComponent<SpotLightComponent>();
+	RegisterComponent<ParticleComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -81,6 +81,13 @@ void ECSManager::Initialize() {
 		SetSystemSignature<SpriteSystem>(signature);
 	}
 
+	particleSystem = RegisterSystem<ParticleSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<ParticleComponent>());
+		SetSystemSignature<ParticleSystem>(signature);
+	}
+	
 	audioSystem = RegisterSystem<AudioSystem>();
 	{
 		Signature signature;
