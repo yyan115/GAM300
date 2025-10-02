@@ -58,7 +58,7 @@ Libraries are rather messy as some needs to manually compiled, some have availab
 
 ## Set up Development Environment
 
-The project now supports using Visual Studio Code, but as the project was first configured using Visual Studio, it still currently supports using Visual Studio as well.
+Visual Studio Code IS SLOW TO UPDATE, MAY BREAK, AND IS NOT RECOMMENDED. Please use Visual Studio instead. However, Visual Studio Code might still have to be installed, for Android Studio to correctly pick up the cmake configuration. So please install Visual Studio Code as well.
 
 Everyone should set up Android Studio to make sure their code works on Android.
 
@@ -113,10 +113,3 @@ Lastly, make sure you have NDK and CMake installed/ticked in Files - Tools - SDK
 ## End
 
 Written by Yan Yu, the tech lead. Please contact if there are any issues.
-
-# Android
-
-filesystems becareful
-use android studio and visual studio i guess for running
-resources folder gets copied over to assets
-use clean-android if resources folder gets changed
