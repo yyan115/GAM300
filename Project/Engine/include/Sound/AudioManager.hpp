@@ -80,6 +80,9 @@ public:
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
 
+    // Get FMOD system (for internal use by AudioMixer)
+    FMOD_SYSTEM* GetFMODSystem() const { return System; }
+
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown

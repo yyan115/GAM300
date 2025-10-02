@@ -103,6 +103,8 @@
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Sound\AudioMixer.hpp" />
+    <ClInclude Include="include\Sound\AudioMixerGroup.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
@@ -217,6 +219,8 @@
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Sound\AudioMixer.cpp" />
+    <ClCompile Include="src\Sound\AudioMixerGroup.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />

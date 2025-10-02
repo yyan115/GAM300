@@ -445,6 +445,41 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
             // no immediate action; applied at play time
         }
 
+        // Output AudioMixerGroup (Unity-style)
+        ImGui::Text("Output:");
+        ImGui::SameLine();
+        
+        std::string outputButtonText;
+        if (!audio.OutputAudioMixerGroup.empty()) {
+            outputButtonText = audio.OutputAudioMixerGroup;
+        } else {
+            outputButtonText = "None (AudioMixerGroup)";
+        }
+        
+        float outputButtonWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::Button(outputButtonText.c_str(), ImVec2(outputButtonWidth, 30.0f));
+        
+        // AudioMixerGroup drag-drop target
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIOMIXERGROUP_DRAG")) {
+                const char* groupPath = static_cast<const char*>(payload->Data);
+                audio.SetOutputAudioMixerGroup(groupPath);
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
+        // Right-click to clear
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !audio.OutputAudioMixerGroup.empty()) {
+            ImGui::OpenPopup("ClearOutputGroup");
+        }
+        
+        if (ImGui::BeginPopup("ClearOutputGroup")) {
+            if (ImGui::MenuItem("Clear Output")) {
+                audio.SetOutputAudioMixerGroup("");
+            }
+            ImGui::EndPopup();
+        }
+
         // Play on Awake (Unity naming)
         ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
 

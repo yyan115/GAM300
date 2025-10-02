@@ -126,6 +126,8 @@
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
+    <ClInclude Include="include\Sound\AudioMixer.hpp" />
+    <ClInclude Include="include\Sound\AudioMixerGroup.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -192,6 +194,8 @@
     <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
+    <ClCompile Include="src\Sound\AudioMixer.cpp" />
+    <ClCompile Include="src\Sound\AudioMixerGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

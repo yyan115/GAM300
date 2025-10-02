@@ -180,7 +180,8 @@ public:
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
 		else if (GetResourceMap<Shader>().find(guid) != GetResourceMap<Shader>().end()) return true;
-		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;		
+		else if (GetResourceMap<Font>().find(guid) != GetResourceMap<Font>().end()) return true;
+		else if (GetResourceMap<Audio>().find(guid) != GetResourceMap<Audio>().end()) return true;
 		return false;
 	}
 

@@ -21,6 +21,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include "Panels/AudioMixerPanel.hpp"
 #include <Asset Manager/AssetManager.hpp>
 #include "Asset Manager/MetaFilesManager.hpp"
 
@@ -163,6 +164,11 @@ void GUIManager::SetupDefaultPanels() {
 	auto assetBrowserPanel = std::make_shared<AssetBrowserPanel>();
 	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
 	panelManager->RegisterPanel(assetBrowserPanel);
+
+	auto audioMixerPanel = std::make_shared<AudioMixerPanel>();
+	assert(audioMixerPanel != nullptr && "Failed to create AudioMixerPanel");
+	panelManager->RegisterPanel(audioMixerPanel);
+	
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
 }
 
