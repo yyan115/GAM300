@@ -298,21 +298,33 @@ void SceneInstance::Draw() {
 	if (mainECS.textSystem)
 	{
 #ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
 #endif
 		mainECS.textSystem->Update();
 #ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
 	}
 
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
+#endif
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
+#endif
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
+#endif
 	if (mainECS.particleSystem)
 	{
 		mainECS.particleSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
+#endif
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
 	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
@@ -321,10 +333,16 @@ void SceneInstance::Draw() {
 	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
+#endif
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
+#endif
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
 #endif

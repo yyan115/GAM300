@@ -122,9 +122,14 @@ public:
 	std::string ExtractRelativeAndroidPath(const std::string& fullAndroidPath);
 
 	// Handle 'Compile All Assets'
-	std::future<std::vector<std::string>> androidAssetCompilationFuture;
 	std::future<std::vector<std::string>> desktopAssetCompilationFuture;
-	int numCompiledAssets = 0;
+	struct AndroidCompilationStatus {
+		bool isCompiling = false;
+		bool finishedCompiling = false;
+		std::future<std::vector<std::string>> assetCompilationFuture;
+		int numCompiledAssets = 0;
+	} androidCompilationStatus;
+
 	int GetAssetMetaMapSize();
 
 private:

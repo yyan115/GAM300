@@ -358,7 +358,8 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 	// THIS RUNS ON A SEPARATE THREAD.
 	std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
-	numCompiledAssets = 0;
+	androidCompilationStatus.numCompiledAssets = 0;
+	androidCompilationStatus.isCompiling = true;
 	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
@@ -370,14 +371,15 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			continue;
 		}
 		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
-			// SKip compiling meshes because they must be compiled on the main OpenGL thread.
+			// Sip compiling meshes because they must be compiled on the main OpenGL thread.
+			assetPath = pair.second->sourceFilePath;
 			remainingPaths.push_back(assetPath);
 			continue;
 		}
 		else {
 			assetPath = pair.second->sourceFilePath;
 			CompileAsset(assetPath, true, true);
-			++numCompiledAssets;
+			++androidCompilationStatus.numCompiledAssets;
 		}
 	}
 
@@ -416,7 +418,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 
 	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
 	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
-
+	androidCompilationStatus.finishedCompiling = true;
 	return remainingPaths;
 }
 

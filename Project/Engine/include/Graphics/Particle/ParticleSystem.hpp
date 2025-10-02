@@ -49,6 +49,7 @@ struct ParticleInstanceData {
 class ParticleSystem : public System {
 public:
     bool Initialise();
+    bool InitialiseParticles();
     void Update();
     void Shutdown();
 

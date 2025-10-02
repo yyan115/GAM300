@@ -276,11 +276,13 @@ void GUIManager::RenderMenuBar() {
 				//	return AssetManager::GetInstance().CompileAllAssetsForDesktop();
 				//});
     //        }
-            if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
-				AssetManager::GetInstance().androidAssetCompilationFuture = std::async(std::launch::async, [] {
+			ImGui::BeginDisabled(AssetManager::GetInstance().androidCompilationStatus.isCompiling);
+			if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
+				AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture = std::async(std::launch::async, [] {
 					return AssetManager::GetInstance().CompileAllAssetsForAndroid();
-				});
-            }
+					});
+			}
+			ImGui::EndDisabled();
             ImGui::Separator();
             if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
                 // TODO: Exit application
@@ -329,20 +331,22 @@ void GUIManager::RenderMenuBar() {
         ImGui::EndMainMenuBar();
     }
 
-	if (AssetManager::GetInstance().androidAssetCompilationFuture.valid() &&
-		AssetManager::GetInstance().androidAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidAssetCompilationFuture.get();
+	if (AssetManager::GetInstance().androidCompilationStatus.finishedCompiling) {
+		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture.get();
 		ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
 		for (const auto& path : remainingToCompile) {
 			AssetManager::GetInstance().CompileAsset(path, true, true);
 		}
+		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
+		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
 	}
-	else if (AssetManager::GetInstance().androidAssetCompilationFuture.valid() &&
-		AssetManager::GetInstance().androidAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout)
+	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
 	{
-		float fraction = (float)AssetManager::GetInstance().numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
+		ImGui::Begin("Compiling assets for Android...");
+		float fraction = (float)AssetManager::GetInstance().androidCompilationStatus.numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
 		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
-		ImGui::ProgressBar(fraction, ImVec2(-1, 0), overlay.c_str());
+		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
+		ImGui::End();
 	}
 	//if (AssetManager::GetInstance().desktopAssetCompilationFuture.valid() &&
 	//	AssetManager::GetInstance().desktopAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {

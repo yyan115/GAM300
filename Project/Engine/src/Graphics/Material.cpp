@@ -399,33 +399,31 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 			texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
 			offset += pathLength;
 
-			// Load texture via Resource Manager
-			std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-			if (texture) {
-				std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-				SetTexture(texType, std::move(textureInfo));
+			// Texture doesn't have to be loaded now, it will only be loaded when it is being rendered.
+			std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+			std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+			SetTexture(texType, std::move(textureInfo));
 
-				// Assign the texture type
-				switch (texType) {
-				case Material::TextureType::DIFFUSE:
-					texture->type = "diffuse";
-					break;
-				case Material::TextureType::SPECULAR:
-					texture->type = "specular";
-					break;
-				case Material::TextureType::NORMAL:
-					texture->type = "normal";
-					break;
-				case Material::TextureType::EMISSIVE:
-					texture->type = "emissive";
-					break;
-					// Add other cases as needed
-				default:
-					ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-					//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
-					texture->type = "unknown";
-					break;
-				}
+			// Assign the texture type
+			switch (texType) {
+			case Material::TextureType::DIFFUSE:
+				texture->type = "diffuse";
+				break;
+			case Material::TextureType::SPECULAR:
+				texture->type = "specular";
+				break;
+			case Material::TextureType::NORMAL:
+				texture->type = "normal";
+				break;
+			case Material::TextureType::EMISSIVE:
+				texture->type = "emissive";
+				break;
+				// Add other cases as needed
+			default:
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+				//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+				texture->type = "unknown";
+				break;
 			}
 		}
 	}

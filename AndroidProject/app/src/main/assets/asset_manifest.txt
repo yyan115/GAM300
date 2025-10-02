@@ -68,6 +68,14 @@ Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
 Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
+Resources/Shaders/particle.frag
+Resources/Shaders/particle.meta
+Resources/Shaders/particle.shader
+Resources/Shaders/particle.vert
+Resources/Shaders/particleandroid.frag
+Resources/Shaders/particleandroid.meta
+Resources/Shaders/particleandroid.shader
+Resources/Shaders/particleandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
 Resources/Shaders/sprite.shader

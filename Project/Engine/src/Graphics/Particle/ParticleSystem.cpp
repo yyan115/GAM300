@@ -21,6 +21,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/VBO.h"
 #include "Graphics/EBO.h"
 #include "TimeManager.hpp"
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
 
 /******************************************************************************/
 /*!
@@ -36,6 +38,16 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 */
 /******************************************************************************/
 bool ParticleSystem::Initialise() 
+{
+    ENGINE_LOG_INFO("Particle System Initializing...");
+#ifndef ANDROID
+    return InitialiseParticles(); // Same as for SpriteSystem, Android must delay particle initialisation.
+#else
+    return true;
+#endif
+}
+
+bool ParticleSystem::InitialiseParticles()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -92,9 +104,9 @@ bool ParticleSystem::Initialise()
         // Rotation (location 5)
         particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 5, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, rotation), 1);
 
-        particleComp.particleVAO->Unbind();
         particleComp.quadVBO->Unbind();
-        particleComp.quadEBO->Unbind();
+        particleComp.particleVAO->Unbind();
+        //particleComp.quadEBO->Unbind();
 
         // Reserve particle pool
         particleComp.particles.reserve(particleComp.maxParticles);
@@ -151,9 +163,9 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 4, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, size), 1);
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 5, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, rotation), 1);
 
-    particleComp.particleVAO->Unbind();
     particleComp.quadVBO->Unbind();
-    particleComp.quadEBO->Unbind();
+    particleComp.particleVAO->Unbind();
+    //particleComp.quadEBO->Unbind();
 
     particleComp.particles.reserve(particleComp.maxParticles);
 }
@@ -176,6 +188,10 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
 /******************************************************************************/
 void ParticleSystem::Update()
 {
+#ifdef ANDROID
+    InitialiseParticles(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
+#endif
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
     float dt = TimeManager::GetDeltaTime();

@@ -528,6 +528,24 @@ bool Engine::InitializeGraphicsResources() {
 #endif
 	ENGINE_LOG_INFO("Initializing graphics resources...");
 
+#ifdef ANDROID
+    if (auto* platform = WindowManager::GetPlatform()) {
+        platform->MakeContextCurrent();
+        // Check if OpenGL context is current
+        EGLDisplay display = eglGetCurrentDisplay();
+        EGLContext context = eglGetCurrentContext();
+        EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+
+        // __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL State - Display: %p, Context: %p, Surface: %p",
+        //                    display, context, surface);
+
+        if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+            __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
+            return false;
+        }
+    }
+#endif
+
 	// Load empty scene
     SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
@@ -545,6 +563,12 @@ bool Engine::InitializeGraphicsResources() {
 bool Engine::InitializeAssets() {
     // Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
     // MetaFilesManager::InitializeAssetMetaFiles("Resources");  // Uncomment if needed
+//#ifdef ANDROID
+//    if (auto* platform = WindowManager::GetPlatform()) {
+//        platform->MakeContextCurrent();
+//        ENGINE_LOG_INFO("Android->MakeContextCurrent success");
+//    }
+//#endif
     return true;
 }
 
