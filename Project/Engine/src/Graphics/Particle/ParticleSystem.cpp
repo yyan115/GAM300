@@ -49,6 +49,8 @@ bool ParticleSystem::Initialise()
 
 bool ParticleSystem::InitialiseParticles()
 {
+    if (particleSystemInitialised) return true;
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     for (const auto& entity : entities)
@@ -114,6 +116,7 @@ bool ParticleSystem::InitialiseParticles()
         ENGINE_PRINT("[ParticleSystem] Initialized particle emitter for entity with ", particleComp.maxParticles, " max particles\n");
     }
 
+    particleSystemInitialised = true;
     return true;
 }
 
