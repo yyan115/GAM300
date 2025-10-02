@@ -10,7 +10,7 @@
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Input\InputManager.hpp" />
-    <ClInclude Include="include\Graphics\Camera.h" />
+    <ClInclude Include="include\Graphics\Camera\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\ShaderClass.h" />
@@ -122,6 +122,8 @@
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
   </ItemGroup>
@@ -187,6 +189,7 @@
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />

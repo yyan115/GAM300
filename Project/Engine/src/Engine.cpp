@@ -19,6 +19,7 @@
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
 
 #ifdef ANDROID
 #include "Input/VirtualControls.hpp"
@@ -655,6 +656,7 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }
 

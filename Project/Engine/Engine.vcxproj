@@ -38,6 +38,8 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
+    <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
@@ -82,7 +84,7 @@
     <ClInclude Include="include\ECS\System.hpp" />
     <ClInclude Include="include\ECS\SystemManager.hpp" />
     <ClInclude Include="include\Engine.h" />
-    <ClInclude Include="include\Graphics\Camera.h" />
+    <ClInclude Include="include\Graphics\Camera\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\Model\Model.h" />
@@ -164,6 +166,7 @@
     <ClCompile Include="src\Graphics\IRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />
     <ClCompile Include="src\Graphics\GraphicsManager.cpp" />

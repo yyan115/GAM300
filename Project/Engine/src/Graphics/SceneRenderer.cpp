@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Graphics/SceneRenderer.hpp"
-#include "Graphics/Camera.h"
+#include "Graphics/Camera/Camera.h"
 #include "Engine.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -172,6 +172,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         if (mainECS.lightingSystem)
         {
             mainECS.lightingSystem->Update();
+        }
+        if (mainECS.particleSystem)
+        {
+            mainECS.particleSystem->Update();
         }
 
         // Render the scene

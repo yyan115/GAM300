@@ -24,8 +24,12 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 
 void GraphicsManager::Shutdown()
 {
+	ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
+
 	renderQueue.clear();
 	currentCamera = nullptr;
+	mainECS.spriteSystem->Shutdown();
+	mainECS.particleSystem->Shutdown();
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
@@ -36,7 +40,7 @@ void GraphicsManager::BeginFrame()
 
 void GraphicsManager::EndFrame()
 {
-
+	
 }
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
@@ -102,6 +106,7 @@ void GraphicsManager::Render()
 		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
 		const SpriteRenderComponent* spriteItem = dynamic_cast<const SpriteRenderComponent*>(renderItem.get());
 		const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get());
+		const ParticleComponent* particleItem = dynamic_cast<const ParticleComponent*>(renderItem.get());
 
 		if (modelItem)
 		{
@@ -118,6 +123,10 @@ void GraphicsManager::Render()
 		else if (debugItem)
 		{
 			RenderDebugDraw(*debugItem);
+		}
+		else if (particleItem)
+		{
+			RenderParticles(*particleItem);
 		}
 	}
 }
@@ -377,6 +386,50 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 #endif
+}
+
+void GraphicsManager::RenderParticles(const ParticleComponent& item) {
+	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	glDepthMask(GL_FALSE);
+
+	item.particleShader->Activate();
+
+	// Setup camera matrices ONCE for all particles
+	if (currentCamera) {
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		item.particleShader->setMat4("view", view);
+
+		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, 100.0f
+		);
+		item.particleShader->setMat4("projection", projection);
+
+		// Send camera vectors for billboard calculations in vertex shader
+		glm::vec3 cameraRight = glm::normalize(glm::cross(currentCamera->Front, currentCamera->Up));
+		item.particleShader->setVec3("cameraRight", cameraRight);
+		item.particleShader->setVec3("cameraUp", currentCamera->Up);
+	}
+
+	// Bind texture if available
+	if (item.particleTexture) {
+		glActiveTexture(GL_TEXTURE0);
+		item.particleTexture->Bind(0);
+		item.particleShader->setInt("particleTexture", 0);
+	}
+
+	// Draw ALL particles with ONE instanced draw call using indices
+	item.particleVAO->Bind();
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, item.particles.size());
+	item.particleVAO->Unbind();
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)

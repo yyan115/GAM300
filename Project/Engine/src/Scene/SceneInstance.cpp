@@ -14,7 +14,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
-
+#include "Graphics/Particle/ParticleComponent.hpp"
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -195,13 +195,6 @@ void SceneInstance::Initialize() {
 		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
 		TextUtils::SetAlignment(textComp, TextRenderComponent::Alignment::CENTER);
 
-		//Entity text2 = ecsManager.CreateEntity();
-		//ecsManager.GetComponent<NameComponent>(text2).name = "Text2";
-		//ecsManager.AddComponent<TextRenderComponent>(text2, TextRenderComponent{ "woohoo?", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf", 20), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
-		//TextRenderComponent& textComp2 = ecsManager.GetComponent<TextRenderComponent>(text2);
-		//TextUtils::SetPosition(textComp2, Vector3D(800, 800, 0));
-		//TextUtils::SetAlignment(textComp2, TextRenderComponent::Alignment::CENTER);
-
 		// Test Audio
 		// Create an entity with AudioComponent
 		Entity audioEntity = ecsManager.CreateEntity();
@@ -225,15 +218,29 @@ void SceneInstance::Initialize() {
 		TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
 		TextUtils::SetPosition(fpsTextComp, Vector3D(0, 0, 0));
 		TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+
+		// Test Particle
+		Entity particleEntity = ecsManager.CreateEntity();
+		ecsManager.GetComponent<NameComponent>(particleEntity).name = "Test Particles";
+		ecsManager.AddComponent<ParticleComponent>(particleEntity, ParticleComponent{});
+		auto& particleComp = ecsManager.GetComponent<ParticleComponent>(particleEntity);
+		ecsManager.transformSystem->SetLocalPosition(particleEntity, { 0, 1, -3 }); // Used to set emitterPosition variable
+		particleComp.emissionRate = 50.0f;
+		particleComp.maxParticles = 1000;
+		particleComp.particleLifetime = 2.0f;
+		particleComp.startSize = 0.2f;
+		particleComp.endSize = 0.05f;
+		particleComp.startColor = glm::vec4(1.0f, 0.8f, 0.2f, 1.0f);  // Orange
+		particleComp.endColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);    // Red fade out
+		particleComp.initialVelocity = glm::vec3(0, 2.0f, 0);
+		particleComp.velocityRandomness = 1.0f;
+		particleComp.gravity = glm::vec3(0, -2.0f, 0);
+		// Load resources
+		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
+
 	}
-
-	// Creates light
-	lightShader = std::make_shared<Shader>();
-	lightShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("light"));
-	//lightShader->LoadAsset("Resources/Shaders/light");
-	std::vector<std::shared_ptr<Texture>> emptyTextures = {};
-	lightCubeMesh = std::make_shared<Mesh>(lightVertices, lightIndices, emptyTextures);
-
+	
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
@@ -243,6 +250,7 @@ void SceneInstance::Initialize() {
 	ecsManager.debugDrawSystem->Initialise();
 	ecsManager.textSystem->Initialise();
 	ecsManager.spriteSystem->Initialise();
+	ecsManager.particleSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -300,6 +308,10 @@ void SceneInstance::Draw() {
 
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
+	}
+	if (mainECS.particleSystem)
+	{
+		mainECS.particleSystem->Update();
 	}
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
