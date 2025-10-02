@@ -10,7 +10,7 @@
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Input\InputManager.hpp" />
-    <ClInclude Include="include\Graphics\Camera.h" />
+    <ClInclude Include="include\Graphics\Camera\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\ShaderClass.h" />

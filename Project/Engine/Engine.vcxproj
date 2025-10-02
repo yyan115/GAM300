@@ -84,7 +84,7 @@
     <ClInclude Include="include\ECS\System.hpp" />
     <ClInclude Include="include\ECS\SystemManager.hpp" />
     <ClInclude Include="include\Engine.h" />
-    <ClInclude Include="include\Graphics\Camera.h" />
+    <ClInclude Include="include\Graphics\Camera\Camera.h" />
     <ClInclude Include="include\Graphics\EBO.h" />
     <ClInclude Include="include\Graphics\Mesh.h" />
     <ClInclude Include="include\Graphics\Model\Model.h" />
