@@ -129,7 +129,7 @@ void SceneRenderer::RenderSceneForEditor()
     RenderSceneForEditor(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
 }
 
-void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom)
+void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom, float orthoZoomLevel)
 {
     try {
         // Initialize static editor camera if not already done
@@ -142,10 +142,14 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         editorCamera->Front = cameraFront;
         editorCamera->Up = cameraUp;
         editorCamera->Zoom = cameraZoom;
+        editorCamera->OrthoZoomLevel = orthoZoomLevel;
 
         // Get the ECS manager and graphics manager
         ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+        // Mark that we're rendering for the editor (for view mode filtering)
+        gfxManager.SetRenderingForEditor(true);
 
         mainECS.transformSystem->Update();
 
@@ -179,6 +183,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
         // End frame
         gfxManager.EndFrame();
+
+        // Reset editor rendering flag
+        gfxManager.SetRenderingForEditor(false);
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");

@@ -116,34 +116,16 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
             bool hasValidAABB = false;
 
             try {
-                // First, check if entity has Transform component (for 3D models and 3D sprites)
-                if (ecsManager.HasComponent<Transform>(entity)) {
-                    auto& transform = ecsManager.GetComponent<Transform>(entity);
-
-                    entitiesWithComponent++;
-                    ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
-
-                    // Create AABB from the entity's transform
-                    entityAABB = CreateAABBFromTransform(transform.worldMatrix);
-                    hasValidAABB = true;
-
-                    ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Transform) AABB: min("
-                        , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
-                        , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
-                }
-                // Second, check if entity has SpriteRenderComponent (for 2D/3D sprites)
-                else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+                // First, check if entity has SpriteRenderComponent (prioritize sprites for better selection)
+                if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
                     auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
                     entitiesWithComponent++;
                     ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with SpriteRenderComponent (is3D=", sprite.is3D, ")\n");
 
-                    // For 3D sprites, try to get position from Transform if it exists
-                    // For 2D sprites, use the sprite's position directly
+                    // Get sprite position from Transform if it exists, otherwise use sprite's position
                     glm::vec3 spritePosition = sprite.position;
-
-                    // If it's a 3D sprite and has a Transform, prefer the Transform position
-                    if (sprite.is3D && ecsManager.HasComponent<Transform>(entity)) {
+                    if (ecsManager.HasComponent<Transform>(entity)) {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
                         spritePosition = glm::vec3(transform.worldMatrix.m.m03,
                                                    transform.worldMatrix.m.m13,
@@ -158,17 +140,33 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                         , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
                         , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
                 }
+                // Second, check if entity has Transform component (for 3D models without sprites)
+                else if (ecsManager.HasComponent<Transform>(entity)) {
+                    auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-                // If we have a valid AABB, test ray intersection
+                    entitiesWithComponent++;
+                    ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
+
+                    // Create AABB from the entity's transform
+                    entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    hasValidAABB = true;
+
+                    ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Transform) AABB: min("
+                        , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
+                        , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+                }
+
+                // Test ray intersection if we have a valid AABB
                 if (hasValidAABB) {
                     float distance;
                     if (RayAABBIntersection(ray, entityAABB, distance)) {
-                        // Check if this is the closest hit
+                        ENGINE_PRINT("[RaycastUtil] Ray hit entity " , entity , " at distance " , distance , "\n");
+
+                        // Update closest hit if this is closer
                         if (!closestHit.hit || distance < closestHit.distance) {
                             closestHit.hit = true;
                             closestHit.entity = entity;
                             closestHit.distance = distance;
-                            closestHit.point = ray.origin + ray.direction * distance;
                         }
                     }
                 }
@@ -180,13 +178,13 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
         ENGINE_PRINT("[RaycastUtil] Tested " , entitiesWithComponent , " entities with Transform components\n");
 
     } catch (const std::exception& e) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n"); 
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error during raycast: ", e.what(), "\n");
     }
 
     return closestHit;
 }
 
-bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
+bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16], bool is2DMode) {
     try {
         // Get the active ECS manager
         ECSRegistry& registry = ECSRegistry::GetInstance();
@@ -209,10 +207,13 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
         else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
-            // Only allow gizmo manipulation for 3D world-space sprites
-            // 2D screen-space sprites (is3D = false) use pixel coordinates and shouldn't use 3D gizmo
-            if (!sprite.is3D) {
-                return false;  // Don't provide transform for 2D screen-space sprites
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't provide transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't provide transform for 3D sprites in 2D mode
             }
 
             // Note: This case should rarely happen since 3D sprites typically have Transform components
@@ -249,7 +250,7 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
     return false;
 }
 
-bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
+bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode) {
     try {
         // Get the active ECS manager
         ECSRegistry& registry = ECSRegistry::GetInstance();
@@ -308,10 +309,13 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
         else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
-            // Only allow gizmo manipulation for 3D world-space sprites
-            // 2D screen-space sprites (is3D = false) use pixel coordinates and shouldn't use 3D gizmo
-            if (!sprite.is3D) {
-                return false;  // Don't apply transform for 2D screen-space sprites
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't apply transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't apply transform for 3D sprites in 2D mode
             }
 
             // Convert column-major float array (ImGuizmo/GLM format) to glm::mat4

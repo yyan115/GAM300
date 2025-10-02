@@ -3,6 +3,7 @@
 #include "Graphics/SceneRenderer.hpp"
 #include "EditorState.hpp"
 #include "Engine.h"
+#include "RunTimeVar.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -231,4 +232,27 @@ void GamePanel::CalculateViewportDimensions(int availableWidth, int availableHei
     // Ensure minimum dimensions
     if (viewportWidth < 100) viewportWidth = 100;
     if (viewportHeight < 100) viewportHeight = 100;
+}
+
+void GamePanel::GetTargetGameResolution(int& outWidth, int& outHeight) const {
+    if (freeAspect) {
+        // For free aspect, return the window dimensions
+        outWidth = RunTimeVar::window.width;
+        outHeight = RunTimeVar::window.height;
+    } else if (useCustomAspectRatio) {
+        // For custom aspect, calculate based on current window and aspect ratio
+        float currentAspect = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+        if (currentAspect > customAspectRatio) {
+            outHeight = RunTimeVar::window.height;
+            outWidth = (int)(outHeight * customAspectRatio);
+        } else {
+            outWidth = RunTimeVar::window.width;
+            outHeight = (int)(outWidth / customAspectRatio);
+        }
+    } else {
+        // Return the selected resolution
+        const auto& res = resolutions[selectedResolutionIndex];
+        outWidth = res.width;
+        outHeight = res.height;
+    }
 }

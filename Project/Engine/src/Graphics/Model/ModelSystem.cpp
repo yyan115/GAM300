@@ -36,6 +36,10 @@ void ModelSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+    // Get current view mode and check if rendering for editor
+    bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
+    bool is3DMode = gfxManager.Is3DMode();
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
 #endif
@@ -43,6 +47,12 @@ void ModelSystem::Update()
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip all 3D models in 2D mode ONLY when rendering for editor
+        // Game window should always show all models
+        if (isRenderingForEditor && !is3DMode) {
+            continue;
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
 #endif

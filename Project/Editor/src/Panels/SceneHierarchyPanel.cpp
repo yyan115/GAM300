@@ -11,11 +11,13 @@
 #include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
+#include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
 #include <Utilities/GUID.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
+#include "Panels/ScenePanel.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -227,8 +229,58 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     else
     {
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
-        if (ImGui::IsItemClicked())
+        if (ImGui::IsItemClicked()) {
             GUIManager::SetSelectedEntity(entityId);
+
+            // Double-click to focus the entity in the scene view
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                try {
+                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                    if (ecsManager.HasComponent<Transform>(entityId)) {
+                        Transform& transform = ecsManager.GetComponent<Transform>(entityId);
+                        glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                          transform.worldMatrix.m.m13,
+                                          transform.worldMatrix.m.m23);
+
+                        std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
+                                 << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+
+                        // Check if we have a sprite component to get the correct 2D position
+                        bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
+                        if (hasSprite) {
+                            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
+                            std::cout << "[SceneHierarchy] Entity has sprite at position ("
+                                     << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
+                                     << ") is3D=" << sprite.is3D << std::endl;
+                            // For 2D sprites, use the sprite position instead of transform
+                            if (!sprite.is3D) {
+                                entityPos = sprite.position;
+                                std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
+                            }
+                        }
+
+                        // Frame the entity in the scene camera
+                        auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
+                        if (scenePanelPtr) {
+                            auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
+                            if (scenePanel) {
+                                scenePanel->SetCameraTarget(entityPos);
+                                std::cout << "[SceneHierarchy] Set camera target to ("
+                                         << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+                            } else {
+                                std::cout << "[SceneHierarchy] Failed to cast to ScenePanel" << std::endl;
+                            }
+                        } else {
+                            std::cout << "[SceneHierarchy] Scene panel not found" << std::endl;
+                        }
+                    } else {
+                        std::cout << "[SceneHierarchy] Entity '" << entityName << "' has no Transform component" << std::endl;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
+                }
+            }
+        }
     }
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---

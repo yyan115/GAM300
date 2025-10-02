@@ -86,17 +86,19 @@ public:
      * @brief Get transform matrix for an entity (avoids including Graphics headers in ScenePanel).
      * @param entity The entity to get transform for
      * @param outMatrix Output array of 16 floats for the transform matrix
+     * @param is2DMode Whether we're in 2D view mode (allows 2D sprite manipulation)
      * @return true if entity has transform, false otherwise
      */
-    static bool GetEntityTransform(Entity entity, float outMatrix[16]);
+    static bool GetEntityTransform(Entity entity, float outMatrix[16], bool is2DMode = false);
 
     /**
      * @brief Set transform matrix for an entity (avoids including Graphics headers in ScenePanel).
      * @param entity The entity to set transform for
      * @param matrix Input array of 16 floats for the transform matrix
+     * @param is2DMode Whether we're in 2D view mode (allows 2D sprite manipulation)
      * @return true if entity transform was updated successfully, false otherwise
      */
-    static bool SetEntityTransform(Entity entity, const float matrix[16]);
+    static bool SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode = false);
 
 
 private:
