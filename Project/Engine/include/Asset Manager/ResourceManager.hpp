@@ -128,7 +128,6 @@ public:
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
 			ENGINE_PRINT("[ResourceManager] Removed from resource map: ", resourcePath, "\n");
-			//std::cout << "[ResourceManager] Removed from resource map: " << resourcePath << std::endl;
 		}
 
 		if (FileUtilities::RemoveFile(resourcePath)) {
@@ -144,7 +143,6 @@ public:
 			//}
 		}
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to unload resource: ", resourcePath, "\n");
-		//std::cerr << "[ResourceManager] ERROR: Failed to unload resource: " << resourcePath << std::endl;
 		return false;
 	}
 
@@ -168,7 +166,6 @@ public:
 		}
 		else {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Trying to unload unsupported resource extension: ", extension, "\n");
-			//std::cerr << "[ResourceManager] ERROR: Trying to unload unsupported resource extension: " << extension << std::endl;
 			return false;
 		}
 	}
@@ -280,12 +277,12 @@ private:
 			if (resource->ReloadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
-				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
+				ENGINE_PRINT("[ResourceManager] Reloaded resource for: ", resourcePath, "\n");
 				return resource;
 			}
 		}
 
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << resourcePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
 #endif
@@ -299,7 +296,7 @@ private:
 			if (font->LoadResource(resourcePath, assetPath, fontSize)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
-				std::cout << "[ResourceManager] Loaded resource for: " << resourcePath << std::endl;
+				ENGINE_PRINT("[ResourceManager] Loaded resource for: ", resourcePath, "\n");
 				return font;
 			}
 		}
@@ -308,12 +305,11 @@ private:
 			if (font->ReloadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<Font>();
 				resourceMap[guid] = font;
-				std::cout << "[ResourceManager] Reloaded resource for: " << resourcePath << std::endl;
+				ENGINE_PRINT("[ResourceManager] Reloaded resource for: ", resourcePath, "\n");
 				return font;
 			}
 		}
-
-		std::cerr << "[ResourceManager] ERROR: Failed to load resource: " << resourcePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
 		return nullptr;
 	}
 };

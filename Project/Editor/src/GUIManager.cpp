@@ -67,7 +67,6 @@ void GUIManager::Initialize() {
 	EditorState& editorState = EditorState::GetInstance();
 	editorState.SetState(EditorState::State::EDIT_MODE);
 	ENGINE_PRINT("[GUIManager] Initialized with panel - based architecture\n");
-	//std::cout << "[GUIManager] Initialized with panel-based architecture" << std::endl;
 }
 
 
@@ -127,7 +126,6 @@ void GUIManager::Exit() {
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	ENGINE_PRINT("[GUIManager] Shutdown complete\n");
-	//std::cout << "[GUIManager] Shutdown complete" << std::endl;
 }
 
 void GUIManager::SetupDefaultPanels() {
@@ -166,7 +164,6 @@ void GUIManager::SetupDefaultPanels() {
 	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
 	panelManager->RegisterPanel(assetBrowserPanel);
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
-	//std::cout << "[GUIManager] Default panels registered" << std::endl;
 }
 
 void GUIManager::CreateDockspace() {

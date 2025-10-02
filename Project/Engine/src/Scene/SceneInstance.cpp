@@ -184,8 +184,7 @@ void SceneInstance::Initialize() {
 			ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
 			ecsManager.lightingSystem->RegisterEntity(spotLight);
 		}
-
-		std::cout << "[Scene] Lighting system entity count: " << ecsManager.lightingSystem->entities.size() << std::endl; 
+		ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
@@ -342,7 +341,6 @@ void SceneInstance::Exit() {
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	ENGINE_PRINT("TestScene Exited\n");
-	//std::cout << "TestScene Exited" << std::endl;
 }
 
 void SceneInstance::processInput(float deltaTime)

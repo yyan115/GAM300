@@ -26,7 +26,6 @@ void GraphicsManager::Shutdown()
 {
 	renderQueue.clear();
 	currentCamera = nullptr;
-	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
@@ -86,7 +85,6 @@ void GraphicsManager::Render()
 	if (!currentCamera) 
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
-		//std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
 		return;
 	}
 
@@ -223,7 +221,6 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	if (!fontVAO || !fontVBO) 
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
-		//std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
 	}
@@ -250,7 +247,6 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		const Character& ch = item.font->GetCharacter(c);
 		if (ch.textureID == 0) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
-			//std::cerr << "Character '" << c << "' has no texture!" << std::endl;
 			continue;
 		}
 

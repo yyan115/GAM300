@@ -55,7 +55,6 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "SceneRenderer: Framebuffer not complete!\n");
-        //std::cerr << "SceneRenderer: Framebuffer not complete!" << std::endl;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -83,7 +82,6 @@ void SceneRenderer::DeleteSceneFramebuffer()
         delete editorCamera;
         editorCamera = nullptr;
         ENGINE_PRINT("[SceneRenderer] Editor camera deleted\n");
-        //std::cout << "[SceneRenderer] Editor camera deleted" << std::endl;
     }
 }
 
@@ -122,7 +120,6 @@ void SceneRenderer::RenderScene()
         Engine::Draw();
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderScene: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderScene: " << e.what() << std::endl;
     }
 }
 
@@ -185,6 +182,5 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
-        //std::cerr << "Exception in SceneRenderer::RenderSceneForEditor: " << e.what() << std::endl;
     }
 }

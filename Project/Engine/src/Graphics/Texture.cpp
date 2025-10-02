@@ -81,14 +81,13 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 
 	// Check if image loading failed
 	if (!bytes) {
-		std::cerr << "[TEXTURE]: Failed to load image: " << assetPath << std::endl;
-		std::cerr << "[TEXTURE]: stbi_failure_reason: " << stbi_failure_reason() << std::endl;
-		std::cerr << "[TEXTURE]: Current working directory: " << std::filesystem::current_path() << std::endl;
-		std::cerr << "[TEXTURE]: File exists check: " << std::filesystem::exists(assetPath) << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Failed to load image: ", assetPath, "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: stbi_failure_reason: ", stbi_failure_reason(), "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Current working directory: ", std::filesystem::current_path(), "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: File exists check: ", std::filesystem::exists(assetPath), "\n");
 		return std::string{}; // Return empty string to indicate failure
 	}
-
-	std::cout << "[TEXTURE]: Successfully loaded image: " << assetPath << " (" << widthImg << "x" << heightImg << ", " << numColCh << " channels)" << std::endl;
+	ENGINE_PRINT("[TEXTURE]: Successfully loaded image: " , assetPath , " (" , widthImg , "x" , heightImg , ", " , numColCh , " channels)\n");
 
 	std::string outPath{};
 
@@ -130,11 +129,11 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	options.dwSize = sizeof(options);
 
 	// Compress the texture.
-	std::cout << "[Texture] Compressing texture: " << assetPath << std::endl;
+	ENGINE_PRINT("[Texture] Compressing texture: ", assetPath, "\n");
 	CMP_ERROR cmp_status;
 	cmp_status = CMP_ConvertTexture(&srcTexture, &dstTexture, &options, nullptr);
 	if (cmp_status != CMP_OK) {
-		std::cerr << "[TEXTURE]: Failed to compress texture." << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Failed to compress texture.\n");
 	}
 
 	// Save the compresed texture to a DDS file.

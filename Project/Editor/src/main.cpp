@@ -23,7 +23,6 @@ int main() {
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to create GLFW window!\n");
-        //std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
         return -1;
     }
@@ -54,6 +53,5 @@ int main() {
     MetaFilesManager::CleanupUnusedMetaFiles();
 
     ENGINE_PRINT("=== Editor ended ===\n");
-    //std::cout << "=== Editor ended ===" << std::endl;
     return 0;
 }

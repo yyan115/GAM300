@@ -35,7 +35,7 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
-		std::cerr << "[MetaFilesManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Platform not available for asset discovery!", "\n");
 		return false;
 	}
 
@@ -85,7 +85,7 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 #endif
 
 		if (iss.fail()) {
-			std::cerr << "[MetaFilesManager] ERROR: Failed to parse timestamp for .meta file: " << metaFilePath << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Failed to parse timestamp for .meta file: ", metaFilePath, "\n");
 			return std::chrono::system_clock::time_point{};
 		}
 		else {
@@ -94,7 +94,7 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 		}
 	}
 	else {
-		std::cerr << "[MetaFilesManager] ERROR: last_compiled not found in meta file: " << metaFilePath << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: last_compiled not found in meta file: ", metaFilePath, "\n");
 		return std::chrono::system_clock::time_point{};
 	}
 }
@@ -143,7 +143,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
-		std::cerr << "[MetaFilesManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Platform not available for asset discovery!", "\n");
 		return;
 	}
 
@@ -162,16 +162,16 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			//ENGINE_LOG_INFO("yes");
 #ifndef ANDROID
 			if (!MetaFileExists(assetPath)) {
-				std::cout << "[MetaFilesManager] .meta missing for: " << assetPath << ". Compiling and generating..." << std::endl;
+				ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
 				AssetManager::GetInstance().CompileAsset(assetPath);
 			}
 			else if (!MetaFileUpdated(assetPath)) {
-				std::cout << "[MetaFilesManager] .meta outdated for: " << assetPath << ". Re-compiling and regenerating..." << std::endl;
+				ENGINE_PRINT("[MetaFilesManager] .meta outdated for: ", assetPath, ". Re-compiling and regenerating...", "\n");
 				AssetManager::GetInstance().CompileAsset(assetPath);
 			}
 			else {
 				if (AssetFileUpdated(assetPath)) {
-					std::cout << "[MetaFilesManager] Asset file was updated: " << assetPath << ". Re-compiling..." << std::endl;
+					ENGINE_PRINT("[MetaFilesManager] Asset file was updated: ", assetPath, ". Re-compiling...", "\n");
 					AssetManager::GetInstance().CompileAsset(assetPath, true);
 				}
 				else {
@@ -307,9 +307,13 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 
 	if (assetMetaData.HasMember("version")) {
 		if (assetMetaData["version"].GetInt() == CURRENT_METADATA_VERSION) {
+			ifs.close();
 			return true;
 		}
-		else return false;
+		else {
+			ifs.close();
+			return false;
+		}
 	}
 	else {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: version not found in meta file: ", metaFilePath, "\n");
@@ -387,12 +391,12 @@ bool MetaFilesManager::DeleteMetaFile(const std::string& assetPath) {
 }
 
 void MetaFilesManager::CleanupUnusedMetaFiles() {
-	std::cout << "[MetaFilesManager] Cleaning up un-used meta files..." << std::endl;
+	ENGINE_PRINT("[MetaFilesManager] Cleaning up un-used meta files...", "\n");
 
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
-		std::cerr << "[MetaFilesManager] ERROR: Platform not available for asset discovery!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Platform not available for asset discovery!", "\n");
 		return;
 	}
 
