@@ -12,6 +12,8 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
+#include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Math/Vector3D.hpp"
 #include "Logging.hpp"
 
@@ -92,7 +94,7 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromSprite(const glm::vec3& position, c
     return AABB(center - halfSize, center + halfSize);
 }
 
-RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity) {
+RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity, bool is2DMode) {
     RaycastHit closestHit;
 
     try {
@@ -109,6 +111,17 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
         for (Entity entity = 0; entity <= 50; ++entity) {
             // Skip excluded entity (e.g., preview entity)
             if (entity == excludeEntity) {
+                continue;
+            }
+
+            // Filter entities based on 2D/3D mode
+            bool entityIs3D = IsEntity3D(entity);
+            if (is2DMode && entityIs3D) {
+                // In 2D mode, skip 3D entities
+                continue;
+            }
+            if (!is2DMode && !entityIs3D) {
+                // In 3D mode, skip 2D entities
                 continue;
             }
 
@@ -347,5 +360,37 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
     }
 
     return false;
+}
+
+bool RaycastUtil::IsEntity3D(Entity entity) {
+    try {
+        // Get the active ECS manager
+        ECSRegistry& registry = ECSRegistry::GetInstance();
+        ECSManager& ecsManager = registry.GetActiveECSManager();
+
+        // Check for ModelRenderComponent (always 3D)
+        if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+            return true;
+        }
+
+        // Check for SpriteRenderComponent with is3D flag
+        if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+            return sprite.is3D;
+        }
+
+        // Check for TextRenderComponent with is3D flag
+        if (ecsManager.HasComponent<TextRenderComponent>(entity)) {
+            auto& text = ecsManager.GetComponent<TextRenderComponent>(entity);
+            return text.is3D;
+        }
+
+        // Default: entities without render components are considered 3D
+        // (Transform-only entities, lights, cameras, etc.)
+        return true;
+    } catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Error checking if entity is 3D: ", e.what(), "\n");
+        return true; // Default to 3D on error
+    }
 }
 

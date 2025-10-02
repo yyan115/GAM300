@@ -230,6 +230,11 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		return;
 	}
 
+	if (!item.is3D && IsRenderingForEditor() && !Is2DMode())
+	{
+		return;
+	}
+
 	// Enable depth testing for 3D text
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
@@ -253,7 +258,16 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	else
 	{
 		// 2D screen space text rendering
-		Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use the editor camera's view/projection matrices
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
+			modelMatrix = glm::scale(modelMatrix, glm::vec3(item.scale, item.scale, 1.0f));
+			SetupMatrices(*item.shader, modelMatrix);
+		} else {
+			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
+			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+		}
 	}
 
 	// Bind VAO and render each character

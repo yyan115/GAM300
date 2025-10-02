@@ -39,10 +39,19 @@ void TextRenderingSystem::Update()
             //ENGINE_PRINT("[TextSystem] Font reloaded with size: ", textComponent.fontSize, "\n");
         }
 
-        // If in 3D mode, sync transform from Transform component
-        if (textComponent.is3D && ecsManager.HasComponent<Transform>(entity)) {
+        // Sync position and transform from Transform component
+        if (ecsManager.HasComponent<Transform>(entity)) {
             Transform& transform = ecsManager.GetComponent<Transform>(entity);
-            textComponent.transform = transform.worldMatrix;
+
+            if (textComponent.is3D) {
+                // 3D mode: sync world transform matrix
+                textComponent.transform = transform.worldMatrix;
+            } else {
+                // 2D mode: sync screen space position from Transform
+                textComponent.position = Vector3D(transform.worldMatrix.m.m03,
+                                                 transform.worldMatrix.m.m13,
+                                                 transform.worldMatrix.m.m23);
+            }
         }
 
         // Only submit valid, visible text

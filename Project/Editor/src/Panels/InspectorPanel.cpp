@@ -592,12 +592,13 @@ void InspectorPanel::DrawTextRenderComponent(Entity entity) {
 
 		ImGui::Separator();
 
-		// Position (if 2D screen space)
-		if (!textComp.is3D) {
-			float pos[3] = { textComp.position.x, textComp.position.y, textComp.position.z };
+		// Position (uses Transform component)
+		if (!textComp.is3D && ecsManager.HasComponent<Transform>(entity)) {
+			Transform& transform = ecsManager.GetComponent<Transform>(entity);
+			float pos[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
 			ImGui::Text("Position (Screen)");
 			if (ImGui::DragFloat3("##TextPosition", pos, 1.0f)) {
-				textComp.position = Vector3D(pos[0], pos[1], pos[2]);
+				ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(pos[0], pos[1], pos[2]));
 			}
 		}
 

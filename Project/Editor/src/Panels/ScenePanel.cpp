@@ -52,11 +52,8 @@ void ScenePanel::SetCameraTarget(const glm::vec3& target) {
     bool is2DMode = editorState.Is2DMode();
 
     if (is2DMode) {
-        // In 2D mode, position the camera AT the target for orthographic projection
-        // The Z position doesn't matter for orthographic, but we keep it back for consistency
         editorCamera.Position = glm::vec3(target.x, target.y, target.z + 5.0f);
     } else {
-        // In 3D mode, reset distance to a reasonable value if it got too large
         if (editorCamera.Distance > 10.0f) {
             editorCamera.Distance = 5.0f;
         }
@@ -253,7 +250,7 @@ void ScenePanel::HandleCameraInput() {
     bool is2DMode = editorState.Is2DMode();
 
     if (is2DMode) {
-        editorCamera.PanSensitivity = 0.8f; // Base sensitivity for 2D (will be scaled by zoom in ProcessInput)
+        editorCamera.PanSensitivity = 2.5f; // Increased sensitivity for 2D (will be scaled by zoom in ProcessInput)
     } else {
         editorCamera.PanSensitivity = 0.005f; // Slower panning in 3D mode
     }
@@ -349,8 +346,8 @@ void ScenePanel::HandleEntitySelection() {
                 viewMatrix, projMatrix
             );
 
-            // Perform raycast against scene entities
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray);
+            // Perform raycast against scene entities (filter by 2D/3D mode)
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, INVALID_ENTITY, is2DMode);
 
             if (hit.hit) {
                 // Entity found, select it
@@ -564,8 +561,11 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     Mat4ToFloatArray(view, viewMatrix);
     Mat4ToFloatArray(projection, projMatrix);
 
-    // Draw grid
-    ImGuizmo::DrawGrid(viewMatrix, projMatrix, identityMatrix, 10.0f);
+    // Draw grid (only in 3D mode)
+    EditorState& editorState = EditorState::GetInstance();
+    if (!editorState.Is2DMode()) {
+        ImGuizmo::DrawGrid(viewMatrix, projMatrix, identityMatrix, 10.0f);
+    }
 
     // Get the PlayControlPanel to check state and get gizmo operation
     auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
@@ -576,6 +576,20 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     // Only show gizmo when an entity is selected AND not in normal pan mode
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
+        // Check if entity should show gizmo based on 2D/3D mode
+        EditorState& editorState = EditorState::GetInstance();
+        bool is2DMode = editorState.Is2DMode();
+        bool entityIs3D = RaycastUtil::IsEntity3D(selectedEntity);
+
+        // In 2D mode, only show gizmo for 2D entities (sprites, 2D text)
+        // In 3D mode, only show gizmo for 3D entities (models, 3D sprites, 3D text)
+        bool shouldShowGizmo = (is2DMode && !entityIs3D) || (!is2DMode && entityIs3D);
+
+        if (!shouldShowGizmo) {
+            ImGui::PopID();
+            return; // Skip gizmo rendering
+        }
+
         // Get the actual transform matrix from the selected entity
         static float selectedObjectMatrix[16];
 
@@ -872,8 +886,10 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
                 viewMatrix, projMatrix
             );
 
-            // Raycast against scene to find placement position (exclude preview entity)
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity);
+            // Raycast against scene to find placement position (exclude preview entity, filter by 2D/3D mode)
+            EditorState& editorState = EditorState::GetInstance();
+            bool is2DMode = editorState.Is2DMode();
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity, is2DMode);
 
             if (hit.hit) {
                 // Hit an object - place on surface

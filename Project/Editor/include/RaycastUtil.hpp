@@ -78,9 +78,10 @@ public:
      * @brief Perform raycast against all entities in the scene.
      * @param ray The ray to cast
      * @param excludeEntity Optional entity to exclude from raycast (e.g., preview entities)
+     * @param is2DMode Whether we're in 2D editor mode (filters out 3D entities if true)
      * @return The closest hit entity, or INVALID_ENTITY if no hit
      */
-    static RaycastHit RaycastScene(const Ray& ray, Entity excludeEntity = INVALID_ENTITY);
+    static RaycastHit RaycastScene(const Ray& ray, Entity excludeEntity = INVALID_ENTITY, bool is2DMode = false);
 
     /**
      * @brief Get transform matrix for an entity (avoids including Graphics headers in ScenePanel).
@@ -100,6 +101,12 @@ public:
      */
     static bool SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode = false);
 
+    /**
+     * @brief Check if an entity is a 3D entity (has 3D model, 3D sprite, or 3D text).
+     * @param entity The entity to check
+     * @return true if entity is 3D, false if entity is 2D or doesn't exist
+     */
+    static bool IsEntity3D(Entity entity);
 
 private:
     static constexpr float EPSILON = 1e-6f;
