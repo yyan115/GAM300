@@ -5,7 +5,7 @@
 #include "EditorComponents.hpp"
 
 PerformancePanel::PerformancePanel()
-    : EditorPanel("Performance", true) {
+    : EditorPanel("Performance", false) {
 }
 
 void PerformancePanel::OnImGuiRender() {
