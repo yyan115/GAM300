@@ -41,7 +41,6 @@ public:
 			activeECSManagerName = newName;
 		}
 		ENGINE_PRINT("[ECSRegistry] Renamed ECSManager from '", oldName, "' to '", newName, "'.\n");
-		//std::cout << "[ECSRegistry] Renamed ECSManager from '" << oldName << "' to '" << newName << "'." << std::endl;
 	}
 
 private:

@@ -18,9 +18,10 @@ ENGINE_API SceneManager::~SceneManager() {
 
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
-	ECSRegistry::GetInstance().CreateECSManager("TestScene");
-	currentScene = std::make_unique<SceneInstance>("TestScene");
-	currentScenePath = "TestScene";
+	ECSRegistry::GetInstance().CreateECSManager("Resources/Scenes/FakeScene.scene");
+	currentScene = std::make_unique<SceneInstance>("Resources/Scenes/FakeScene.scene");
+	currentScenePath = "Resources/Scenes/FakeScene.scene";
+	currentSceneName = "FakeScene";
 	currentScene->Initialize();
 }
 
@@ -36,10 +37,15 @@ ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 		ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
 		ECSRegistry::GetInstance().RenameECSManager(currentScenePath, scenePath);
 	}
+	else {
+		ECSRegistry::GetInstance().CreateECSManager(scenePath);
+	}
 
 	// Create and initialize the new scene.
 	currentScene = std::make_unique<SceneInstance>(scenePath);
 	currentScenePath = scenePath;
+	std::filesystem::path p(currentScenePath);
+	currentSceneName = p.stem().generic_string();
 
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
@@ -72,10 +78,10 @@ void SceneManager::ExitScene() {
 
 //Simple JSON save scene
 ENGINE_API void SceneManager::SaveScene() {
-	Serializer::SerializeScene("Resources/Scenes/scene.json");
-	if (FileUtilities::CopyFile("Resources/Scenes/scene.json", (FileUtilities::GetSolutionRootDir() / "Resources/Scenes/scene.json").generic_string())) {
-		ENGINE_LOG_INFO("Copied scene file to root project folder: Resources/Scenes/scene.json");
-	}
+	Serializer::SerializeScene(currentScenePath); // TEMP, replace with currentScenePath later
+	//if (FileUtilities::CopyFile(currentScenePath, (FileUtilities::GetSolutionRootDir() / currentScenePath).generic_string())) {
+	//	ENGINE_LOG_INFO("Copied scene file to root project folder: " + currentScenePath);
+	//}
 }
 
 void SceneManager::SaveTempScene() {
@@ -92,7 +98,10 @@ void SceneManager::ReloadTempScene() {
 	else {
 		// Handle the case where the temp file doesn't exist
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist: ", tempScenePath, "\n");
-		//std::cerr << "Temp file does not exist: " << tempScenePath << std::endl;
 		return; // Early exit if needed
 	}
+}
+
+std::string SceneManager::GetSceneName() const {
+	return currentSceneName;
 }

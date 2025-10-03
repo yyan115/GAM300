@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Graphics/LightManager.hpp"
 #include "Graphics/Model/ModelSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
@@ -37,6 +36,10 @@ void ModelSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+    // Get current view mode and check if rendering for editor
+    bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
+    bool is3DMode = gfxManager.Is3DMode();
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
 #endif
@@ -44,6 +47,12 @@ void ModelSystem::Update()
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip all 3D models in 2D mode ONLY when rendering for editor
+        // Game window should always show all models
+        if (isRenderingForEditor && !is3DMode) {
+            continue;
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
 #endif
@@ -78,5 +87,4 @@ void ModelSystem::Update()
 void ModelSystem::Shutdown() 
 {
     ENGINE_PRINT("[ModelSystem] Shutdown\n");
-    //std::cout << "[ModelSystem] Shutdown" << std::endl;
 }

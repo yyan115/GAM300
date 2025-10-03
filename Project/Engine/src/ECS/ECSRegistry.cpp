@@ -19,7 +19,6 @@ ECSManager& ECSRegistry::CreateECSManager(const std::string& name) {
 		SetActiveECSManager(name);
 	}
 	ENGINE_PRINT("[ECSRegistry] Created ECSManager '", name, "'.\n");
-	//std::cout << "[ECSRegistry] Created ECSManager '" << name << "'." << std::endl;
 	return *ecsManagers[name];
 }
 

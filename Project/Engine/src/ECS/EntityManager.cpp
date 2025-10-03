@@ -74,7 +74,9 @@ bool EntityManager::IsActive(Entity entity) const {
 
 std::vector<Entity> EntityManager::GetActiveEntities() const {
 	std::vector<Entity> entities;
-	for (Entity entity = 0; entity < activeEntityCount; ++entity) {
+	// Loop through ALL possible entity IDs, not just activeEntityCount
+	// activeEntityCount is the COUNT of entities, not the max entity ID!
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
 		if (activeEntities[entity]) {
 			entities.push_back(entity);
 		}
@@ -84,8 +86,11 @@ std::vector<Entity> EntityManager::GetActiveEntities() const {
 
 std::vector<Entity> EntityManager::GetAllEntities() const {
 	std::vector<Entity> entities;
-	for (Entity entity = 0; entity < activeEntityCount; ++entity) {
-		entities.push_back(entity);
+	// Loop through ALL possible entity IDs, not just activeEntityCount
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
+		if (activeEntities[entity]) {
+			entities.push_back(entity);
+		}
 	}
 	return entities;
 }

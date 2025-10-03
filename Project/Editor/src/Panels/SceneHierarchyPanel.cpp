@@ -2,20 +2,29 @@
 #include "imgui.h"
 #include "pch.h"
 #include "GUIManager.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/NameComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
 #include <imgui_internal.h>
+#include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
+#include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
 #include <Utilities/GUID.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
+#include "Panels/ScenePanel.hpp"
 
-SceneHierarchyPanel::SceneHierarchyPanel() 
+SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
+}
+
+void SceneHierarchyPanel::MarkForRefresh() {
+    needsRefresh = true;
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
@@ -52,18 +61,32 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        ImGui::Text("Scene Objects:");
+        ImGui::Text(SceneManager::GetInstance().GetSceneName().c_str());
         ImGui::Separator();
 
         try {
             // Get the active ECS manager
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
+            // Always get fresh entity list to ensure we see newly created entities
+            std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
             // Draw entity nodes starting from root entities, in a depth-first manner.
-            for (const auto& entity : ecsManager.GetActiveEntities()) {
-                if (!ecsManager.HasComponent<ParentComponent>(entity)) {
+            for (const auto& entity : allEntities) {
+                // Only draw root entities (entities without a parent)
+                if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+                    // Check if entity has NameComponent before accessing it
+                    if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                        continue;
+                    }
                     std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
-                    DrawEntityNode(entityName, entity, ecsManager.HasComponent<ChildrenComponent>(entity));
+
+                    // Skip PREVIEW entities (used for drag-and-drop preview)
+                    if (entityName == "PREVIEW") {
+                        continue;
+                    }
+
+                    DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                 }
             }
 
@@ -87,7 +110,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
             //    DrawEntityNode(entityName, entity, hasChildren);
             //}
 
-            if (ecsManager.GetActiveEntities().empty()) {
+            if (allEntities.empty()) {
                 ImGui::Text("No entities in scene");
             }
         }
@@ -160,6 +183,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
     ImGui::End();
 }
 
+
 void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
 {
     assert(!entityName.empty() && "Entity name cannot be empty");
@@ -205,8 +229,58 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     else
     {
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
-        if (ImGui::IsItemClicked())
+        if (ImGui::IsItemClicked()) {
             GUIManager::SetSelectedEntity(entityId);
+
+            // Double-click to focus the entity in the scene view
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                try {
+                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                    if (ecsManager.HasComponent<Transform>(entityId)) {
+                        Transform& transform = ecsManager.GetComponent<Transform>(entityId);
+                        glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                          transform.worldMatrix.m.m13,
+                                          transform.worldMatrix.m.m23);
+
+                        std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
+                                 << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+
+                        // Check if we have a sprite component to get the correct 2D position
+                        bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
+                        if (hasSprite) {
+                            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
+                            std::cout << "[SceneHierarchy] Entity has sprite at position ("
+                                     << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
+                                     << ") is3D=" << sprite.is3D << std::endl;
+                            // For 2D sprites, use the sprite position instead of transform
+                            if (!sprite.is3D) {
+                                entityPos = sprite.position;
+                                std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
+                            }
+                        }
+
+                        // Frame the entity in the scene camera
+                        auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
+                        if (scenePanelPtr) {
+                            auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
+                            if (scenePanel) {
+                                scenePanel->SetCameraTarget(entityPos);
+                                std::cout << "[SceneHierarchy] Set camera target to ("
+                                         << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+                            } else {
+                                std::cout << "[SceneHierarchy] Failed to cast to ScenePanel" << std::endl;
+                            }
+                        } else {
+                            std::cout << "[SceneHierarchy] Scene panel not found" << std::endl;
+                        }
+                    } else {
+                        std::cout << "[SceneHierarchy] Entity '" << entityName << "' has no Transform component" << std::endl;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
+                }
+            }
+        }
     }
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
@@ -378,6 +452,7 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& name) {
         }
 
         std::cout << "[SceneHierarchy] Created empty entity '" << name << "' with ID " << newEntity << std::endl;
+
         return newEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create empty entity: " << e.what() << std::endl;
@@ -395,13 +470,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         // Add ModelRenderComponent for cube with cube.obj model
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
-        // Set cube model GUID and load the model
-        GUID_128 cubeModelGuid = GUIDUtilities::ConvertStringToGUID128("0068bf5177bc76fe-0002cc3f7c000001");
-        cubeRenderer.modelGUID = cubeModelGuid;
-
-        // Load the cube model
-        std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(cubeModelGuid);
-        cubeRenderer.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(cubeModelGuid, modelPath);
+        // Load the cube model using direct file path
+        std::string modelPath = "Resources/Models/cube.obj";
+        cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
 
         if (cubeRenderer.model) {
             std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
@@ -409,18 +480,14 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
             std::cerr << "[SceneHierarchy] Failed to load cube model from: " << modelPath << std::endl;
         }
 
-        // Set default shader for rendering
-        GUID_128 defaultShaderGuid = GUIDUtilities::ConvertStringToGUID128("007ebbc8de41468e-0002c7078200001b");
-        cubeRenderer.shaderGUID = defaultShaderGuid;
-
-        // Load the shader
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(defaultShaderGuid);
-        cubeRenderer.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(defaultShaderGuid, shaderPath);
+        // Load the default shader using direct file path
+        std::string shaderPath = "Resources/Shaders/default";
+        cubeRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 
         if (cubeRenderer.shader) {
-            std::cout << "[SceneHierarchy] Default shader loaded successfully" << std::endl;
+            std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;
         } else {
-            std::cerr << "[SceneHierarchy] Failed to load default shader" << std::endl;
+            std::cerr << "[SceneHierarchy] Failed to load default shader from: " << shaderPath << std::endl;
         }
 
         ecsManager.AddComponent<ModelRenderComponent>(cubeEntity, cubeRenderer);

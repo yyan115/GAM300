@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "Graphics/OpenGL.h"
 #include <unordered_map>
-#include <WindowManager.hpp>
+#include "Engine.h"
 #include "Input/Keys.h"
 
 namespace RunTimeVar {
@@ -23,7 +23,7 @@ namespace RunTimeVar {
     };
 
     struct Input {
-        //to be port over 
+        //to be port over
         double mouseX = 0.0;
         double mouseY = 0.0;
         double scrollOffsetX = 0.0;
@@ -31,11 +31,11 @@ namespace RunTimeVar {
 
     };
 
-    extern Window window;
-    extern Input input;
+    extern ENGINE_API Window window;
+    extern ENGINE_API Input input;
     //TimeManager
-    extern double deltaTime;
-    extern double lastFrameTime;
+    extern ENGINE_API double deltaTime;
+    extern ENGINE_API double lastFrameTime;
     //extern class IPlatform* platform;
     //extern PlatformWindow ptrWindow;
 }

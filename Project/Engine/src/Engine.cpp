@@ -2,7 +2,6 @@
 
 #include "Graphics/OpenGL.h"
 #include "Platform/Platform.h"
-#include "Graphics/LightManager.hpp"
 
 #ifdef ANDROID
 #include <EGL/egl.h>
@@ -20,6 +19,11 @@
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
+
+#ifdef ANDROID
+#include "Input/VirtualControls.hpp"
+#endif
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -35,7 +39,6 @@ bool Engine::Initialize() {
 	// Initialize logging system first
 	if (!EngineLogging::Initialize()) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize logging system!\n");
-		//std::cerr << "[Engine] Failed to initialize logging system!" << std::endl;
 		return false;
 	}
 	SetGameState(GameState::PLAY_MODE);
@@ -100,7 +103,7 @@ bool Engine::Initialize() {
                     const auto& m = members[i];
                     std::string mname = m.name ? m.name : "<null>";
                     std::string tname = m.type ? m.type->ToString() : "<null-type>";
-                    std::cout << "  [" << i << "] name='" << mname << "' type='" << tname << "'" << std::endl;
+                    ENGINE_PRINT("  [", i, "] name='", mname, "' type='", tname, "'\n");
 
                     if (!m.type) {
                         ENGINE_PRINT(EngineLogging::LogLevel::Error, "    -> FAIL: member has null TypeDescriptor");
@@ -229,7 +232,7 @@ bool Engine::Initialize() {
                         // Run runtime assign/verify tests
                         bool runtime_ok = true;
                         if (runtime_tests.empty()) {
-                            std::cout << "    -> WARN: no supported primitive members found; cannot validate runtime read/write" << std::endl;
+                            ENGINE_PRINT("    -> WARN: no supported primitive members found; cannot validate runtime read/write\n");
                             runtime_ok = false;
                         }
                         else {
@@ -239,14 +242,14 @@ bool Engine::Initialize() {
                                     rt.assign(addr);                    // write sample
                                 }
                                 catch (...) {
-                                    std::cout << "    -> EXCEPTION assigning member[" << rt.idx << "]" << std::endl;
+                                    ENGINE_PRINT("    -> EXCEPTION assigning member[" , rt.idx, "]\n");
                                     runtime_ok = false;
                                     continue;
                                 }
                                 bool ok = false;
                                 try { ok = rt.verify_inplace(addr); }   // read & compare
                                 catch (...) { ok = false; }
-                                std::cout << "    -> runtime member[" << rt.idx << "] (" << rt.type_name << "): " << (ok ? "OK" : "MISMATCH") << std::endl;
+                                ENGINE_PRINT("    -> runtime member[" , rt.idx , "] (" , rt.type_name , "): " , (ok ? "OK" : "MISMATCH\n"));
                                 if (!ok) runtime_ok = false;
                             }
                         }
@@ -407,7 +410,7 @@ bool Engine::Initialize() {
                     for (const auto& st : ser_tests) {
                         void* addr = members[st.idx].get_ptr(&src);
                         try { st.assign(addr); }
-                        catch (...) { std::cout << "  -> exception assigning member[" << st.idx << "]" << std::endl; }
+                        catch (...) {ENGINE_PRINT("  -> exception assigning member[", st.idx, "]\n");}
                     }
 
                     // Optionally set canonical floats if available
@@ -446,7 +449,7 @@ bool Engine::Initialize() {
                     // Compare tested members src vs dst
                     size_t matched = 0;
                     if (ser_tests.empty()) {
-                        std::cout << "WARN: no supported members were tested; ensure primitive descriptors are registered." << std::endl;
+                        ENGINE_PRINT("WARN: no supported members were tested; ensure primitive descriptors are registered.\n");
                     }
                     else {
                         for (const auto& st : ser_tests) {
@@ -455,7 +458,7 @@ bool Engine::Initialize() {
                             bool ok = false;
                             try { ok = st.compare(a, b); }
                             catch (...) { ok = false; }
-                            std::cout << "  member[" << st.idx << "] (" << st.type_name << "): " << (ok ? "MATCH" : "MISMATCH") << std::endl;
+                            ENGINE_PRINT("  member[", st.idx, "] (", st.type_name, "): ", (ok ? "MATCH" : "MISMATCH\n"));
                             if (ok) ++matched;
                         }
                     }
@@ -513,48 +516,45 @@ bool Engine::Initialize() {
 	// Add some test logging messages
 	ENGINE_LOG_WARN("This is a test warning message");
 	ENGINE_LOG_ERROR("This is a test error message");
-	
-    std::cout << "test\n";
-    
+	    
 	return true;
 }
 
 bool Engine::InitializeGraphicsResources() {
+#ifndef ANDROID
+    MetaFilesManager::InitializeAssetMetaFiles("../../Resources"); // Root project resources folder for desktop
+#else
+    MetaFilesManager::InitializeAssetMetaFiles("Resources"); // Root project resources folder for Android
+#endif
 	ENGINE_LOG_INFO("Initializing graphics resources...");
-    MetaFilesManager::InitializeAssetMetaFiles("Resources");
 
-	// Load test scene
-	SceneManager::GetInstance().LoadTestScene();
+#ifdef ANDROID
+    if (auto* platform = WindowManager::GetPlatform()) {
+        platform->MakeContextCurrent();
+        // Check if OpenGL context is current
+        EGLDisplay display = eglGetCurrentDisplay();
+        EGLContext context = eglGetCurrentContext();
+        EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+
+        // __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL State - Display: %p, Context: %p, Surface: %p",
+        //                    display, context, surface);
+
+        if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+            __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
+            return false;
+        }
+    }
+#endif
+
+	// Load empty scene
+    SceneManager::GetInstance().LoadTestScene();
     ENGINE_LOG_INFO("Loaded test scene");
 
-	// ---Set Up Lighting---
-	LightManager& lightManager = LightManager::getInstance();
-	const auto& pointLights = lightManager.getPointLights();
-	// Set up directional light
-	lightManager.setDirectionalLight(
-		glm::vec3(-0.2f, -1.0f, -0.3f),
-		glm::vec3(0.4f, 0.4f, 0.4f)
-	);
-
-	// Add point lights
-	glm::vec3 lightPositions[] = {
-		glm::vec3(0.7f,  0.2f,  2.0f),
-		glm::vec3(2.3f, -3.3f, -4.0f),
-		glm::vec3(-4.0f,  2.0f, -12.0f),
-		glm::vec3(0.0f,  0.0f, -3.0f)
-	};
-
-	for (int i = 0; i < 4; i++)
-	{
-		lightManager.addPointLight(lightPositions[i], glm::vec3(0.8f, 0.8f, 0.8f));
-	}
-
-	// Set up spotlight
-	lightManager.setSpotLight(
-		glm::vec3(0.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(1.0f, 1.0f, 1.0f)
-	);
+#ifdef ANDROID
+    // Initialize virtual controls for Android
+    VirtualControls::Initialize();
+    ENGINE_LOG_INFO("Virtual controls initialized");
+#endif
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
@@ -563,6 +563,12 @@ bool Engine::InitializeGraphicsResources() {
 bool Engine::InitializeAssets() {
     // Initialize asset meta files - called after platform is ready (e.g., Android AssetManager set)
     // MetaFilesManager::InitializeAssetMetaFiles("Resources");  // Uncomment if needed
+//#ifdef ANDROID
+//    if (auto* platform = WindowManager::GetPlatform()) {
+//        platform->MakeContextCurrent();
+//        ENGINE_LOG_INFO("Android->MakeContextCurrent success");
+//    }
+//#endif
     return true;
 }
 
@@ -573,10 +579,6 @@ void Engine::Update() {
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
-
-
-		// Test Audio
-		AudioManager::GetInstance().Update();
 	}
 }
 
@@ -647,14 +649,18 @@ void Engine::Draw() {
 
     try {
         SceneManager::GetInstance().DrawScene();
+        
+        // Render virtual controls on top of everything (Android only)
+        VirtualControls::Render(surfaceWidth, surfaceHeight);
+        
     } catch (const std::exception& e) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
     }
+    
 #else
     SceneManager::GetInstance().DrawScene();
-    //std::cout << "drawn scene\n";
 #endif
 }
 
@@ -674,6 +680,7 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }
 

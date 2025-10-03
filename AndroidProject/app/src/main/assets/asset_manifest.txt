@@ -1,7 +1,7 @@
+Resources/Audio/sfx/start menu bgm.ogg
+Resources/Audio/sfx/start menu bgm.ogg.meta
 Resources/Audio/sfx/Test_duck.wav
 Resources/Audio/sfx/Test_duck.wav.meta
-Resources/dora the explorer (1).prefab
-Resources/dora the explorer.prefab
 Resources/Fonts/fa-solid-900.font
 Resources/Fonts/fa-solid-900.ttf
 Resources/Fonts/fa-solid-900.ttf.meta
@@ -12,18 +12,14 @@ Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
 Resources/Kenney Mini.font
-Resources/Kenney Mini.ttf
-Resources/Kenney Mini.ttf.meta
-Resources/License.txt
-Resources/Materials/NewMaterial.mat
-Resources/Materials/NewMaterial.mat.meta
+Resources/Materials/Backpack Material.mat
+Resources/Materials/Backpack Material.mat.meta
 Resources/Materials/test.mat
 Resources/Materials/test.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
 Resources/Models/backpack/backpack.mesh
-Resources/Models/backpack/backpack.mtl
 Resources/Models/backpack/backpack.obj
 Resources/Models/backpack/backpack.obj.meta
 Resources/Models/backpack/diffuse.dds
@@ -35,17 +31,19 @@ Resources/Models/backpack/normal.png.meta
 Resources/Models/backpack/roughness.dds
 Resources/Models/backpack/roughness.jpg
 Resources/Models/backpack/roughness.jpg.meta
-Resources/Models/backpack/source_attribution.txt
 Resources/Models/backpack/specular.dds
 Resources/Models/backpack/specular.jpg
 Resources/Models/backpack/specular.jpg.meta
 Resources/Models/backpack.mesh
-Resources/Models/backpack.obj
-Resources/Models/backpack.obj.meta
+Resources/Models/cube.mesh
+Resources/Models/cube.obj
+Resources/Models/cube.obj.meta
+Resources/Models/cube_backup.mesh
+Resources/Models/cube_backup.obj
+Resources/Models/cube_backup.obj.meta
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
-Resources/Scenes/scene.json
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
@@ -70,6 +68,14 @@ Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
 Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
+Resources/Shaders/particle.frag
+Resources/Shaders/particle.meta
+Resources/Shaders/particle.shader
+Resources/Shaders/particle.vert
+Resources/Shaders/particleandroid.frag
+Resources/Shaders/particleandroid.meta
+Resources/Shaders/particleandroid.shader
+Resources/Shaders/particleandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
 Resources/Shaders/sprite.shader
@@ -86,7 +92,10 @@ Resources/Shaders/textandroid.frag
 Resources/Shaders/textandroid.meta
 Resources/Shaders/textandroid.shader
 Resources/Shaders/textandroid.vert
-Resources/test.txt
+Resources/Shaders/virtualcontrolsandroid.frag
+Resources/Shaders/virtualcontrolsandroid.meta
+Resources/Shaders/virtualcontrolsandroid.shader
+Resources/Shaders/virtualcontrolsandroid.vert
 Resources/Textures/awesomeface.dds
 Resources/Textures/awesomeface.png
 Resources/Textures/awesomeface.png.meta
