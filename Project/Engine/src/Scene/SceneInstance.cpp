@@ -87,7 +87,7 @@ void SceneInstance::Initialize() {
 		col.layer = Layers::MOVING;
 		col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		
 		// ---- FLOOR (static, invisible) ----
@@ -139,7 +139,7 @@ void SceneInstance::Initialize() {
 		backpack2Col.layer = Layers::MOVING;
 		backpack2Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack2, NameComponent{});
@@ -170,7 +170,7 @@ void SceneInstance::Initialize() {
 		backpack3Col.layer = Layers::MOVING;
 		backpack3Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
@@ -350,7 +350,7 @@ void SceneInstance::Initialize() {
 		ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
 		ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
 		TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-		TextUtils::SetPosition(fpsTextComp, Vector3D(0, 0, 0));
+		TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
 		TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
 
 		// Test Particle
