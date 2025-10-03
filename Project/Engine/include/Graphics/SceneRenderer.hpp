@@ -69,6 +69,11 @@ public:
      */
     static void RenderSceneForEditor();
 
+    // Game Panel separate framebuffer methods
+    static void BeginGameRender(int width, int height);
+    static void EndGameRender();
+    static unsigned int GetGameTexture();
+
     /**
      * @brief Render scene for editor with custom camera parameters
      * @param cameraPos Camera position
@@ -84,12 +89,19 @@ public:
                                    float orthoZoomLevel = 1.0f);
 
 private:
-    // Static framebuffer data
+    // Static framebuffer data for SCENE panel
     static unsigned int sceneFrameBuffer;
     static unsigned int sceneColorTexture;
     static unsigned int sceneDepthTexture;
     static int sceneWidth;
     static int sceneHeight;
+
+    // Static framebuffer data for GAME panel (separate)
+    static unsigned int gameFrameBuffer;
+    static unsigned int gameColorTexture;
+    static unsigned int gameDepthTexture;
+    static int gameWidth;
+    static int gameHeight;
 
     // Static editor camera for rendering
     static Camera* editorCamera;
