@@ -6,10 +6,12 @@
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
+#include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
+#include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
 #include <cstring>
 #include <filesystem>
@@ -188,6 +190,13 @@ void InspectorPanel::OnImGuiRender() {
 					if (ecsManager.HasComponent<SpriteRenderComponent>(displayEntity)) {
 						if (DrawComponentHeaderWithRemoval("Sprite Renderer", displayEntity, "SpriteRenderComponent")) {
 							DrawSpriteRenderComponent(displayEntity);
+						}
+					}
+
+					// Draw TextRenderComponent if it exists
+					if (ecsManager.HasComponent<TextRenderComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Text Renderer", displayEntity, "TextRenderComponent")) {
+							DrawTextRenderComponent(displayEntity);
 						}
 					}
 
@@ -504,6 +513,138 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 	}
 }
 
+void InspectorPanel::DrawTextRenderComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
+
+		ImGui::PushID("TextRenderComponent");
+
+		// Text input
+		char textBuffer[256] = {};
+		size_t copyLen = (std::min)(textComp.text.size(), sizeof(textBuffer) - 1);
+		std::memcpy(textBuffer, textComp.text.c_str(), copyLen);
+		textBuffer[copyLen] = '\0';
+
+		ImGui::Text("Text");
+		if (ImGui::InputText("##Text", textBuffer, sizeof(textBuffer))) {
+			textComp.text = std::string(textBuffer);
+		}
+
+		ImGui::Separator();
+
+		// Font drag-drop slot
+		ImGui::Text("Font:");
+		ImGui::SameLine();
+
+		std::string fontButtonText = "None (Font)";
+		if (textComp.font) {
+			// Try to get font name from asset manager
+			std::shared_ptr<AssetMeta> fontMeta = AssetManager::GetInstance().GetAssetMeta(textComp.fontGUID);
+			if (fontMeta) {
+				std::filesystem::path fontPath(fontMeta->sourceFilePath);
+				fontButtonText = fontPath.filename().string();
+			} else {
+				fontButtonText = "Loaded Font";
+			}
+		}
+
+		float buttonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(fontButtonText.c_str(), buttonWidth);
+
+		// Font drag-drop target
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .ttf or .otf font here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD")) {
+				const char* fontPath = (const char*)payload->Data;
+				// Load font using ResourceManager
+				textComp.font = ResourceManager::GetInstance().GetFontResource(fontPath);
+				if (textComp.font) {
+					textComp.fontGUID = MetaFilesManager::GetGUID128FromAssetFile(fontPath);
+					std::cout << "[Inspector] Loaded font: " << fontPath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load font: " << fontPath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		ImGui::Separator();
+
+		// Font size
+		int fontSize = static_cast<int>(textComp.fontSize);
+		ImGui::Text("Font Size");
+		ImGui::SameLine();
+		if (ImGui::DragInt("##FontSize", &fontSize, 1.0f, 1, 500)) {
+			textComp.fontSize = static_cast<unsigned int>(fontSize);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Font size affects glyph quality. Use Transform Scale to resize text.");
+		}
+
+		// Color picker
+		float colorArray[3] = { textComp.color.x, textComp.color.y, textComp.color.z };
+		ImGui::Text("Color");
+		ImGui::SameLine();
+		if (ImGui::ColorEdit3("##TextColor", colorArray)) {
+			textComp.color = Vector3D(colorArray[0], colorArray[1], colorArray[2]);
+		}
+
+		ImGui::Separator();
+
+		// Position (uses Transform component)
+		if (!textComp.is3D && ecsManager.HasComponent<Transform>(entity)) {
+			Transform& transform = ecsManager.GetComponent<Transform>(entity);
+			float pos[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
+			ImGui::Text("Position (Screen)");
+			if (ImGui::DragFloat3("##TextPosition", pos, 1.0f)) {
+				ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(pos[0], pos[1], pos[2]));
+			}
+		}
+
+		// Alignment (swapped to match actual rendering behavior)
+		const char* alignmentItems[] = { "Right", "Center", "Left" };
+		int currentAlignment = static_cast<int>(textComp.alignment);
+		ImGui::Text("Alignment");
+		ImGui::SameLine();
+		if (ImGui::Combo("##TextAlignment", &currentAlignment, alignmentItems, 3)) {
+			textComp.alignment = static_cast<TextRenderComponent::Alignment>(currentAlignment);
+			textComp.alignmentInt = currentAlignment;
+		}
+
+		// Is 3D toggle with position handling
+		bool is3D = textComp.is3D;
+		if (ImGui::Checkbox("Is 3D", &is3D)) {
+			if (is3D && !textComp.is3D) {
+				// Switching from 2D to 3D
+				// Reset 2D position to origin and switch to Transform component positioning
+				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
+				textComp.is3D = true;
+				// Position entity in front of camera by default
+				if (ecsManager.HasComponent<Transform>(entity)) {
+					ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(0.0f, 0.0f, -5.0f));
+					ecsManager.transformSystem->SetLocalScale(entity, Vector3D(1.0f, 1.0f, 1.0f));
+				}
+			}
+			else if (!is3D && textComp.is3D) {
+				// Switching from 3D to 2D
+				// Set 2D screen space position to origin
+				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
+				textComp.is3D = false;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("3D mode uses Transform component scale/position, 2D mode uses screen space position");
+		}
+
+		ImGui::Checkbox("Visible", &textComp.isVisible);
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing TextRenderComponent: %s", e.what());
+	}
+}
+
 void InspectorPanel::DrawAudioComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -750,22 +891,22 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				std::filesystem::path absolutePath = std::filesystem::absolute(sourceFilePath);
 				std::string absolutePathStr = absolutePath.string();
 
-				// Load material and cache it
-				std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
-				std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
-				cachedMaterial = std::make_shared<Material>();
-				if (cachedMaterial->LoadResource(absolutePathStr, "")) {
-					cachedMaterialGuid = assetGuid;
-					cachedMaterialPath = sourceFilePath;
-					std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
-				} else {
-					cachedMaterial.reset();
-					cachedMaterialGuid = {0, 0};
-					cachedMaterialPath.clear();
-					ImGui::Text("Failed to load material");
-					return;
-				}
-			}
+                // Load material and cache it
+                std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
+                std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
+                cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
+                if (cachedMaterial) {
+                    cachedMaterialGuid = assetGuid;
+                    cachedMaterialPath = sourceFilePath;
+                    std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+                } else {
+                    cachedMaterial.reset();
+                    cachedMaterialGuid = {0, 0};
+                    cachedMaterialPath.clear();
+                    ImGui::Text("Failed to load material");
+                    return;
+                }
+            }
 
 			// Use cached material with lock button
 			auto lockCallback = [this, selectedAsset]() {

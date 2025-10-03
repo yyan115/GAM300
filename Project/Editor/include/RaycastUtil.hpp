@@ -102,6 +102,12 @@ public:
      */
     static bool SetEntityTransform(Entity entity, const float matrix[16], bool is2DMode = false);
 
+    /**
+     * @brief Check if an entity is a 3D entity (has 3D model, 3D sprite, or 3D text).
+     * @param entity The entity to check
+     * @return true if entity is 3D, false if entity is 2D or doesn't exist
+     */
+    static bool IsEntity3D(Entity entity);
 
 private:
     static constexpr float EPSILON = 1e-6f;

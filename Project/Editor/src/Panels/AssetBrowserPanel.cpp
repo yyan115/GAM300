@@ -93,8 +93,8 @@ AssetBrowserPanel::AssetInfo::AssetInfo(const std::string& path, const GUID_128&
 
 AssetBrowserPanel::AssetBrowserPanel()
     : EditorPanel("Asset Browser", true)
-    , currentDirectory("Resources")
-    , rootAssetDirectory("Resources")
+    , currentDirectory(AssetManager::GetInstance().GetRootAssetDirectory())
+    , rootAssetDirectory(AssetManager::GetInstance().GetRootAssetDirectory())
     , selectedAssetType(AssetType::All)
 {
     // Initialize default GUID for untracked assets
@@ -172,20 +172,23 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     }
 
     // Handle different file events
-    if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+    if (AssetManager::GetInstance().IsAssetExtensionSupported(extension) && !AssetManager::GetInstance().IsExtensionMaterial(extension)) {
         // Sleep this thread for a while to allow the OS to finish the file operation.
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         if (event == filewatch::Event::modified || event == filewatch::Event::added) {
-            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
+            if (event == filewatch::Event::modified)
+                AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
+            else
+                AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::added, fullPathObj);
             
             // Invalidate thumbnail cache for modified textures (Unity behavior)
-            if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
-                if (MetaFilesManager::MetaFileExists(fullPath)) {
-                    GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
-                    RemoveThumbnailFromCache(guid);
-                }
-            }
+            //if (AssetManager::GetInstance().IsExtensionTexture(extension)) {
+            //    if (MetaFilesManager::MetaFileExists(fullPath)) {
+            //        GUID_128 guid = MetaFilesManager::GetGUID128FromAssetFile(fullPath);
+            //        RemoveThumbnailFromCache(guid);
+            //    }
+            //}
         }
         else if (event == filewatch::Event::removed) {
             // Remove from thumbnail cache before unloading
@@ -528,7 +531,7 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
             try {
                 std::vector<std::filesystem::path> subdirectories;
                 for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-                    if (entry.is_directory()) {
+                    if (entry.is_directory() && entry.path().generic_string().find("Shaders") == std::string::npos) {
                         subdirectories.push_back(entry.path());
                     }
                 }
@@ -780,22 +783,6 @@ void AssetBrowserPanel::RenderAssetGrid()
             dl->AddRect(rectMin, rectMax, IM_COL32(255, 255, 255, 30), 4.0f, ImDrawFlags_RoundCornersAll, 2.0f);
         }
 
-        // double click
-        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            if (asset.isDirectory) NavigateToDirectory(asset.filePath);
-            else {
-                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
-                std::filesystem::path p(asset.fileName);
-
-                // Open scene confirmation dialogue.
-                if (p.extension() == ".scene") {
-                    OpenScene(asset);
-                }
-            }
-        }
-
-        ShowOpenSceneConfirmation();
-
         ImGui::PopID();
         // context menu
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -808,6 +795,29 @@ void AssetBrowserPanel::RenderAssetGrid()
         // wrap
         ++index;
         if ((index % cols) != 0) ImGui::SameLine(0.0f, pad);
+
+        // double click
+        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            if (asset.isDirectory) {
+                pendingNavigation = asset.filePath;
+                //break;
+            }
+            else {
+                ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
+                std::filesystem::path p(asset.fileName);
+
+                // Open scene confirmation dialogue.
+                if (p.extension() == ".scene") {
+                    OpenScene(asset);
+                }
+            }
+        }
+
+    }
+    
+    ShowOpenSceneConfirmation();
+    if (!pendingNavigation.empty()) {
+        NavigateToDirectory(pendingNavigation);
     }
 
     // Only clear selection if not dragging (to avoid interfering with drag operations)
@@ -986,6 +996,8 @@ void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
             needsTreeSync = true;
         }
     }
+
+    pendingNavigation.clear();
 }
 
 void AssetBrowserPanel::UpdateBreadcrumbs() {
@@ -1513,23 +1525,16 @@ uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std
     uint64_t cacheKey = guid.high ^ guid.low;
     
     // Check if thumbnail already exists in cache
-    auto it = thumbnailCache.find(cacheKey);
-    if (it != thumbnailCache.end()) {
-        return it->second;
-    }
+    //auto it = thumbnailCache.find(cacheKey);
+    //if (it != thumbnailCache.end()) {
+    //    return it->second;
+    //}
 
     // Load texture using AssetManager and ResourceManager (GUID-based)
     std::shared_ptr<Texture> texture = nullptr;
     
-    // Check if asset is compiled
-    if (AssetManager::GetInstance().IsAssetCompiled(guid)) {
-        // Load using GUID through AssetManager
-        texture = AssetManager::GetInstance().LoadByGUID<Texture>(guid);
-    } else {
-        // Compile and load the asset
-        AssetManager::GetInstance().CompileTexture(assetPath, "diffuse", -1, false);
-        texture = AssetManager::GetInstance().LoadByGUID<Texture>(guid);
-    }
+    // Get the texture from ResourceManager.
+    texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(guid, assetPath);
 
     if (texture && texture->ID != 0) {
         // Cache the texture ID for future use

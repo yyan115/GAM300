@@ -38,7 +38,8 @@ std::string Audio::CompileToResource(const std::string& assetPath, bool forAndro
     }
     else {
         // For Android, copy to android resources path
-        outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p).generic_string();
+        std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+        outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
     }
 
     // For desktop builds, we don't need to copy the file since it's already in Resources

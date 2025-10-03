@@ -9,7 +9,7 @@
 
 GamePanel::GamePanel()
     : EditorPanel("Game", true), selectedResolutionIndex(0), useCustomAspectRatio(false),
-      customAspectRatio(16.0f / 9.0f), freeAspect(true) {
+      customAspectRatio(16.0f / 9.0f), freeAspect(false) {
 
     // Initialize common resolutions
     resolutions.emplace_back(1920, 1080, "Full HD (1920x1080)");

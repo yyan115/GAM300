@@ -204,6 +204,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     // Extract texture path from payload
                     const char* texturePath = (const char*)payload->Data;
                     std::string pathStr(texturePath, payload->DataSize);
+                    // strip trailing nulls
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                     // Use the original path as-is since it already has the correct relative path
                     std::string assetPathStr = pathStr;
@@ -302,26 +304,28 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
         std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
+        material->CompileUpdatedAssetToResource(assetPath);
+        //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
         
         // Use the Material's CompileToResource method
-        std::string compiledPath = material->CompileToResource(absoluteSavePathStr);
-        if (!compiledPath.empty()) {
-            std::cout << "[MaterialInspector] Material saved successfully: " << compiledPath << std::endl;
+        //std::string compiledPath = material->CompileToResource(absoluteSavePathStr);
+        //if (!compiledPath.empty()) {
+        //    std::cout << "[MaterialInspector] Material saved successfully: " << compiledPath << std::endl;
 
-            // Force ResourceManager to reload the material from disk to update cache
-            std::cout << "[MaterialInspector] Forcing ResourceManager cache reload for: " << absoluteSavePathStr << std::endl;
-            auto reloadedMaterial = ResourceManager::GetInstance().GetResource<Material>(absoluteSavePathStr, true);
-            if (reloadedMaterial) {
-                std::cout << "[MaterialInspector] Successfully reloaded material in ResourceManager cache: " << reloadedMaterial->GetName() << " with " << reloadedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
-            } else {
-                std::cout << "[MaterialInspector] Failed to reload material in ResourceManager cache" << std::endl;
-            }
+        //    // Force ResourceManager to reload the material from disk to update cache
+        //    std::cout << "[MaterialInspector] Forcing ResourceManager cache reload for: " << absoluteSavePathStr << std::endl;
+        //    auto reloadedMaterial = ResourceManager::GetInstance().GetResource<Material>(absoluteSavePathStr, true);
+        //    if (reloadedMaterial) {
+        //        std::cout << "[MaterialInspector] Successfully reloaded material in ResourceManager cache: " << reloadedMaterial->GetName() << " with " << reloadedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+        //    } else {
+        //        std::cout << "[MaterialInspector] Failed to reload material in ResourceManager cache" << std::endl;
+        //    }
 
-            materialChanged = false; // Reset change flag after save
-        }
-        else {
-            std::cout << "[MaterialInspector] Failed to save material to: " << absoluteSavePathStr << std::endl;
-        }
+        //    materialChanged = false; // Reset change flag after save
+        //}
+        //else {
+        //    std::cout << "[MaterialInspector] Failed to save material to: " << absoluteSavePathStr << std::endl;
+        //}
     }
     if (materialChanged) {
         ImGui::SameLine();

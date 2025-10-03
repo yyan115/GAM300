@@ -4,14 +4,9 @@
 
 /**
  * @brief Centralized UI components and styles for the editor
- *
- * This class provides reusable Unity-style UI components for the editor,
- * allowing consistent styling across all panels. Modify the static constants
- * here to change the appearance globally.
  */
 class EditorComponents {
 public:
-    // ===== Unity-Style Drag-Drop Button Settings =====
 
     // Button Colors (RGB 0-1 range)
     static constexpr ImVec4 DRAG_DROP_BUTTON_BG = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);          // Dark background
@@ -35,7 +30,7 @@ public:
     // ===== Public Methods =====
 
     /**
-     * @brief Draws a Unity-style drag-drop button
+     * @brief Draws a drag-drop button
      * @param label The text to display on the button
      * @param width The width of the button (0 = auto-fit)
      * @return True if the button was visible and rendered
@@ -43,7 +38,7 @@ public:
     static bool DrawDragDropButton(const char* label, float width = 0.0f);
 
     /**
-     * @brief Begins a drag-drop target with Unity-style visual feedback
+     * @brief Begins a drag-drop target with visual feedback
      * Call this after DrawDragDropButton, then check for payload and call EndDragDropTarget
      * @return True if dragging over this target
      */

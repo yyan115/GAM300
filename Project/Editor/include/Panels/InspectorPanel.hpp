@@ -38,6 +38,7 @@ private:
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
     void DrawSpriteRenderComponent(Entity entity);
+    void DrawTextRenderComponent(Entity entity);
     void DrawAudioComponent(Entity entity);
     void DrawLightComponents(Entity entity);
     void DrawSelectedAsset(const GUID_128& assetGuid);

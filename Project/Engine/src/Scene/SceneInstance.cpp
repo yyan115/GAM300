@@ -40,7 +40,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt, { 0, 0, 0 });
 		NameComponent& backpackName = ecsManager.GetComponent<NameComponent>(backpackEntt);
 		backpackName.name = "dora the explorer";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile( AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -50,7 +50,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt2, { 0, 0, 0 });
 		NameComponent& backpack2Name = ecsManager.GetComponent<NameComponent>(backpackEntt2);
 		backpack2Name.name = "ash ketchum";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -60,7 +60,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
 		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
 		backpack3Name.name = "indiana jones";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -69,7 +69,7 @@ void SceneInstance::Initialize() {
 		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
 		spriteName.name = "sprite_test";
 		// Load resources first
-		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>(AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png");
 		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
 		// Add component with constructor parameters
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
@@ -88,7 +88,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
 		NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
 		spriteName3D.name = "sprite_3d_test";
-		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.jpg");
+		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>(AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png");
 		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
@@ -154,7 +154,7 @@ void SceneInstance::Initialize() {
 				// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 				
 				// Test Model
-				ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+				ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 
 				PointLightComponent pointLightComp;
 				pointLightComp.ambient = glm::vec3(0.05f);
@@ -196,7 +196,7 @@ void SceneInstance::Initialize() {
 		// Text entity test
 		Entity text = ecsManager.CreateEntity();
 		ecsManager.GetComponent<NameComponent>(text).name = "Text1";
-		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "hello woody", 48, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
 		//ecsManager.AddComponent<TextRenderComponent>(text, TextRenderComponent{ "Hello World!", ResourceManager::GetInstance().GetFontResource("Resources/Fonts/Kenney Mini.ttf"), ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text")) });
 		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(text);
 		TextUtils::SetPosition(textComp, Vector3D(800, 100, 0));
@@ -211,7 +211,7 @@ void SceneInstance::Initialize() {
 				
 		// Add AudioComponent
 		AudioComponent audioComp;
-		audioComp.Clip = "Resources/Audio/sfx/start menu bgm.ogg";
+		audioComp.Clip = AssetManager::GetInstance().GetRootAssetDirectory() + "/Audio/sfx/start menu bgm.ogg";
 		audioComp.Volume = 0.3f;
 		audioComp.Loop = true;
 		audioComp.PlayOnAwake = true;
@@ -221,7 +221,7 @@ void SceneInstance::Initialize() {
 		// Add FPS text (mainly for android to see FPS)
 		fpsText = ecsManager.CreateEntity();
 		ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
-		ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+		ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
 		TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
 		TextUtils::SetPosition(fpsTextComp, Vector3D(0, 0, 0));
 		TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
@@ -305,21 +305,33 @@ void SceneInstance::Draw() {
 	if (mainECS.textSystem)
 	{
 #ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
 #endif
 		mainECS.textSystem->Update();
 #ifdef ANDROID
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
 #endif
 	}
 
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
+#endif
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
+#endif
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
+#endif
 	if (mainECS.particleSystem)
 	{
 		mainECS.particleSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
+#endif
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
 	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
@@ -328,10 +340,16 @@ void SceneInstance::Draw() {
 	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
+#endif
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();
 	}
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
+#endif
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
 #endif
