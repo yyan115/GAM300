@@ -88,7 +88,11 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
     bool materialChanged = false;
 
     // Colors section
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
     bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::PopStyleColor(3);
 
     // Add lock button on the same line as Colors header if requested
     if (showLockButton && isLocked && lockCallback) {
@@ -150,7 +154,11 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
     }
 
     // Textures section
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
     if (ImGui::CollapsingHeader("Textures")) {
+        ImGui::PopStyleColor(3);
         // Texture type mappings
         static const std::vector<std::pair<Material::TextureType, std::string>> textureTypes = {
             {Material::TextureType::DIFFUSE, "Diffuse"},
@@ -294,6 +302,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Pop the unique ID
             ImGui::PopID();
         }
+    } else {
+        ImGui::PopStyleColor(3); // Pop header colors if not open
     }
 
     // Save button - always show it for material editing (outside collapsing headers)

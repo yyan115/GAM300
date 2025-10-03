@@ -354,8 +354,8 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 		// Create a model slot button that shows current model
 		std::string modelButtonText;
 		if (modelRenderer.model) {
-			// Extract filename from model path or use a default name
-			modelButtonText = "Loaded Model (" + std::to_string(modelRenderer.model->meshes.size()) + " meshes)";
+			// Show the model name if available
+			modelButtonText = modelRenderer.model->modelName.empty() ? "Unnamed Model" : modelRenderer.model->modelName;
 		} else {
 			modelButtonText = "None (Model)";
 		}
