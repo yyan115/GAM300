@@ -109,12 +109,18 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                 entitiesWithComponent++;
                 ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
 
-                // Create AABB from the entity's transform
-                AABB entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    // Get sprite position from Transform if it exists, otherwise use sprite's position
+                    glm::vec3 spritePosition = sprite.position.ConvertToGLM();
+                    if (ecsManager.HasComponent<Transform>(entity)) {
+                        auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        spritePosition = glm::vec3(transform.worldMatrix.m.m03,
+                                                   transform.worldMatrix.m.m13,
+                                                   transform.worldMatrix.m.m23);
+                    }
 
-                ENGINE_PRINT("[RaycastUtil] Entity ", entity, " AABB: min("
-                    , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
-                    , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
+                    // Create AABB from the sprite's position and scale
+                    entityAABB = CreateAABBFromSprite(spritePosition, sprite.scale.ConvertToGLM(), sprite.is3D);
+                    hasValidAABB = true;
 
 
                 // Test ray intersection
@@ -158,6 +164,46 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16]) {
             outMatrix[1]  = transform.worldMatrix.m.m10; outMatrix[5]  = transform.worldMatrix.m.m11; outMatrix[9]  = transform.worldMatrix.m.m12; outMatrix[13] = transform.worldMatrix.m.m13;
             outMatrix[2]  = transform.worldMatrix.m.m20; outMatrix[6]  = transform.worldMatrix.m.m21; outMatrix[10] = transform.worldMatrix.m.m22; outMatrix[14] = transform.worldMatrix.m.m23;
             outMatrix[3]  = transform.worldMatrix.m.m30; outMatrix[7]  = transform.worldMatrix.m.m31; outMatrix[11] = transform.worldMatrix.m.m32; outMatrix[15] = transform.worldMatrix.m.m33;
+
+            return true;
+        }
+        // If no Transform, check for SpriteRenderComponent (for sprites without Transform)
+        else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't provide transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't provide transform for 3D sprites in 2D mode
+            }
+
+            // Note: This case should rarely happen since 3D sprites typically have Transform components
+            // But if a 3D sprite exists without Transform, use sprite properties
+
+            // For 3D sprites: position is already the center (used directly in TRS transform)
+            // Build a transform matrix from position, scale, and rotation
+            // Create a TRS (Translation * Rotation * Scale) matrix
+
+            // Convert rotation from degrees to radians
+            float rotationRadians = glm::radians(sprite.rotation);
+
+            // Create transformation matrices
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), sprite.position.ConvertToGLM());
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z axis
+            glm::mat4 scale = glm::scale(glm::mat4(1.0f), sprite.scale.ConvertToGLM());
+
+            // Combine: TRS order
+            glm::mat4 transformMatrix = translation * rotation * scale;
+
+            // Convert glm::mat4 (column-major) to column-major float array for ImGuizmo
+            // GLM is already column-major, so we can directly copy
+            const float* matrixPtr = glm::value_ptr(transformMatrix);
+            for (int i = 0; i < 16; ++i) {
+                outMatrix[i] = matrixPtr[i];
+            }
 
             return true;
         }
@@ -206,6 +252,43 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16]) {
             //// Update last known values to prevent TransformSystem from recalculating
             //transform.lastPosition = newPosition;
             //transform.lastScale = newScale;
+
+            return true;
+        }
+        // If no Transform, check for SpriteRenderComponent
+        else if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+            // In 3D mode: only allow 3D sprites
+            // In 2D mode: only allow 2D sprites
+            if (!is2DMode && !sprite.is3D) {
+                return false;  // Don't apply transform for 2D screen-space sprites in 3D mode
+            }
+            if (is2DMode && sprite.is3D) {
+                return false;  // Don't apply transform for 3D sprites in 2D mode
+            }
+
+            // Convert column-major float array (ImGuizmo/GLM format) to glm::mat4
+            glm::mat4 transformMatrix;
+            const float* matrixPtr = matrix;
+            transformMatrix = glm::make_mat4(matrixPtr);
+
+            // Decompose the matrix to get position, rotation, and scale
+            glm::vec3 position;
+            glm::vec3 scale;
+            glm::quat rotation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(transformMatrix, scale, rotation, position, skew, perspective);
+
+            // Convert quaternion to Euler angles (in radians)
+            glm::vec3 eulerAngles = glm::eulerAngles(rotation);
+
+            // For 3D sprites, position is already the center (no conversion needed)
+            // Update sprite properties directly
+            sprite.position = Vector3D::ConvertGLMToVector3D(position);
+            sprite.scale = Vector3D::ConvertGLMToVector3D(scale);
+            sprite.rotation = glm::degrees(eulerAngles.z); // Convert back to degrees and use Z rotation
 
             return true;
         }

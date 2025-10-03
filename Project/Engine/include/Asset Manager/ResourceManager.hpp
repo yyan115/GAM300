@@ -237,6 +237,7 @@ private:
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Target resource path: %s", resourcePath.c_str());
 #endif
 		std::shared_ptr<T> resource;
 		if (!reload) {

@@ -347,99 +347,568 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 
 		ImGui::PushID("ModelRenderComponent");
 
-        // Display model info (read-only for now)
-        ImGui::Text("Model Renderer Component");
+		// Display model info (read-only for now)
+		ImGui::Text("Model Renderer Component");
 
-        // Model drag-drop slot like Unity
-        ImGui::Text("Model:");
-        ImGui::SameLine();
+		// Model drag-drop slot
+		ImGui::Text("Model:");
+		ImGui::SameLine();
 
-        // Create a model slot button that shows current model
-        std::string modelButtonText;
-        if (modelRenderer.model) {
-            // Extract filename from model path or use a default name
-            modelButtonText = "Loaded Model (" + std::to_string(modelRenderer.model->meshes.size()) + " meshes)";
-        } else {
-            modelButtonText = "None (Drop model here)";
-        }
+		// Create a model slot button that shows current model
+		std::string modelButtonText;
+		if (modelRenderer.model) {
+			// Show the model name if available
+			modelButtonText = modelRenderer.model->modelName.empty() ? "Unnamed Model" : modelRenderer.model->modelName;
+		} else {
+			modelButtonText = "None (Model)";
+		}
 
-        // Create the model slot button (like Unity's model slot)
-        float buttonWidth = ImGui::GetContentRegionAvail().x;
-        ImGui::Button(modelButtonText.c_str(), ImVec2(buttonWidth, 30.0f));
+		
+		float buttonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(modelButtonText.c_str(), buttonWidth);
 
-        // The button is now the drag-drop target for models
-        if (ImGui::BeginDragDropTarget()) {
-            // Visual feedback - highlight when dragging over
-            ImGui::SetTooltip("Drop .obj, .fbx, .dae, or .3ds model here");
-            // Accept the cross-window drag payload
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
-                // Apply the model to the ModelRenderComponent
-                ApplyModelToRenderer(entity, DraggedModelGuid, DraggedModelPath);
+		// The button is now the drag-drop target for models with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .obj, .fbx, .dae, or .3ds model here");
+			// Accept the cross-window drag payload
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
+				// Apply the model to the ModelRenderComponent
+				ApplyModelToRenderer(entity, DraggedModelGuid, DraggedModelPath);
 
-                // Clear the drag state
-                DraggedModelGuid = {0, 0};
-                DraggedModelPath.clear();
-            }
-            ImGui::EndDragDropTarget();
-        }
+				// Clear the drag state
+				DraggedModelGuid = {0, 0};
+				DraggedModelPath.clear();
+			}
+			EditorComponents::EndDragDropTarget();
+		}
 
-        if (modelRenderer.shader) {
-            ImGui::Text("Shader: Loaded");
-        } else {
-            ImGui::Text("Shader: None");
-        }
+		if (modelRenderer.shader) {
+			ImGui::Text("Shader: Loaded");
+		} else {
+			ImGui::Text("Shader: None");
+		}
 
-        ImGui::Separator();
+		ImGui::Separator();
 
-        // Material drag-drop slot like Unity
-        ImGui::Text("Material:");
-        ImGui::SameLine();
+		// Material drag-drop slot
+		ImGui::Text("Material:");
+		ImGui::SameLine();
 
-        // Create a material slot button that shows current material
-        std::shared_ptr<Material> currentMaterial = modelRenderer.material;
-        std::string buttonText;
-        if (currentMaterial) {
-            buttonText = currentMaterial->GetName();
-        } else if (modelRenderer.model && !modelRenderer.model->meshes.empty()) {
-            // Show default material from first mesh
-            auto& defaultMaterial = modelRenderer.model->meshes[0].material;
-            if (defaultMaterial) {
-                buttonText = defaultMaterial->GetName() + " (default)";
-            } else {
-                buttonText = "None (Drop material here)";
-            }
-        } else {
-            buttonText = "None (Drop material here)";
-        }
+		// Create a material slot button that shows current material
+		std::shared_ptr<Material> currentMaterial = modelRenderer.material;
+		std::string buttonText;
+		if (currentMaterial) {
+			buttonText = currentMaterial->GetName();
+		} else if (modelRenderer.model && !modelRenderer.model->meshes.empty()) {
+			// Show default material from first mesh
+			auto& defaultMaterial = modelRenderer.model->meshes[0].material;
+			if (defaultMaterial) {
+				buttonText = defaultMaterial->GetName() + " (default)";
+			} else {
+				buttonText = "None (Material)";
+			}
+		} else {
+			buttonText = "None (Material)";
+		}
 
-        // Create the material slot button (like Unity's material slot)
-        float materialButtonWidth = ImGui::GetContentRegionAvail().x;
-        ImGui::Button(buttonText.c_str(), ImVec2(materialButtonWidth, 30.0f));
+		
+		float materialButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(buttonText.c_str(), materialButtonWidth);
 
-        // The button is now the drag-drop target
-        if (ImGui::BeginDragDropTarget()) {
-            // Visual feedback - highlight when dragging over
-            ImGui::SetTooltip("Drop material here to apply to model");
-            // Accept the cross-window drag payload
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG")) {
-                // Try GUID first, then fallback to path
-                if (DraggedMaterialGuid.high != 0 || DraggedMaterialGuid.low != 0) {
-                    MaterialInspector::ApplyMaterialToModel(entity, DraggedMaterialGuid);
-                } else {
-                    MaterialInspector::ApplyMaterialToModelByPath(entity, DraggedMaterialPath);
-                }
+		// The button is now the drag-drop target with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop material here to apply to model");
+			// Accept the cross-window drag payload
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG")) {
+				// Try GUID first, then fallback to path
+				if (DraggedMaterialGuid.high != 0 || DraggedMaterialGuid.low != 0) {
+					MaterialInspector::ApplyMaterialToModel(entity, DraggedMaterialGuid);
+				} else {
+					MaterialInspector::ApplyMaterialToModelByPath(entity, DraggedMaterialPath);
+				}
 
-                // Clear the drag state
-                DraggedMaterialGuid = {0, 0};
-                DraggedMaterialPath.clear();
-            }
-            ImGui::EndDragDropTarget();
-        }
+				// Clear the drag state
+				DraggedMaterialGuid = {0, 0};
+				DraggedMaterialPath.clear();
+			}
+			EditorComponents::EndDragDropTarget();
+		}
 
-        ImGui::PopID();
-    } catch (const std::exception& e) {
-        ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
-    }
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		SpriteRenderComponent& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+		ImGui::PushID("SpriteRenderComponent");
+
+		// Texture drag-drop slot
+		ImGui::Text("Texture:");
+		ImGui::SameLine();
+
+		// Create texture slot button showing current texture
+		std::string textureButtonText;
+		if (sprite.texture) {
+			// Extract filename from texture path if available
+			if (!sprite.texturePath.empty()) {
+				std::filesystem::path texPath(sprite.texturePath);
+				textureButtonText = texPath.filename().string();
+			} else {
+				textureButtonText = "Loaded Texture";
+			}
+		} else {
+			textureButtonText = "None (Texture)";
+		}
+
+		
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
+
+		// Texture drag-drop target with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+				// Payload contains the file path
+				const char* texturePath = (const char*)payload->Data;
+
+				// Load texture using ResourceManager
+				sprite.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
+				sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(sprite.textureGUID, texturePath);
+
+				if (sprite.texture) {
+					sprite.texturePath = texturePath; // Store the path for display
+					std::cout << "[Inspector] Loaded texture: " << texturePath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load texture: " << texturePath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		// Right-click to clear texture
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && sprite.texture) {
+			ImGui::OpenPopup("ClearTexture");
+		}
+
+		if (ImGui::BeginPopup("ClearTexture")) {
+			if (ImGui::MenuItem("Clear Texture")) {
+				sprite.texture = nullptr;
+				sprite.texturePath.clear();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+
+		// Sprite type toggle (inverted - checkbox shows "Is 2D")
+		bool is2D = !sprite.is3D;
+		if (ImGui::Checkbox("Is 2D", &is2D)) {
+			// Mode changed
+			if (is2D && sprite.is3D) {
+				// Switching from 3D to 2D
+				// Sync sprite.position with Transform before saving (in case user moved via Transform)
+				if (ecsManager.HasComponent<Transform>(entity)) {
+					Transform& transform = ecsManager.GetComponent<Transform>(entity);
+					sprite.position = Vector3D(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+				}
+				// Save current 3D position
+				sprite.saved3DPosition = sprite.position;
+
+				// Set sprite to center of viewport (using screen coordinates)
+				// For 2D mode, position is in pixels from top-left
+				sprite.position = Vector3D(RunTimeVar::window.width / 2.0f, RunTimeVar::window.height / 2.0f, 0.0f);
+				sprite.is3D = false;
+			}
+			else if (!is2D && !sprite.is3D) {
+				// Switching from 2D to 3D
+				// Restore saved 3D position to both Transform and sprite.position
+				if (ecsManager.HasComponent<Transform>(entity)) {
+					ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(sprite.saved3DPosition.x, sprite.saved3DPosition.y, sprite.saved3DPosition.z));
+				}
+				sprite.position = sprite.saved3DPosition;
+				sprite.is3D = true;
+				sprite.enableBillboard = true;
+			}
+		}
+
+		// Follow Camera toggle (billboard effect - only for 3D sprites)
+		if (sprite.is3D) {
+			ImGui::Checkbox("Follow Camera", &sprite.enableBillboard);
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Makes the sprite always face the camera (billboard effect)");
+			}
+		}
+
+		ImGui::Checkbox("Visible", &sprite.isVisible);
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing SpriteRenderComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawTextRenderComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
+
+		ImGui::PushID("TextRenderComponent");
+
+		// Text input
+		char textBuffer[256] = {};
+		size_t copyLen = (std::min)(textComp.text.size(), sizeof(textBuffer) - 1);
+		std::memcpy(textBuffer, textComp.text.c_str(), copyLen);
+		textBuffer[copyLen] = '\0';
+
+		ImGui::Text("Text");
+		if (ImGui::InputText("##Text", textBuffer, sizeof(textBuffer))) {
+			textComp.text = std::string(textBuffer);
+		}
+
+		ImGui::Separator();
+
+		// Font drag-drop slot
+		ImGui::Text("Font:");
+		ImGui::SameLine();
+
+		std::string fontButtonText = "None (Font)";
+		if (textComp.font) {
+			// Try to get font name from asset manager
+			std::shared_ptr<AssetMeta> fontMeta = AssetManager::GetInstance().GetAssetMeta(textComp.fontGUID);
+			if (fontMeta) {
+				std::filesystem::path fontPath(fontMeta->sourceFilePath);
+				fontButtonText = fontPath.filename().string();
+			} else {
+				fontButtonText = "Loaded Font";
+			}
+		}
+
+		float buttonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(fontButtonText.c_str(), buttonWidth);
+
+		// Font drag-drop target
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .ttf or .otf font here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD")) {
+				const char* fontPath = (const char*)payload->Data;
+				// Load font using ResourceManager
+				textComp.font = ResourceManager::GetInstance().GetFontResource(fontPath);
+				if (textComp.font) {
+					textComp.fontGUID = MetaFilesManager::GetGUID128FromAssetFile(fontPath);
+					std::cout << "[Inspector] Loaded font: " << fontPath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load font: " << fontPath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		ImGui::Separator();
+
+		// Font size
+		int fontSize = static_cast<int>(textComp.fontSize);
+		ImGui::Text("Font Size");
+		ImGui::SameLine();
+		if (ImGui::DragInt("##FontSize", &fontSize, 1.0f, 1, 500)) {
+			textComp.fontSize = static_cast<unsigned int>(fontSize);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Font size affects glyph quality. Use Transform Scale to resize text.");
+		}
+
+		// Color picker
+		float colorArray[3] = { textComp.color.x, textComp.color.y, textComp.color.z };
+		ImGui::Text("Color");
+		ImGui::SameLine();
+		if (ImGui::ColorEdit3("##TextColor", colorArray)) {
+			textComp.color = Vector3D(colorArray[0], colorArray[1], colorArray[2]);
+		}
+
+		ImGui::Separator();
+
+		// Position (uses Transform component)
+		if (!textComp.is3D && ecsManager.HasComponent<Transform>(entity)) {
+			Transform& transform = ecsManager.GetComponent<Transform>(entity);
+			float pos[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
+			ImGui::Text("Position (Screen)");
+			if (ImGui::DragFloat3("##TextPosition", pos, 1.0f)) {
+				ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(pos[0], pos[1], pos[2]));
+			}
+		}
+
+		// Alignment (swapped to match actual rendering behavior)
+		const char* alignmentItems[] = { "Right", "Center", "Left" };
+		int currentAlignment = static_cast<int>(textComp.alignment);
+		ImGui::Text("Alignment");
+		ImGui::SameLine();
+		if (ImGui::Combo("##TextAlignment", &currentAlignment, alignmentItems, 3)) {
+			textComp.alignment = static_cast<TextRenderComponent::Alignment>(currentAlignment);
+			textComp.alignmentInt = currentAlignment;
+		}
+
+		// Is 3D toggle with position handling
+		bool is3D = textComp.is3D;
+		if (ImGui::Checkbox("Is 3D", &is3D)) {
+			if (is3D && !textComp.is3D) {
+				// Switching from 2D to 3D
+				// Reset 2D position to origin and switch to Transform component positioning
+				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
+				textComp.is3D = true;
+				// Position entity in front of camera by default
+				if (ecsManager.HasComponent<Transform>(entity)) {
+					ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(0.0f, 0.0f, -5.0f));
+					ecsManager.transformSystem->SetLocalScale(entity, Vector3D(1.0f, 1.0f, 1.0f));
+				}
+			}
+			else if (!is3D && textComp.is3D) {
+				// Switching from 3D to 2D
+				// Set 2D screen space position to origin
+				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
+				textComp.is3D = false;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("3D mode uses Transform component scale/position, 2D mode uses screen space position");
+		}
+
+		ImGui::Checkbox("Visible", &textComp.isVisible);
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing TextRenderComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawParticleComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ParticleComponent& particle = ecsManager.GetComponent<ParticleComponent>(entity);
+
+		ImGui::PushID("ParticleComponent");
+
+		// Play/Pause/Stop buttons for editor preview (shows in Scene panel)
+		float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+		// Play button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPlayingInEditor && !particle.isPausedInEditor ? ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0))) {
+			particle.isPlayingInEditor = true;
+			particle.isPausedInEditor = false;
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Play particle preview in Scene panel");
+		}
+
+		ImGui::PopStyleColor(3);
+		ImGui::SameLine();
+
+		// Pause button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPausedInEditor ? ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0))) {
+			if (particle.isPlayingInEditor) {
+				particle.isPausedInEditor = !particle.isPausedInEditor;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Pause particle preview (keeps existing particles)");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		// Stop button (full width)
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+			particle.isPlayingInEditor = false;
+			particle.isPausedInEditor = false;
+			particle.particles.clear();  // Clear all particles on stop
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Stop and clear all particles");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Texture drag-drop slot
+		ImGui::Text("Texture:");
+		ImGui::SameLine();
+
+		// Create texture slot button showing current texture
+		std::string textureButtonText;
+		if (particle.particleTexture) {
+			// Extract filename from texture path if available
+			if (!particle.texturePath.empty()) {
+				std::filesystem::path texPath(particle.texturePath);
+				textureButtonText = texPath.filename().string();
+			} else {
+				textureButtonText = "Loaded Texture";
+			}
+		} else {
+			textureButtonText = "None (Texture)";
+		}
+
+		
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
+
+		// Texture drag-drop target with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+				// Payload contains the file path
+				const char* texturePath = (const char*)payload->Data;
+
+				// Load texture using ResourceManager
+				particle.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+
+				if (particle.particleTexture) {
+					particle.texturePath = texturePath;  // Store the path for display
+					particle.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
+					std::cout << "[Inspector] Loaded particle texture: " << texturePath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load particle texture: " << texturePath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		// Right-click to clear texture
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && particle.particleTexture) {
+			ImGui::OpenPopup("ClearParticleTexture");
+		}
+
+		if (ImGui::BeginPopup("ClearParticleTexture")) {
+			if (ImGui::MenuItem("Clear Texture")) {
+				particle.particleTexture = nullptr;
+				particle.texturePath.clear();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+
+		// Emitter Properties Section
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
+		// Emission Rate
+		ImGui::Text("Emission Rate");
+		ImGui::DragFloat("##EmissionRate", &particle.emissionRate, 0.1f, 0.0f, 1000.0f, "%.1f particles/sec");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Number of particles emitted per second");
+		}
+
+		// Max Particles
+		ImGui::Text("Max Particles");
+		ImGui::DragInt("##MaxParticles", &particle.maxParticles, 1, 1, 100000);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Maximum number of particles that can exist at once");
+		}
+
+		// Is Emitting
+		ImGui::Checkbox("Is Emitting", &particle.isEmitting);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
+		}
+
+		// Active Particle Count (Read-only)
+		ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
+
+		ImGui::Spacing();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		// Particle Lifetime
+		ImGui::Text("Lifetime");
+		ImGui::DragFloat("##Lifetime", &particle.particleLifetime, 0.01f, 0.01f, 100.0f, "%.2f seconds");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("How long each particle lives before fading out");
+		}
+
+		// Start Size
+		ImGui::Text("Start Size");
+		ImGui::DragFloat("##StartSize", &particle.startSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial size of particles when spawned");
+		}
+
+		// End Size
+		ImGui::Text("End Size");
+		ImGui::DragFloat("##EndSize", &particle.endSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final size of particles before they die (interpolated over lifetime)");
+		}
+
+		// Start Color
+		ImGui::Text("Start Color");
+		glm::vec4 startColor{ particle.startColor.x, particle.startColor.y, particle.startColor.z, particle.startColorAlpha };
+		ImGui::ColorEdit4("##StartColor", &startColor.r);
+		particle.startColor.x = startColor.x; particle.startColor.y = startColor.y; particle.startColor.z = startColor.z; particle.startColorAlpha = startColor.a;
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial color and alpha of particles when spawned");
+		}
+
+		// End Color
+		ImGui::Text("End Color");
+		glm::vec4 endColor{ particle.endColor.x, particle.endColor.y, particle.endColor.z, particle.endColorAlpha };
+		ImGui::ColorEdit4("##EndColor", &endColor.r);
+		particle.endColor.x = endColor.x; particle.endColor.y = endColor.y; particle.endColor.z = endColor.z; particle.endColorAlpha = endColor.a;
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final color and alpha of particles before they die (interpolated over lifetime)");
+		}
+
+		ImGui::Spacing();
+		ImGui::Text("Physics");
+		ImGui::Separator();
+
+		// Gravity
+		ImGui::Text("Gravity");
+		float gravity[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
+		if (ImGui::DragFloat3("##Gravity", gravity, 0.1f, -50.0f, 50.0f, "%.2f")) {
+			particle.gravity = Vector3D(gravity[0], gravity[1], gravity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Gravity force applied to particles (typically negative Y for downward)");
+		}
+
+		// Initial Velocity
+		ImGui::Text("Initial Velocity");
+		float velocity[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
+		if (ImGui::DragFloat3("##InitialVelocity", velocity, 0.1f, -100.0f, 100.0f, "%.2f")) {
+			particle.initialVelocity = Vector3D(velocity[0], velocity[1], velocity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Base velocity direction for newly spawned particles");
+		}
+
+		// Velocity Randomness
+		ImGui::Text("Velocity Randomness");
+		ImGui::DragFloat("##VelocityRandomness", &particle.velocityRandomness, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Amount of random variation applied to particle velocities");
+		}
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing ParticleComponent: %s", e.what());
+	}
 }
 
 void InspectorPanel::DrawAudioComponent(Entity entity) {
@@ -920,8 +1389,8 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
         if (componentType == "ModelRenderComponent") {
             ModelRenderComponent component; // Use default constructor
 
-            // Set default shader GUID for new components
-            component.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
+			// Set default shader GUID for new components
+			component.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
             // Load the default shader
             std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(component.shaderGUID);
@@ -960,9 +1429,227 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
             std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
         }
 
-    } catch (const std::exception& e) {
-        std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
-    }
+			// Load the default sprite shader
+			std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteShaderGUID);
+			auto shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteShaderGUID, shaderPath);
+
+			SpriteRenderComponent component;
+			component.shader = shader;
+			component.shaderGUID = spriteShaderGUID;
+			component.texture = nullptr; // Will be set via drag-and-drop
+			component.is3D = false; // Default to 2D
+			component.isVisible = true;
+			component.scale = Vector3D(100.0f, 100.0f, 1.0f); // Default 100x100 pixels for 2D
+
+			ecsManager.AddComponent<SpriteRenderComponent>(entity, component);
+
+			// Ensure entity has a Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Sprite positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added SpriteRenderComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "DirectionalLightComponent") {
+			DirectionalLightComponent component;
+			// Set reasonable default values (matching SceneInstance.cpp)
+			component.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+			component.ambient = glm::vec3(0.05f);
+			component.diffuse = glm::vec3(0.4f);
+			component.specular = glm::vec3(0.5f);
+			component.enabled = true;
+
+			ecsManager.AddComponent<DirectionalLightComponent>(entity, component);
+
+			// Ensure entity has a Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+			}
+
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
+
+			std::cout << "[Inspector] Added DirectionalLightComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "PointLightComponent") {
+			PointLightComponent component;
+			// Set reasonable default values (matching SceneInstance.cpp)
+			component.ambient = glm::vec3(0.05f);
+			component.diffuse = glm::vec3(0.8f);
+			component.specular = glm::vec3(1.0f);
+			component.constant = 1.0f;
+			component.linear = 0.09f;
+			component.quadratic = 0.032f;
+			component.enabled = true;
+
+			ecsManager.AddComponent<PointLightComponent>(entity, component);
+
+			// Ensure entity has a Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for PointLight positioning" << std::endl;
+			}
+
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
+
+			std::cout << "[Inspector] Added PointLightComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "SpotLightComponent") {
+			SpotLightComponent component;
+			// Set reasonable default values (matching SceneInstance.cpp)
+			component.direction = glm::vec3(0.0f, 0.0f, -1.0f);
+			component.ambient = glm::vec3(0.0f);
+			component.diffuse = glm::vec3(1.0f);
+			component.specular = glm::vec3(1.0f);
+			component.constant = 1.0f;
+			component.linear = 0.09f;
+			component.quadratic = 0.032f;
+			component.cutOff = 0.976f;      // cos(12.5 degrees)
+			component.outerCutOff = 0.966f; // cos(15 degrees)
+			component.enabled = true;
+
+			ecsManager.AddComponent<SpotLightComponent>(entity, component);
+
+			// Ensure entity has a Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+			}
+
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
+
+			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "ParticleComponent") {
+			ParticleComponent component;
+			// Default values are already set in ParticleComponent's default constructor
+			// emissionRate = 10.0f
+			// maxParticles = 1000
+			// particleLifetime = 2.0f
+			// startSize = 0.1f, endSize = 0.0f
+			// startColor = white, endColor = white with alpha 0
+			// gravity = (0, -9.8, 0)
+			// velocityRandomness = 1.0f
+			// initialVelocity = (0, 1, 0)
+			// isEmitting = true
+
+			component.isVisible = true;
+
+			// Load default particle texture and shader (required for rendering)
+			std::string defaultTexturePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png";
+			component.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(defaultTexturePath);
+			component.texturePath = defaultTexturePath;  // Store path for display
+			component.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(defaultTexturePath);
+			component.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
+
+			ecsManager.AddComponent<ParticleComponent>(entity, component);
+
+			// Ensure entity has a Transform component for emitter positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Particle emitter positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added ParticleComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "TextRenderComponent") {
+			// Load default font and shader GUIDs (matching SceneInstance.cpp)
+			std::string defaultFontPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf";
+			GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile(defaultFontPath);
+			GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
+
+			// Create component using constructor (matching SceneInstance.cpp pattern)
+			TextRenderComponent component("New Text", 48, fontGUID, shaderGUID);
+
+			// Set additional default values
+			component.color = Vector3D(1.0f, 1.0f, 1.0f); // White
+			component.alignment = TextRenderComponent::Alignment::LEFT;
+			component.alignmentInt = 0;
+			component.is3D = false;
+			component.isVisible = true;
+			component.position = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
+			component.scale = 1.0f;
+
+			// Load font and shader resources
+			if (std::filesystem::exists(defaultFontPath)) {
+				component.font = ResourceManager::GetInstance().GetFontResource(defaultFontPath);
+			} else {
+				std::cerr << "[Inspector] Warning: Default font not found at " << defaultFontPath << std::endl;
+			}
+
+			component.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text"));
+			if (!component.shader) {
+				std::cerr << "[Inspector] Warning: Failed to load text shader" << std::endl;
+			}
+
+			ecsManager.AddComponent<TextRenderComponent>(entity, component);
+
+			// Ensure entity has a Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				transform.localPosition = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Text positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added TextRenderComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "ColliderComponent") {
+			ColliderComponent component;
+			// Set default box shape - shape will be created by physics system
+			component.shapeType = ColliderShapeType::Box;
+			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
+			component.layer = Layers::MOVING;
+			component.shape = nullptr; // Physics system will create the shape
+			component.version = 1; // Mark as needing creation
+
+			ecsManager.AddComponent<ColliderComponent>(entity, component);
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Collider" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added ColliderComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "RigidBodyComponent") {
+			RigidBodyComponent component;
+			component.motion = Motion::Dynamic;
+			component.ccd = false;
+
+			ecsManager.AddComponent<RigidBodyComponent>(entity, component);
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for RigidBody" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
+		}
+		else {
+			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
+		}
+
+	} catch (const std::exception& e) {
+		std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
+	}
 }
 
 bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags) {

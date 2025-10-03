@@ -19,9 +19,17 @@ bool ModelSystem::Initialise()
     for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
         modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+#ifndef ANDROID
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
         modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+#else
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
+        modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+#endif
+        std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
+        if (!materialPath.empty())
+            modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");

@@ -184,7 +184,8 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
 void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
 {
-    assert(!entityName.empty() && "Entity name cannot be empty");
+    if (!renamingEntity)
+        assert(!entityName.empty() && "Entity name cannot be empty");
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -229,6 +230,84 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
         if (ImGui::IsItemClicked())
             GUIManager::SetSelectedEntity(entityId);
+
+            // Double-click to focus the entity in the scene view
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                try {
+                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                    if (ecsManager.HasComponent<Transform>(entityId)) {
+                        Transform& transform = ecsManager.GetComponent<Transform>(entityId);
+                        glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                          transform.worldMatrix.m.m13,
+                                          transform.worldMatrix.m.m23);
+
+                        std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
+                                 << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+
+                        // Determine if entity is 2D or 3D
+                        bool entityIs3D = true; // Default to 3D
+                        bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
+                        bool hasText = ecsManager.HasComponent<TextRenderComponent>(entityId);
+                        bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(entityId);
+
+                        if (hasModel) {
+                            entityIs3D = true;
+                        } else if (hasSprite) {
+                            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
+                            entityIs3D = sprite.is3D;
+                            std::cout << "[SceneHierarchy] Entity has sprite at position ("
+                                     << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
+                                     << ") is3D=" << sprite.is3D << std::endl;
+                            // For 2D sprites, use the sprite position instead of transform
+                            if (!sprite.is3D) {
+                                entityPos = sprite.position.ConvertToGLM();
+                                std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
+                            }
+                        } else if (hasText) {
+                            auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
+                            entityIs3D = text.is3D;
+                            std::cout << "[SceneHierarchy] Entity has text component is3D=" << text.is3D << std::endl;
+                        }
+
+                        // Switch view mode to match entity
+                        EditorState& editorState = EditorState::GetInstance();
+                        bool currentIs2D = editorState.Is2DMode();
+                        bool targetIs2D = !entityIs3D;
+
+                        if (currentIs2D != targetIs2D) {
+                            // Need to switch modes
+                            EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                            editorState.SetViewMode(newViewMode);
+
+                            // Sync with GraphicsManager
+                            GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                            GraphicsManager::GetInstance().SetViewMode(gfxMode);
+
+                            std::cout << "[SceneHierarchy] Switched view mode to " << (entityIs3D ? "3D" : "2D") << std::endl;
+                        }
+
+                        // Frame the entity in the scene camera
+                        auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
+                        if (scenePanelPtr) {
+                            auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
+                            if (scenePanel) {
+                                scenePanel->SetCameraTarget(entityPos);
+                                std::cout << "[SceneHierarchy] Set camera target to ("
+                                         << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
+                            } else {
+                                std::cout << "[SceneHierarchy] Failed to cast to ScenePanel" << std::endl;
+                            }
+                        } else {
+                            std::cout << "[SceneHierarchy] Scene panel not found" << std::endl;
+                        }
+                    } else {
+                        std::cout << "[SceneHierarchy] Entity '" << entityName << "' has no Transform component" << std::endl;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
+                }
+            }
+        }
     }
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
