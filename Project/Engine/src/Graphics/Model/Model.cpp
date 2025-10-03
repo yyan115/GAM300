@@ -82,6 +82,9 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //
 //#endif
 
+    std::filesystem::path p(assetPath);
+    modelPath = assetPath;
+    modelName = p.stem().generic_string();
 	// Recursive function
 	ProcessNode(scene->mRootNode, scene);
 
@@ -295,6 +298,10 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 //#ifdef ANDROID
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Creating mesh with material pointer=%p", material.get());
 //#endif
+
+    // Compile the material for the mesh if it hasn't been compiled before yet.
+    std::string materialPath = modelName + "_" + material->GetName() + ".mat";
+    AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material);
     return Mesh(vertices, indices, material);
 }
 
@@ -559,8 +566,14 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
 
 bool Model::LoadResource(const std::string& resourcePath, const std::string& assetPath)
 {
-    assetPath;
     meshes.clear();
+
+    // Set model name from asset path
+    if (!assetPath.empty()) {
+        std::filesystem::path p(assetPath);
+        modelName = p.filename().generic_string();
+        modelPath = assetPath;
+    }
 //#ifdef __ANDROID__
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadResource called with path: %s", assetPath.c_str());
 //#endif

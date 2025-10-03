@@ -130,7 +130,7 @@ void PlayControlPanel::OnImGuiRender() {
 }
 
 void PlayControlPanel::RenderTransformTools() {
-    // Transform tool buttons with Unity-style layout and highlighting
+    // Transform tool buttons with layout and highlighting
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12.0f, 6.0f)); // Increased padding
     
     float toolButtonHeight = 30.0f; // Same height as play/stop buttons

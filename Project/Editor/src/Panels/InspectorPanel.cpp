@@ -7,8 +7,13 @@
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
+#include <Graphics/Particle/ParticleComponent.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
+#include <Physics/CollisionLayers.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
+#include <Graphics/GraphicsManager.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
@@ -42,6 +47,10 @@ InspectorPanel::InspectorPanel()
 }
 
 void InspectorPanel::OnImGuiRender() {
+	
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_INSPECTOR);
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_INSPECTOR);
+
 	if (ImGui::Begin(name.c_str(), &isOpen)) {
 		// Check for selected asset first (higher priority)
 		GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
@@ -169,8 +178,28 @@ void InspectorPanel::OnImGuiRender() {
 					// Draw NameComponent if it exists
 					if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
 						DrawNameComponent(displayEntity);
-						ImGui::Separator();
 					}
+
+					
+					ImGui::Spacing();
+
+					// Tag dropdown
+					ImGui::Text("Tag");
+					ImGui::SameLine(80);
+					ImGui::SetNextItemWidth(-1);
+					const char* tags[] = { "Untagged", "Player", "Enemy", "UI", "Camera", "Light" };
+					static int currentTag = 0;
+					ImGui::Combo("##Tag", &currentTag, tags, IM_ARRAYSIZE(tags));
+
+					// Layer dropdown
+					ImGui::Text("Layer");
+					ImGui::SameLine(80);
+					ImGui::SetNextItemWidth(-1);
+					const char* layers[] = { "Default", "UI", "Water", "Ignore Raycast", "PostProcessing" };
+					static int currentLayer = 0;
+					ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
+
+					ImGui::Separator();
 
 					// Draw Transform component if it exists
 					if (ecsManager.HasComponent<Transform>(displayEntity)) {
@@ -200,6 +229,13 @@ void InspectorPanel::OnImGuiRender() {
 						}
 					}
 
+					// Draw ParticleComponent if it exists
+					if (ecsManager.HasComponent<ParticleComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Particle System", displayEntity, "ParticleComponent")) {
+							DrawParticleComponent(displayEntity);
+						}
+					}
+
 					// Draw AudioComponent if present
 					if (ecsManager.HasComponent<AudioComponent>(displayEntity)) {
 						if (DrawComponentHeaderWithRemoval("Audio", displayEntity, "AudioComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -209,6 +245,20 @@ void InspectorPanel::OnImGuiRender() {
 
 					// Draw Light Components if present
 					DrawLightComponents(displayEntity);
+
+					// Draw Collider Component if present
+					if (ecsManager.HasComponent<ColliderComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Collider", displayEntity, "ColliderComponent")) {
+							DrawColliderComponent(displayEntity);
+						}
+					}
+
+					// Draw RigidBody Component if present
+					if (ecsManager.HasComponent<RigidBodyComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("RigidBody", displayEntity, "RigidBodyComponent")) {
+							DrawRigidBodyComponent(displayEntity);
+						}
+					}
 
 					// Add Component button
 					ImGui::Separator();
@@ -225,6 +275,8 @@ void InspectorPanel::OnImGuiRender() {
 	ProcessPendingComponentRemovals();
 
 	ImGui::End();
+
+	ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
 }
 
 void InspectorPanel::DrawNameComponent(Entity entity) {
@@ -312,20 +364,20 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 		// Display model info (read-only for now)
 		ImGui::Text("Model Renderer Component");
 
-		// Model drag-drop slot (Unity style)
+		// Model drag-drop slot
 		ImGui::Text("Model:");
 		ImGui::SameLine();
 
 		// Create a model slot button that shows current model
 		std::string modelButtonText;
 		if (modelRenderer.model) {
-			// Extract filename from model path or use a default name
-			modelButtonText = "Loaded Model (" + std::to_string(modelRenderer.model->meshes.size()) + " meshes)";
+			// Show the model name if available
+			modelButtonText = modelRenderer.model->modelName.empty() ? "Unnamed Model" : modelRenderer.model->modelName;
 		} else {
 			modelButtonText = "None (Model)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float buttonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(modelButtonText.c_str(), buttonWidth);
 
@@ -352,7 +404,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 
 		ImGui::Separator();
 
-		// Material drag-drop slot (Unity style)
+		// Material drag-drop slot
 		ImGui::Text("Material:");
 		ImGui::SameLine();
 
@@ -373,7 +425,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 			buttonText = "None (Material)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float materialButtonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(buttonText.c_str(), materialButtonWidth);
 
@@ -409,7 +461,7 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 
 		ImGui::PushID("SpriteRenderComponent");
 
-		// Texture drag-drop slot (Unity style)
+		// Texture drag-drop slot
 		ImGui::Text("Texture:");
 		ImGui::SameLine();
 
@@ -427,9 +479,9 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 			textureButtonText = "None (Texture)";
 		}
 
-		// Unity-style drag-drop slot
-		float buttonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
+		
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
 
 		// Texture drag-drop target with visual feedback
 		if (EditorComponents::BeginDragDropTarget()) {
@@ -645,6 +697,228 @@ void InspectorPanel::DrawTextRenderComponent(Entity entity) {
 	}
 }
 
+void InspectorPanel::DrawParticleComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ParticleComponent& particle = ecsManager.GetComponent<ParticleComponent>(entity);
+
+		ImGui::PushID("ParticleComponent");
+
+		// Play/Pause/Stop buttons for editor preview (shows in Scene panel)
+		float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+		// Play button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPlayingInEditor && !particle.isPausedInEditor ? ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0))) {
+			particle.isPlayingInEditor = true;
+			particle.isPausedInEditor = false;
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Play particle preview in Scene panel");
+		}
+
+		ImGui::PopStyleColor(3);
+		ImGui::SameLine();
+
+		// Pause button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPausedInEditor ? ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0))) {
+			if (particle.isPlayingInEditor) {
+				particle.isPausedInEditor = !particle.isPausedInEditor;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Pause particle preview (keeps existing particles)");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		// Stop button (full width)
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+			particle.isPlayingInEditor = false;
+			particle.isPausedInEditor = false;
+			particle.particles.clear();  // Clear all particles on stop
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Stop and clear all particles");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Texture drag-drop slot
+		ImGui::Text("Texture:");
+		ImGui::SameLine();
+
+		// Create texture slot button showing current texture
+		std::string textureButtonText;
+		if (particle.particleTexture) {
+			// Extract filename from texture path if available
+			if (!particle.texturePath.empty()) {
+				std::filesystem::path texPath(particle.texturePath);
+				textureButtonText = texPath.filename().string();
+			} else {
+				textureButtonText = "Loaded Texture";
+			}
+		} else {
+			textureButtonText = "None (Texture)";
+		}
+
+		
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
+
+		// Texture drag-drop target with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+				// Payload contains the file path
+				const char* texturePath = (const char*)payload->Data;
+
+				// Load texture using ResourceManager
+				particle.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+
+				if (particle.particleTexture) {
+					particle.texturePath = texturePath;  // Store the path for display
+					std::cout << "[Inspector] Loaded particle texture: " << texturePath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load particle texture: " << texturePath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		// Right-click to clear texture
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && particle.particleTexture) {
+			ImGui::OpenPopup("ClearParticleTexture");
+		}
+
+		if (ImGui::BeginPopup("ClearParticleTexture")) {
+			if (ImGui::MenuItem("Clear Texture")) {
+				particle.particleTexture = nullptr;
+				particle.texturePath.clear();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+
+		// Emitter Properties Section
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
+		// Emission Rate
+		ImGui::Text("Emission Rate");
+		ImGui::DragFloat("##EmissionRate", &particle.emissionRate, 0.1f, 0.0f, 1000.0f, "%.1f particles/sec");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Number of particles emitted per second");
+		}
+
+		// Max Particles
+		ImGui::Text("Max Particles");
+		ImGui::DragInt("##MaxParticles", &particle.maxParticles, 1, 1, 100000);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Maximum number of particles that can exist at once");
+		}
+
+		// Is Emitting
+		ImGui::Checkbox("Is Emitting", &particle.isEmitting);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
+		}
+
+		// Active Particle Count (Read-only)
+		ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
+
+		ImGui::Spacing();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		// Particle Lifetime
+		ImGui::Text("Lifetime");
+		ImGui::DragFloat("##Lifetime", &particle.particleLifetime, 0.01f, 0.01f, 100.0f, "%.2f seconds");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("How long each particle lives before fading out");
+		}
+
+		// Start Size
+		ImGui::Text("Start Size");
+		ImGui::DragFloat("##StartSize", &particle.startSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial size of particles when spawned");
+		}
+
+		// End Size
+		ImGui::Text("End Size");
+		ImGui::DragFloat("##EndSize", &particle.endSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final size of particles before they die (interpolated over lifetime)");
+		}
+
+		// Start Color
+		ImGui::Text("Start Color");
+		ImGui::ColorEdit4("##StartColor", &particle.startColor.r);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial color and alpha of particles when spawned");
+		}
+
+		// End Color
+		ImGui::Text("End Color");
+		ImGui::ColorEdit4("##EndColor", &particle.endColor.r);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final color and alpha of particles before they die (interpolated over lifetime)");
+		}
+
+		ImGui::Spacing();
+		ImGui::Text("Physics");
+		ImGui::Separator();
+
+		// Gravity
+		ImGui::Text("Gravity");
+		float gravity[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
+		if (ImGui::DragFloat3("##Gravity", gravity, 0.1f, -50.0f, 50.0f, "%.2f")) {
+			particle.gravity = glm::vec3(gravity[0], gravity[1], gravity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Gravity force applied to particles (typically negative Y for downward)");
+		}
+
+		// Initial Velocity
+		ImGui::Text("Initial Velocity");
+		float velocity[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
+		if (ImGui::DragFloat3("##InitialVelocity", velocity, 0.1f, -100.0f, 100.0f, "%.2f")) {
+			particle.initialVelocity = glm::vec3(velocity[0], velocity[1], velocity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Base velocity direction for newly spawned particles");
+		}
+
+		// Velocity Randomness
+		ImGui::Text("Velocity Randomness");
+		ImGui::DragFloat("##VelocityRandomness", &particle.velocityRandomness, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Amount of random variation applied to particle velocities");
+		}
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing ParticleComponent: %s", e.what());
+	}
+}
+
 void InspectorPanel::DrawAudioComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -652,7 +926,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
 
 		ImGui::PushID("AudioComponent");
 
-		// Audio Clip drag-drop slot (Unity-style)
+		// Audio Clip drag-drop slot
 		ImGui::Text("Clip:");
 		ImGui::SameLine();
 
@@ -1100,6 +1374,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "SpriteRenderComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<ParticleComponent>(entity)) {
+					if (ImGui::MenuItem("Particle System")) {
+						AddComponent(entity, "ParticleComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -1128,6 +1407,21 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				if (!ecsManager.HasComponent<SpotLightComponent>(entity)) {
 					if (ImGui::MenuItem("Spot Light")) {
 						AddComponent(entity, "SpotLightComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			// Physics Components
+			if (ImGui::BeginMenu("Physics")) {
+				if (!ecsManager.HasComponent<ColliderComponent>(entity)) {
+					if (ImGui::MenuItem("Collider")) {
+						AddComponent(entity, "ColliderComponent");
+					}
+				}
+				if (!ecsManager.HasComponent<RigidBodyComponent>(entity)) {
+					if (ImGui::MenuItem("RigidBody")) {
+						AddComponent(entity, "RigidBodyComponent");
 					}
 				}
 				ImGui::EndMenu();
@@ -1275,6 +1569,74 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "ParticleComponent") {
+			ParticleComponent component;
+			// Default values are already set in ParticleComponent's default constructor
+			// emissionRate = 10.0f
+			// maxParticles = 1000
+			// particleLifetime = 2.0f
+			// startSize = 0.1f, endSize = 0.0f
+			// startColor = white, endColor = white with alpha 0
+			// gravity = (0, -9.8, 0)
+			// velocityRandomness = 1.0f
+			// initialVelocity = (0, 1, 0)
+			// isEmitting = true
+
+			component.isVisible = true;
+
+			// Load default particle texture and shader (required for rendering)
+			std::string defaultTexturePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png";
+			component.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(defaultTexturePath);
+			component.texturePath = defaultTexturePath;  // Store path for display
+			component.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
+
+			ecsManager.AddComponent<ParticleComponent>(entity, component);
+
+			// Ensure entity has a Transform component for emitter positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Particle emitter positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added ParticleComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "ColliderComponent") {
+			ColliderComponent component;
+			// Set default box shape - shape will be created by physics system
+			component.shapeType = ColliderShapeType::Box;
+			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
+			component.layer = Layers::MOVING;
+			component.shape = nullptr; // Physics system will create the shape
+			component.version = 1; // Mark as needing creation
+
+			ecsManager.AddComponent<ColliderComponent>(entity, component);
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Collider" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added ColliderComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "RigidBodyComponent") {
+			RigidBodyComponent component;
+			component.motion = Motion::Dynamic;
+			component.ccd = false;
+
+			ecsManager.AddComponent<RigidBodyComponent>(entity, component);
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for RigidBody" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1285,26 +1647,57 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 }
 
 bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags) {
+	
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+
+	
+	ImGui::Spacing();
+
+	
+	ImGui::PushID(label);
+	bool componentEnabled = true; // TODO: Get actual enabled state from component
+	ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
+	ImGui::PopID();
+
+	// Collapsing header on same line
+	ImGui::SameLine();
 	bool isOpen = ImGui::CollapsingHeader(label, flags);
 
-	// Handle right-click for component removal
-	std::string popupName = "ComponentContextMenu_" + componentType;
-	if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) { // Right-click
+	
+	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
+	ImGui::PushID((label + std::string("_gear")).c_str());
+	if (ImGui::SmallButton(ICON_FA_GEAR)) {
+		std::string popupName = "ComponentContextMenu_" + componentType;
 		ImGui::OpenPopup(popupName.c_str());
 	}
+	ImGui::PopID();
 
 	// Context menu for component removal
+	std::string popupName = "ComponentContextMenu_" + componentType;
 	if (ImGui::BeginPopup(popupName.c_str())) {
 		if (ImGui::MenuItem("Remove Component")) {
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({entity, componentType});
 		}
+		if (ImGui::MenuItem("Reset")) {
+			// TODO: Implement reset functionality
+		}
+		if (ImGui::MenuItem("Copy Component")) {
+			// TODO: Implement copy functionality
+		}
+		if (ImGui::MenuItem("Paste Component Values")) {
+			// TODO: Implement paste functionality
+		}
 		ImGui::EndPopup();
 	}
 
-	// Show tooltip on hover
-	if (ImGui::IsItemHovered()) {
-		ImGui::SetTooltip("Right-click to remove component");
+	ImGui::PopStyleColor(3);
+
+	
+	if (isOpen) {
+		ImGui::Spacing();
 	}
 
 	return isOpen;
@@ -1339,6 +1732,14 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);
 				std::cout << "[Inspector] Removed AudioComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ColliderComponent") {
+				ecsManager.RemoveComponent<ColliderComponent>(request.entity);
+				std::cout << "[Inspector] Removed ColliderComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "RigidBodyComponent") {
+				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
+				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -1383,6 +1784,8 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 			std::cout << "[Inspector] Model loaded successfully, applying to ModelRenderComponent..." << std::endl;
 			modelRenderer.model = loadedModel;
 			modelRenderer.modelGUID = modelGuid;
+			modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
+			modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
 			// Ensure entity has a shader for rendering
 			if (modelRenderer.shaderGUID.high == 0 && modelRenderer.shaderGUID.low == 0) {
@@ -1390,18 +1793,19 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 				modelRenderer.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
 			}
 
-			// Load the shader if it's not already loaded
-			if (!modelRenderer.shader) {
-				std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;
-				std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelRenderer.shaderGUID);
-				modelRenderer.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelRenderer.shaderGUID, shaderPath);
+			//// Load the shader if it's not already loaded
+			//if (!modelRenderer.shader) {
+			//	std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;
+			//	//std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelRenderer.shaderGUID);
+			//	// By default, always load the default shader for models.
+			//	modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
 
-				if (modelRenderer.shader) {
-					std::cout << "[Inspector] Shader loaded successfully" << std::endl;
-				} else {
-					std::cerr << "[Inspector] Failed to load shader for entity " << entity << std::endl;
-				}
-			}
+			//	if (modelRenderer.shader) {
+			//		std::cout << "[Inspector] Shader loaded successfully" << std::endl;
+			//	} else {
+			//		std::cerr << "[Inspector] Failed to load shader for entity " << entity << std::endl;
+			//	}
+			//}
 
 			std::cout << "[Inspector] Model successfully applied to entity " << entity << std::endl;
 		} else {
@@ -1410,5 +1814,135 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 
 	} catch (const std::exception& e) {
 		std::cerr << "[Inspector] Error applying model to entity " << entity << ": " << e.what() << std::endl;
+	}
+}
+
+void InspectorPanel::DrawColliderComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(entity);
+
+		ImGui::PushID("ColliderComponent");
+
+		// Shape Type dropdown
+		ImGui::Text("Shape Type");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		const char* shapeTypes[] = { "Box", "Sphere", "Capsule", "Cylinder" };
+		int currentShapeType = static_cast<int>(collider.shapeType);
+		EditorComponents::PushComboColors();
+		if (ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes))) {
+			collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
+			collider.version++; // Mark for recreation
+		}
+		EditorComponents::PopComboColors();
+
+		// Shape Parameters based on type
+		bool shapeParamsChanged = false;
+		switch (collider.shapeType) {
+			case ColliderShapeType::Box: {
+				ImGui::Text("Half Extents");
+				ImGui::SameLine();
+				float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
+				if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
+					shapeParamsChanged = true;
+				}
+				break;
+			}
+			case ColliderShapeType::Sphere: {
+				ImGui::Text("Radius");
+				ImGui::SameLine();
+				if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					shapeParamsChanged = true;
+				}
+				break;
+			}
+			case ColliderShapeType::Capsule: {
+				ImGui::Text("Radius");
+				ImGui::SameLine();
+				if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					shapeParamsChanged = true;
+				}
+				ImGui::Text("Half Height");
+				ImGui::SameLine();
+				if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					shapeParamsChanged = true;
+				}
+				break;
+			}
+			case ColliderShapeType::Cylinder: {
+				ImGui::Text("Radius");
+				ImGui::SameLine();
+				if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					shapeParamsChanged = true;
+				}
+				ImGui::Text("Half Height");
+				ImGui::SameLine();
+				if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+					shapeParamsChanged = true;
+				}
+				break;
+			}
+		}
+
+		if (shapeParamsChanged) {
+			collider.version++; // Mark for recreation - physics system will recreate the shape
+		}
+
+		// Physics Layer dropdown
+		ImGui::Text("Layer");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		const char* layers[] = { "Non-Moving", "Moving", "Sensor", "Debris" };
+		int currentLayer = static_cast<int>(collider.layer);
+		EditorComponents::PushComboColors();
+		if (ImGui::Combo("##PhysicsLayer", &currentLayer, layers, IM_ARRAYSIZE(layers))) {
+			collider.layer = static_cast<JPH::ObjectLayer>(currentLayer);
+			collider.version++; // Mark for recreation
+		}
+		EditorComponents::PopComboColors();
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error rendering ColliderComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		RigidBodyComponent& rigidBody = ecsManager.GetComponent<RigidBodyComponent>(entity);
+
+		ImGui::PushID("RigidBodyComponent");
+
+		// Motion Type dropdown
+		ImGui::Text("Motion");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
+		int currentMotion = static_cast<int>(rigidBody.motion);
+		EditorComponents::PushComboColors();
+		if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
+			rigidBody.motion = static_cast<Motion>(currentMotion);
+			rigidBody.motion_dirty = true; // Mark for recreation
+		}
+		EditorComponents::PopComboColors();
+
+		// CCD checkbox
+		ImGui::Text("CCD");
+		ImGui::SameLine();
+		if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) {
+			rigidBody.motion_dirty = true; // Mark for recreation
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error rendering RigidBodyComponent: %s", e.what());
 	}
 }

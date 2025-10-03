@@ -35,6 +35,9 @@ public:
     // Saved 3D position for mode switching
     glm::vec3 saved3DPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    // Migration flag to prevent spam
+    bool hasMigratedToTransform = false;
+
     SpriteRenderComponent(std::shared_ptr<Texture> tex, std::shared_ptr<Shader> s)
         : texture(std::move(tex)), shader(std::move(s)) {
         renderOrder = 200; // Render after 3D models but before UI

@@ -43,10 +43,10 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
-echo [4/4] Testing vcpkg installation...
-vcpkg.exe version
+echo [4/4] Integrating vcpkg with Visual Studio...
+vcpkg.exe integrate install
 if !errorlevel! neq 0 (
-    echo ERROR: vcpkg installation verification failed
+    echo ERROR: Failed to integrate vcpkg with Visual Studio
     pause
     exit /b 1
 )
@@ -55,10 +55,9 @@ echo.
 echo ========================================
 echo SUCCESS! vcpkg has been set up successfully.
 echo.
-echo Next steps:
-echo 1. Open Visual Studio or VS Code
-echo 2. Configure with: cmake --preset debug (or other preset)
-echo 3. Build with: cmake --build Build/debug
+echo vcpkg is now integrated with Visual Studio.
+echo When you open the solution in Visual Studio, it will
+echo automatically install dependencies from vcpkg.json
 echo ========================================
 echo.
 pause

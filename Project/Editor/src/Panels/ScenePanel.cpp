@@ -4,6 +4,7 @@
 #include "Panels/SceneHierarchyPanel.hpp"
 #include "Panels/GamePanel.hpp"
 #include "EditorInputManager.hpp"
+#include "EditorComponents.hpp"
 #include "Graphics/SceneRenderer.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -14,6 +15,7 @@
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Graphics/Material.hpp"
+#include "Physics/ColliderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
@@ -52,8 +54,11 @@ void ScenePanel::SetCameraTarget(const glm::vec3& target) {
     bool is2DMode = editorState.Is2DMode();
 
     if (is2DMode) {
+        // In 2D mode, only update target - don't recalculate camera vectors
+        // (to preserve 2D panning orientation)
         editorCamera.Position = glm::vec3(target.x, target.y, target.z + 5.0f);
     } else {
+        // In 3D mode, frame the target properly
         if (editorCamera.Distance > 10.0f) {
             editorCamera.Distance = 5.0f;
         }
@@ -106,7 +111,7 @@ void ScenePanel::DrawGameViewportIndicator() {
 
     // Draw the rectangle using ImGui
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    ImU32 color = IM_COL32(180, 180, 180, 255); // Light gray (Unity-style)
+    ImU32 color = IM_COL32(180, 180, 180, 255); // Light gray
     float thickness = 2.0f;
 
     drawList->AddLine(screenTopLeft, screenTopRight, color, thickness);
@@ -284,10 +289,11 @@ void ScenePanel::HandleEntitySelection() {
     // Only handle selection on left click (not during camera operations)
     ImGuiIO& io = ImGui::GetIO();
     bool isLeftClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    bool isDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
     bool isAltPressed = io.KeyAlt;
 
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
-    if (isLeftClicked && !isAltPressed) {
+    if ((isLeftClicked || isDoubleClicked) && !isAltPressed) {
         // Get mouse position relative to the scene window
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 windowPos = ImGui::GetWindowPos();
@@ -346,18 +352,81 @@ void ScenePanel::HandleEntitySelection() {
                 viewMatrix, projMatrix
             );
 
-            // Perform raycast against scene entities (filter by 2D/3D mode)
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, INVALID_ENTITY, is2DMode);
+            // Perform raycast (filter for single-click, don't filter for double-click)
+            bool shouldFilter = !isDoubleClicked;
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, INVALID_ENTITY, shouldFilter, is2DMode);
 
             if (hit.hit) {
-                // Entity found, select it
+                // Check if entity matches current mode
+                bool entityIs3D = RaycastUtil::IsEntity3D(hit.entity);
+                bool entityMatchesMode = (is2DMode && !entityIs3D) || (!is2DMode && entityIs3D);
+
+                ENGINE_PRINT("[ScenePanel] Hit entity ", hit.entity, " - entityIs3D: ", entityIs3D,
+                           ", currentMode is2D: ", is2DMode, ", matchesMode: ", entityMatchesMode,
+                           ", isDoubleClick: ", isDoubleClicked, "\n");
+
+                // Handle double-click: switch mode and focus
+                if (isDoubleClicked) {
+                    ENGINE_PRINT("[ScenePanel] Double-click detected!\n");
+
+                    if (!entityMatchesMode) {
+                        ENGINE_PRINT("[ScenePanel] Entity doesn't match mode - switching modes\n");
+                        ENGINE_PRINT("[ScenePanel] Before switch - EditorState is2D: ", editorState.Is2DMode(), "\n");
+
+                        // Entity is in opposite mode - switch mode
+                        EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                        editorState.SetViewMode(newViewMode);
+
+                        ENGINE_PRINT("[ScenePanel] After EditorState.SetViewMode - is2D: ", editorState.Is2DMode(), "\n");
+
+                        // Sync with GraphicsManager (important!)
+                        GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                        GraphicsManager::GetInstance().SetViewMode(gfxMode);
+
+                        ENGINE_PRINT("[ScenePanel] Double-click: Switched to ", (entityIs3D ? "3D" : "2D"), " mode\n");
+
+                        // Update is2DMode for focus calculation
+                        is2DMode = editorState.Is2DMode();
+                        ENGINE_PRINT("[ScenePanel] Updated is2DMode to: ", is2DMode, "\n");
+                    } else {
+                        ENGINE_PRINT("[ScenePanel] Entity matches mode - no mode switch needed\n");
+                    }
+
+                    // Focus on the entity
+                    try {
+                        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecsManager.HasComponent<Transform>(hit.entity)) {
+                            Transform& transform = ecsManager.GetComponent<Transform>(hit.entity);
+                            Vector3D targetPos(transform.worldMatrix.m.m03,
+                                             transform.worldMatrix.m.m13,
+                                             transform.worldMatrix.m.m23);
+
+                            glm::vec3 entityPos(targetPos.x, targetPos.y, targetPos.z);
+
+                            if (is2DMode) {
+                                // Focus in 2D
+                                editorCamera.Target = glm::vec3(targetPos.x, targetPos.y, 0.0f);
+                            } else {
+                                // Focus in 3D
+                                editorCamera.FrameTarget(entityPos, 5.0f);
+                            }
+                            ENGINE_PRINT("[ScenePanel] Focused camera on entity ", hit.entity, "\n");
+                        }
+                    } catch (const std::exception& e) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScenePanel] Error focusing on entity: ", e.what(), "\n");
+                    }
+                }
+
+                // Select the entity (for both single and double click)
                 GUIManager::SetSelectedEntity(hit.entity);
                 ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
                     , " at distance ", hit.distance, "\n");
             } else {
-                // No entity hit, clear selection
-                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
+                // No entity hit, clear selection (only on single click)
+                if (!isDoubleClicked) {
+                    GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+                    ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
+                }
             }
             ENGINE_PRINT("[ScenePanel] Mouse clicked at (" , relativeX , ", " , relativeY
                 , ") in scene bounds (", sceneWidth, "x", sceneHeight, ")\n"); 
@@ -368,6 +437,10 @@ void ScenePanel::HandleEntitySelection() {
 
 void ScenePanel::OnImGuiRender()
 {
+    
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_VIEWPORT);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_VIEWPORT);
+
     // Update input manager state
     EditorInputManager::Update();
 
@@ -388,8 +461,25 @@ void ScenePanel::OnImGuiRender()
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
+        // Optimize: Reduce render frequency when window is not focused
+        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+        static int unfocusedFrameCounter = 0;
+        bool shouldRender = true;
+
+        if (!isFocused) {
+            unfocusedFrameCounter++;
+            // Render unfocused panel every 3rd frame instead of every frame
+            if (unfocusedFrameCounter % 3 != 0) {
+                shouldRender = false;
+            }
+        } else {
+            unfocusedFrameCounter = 0;
+        }
+
         // Render the scene with our editor camera to the framebuffer
-        RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
+        if (shouldRender) {
+            RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
+        }
 
         // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
@@ -423,10 +513,21 @@ void ScenePanel::OnImGuiRender()
             }
 
             // Hover state for input routing
-            isSceneHovered = ImGui::IsWindowHovered();
+            // Use flags to ensure hover works correctly when docked with other panels
+            isSceneHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+            // Auto-focus on interaction (any mouse click)
+            if (isSceneHovered && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+                                   ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
+                                   ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+                ImGui::SetWindowFocus();
+            }
 
             // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
+
+            // Draw collider gizmos for selected entity
+            DrawColliderGizmos();
 
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
@@ -458,6 +559,8 @@ void ScenePanel::OnImGuiRender()
         ImGui::PopID(); // <--- NEW
     }
     ImGui::End();
+
+    ImGui::PopStyleColor(2);
 }
 
 void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize)
@@ -519,7 +622,7 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
         SceneRenderer::EndSceneRender();
 
         // Now both the visual representation AND ImGuizmo overlay use our editor camera
-        // This gives us proper Unity-style editor controls
+        // This gives us proper editor controls
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in RenderSceneWithEditorCamera: ", e.what(), "\n");
@@ -889,7 +992,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             // Raycast against scene to find placement position (exclude preview entity, filter by 2D/3D mode)
             EditorState& editorState = EditorState::GetInstance();
             bool is2DMode = editorState.Is2DMode();
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity, is2DMode);
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity, true, is2DMode);
 
             if (hit.hit) {
                 // Hit an object - place on surface
@@ -1028,7 +1131,9 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
         if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
             ModelRenderComponent modelRenderer;
             modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+            modelRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(previewModelPath);
+            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
+            modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
             if (modelRenderer.model && modelRenderer.shader) {
                 ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);
@@ -1051,5 +1156,256 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error spawning model entity: ", e.what(), "\n");
         return static_cast<Entity>(-1);
+    }
+}
+
+void ScenePanel::DrawColliderGizmos() {
+    Entity selectedEntity = GUIManager::GetSelectedEntity();
+    if (selectedEntity == static_cast<Entity>(-1)) return;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Check if entity has both Transform and Collider
+        if (!ecsManager.HasComponent<Transform>(selectedEntity) ||
+            !ecsManager.HasComponent<ColliderComponent>(selectedEntity)) {
+            return;
+        }
+
+        Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+        ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
+
+        // Get world position and scale from transform
+        glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+        glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+
+        // Get viewport dimensions from current ImGui window
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        if (windowSize.x == 0 || windowSize.y == 0) return;
+
+        float aspectRatio = windowSize.x / windowSize.y;
+
+        // Project to screen space
+        glm::mat4 view = editorCamera.GetViewMatrix();
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+        glm::mat4 vp = projection * view;
+
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+
+        // Green color for collider gizmos (like Unity)
+        ImU32 gizmoColor = IM_COL32(0, 255, 0, 255);
+
+        // Helper lambda to project 3D point to screen space with depth check
+        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
+            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
+
+            // Check if point is behind camera or at camera plane
+            if (clipSpace.w <= 0.0001f) {
+                isVisible = false;
+                return ImVec2(-10000, -10000);
+            }
+
+            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+
+            // Convert NDC to screen coordinates
+            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
+            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
+
+            isVisible = true;
+            return ImVec2(screenX, screenY);
+        };
+
+        // Draw based on shape type
+        switch (collider.shapeType) {
+            case ColliderShapeType::Box: {
+                // Draw wireframe box - apply transform scale to extents
+                glm::vec3 extents = glm::vec3(
+                    collider.boxHalfExtents.x * worldScale.x,
+                    collider.boxHalfExtents.y * worldScale.y,
+                    collider.boxHalfExtents.z * worldScale.z
+                );
+
+                // 8 corners of the box
+                glm::vec3 corners[8] = {
+                    worldPos + glm::vec3(-extents.x, -extents.y, -extents.z),
+                    worldPos + glm::vec3( extents.x, -extents.y, -extents.z),
+                    worldPos + glm::vec3( extents.x,  extents.y, -extents.z),
+                    worldPos + glm::vec3(-extents.x,  extents.y, -extents.z),
+                    worldPos + glm::vec3(-extents.x, -extents.y,  extents.z),
+                    worldPos + glm::vec3( extents.x, -extents.y,  extents.z),
+                    worldPos + glm::vec3( extents.x,  extents.y,  extents.z),
+                    worldPos + glm::vec3(-extents.x,  extents.y,  extents.z),
+                };
+
+                // Project corners to screen with visibility check
+                ImVec2 screenCorners[8];
+                bool visible[8];
+                for (int i = 0; i < 8; i++) {
+                    screenCorners[i] = projectToScreen(corners[i], visible[i]);
+                }
+
+                // Draw 12 edges of the box - only draw if both endpoints are visible
+                int edges[12][2] = {
+                    {0,1}, {1,2}, {2,3}, {3,0}, // Bottom face
+                    {4,5}, {5,6}, {6,7}, {7,4}, // Top face
+                    {0,4}, {1,5}, {2,6}, {3,7}  // Vertical edges
+                };
+
+                for (int i = 0; i < 12; i++) {
+                    int idx0 = edges[i][0];
+                    int idx1 = edges[i][1];
+                    if (visible[idx0] && visible[idx1]) {
+                        drawList->AddLine(screenCorners[idx0], screenCorners[idx1], gizmoColor, 2.0f);
+                    }
+                }
+                break;
+            }
+
+            case ColliderShapeType::Sphere: {
+                // Draw wireframe sphere (3 orthogonal circles) - use max scale component
+                float maxScale = glm::max(glm::max(worldScale.x, worldScale.y), worldScale.z);
+                float radius = collider.sphereRadius * maxScale;
+                int segments = 32;
+
+                // XY plane circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
+                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = projectToScreen(p1, vis1);
+                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // XZ plane circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = projectToScreen(p1, vis1);
+                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // YZ plane circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 p1 = worldPos + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
+                    glm::vec3 p2 = worldPos + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = projectToScreen(p1, vis1);
+                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+                break;
+            }
+
+            case ColliderShapeType::Capsule: {
+                // Draw wireframe capsule - scale radius by XZ, height by Y
+                float radialScale = glm::max(worldScale.x, worldScale.z);
+                float radius = collider.capsuleRadius * radialScale;
+                float halfHeight = collider.capsuleHalfHeight * worldScale.y;
+                int segments = 16;
+
+                // Draw cylinder body (vertical lines)
+                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
+                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+
+                for (int i = 0; i < segments; i++) {
+                    float angle = (float)i / segments * 2.0f * 3.14159f;
+                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = projectToScreen(top + offset, vis1);
+                    ImVec2 s2 = projectToScreen(bottom + offset, vis2);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // Top and bottom circles
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                    bool vis1, vis2, vis3, vis4;
+                    ImVec2 s1 = projectToScreen(top + p1, vis1);
+                    ImVec2 s2 = projectToScreen(top + p2, vis2);
+                    ImVec2 s3 = projectToScreen(bottom + p1, vis3);
+                    ImVec2 s4 = projectToScreen(bottom + p2, vis4);
+
+                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
+                }
+                break;
+            }
+
+            case ColliderShapeType::Cylinder: {
+                // Draw wireframe cylinder - scale radius by XZ, height by Y
+                float radialScale = glm::max(worldScale.x, worldScale.z);
+                float radius = collider.cylinderRadius * radialScale;
+                float halfHeight = collider.cylinderHalfHeight * worldScale.y;
+                int segments = 16;
+
+                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
+                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+
+                // Vertical edges
+                for (int i = 0; i < segments; i++) {
+                    float angle = (float)i / segments * 2.0f * 3.14159f;
+                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = projectToScreen(top + offset, vis1);
+                    ImVec2 s2 = projectToScreen(bottom + offset, vis2);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // Top and bottom circles
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                    bool vis1, vis2, vis3, vis4;
+                    ImVec2 s1 = projectToScreen(top + p1, vis1);
+                    ImVec2 s2 = projectToScreen(top + p2, vis2);
+                    ImVec2 s3 = projectToScreen(bottom + p1, vis3);
+                    ImVec2 s4 = projectToScreen(bottom + p2, vis4);
+
+                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
+                }
+                break;
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        // Silently fail - entity might have been deleted
     }
 }

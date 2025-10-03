@@ -33,7 +33,7 @@ public:
 
     ENGINE_API static void CleanupUnusedMetaFiles();
 
-    static constexpr int CURRENT_METADATA_VERSION = 5;
+    static constexpr int CURRENT_METADATA_VERSION = 6;
 
 private:
     /**

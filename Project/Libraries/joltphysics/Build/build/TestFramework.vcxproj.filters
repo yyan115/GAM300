@@ -1,0 +1,396 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\TestFramework.dir\cmake_pch.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Application\Application.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Application\DebugUI.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\External\Perlin.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\BlitSurface.cpp">
+      <Filter>Image</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\LoadBMP.cpp">
+      <Filter>Image</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\LoadTGA.cpp">
+      <Filter>Image</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\Surface.cpp">
+      <Filter>Image</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\ZoomImage.cpp">
+      <Filter>Image</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DebugRendererImp.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Font.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\RenderPrimitive.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIAnimation.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIAnimationSlide.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UICheckBox.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIComboBox.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIElement.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIHorizontalStack.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIImage.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIManager.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UISlider.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIStaticText.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UITextButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIVerticalStack.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\CustomMemoryHook.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\ReadData.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Win\KeyboardWin.cpp">
+      <Filter>Input\Win</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Win\MouseWin.cpp">
+      <Filter>Input\Win</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\ConstantBufferDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\FatalErrorIfFailedDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\PipelineStateDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RendererDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RenderInstancesDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RenderPrimitiveDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\TextureDX12.cpp">
+      <Filter>Renderer\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\AssetStream.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\Log.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Window\ApplicationWindowWin.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Application\Application.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Application\DebugUI.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Application\EntryPoint.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\External\Perlin.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\External\stb_truetype.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\BlitSurface.h">
+      <Filter>Image</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\LoadBMP.h">
+      <Filter>Image</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\LoadTGA.h">
+      <Filter>Image</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\Surface.h">
+      <Filter>Image</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Image\ZoomImage.h">
+      <Filter>Image</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Keyboard.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Mouse.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DebugRendererImp.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Font.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Frustum.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\PipelineState.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\PixelShader.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Renderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\RenderInstances.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\RenderPrimitive.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\Texture.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\VertexShader.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\TestFramework.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIAnimation.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIAnimationSlide.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIButton.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UICheckBox.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIComboBox.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIElement.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIEventListener.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIHorizontalStack.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIImage.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIManager.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UISlider.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIStaticText.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UITextButton.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UITexturedQuad.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\UI\UIVerticalStack.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\CustomMemoryHook.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\AssetStream.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\Log.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Utils\ReadData.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Window\ApplicationWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Win\KeyboardWin.h">
+      <Filter>Input\Win</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Input\Win\MouseWin.h">
+      <Filter>Input\Win</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\ConstantBufferDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\CommandQueueDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\DescriptorHeapDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\FatalErrorIfFailedDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\PipelineStateDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\PixelShaderDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RendererDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RenderInstancesDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\RenderPrimitiveDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\TextureDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Renderer\DX12\VertexShaderDX12.h">
+      <Filter>Renderer\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\Window\ApplicationWindowWin.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\VertexConstants.h">
+      <Filter>Assets\Shaders\DX</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\TestFramework.dir\Debug\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\TestFramework.dir\Release\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\TestFramework.dir\Distribution\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\FontVertexShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\LineVertexShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\TriangleDepthVertexShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\TriangleVertexShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\UIVertexShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\FontPixelShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\LinePixelShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\TriangleDepthPixelShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\TrianglePixelShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\UIPixelShader.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+    <FXCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Assets\Shaders\DX\UIPixelShaderUntextured.hlsl">
+      <Filter>Assets\Shaders\DX</Filter>
+    </FXCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\TestFramework\TestFramework.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Application">
+      <UniqueIdentifier>{257C4DC4-F1B0-31C7-BF0E-55EAA6D53CFF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{543F92AD-90C7-3390-91CD-ABDB1215400F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Shaders">
+      <UniqueIdentifier>{68F3EE36-B497-3DD6-80AF-313C93E96C82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Shaders\DX">
+      <UniqueIdentifier>{150426EF-4751-366D-B456-21C8811C6568}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{4250D762-B9AC-3C55-AF61-2000205009A5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Image">
+      <UniqueIdentifier>{CAF1EA08-D019-3782-9AEE-E816B356257F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{34033A1F-FEA6-3109-9FD1-171F303E2059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input\Win">
+      <UniqueIdentifier>{44F32130-09D6-3D6E-B790-B55F3FF06914}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Precompile Header File">
+      <UniqueIdentifier>{92926116-3C45-3971-BB25-A96DA1A0F62E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{8F9F7437-0EBC-3C47-BB33-53BB44D0A32C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\DX12">
+      <UniqueIdentifier>{6CC88AAB-3858-35DC-ADBB-9B28680A1967}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{006B1BA6-7A4D-3A12-918A-F7C6911A646D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{CE443DF9-705C-3F61-BC5D-86739EAE60BB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{5FDA5016-B7AF-3B95-BB37-FB25F3080348}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{67639DD6-D0DB-34AB-8CC4-17DD3DDCD8C7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

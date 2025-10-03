@@ -64,6 +64,8 @@ class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;
+    std::string modelName;
+    std::string modelPath;
 
 	Model();
 	virtual ~Model() = default;
