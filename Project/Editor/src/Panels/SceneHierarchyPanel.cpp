@@ -2,6 +2,8 @@
 #include "imgui.h"
 #include "pch.h"
 #include "GUIManager.hpp"
+#include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
+#include "EditorComponents.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
@@ -32,6 +34,10 @@ void SceneHierarchyPanel::MarkForRefresh() {
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
+    
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_HIERARCHY);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_HIERARCHY);
+
     if (ImGui::Begin(name.c_str(), &isOpen)) {
         // Handle F2 key for renaming selected entity
         if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2)) {
@@ -65,61 +71,54 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        ImGui::Text(SceneManager::GetInstance().GetSceneName().c_str());
-        ImGui::Separator();
+        
+        std::string sceneName = SceneManager::GetInstance().GetSceneName();
+        std::string sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
 
-        try {
-            // Get the active ECS manager
-            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        // Add visual separation: MUCH darker background for scene header (like Unity)
+        ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
 
-            // Always get fresh entity list to ensure we see newly created entities
-            std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+        ImGuiTreeNodeFlags sceneFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+        bool sceneExpanded = ImGui::TreeNodeEx("##SceneRoot", sceneFlags, "%s", sceneDisplayName.c_str());
 
-            // Draw entity nodes starting from root entities, in a depth-first manner.
-            for (const auto& entity : allEntities) {
-                // Only draw root entities (entities without a parent)
-                if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
-                    // Check if entity has NameComponent before accessing it
-                    if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
-                        continue;
+        ImGui::PopStyleColor(3);
+
+        // Add small spacing after scene header for visual clarity
+        ImGui::Spacing();
+
+        if (sceneExpanded) {
+            try {
+                // Get the active ECS manager
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+                // Always get fresh entity list to ensure we see newly created entities
+                std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
+                // Draw entity nodes starting from root entities, in a depth-first manner.
+                for (const auto& entity : allEntities) {
+                    // Only draw root entities (entities without a parent)
+                    if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+                        // Check if entity has NameComponent before accessing it
+                        if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                            continue;
+                        }
+                        std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
+
+                        // Skip PREVIEW entities (used for drag-and-drop preview)
+                        if (entityName == "PREVIEW") {
+                            continue;
+                        }
+
+                        DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                     }
-                    std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
-
-                    // Skip PREVIEW entities (used for drag-and-drop preview)
-                    if (entityName == "PREVIEW") {
-                        continue;
-                    }
-
-                    DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                 }
+            } catch (const std::exception& e) {
+                ImGui::Text("Error accessing ECS: %s", e.what());
             }
 
-            //// Get all active entities
-            //std::vector<Entity> entities = ecsManager.GetActiveEntities();
-
-            //// Display each entity
-            //for (Entity entity : entities) {
-            //    std::string entityName;
-
-            //    // Try to get the name from NameComponent
-            //    if (ecsManager.HasComponent<NameComponent>(entity)) {
-            //        const NameComponent& nameComp = ecsManager.GetComponent<NameComponent>(entity);
-            //        entityName = nameComp.name;
-            //    } else {
-            //        // Fallback to "Entity [ID]" format
-            //        entityName = "Entity " + std::to_string(entity);
-            //    }
-
-            //    bool hasChildren = ecsManager.HasComponent<ChildrenComponent>(entity);
-            //    DrawEntityNode(entityName, entity, hasChildren);
-            //}
-
-            if (allEntities.empty()) {
-                ImGui::Text("No entities in scene");
-            }
-        }
-        catch (const std::exception& e) {
-            ImGui::Text("Error accessing ECS: %s", e.what());
+            ImGui::TreePop();
         }
 
         //ImGui::Separator();
@@ -183,8 +182,11 @@ void SceneHierarchyPanel::OnImGuiRender() {
                 ImGui::EndDragDropTarget();
             }
         }
+
     }
     ImGui::End();
+
+    ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
 }
 
 
@@ -233,7 +235,9 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
     else
     {
-        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
+        
+        std::string displayName = std::string(ICON_FA_CUBE) + " " + entityName;
+        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
         if (ImGui::IsItemClicked()) {
             GUIManager::SetSelectedEntity(entityId);
 

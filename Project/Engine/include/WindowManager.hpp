@@ -2,7 +2,6 @@
 
 #include "Platform/Platform.h"
 #include <string>
-#include <glm/glm.hpp>
 
 #include "RunTimeVar.hpp"
 

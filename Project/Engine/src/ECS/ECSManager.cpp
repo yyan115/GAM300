@@ -15,6 +15,11 @@
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
+#include <Physics/PhysicsSystem.hpp>
+
+
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
 	componentManager = std::make_unique<ComponentManager>();
@@ -27,13 +32,16 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<ColliderComponent>();
+	RegisterComponent<RigidBodyComponent>();
+	RegisterComponent<LightComponent>();
+	RegisterComponent<DirectionalLightComponent>();
+	RegisterComponent<PointLightComponent>();
+	RegisterComponent<SpotLightComponent>();
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<SpriteRenderComponent>();
-	RegisterComponent<DirectionalLightComponent>();
-	RegisterComponent<PointLightComponent>();
-	RegisterComponent<SpotLightComponent>();
 	RegisterComponent<ParticleComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
@@ -64,6 +72,15 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<DebugDrawComponent>());
 		SetSystemSignature<DebugDrawSystem>(signature);
+	}
+
+	physicsSystem = RegisterSystem<PhysicsSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<Transform>());
+		signature.set(GetComponentID<ColliderComponent>());
+		signature.set(GetComponentID<RigidBodyComponent>());
+		SetSystemSignature<PhysicsSystem>(signature);
 	}
 
 	lightingSystem = RegisterSystem<LightingSystem>();

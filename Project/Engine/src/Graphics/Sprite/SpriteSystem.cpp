@@ -106,7 +106,7 @@ void SpriteSystem::Update()
                 // For 2D sprites: If Transform position is at origin (0,0,0) but sprite has a different position,
                 // it means the sprite was created with position in sprite component, not Transform
                 // In this case, sync Transform to sprite position and scale
-                if (!spriteComponent.is3D &&
+                if (!spriteComponent.is3D && !spriteComponent.hasMigratedToTransform &&
                     transformPos.x == 0.0f && transformPos.y == 0.0f && transformPos.z == 0.0f &&
                     !(spriteComponent.position.x == 0.0f && spriteComponent.position.y == 0.0f && spriteComponent.position.z == 0.0f))
                 {
@@ -116,8 +116,9 @@ void SpriteSystem::Update()
                     ecsManager.transformSystem->SetWorldScale(entity,
                         Vector3D(spriteComponent.scale.x, spriteComponent.scale.y, spriteComponent.scale.z));
                     transformPos = spriteComponent.position.ConvertToGLM();
+                    spriteComponent.hasMigratedToTransform = true;
 
-                    // Log the migration
+                    // Log the migration (only once)
                     std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
                               << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
                               << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;

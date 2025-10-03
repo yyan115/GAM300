@@ -80,62 +80,8 @@ android {
     //}
 //}
 
-// Task to configure CMake for Android if needed
-task configureEngine(type: Exec) {
-    description 'Configure the GAM300 Engine CMake project for Android'
-    group 'build'
-
-    // Set working directory to the main project
-    workingDir = file('../../Project')
-
-    // Configure the engine using cmake preset with Ninja generator
-    commandLine 'cmake', '--preset', 'android-debug', '-G', 'Ninja'
-
-    // Show output for debugging
-    standardOutput = System.out
-    errorOutput = System.err
-
-    // Only run if build directory doesn't exist (not configured yet)
-    onlyIf {
-        !file('../../Project/Build/android-debug').exists()
-    }
-}
-
-// Task to build the Engine library before Android native build
-task buildEngine(type: Exec) {
-    description 'Build the GAM300 Engine library for Android'
-    group 'build'
-
-    // Set working directory to the main project
-    workingDir = file('../../Project')
-
-    // Build the engine using cmake
-    commandLine 'cmake', '--build', 'Build/android-debug', '--config', 'Debug'
-
-    // Show output for debugging
-    standardOutput = System.out
-    errorOutput = System.err
-
-    // Only run if build directory exists (engine has been configured)
-    onlyIf {
-        file('../../Project/Build/android-debug').exists()
-    }
-
-    // Ensure engine is configured first, then resources are copied
-    dependsOn configureEngine//, copyResources
-}
-
-// Make all native build tasks depend on engine build
-tasks.whenTaskAdded { task ->
-    if (task.name.contains('external') && task.name.contains('Native') && task.name.contains('Build')) {
-        task.dependsOn buildEngine
-    }
-}
-
-// Also make sure the engine is built before any assembleDebug/assembleRelease
-tasks.matching { it.name.startsWith('assemble') }.all {
-    dependsOn buildEngine
-}
+// NOTE: Removed custom configureEngine and buildEngine tasks
+// The Android JNI CMakeLists.txt now handles building Engine and Game
 
 // Make sure resources are copied before any asset processing
 //tasks.whenTaskAdded { task ->

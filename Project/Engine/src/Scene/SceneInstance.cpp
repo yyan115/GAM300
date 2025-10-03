@@ -11,6 +11,9 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/TextRendering/TextUtils.hpp>
 #include "ECS/NameComponent.hpp"
+#include <Physics/PhysicsSystem.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -55,6 +58,126 @@ void SceneInstance::Initialize() {
 			MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat")});
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
+
+		// GRAPHICS TEST CODE
+		ecsManager.transformSystem->Initialise();
+		ecsManager.modelSystem->Initialise();
+		ecsManager.debugDrawSystem->Initialise();
+		
+		//PHYSICS TEST CODE
+		ecsManager.physicsSystem->Initialise();
+		Entity physicsBoxObj = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(physicsBoxObj, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(physicsBoxObj, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(physicsBoxObj, ColliderComponent{});
+		Transform& physicsTransform = ecsManager.GetComponent<Transform>(physicsBoxObj);
+		physicsTransform.localPosition = { 0.5f, 60.5f, 0 };
+		physicsTransform.localScale = { .8f, .8f, .8f };
+		physicsTransform.localRotation = { 0, 0, 0, 0 };
+
+		RigidBodyComponent& rb = ecsManager.GetComponent<RigidBodyComponent>(physicsBoxObj);
+		rb.motion = Motion::Dynamic;
+		rb.ccd = false;
+		rb.transform_dirty = true;
+		rb.motion_dirty = true;
+		rb.collider_seen_version = 0;
+
+		ColliderComponent& col = ecsManager.GetComponent<ColliderComponent>(physicsBoxObj);
+		col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
+		col.layer = Layers::MOVING;
+		col.version++;
+
+		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+
+		
+		// ---- FLOOR (static, invisible) ----
+		Entity floor = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(floor, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(floor, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(floor, ColliderComponent{});
+
+		// Transform: center the floor at y = 0 (top surface near y = +0.5 since half-extent is 0.5)
+		auto& floorTr = ecsManager.GetComponent<Transform>(floor);
+		floorTr.localPosition = { 0.0f, -0.5f, 0.0f };
+		floorTr.localRotation = { 0, 0, 0, 0 };
+		floorTr.localScale = { 1, 1, 1 }; // render-only; physics size comes from the shape
+
+		auto& floorRb = ecsManager.GetComponent<RigidBodyComponent>(floor);
+		floorRb.motion = Motion::Static;
+		floorRb.ccd = false;
+		floorRb.transform_dirty = true;
+		floorRb.motion_dirty = true;
+		floorRb.collider_seen_version = 0;
+
+		ColliderComponent& floorCol = ecsManager.GetComponent<ColliderComponent>(floor);
+		// Large, thin box: 200 x 1 x 200 (half-extents 100,0.5,100)
+		floorCol.shape = new JPH::BoxShape(JPH::Vec3(100.f, 0.5f, 100.f));
+		floorCol.layer = Layers::NON_MOVING;
+		floorCol.version++;
+
+		// ---- SECOND DYNAMIC BACKPACK (Sphere shape for bouncy behavior) ----
+		Entity backpack2 = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(backpack2, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(backpack2, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(backpack2, ColliderComponent{});
+
+		auto& backpack2Tr = ecsManager.GetComponent<Transform>(backpack2);
+		backpack2Tr.localPosition = { 2.0f, 8.0f, 0.0f }; // High up, offset to the right
+		backpack2Tr.localScale = { 0.8f, 0.8f, 0.8f };
+		backpack2Tr.localRotation = { 0, 0, 0, 0 };
+
+		auto& backpack2Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack2);
+		backpack2Rb.motion = Motion::Dynamic;
+		backpack2Rb.ccd = false;
+		backpack2Rb.transform_dirty = true;
+		backpack2Rb.motion_dirty = true;
+		backpack2Rb.collider_seen_version = 0;
+
+		auto& backpack2Col = ecsManager.GetComponent<ColliderComponent>(backpack2);
+		// Sphere shape for better bouncing
+		backpack2Col.shape = new JPH::SphereShape(0.6f);
+		backpack2Col.layer = Layers::MOVING;
+		backpack2Col.version++;
+
+		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+
+		// Add name component
+		ecsManager.AddComponent<NameComponent>(backpack2, NameComponent{});
+		NameComponent& physicsBackpack2Name = ecsManager.GetComponent<NameComponent>(backpack2);
+		physicsBackpack2Name.name = "Bouncy Sphere Backpack";
+
+		// ---- THIRD DYNAMIC BACKPACK (Different position for collision demo) ----
+		Entity backpack3 = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(backpack3, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(backpack3, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(backpack3, ColliderComponent{});
+
+		auto& backpack3Tr = ecsManager.GetComponent<Transform>(backpack3);
+		backpack3Tr.localPosition = { -1.5f, 6.0f, 0.0f }; // High up, offset to the left
+		backpack3Tr.localScale = { 0.7f, 0.7f, 0.7f };
+		backpack3Tr.localRotation = { 0, 0, 0, 0 };
+
+		auto& backpack3Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack3);
+		backpack3Rb.motion = Motion::Dynamic;
+		backpack3Rb.ccd = false;
+		backpack3Rb.transform_dirty = true;
+		backpack3Rb.motion_dirty = true;
+		backpack3Rb.collider_seen_version = 0;
+
+		auto& backpack3Col = ecsManager.GetComponent<ColliderComponent>(backpack3);
+		// Box shape with different size
+		backpack3Col.shape = new JPH::BoxShape(JPH::Vec3(0.4f, 0.4f, 0.4f));
+		backpack3Col.layer = Layers::MOVING;
+		backpack3Col.version++;
+
+		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+
+		// Add name component
+		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
+		NameComponent& physicsBackpack3Name = ecsManager.GetComponent<NameComponent>(backpack3);
+		physicsBackpack3Name.name = "Box Backpack";
+
+		ecsManager.physicsSystem->physicsAuthoring(ecsManager);
 
 		Entity backpackEntt3 = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
@@ -144,7 +267,7 @@ void SceneInstance::Initialize() {
 		ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
 		ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
 		TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-		TextUtils::SetPosition(fpsTextComp, Vector3D(0, 0, 0));
+		TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
 		TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
 
 		// Test Particle
@@ -165,6 +288,7 @@ void SceneInstance::Initialize() {
 		particleComp.gravity = glm::vec3(0, -2.0f, 0);
 		// Load resources
 		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		particleComp.texturePath = "Resources/Textures/awesomeface.png";  // Store path for display
 		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
 
 	}
@@ -280,6 +404,8 @@ void SceneInstance::Update(double dt) {
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
+	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
+	mainECS.physicsSystem->physicsSyncBack(mainECS);
 	mainECS.transformSystem->Update();
 	mainECS.lightingSystem->Update();
 
@@ -293,6 +419,10 @@ void SceneInstance::Draw() {
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+	// Set to false so game view shows ALL sprites (not filtered by 2D/3D mode)
+	gfxManager.SetRenderingForEditor(false);
+
 	//RenderSystem::getInstance().BeginFrame();
 	gfxManager.BeginFrame();
 	gfxManager.Clear();
@@ -309,34 +439,34 @@ void SceneInstance::Draw() {
 	}
 	if (mainECS.textSystem)
 	{
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+//#endif
 		mainECS.textSystem->Update();
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+//#endif
 	}
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
+//#endif
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
-#endif
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
+//#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
+//#endif
 	if (mainECS.particleSystem)
 	{
 		mainECS.particleSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
+//#endif
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
 	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
@@ -345,16 +475,16 @@ void SceneInstance::Draw() {
 	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
+//#endif
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
+//#endif
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
 #endif
@@ -382,6 +512,8 @@ void SceneInstance::Draw() {
 void SceneInstance::Exit() {
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
+	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 

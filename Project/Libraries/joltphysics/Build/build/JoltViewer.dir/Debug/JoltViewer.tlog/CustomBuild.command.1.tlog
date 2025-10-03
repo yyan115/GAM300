@@ -1,0 +1,10 @@
+^D:\SIT\Y3T1\GAM300\PROJECT\LIBRARIES\JOLTPHYSICS\BUILD\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/SIT/Y3T1/GAM300/Project/Libraries/joltphysics/Build -BD:/SIT/Y3T1/GAM300/Project/Libraries/joltphysics/Build/build --check-stamp-file D:/SIT/Y3T1/GAM300/Project/Libraries/joltphysics/Build/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

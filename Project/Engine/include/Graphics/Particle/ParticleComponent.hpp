@@ -80,6 +80,7 @@ public:
     std::vector<Particle> particles;
     std::shared_ptr<Texture> particleTexture;
     std::shared_ptr<Shader> particleShader;
+    std::string texturePath;  // For inspector display
 
     VAO* particleVAO = nullptr;
     VBO* quadVBO = nullptr;      // Vertex data for quad
@@ -88,6 +89,8 @@ public:
 
     float timeSinceEmission = 0.0f;
     bool isEmitting = true;
+    bool isPlayingInEditor = false;  // Manual play control in editor
+    bool isPausedInEditor = false;   // Manual pause control in editor
 
     ParticleComponent() = default;
     ~ParticleComponent() = default;
