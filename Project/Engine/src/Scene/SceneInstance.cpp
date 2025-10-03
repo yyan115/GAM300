@@ -244,6 +244,7 @@ void SceneInstance::Initialize() {
 		particleComp.gravity = glm::vec3(0, -2.0f, 0);
 		// Load resources
 		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
+		particleComp.texturePath = "Resources/Textures/awesomeface.png";  // Store path for display
 		particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
 
 	}

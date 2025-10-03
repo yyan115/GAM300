@@ -7,6 +7,7 @@
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
+#include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
 #include <Asset Manager/AssetManager.hpp>
@@ -197,6 +198,13 @@ void InspectorPanel::OnImGuiRender() {
 					if (ecsManager.HasComponent<TextRenderComponent>(displayEntity)) {
 						if (DrawComponentHeaderWithRemoval("Text Renderer", displayEntity, "TextRenderComponent")) {
 							DrawTextRenderComponent(displayEntity);
+						}
+					}
+
+					// Draw ParticleComponent if it exists
+					if (ecsManager.HasComponent<ParticleComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Particle System", displayEntity, "ParticleComponent")) {
+							DrawParticleComponent(displayEntity);
 						}
 					}
 
@@ -642,6 +650,173 @@ void InspectorPanel::DrawTextRenderComponent(Entity entity) {
 		ImGui::PopID();
 	} catch (const std::exception& e) {
 		ImGui::Text("Error accessing TextRenderComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawParticleComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ParticleComponent& particle = ecsManager.GetComponent<ParticleComponent>(entity);
+
+		ImGui::PushID("ParticleComponent");
+
+		// Texture drag-drop slot
+		ImGui::Text("Texture:");
+		ImGui::SameLine();
+
+		// Create texture slot button showing current texture
+		std::string textureButtonText;
+		if (particle.particleTexture) {
+			// Extract filename from texture path if available
+			if (!particle.texturePath.empty()) {
+				std::filesystem::path texPath(particle.texturePath);
+				textureButtonText = texPath.filename().string();
+			} else {
+				textureButtonText = "Loaded Texture";
+			}
+		} else {
+			textureButtonText = "None (Texture)";
+		}
+
+		// Unity-style drag-drop slot
+		float buttonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
+
+		// Texture drag-drop target with visual feedback
+		if (EditorComponents::BeginDragDropTarget()) {
+			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+				// Payload contains the file path
+				const char* texturePath = (const char*)payload->Data;
+
+				// Load texture using ResourceManager
+				particle.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+
+				if (particle.particleTexture) {
+					particle.texturePath = texturePath;  // Store the path for display
+					std::cout << "[Inspector] Loaded particle texture: " << texturePath << std::endl;
+				} else {
+					std::cerr << "[Inspector] Failed to load particle texture: " << texturePath << std::endl;
+				}
+			}
+			EditorComponents::EndDragDropTarget();
+		}
+
+		// Right-click to clear texture
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && particle.particleTexture) {
+			ImGui::OpenPopup("ClearParticleTexture");
+		}
+
+		if (ImGui::BeginPopup("ClearParticleTexture")) {
+			if (ImGui::MenuItem("Clear Texture")) {
+				particle.particleTexture = nullptr;
+				particle.texturePath.clear();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Separator();
+
+		// Emitter Properties Section
+		ImGui::Text("Emitter Properties");
+		ImGui::Separator();
+
+		// Emission Rate
+		ImGui::Text("Emission Rate");
+		ImGui::DragFloat("##EmissionRate", &particle.emissionRate, 0.1f, 0.0f, 1000.0f, "%.1f particles/sec");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Number of particles emitted per second");
+		}
+
+		// Max Particles
+		ImGui::Text("Max Particles");
+		ImGui::DragInt("##MaxParticles", &particle.maxParticles, 1, 1, 100000);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Maximum number of particles that can exist at once");
+		}
+
+		// Is Emitting
+		ImGui::Checkbox("Is Emitting", &particle.isEmitting);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
+		}
+
+		// Active Particle Count (Read-only)
+		ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
+
+		ImGui::Spacing();
+		ImGui::Text("Particle Properties");
+		ImGui::Separator();
+
+		// Particle Lifetime
+		ImGui::Text("Lifetime");
+		ImGui::DragFloat("##Lifetime", &particle.particleLifetime, 0.01f, 0.01f, 100.0f, "%.2f seconds");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("How long each particle lives before fading out");
+		}
+
+		// Start Size
+		ImGui::Text("Start Size");
+		ImGui::DragFloat("##StartSize", &particle.startSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial size of particles when spawned");
+		}
+
+		// End Size
+		ImGui::Text("End Size");
+		ImGui::DragFloat("##EndSize", &particle.endSize, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final size of particles before they die (interpolated over lifetime)");
+		}
+
+		// Start Color
+		ImGui::Text("Start Color");
+		ImGui::ColorEdit4("##StartColor", &particle.startColor.r);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Initial color and alpha of particles when spawned");
+		}
+
+		// End Color
+		ImGui::Text("End Color");
+		ImGui::ColorEdit4("##EndColor", &particle.endColor.r);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Final color and alpha of particles before they die (interpolated over lifetime)");
+		}
+
+		ImGui::Spacing();
+		ImGui::Text("Physics");
+		ImGui::Separator();
+
+		// Gravity
+		ImGui::Text("Gravity");
+		float gravity[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
+		if (ImGui::DragFloat3("##Gravity", gravity, 0.1f, -50.0f, 50.0f, "%.2f")) {
+			particle.gravity = glm::vec3(gravity[0], gravity[1], gravity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Gravity force applied to particles (typically negative Y for downward)");
+		}
+
+		// Initial Velocity
+		ImGui::Text("Initial Velocity");
+		float velocity[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
+		if (ImGui::DragFloat3("##InitialVelocity", velocity, 0.1f, -100.0f, 100.0f, "%.2f")) {
+			particle.initialVelocity = glm::vec3(velocity[0], velocity[1], velocity[2]);
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Base velocity direction for newly spawned particles");
+		}
+
+		// Velocity Randomness
+		ImGui::Text("Velocity Randomness");
+		ImGui::DragFloat("##VelocityRandomness", &particle.velocityRandomness, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Amount of random variation applied to particle velocities");
+		}
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing ParticleComponent: %s", e.what());
 	}
 }
 
@@ -1100,6 +1275,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "SpriteRenderComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<ParticleComponent>(entity)) {
+					if (ImGui::MenuItem("Particle System")) {
+						AddComponent(entity, "ParticleComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -1274,6 +1454,38 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			}
 
 			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "ParticleComponent") {
+			ParticleComponent component;
+			// Default values are already set in ParticleComponent's default constructor
+			// emissionRate = 10.0f
+			// maxParticles = 1000
+			// particleLifetime = 2.0f
+			// startSize = 0.1f, endSize = 0.0f
+			// startColor = white, endColor = white with alpha 0
+			// gravity = (0, -9.8, 0)
+			// velocityRandomness = 1.0f
+			// initialVelocity = (0, 1, 0)
+			// isEmitting = true
+
+			component.isVisible = true;
+
+			// Load default particle texture and shader (required for rendering)
+			std::string defaultTexturePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png";
+			component.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(defaultTexturePath);
+			component.texturePath = defaultTexturePath;  // Store path for display
+			component.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
+
+			ecsManager.AddComponent<ParticleComponent>(entity, component);
+
+			// Ensure entity has a Transform component for emitter positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Particle emitter positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added ParticleComponent to entity " << entity << std::endl;
 		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
