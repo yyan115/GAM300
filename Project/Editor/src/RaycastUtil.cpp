@@ -92,7 +92,7 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromSprite(const glm::vec3& position, c
     return AABB(center - halfSize, center + halfSize);
 }
 
-RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity) {
+RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity excludeEntity, bool filterByMode, bool is2DMode) {
     RaycastHit closestHit;
 
     try {
@@ -110,6 +110,19 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
             // Skip excluded entity (e.g., preview entity)
             if (entity == excludeEntity) {
                 continue;
+            }
+
+            // Filter entities based on 2D/3D mode (if filtering is enabled)
+            if (filterByMode) {
+                bool entityIs3D = IsEntity3D(entity);
+                if (is2DMode && entityIs3D) {
+                    // In 2D mode, skip 3D entities
+                    continue;
+                }
+                if (!is2DMode && !entityIs3D) {
+                    // In 3D mode, skip 2D entities
+                    continue;
+                }
             }
 
             AABB entityAABB(glm::vec3(0.0f), glm::vec3(0.0f));

@@ -287,10 +287,11 @@ void ScenePanel::HandleEntitySelection() {
     // Only handle selection on left click (not during camera operations)
     ImGuiIO& io = ImGui::GetIO();
     bool isLeftClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    bool isDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
     bool isAltPressed = io.KeyAlt;
 
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
-    if (isLeftClicked && !isAltPressed) {
+    if ((isLeftClicked || isDoubleClicked) && !isAltPressed) {
         // Get mouse position relative to the scene window
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 windowPos = ImGui::GetWindowPos();
@@ -349,18 +350,82 @@ void ScenePanel::HandleEntitySelection() {
                 viewMatrix, projMatrix
             );
 
-            // Perform raycast against scene entities
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray);
+            // Perform raycast (filter for single-click, don't filter for double-click)
+            bool shouldFilter = !isDoubleClicked;
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, INVALID_ENTITY, shouldFilter, is2DMode);
 
             if (hit.hit) {
-                // Entity found, select it
+                // Check if entity matches current mode
+                bool entityIs3D = RaycastUtil::IsEntity3D(hit.entity);
+                bool entityMatchesMode = (is2DMode && !entityIs3D) || (!is2DMode && entityIs3D);
+
+                ENGINE_PRINT("[ScenePanel] Hit entity ", hit.entity, " - entityIs3D: ", entityIs3D,
+                           ", currentMode is2D: ", is2DMode, ", matchesMode: ", entityMatchesMode,
+                           ", isDoubleClick: ", isDoubleClicked, "\n");
+
+                // Handle double-click: switch mode and focus
+                if (isDoubleClicked) {
+                    ENGINE_PRINT("[ScenePanel] Double-click detected!\n");
+
+                    if (!entityMatchesMode) {
+                        ENGINE_PRINT("[ScenePanel] Entity doesn't match mode - switching modes\n");
+                        ENGINE_PRINT("[ScenePanel] Before switch - EditorState is2D: ", editorState.Is2DMode(), "\n");
+
+                        // Entity is in opposite mode - switch mode
+                        EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                        editorState.SetViewMode(newViewMode);
+
+                        ENGINE_PRINT("[ScenePanel] After EditorState.SetViewMode - is2D: ", editorState.Is2DMode(), "\n");
+
+                        // Sync with GraphicsManager (important!)
+                        GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                        GraphicsManager::GetInstance().SetViewMode(gfxMode);
+
+                        ENGINE_PRINT("[ScenePanel] Double-click: Switched to ", (entityIs3D ? "3D" : "2D"), " mode\n");
+
+                        // Update is2DMode for focus calculation
+                        is2DMode = editorState.Is2DMode();
+                        ENGINE_PRINT("[ScenePanel] Updated is2DMode to: ", is2DMode, "\n");
+                    } else {
+                        ENGINE_PRINT("[ScenePanel] Entity matches mode - no mode switch needed\n");
+                    }
+
+                    // Focus on the entity
+                    try {
+                        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecsManager.HasComponent<Transform>(hit.entity)) {
+                            Transform& transform = ecsManager.GetComponent<Transform>(hit.entity);
+                            Vector3D targetPos(transform.worldMatrix.m.m03,
+                                             transform.worldMatrix.m.m13,
+                                             transform.worldMatrix.m.m23);
+
+                            glm::vec3 entityPos(targetPos.x, targetPos.y, targetPos.z);
+
+                            if (is2DMode) {
+                                // Focus in 2D: set target to entity position
+                                editorCamera.SetTarget(glm::vec3(targetPos.x, targetPos.y, 0.0f));
+                                editorCamera.UpdateCameraVectors();
+                            } else {
+                                // Focus in 3D: frame the entity (like Unity's Frame Selected)
+                                editorCamera.FrameTarget(entityPos, 5.0f);
+                            }
+                            ENGINE_PRINT("[ScenePanel] Focused camera on entity ", hit.entity, "\n");
+                        }
+                    } catch (const std::exception& e) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScenePanel] Error focusing on entity: ", e.what(), "\n");
+                    }
+                }
+
+                // Select the entity (for both single and double click)
                 GUIManager::SetSelectedEntity(hit.entity);
                 ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
                     , " at distance ", hit.distance, "\n");
             } else {
-                // No entity hit, clear selection
-                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
+                // No entity hit, clear selection (only on single click)
+                if (!isDoubleClicked) {
+                    GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+                    ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
+                }
             }
             ENGINE_PRINT("[ScenePanel] Mouse clicked at (" , relativeX , ", " , relativeY
                 , ") in scene bounds (", sceneWidth, "x", sceneHeight, ")\n"); 
@@ -872,8 +937,10 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
                 viewMatrix, projMatrix
             );
 
-            // Raycast against scene to find placement position (exclude preview entity)
-            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity);
+            // Raycast against scene to find placement position (exclude preview entity, filter by 2D/3D mode)
+            EditorState& editorState = EditorState::GetInstance();
+            bool is2DMode = editorState.Is2DMode();
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, previewEntity, true, is2DMode);
 
             if (hit.hit) {
                 // Hit an object - place on surface
