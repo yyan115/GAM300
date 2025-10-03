@@ -4,6 +4,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(Transform)
+	REFL_REGISTER_PROPERTY(overrideFromPrefab)
     REFL_REGISTER_PROPERTY(localPosition)
 	REFL_REGISTER_PROPERTY(localScale)
 	REFL_REGISTER_PROPERTY(localRotation)

@@ -126,6 +126,7 @@
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
+    <ClInclude Include="include\PrefabLinkComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

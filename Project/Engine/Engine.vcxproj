@@ -63,6 +63,7 @@
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
     <ClInclude Include="include\PrefabIO.hpp" />
+    <ClInclude Include="include\PrefabLinkComponent.hpp" />
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />

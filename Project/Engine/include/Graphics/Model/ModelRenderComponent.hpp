@@ -15,6 +15,7 @@ class ModelRenderComponent : public IRenderComponent {
 public:
 	// Serialize these.
 	REFL_SERIALIZABLE
+	bool overrideFromPrefab = false;
 	GUID_128 modelGUID{};
 	GUID_128 shaderGUID{};
 	Matrix4x4 transform;

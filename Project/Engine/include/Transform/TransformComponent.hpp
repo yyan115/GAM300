@@ -8,6 +8,7 @@ struct Transform {
 	//Vector3D worldScale = { 0, 0, 0 };
 	//Vector3D worldRotation = { 0, 0, 0 };
 
+	bool overrideFromPrefab = false;
 	Vector3D localPosition;
 	Vector3D localScale;
 	//Vector3D editorEuler;

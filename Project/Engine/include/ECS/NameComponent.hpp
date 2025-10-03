@@ -4,6 +4,7 @@
 struct NameComponent
 {
 	REFL_SERIALIZABLE
+	bool overrideFromPrefab = false;
 	std::string name;
 
 	NameComponent() = default;

@@ -35,6 +35,13 @@ public:
 		componentManager->RegisterComponent<T>();
 	}
 
+	template<typename T>
+	bool IsComponentTypeRegistered() const
+	{
+		return componentManager                     // unique_ptr exists?
+			&& componentManager->IsRegistered<T>(); // note the -> here
+	}
+
 	template <typename T>
 	void AddComponent(Entity entity, T component) {
 		// Add the component to the entity via the ComponentManager.

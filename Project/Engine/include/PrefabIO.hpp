@@ -11,3 +11,11 @@ ENGINE_API bool SaveEntityToPrefabFile(ECSManager& ecs,
     AssetManager& assets,
     Entity entity,
     const std::string& dstPath);
+
+ENGINE_API bool InstantiatePrefabIntoEntity(
+    ECSManager& ecs,
+    AssetManager& assets,
+    const std::string& prefabPath,
+    Entity intoEntity,
+    bool keepExistingPosition,
+    bool resolveAssets = true);
