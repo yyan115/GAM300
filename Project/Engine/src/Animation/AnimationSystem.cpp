@@ -13,7 +13,11 @@ bool AnimationSystem::Initialise()
 		auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
 		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
 		if(modelComp.model)
+		{
 			animComp.SetModel(&*modelComp.model);
+			animComp.AddClipFromFile("Resources/Models/kachujin/Animation/KachujinAnimation.fbx");
+			animComp.Play();
+		}
 		else
 			std::cout << "[AnimationSystem] Warning: Entity " << entity << " has no model assigned for AnimationComponent.\n";
 	}

@@ -56,8 +56,11 @@ void AnimationComponent::Update(float dt)
 {
 	if (!animator) return;
 
+
     if (isPlay && !clips.empty())
     {
+
+
         animator->UpdateAnimation(dt * speed, isLoop);
         if (!isLoop)
         {

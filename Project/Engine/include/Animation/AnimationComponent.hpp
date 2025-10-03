@@ -46,7 +46,7 @@ public:
     size_t GetActiveClipIndex() const;
 
     // UI state (can be private with getters if you prefer)
-    bool  isPlay = true;
+    bool  isPlay = false;
     bool  isLoop = true;
     float speed = 1.0f;
 

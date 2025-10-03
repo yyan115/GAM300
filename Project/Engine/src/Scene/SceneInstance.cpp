@@ -68,7 +68,7 @@ void SceneInstance::Initialize() {
 		ecsManager.AddComponent<AnimationComponent>(kachujin, AnimationComponent(&*kachujinModel.model));
 		AnimationComponent& kachujinAnimation = ecsManager.GetComponent<AnimationComponent>(kachujin);
 		kachujinAnimation.SetModel(&*kachujinModel.model);
-		kachujinAnimation.AddClipFromFile("Resources/Models/Models/kachujin/Animation/KachujinAnimation.fbx");
+		kachujinAnimation.AddClipFromFile("Resources/Models/kachujin/Animation/KachujinAnimation.fbx");
 		kachujinAnimation.Play();
 		
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
