@@ -5,9 +5,7 @@ Animator::Animator(Animation* animation)
 {
 	mCurrentTime = 0.0f;
 	mCurrentAnimation = animation;
-	mFinalBoneMatrices.reserve(100);
-	for (int i = 0; i < 100; i++)
-		mFinalBoneMatrices.push_back(glm::mat4(1.0f));
+	mFinalBoneMatrices.assign(100, glm::mat4(1.0f));
 }
 
 void Animator::UpdateAnimation(float dt, bool isLoop)
@@ -36,6 +34,8 @@ void Animator::PlayAnimation(Animation* pAnimation)
 {
 	mCurrentAnimation = pAnimation;
 	mCurrentTime = 0.0f;
+	if(pAnimation)
+		mFinalBoneMatrices.assign(pAnimation->GetBoneIDMap().size(), glm::mat4(1.0f));
 }
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)

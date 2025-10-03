@@ -12,6 +12,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
+#include "Animation/AnimationComponent.hpp"
 #include "Logging.hpp"
 
 void ECSManager::Initialize() {
@@ -34,6 +35,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<PointLightComponent>();
 	RegisterComponent<SpotLightComponent>();
 	RegisterComponent<ParticleComponent>();
+	RegisterComponent<AnimationComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -93,6 +95,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
 		SetSystemSignature<AudioSystem>(signature);
+	}
+
+	animationSystem = RegisterSystem<AnimationSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<AnimationComponent>());
+		SetSystemSignature<AnimationSystem>(signature);
 	}
 }
 

@@ -22,6 +22,9 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
 
+#include <Animation/AnimationComponent.hpp>
+#include <Animation/AnimationSystem.hpp>
+
 Entity fpsText;
 
 void SceneInstance::Initialize() {
@@ -54,13 +57,20 @@ void SceneInstance::Initialize() {
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
-		Entity backpackEntt3 = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
-		ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .01f, .01f, .01f });
-		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 0, 0, 0 });
-		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
-		backpack3Name.name = "indiana jones";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		Entity kachujin = ecsManager.CreateEntity();
+		ecsManager.transformSystem->SetLocalPosition(kachujin, { -1.0, -0.35f, 0.8 });
+		ecsManager.transformSystem->SetLocalScale(kachujin, { .005f, .005f, .005f });
+		ecsManager.transformSystem->SetLocalRotation(kachujin, { 0, 0, 0 });
+		NameComponent& kachujinName = ecsManager.GetComponent<NameComponent>(kachujin);
+		kachujinName.name = "Kachujin";
+		ecsManager.AddComponent<ModelRenderComponent>(kachujin, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/kachujin/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ModelRenderComponent& kachujinModel = ecsManager.GetComponent<ModelRenderComponent>(kachujin);
+		ecsManager.AddComponent<AnimationComponent>(kachujin, AnimationComponent(&*kachujinModel.model));
+		AnimationComponent& kachujinAnimation = ecsManager.GetComponent<AnimationComponent>(kachujin);
+		kachujinAnimation.SetModel(&*kachujinModel.model);
+		kachujinAnimation.AddClipFromFile("Resources/Models/Models/kachujin/Animation/KachujinAnimation.fbx");
+		kachujinAnimation.Play();
+		
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
@@ -258,6 +268,7 @@ void SceneInstance::Initialize() {
 	ecsManager.textSystem->Initialise();
 	ecsManager.spriteSystem->Initialise();
 	ecsManager.particleSystem->Initialise();
+	ecsManager.animationSystem->Initialise();
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -276,7 +287,9 @@ void SceneInstance::Update(double dt) {
 
 	// Update systems.
 	mainECS.transformSystem->Update();
-	mainECS.lightingSystem->Update();
+
+	mainECS.animationSystem->Update();
+
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem) {
@@ -361,6 +374,10 @@ void SceneInstance::Draw() {
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
+
+	if(mainECS.animationSystem)
+		mainECS.animationSystem->Update(); // After rendering to reset any pose changes if necessary
+
 
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");

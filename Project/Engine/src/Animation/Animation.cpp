@@ -5,19 +5,11 @@
 #include <assimp/scene.h>
 
 
-Animation::Animation(const std::string& animationPath, class Model* model) : mDuration(0.0f), mTicksPerSecond(0)
+Animation::Animation(aiAnimation* animation, const aiNode* rootNode, Model* model) 
 {
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
-	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-	{
-		std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-		return;
-	}
-	auto animation = scene->mAnimations[0];
-	mDuration = static_cast<float>(animation->mDuration);
-	mTicksPerSecond = static_cast<int>(animation->mTicksPerSecond);
-	ReadHeirarchyData(mRootNode, scene->mRootNode);
+	mDuration = animation->mDuration;
+	mTicksPerSecond = animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25;
+	ReadHeirarchyData(mRootNode, rootNode);
 	ReadMissingBones(animation, *model);
 }
 

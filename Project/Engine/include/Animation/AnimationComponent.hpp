@@ -1,12 +1,24 @@
 #pragma once
 #include "pch.h"
 #include "Animation/Animator.hpp"
+#include "Animation/AnimationSystem.hpp"
 
-class AnimationComponent
+class ENGINE_API AnimationComponent
 {
 public:
-    // Construction: pass the rigged Model so Animation can resolve bones
+	AnimationComponent() = default; // must provide Model*
+
     AnimationComponent(Model* model);
+
+    AnimationComponent(const AnimationComponent& other);
+
+    AnimationComponent& operator=(AnimationComponent other) noexcept;
+
+    friend void swap(AnimationComponent& a, AnimationComponent& b) noexcept;
+
+    // also keep move ops (optional)
+    AnimationComponent(AnimationComponent&&) noexcept = default;
+    AnimationComponent& operator=(AnimationComponent&&) noexcept = default;
 
     // Per-frame from your engine/editor
     void Update(float dt);           // advances Animator if playing
@@ -19,6 +31,12 @@ public:
     void SetSpeed(float s);
     void SetClip(size_t index);      // choose a different clip
 
+	// Load Animation from file and add to clips
+	void AddClipFromFile(const std::string& path);
+
+	// Assign a new Model (if needed)
+	void SetModel(Model* m);
+
     // Access for systems that need it
     Animator& GetAnimator();
     const Animator& GetAnimator() const;
@@ -28,7 +46,7 @@ public:
     size_t GetActiveClipIndex() const;
 
     // UI state (can be private with getters if you prefer)
-    bool  isPlay = false;
+    bool  isPlay = true;
     bool  isLoop = true;
     float speed = 1.0f;
 

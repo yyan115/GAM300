@@ -26,7 +26,7 @@ public:
 	
     Animation() = default;
 
-	Animation(const std::string& animationPath, class Model* model);
+    Animation(aiAnimation* animation, const aiNode* rootNode, Model* model);
 
 	~Animation() = default;
 
