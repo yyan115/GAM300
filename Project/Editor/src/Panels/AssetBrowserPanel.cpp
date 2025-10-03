@@ -7,6 +7,7 @@
 #include "Graphics/Texture.h"
 #include "Graphics/Material.hpp"
 #include "GUIManager.hpp"
+#include "EditorComponents.hpp"
 #include "Prefab.hpp"
 #include "PrefabIO.hpp"
 #include "PrefabComponent.hpp"
@@ -34,6 +35,10 @@ std::string DraggedModelPath;
 // Global drag-drop state for cross-window audio dragging
 GUID_128 DraggedAudioGuid = {0, 0};
 std::string DraggedAudioPath;
+
+// Global drag-drop state for cross-window font dragging
+GUID_128 DraggedFontGuid = {0, 0};
+std::string DraggedFontPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
@@ -271,12 +276,16 @@ void AssetBrowserPanel::QueueRefresh() {
 }
 
 void AssetBrowserPanel::OnImGuiRender() {
+    
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_ASSET_BROWSER);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_ASSET_BROWSER);
+
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
         // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
     }
-    
+
     // Sync directory tree if needed (Unity behavior)
     if (needsTreeSync) {
         SyncTreeWithCurrentDirectory();
@@ -322,14 +331,17 @@ void AssetBrowserPanel::OnImGuiRender() {
         const float MIN_WIDTH = 150.0f;
         const float maxWidth = ImGui::GetContentRegionAvail().x - 200.0f;
 
-        ImGui::BeginChild("##FolderTree", ImVec2(splitterWidth, 0), true);
+        
+        ImGui::BeginChild("##FolderTree", ImVec2(splitterWidth, 0), false);  // No border
         RenderFolderTree();
         ImGui::EndChild();
 
         ImGui::SameLine();
 
-        // Splitter bar
+        // Splitter bar - darker to blend better
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
         ImGui::Button("##Splitter", ImVec2(8.0f, -1));
+        ImGui::PopStyleColor();
         if (ImGui::IsItemActive()) {
             float delta = ImGui::GetIO().MouseDelta.x;
             splitterWidth += delta;
@@ -341,13 +353,15 @@ void AssetBrowserPanel::OnImGuiRender() {
 
         ImGui::SameLine();
 
-        ImGui::BeginChild("##AssetGrid", ImVec2(0, 0), true);
+        ImGui::BeginChild("##AssetGrid", ImVec2(0, 0), false);  // No border
         RenderAssetGrid();
         ImGui::EndChild();
 
         ImGui::EndChild();
     }
     ImGui::End();
+
+    ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
 
     // Delete confirmation popup
     if (showDeleteConfirmation) {
@@ -430,8 +444,12 @@ void AssetBrowserPanel::RenderToolbar() {
         // TODO: Implement import dialog
     }
 
-    // Search and filter bar
-    ImGui::SetNextItemWidth(200.0f);
+    
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
+
+    ImGui::SetNextItemWidth(250.0f);
     char searchBuffer[256];
 #ifdef _WIN32
     strncpy_s(searchBuffer, searchQuery.c_str(), sizeof(searchBuffer) - 1);
@@ -444,11 +462,14 @@ void AssetBrowserPanel::RenderToolbar() {
         searchQuery = searchBuffer;
     }
 
+    ImGui::PopStyleColor(3);
+
     ImGui::SameLine();
     ImGui::SetNextItemWidth(120.0f);
 
     const char* assetTypeNames[] = { "All", "Textures", "Models", "Shaders", "Audio", "Fonts", "Materials" };
     int currentTypeIndex = static_cast<int>(selectedAssetType);
+
     if (ImGui::Combo("##Filter", &currentTypeIndex, assetTypeNames, IM_ARRAYSIZE(assetTypeNames))) {
         selectedAssetType = static_cast<AssetType>(currentTypeIndex);
     }
@@ -604,10 +625,11 @@ void AssetBrowserPanel::RenderAssetGrid()
                            lowerExt == ".dae" || lowerExt == ".3ds");
             bool isAudio = (lowerExt == ".wav" || lowerExt == ".ogg" ||
                            lowerExt == ".mp3" || lowerExt == ".flac");
+            bool isFont = (lowerExt == ".ttf" || lowerExt == ".otf");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -636,6 +658,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Use a simple payload - just a flag that dragging is active
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
+                } else if (isFont) {
+                    // Send font path directly
+                    ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -741,7 +767,15 @@ void AssetBrowserPanel::RenderAssetGrid()
                 imgMin.x + (thumb - iconSize.x) * 0.5f,
                 imgMin.y + (thumb - iconSize.y) * 0.5f
             );
-            dl->AddText(font, fontSize, iconPos, IM_COL32(220, 220, 220, 255), icon.c_str());
+
+            std::string lowerExtCheck = asset.extension;
+            std::transform(lowerExtCheck.begin(), lowerExtCheck.end(), lowerExtCheck.begin(), ::tolower);
+            bool isDraggableAsset = (lowerExtCheck == ".obj" || lowerExtCheck == ".fbx" ||
+                                    lowerExtCheck == ".dae" || lowerExtCheck == ".3ds" ||
+                                    lowerExtCheck == ".mat" || lowerExtCheck == ".prefab");
+
+            ImU32 iconColor = isDraggableAsset ? IM_COL32(100, 180, 255, 255) : IM_COL32(220, 220, 220, 255);
+            dl->AddText(font, fontSize, iconPos, iconColor, icon.c_str());
         }
 
 
@@ -1552,10 +1586,13 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
         return ICON_FA_FONT;
     }
     else if (lowerExt == ".mat") {
-        return ICON_FA_PAINTBRUSH;
+        return ICON_FA_CIRCLE_HALF_STROKE;
     }
     else if (lowerExt == ".prefab") {
         return ICON_FA_CUBES;
+    }
+    else if (lowerExt == ".scene") {
+        return ICON_FA_EARTH_AMERICAS;
     }
 
     return ICON_FA_FILE; // Default file icon

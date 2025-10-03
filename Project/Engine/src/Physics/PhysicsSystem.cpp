@@ -180,6 +180,24 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
+        // Create shape if it doesn't exist or if version changed
+        if (!col.shape || rb.collider_seen_version != col.version) {
+            switch (col.shapeType) {
+                case ColliderShapeType::Box:
+                    col.shape = new JPH::BoxShape(JPH::Vec3(col.boxHalfExtents.x, col.boxHalfExtents.y, col.boxHalfExtents.z));
+                    break;
+                case ColliderShapeType::Sphere:
+                    col.shape = new JPH::SphereShape(col.sphereRadius);
+                    break;
+                case ColliderShapeType::Capsule:
+                    col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight, col.capsuleRadius);
+                    break;
+                case ColliderShapeType::Cylinder:
+                    col.shape = new JPH::CylinderShape(col.cylinderHalfHeight, col.cylinderRadius);
+                    break;
+            }
+        }
+
         // 1) Create if not created yet
         if (rb.id.IsInvalid()) {
             const auto motion =
