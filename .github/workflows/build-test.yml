@@ -44,11 +44,13 @@ jobs:
         # Bootstrap vcpkg if needed
         if (!(Test-Path "vcpkg\vcpkg.exe")) {
             Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
-            & "vcpkg\bootstrap-vcpkg.bat"
+            $bootstrapPath = Join-Path (Get-Location) "vcpkg\bootstrap-vcpkg.bat"
+            & cmd.exe /c $bootstrapPath
         }
 
         # Integrate with Visual Studio
-        & "vcpkg\vcpkg.exe" integrate install
+        $vcpkgPath = Join-Path (Get-Location) "vcpkg\vcpkg.exe"
+        & $vcpkgPath integrate install
 
         Write-Host "vcpkg setup complete!" -ForegroundColor Green
 
