@@ -10,20 +10,12 @@
 #include <iostream>
 #include "Logging.hpp"
 
-// Static member definitions for SCENE panel
+// Static member definitions
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
 unsigned int SceneRenderer::sceneColorTexture = 0;
 unsigned int SceneRenderer::sceneDepthTexture = 0;
 int SceneRenderer::sceneWidth = 1280;
 int SceneRenderer::sceneHeight = 720;
-
-// Static member definitions for GAME panel (separate)
-unsigned int SceneRenderer::gameFrameBuffer = 0;
-unsigned int SceneRenderer::gameColorTexture = 0;
-unsigned int SceneRenderer::gameDepthTexture = 0;
-int SceneRenderer::gameWidth = 1920;
-int SceneRenderer::gameHeight = 1080;
-
 Camera* SceneRenderer::editorCamera = nullptr;
 
 unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
@@ -137,7 +129,7 @@ void SceneRenderer::RenderSceneForEditor()
     RenderSceneForEditor(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f);
 }
 
-void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom, float orthoZoomLevel)
+void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom)
 {
     try {
         // Initialize static editor camera if not already done
@@ -150,14 +142,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         editorCamera->Front = cameraFront;
         editorCamera->Up = cameraUp;
         editorCamera->Zoom = cameraZoom;
-        editorCamera->OrthoZoomLevel = orthoZoomLevel;
 
         // Get the ECS manager and graphics manager
         ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
         GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-
-        // Mark that we're rendering for the editor (for view mode filtering)
-        gfxManager.SetRenderingForEditor(true);
 
         mainECS.transformSystem->Update();
 
@@ -196,76 +184,7 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // End frame
         gfxManager.EndFrame();
 
-        // Reset editor rendering flag
-        gfxManager.SetRenderingForEditor(false);
-
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
     }
-}
-
-// ============================================================================
-// GAME PANEL SEPARATE FRAMEBUFFER FUNCTIONS
-// ============================================================================
-
-void SceneRenderer::BeginGameRender(int width, int height)
-{
-    // Create or resize game framebuffer if needed
-    if (gameFrameBuffer == 0 || width != gameWidth || height != gameHeight) {
-        // Delete existing game framebuffer if it exists
-        if (gameFrameBuffer != 0) {
-            glDeleteFramebuffers(1, &gameFrameBuffer);
-            glDeleteTextures(1, &gameColorTexture);
-            glDeleteTextures(1, &gameDepthTexture);
-        }
-
-        gameWidth = width;
-        gameHeight = height;
-
-        // Create framebuffer
-        glGenFramebuffers(1, &gameFrameBuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
-
-        // Create color texture
-        glGenTextures(1, &gameColorTexture);
-        glBindTexture(GL_TEXTURE_2D, gameColorTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gameColorTexture, 0);
-
-        // Create depth texture
-        glGenTextures(1, &gameDepthTexture);
-        glBindTexture(GL_TEXTURE_2D, gameDepthTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gameDepthTexture, 0);
-
-        // Check framebuffer completeness
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SceneRenderer] Game framebuffer is not complete!\n");
-        }
-    }
-
-    // Update WindowManager viewport dimensions to match game rendering area
-    WindowManager::SetViewportDimensions(width, height);
-
-    // Bind game framebuffer and set viewport
-    glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
-    glViewport(0, 0, width, height);
-
-    // Enable depth testing for 3D rendering
-    glEnable(GL_DEPTH_TEST);
-}
-
-void SceneRenderer::EndGameRender()
-{
-    // Unbind framebuffer (render to screen again)
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-unsigned int SceneRenderer::GetGameTexture()
-{
-    return gameColorTexture;
 }

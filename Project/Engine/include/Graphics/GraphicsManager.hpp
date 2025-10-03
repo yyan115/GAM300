@@ -12,19 +12,13 @@
 #include "DebugDraw/DebugDrawComponent.hpp"
 #include "Sprite/SpriteRenderComponent.hpp"
 #include <Math/Matrix4x4.hpp>
-#include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
 
-class ENGINE_API GraphicsManager {
+class GraphicsManager {
 public:
-	enum class ViewMode {
-		VIEW_3D,      // 3D mode - show 3D models and 3D sprites
-		VIEW_2D       // 2D mode - show 2D sprites only in screen space
-	};
-
 	static GraphicsManager& GetInstance();
 
-	// Initialization
+	// Initialization 
 	bool Initialize(int window_width, int window_height);
 	void Shutdown();
 
@@ -36,20 +30,6 @@ public:
     // Camera management
     void SetCamera(Camera* camera);
     Camera* GetCurrentCamera() const { return currentCamera; }
-
-    // Viewport management (for editor/scene panel rendering with correct aspect ratio)
-    void SetViewportSize(int width, int height);
-    void GetViewportSize(int& width, int& height) const;
-
-    // View mode management (2D/3D toggle)
-    void SetViewMode(ViewMode mode) { viewMode = mode; }
-    ViewMode GetViewMode() const { return viewMode; }
-    bool Is3DMode() const { return viewMode == ViewMode::VIEW_3D; }
-    bool Is2DMode() const { return viewMode == ViewMode::VIEW_2D; }
-
-    // Editor rendering flag (to distinguish editor from game rendering)
-    void SetRenderingForEditor(bool isEditor) { isRenderingForEditor = isEditor; }
-    bool IsRenderingForEditor() const { return isRenderingForEditor; }
 
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
@@ -78,16 +58,6 @@ private:
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
-
-    // Viewport dimensions for proper aspect ratio (set by editor/scene panel)
-    int viewportWidth = 0;
-    int viewportHeight = 0;
-
-    // View mode state (2D/3D toggle)
-    ViewMode viewMode = ViewMode::VIEW_3D;
-
-    // Flag to indicate if currently rendering for editor (vs game)
-    bool isRenderingForEditor = false;
 
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);

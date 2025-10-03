@@ -59,7 +59,6 @@ private:
     GUID_128 lastSelectedAsset;
     bool isOpeningScene = false;
     AssetInfo selectedScene;
-    std::string pendingNavigation;
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };

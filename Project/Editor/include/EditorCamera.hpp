@@ -39,9 +39,6 @@ public:
     float ZoomSensitivity;
     float PanSensitivity;
 
-    // 2D orthographic zoom level (1.0 = normal size, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
-    float OrthoZoomLevel;
-
     /**
      * @brief Constructor - creates editor camera looking at origin
      */
@@ -49,24 +46,14 @@ public:
                  float distance = 5.0f);
 
     /**
-     * @brief Returns the view matrix (for 3D mode)
+     * @brief Returns the view matrix
      */
     glm::mat4 GetViewMatrix() const;
-
-    /**
-     * @brief Returns the view matrix for 2D mode (simple identity-based view)
-     */
-    glm::mat4 Get2DViewMatrix() const;
     
     /**
-     * @brief Returns the projection matrix (perspective or orthographic based on mode)
+     * @brief Returns the projection matrix
      */
     glm::mat4 GetProjectionMatrix(float aspectRatio) const;
-
-    /**
-     * @brief Returns orthographic projection matrix for 2D view
-     */
-    glm::mat4 GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const;
 
     /**
      * @brief Process Unity-style editor input
@@ -78,11 +65,10 @@ public:
      * @param mouseDeltaX Mouse X movement
      * @param mouseDeltaY Mouse Y movement
      * @param scrollDelta Mouse scroll delta
-     * @param is2DMode Whether in 2D mode (for zoom-scaled panning)
      */
     void ProcessInput(float deltaTime, bool isWindowHovered,
                      bool isAltPressed, bool isLeftMousePressed, bool isMiddleMousePressed,
-                     float mouseDeltaX, float mouseDeltaY, float scrollDelta, bool is2DMode = false);
+                     float mouseDeltaX, float mouseDeltaY, float scrollDelta);
 
     /**
      * @brief Set the target point to orbit around
@@ -94,10 +80,9 @@ public:
      */
     void FrameTarget(const glm::vec3& target, float distance = 5.0f);
 
+private:
     /**
      * @brief Update camera position based on orbit parameters
      */
     void UpdateCameraVectors();
-
-private:
 };

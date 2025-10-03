@@ -21,13 +21,8 @@ public:
         PAUSED        // Play mode but paused
     };
 
-    enum class ViewMode {
-        VIEW_3D,      // 3D mode - show 3D models and 3D sprites
-        VIEW_2D       // 2D mode - show 2D sprites only in screen space
-    };
-
     static EditorState& GetInstance();
-
+    
     // State management (delegates to Engine)
     void SetState(State newState);
     State GetState() const;
@@ -37,17 +32,11 @@ public:
     bool IsPlayMode() const { return Engine::IsPlayMode(); }
     bool IsPaused() const { return Engine::IsPaused(); }
     bool ShouldRunGameLogic() const { return Engine::ShouldRunGameLogic(); }
-
+    
     // State transitions
     void Play();
     void Pause();
     void Stop();
-
-    // View mode management
-    void SetViewMode(ViewMode mode) { viewMode = mode; }
-    ViewMode GetViewMode() const { return viewMode; }
-    bool Is3DMode() const { return viewMode == ViewMode::VIEW_3D; }
-    bool Is2DMode() const { return viewMode == ViewMode::VIEW_2D; }
 
     // Entity selection management
     void SetSelectedEntity(Entity entity);
@@ -63,7 +52,4 @@ private:
 
     // Only store entity selection, game state is managed by Engine
     Entity selectedEntity = INVALID_ENTITY;
-
-    // View mode state
-    ViewMode viewMode = ViewMode::VIEW_3D;
 };

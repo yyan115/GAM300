@@ -25,8 +25,8 @@ foreach(source ${GAME_SOURCES})
 endforeach()
 
 # Determine build type based on configuration
-if(CMAKE_BUILD_TYPE MATCHES "Editor" OR ANDROID)
-    # Editor configs or Android: Game as static library (no main.cpp)
+if(CMAKE_BUILD_TYPE MATCHES "Editor")
+    # Editor configs: Game as static library (no main.cpp)
     if(GAME_MAIN_SOURCE)
         list(REMOVE_ITEM GAME_SOURCES ${GAME_MAIN_SOURCE})
         message(STATUS "Building Game as static library (removed main.cpp)")
@@ -56,7 +56,7 @@ endforeach()
 target_include_directories(Game
     PRIVATE
         ${GAME_INCLUDE_DIRS}
-        # Engine include comes from linking to Engine target, not manually added
+        ${CMAKE_SOURCE_DIR}/Engine/include
 )
 
 # Link to Engine shared library

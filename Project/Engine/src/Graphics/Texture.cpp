@@ -158,14 +158,12 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		outPath = (p.parent_path() / p.stem()).generic_string() + ".dds";
 		gli::save(tex, outPath);
 
-		//// Save to the root project directory as well.
-		//p = (FileUtilities::GetSolutionRootDir() / outPath);
-		//gli::save(tex, p.generic_string());
+		// Save to the root project directory as well.
+		p = (FileUtilities::GetSolutionRootDir() / outPath);
+		gli::save(tex, p.generic_string());
 	}
 	else {
-		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
-		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
-		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.ktx";
+		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + "_android.ktx";
 		// Ensure parent directories exist
 		std::filesystem::path p(outPath);
 		std::filesystem::create_directories(p.parent_path());
@@ -302,8 +300,7 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 		metaFilePath = assetPath + ".meta";
 	}
 	else {
-		std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
-		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".meta";
+		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPath).generic_string() + ".meta";
 	}
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -333,29 +330,29 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	metaFile << buffer.GetString();
 	metaFile.close();
 
-	//if (!forAndroid) {
-	//	// Save the meta file in the root project directory as well.
-	//	try {
-	//		std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / metaFilePath).generic_string(),
-	//			std::filesystem::copy_options::overwrite_existing);
-	//	}
-	//	catch (const std::filesystem::filesystem_error& e) {
-	//		std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-	//	}
-	//}
-	//else {
-	//	// Save the meta file to the build and root directory as well.
-	//	try {
-	//		std::string buildMetaPath = assetPath + ".meta";
-	//		std::filesystem::copy_file(metaFilePath, buildMetaPath,
-	//			std::filesystem::copy_options::overwrite_existing);
-	//		std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / buildMetaPath).generic_string(),
-	//			std::filesystem::copy_options::overwrite_existing);
-	//	}
-	//	catch (const std::filesystem::filesystem_error& e) {
-	//		std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-	//	}
-	//}
+	if (!forAndroid) {
+		// Save the meta file in the root project directory as well.
+		try {
+			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / metaFilePath).generic_string(),
+				std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
+		}
+	}
+	else {
+		// Save the meta file to the build and root directory as well.
+		try {
+			std::string buildMetaPath = assetPath + ".meta";
+			std::filesystem::copy_file(metaFilePath, buildMetaPath,
+				std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / buildMetaPath).generic_string(),
+				std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
+		}
+	}
 
 	std::shared_ptr<TextureMeta> metaData = std::make_shared<TextureMeta>();
 	metaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);

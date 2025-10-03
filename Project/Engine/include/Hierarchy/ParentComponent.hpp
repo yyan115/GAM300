@@ -3,5 +3,5 @@
 
 struct ParentComponent {
 REFL_SERIALIZABLE
-	GUID_128 parent;
+	Entity parent;
 };

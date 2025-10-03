@@ -5,7 +5,6 @@
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
-#include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Math/Matrix3x3.hpp>
 
 void TransformSystem::Initialise() {
@@ -77,8 +76,7 @@ void TransformSystem::UpdateTransform(Entity entity) {
 		auto parentCompOpt = ecsManager.TryGetComponent<ParentComponent>(entity);
 		// If the entity has a parent
 		if (parentCompOpt.has_value()) {
-			auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-			auto& parentTransform = ecsManager.GetComponent<Transform>(guidRegistry.GetEntityByGUID(parentCompOpt->get().parent));
+			auto& parentTransform = ecsManager.GetComponent<Transform>(parentCompOpt->get().parent);
 			//auto& rootParentTransform = GetRootParentTransform(entity);
 			//transform.worldMatrix = parentTransform.worldMatrix * CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
 			
@@ -112,10 +110,8 @@ void TransformSystem::TraverseHierarchy(Entity entity, std::function<void(Entity
 	// Then traverse children.
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
-		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
-		for (const auto& childGUID : childrenComp.children) {
-			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+		for (const auto& child : childrenComp.children) {
 			TraverseHierarchy(child, updateTransform);
 		}
 	}
@@ -137,7 +133,7 @@ void TransformSystem::SetWorldPosition(Entity entity, Vector3D position) {
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
-		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
+		Entity parent = ecsManager.GetComponent<ParentComponent>(entity).parent;
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 		
 		// Convert world to local.
@@ -164,7 +160,7 @@ void TransformSystem::SetWorldRotation(Entity entity, Vector3D rotation) {
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
-		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
+		Entity parent = ecsManager.GetComponent<ParentComponent>(entity).parent;
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
@@ -194,7 +190,7 @@ void TransformSystem::SetWorldScale(Entity entity, Vector3D scale) {
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
-		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
+		Entity parent = ecsManager.GetComponent<ParentComponent>(entity).parent;
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
@@ -223,8 +219,7 @@ void TransformSystem::SetDirtyRecursive(Entity entity) {
 
 	if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
 		auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
-		for (const auto& childGUID : children) {
-			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+		for (Entity child : children) {
 			SetDirtyRecursive(child);
 		}
 	}
@@ -236,7 +231,7 @@ Transform& TransformSystem::GetRootParentTransform(Entity currentEntity) {
 		return ecsManager.GetComponent<Transform>(currentEntity);
 	}
 	else {
-		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(currentEntity).parent);
+		Entity parent = ecsManager.GetComponent<ParentComponent>(currentEntity).parent;
 		return GetRootParentTransform(parent);
 	}
 }

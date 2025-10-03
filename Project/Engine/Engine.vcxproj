@@ -60,10 +60,6 @@
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Logging.hpp" />
-    <ClInclude Include="include\Physics\CollisionFilters.hpp" />
-    <ClInclude Include="include\Physics\CollisionLayers.hpp" />
-    <ClInclude Include="include\Physics\JoltInclude.hpp" />
-    <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
     <ClInclude Include="include\PrefabIO.hpp" />
@@ -123,8 +119,6 @@
     <ClInclude Include="include\Platform\Platform.h" />
     <ClInclude Include="include\Platform\DesktopPlatform.h" />
     <ClInclude Include="include\Platform\AndroidPlatform.h" />
-    <ClInclude Include="include\Physics\ColliderComponent.hpp" />
-    <ClInclude Include="include\Physics\RigidBodyComponent.hpp" />
     <ClInclude Include="src\DebugDrawComponent.hpp" />
     <ClInclude Include="src\DebugDraw\DebugDrawComponent.hpp" />
     <ClInclude Include="src\DebugDraw\DebugDrawSystem.hpp" />
@@ -163,7 +157,6 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
@@ -183,12 +176,9 @@
     <ClCompile Include="src\Graphics\TextRendering\TextRenderingSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
-    <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />
-    <ClCompile Include="src\Physics\CollisionFilters.cpp" />
-    <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
@@ -364,9 +354,6 @@
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -427,7 +414,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc</AdditionalIncludeDirectories>
@@ -450,7 +437,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include</AdditionalIncludeDirectories>
@@ -463,8 +450,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64;$(SolutionDir)Libraries\Compressonator\lib\bin\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib;Compressonator_MDd.lib</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099 /VERBOSE:LIB %(AdditionalOptions)</AdditionalOptions>
-      <ShowProgress>LinkVerbose</ShowProgress>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(SolutionDir)Libraries\FMOD\core\lib\x64\fmod.dll" "$(OutDir)"</Command>

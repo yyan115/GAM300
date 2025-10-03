@@ -6,11 +6,10 @@
 #include "Graphics/VBO.h"
 #include "Graphics/EBO.h"
 #include "DebugDrawComponent.hpp"
-#include "Engine.h"  // For ENGINE_API macro
 
 class Model;
 
-class ENGINE_API DebugDrawSystem : public System {
+class DebugDrawSystem : public System {
 public:
     DebugDrawSystem() = default;
     ~DebugDrawSystem() = default;

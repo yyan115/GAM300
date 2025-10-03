@@ -11,17 +11,11 @@
 #include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
-#include <Graphics/Sprite/SpriteRenderComponent.hpp>
-#include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
-#include "EditorState.hpp"
-#include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
-#include "Panels/ScenePanel.hpp"
-#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -233,86 +227,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     else
     {
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", entityName.c_str());
-        if (ImGui::IsItemClicked()) {
+        if (ImGui::IsItemClicked())
             GUIManager::SetSelectedEntity(entityId);
-
-            // Double-click to focus the entity in the scene view
-            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                try {
-                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                    if (ecsManager.HasComponent<Transform>(entityId)) {
-                        Transform& transform = ecsManager.GetComponent<Transform>(entityId);
-                        glm::vec3 entityPos(transform.worldMatrix.m.m03,
-                                          transform.worldMatrix.m.m13,
-                                          transform.worldMatrix.m.m23);
-
-                        std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
-                                 << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
-
-                        // Determine if entity is 2D or 3D
-                        bool entityIs3D = true; // Default to 3D
-                        bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
-                        bool hasText = ecsManager.HasComponent<TextRenderComponent>(entityId);
-                        bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(entityId);
-
-                        if (hasModel) {
-                            entityIs3D = true;
-                        } else if (hasSprite) {
-                            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
-                            entityIs3D = sprite.is3D;
-                            std::cout << "[SceneHierarchy] Entity has sprite at position ("
-                                     << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
-                                     << ") is3D=" << sprite.is3D << std::endl;
-                            // For 2D sprites, use the sprite position instead of transform
-                            if (!sprite.is3D) {
-                                entityPos = sprite.position;
-                                std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
-                            }
-                        } else if (hasText) {
-                            auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
-                            entityIs3D = text.is3D;
-                            std::cout << "[SceneHierarchy] Entity has text component is3D=" << text.is3D << std::endl;
-                        }
-
-                        // Switch view mode to match entity
-                        EditorState& editorState = EditorState::GetInstance();
-                        bool currentIs2D = editorState.Is2DMode();
-                        bool targetIs2D = !entityIs3D;
-
-                        if (currentIs2D != targetIs2D) {
-                            // Need to switch modes
-                            EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
-                            editorState.SetViewMode(newViewMode);
-
-                            // Sync with GraphicsManager
-                            GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
-                            GraphicsManager::GetInstance().SetViewMode(gfxMode);
-
-                            std::cout << "[SceneHierarchy] Switched view mode to " << (entityIs3D ? "3D" : "2D") << std::endl;
-                        }
-
-                        // Frame the entity in the scene camera
-                        auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
-                        if (scenePanelPtr) {
-                            auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
-                            if (scenePanel) {
-                                scenePanel->SetCameraTarget(entityPos);
-                                std::cout << "[SceneHierarchy] Set camera target to ("
-                                         << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
-                            } else {
-                                std::cout << "[SceneHierarchy] Failed to cast to ScenePanel" << std::endl;
-                            }
-                        } else {
-                            std::cout << "[SceneHierarchy] Scene panel not found" << std::endl;
-                        }
-                    } else {
-                        std::cout << "[SceneHierarchy] Entity '" << entityName << "' has no Transform component" << std::endl;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
-                }
-            }
-        }
     }
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
@@ -358,8 +274,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     if (opened && hasChildren) {
         // Child nodes would be drawn here in a real implementation
-        for (const auto& childGUID : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
-            Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+        for (const auto& child : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
             DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
         }
 
@@ -369,10 +284,6 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
 void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetParent) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-    GUID_128 draggedEntityGUID = guidRegistry.GetGUIDByEntity(draggedEntity);
-    GUID_128 targetParentGUID = guidRegistry.GetGUIDByEntity(targetParent);
-
     Transform& draggedEntityTransform = ecsManager.GetComponent<Transform>(draggedEntity);
 
     // If the target parent is one of the dragged entity's child, do nothing (circular dependency).
@@ -390,16 +301,15 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
         ParentComponent& parentComponent = ecsManager.GetComponent<ParentComponent>(draggedEntity);
 
         // Check if the new parent is the same as the old parent. If it is, exit.
-        if (parentComponent.parent == targetParentGUID) return;
+        if (parentComponent.parent == targetParent) return;
         
         // Set the child's new parent.
-        GUID_128 oldParentGUID = parentComponent.parent;
-        Entity oldParent = guidRegistry.GetEntityByGUID(oldParentGUID);
-        parentComponent.parent = targetParentGUID;
+        Entity oldParent = parentComponent.parent;
+        parentComponent.parent = targetParent;
 
         // Remove the child from the old parent.
         auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
-        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
+        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), draggedEntity);
         ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
 
         // If the old parent has no more children, remove the children component from the old parent.
@@ -408,17 +318,17 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
     }
     else {
         ecsManager.AddComponent<ParentComponent>(draggedEntity, ParentComponent{});
-        ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParentGUID;
+        ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParent;
     }
 
     // If the parent already has children
     if (ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
 
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntityGUID);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
     else {
         ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntityGUID);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
     }
 
     // Calculate the child's world position, rotation and scale.
@@ -434,18 +344,15 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
 
 void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-
     // First check if the dragged entity has a ParentComponent
     if (ecsManager.HasComponent<ParentComponent>(draggedEntity)) {
         // If there is, remove it, but store the parent first.
-        GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
-        Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+        Entity parent = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
         ecsManager.RemoveComponent<ParentComponent>(draggedEntity);
 
         // Update the parent by removing the dragged entity from its children.
         ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
-        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
+        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),draggedEntity);
         pChildrenComponent.children.erase(it);
         if (pChildrenComponent.children.empty()) {
             ecsManager.RemoveComponent<ChildrenComponent>(parent);
@@ -470,12 +377,9 @@ void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nes
 
     // Then traverse children.
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-
     if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
         auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
-        for (const auto& childGUID : childrenComp.children) {
-            Entity child = guidRegistry.GetEntityByGUID(childGUID);
+        for (const auto& child : childrenComp.children) {
             TraverseHierarchy(child, nestedChildren, addNestedChildren);
         }
     }
@@ -515,9 +419,8 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
         // Load the cube model using direct file path
-        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/cube.obj";
+        std::string modelPath = "Resources/Models/cube.obj";
         cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
-        cubeRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(modelPath);
 
         if (cubeRenderer.model) {
             std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
@@ -526,9 +429,8 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         }
 
         // Load the default shader using direct file path
-        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
+        std::string shaderPath = "Resources/Shaders/default";
         cubeRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
-        cubeRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(shaderPath);
 
         if (cubeRenderer.shader) {
             std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;

@@ -80,7 +80,6 @@ public:
     std::vector<Particle> particles;
     std::shared_ptr<Texture> particleTexture;
     std::shared_ptr<Shader> particleShader;
-    std::string texturePath;  // For inspector display
 
     VAO* particleVAO = nullptr;
     VBO* quadVBO = nullptr;      // Vertex data for quad

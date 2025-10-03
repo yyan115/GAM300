@@ -8,35 +8,28 @@ project("gam300android")
 set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
 set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-debug")
 
-# Configure Engine if CMakeCache doesn't exist (one-time setup)
+# Configure Engine project if needed (one-time setup)
+if(NOT EXISTS ${ENGINE_BUILD_DIR})
+    message(STATUS "Creating Engine build directory...")
+    file(MAKE_DIRECTORY ${ENGINE_BUILD_DIR})
+endif()
+
 if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
-    message(STATUS "Configuring Engine for Android (one-time)...")
+    message(STATUS "Configuring Engine for Android...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND}
-            -S ${ENGINE_PROJECT_DIR}
-            -B ${ENGINE_BUILD_DIR}
-            -G Ninja
-            -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
-            -DANDROID_ABI=arm64-v8a
-            -DANDROID_PLATFORM=android-33
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_ANDROID_STL_TYPE=c++_shared
-        RESULT_VARIABLE CONFIG_RESULT
-        OUTPUT_VARIABLE CONFIG_OUTPUT
-        ERROR_VARIABLE CONFIG_ERROR
+        COMMAND ${CMAKE_COMMAND} --preset android-debug -G Ninja
+        WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
+        RESULT_VARIABLE ENGINE_CONFIG_RESULT
+        OUTPUT_VARIABLE ENGINE_CONFIG_OUTPUT
+        ERROR_VARIABLE ENGINE_CONFIG_ERROR
     )
-    if(CONFIG_OUTPUT)
-        message(STATUS "Configure output: ${CONFIG_OUTPUT}")
-    endif()
-    if(CONFIG_ERROR)
-        message(STATUS "Configure errors: ${CONFIG_ERROR}")
-    endif()
-    if(NOT CONFIG_RESULT EQUAL 0)
-        message(FATAL_ERROR "Engine configure failed with code ${CONFIG_RESULT}")
+
+    if(NOT ENGINE_CONFIG_RESULT EQUAL 0)
+        message(FATAL_ERROR "Engine configure failed: ${ENGINE_CONFIG_ERROR}")
     endif()
 endif()
 
-# Collect all Engine and Game source files for dependency tracking
+# Collect all Engine source files for dependency tracking
 file(GLOB_RECURSE ENGINE_SOURCES
     "${ENGINE_PROJECT_DIR}/Engine/src/*.cpp"
     "${ENGINE_PROJECT_DIR}/Engine/src/*.c"
@@ -44,45 +37,35 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "${ENGINE_PROJECT_DIR}/Engine/include/*.hpp"
 )
 
-file(GLOB_RECURSE GAME_SOURCES_FOR_DEPS
-    "${ENGINE_PROJECT_DIR}/Game/src/*.cpp"
-    "${ENGINE_PROJECT_DIR}/Game/src/*.c"
-    "${ENGINE_PROJECT_DIR}/Game/include/*.h"
-    "${ENGINE_PROJECT_DIR}/Game/include/*.hpp"
-)
-
-# Track CMakeLists.txt and ImportDependencies.cmake that could affect the build
+# Also track CMakeLists.txt files that could affect the build
 file(GLOB ENGINE_CMAKE_FILES
     "${ENGINE_PROJECT_DIR}/Engine/CMakeLists.txt"
-    "${ENGINE_PROJECT_DIR}/Game/CMakeLists.txt"
     "${ENGINE_PROJECT_DIR}/CMakeLists.txt"
-    "${ENGINE_PROJECT_DIR}/ImportDependencies.cmake"
+    "${ENGINE_PROJECT_DIR}/CMakePresets.json"
 )
 
-# Build Engine and Game when source files change (runs at build time, not config time)
+# Create custom target to build Engine when sources OR main Resources folder changes
 add_custom_command(
-    OUTPUT
-        ${ENGINE_BUILD_DIR}/lib/libEngine.so
-        ${ENGINE_BUILD_DIR}/lib/libGame.a
-    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] Building Engine and Game..."
-    COMMAND ${CMAKE_COMMAND} --build ${ENGINE_BUILD_DIR}
+    OUTPUT ${ENGINE_BUILD_DIR}/lib/libEngine.so
+    COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] Resources changed - cleaning and rebuilding Engine..."
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} --preset android-debug -G Ninja
+    COMMAND ${CMAKE_COMMAND} --build ${ENGINE_BUILD_DIR} --config $<CONFIG>
     WORKING_DIRECTORY ${ENGINE_PROJECT_DIR}
-    DEPENDS ${ENGINE_SOURCES} ${GAME_SOURCES_FOR_DEPS} ${ENGINE_CMAKE_FILES}
-    COMMENT "Building Engine and Game (auto-rebuild when sources change)"
+    DEPENDS ${ENGINE_SOURCES} ${ENGINE_CMAKE_FILES} #${RESOURCE_FILES}
+    COMMENT "Building Engine library (CLEAN + REBUILD when main Resources folder changes)"
     VERBATIM
 )
 
-# Create a target that depends on the engine and game libraries
-add_custom_target(build_engine_and_game
-    DEPENDS
-        ${ENGINE_BUILD_DIR}/lib/libEngine.so
-        ${ENGINE_BUILD_DIR}/lib/libGame.a
+# Create a target that depends on the engine library
+add_custom_target(build_engine
+    DEPENDS ${ENGINE_BUILD_DIR}/lib/libEngine.so
 )
 
 # Create jniLibs directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a)
 
-# Copy Engine library with proper dependency tracking (runs at build time)
+# Copy Engine library with proper dependency tracking
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libEngine.so
     COMMAND ${CMAKE_COMMAND} -E copy ${ENGINE_BUILD_DIR}/lib/libEngine.so ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
@@ -91,36 +74,60 @@ add_custom_command(
     VERBATIM
 )
 
-# Copy FMOD library (static dependency, only copy once)
+# Copy FMOD library (static dependency)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libfmod.so
     COMMAND ${CMAKE_COMMAND} -E copy ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
     DEPENDS ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so
     COMMENT "Copying FMOD library to jniLibs"
-    VERBATIM
 )
 
-# Copy assimp library (Engine dependency)
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libassimp.so
-    COMMAND ${CMAKE_COMMAND} -E copy ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libassimp.so ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
-    DEPENDS ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libassimp.so
-    COMMENT "Copying assimp library to jniLibs"
-    VERBATIM
-)
+# Collect all files in Resources directory for dependency tracking
+#file(GLOB_RECURSE RESOURCE_FILES "${ENGINE_PROJECT_DIR}/Resources/*")
+
+# Copy Resources from main project to Android assets - ALWAYS RUNS FIRST
+# add_custom_command(
+#     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD: Starting Resources copy..."
+#     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#         ${ENGINE_PROJECT_DIR}/Resources
+#         ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources
+#     COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMAND ${CMAKE_COMMAND} -E echo "[Android CMake] PRE-BUILD SUCCESS: Resources copied to assets folder"
+#     DEPENDS ${RESOURCE_FILES}
+#     COMMENT "PRE-BUILD: Copying Resources to Android assets"
+#     VERBATIM
+# )
+
+# Create custom target for resources - runs BEFORE everything else
+# add_custom_target(copy_resources ALL
+#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+# )
+
+# Create alias target for Gradle to reference
+# add_custom_target(copyResourcesToAssets
+#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../assets/Resources/copied.stamp
+#     COMMENT "Alias target for Gradle: Copy Resources to Android assets"
+# )
 
 # Create custom target to ensure libraries are copied
 add_custom_target(copy_libraries ALL
     DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libEngine.so
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libfmod.so
-        ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libassimp.so
 )
 
-# Create our JNI bridge library (just the bridge, not Game sources)
+# Collect all Game source files except main.cpp
+file(GLOB_RECURSE GAME_SOURCES "${ENGINE_PROJECT_DIR}/Game/src/*.cpp")
+list(REMOVE_ITEM GAME_SOURCES "${ENGINE_PROJECT_DIR}/Game/src/main.cpp")
+
+# Create our JNI bridge library
 add_library(${CMAKE_PROJECT_NAME} SHARED
-    # JNI bridge code only
+    # JNI bridge code
     native-lib.cpp
+    # Game source files (excluding main.cpp)
+    ${GAME_SOURCES}
 )
 
 # Copy the main JNI library to jniLibs after build (must come AFTER add_library)
@@ -131,11 +138,11 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     VERBATIM
 )
 
-# Include only public Engine and Game headers (clean architecture!)
+# Include engine headers + Android library headers + Game headers
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ENGINE_PROJECT_DIR}/Engine/include
+    ${ENGINE_PROJECT_DIR}/Engine/src
     ${ENGINE_PROJECT_DIR}/Game/include
-    # Android headers - dependencies leaked by Engine public headers
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/glm
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/rapidjson
@@ -146,28 +153,38 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/GLI
 )
 
-# Import the prebuilt Engine library (built by main CMake)
+# Import prebuilt libraries
 add_library(Engine SHARED IMPORTED)
 set_target_properties(Engine PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libEngine.so
 )
 
-# Import the prebuilt Game library (built by main CMake)
-add_library(Game STATIC IMPORTED)
-set_target_properties(Game PROPERTIES
-    IMPORTED_LOCATION ${ENGINE_BUILD_DIR}/lib/libGame.a
+add_library(assimp SHARED IMPORTED)
+set_target_properties(assimp PROPERTIES
+    IMPORTED_LOCATION ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libassimp.so
 )
 
-# Make sure our JNI library depends on Engine/Game being built and libraries being copied
-add_dependencies(${CMAKE_PROJECT_NAME} build_engine_and_game copy_libraries)
+add_library(fmod SHARED IMPORTED)
+set_target_properties(fmod PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libfmod.so
+)
+
+# Make sure our main library depends on the copied libraries, resources, and engine build
+#add_dependencies(${CMAKE_PROJECT_NAME} build_engine copy_libraries copy_resources)
+
+# Also add the Engine sources as dependencies to our main target to force rebuilds
+set_source_files_properties(native-lib.cpp PROPERTIES OBJECT_DEPENDS "${ENGINE_SOURCES}")
+
+# Make the imported Engine library depend on the actual file being built AND copied
+add_dependencies(Engine build_engine copy_libraries)
 
 # Link everything together
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    # Our libraries (built by main CMake)
-    Game    # Game static library
-    Engine  # Engine shared library (Engine already links to assimp, fmod, Jolt, etc.)
-    # FMOD for Android (needed for JNI initialization)
-    ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so
+    # Our engine
+    Engine
+    # Prebuilt libraries
+    assimp
+    fmod
     # C++ standard library (critical for Android)
     c++_shared
     # Android system libraries

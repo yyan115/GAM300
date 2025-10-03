@@ -1,20 +1,17 @@
 #include "pch.h"
 #include "GUIManager.hpp"
+#include "imgui.h"
+#include "imgui_internal.h" 
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "ImGuizmo.h"
 #include "Graphics/SceneRenderer.hpp"
 #include "WindowManager.hpp"
 #include "EditorState.hpp"
-#include "Scene/SceneManager.hpp"
+#include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include "Logging.hpp"
 
-// External libraries
-#include <imgui.h>
-#include <imgui_internal.h> 
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <ImGuizmo.h>
-#include <IconsFontAwesome6.h>
-#include <filesystem>
-
+#include "Scene/SceneManager.hpp"
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
@@ -24,7 +21,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
-#include "Asset Manager/AssetManager.hpp"
+#include <Asset Manager/AssetManager.hpp>
 #include "Asset Manager/MetaFilesManager.hpp"
 
 
@@ -49,12 +46,7 @@ void GUIManager::Initialize() {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable Docking
 
-	// Load default layout from Editor's imgui.ini if build's imgui.ini doesn't exist
-	if (!std::filesystem::exists("imgui.ini")) {
-		std::filesystem::path editorIni = "../../../Project/Editor/imgui.ini";
-		std::cout << "Loading default editor layout from: " << editorIni << std::endl;
-		ImGui::LoadIniSettingsFromDisk(editorIni.string().c_str());
-	}
+	io.IniFilename = "imgui.ini";
 	
 	CreateEditorTheme();
 
@@ -279,13 +271,12 @@ void GUIManager::RenderMenuBar() {
                 SceneManager::GetInstance().SaveScene();
             }
             ImGui::Separator();
-			ImGui::BeginDisabled(AssetManager::GetInstance().androidCompilationStatus.isCompiling);
-			if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
-				AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture = std::async(std::launch::async, [] {
-					return AssetManager::GetInstance().CompileAllAssetsForAndroid();
-					});
-			}
-			ImGui::EndDisabled();
+            if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
+                AssetManager::GetInstance().CompileAllAssetsForDesktop();
+            }
+            if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
+                AssetManager::GetInstance().CompileAllAssetsForAndroid();
+            }
             ImGui::Separator();
             if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
                 // TODO: Exit application
@@ -333,25 +324,6 @@ void GUIManager::RenderMenuBar() {
 
         ImGui::EndMainMenuBar();
     }
-
-	// For now temporarily put here.
-	if (AssetManager::GetInstance().androidCompilationStatus.finishedCompiling) {
-		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture.get();
-		ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
-		for (const auto& path : remainingToCompile) {
-			AssetManager::GetInstance().CompileAsset(path, true, true);
-		}
-		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
-		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
-	}
-	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
-	{
-		ImGui::Begin("Compiling assets for Android...");
-		float fraction = (float)AssetManager::GetInstance().androidCompilationStatus.numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
-		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
-		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
-		ImGui::End();
-	}
 }
 
 void GUIManager::CreateEditorTheme() {

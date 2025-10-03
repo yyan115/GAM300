@@ -55,8 +55,6 @@ class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;
-    std::string modelName;
-    std::string modelPath;
 
 	Model();
 	virtual ~Model() = default;
@@ -74,6 +72,6 @@ private:
 	//void loadModel(const std::string& path);
 	void ProcessNode(aiNode* node, const aiScene* scene);
 	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-	//std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
-    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+	std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+
 };

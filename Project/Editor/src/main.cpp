@@ -50,7 +50,7 @@ int main() {
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();
-    MetaFilesManager::CleanupUnusedMetaFiles();
+    MetaFilesManager::CleanupUnusedMetaFiles("Resources");
 
     ENGINE_PRINT("=== Editor ended ===\n");
     return 0;

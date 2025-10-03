@@ -314,11 +314,8 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 	
 	if (!forAndroid)
 		shaderPath = (p.parent_path() / p.stem()).generic_string() + ".shader";
-	else {
-		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
-		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
-		shaderPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".shader";
-	}
+	else
+		shaderPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + ".shader";
 
 	// Ensure parent directories exist
 	p = shaderPath;
@@ -336,45 +333,40 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 		if (forAndroid) {
 			// Copy the .vert and .frag source files as well for fallback.
 			try {
-				std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
-				assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
-
-				std::string vertPath = assetPathAndroid + ".vert";
+				std::string vertPath = path + ".vert";
 				std::string androidVertPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / vertPath).generic_string();
-				std::string fragPath = assetPathAndroid + ".frag";
+				std::string fragPath = path + ".frag";
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
-				std::filesystem::copy_file(path + ".vert", androidVertPath,
+				std::filesystem::copy_file(vertPath, androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
-				std::filesystem::copy_file(path + ".frag", androidFragPath,
+				std::filesystem::copy_file(fragPath, androidFragPath,
 					std::filesystem::copy_options::overwrite_existing);
 			}
 			catch (const std::filesystem::filesystem_error& e) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
-				return std::string{};
 			}
 
+			return shaderPath;
 		}
 	}
 
-	return shaderPath;
+	if (!forAndroid) {
+		// Save the binary code to the root project folder as well.
+		p = (FileUtilities::GetSolutionRootDir() / shaderPath);
+		shaderFile.open(p.generic_string(), std::ios::binary);
+		if (shaderFile.is_open()) {
+			// Write the binary format to the file.
+			shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
+			// Write the binary length to the file.
+			shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
+			// Write the binary code to the file.
+			shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
+			shaderFile.close();
+			return shaderPath;
+		}
+	}
 
-	//if (!forAndroid) {
-	//	// Save the binary code to the root project folder as well.
-	//	p = (FileUtilities::GetSolutionRootDir() / shaderPath);
-	//	shaderFile.open(p.generic_string(), std::ios::binary);
-	//	if (shaderFile.is_open()) {
-	//		// Write the binary format to the file.
-	//		shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
-	//		// Write the binary length to the file.
-	//		shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
-	//		// Write the binary code to the file.
-	//		shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
-	//		shaderFile.close();
-	//		return shaderPath;
-	//	}
-	//}
-
-	//return std::string{};
+	return std::string{};
 }
 
 bool Shader::LoadResource(const std::string& resourcePath, const std::string& assetPath)

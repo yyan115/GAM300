@@ -37,9 +37,6 @@ ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 		ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
 		ECSRegistry::GetInstance().RenameECSManager(currentScenePath, scenePath);
 	}
-	else {
-		ECSRegistry::GetInstance().CreateECSManager(scenePath);
-	}
 
 	// Create and initialize the new scene.
 	currentScene = std::make_unique<SceneInstance>(scenePath);
@@ -79,9 +76,9 @@ void SceneManager::ExitScene() {
 //Simple JSON save scene
 ENGINE_API void SceneManager::SaveScene() {
 	Serializer::SerializeScene(currentScenePath); // TEMP, replace with currentScenePath later
-	//if (FileUtilities::CopyFile(currentScenePath, (FileUtilities::GetSolutionRootDir() / currentScenePath).generic_string())) {
-	//	ENGINE_LOG_INFO("Copied scene file to root project folder: " + currentScenePath);
-	//}
+	if (FileUtilities::CopyFile(currentScenePath, (FileUtilities::GetSolutionRootDir() / currentScenePath).generic_string())) {
+		ENGINE_LOG_INFO("Copied scene file to root project folder: " + currentScenePath);
+	}
 }
 
 void SceneManager::SaveTempScene() {

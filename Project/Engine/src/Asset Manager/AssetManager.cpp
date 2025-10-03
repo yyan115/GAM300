@@ -98,10 +98,6 @@ std::string AssetManager::ExtractRelativeAndroidPath(const std::string& fullAndr
 	return fullAndroidPath.substr(canonicalAndroidResourcesPath.generic_string().length() + 1);
 }
 
-int AssetManager::GetAssetMetaMapSize() {
-	return static_cast<int>(assetMetaMap.size());
-}
-
 void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
@@ -146,9 +142,6 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
 		return CompileAsset<Shader>(filePathStr, forceCompile, forAndroid);
 	}
-	else if (materialExtensions.find(extension) != materialExtensions.end()) {
-		return CompileAsset<Material>(filePathStr, forceCompile, forAndroid);
-	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
 		return false;
@@ -179,36 +172,8 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 	}
 }
 
-bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material) {
-	GUID_128 guid{};
-	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
-		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
-		guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
-	}
-	else {
-		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
-	}
-
-	auto it = assetMetaMap.find(guid);
-	if (it != assetMetaMap.end()) {
-		return true;
-	}
-	else {
-		return CompileUpdatedMaterialToResource(guid, filePath, material);
-	}
-}
-
 bool AssetManager::IsAssetCompiled(GUID_128 guid) {
 	return assetMetaMap.find(guid) != assetMetaMap.end();
-}
-
-bool AssetManager::IsAssetCompiled(const std::string& assetPath) {
-	for (const auto& pair : assetMetaMap) {
-		if (pair.second->sourceFilePath == assetPath) {
-			return true;
-		}
-	}
-	return false;
 }
 
 void AssetManager::UnloadAsset(const std::string& assetPath) {
@@ -284,7 +249,6 @@ void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(fontExtensions.begin(), fontExtensions.end());
 	supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
-	supportedAssetExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 }
 
 std::unordered_set<std::string>& AssetManager::GetSupportedExtensions() {
@@ -314,10 +278,6 @@ bool AssetManager::IsExtensionShaderVertFrag(const std::string& extension) const
 
 bool AssetManager::IsExtensionTexture(const std::string& extension) const {
 	return textureExtensions.find(extension) != textureExtensions.end();
-}
-
-bool AssetManager::IsExtensionMaterial(const std::string& extension) const {
-	return materialExtensions.find(extension) != materialExtensions.end();
 }
 
 bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
@@ -373,7 +333,7 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
-	//ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
+	ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 		return it->second->sourceFilePath;
@@ -383,42 +343,26 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 	return "";
 }
 
-std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
-	// THIS RUNS ON A SEPARATE THREAD.
+void AssetManager::CompileAllAssetsForAndroid() {
+	// SHOULD RUN ON ANOTHER THREAD, TBD
 	std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
-	androidCompilationStatus.numCompiledAssets = 0;
-	androidCompilationStatus.isCompiling = true;
-	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
 		if (ResourceManager::GetInstance().IsExtensionShader(p.extension().generic_string())) {
-			// Skip compiling shaders because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath + ".vert";
-			remainingPaths.push_back(assetPath);
-			continue;
-		}
-		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
-			// Sip compiling meshes because they must be compiled on the main OpenGL thread.
-			assetPath = pair.second->sourceFilePath;
-			remainingPaths.push_back(assetPath);
-			continue;
 		}
 		else {
 			assetPath = pair.second->sourceFilePath;
-			CompileAsset(assetPath, true, true);
-			++androidCompilationStatus.numCompiledAssets;
 		}
+		CompileAsset(assetPath, true, true);
 	}
 
 	// Copy scenes to Android resources.
-	if (std::filesystem::exists("../../Resources/Scenes")) {
-		for (auto p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Scenes")) {
-			std::string extension = p.path().extension().generic_string();
+	if (std::filesystem::exists("Resources/Scenes")) {
+		for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
 			if (std::filesystem::is_regular_file(p)) {
-				std::string path = p.path().generic_string();
-				path = path.substr(path.find("Resources"));
-				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
+				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / p.path()).generic_string())) {
 					ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
 				}
 			}
@@ -430,132 +374,43 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 	std::ofstream out(manifestFileP.generic_string());
 	if (!out.is_open()) {
 		std::cerr << "[AssetManager] Failed to open manifest file for writing\n";
-		return std::vector<std::string>{};
+		return;
 	}
-	for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory)) {
-		// Only copy the file if it is one of the recognised asset file extensions.
-		std::string extension = p.path().extension().generic_string();
-		if (std::filesystem::is_regular_file(p) && (IsAssetExtensionSupported(extension) ||
-			ResourceManager::GetInstance().IsResourceExtensionSupported(extension) || IsExtensionMetaFile(extension)))
-		{
-			std::string path = p.path().generic_string();
-			path = path.substr(path.find("Resources"));
-			out << path << "\n";
+	for (auto& p : std::filesystem::recursive_directory_iterator("Resources")) {
+		if (std::filesystem::is_regular_file(p)) {
+			out << p.path().generic_string() << "\n";
 		}
 	}
 
 	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
-	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
-	androidCompilationStatus.finishedCompiling = true;
-	return remainingPaths;
+	std::cout << "[AssetManager] Finished compiling assets for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
 }
 
-std::vector<std::string> AssetManager::CompileAllAssetsForDesktop() {
-	// THIS RUNS ON A SEPARATE THREAD.
+void AssetManager::CompileAllAssetsForDesktop() {
+	// SHOULD RUN ON ANOTHER THREAD, TBD
 	std::cout << "[AssetManager] Starting compile all assets for Desktop..." << std::endl;
-	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
 		if (ResourceManager::GetInstance().IsExtensionShader(p.extension().generic_string())) {
-			// Skip compiling shaders because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath + ".vert";
-			remainingPaths.push_back(assetPath);
-			continue;
-		}
-		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
-			// SKip compiling meshes because they must be compiled on the main OpenGL thread.
-			remainingPaths.push_back(assetPath);
-			continue;
 		}
 		else {
 			assetPath = pair.second->sourceFilePath;
-			CompileAsset(assetPath, true);
 		}
+		CompileAsset(assetPath, true);
 	}
 
-	//// Copy scenes to resources.
-	//if (std::filesystem::exists(rootAssetFolder + "/Scenes")) {
-	//	for (auto p : std::filesystem::recursive_directory_iterator(rootAssetFolder + "/Scenes")) {
-	//		if (std::filesystem::is_regular_file(p)) {
-	//			if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
-	//				ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
-	//			}
-	//		}
-	//	}
-	//}
-
-	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Desktop." << std::endl << std::endl;
-	return remainingPaths;
-}
-
-void AssetManager::SetRootAssetDirectory(const std::string& _rootAssetsFolder) {
-	rootAssetDirectory = _rootAssetsFolder;
-}
-
-std::string AssetManager::GetRootAssetDirectory() const {
-	return rootAssetDirectory;
-}
-
-bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile, bool forAndroid) {
-	// If the asset is not already loaded, load and store it using the GUID.
-	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-		Texture texture{ texType, slot };
-		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
-		if (compiledPath.empty()) {
-			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
-			return false;
-		}
-
-		std::shared_ptr<AssetMeta> assetMeta;
-		if (!forAndroid) {
-			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
-		}
-		else {
-			assetMeta = assetMetaMap.find(guid)->second;
-			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
-		}
-		assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
-		assetMetaMap[guid] = assetMeta;
-		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
-
-		if (!forAndroid) {
-			// If the resource is already loaded, hot-reload the resource.
-			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
-				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
+	// Copy scenes to resources.
+	if (std::filesystem::exists("Resources/Scenes")) {
+		for (auto p : std::filesystem::recursive_directory_iterator("Resources/Scenes")) {
+			if (std::filesystem::is_regular_file(p)) {
+				if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
+					ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+				}
 			}
-
-			// Copy compiled asset to root project Resources folder also.
-			//FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 		}
-
-		return true;
 	}
 
-	return true;
-}
-
-bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material) {
-	// If the asset is not already loaded, load and store it using the GUID.
-	if (assetMetaMap.find(guid) == assetMetaMap.end()) {
-		std::string compiledPath = material->CompileUpdatedAssetToResource(filePath);
-		if (compiledPath.empty()) {
-			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile updated material: ", filePath, "\n");
-			return false;
-		}
-
-		std::shared_ptr<AssetMeta> assetMeta;
-		assetMeta = material->GenerateBaseMetaFile(guid, filePath, compiledPath);
-		assetMetaMap[guid] = assetMeta;
-		ENGINE_PRINT("[AssetManager] Compiled updated material: ", filePath, " to ", compiledPath, "\n\n");
-
-		// If the resource is already loaded, hot-reload the resource.
-		if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
-			ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
-		}
-
-		return true;
-	}
-
-	return true;
+	std::cout << "[AssetManager] Finished compiling assets for Desktop." << std::endl << std::endl;
 }

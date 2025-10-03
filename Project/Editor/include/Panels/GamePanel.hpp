@@ -20,13 +20,6 @@ public:
      */
     void OnImGuiRender() override;
 
-    /**
-     * @brief Get the current target game resolution
-     * @param outWidth Output width
-     * @param outHeight Output height
-     */
-    void GetTargetGameResolution(int& outWidth, int& outHeight) const;
-
 private:
     /**
      * @brief Render the resolution panel toolbar

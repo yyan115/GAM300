@@ -14,10 +14,6 @@ project(GAM300 VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Import dependencies using centralized module
-include(ImportDependencies.cmake)
-importDependencies()
-
 # Build configurations
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
