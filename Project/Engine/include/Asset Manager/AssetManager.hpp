@@ -61,8 +61,10 @@ public:
 	}
 
 	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
+	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material);
 
 	bool IsAssetCompiled(GUID_128 guid);
+	bool IsAssetCompiled(const std::string& assetPath);
 	void UnloadAsset(const std::string& assetPath);
 
 	//void UnloadAllAssets() {
@@ -235,41 +237,6 @@ private:
 		return true;
 	}
 
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false, bool forAndroid = false) {
-		// If the asset is not already loaded, load and store it using the GUID.
-		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-			Texture texture{ texType, slot };
-			std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
-			if (compiledPath.empty()) {
-				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
-				return false;
-			}
-
-			std::shared_ptr<AssetMeta> assetMeta;
-			if (!forAndroid) {
-				assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
-			}
-			else {
-				assetMeta = assetMetaMap.find(guid)->second;
-				assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
-			}
-			assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
-			assetMetaMap[guid] = assetMeta;
-			ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath , " to ", compiledPath, "\n\n");
-
-			if (!forAndroid) {
-				// If the resource is already loaded, hot-reload the resource.
-				if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
-					ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
-				}
-
-				// Copy compiled asset to root project Resources folder also.
-				//FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
-			}
-
-			return true;
-		}
-
-		return true;
-	}
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
+	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material);
 };

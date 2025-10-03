@@ -21,6 +21,7 @@
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
 #include "Panels/ScenePanel.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -357,7 +358,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     if (opened && hasChildren) {
         // Child nodes would be drawn here in a real implementation
-        for (const auto& child : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
+        for (const auto& childGUID : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
+            Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
             DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
         }
 
@@ -367,6 +369,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
 void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetParent) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+    GUID_128 draggedEntityGUID = guidRegistry.GetGUIDByEntity(draggedEntity);
+    GUID_128 targetParentGUID = guidRegistry.GetGUIDByEntity(targetParent);
+
     Transform& draggedEntityTransform = ecsManager.GetComponent<Transform>(draggedEntity);
 
     // If the target parent is one of the dragged entity's child, do nothing (circular dependency).
@@ -384,15 +390,16 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
         ParentComponent& parentComponent = ecsManager.GetComponent<ParentComponent>(draggedEntity);
 
         // Check if the new parent is the same as the old parent. If it is, exit.
-        if (parentComponent.parent == targetParent) return;
+        if (parentComponent.parent == targetParentGUID) return;
         
         // Set the child's new parent.
-        Entity oldParent = parentComponent.parent;
-        parentComponent.parent = targetParent;
+        GUID_128 oldParentGUID = parentComponent.parent;
+        Entity oldParent = guidRegistry.GetEntityByGUID(oldParentGUID);
+        parentComponent.parent = targetParentGUID;
 
         // Remove the child from the old parent.
         auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
-        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), draggedEntity);
+        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
         ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
 
         // If the old parent has no more children, remove the children component from the old parent.
@@ -401,17 +408,17 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
     }
     else {
         ecsManager.AddComponent<ParentComponent>(draggedEntity, ParentComponent{});
-        ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParent;
+        ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParentGUID;
     }
 
     // If the parent already has children
     if (ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
 
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntityGUID);
     }
     else {
         ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
-        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntity);
+        ecsManager.GetComponent<ChildrenComponent>(targetParent).children.push_back(draggedEntityGUID);
     }
 
     // Calculate the child's world position, rotation and scale.
@@ -427,15 +434,18 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
 
 void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
     // First check if the dragged entity has a ParentComponent
     if (ecsManager.HasComponent<ParentComponent>(draggedEntity)) {
         // If there is, remove it, but store the parent first.
-        Entity parent = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
+        GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
+        Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
         ecsManager.RemoveComponent<ParentComponent>(draggedEntity);
 
         // Update the parent by removing the dragged entity from its children.
         ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
-        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),draggedEntity);
+        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
         pChildrenComponent.children.erase(it);
         if (pChildrenComponent.children.empty()) {
             ecsManager.RemoveComponent<ChildrenComponent>(parent);
@@ -460,9 +470,12 @@ void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nes
 
     // Then traverse children.
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
     if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
         auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
-        for (const auto& child : childrenComp.children) {
+        for (const auto& childGUID : childrenComp.children) {
+            Entity child = guidRegistry.GetEntityByGUID(childGUID);
             TraverseHierarchy(child, nestedChildren, addNestedChildren);
         }
     }
@@ -502,8 +515,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
         // Load the cube model using direct file path
-        std::string modelPath = "Resources/Models/cube.obj";
+        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/cube.obj";
         cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
+        cubeRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(modelPath);
 
         if (cubeRenderer.model) {
             std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
@@ -512,8 +526,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         }
 
         // Load the default shader using direct file path
-        std::string shaderPath = "Resources/Shaders/default";
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
         cubeRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+        cubeRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(shaderPath);
 
         if (cubeRenderer.shader) {
             std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;

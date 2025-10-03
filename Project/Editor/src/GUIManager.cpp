@@ -271,11 +271,6 @@ void GUIManager::RenderMenuBar() {
                 SceneManager::GetInstance().SaveScene();
             }
             ImGui::Separator();
-    //        if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
-				//AssetManager::GetInstance().desktopAssetCompilationFuture = std::async(std::launch::async, [] {
-				//	return AssetManager::GetInstance().CompileAllAssetsForDesktop();
-				//});
-    //        }
 			ImGui::BeginDisabled(AssetManager::GetInstance().androidCompilationStatus.isCompiling);
 			if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
 				AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture = std::async(std::launch::async, [] {
@@ -331,6 +326,7 @@ void GUIManager::RenderMenuBar() {
         ImGui::EndMainMenuBar();
     }
 
+	// For now temporarily put here.
 	if (AssetManager::GetInstance().androidCompilationStatus.finishedCompiling) {
 		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture.get();
 		ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
@@ -348,14 +344,6 @@ void GUIManager::RenderMenuBar() {
 		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
 		ImGui::End();
 	}
-	//if (AssetManager::GetInstance().desktopAssetCompilationFuture.valid() &&
-	//	AssetManager::GetInstance().desktopAssetCompilationFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-	//	std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidAssetCompilationFuture.get();
-	//	ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
-	//	for (const auto& path : remainingToCompile) {
-	//		AssetManager::GetInstance().CompileAsset(path, true, false);
-	//	}
-	//}
 }
 
 void GUIManager::CreateEditorTheme() {

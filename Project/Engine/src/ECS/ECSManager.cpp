@@ -13,6 +13,7 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Logging.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
@@ -142,6 +143,17 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 }
 
 void ECSManager::DestroyEntity(Entity entity) {
+	// Remove the destroyed entity from its parent's children component, if it was a child.
+	if (HasComponent<ParentComponent>(entity)) {
+		GUID_128 entityGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(entity);
+		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(GetComponent<ParentComponent>(entity).parent);
+		auto& childrenComp = GetComponent<ChildrenComponent>(parent);
+		childrenComp.children.erase(std::find(childrenComp.children.begin(), childrenComp.children.end(), entityGUID));
+		if (childrenComp.children.empty()) {
+			RemoveComponent<ChildrenComponent>(parent);
+		}
+	}
+
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
