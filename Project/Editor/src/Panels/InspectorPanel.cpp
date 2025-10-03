@@ -33,6 +33,26 @@ extern std::string DraggedAudioPath;
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
 
+template <typename, typename = void> struct has_override_flag : std::false_type {};
+template <typename T>
+struct has_override_flag<T, std::void_t<decltype(std::declval<T&>().overrideFromPrefab)>> : std::true_type {};
+
+template <typename T>
+static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const char* id_suffix = "")
+{
+    if constexpr (has_override_flag<T>::value) {
+        auto& c = ecs.GetComponent<T>(e);
+        bool b = c.overrideFromPrefab;
+        std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
+        if (ImGui::Checkbox(label.c_str(), &b)) {
+            c.overrideFromPrefab = b;
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("(Instance)");
+    }
+}
+
+
 InspectorPanel::InspectorPanel()
     : EditorPanel("Inspector", true) {
 }
@@ -164,21 +184,57 @@ void InspectorPanel::OnImGuiRender() {
 
                     // Draw NameComponent if it exists
                     if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
-                        DrawNameComponent(displayEntity);
+                        auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
+
+                        DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Name");
+
+                        bool followPrefab = false;
+                        if constexpr (has_override_flag<NameComponent>::value) followPrefab = !nc.overrideFromPrefab;
+
+                        ImGui::BeginDisabled(followPrefab);
+                        {
+                            DrawNameComponent(displayEntity);
+                        }
+                        ImGui::EndDisabled();
+
+                        
+                        
                         ImGui::Separator();
                     }
 
                     // Draw Transform component if it exists
                     if (ecsManager.HasComponent<Transform>(displayEntity)) {
                         if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-                            DrawTransformComponent(displayEntity);
+                            auto& t = ecsManager.GetComponent<Transform>(displayEntity);
+
+                            DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Transform");
+
+                            bool followPrefab = false;
+                            if constexpr (has_override_flag<Transform>::value) followPrefab = !t.overrideFromPrefab;
+
+                            ImGui::BeginDisabled(followPrefab);
+                            {
+                                DrawTransformComponent(displayEntity);
+                            }
+                            ImGui::EndDisabled();
                         }
                     }
 
                     // Draw ModelRenderComponent if it exists
                     if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
                         if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent")) {
-                            DrawModelRenderComponent(displayEntity);
+                            auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
+
+                            DrawOverrideToggleIfPresent<ModelRenderComponent>(ecsManager, displayEntity, "ModelRender");
+
+                            bool followPrefab = false;
+                            if constexpr (has_override_flag<ModelRenderComponent>::value) followPrefab = !m.overrideFromPrefab;
+
+                            ImGui::BeginDisabled(followPrefab);
+                            {
+                                DrawModelRenderComponent(displayEntity);
+                            }
+                            ImGui::EndDisabled();
                         }
                     }
 

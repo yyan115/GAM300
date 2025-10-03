@@ -64,10 +64,6 @@ void PrefabEditorPanel::SetPrefabPath(const std::string& path)
     GUIManager::SetSelectedAsset(GUID_128{});
 
     LoadPrefabSandbox();
-
-    if (sandboxEntity != static_cast<Entity>(-1)) {
-        GUIManager::SetSelectedEntity(sandboxEntity);
-    }
 }
 
 void PrefabEditorPanel::OnImGuiRender()
@@ -79,14 +75,10 @@ void PrefabEditorPanel::OnImGuiRender()
         ImGui::TextUnformatted(prefabPath.c_str());
         ImGui::Separator();
 
-        // Only re-point selection when the user actually clicks inside this window
-        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) &&
-            ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        {
-            if (sandboxEntity != static_cast<Entity>(-1))
-                GUIManager::SetSelectedEntity(sandboxEntity);
-            // Leave asset selection alone; do not clear it every frame.
-        }
+        // Unselect everything if Prefab Editor is focused
+        /*if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+            GUIManager::SetSelectedAsset(GUID_128{});
+        }*/
 
         if (sandboxEntity != static_cast<Entity>(-1))
         {
@@ -95,10 +87,6 @@ void PrefabEditorPanel::OnImGuiRender()
                 char buf[128] = {};
                 std::snprintf(buf, sizeof(buf), "%s", nc.name.c_str());
                 if (ImGui::InputText("Name", buf, sizeof(buf))) nc.name = buf;
-
-                if constexpr (has_override_flag<NameComponent>::value) {
-                    ImGui::Checkbox("Override From Prefab##Name", &nc.overrideFromPrefab);
-                }
             }
             else {
                 sandboxECS.AddComponent<NameComponent>(sandboxEntity, NameComponent{});
@@ -111,9 +99,6 @@ void PrefabEditorPanel::OnImGuiRender()
                 ImGui::DragFloat3("Rotation", &t.localRotation.x, 0.5f);
                 ImGui::DragFloat3("Scale", &t.localScale.x, 0.01f);
                 t.isDirty = true;
-                if constexpr (has_override_flag<Transform>::value) {
-                    ImGui::Checkbox("Override From Prefab##Transform", &t.overrideFromPrefab);
-                }
             }
             else {
                 sandboxECS.AddComponent<Transform>(sandboxEntity, Transform{});
@@ -125,9 +110,6 @@ void PrefabEditorPanel::OnImGuiRender()
                 ImGui::TextUnformatted("Model Render (GUIDs only; sandbox does not resolve assets)");
                 ImGui::Text("Model GUID:  %s", (m.modelGUID.high || m.modelGUID.low) ? "set" : "empty");
                 ImGui::Text("Shader GUID: %s", (m.shaderGUID.high || m.shaderGUID.low) ? "set" : "empty");
-                if constexpr (has_override_flag<ModelRenderComponent>::value) {
-                    ImGui::Checkbox("Override From Prefab", &m.overrideFromPrefab);
-                }
             }
         }
 
