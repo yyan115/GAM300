@@ -373,13 +373,12 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
-	//ENGINE_LOG_INFO("[AssetManager] AssetMetaMap size: " + std::to_string(assetMetaMap.size()));
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 		return it->second->sourceFilePath;
 	}
 
-	ENGINE_LOG_ERROR("[AssetManager] ERROR: Asset meta with GUID not found.");
+	ENGINE_LOG_ERROR("[AssetManager] ERROR: Asset meta with GUID " + GUIDUtilities::ConvertGUID128ToString(guid) + " not found.");
 	return "";
 }
 

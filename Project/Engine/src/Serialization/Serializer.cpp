@@ -9,6 +9,8 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Hierarchy/EntityGUIDRegistry.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -191,39 +193,33 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 }
 
 void Serializer::DeserializeScene(const std::string& scenePath) {
+    ENGINE_LOG_INFO("[Serializer] Deserializing scene: " + scenePath);
     using namespace std;
     namespace fs = std::filesystem;
 
-    fs::path pathToOpen = scenePath;
-    if (!fs::exists(pathToOpen)) {
-        // fallback to filename-only (in case save used only filename)
-        pathToOpen = pathToOpen.filename();
+    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+    IPlatform* platform = WindowManager::GetPlatform();
+    if (!platform) {
+        ENGINE_LOG_DEBUG("[Serializer] ERROR: Platform not available for asset discovery!");
+        return;
     }
-
-    if (!fs::exists(pathToOpen)) {
-        std::cerr << "[CreateEntitiesFromJson] no scene JSON file found: " << scenePath << "\n";
+    if (!platform->FileExists(scenePath)) {
+        ENGINE_LOG_DEBUG("[Serializer]: Scene file not found: " + scenePath);
         return;
     }
 
-    std::ifstream ifs(pathToOpen.string(), std::ios::binary);
-    if (!ifs) {
-        std::cerr << "[CreateEntitiesFromJson] failed to open: " << pathToOpen.string() << "\n";
-        return;
-    }
-
-    std::stringstream ss;
-    ss << ifs.rdbuf();
-    std::string jsonStr = ss.str();
-    ifs.close();
-
+    std::vector<uint8_t> metaFileData = platform->ReadAsset(scenePath);
     rapidjson::Document doc;
-    if (doc.Parse(jsonStr.c_str()).HasParseError()) {
-        std::cerr << "[CreateEntitiesFromJson] JSON parse error in: " << pathToOpen.string() << "\n";
-        return;
+    if (!metaFileData.empty()) {
+        rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+        doc.ParseStream(ms);
+    }
+    if (doc.HasParseError()) {
+        ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + scenePath);
     }
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
-        std::cerr << "[CreateEntitiesFromJson] no entities array in JSON: " << pathToOpen.string() << "\n";
+        ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
         return;
     }
 
@@ -344,6 +340,7 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             GUID_string guidStr = entObj["guid"].GetString();
             GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
             newEnt = ecs.CreateEntityWithGUID(guid);
+            ENGINE_LOG_INFO("Entity " + std::to_string(newEnt) + " created with GUID " + guidStr);
         }
         else {
             // Fallback for if there is no GUID, but it shouldn't happen.
@@ -517,5 +514,5 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
     } // end for entities
 
-    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << pathToOpen.string() << "\n";
+    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }

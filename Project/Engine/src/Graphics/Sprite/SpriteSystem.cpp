@@ -19,10 +19,16 @@ bool SpriteSystem::Initialise()
     for (const auto& entity : entities) {
         auto& spriteComp = ecsManager.GetComponent<SpriteRenderComponent>(entity);
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.textureGUID);
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
         spriteComp.texturePath = texturePath;
-        spriteComp.texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+        spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
+#ifndef ANDROID
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
+        spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
+#else
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("sprite");
         spriteComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+
+#endif
     }
 
     ENGINE_LOG_INFO("SpriteSystem Initialized");

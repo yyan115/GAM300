@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 5,
-        "guid": "005a6bbb3615015d-0002d479f4000007",
+        "guid": "001aa396bba119ff-0002d62d20000007",
         "source": "../../Resources/Fonts/Kenney Mini.ttf",
         "compiled": "../../Resources/Fonts/Kenney Mini.font",
         "android_compiled": "Resources/Fonts/Kenney Mini_android.font",
-        "last_compiled": "2025-10-02 18:28:16.4646814"
+        "last_compiled": "2025-10-03 10:56:35.3806517"
     }
 }

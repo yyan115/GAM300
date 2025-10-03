@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 5,
-        "guid": "005a6bbb69ab0c69-0002d47a00000017",
+        "guid": "00404bb323f3ceaf-0002d62d8000000b",
         "source": "../../Resources/Models/backpack/specular.jpg",
         "compiled": "../../Resources/Models/backpack/specular.dds",
         "android_compiled": "Resources/Models/backpack/specular_android.ktx",
-        "last_compiled": "2025-10-02 18:29:02.4324283"
+        "last_compiled": "2025-10-03 10:57:18.3602910"
     },
     "TextureMetaData": {
         "id": 0,

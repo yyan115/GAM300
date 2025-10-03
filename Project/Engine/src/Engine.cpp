@@ -24,6 +24,7 @@
 #ifdef ANDROID
 #include "Input/VirtualControls.hpp"
 #endif
+#include <Asset Manager/AssetManager.hpp>
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -548,6 +549,7 @@ bool Engine::InitializeGraphicsResources() {
 
 	// Load empty scene
     SceneManager::GetInstance().LoadTestScene();
+    //SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/Example Scene.scene");
     ENGINE_LOG_INFO("Loaded test scene");
 
 #ifdef ANDROID

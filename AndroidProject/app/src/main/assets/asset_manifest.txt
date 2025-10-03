@@ -14,6 +14,8 @@ Resources/Inter.ttf.meta
 Resources/Kenney Mini.font
 Resources/Materials/Backpack Material.mat
 Resources/Materials/Backpack Material.mat.meta
+Resources/Materials/Scene_-_Root.mat
+Resources/Materials/Scene_-_Root.mat.meta
 Resources/Materials/test.mat
 Resources/Materials/test.mat.meta
 Resources/Models/backpack/ao.dds
@@ -108,3 +110,4 @@ Resources/Textures/container2_specular.png.meta
 Resources/Textures/wooden_container.dds
 Resources/Textures/wooden_container.jpg
 Resources/Textures/wooden_container.jpg.meta
+Resources/Scenes/Example Scene.scene
