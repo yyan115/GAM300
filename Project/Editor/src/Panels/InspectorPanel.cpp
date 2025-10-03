@@ -798,6 +798,7 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 
 				if (particle.particleTexture) {
 					particle.texturePath = texturePath;  // Store the path for display
+					particle.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
 					std::cout << "[Inspector] Loaded particle texture: " << texturePath << std::endl;
 				} else {
 					std::cerr << "[Inspector] Failed to load particle texture: " << texturePath << std::endl;
@@ -875,14 +876,18 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 
 		// Start Color
 		ImGui::Text("Start Color");
-		ImGui::ColorEdit4("##StartColor", &particle.startColor.r);
+		glm::vec4 startColor{ particle.startColor.x, particle.startColor.y, particle.startColor.z, particle.startColorAlpha };
+		ImGui::ColorEdit4("##StartColor", &startColor.r);
+		particle.startColor.x = startColor.x; particle.startColor.y = startColor.y; particle.startColor.z = startColor.z; particle.startColorAlpha = startColor.a;
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Initial color and alpha of particles when spawned");
 		}
 
 		// End Color
 		ImGui::Text("End Color");
-		ImGui::ColorEdit4("##EndColor", &particle.endColor.r);
+		glm::vec4 endColor{ particle.endColor.x, particle.endColor.y, particle.endColor.z, particle.endColorAlpha };
+		ImGui::ColorEdit4("##EndColor", &endColor.r);
+		particle.endColor.x = endColor.x; particle.endColor.y = endColor.y; particle.endColor.z = endColor.z; particle.endColorAlpha = endColor.a;
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Final color and alpha of particles before they die (interpolated over lifetime)");
 		}
@@ -895,7 +900,7 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 		ImGui::Text("Gravity");
 		float gravity[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
 		if (ImGui::DragFloat3("##Gravity", gravity, 0.1f, -50.0f, 50.0f, "%.2f")) {
-			particle.gravity = glm::vec3(gravity[0], gravity[1], gravity[2]);
+			particle.gravity = Vector3D(gravity[0], gravity[1], gravity[2]);
 		}
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Gravity force applied to particles (typically negative Y for downward)");
@@ -905,7 +910,7 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 		ImGui::Text("Initial Velocity");
 		float velocity[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
 		if (ImGui::DragFloat3("##InitialVelocity", velocity, 0.1f, -100.0f, 100.0f, "%.2f")) {
-			particle.initialVelocity = glm::vec3(velocity[0], velocity[1], velocity[2]);
+			particle.initialVelocity = Vector3D(velocity[0], velocity[1], velocity[2]);
 		}
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("Base velocity direction for newly spawned particles");
@@ -1599,6 +1604,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::string defaultTexturePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png";
 			component.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(defaultTexturePath);
 			component.texturePath = defaultTexturePath;  // Store path for display
+			component.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(defaultTexturePath);
 			component.particleShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("particle"));
 
 			ecsManager.AddComponent<ParticleComponent>(entity, component);

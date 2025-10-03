@@ -131,6 +131,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("TextRenderComponent", v, alloc);
         }
+        if (ecs.HasComponent<ParticleComponent>(entity)) {
+            auto& c = ecs.GetComponent<ParticleComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ParticleComponent", v, alloc);
+        }
         //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
         //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
         //    rapidjson::Value v = serializeComponentToValue(c);
@@ -485,6 +490,33 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                 textComp.is3D = d[7]["data"].GetBool();
                 textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[9]["data"].GetInt());
                 ecs.AddComponent<TextRenderComponent>(newEnt, textComp);
+            }
+        }
+
+        // ParticleComponent
+        if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ParticleComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                ParticleComponent particleComp{};
+                const auto& d = tv["data"];
+                GUID_string guidStr = d[0].GetString();
+                particleComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                readVec3Generic(d[1], particleComp.emitterPosition);
+                particleComp.emissionRate = d[2]["data"].GetFloat();
+                particleComp.maxParticles = d[3]["data"].GetInt();
+                particleComp.particleLifetime = d[4]["data"].GetFloat();
+                particleComp.startSize = d[5]["data"].GetFloat();
+                particleComp.endSize = d[6]["data"].GetFloat();
+                readVec3Generic(d[7], particleComp.startColor);
+                particleComp.startColorAlpha = d[8]["data"].GetFloat();
+                readVec3Generic(d[9], particleComp.endColor);
+                particleComp.endColorAlpha = d[10]["data"].GetFloat();
+                readVec3Generic(d[11], particleComp.gravity);
+                particleComp.velocityRandomness = d[12]["data"].GetFloat();
+                readVec3Generic(d[13], particleComp.initialVelocity);
+                ecs.AddComponent<ParticleComponent>(newEnt, particleComp);
             }
         }
 

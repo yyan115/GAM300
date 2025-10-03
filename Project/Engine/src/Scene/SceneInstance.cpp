@@ -281,11 +281,13 @@ void SceneInstance::Initialize() {
 		particleComp.particleLifetime = 2.0f;
 		particleComp.startSize = 0.2f;
 		particleComp.endSize = 0.05f;
-		particleComp.startColor = glm::vec4(1.0f, 0.8f, 0.2f, 1.0f);  // Orange
-		particleComp.endColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);    // Red fade out
-		particleComp.initialVelocity = glm::vec3(0, 2.0f, 0);
+		particleComp.startColor = Vector3D(1.0f, 0.8f, 0.2f);  // Orange
+		particleComp.startColorAlpha = 1.0f;
+		particleComp.endColor = Vector3D(1.0f, 0.0f, 0.0f);    // Red fade out
+		particleComp.endColorAlpha = 0.0f;
+		particleComp.initialVelocity = Vector3D(0, 2.0f, 0);
 		particleComp.velocityRandomness = 1.0f;
-		particleComp.gravity = glm::vec3(0, -2.0f, 0);
+		particleComp.gravity = Vector3D(0, -2.0f, 0);
 		// Load resources
 		particleComp.particleTexture = ResourceManager::GetInstance().GetResource<Texture>("Resources/Textures/awesomeface.png");
 		particleComp.texturePath = "Resources/Textures/awesomeface.png";  // Store path for display
@@ -514,6 +516,7 @@ void SceneInstance::Exit() {
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 

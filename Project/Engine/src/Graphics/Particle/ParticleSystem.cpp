@@ -24,6 +24,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 #include "Engine.h"
+#include "Asset Manager/AssetManager.hpp"
 
 /******************************************************************************/
 /*!
@@ -57,6 +58,13 @@ bool ParticleSystem::InitialiseParticles()
     for (const auto& entity : entities)
     {
         auto& particleComp = ecsManager.GetComponent<ParticleComponent>(entity);
+
+        // Get the texture and shader first.
+        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(particleComp.textureGUID);
+        particleComp.texturePath = texturePath;
+        particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("particle");
+        particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 
         // Setup VAO
         particleComp.particleVAO = new VAO();
@@ -232,7 +240,7 @@ void ParticleSystem::Update()
         if (ecsManager.HasComponent<Transform>(entity))
         {
             auto& transform = ecsManager.GetComponent<Transform>(entity);
-            particleComp.emitterPosition = glm::vec3(
+            particleComp.emitterPosition = Vector3D(
                 transform.worldMatrix.m.m03,
                 transform.worldMatrix.m.m13,
                 transform.worldMatrix.m.m23
@@ -297,6 +305,8 @@ void ParticleSystem::Shutdown()
             particleComp.instanceVBO = nullptr;
         }
     }
+
+    particleSystemInitialised = false;
 }
 
 /******************************************************************************/
@@ -318,7 +328,7 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
     for (auto& particle : comp.particles) 
     {
         // Update physics
-        particle.velocity += comp.gravity * dt;
+        particle.velocity += comp.gravity.ConvertToGLM() * dt;
         particle.position += particle.velocity * dt;
 
         // Update life
@@ -327,7 +337,9 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
         // Interpolate properties based on life
         float t = 1.0f - particle.life;
         particle.size = glm::mix(comp.startSize, comp.endSize, t);
-        particle.color = glm::mix(comp.startColor, comp.endColor, t);
+        glm::vec4 startColor{ comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha };
+        glm::vec4 endColor{ comp.endColor.x, comp.endColor.y, comp.endColor.z, comp.endColorAlpha };
+        particle.color = glm::mix(startColor, endColor, t);
     }
 }
 
@@ -357,10 +369,10 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
         if (comp.particles.size() >= comp.maxParticles) break;
 
         Particle p;
-        p.position = comp.emitterPosition;
+        p.position = comp.emitterPosition.ConvertToGLM();
         p.life = 1.0f;
         p.size = comp.startSize;
-        p.color = comp.startColor;
+        p.color = glm::vec4{ comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha };
         p.rotation = dist(rng) * 360.0f;
 
         // Add velocity randomness
@@ -369,7 +381,7 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
             dist(rng) * comp.velocityRandomness,
             dist(rng) * comp.velocityRandomness
         );
-        p.velocity = comp.initialVelocity + randomVel;
+        p.velocity = comp.initialVelocity.ConvertToGLM() + randomVel;
 
         comp.particles.push_back(p);
     }

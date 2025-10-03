@@ -172,6 +172,7 @@
     <ClCompile Include="src\Graphics\IRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Model\ModelRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />

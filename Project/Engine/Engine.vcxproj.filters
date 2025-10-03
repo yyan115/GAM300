@@ -203,6 +203,7 @@
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
