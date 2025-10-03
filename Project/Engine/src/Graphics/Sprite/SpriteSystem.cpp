@@ -6,31 +6,11 @@
 #include "Graphics/VAO.h"
 #include "Graphics/VBO.h"
 #include "Graphics/EBO.h"
-#include "Asset Manager/AssetManager.hpp"
-#include "Asset Manager/ResourceManager.hpp"
 
 bool SpriteSystem::Initialise()
 {
     InitializeSpriteQuad();
-#endif
-
-    auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    for (const auto& entity : entities) {
-        auto& spriteComp = ecsManager.GetComponent<SpriteRenderComponent>(entity);
-        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.textureGUID);
-        spriteComp.texturePath = texturePath;
-        spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
-#ifndef ANDROID
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
-        spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
-#else
-        std::string shaderPath = ResourceManager::GetPlatformShaderPath("sprite");
-        spriteComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
-
-#endif
-    }
-
-    ENGINE_LOG_INFO("SpriteSystem Initialized");
+	std::cout << "[SpriteSystem] Initialized" << std::endl;
 	return true;
 }
 
@@ -78,50 +58,6 @@ void SpriteSystem::Update()
                 spriteRenderItem->position = glm::vec3(transform.worldMatrix.m.m03,
                     transform.worldMatrix.m.m13,
                     transform.worldMatrix.m.m23);
-
-                // For 2D sprites: If Transform position is at origin (0,0,0) but sprite has a different position,
-                // it means the sprite was created with position in sprite component, not Transform
-                // In this case, sync Transform to sprite position and scale
-                if (!spriteComponent.is3D && !spriteComponent.hasMigratedToTransform &&
-                    transformPos.x == 0.0f && transformPos.y == 0.0f && transformPos.z == 0.0f &&
-                    !(spriteComponent.position.x == 0.0f && spriteComponent.position.y == 0.0f && spriteComponent.position.z == 0.0f))
-                {
-                    // Sync Transform to sprite position and scale (one-time migration)
-                    ecsManager.transformSystem->SetWorldPosition(entity,
-                        Vector3D(spriteComponent.position.x, spriteComponent.position.y, spriteComponent.position.z));
-                    ecsManager.transformSystem->SetWorldScale(entity,
-                        Vector3D(spriteComponent.scale.x, spriteComponent.scale.y, spriteComponent.scale.z));
-                    transformPos = spriteComponent.position.ConvertToGLM();
-                    spriteComponent.hasMigratedToTransform = true;
-
-                    // Log the migration (only once)
-                    std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
-                              << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
-                              << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
-                }
-
-                spriteRenderItem->position = Vector3D::ConvertGLMToVector3D(transformPos);
-
-                // Extract scale from world matrix (length of basis vectors)
-                float scaleX = sqrt(transform.worldMatrix.m.m00 * transform.worldMatrix.m.m00 +
-                                   transform.worldMatrix.m.m10 * transform.worldMatrix.m.m10 +
-                                   transform.worldMatrix.m.m20 * transform.worldMatrix.m.m20);
-                float scaleY = sqrt(transform.worldMatrix.m.m01 * transform.worldMatrix.m.m01 +
-                                   transform.worldMatrix.m.m11 * transform.worldMatrix.m.m11 +
-                                   transform.worldMatrix.m.m21 * transform.worldMatrix.m.m21);
-                float scaleZ = sqrt(transform.worldMatrix.m.m02 * transform.worldMatrix.m.m02 +
-                                   transform.worldMatrix.m.m12 * transform.worldMatrix.m.m12 +
-                                   transform.worldMatrix.m.m22 * transform.worldMatrix.m.m22);
-
-                spriteRenderItem->scale = Vector3D::ConvertGLMToVector3D(glm::vec3(scaleX, scaleY, scaleZ));
-
-                // Extract Z-axis rotation from the world matrix for 2D sprites
-                // Calculate rotation from the 2D rotation matrix (using X and Y basis vectors)
-                float rotationRadians = atan2(transform.worldMatrix.m.m10, transform.worldMatrix.m.m00);
-                spriteRenderItem->rotation = glm::degrees(rotationRadians);
-
-            } else {
-                // No Transform component - use sprite's own properties
             }
 
                 gfxManager.Submit(std::move(spriteRenderItem));

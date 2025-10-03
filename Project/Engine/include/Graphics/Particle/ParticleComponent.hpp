@@ -17,7 +17,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/IRenderComponent.hpp"
 #include <glm/glm.hpp>
 #include <vector>
-#include <Math/Vector3D.hpp>
 
 // Forward Declarations
 class Texture;
@@ -60,11 +59,8 @@ struct Particle {
 /******************************************************************************/
 class ParticleComponent : public IRenderComponent {
 public:
-    REFL_SERIALIZABLE
-    GUID_128 textureGUID{};
-
     // Emitter properties
-    Vector3D emitterPosition;
+    glm::vec3 emitterPosition;
     float emissionRate = 10.0f;
     int maxParticles = 1000;
 
@@ -72,18 +68,13 @@ public:
     float particleLifetime = 2.0f;
     float startSize = 0.1f;
     float endSize = 0.0f;
-    //glm::vec4 startColor = glm::vec4(1.0f);
-    //glm::vec4 endColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-    // To be serialized
-    Vector3D startColor = Vector3D{ 1, 1, 1 };
-    float startColorAlpha = 1.0f;
-    Vector3D endColor = Vector3D{ 1, 1, 1 };
-    float endColorAlpha = 1.0f;
+    glm::vec4 startColor = glm::vec4(1.0f);
+    glm::vec4 endColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 
     // Physics
-    Vector3D gravity = Vector3D(0.0f, -9.8f, 0.0f);
+    glm::vec3 gravity = glm::vec3(0.0f, -9.8f, 0.0f);
     float velocityRandomness = 1.0f;
-    Vector3D initialVelocity = Vector3D(0.0f, 1.0f, 0.0f);
+    glm::vec3 initialVelocity = glm::vec3(0.0f, 1.0f, 0.0f);
 
     // Runtime data (don't serialize)
     std::vector<Particle> particles;

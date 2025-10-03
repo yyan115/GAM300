@@ -60,4 +60,11 @@ private:
     } spotLightData;
 
     void CollectLightData();
+
+public:
+    void RegisterEntity(Entity entity) 
+    {
+        entities.insert(entity);
+    }
+
 };

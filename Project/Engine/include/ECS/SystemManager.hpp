@@ -49,9 +49,8 @@ public:
 			const auto& system = pair.second;
 			const auto& systemSignature = signatures[typeName];
 
-			// If the entity's signature matches ANY of the system's signature, add it to the set.
-			// If the entity has ANY of the required components for the system, add it to the set.
-			if ((entitySignature & systemSignature).any()) {
+			// If the entity's signature matches the system's signature, add it to the set.
+			if ((entitySignature & systemSignature) == systemSignature) {
 				system->entities.insert(entity);
 			} else {
 				system->entities.erase(entity);

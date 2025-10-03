@@ -165,15 +165,7 @@ void Material::BindTextures(Shader& shader) const
 
 		//std::cout << "[MATERIAL] DEBUG: Processing texture type " << (int)type << ", textureInfo valid: " << (textureInfo != nullptr) << std::endl;
 		if (textureInfo) {
-			// Check if the texture is loaded. If it isn't, load it now.
-			if (!textureInfo->texture) {
-#ifndef ANDROID
-				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(textureInfo->filePath);
-#else
-				std::string androidAssetPath = textureInfo->filePath.substr(textureInfo->filePath.find("Resources"));
-				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(androidAssetPath);
-#endif
-			}
+			//std::cout << "[MATERIAL] DEBUG: Texture ID: " << textureInfo->texture->ID << std::endl;
 		}
 
 		if (textureInfo && textureInfo->texture && textureUnit < 16)
@@ -371,7 +363,6 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 }
 
 bool Material::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
-	ENGINE_LOG_INFO("[Material] Loading material: " + resourcePath);
 	std::filesystem::path resourcePathFS;
 
 	if (!resourcePath.empty()) {
@@ -383,10 +374,7 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 		resourcePathFS = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".mat";
 	}
 
-	ENGINE_LOG_INFO("[Material] Resolving project root");
-#ifndef ANDROID
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
-#endif
 	std::string finalResourcePath = resourcePathFS.generic_string();
 
 	ENGINE_PRINT("[Material] LOAD - Input path: ", assetPath, "\n");
