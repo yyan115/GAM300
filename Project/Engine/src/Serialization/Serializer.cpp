@@ -8,6 +8,7 @@
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -63,6 +64,7 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         return;
     }
     ECSManager& ecs = *ecsPtr;
+    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
     // Iterate entities
     for (auto entity : ecs.GetAllEntities())
@@ -74,6 +76,18 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value idv;
             idv.SetUint64(static_cast<uint64_t>(entity)); // adapt if entity type differs
             entObj.AddMember("id", idv, alloc);
+            // convert GUID to string
+            GUID_string entityGUIDStr =
+                GUIDUtilities::ConvertGUID128ToString(
+                    guidRegistry.GetGUIDByEntity(static_cast<Entity>(entity)));
+
+            // create a RapidJSON string value with allocator
+            rapidjson::Value guidv;
+            guidv.SetString(entityGUIDStr.c_str(),
+                static_cast<rapidjson::SizeType>(entityGUIDStr.length()),
+                alloc);
+
+            entObj.AddMember("guid", guidv, alloc);
         }
 
         rapidjson::Value compsObj(rapidjson::kObjectType);
@@ -317,11 +331,20 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
+        Entity newEnt{};
         uint64_t oldId = 0;
         if (entObj.HasMember("id") && entObj["id"].IsUint64()) oldId = entObj["id"].GetUint64();
         else if (entObj.HasMember("id") && entObj["id"].IsUint()) oldId = static_cast<uint64_t>(entObj["id"].GetUint());
-
-        Entity newEnt = ecs.CreateEntity();
+        if (entObj.HasMember("guid")) {
+            GUID_string guidStr = entObj["guid"].GetString();
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            newEnt = ecs.CreateEntityWithGUID(guid);
+        }
+        else {
+            // Fallback for if there is no GUID, but it shouldn't happen.
+            newEnt = ecs.CreateEntity();
+            ENGINE_LOG_WARN("Entity created with no GUID!");
+        }
 
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];
@@ -400,8 +423,10 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                     ModelRenderComponent modelComp{};
                     GUID_string modelGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
+                    GUID_string materialGUIDStr = mv["data"][2].GetString();
                     modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
                     modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+                    modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
 
                     ecs.AddComponent<ModelRenderComponent>(newEnt, modelComp);
                 }
@@ -433,7 +458,8 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
             ParentComponent parentComp{};
-            parentComp.parent = parentCompJSON["data"][0]["data"].GetUint();
+            GUID_string parentGUIDStr = parentCompJSON["data"][0].GetString();
+            parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
             ecs.AddComponent(newEnt, parentComp);
         }
 
@@ -444,7 +470,8 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             if (childrenCompJSON.HasMember("data")) {
                 const auto& childrenVectorJSON = childrenCompJSON["data"][0]["data"].GetArray();
                 for (const auto& childJSON : childrenVectorJSON) {
-                    childrenComp.children.push_back(childJSON["data"].GetUint());
+                    GUID_string childGUIDStr = childJSON.GetString();
+                    childrenComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
                 }
             }
 

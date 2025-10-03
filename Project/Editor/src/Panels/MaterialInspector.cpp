@@ -387,6 +387,7 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
+        modelRenderer.materialGUID = materialGuid;
         std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity" << std::endl;
     }
     catch (const std::exception& e) {

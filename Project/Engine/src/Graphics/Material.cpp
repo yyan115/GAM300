@@ -400,31 +400,31 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 			offset += pathLength;
 
 			// Texture doesn't have to be loaded now, it will only be loaded when it is being rendered.
-			std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-			std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+			//std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+			std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
 			SetTexture(texType, std::move(textureInfo));
 
-			// Assign the texture type
-			switch (texType) {
-			case Material::TextureType::DIFFUSE:
-				texture->type = "diffuse";
-				break;
-			case Material::TextureType::SPECULAR:
-				texture->type = "specular";
-				break;
-			case Material::TextureType::NORMAL:
-				texture->type = "normal";
-				break;
-			case Material::TextureType::EMISSIVE:
-				texture->type = "emissive";
-				break;
-				// Add other cases as needed
-			default:
-				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-				//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
-				texture->type = "unknown";
-				break;
-			}
+			//// Assign the texture type
+			//switch (texType) {
+			//case Material::TextureType::DIFFUSE:
+			//	texture->type = "diffuse";
+			//	break;
+			//case Material::TextureType::SPECULAR:
+			//	texture->type = "specular";
+			//	break;
+			//case Material::TextureType::NORMAL:
+			//	texture->type = "normal";
+			//	break;
+			//case Material::TextureType::EMISSIVE:
+			//	texture->type = "emissive";
+			//	break;
+			//	// Add other cases as needed
+			//default:
+			//	ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+			//	//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+			//	texture->type = "unknown";
+			//	break;
+			//}
 		}
 	}
 
@@ -561,6 +561,10 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 	ENGINE_PRINT("[Material] SAVE - Number of textures: ", m_textureInfo.size(), "\n");
 	ENGINE_PRINT("[Material] SAVE - Ambient: (", m_ambient.x, ", ", m_ambient.y, ", ", m_ambient.z, ")\n");
 
+	int counter = 1;
+	while (std::filesystem::exists(materialPath)) {
+		materialPath = (p.parent_path() / p.stem()).generic_string() + "_" + std::to_string(counter++) + ".mat";
+	}
 	std::ofstream materialFile(materialPath, std::ios::binary);
 	if (materialFile.is_open()) {
 		// Write material name

@@ -176,6 +176,7 @@
     <ClCompile Include="src\Graphics\TextRendering\TextRenderingSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\TextUtils.cpp" />
     <ClCompile Include="src\Hierarchy\ChildrenComponent.cpp" />
+    <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
     <ClCompile Include="src\Hierarchy\ParentComponent.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />

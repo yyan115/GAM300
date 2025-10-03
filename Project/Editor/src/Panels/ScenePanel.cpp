@@ -1028,7 +1028,9 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
         if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
             ModelRenderComponent modelRenderer;
             modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+            modelRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(previewModelPath);
+            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
+            modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
             if (modelRenderer.model && modelRenderer.shader) {
                 ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);

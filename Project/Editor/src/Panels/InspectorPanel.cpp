@@ -1383,6 +1383,8 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 			std::cout << "[Inspector] Model loaded successfully, applying to ModelRenderComponent..." << std::endl;
 			modelRenderer.model = loadedModel;
 			modelRenderer.modelGUID = modelGuid;
+			modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
+			modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
 			// Ensure entity has a shader for rendering
 			if (modelRenderer.shaderGUID.high == 0 && modelRenderer.shaderGUID.low == 0) {
@@ -1390,18 +1392,19 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 				modelRenderer.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
 			}
 
-			// Load the shader if it's not already loaded
-			if (!modelRenderer.shader) {
-				std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;
-				std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelRenderer.shaderGUID);
-				modelRenderer.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelRenderer.shaderGUID, shaderPath);
+			//// Load the shader if it's not already loaded
+			//if (!modelRenderer.shader) {
+			//	std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;
+			//	//std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelRenderer.shaderGUID);
+			//	// By default, always load the default shader for models.
+			//	modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
 
-				if (modelRenderer.shader) {
-					std::cout << "[Inspector] Shader loaded successfully" << std::endl;
-				} else {
-					std::cerr << "[Inspector] Failed to load shader for entity " << entity << std::endl;
-				}
-			}
+			//	if (modelRenderer.shader) {
+			//		std::cout << "[Inspector] Shader loaded successfully" << std::endl;
+			//	} else {
+			//		std::cerr << "[Inspector] Failed to load shader for entity " << entity << std::endl;
+			//	}
+			//}
 
 			std::cout << "[Inspector] Model successfully applied to entity " << entity << std::endl;
 		} else {
