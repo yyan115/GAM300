@@ -29,6 +29,11 @@ add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
+# Jolt Physics compile definitions:
+# For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
+#              Engine gets them automatically when linking to Jolt
+# For Desktop: Defines come from JoltInclude.hpp header
+
 # Windows-specific definitions
 if(WIN32)
     target_compile_definitions(Engine PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -59,11 +64,11 @@ endforeach()
 if(ANDROID)
     # Android build - using prebuilt libraries
     message(STATUS "Android build - using prebuilt libraries")
-    
+
     # Define Android library paths
     set(ANDROID_LIBS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/arm64")
     set(ANDROID_HEADERS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/headers")
-    
+
     # Header-only libraries - include directories only
     set(GLM_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}" CACHE STRING "GLM include directory")
     set(RAPIDJSON_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}/rapidjson" CACHE STRING "RapidJSON include directory")
@@ -108,8 +113,13 @@ endif()
 # Manual libraries that aren't available in vcpkg or need custom versions
 target_include_directories(Engine
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        # Only expose the base include directory so consumers can do #include "Engine.h"
+        # NOT subdirectories - those are internal implementation
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
     PRIVATE
+        # Engine internals can see everything
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
@@ -135,12 +145,14 @@ endif()
 
 # Platform-specific linking
 if(ANDROID)
-    # Android linking - using prebuilt libraries
+    # Android linking - using prebuilt libraries + FetchContent Jolt
     target_link_libraries(Engine
         PUBLIC
             ${OPENGL_LIBRARIES}
             # GLM and RapidJSON are header-only, no linking needed
         PRIVATE
+            # FetchContent Jolt Physics - PRIVATE so Game doesn't see it
+            Jolt
             # Prebuilt libraries
             ${SPDLOG_LIBRARY}
             ${FREETYPE_LIBRARY}
@@ -151,14 +163,14 @@ if(ANDROID)
             android  # Android NDK library
     )
 else()
-    # Desktop linking (Linux/Windows) - vcpkg dependencies
+    # Desktop linking (Linux/Windows) - vcpkg dependencies + FetchContent Jolt
     target_link_libraries(Engine
         PUBLIC
             ${OPENGL_LIBRARIES}
-            # Public dependencies that consumers need
-            glm::glm
         PRIVATE
-            # Private dependencies only Engine needs
+            # All dependencies are PRIVATE - Game only sees Engine.h
+            glm::glm
+            Jolt
             assimp::assimp
             glfw
             Freetype::Freetype

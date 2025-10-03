@@ -69,6 +69,12 @@
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
+    <ClInclude Include="include\Physics\ColliderComponent.hpp" />
+    <ClInclude Include="include\Physics\RigidBodyComponent.hpp" />
+    <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
+    <ClInclude Include="include\Physics\CollisionFilters.hpp" />
+    <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
     <ClInclude Include="include\Graphics\Lights\LightComponent.hpp" />
@@ -169,6 +175,8 @@
     <ClCompile Include="src\Asset Manager\AssetManager.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\TimeManager.cpp" />
+    <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="src\Physics\CollisionFilters.cpp" />
     <ClCompile Include="src\Prefab.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
