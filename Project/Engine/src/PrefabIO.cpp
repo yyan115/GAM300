@@ -34,6 +34,16 @@ template <typename T> inline bool IsOverriddenFromPrefab(const T& t) {
     else                                return false;
 }
 
+static inline void EnsurePrefabLinkOn(ECSManager& ecs, Entity e, const std::string& canonicalPath)
+{
+    if (!ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) return;
+
+    if (!ecs.HasComponent<PrefabLinkComponent>(e))
+        ecs.AddComponent<PrefabLinkComponent>(e, PrefabLinkComponent{});
+
+    ecs.GetComponent<PrefabLinkComponent>(e).prefabPath = canonicalPath; // canonical, normalized
+}
+
 // Keep-position context for updates
 namespace {
     struct PrefabSpawnContext {
@@ -144,6 +154,17 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
 
     if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
 
+    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
+    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
+        if (!ecs.HasComponent<PrefabLinkComponent>(intoEntity))
+            ecs.AddComponent<PrefabLinkComponent>(intoEntity, PrefabLinkComponent{});
+
+        auto& link = ecs.GetComponent<PrefabLinkComponent>(intoEntity);
+        link.prefabPath = tryPath; // canonical path (same normalization PrefabEditor uses)
+    }
+
+    EnsurePrefabLinkOn(ecs, intoEntity, tryPath);
+
     std::ifstream f(tryPath, std::ios::binary);
     if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
     const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
@@ -181,6 +202,17 @@ ENGINE_API bool InstantiatePrefabIntoEntity(
 
     if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
 
+    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
+    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
+        if (!ecs.HasComponent<PrefabLinkComponent>(intoEntity))
+            ecs.AddComponent<PrefabLinkComponent>(intoEntity, PrefabLinkComponent{});
+
+        auto& link = ecs.GetComponent<PrefabLinkComponent>(intoEntity);
+        link.prefabPath = tryPath; // canonical path (same normalization PrefabEditor uses)
+    }
+
+    EnsurePrefabLinkOn(ecs, intoEntity, tryPath);
+
     std::string json;
     {
         std::ifstream f(tryPath, std::ios::binary);
@@ -208,8 +240,6 @@ ENGINE_API bool InstantiatePrefabIntoEntity(
         catch (const std::exception& ex) { std::cerr << "[PrefabIO] Exception applying '" << typeName << "': " << ex.what() << "\n"; }
         catch (...) { std::cerr << "[PrefabIO] Unknown error applying '" << typeName << "'\n"; }
     }
-
-    // Do NOT add PrefabLink here (editor scratch/sandbox would assert if not registered)
 
     if (keepExistingPosition && hadPrevTransform && ecs.HasComponent<Transform>(intoEntity)) {
         auto& t = ecs.GetComponent<Transform>(intoEntity);
