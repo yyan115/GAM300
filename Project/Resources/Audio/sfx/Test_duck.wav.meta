@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 5,
-        "guid": "001aa396b346c4d9-0002d62d20000003",
+        "version": 6,
+        "guid": "00315556d30c0a60-0002d702f6000003",
         "source": "../../Resources/Audio/sfx/Test_duck.wav",
         "compiled": "../../Resources/Audio/sfx/Test_duck.wav",
-        "last_compiled": "2025-10-03 09:49:04.4265420"
+        "last_compiled": "2025-10-03 17:25:15.2842019"
     }
 }

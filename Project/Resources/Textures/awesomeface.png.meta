@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 5,
-        "guid": "00404bb3196ce8f6-0002d62d82000033",
+        "version": 6,
+        "guid": "00315556c1bd6336-0002d702fa00003d",
         "source": "../../Resources/Textures/awesomeface.png",
         "compiled": "../../Resources/Textures/awesomeface.dds",
-        "last_compiled": "2025-10-03 10:57:19.8444966"
+        "last_compiled": "2025-10-03 17:25:17.6252567"
     },
     "TextureMetaData": {
         "id": 0,

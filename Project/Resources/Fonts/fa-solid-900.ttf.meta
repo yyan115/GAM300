@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 5,
-        "guid": "001aa3969112efd0-0002d62d20000005",
+        "version": 6,
+        "guid": "0031555680ca4767-0002d702f6000005",
         "source": "../../Resources/Fonts/fa-solid-900.ttf",
         "compiled": "../../Resources/Fonts/fa-solid-900.font",
-        "last_compiled": "2025-10-03 10:56:35.6022646"
+        "last_compiled": "2025-10-03 17:25:15.2862638"
     }
 }

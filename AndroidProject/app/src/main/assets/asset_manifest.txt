@@ -110,4 +110,3 @@ Resources/Textures/container2_specular.png.meta
 Resources/Textures/wooden_container.dds
 Resources/Textures/wooden_container.jpg
 Resources/Textures/wooden_container.jpg.meta
-Resources/Scenes/Example Scene.scene

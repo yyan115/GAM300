@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 5,
-        "guid": "001aa396acc47116-0002d62d20000001",
+        "version": 6,
+        "guid": "00315556cf80f5bf-0002d702f6000001",
         "source": "../../Resources/Audio/sfx/start menu bgm.ogg",
         "compiled": "../../Resources/Audio/sfx/start menu bgm.ogg",
-        "last_compiled": "2025-10-03 09:49:04.4243700"
+        "last_compiled": "2025-10-03 17:25:15.2828727"
     }
 }
