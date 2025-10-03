@@ -4,6 +4,7 @@
 #include "Panels/SceneHierarchyPanel.hpp"
 #include "Panels/GamePanel.hpp"
 #include "EditorInputManager.hpp"
+#include "EditorComponents.hpp"
 #include "Graphics/SceneRenderer.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -435,6 +436,10 @@ void ScenePanel::HandleEntitySelection() {
 
 void ScenePanel::OnImGuiRender()
 {
+    
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_VIEWPORT);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_VIEWPORT);
+
     // Update input manager state
     EditorInputManager::Update();
 
@@ -526,6 +531,8 @@ void ScenePanel::OnImGuiRender()
         ImGui::PopID(); // <--- NEW
     }
     ImGui::End();
+
+    ImGui::PopStyleColor(2);
 }
 
 void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize)

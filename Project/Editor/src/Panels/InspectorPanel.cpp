@@ -43,6 +43,10 @@ InspectorPanel::InspectorPanel()
 }
 
 void InspectorPanel::OnImGuiRender() {
+	
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_INSPECTOR);
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_INSPECTOR);
+
 	if (ImGui::Begin(name.c_str(), &isOpen)) {
 		// Check for selected asset first (higher priority)
 		GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
@@ -170,8 +174,28 @@ void InspectorPanel::OnImGuiRender() {
 					// Draw NameComponent if it exists
 					if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
 						DrawNameComponent(displayEntity);
-						ImGui::Separator();
 					}
+
+					
+					ImGui::Spacing();
+
+					// Tag dropdown
+					ImGui::Text("Tag");
+					ImGui::SameLine(80);
+					ImGui::SetNextItemWidth(-1);
+					const char* tags[] = { "Untagged", "Player", "Enemy", "UI", "Camera", "Light" };
+					static int currentTag = 0;
+					ImGui::Combo("##Tag", &currentTag, tags, IM_ARRAYSIZE(tags));
+
+					// Layer dropdown
+					ImGui::Text("Layer");
+					ImGui::SameLine(80);
+					ImGui::SetNextItemWidth(-1);
+					const char* layers[] = { "Default", "UI", "Water", "Ignore Raycast", "PostProcessing" };
+					static int currentLayer = 0;
+					ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
+
+					ImGui::Separator();
 
 					// Draw Transform component if it exists
 					if (ecsManager.HasComponent<Transform>(displayEntity)) {
@@ -233,6 +257,8 @@ void InspectorPanel::OnImGuiRender() {
 	ProcessPendingComponentRemovals();
 
 	ImGui::End();
+
+	ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
 }
 
 void InspectorPanel::DrawNameComponent(Entity entity) {
@@ -320,7 +346,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 		// Display model info (read-only for now)
 		ImGui::Text("Model Renderer Component");
 
-		// Model drag-drop slot (Unity style)
+		// Model drag-drop slot
 		ImGui::Text("Model:");
 		ImGui::SameLine();
 
@@ -333,7 +359,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 			modelButtonText = "None (Model)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float buttonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(modelButtonText.c_str(), buttonWidth);
 
@@ -360,7 +386,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 
 		ImGui::Separator();
 
-		// Material drag-drop slot (Unity style)
+		// Material drag-drop slot
 		ImGui::Text("Material:");
 		ImGui::SameLine();
 
@@ -381,7 +407,7 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 			buttonText = "None (Material)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float materialButtonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(buttonText.c_str(), materialButtonWidth);
 
@@ -417,7 +443,7 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 
 		ImGui::PushID("SpriteRenderComponent");
 
-		// Texture drag-drop slot (Unity style)
+		// Texture drag-drop slot
 		ImGui::Text("Texture:");
 		ImGui::SameLine();
 
@@ -435,7 +461,7 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 			textureButtonText = "None (Texture)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float buttonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
 
@@ -678,7 +704,7 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 			textureButtonText = "None (Texture)";
 		}
 
-		// Unity-style drag-drop slot
+		
 		float buttonWidth = ImGui::GetContentRegionAvail().x;
 		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
 
@@ -1497,26 +1523,57 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 }
 
 bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags) {
+	
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+
+	
+	ImGui::Spacing();
+
+	
+	ImGui::PushID(label);
+	bool componentEnabled = true; // TODO: Get actual enabled state from component
+	ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
+	ImGui::PopID();
+
+	// Collapsing header on same line
+	ImGui::SameLine();
 	bool isOpen = ImGui::CollapsingHeader(label, flags);
 
-	// Handle right-click for component removal
-	std::string popupName = "ComponentContextMenu_" + componentType;
-	if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1)) { // Right-click
+	
+	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
+	ImGui::PushID((label + std::string("_gear")).c_str());
+	if (ImGui::SmallButton(ICON_FA_GEAR)) {
+		std::string popupName = "ComponentContextMenu_" + componentType;
 		ImGui::OpenPopup(popupName.c_str());
 	}
+	ImGui::PopID();
 
 	// Context menu for component removal
+	std::string popupName = "ComponentContextMenu_" + componentType;
 	if (ImGui::BeginPopup(popupName.c_str())) {
 		if (ImGui::MenuItem("Remove Component")) {
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({entity, componentType});
 		}
+		if (ImGui::MenuItem("Reset")) {
+			// TODO: Implement reset functionality
+		}
+		if (ImGui::MenuItem("Copy Component")) {
+			// TODO: Implement copy functionality
+		}
+		if (ImGui::MenuItem("Paste Component Values")) {
+			// TODO: Implement paste functionality
+		}
 		ImGui::EndPopup();
 	}
 
-	// Show tooltip on hover
-	if (ImGui::IsItemHovered()) {
-		ImGui::SetTooltip("Right-click to remove component");
+	ImGui::PopStyleColor(3);
+
+	
+	if (isOpen) {
+		ImGui::Spacing();
 	}
 
 	return isOpen;

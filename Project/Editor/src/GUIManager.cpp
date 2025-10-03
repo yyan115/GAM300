@@ -379,25 +379,30 @@ void GUIManager::CreateEditorTheme() {
 	colors[ImGuiCol_Border] = ImVec4(0.28f, 0.28f, 0.28f, 1.0f);       // Medium gray border
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.10f, 0.10f, 0.10f, 0.5f); // Subtle shadow
 
-	// Text
-	colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.0f);         // White text
+	// Text - Unity-style brighter white
+	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);         // Brighter white text like Unity
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.0f); // Gray text for disabled items
 
-	// Headers
-	colors[ImGuiCol_Header] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);       // Header background
-	colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Hovered header
-	colors[ImGuiCol_HeaderActive] = ImVec4(0.33f, 0.33f, 0.33f, 1.0f); // Active header
+	// Headers - Unity-style grey-blue selection (for combo boxes, selectables, etc.)
+	colors[ImGuiCol_Header] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);         // Unity grey-blue selection
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);  // Subtle grey hover
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);   // Match selected
 
-	// Buttons
-	colors[ImGuiCol_Button] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);       // Button background
+	// Buttons - Unity-style
+	colors[ImGuiCol_Button] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);       // Button background
 	colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Hovered button
-	colors[ImGuiCol_ButtonActive] = ImVec4(0.33f, 0.33f, 0.33f, 1.0f); // Active button
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f); // Active button
 
-	// Tabs
-	colors[ImGuiCol_Tab] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);          // Tab background
-	colors[ImGuiCol_TabHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);   // Hovered tab
-	colors[ImGuiCol_TabActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);    // Active tab
-	colors[ImGuiCol_TabUnfocused] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f); // Unfocused tab
+	// Frame (for input fields, combo boxes, etc.) - Unity-style
+	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);        // Frame background
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f); // Hovered frame
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);  // Active frame
+
+	// Tabs - Unity-style: active tabs are LIGHTER, inactive are DARKER
+	colors[ImGuiCol_Tab] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);          // Inactive tab (darker)
+	colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);   // Hovered tab
+	colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);    // Active tab (lighter - matches window bg)
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.16f, 0.16f, 0.16f, 1.0f); // Unfocused tab (darker)
 	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.22f, 0.22f, 0.22f, 1.0f); // Unfocused active tab
 
 	// Title Bar (for windows)

@@ -59,4 +59,5 @@ private:
     bool useCustomAspectRatio;
     float customAspectRatio;
     bool freeAspect;
+    float viewportScale;  
 };

@@ -87,7 +87,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
 
     bool materialChanged = false;
 
-    // Colors section - Unity style
+    // Colors section
     bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
 
     // Add lock button on the same line as Colors header if requested
@@ -174,7 +174,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            // Unity-style texture slot layout
+            
             ImGui::Text("%s:", name.c_str());
             ImGui::SameLine();
 
@@ -185,7 +185,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
-            // Texture display field (drag-drop target) - Unity style
+            // Texture display field (drag-drop target)
             std::string textureDisplay;
             if (currentPath.empty()) {
                 textureDisplay = "None (Texture)";
@@ -195,7 +195,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 textureDisplay = pathObj.filename().string();
             }
 
-            // Unity-style drag-drop slot
+            
             EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
             // Drag-drop target for textures with visual feedback
