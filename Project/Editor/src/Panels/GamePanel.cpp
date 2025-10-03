@@ -58,7 +58,8 @@ void GamePanel::OnImGuiRender() {
         ImGui::SetCursorPos(ImVec2(startPos.x + offsetX, startPos.y + offsetY));
 
         // Always render the scene at base resolution (no stretching)
-        SceneRenderer::BeginSceneRender(baseRenderWidth, baseRenderHeight);
+        // Use GAME-specific framebuffer to avoid conflicts with Scene panel
+        SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
 
         if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
             // Render 3D scene with game logic running
@@ -68,10 +69,10 @@ void GamePanel::OnImGuiRender() {
             SceneRenderer::RenderScene(); // This should show the game camera view
         }
 
-        SceneRenderer::EndSceneRender();
+        SceneRenderer::EndGameRender();
 
-        // Get the texture from SceneRenderer and display it
-        unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
+        // Get the texture from Game framebuffer (not Scene framebuffer)
+        unsigned int sceneTexture = SceneRenderer::GetGameTexture();
         if (sceneTexture != 0) {
             // Calculate crop UV coordinates based on target aspect ratio
             float targetAspectRatio;

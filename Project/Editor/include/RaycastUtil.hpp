@@ -78,10 +78,11 @@ public:
      * @brief Perform raycast against all entities in the scene.
      * @param ray The ray to cast
      * @param excludeEntity Optional entity to exclude from raycast (e.g., preview entities)
-     * @param is2DMode Whether we're in 2D editor mode (filters out 3D entities if true)
+     * @param filterByMode Whether to filter entities by 2D/3D mode (true = filter, false = hit all entities)
+     * @param is2DMode Whether we're in 2D editor mode (only used if filterByMode is true)
      * @return The closest hit entity, or INVALID_ENTITY if no hit
      */
-    static RaycastHit RaycastScene(const Ray& ray, Entity excludeEntity = INVALID_ENTITY, bool is2DMode = false);
+    static RaycastHit RaycastScene(const Ray& ray, Entity excludeEntity = INVALID_ENTITY, bool filterByMode = true, bool is2DMode = false);
 
     /**
      * @brief Get transform matrix for an entity (avoids including Graphics headers in ScenePanel).

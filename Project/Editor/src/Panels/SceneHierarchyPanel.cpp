@@ -12,8 +12,11 @@
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
+#include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
+#include "EditorState.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
@@ -245,10 +248,17 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                         std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
                                  << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
 
-                        // Check if we have a sprite component to get the correct 2D position
+                        // Determine if entity is 2D or 3D
+                        bool entityIs3D = true; // Default to 3D
                         bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
-                        if (hasSprite) {
+                        bool hasText = ecsManager.HasComponent<TextRenderComponent>(entityId);
+                        bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(entityId);
+
+                        if (hasModel) {
+                            entityIs3D = true;
+                        } else if (hasSprite) {
                             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
+                            entityIs3D = sprite.is3D;
                             std::cout << "[SceneHierarchy] Entity has sprite at position ("
                                      << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
                                      << ") is3D=" << sprite.is3D << std::endl;
@@ -257,6 +267,27 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                                 entityPos = sprite.position;
                                 std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
                             }
+                        } else if (hasText) {
+                            auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
+                            entityIs3D = text.is3D;
+                            std::cout << "[SceneHierarchy] Entity has text component is3D=" << text.is3D << std::endl;
+                        }
+
+                        // Switch view mode to match entity
+                        EditorState& editorState = EditorState::GetInstance();
+                        bool currentIs2D = editorState.Is2DMode();
+                        bool targetIs2D = !entityIs3D;
+
+                        if (currentIs2D != targetIs2D) {
+                            // Need to switch modes
+                            EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                            editorState.SetViewMode(newViewMode);
+
+                            // Sync with GraphicsManager
+                            GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                            GraphicsManager::GetInstance().SetViewMode(gfxMode);
+
+                            std::cout << "[SceneHierarchy] Switched view mode to " << (entityIs3D ? "3D" : "2D") << std::endl;
                         }
 
                         // Frame the entity in the scene camera
