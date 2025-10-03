@@ -239,7 +239,7 @@ void GUIManager::CreateDockspace() {
 					if (hierarchyPanel) hierarchyPanel->SetOpen(true);
 					if (inspectorPanel) inspectorPanel->SetOpen(true);
 					if (consolePanel) consolePanel->SetOpen(true);
-					//if (performancePanel) performancePanel->SetOpen(true); // Don't enable by default
+					if (performancePanel) performancePanel->SetOpen(false); // Don't enable by default
 					if (assetBrowserPanel) assetBrowserPanel->SetOpen(true);
 				}
 
