@@ -11,6 +11,10 @@
 #include "Transform/TransformComponent.hpp"
 #include <cstdarg>
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
 
 #define STR2(x) #x
 #define STR(x) STR2(x)
@@ -42,13 +46,60 @@ static bool JoltAssertFailed(const char* expr, const char* msg, const char* file
 
 
 bool PhysicsSystem::Initialise() {
-    // Jolt one-time bootstrap (no RegisterTypes needed for this smoke test)
-    if (JPH::Factory::sInstance == nullptr) {
+    // Jolt one-time bootstrap
+    static bool joltInitialized = false;
+    if (!joltInitialized) {
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Starting Jolt initialization...");
+#ifndef JPH_DISABLE_CUSTOM_ALLOCATOR
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering default allocator...");
         JPH::RegisterDefaultAllocator();
+#endif
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Setting trace and assert handlers...");
+#else
+        JPH::RegisterDefaultAllocator();
+#endif
         JPH::Trace = JoltTrace;
         JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed; )
-            JPH::Factory::sInstance = new JPH::Factory();
+
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Creating Factory instance...");
+#endif
+        JPH::Factory::sInstance = new JPH::Factory();
+
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering Jolt types...");
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", JPH_PROFILE_ENABLED);
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_STREAM=%d", JPH_OBJECT_STREAM);
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=%d", JPH_FLOATING_POINT_EXCEPTIONS_ENABLED);
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_DISABLE_CUSTOM_ALLOCATOR=%d",
+#ifdef JPH_DISABLE_CUSTOM_ALLOCATOR
+            1
+#else
+            0
+#endif
+        );
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_LAYER_BITS=%d",
+#ifdef JPH_OBJECT_LAYER_BITS
+            JPH_OBJECT_LAYER_BITS
+#else
+            16  // default
+#endif
+        );
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
+#ifdef JPH_ENABLE_ASSERTS
+            1
+#else
+            0
+#endif
+        );
+#endif
         JPH::RegisterTypes();
+
+#ifdef __ANDROID__
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Jolt initialization complete!");
+#endif
+        joltInitialized = true;
     }
 
     if (!temp) temp = std::make_unique<JPH::TempAllocatorImpl>(16 * 1024 * 1024);
@@ -58,8 +109,14 @@ bool PhysicsSystem::Initialise() {
 
     // IMPORTANT: pass your persistent members (not locals) to Init
     physics.Init(MAX_BODIES, NUM_BODY_MUTEXES, MAX_BODY_PAIRS, MAX_CONTACT_CONSTRAINTS,
-        broadphase, objVsBP, objPair);  
+        broadphase, objVsBP, objPair);
     physics.SetGravity(JPH::Vec3(0, -9.81f, 0));  // gravity set
+
+#ifdef __ANDROID__
+    JPH::Vec3 gravity = physics.GetGravity();
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Gravity set to: (%f, %f, %f)",
+        gravity.GetX(), gravity.GetY(), gravity.GetZ());
+#endif
 
     /*JPH::BodyInterface& bi = physics.GetBodyInterface();
 
@@ -83,7 +140,14 @@ bool PhysicsSystem::Initialise() {
 
 
 void PhysicsSystem::Update(float dt) {
-	physics.Update(dt, /*collisionSteps=*/1, temp.get(), jobs.get());
+#ifdef __ANDROID__
+	static int updateCount = 0;
+	if (updateCount++ % 60 == 0) { // Log every 60 frames
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, dt=%f, entities=%zu", dt, entities.size());
+	}
+#endif
+
+	physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
 
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -101,6 +165,9 @@ void PhysicsSystem::Update(float dt) {
 }
 
 void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
+#ifdef __ANDROID__
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
+#endif
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
@@ -123,16 +190,32 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
 
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
             if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+            
+            // Set physics material properties for bouncing
+            bcs.mRestitution = 0.8f;        // High bounciness
+            bcs.mFriction = 0.3f;           // Moderate friction
+            bcs.mLinearDamping = 0.01f;     // Very low linear damping
+            bcs.mAngularDamping = 0.01f;    // Very low angular damping
 
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
+
+#ifdef __ANDROID__
+            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Created body: id=%u, motion=%d, pos=(%f,%f,%f)",
+                rb.id.GetIndex(), (int)motion, pos.GetX(), pos.GetY(), pos.GetZ());
+            // Verify body is actually active
+            if (motion == JPH::EMotionType::Dynamic) {
+                bool isActive = bi.IsActive(rb.id);
+                __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Dynamic body active: %d", isActive);
+            }
+#endif
             continue; // done for this entity
         }
 
         // 2) Recreate if collider or motion changed (cheap guard)
         if (rb.motion_dirty || rb.collider_seen_version != col.version) {
-            // remove, destroy, recreate (schemas usually don’t change frequently)
+            // remove, destroy, recreate (schemas usually donï¿½t change frequently)
             bi.RemoveBody(rb.id);
             bi.DestroyBody(rb.id);
             rb.id = JPH::BodyID(); // mark invalid; next loop creates fresh
@@ -154,6 +237,13 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
 void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 	auto& bi = physics.GetBodyInterface();
 
+#ifdef __ANDROID__
+	static int syncCount = 0;
+	if (syncCount++ % 60 == 0) { // Log every 60 frames
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsSyncBack called, entities=%zu", entities.size());
+	}
+#endif
+
     for (auto &e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
@@ -170,6 +260,14 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 			tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
 			tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
             tr.isDirty = true;
+
+#ifdef __ANDROID__
+			// Debug: Log position for one dynamic body every 60 frames
+			if (syncCount % 60 == 0) {
+				__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Dynamic body pos: (%f, %f, %f)",
+					p.GetX(), p.GetY(), p.GetZ());
+			}
+#endif
         }
     }
 }

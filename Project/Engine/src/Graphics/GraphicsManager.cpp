@@ -122,37 +122,37 @@ void GraphicsManager::Render()
 
 		if (modelItem)
 		{
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderModel");
-#endif
+//#ifdef ANDROID
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderModel");
+//#endif
 			RenderModel(*modelItem);
 		}
 		else if (textItem)
 		{
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderText");
-#endif
+//#ifdef ANDROID
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderText");
+//#endif
 			RenderText(*textItem);
 		}
 		else if (spriteItem)
 		{
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderSprite");
-#endif
+//#ifdef ANDROID
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderSprite");
+//#endif
 			RenderSprite(*spriteItem);
 		}
 		else if (debugItem)
 		{
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderDebugDraw");
-#endif
+//#ifdef ANDROID
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderDebugDraw");
+//#endif
 			RenderDebugDraw(*debugItem);
 		}
 		else if (particleItem)
 		{
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderParticles");
-#endif
+//#ifdef ANDROID
+//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderParticles");
+//#endif
 			RenderParticles(*particleItem);
 		}
 	}

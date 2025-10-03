@@ -41,9 +41,6 @@ void ECSManager::Initialize() {
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<SpriteRenderComponent>();
-	RegisterComponent<DirectionalLightComponent>();
-	RegisterComponent<PointLightComponent>();
-	RegisterComponent<SpotLightComponent>();
 	RegisterComponent<ParticleComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE

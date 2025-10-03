@@ -81,7 +81,7 @@ void SceneInstance::Initialize() {
 		rb.collider_seen_version = 0;
 
 		ColliderComponent& col = ecsManager.GetComponent<ColliderComponent>(physicsBoxObj);
-		col.shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+		col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
 		col.layer = Layers::MOVING;
 		col.version++;
 
@@ -109,9 +109,71 @@ void SceneInstance::Initialize() {
 
 		ColliderComponent& floorCol = ecsManager.GetComponent<ColliderComponent>(floor);
 		// Large, thin box: 200 x 1 x 200 (half-extents 100,0.5,100)
-		floorCol.shape = JPH::BoxShapeSettings(JPH::Vec3(100.f, 0.5f, 100.f)).Create().Get();
+		floorCol.shape = new JPH::BoxShape(JPH::Vec3(100.f, 0.5f, 100.f));
 		floorCol.layer = Layers::NON_MOVING;
 		floorCol.version++;
+
+		// ---- SECOND DYNAMIC BACKPACK (Sphere shape for bouncy behavior) ----
+		Entity backpack2 = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(backpack2, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(backpack2, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(backpack2, ColliderComponent{});
+
+		auto& backpack2Tr = ecsManager.GetComponent<Transform>(backpack2);
+		backpack2Tr.localPosition = { 2.0f, 8.0f, 0.0f }; // High up, offset to the right
+		backpack2Tr.localScale = { 0.8f, 0.8f, 0.8f };
+		backpack2Tr.localRotation = { 0, 0, 0, 0 };
+
+		auto& backpack2Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack2);
+		backpack2Rb.motion = Motion::Dynamic;
+		backpack2Rb.ccd = false;
+		backpack2Rb.transform_dirty = true;
+		backpack2Rb.motion_dirty = true;
+		backpack2Rb.collider_seen_version = 0;
+
+		auto& backpack2Col = ecsManager.GetComponent<ColliderComponent>(backpack2);
+		// Sphere shape for better bouncing
+		backpack2Col.shape = new JPH::SphereShape(0.6f);
+		backpack2Col.layer = Layers::MOVING;
+		backpack2Col.version++;
+
+		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+
+		// Add name component
+		ecsManager.AddComponent<NameComponent>(backpack2, NameComponent{});
+		NameComponent& physicsBackpack2Name = ecsManager.GetComponent<NameComponent>(backpack2);
+		physicsBackpack2Name.name = "Bouncy Sphere Backpack";
+
+		// ---- THIRD DYNAMIC BACKPACK (Different position for collision demo) ----
+		Entity backpack3 = ecsManager.CreateEntity();
+		ecsManager.AddComponent<Transform>(backpack3, Transform{});
+		ecsManager.AddComponent<RigidBodyComponent>(backpack3, RigidBodyComponent{});
+		ecsManager.AddComponent<ColliderComponent>(backpack3, ColliderComponent{});
+
+		auto& backpack3Tr = ecsManager.GetComponent<Transform>(backpack3);
+		backpack3Tr.localPosition = { -1.5f, 6.0f, 0.0f }; // High up, offset to the left
+		backpack3Tr.localScale = { 0.7f, 0.7f, 0.7f };
+		backpack3Tr.localRotation = { 0, 0, 0, 0 };
+
+		auto& backpack3Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack3);
+		backpack3Rb.motion = Motion::Dynamic;
+		backpack3Rb.ccd = false;
+		backpack3Rb.transform_dirty = true;
+		backpack3Rb.motion_dirty = true;
+		backpack3Rb.collider_seen_version = 0;
+
+		auto& backpack3Col = ecsManager.GetComponent<ColliderComponent>(backpack3);
+		// Box shape with different size
+		backpack3Col.shape = new JPH::BoxShape(JPH::Vec3(0.4f, 0.4f, 0.4f));
+		backpack3Col.layer = Layers::MOVING;
+		backpack3Col.version++;
+
+		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+
+		// Add name component
+		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
+		NameComponent& physicsBackpack3Name = ecsManager.GetComponent<NameComponent>(backpack3);
+		physicsBackpack3Name.name = "Box Backpack";
 
 		ecsManager.physicsSystem->physicsAuthoring(ecsManager);
 
@@ -367,34 +429,34 @@ void SceneInstance::Draw() {
 	}
 	if (mainECS.textSystem)
 	{
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+//#endif
 		mainECS.textSystem->Update();
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+//#endif
 	}
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
+//#endif
 	if (mainECS.spriteSystem) {
 		mainECS.spriteSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
-#endif
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
+//#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
+//#endif
 	if (mainECS.particleSystem)
 	{
 		mainECS.particleSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
+//#endif
 	// Test debug drawing
 	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
 	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
@@ -403,16 +465,16 @@ void SceneInstance::Draw() {
 	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
+//#endif
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();
 	}
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
-#endif
+//#ifdef ANDROID
+//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
+//#endif
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
 #endif
