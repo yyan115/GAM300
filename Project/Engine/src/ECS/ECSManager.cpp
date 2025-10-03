@@ -12,6 +12,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
+#include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 
 void ECSManager::Initialize() {
@@ -34,6 +35,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<PointLightComponent>();
 	RegisterComponent<SpotLightComponent>();
 	RegisterComponent<ParticleComponent>();
+	RegisterComponent<PrefabLinkComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,

@@ -76,15 +76,16 @@ void PrefabEditorPanel::OnImGuiRender()
 
     if (ImGui::Begin(name.c_str(), &isOpen))
     {
-        GUIManager::SetSelectedAsset(GUID_128{});
         ImGui::TextUnformatted(prefabPath.c_str());
         ImGui::Separator();
 
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-            // re-point selection to our scratch entity *and* keep the asset selection empty
+        // Only re-point selection when the user actually clicks inside this window
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) &&
+            ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
             if (sandboxEntity != static_cast<Entity>(-1))
                 GUIManager::SetSelectedEntity(sandboxEntity);
-            GUIManager::SetSelectedAsset(GUID_128{});    // <— make sure it stays cleared
+            // Leave asset selection alone; do not clear it every frame.
         }
 
         if (sandboxEntity != static_cast<Entity>(-1))
@@ -190,10 +191,9 @@ void PrefabEditorPanel::PropagateToInstances()
 {
     ECSManager& liveECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    // Safety: do nothing if PrefabLink isn't part of this build
-    if (!liveECS.IsComponentTypeRegistered<PrefabLink>()) {
+    if (!liveECS.IsComponentTypeRegistered<PrefabLinkComponent>()) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[PrefabEditor] PrefabLink not registered; propagation skipped.\n");
+            "[PrefabEditor] PrefabLinkComponent not registered; propagation skipped.\n");
         return;
     }
 
@@ -202,8 +202,8 @@ void PrefabEditorPanel::PropagateToInstances()
 
     for (Entity e : liveECS.GetActiveEntities())
     {
-        if (!liveECS.HasComponent<PrefabLink>(e)) continue;
-        const auto& link = liveECS.GetComponent<PrefabLink>(e);
+        if (!liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
+        const auto& link = liveECS.GetComponent<PrefabLinkComponent>(e);
         const std::string refNorm = NormalizePath(CanonicalPrefabPath(link.prefabPath));
         if (refNorm != myNorm) continue;
 
