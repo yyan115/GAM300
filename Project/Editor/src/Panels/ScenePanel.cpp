@@ -52,8 +52,11 @@ void ScenePanel::SetCameraTarget(const glm::vec3& target) {
     bool is2DMode = editorState.Is2DMode();
 
     if (is2DMode) {
+        // In 2D mode, only update target - don't recalculate camera vectors
+        // (to preserve 2D panning orientation)
         editorCamera.Position = glm::vec3(target.x, target.y, target.z + 5.0f);
     } else {
+        // In 3D mode, frame the target properly
         if (editorCamera.Distance > 10.0f) {
             editorCamera.Distance = 5.0f;
         }
@@ -399,11 +402,10 @@ void ScenePanel::HandleEntitySelection() {
                             glm::vec3 entityPos(targetPos.x, targetPos.y, targetPos.z);
 
                             if (is2DMode) {
-                                // Focus in 2D: set target to entity position
-                                editorCamera.SetTarget(glm::vec3(targetPos.x, targetPos.y, 0.0f));
-                                editorCamera.UpdateCameraVectors();
+                                // Focus in 2D
+                                editorCamera.Target = glm::vec3(targetPos.x, targetPos.y, 0.0f);
                             } else {
-                                // Focus in 3D: frame the entity (like Unity's Frame Selected)
+                                // Focus in 3D
                                 editorCamera.FrameTarget(entityPos, 5.0f);
                             }
                             ENGINE_PRINT("[ScenePanel] Focused camera on entity ", hit.entity, "\n");
