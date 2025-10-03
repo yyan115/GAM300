@@ -561,14 +561,8 @@ std::string Model::CompileToMesh(const std::string& modelPath, const std::vector
 
 bool Model::LoadResource(const std::string& resourcePath, const std::string& assetPath)
 {
+    assetPath;
     meshes.clear();
-
-    // Set model name from asset path
-    if (!assetPath.empty()) {
-        std::filesystem::path p(assetPath);
-        modelName = p.filename().generic_string();
-        modelPath = assetPath;
-    }
 //#ifdef __ANDROID__
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadResource called with path: %s", assetPath.c_str());
 //#endif

@@ -9,7 +9,7 @@
 // Forward declare Audio class to avoid including the header
 class Audio;
 
-// AudioComponent: AudioSource component for ECS entities
+// AudioComponent: Unity-style AudioSource component for ECS entities
 // Mirrors Unity's AudioSource API and behavior patterns
 struct ENGINE_API AudioComponent {
     // Unity-like public properties (Inspector editable)
@@ -21,7 +21,7 @@ struct ENGINE_API AudioComponent {
     bool Mute{ false };          // Mute the audio source
     int Priority{ 128 };         // Channel priority (0-256, Unity standard)
     
-    // 3D Audio Properties
+    // 3D Audio Properties (Unity-style)
     bool Spatialize{ false };    // Enable 3D spatial audio
     float MinDistance{ 1.0f };   // Distance for full volume
     float MaxDistance{ 100.0f }; // Distance for minimum volume
@@ -56,7 +56,7 @@ public:
     void Pause();
     void UnPause();
     
-    // State queries
+    // State queries (Unity-style properties)
     bool GetIsPlaying() const;
     bool GetIsPaused() const;
     AudioSourceState GetState() const;

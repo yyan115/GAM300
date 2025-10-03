@@ -4,13 +4,12 @@
 #include "EditorState.hpp"
 #include "Engine.h"
 #include "RunTimeVar.hpp"
-#include "EditorComponents.hpp"
 #include <algorithm>
 #include <cmath>
 
 GamePanel::GamePanel()
     : EditorPanel("Game", true), selectedResolutionIndex(0), useCustomAspectRatio(false),
-      customAspectRatio(16.0f / 9.0f), freeAspect(false), viewportScale(1.0f) {
+      customAspectRatio(16.0f / 9.0f), freeAspect(false) {
 
     // Initialize common resolutions
     resolutions.emplace_back(1920, 1080, "Full HD (1920x1080)");
@@ -28,16 +27,12 @@ GamePanel::GamePanel()
 }
 
 void GamePanel::OnImGuiRender() {
-    
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_VIEWPORT);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_VIEWPORT);
-
     if (ImGui::Begin(name.c_str(), &isOpen)) {
 
-        // Render the resolution panel toolbar (always at top)
+        // Render the resolution panel toolbar
         RenderResolutionPanel();
 
-        // Get available space after toolbar for game view
+        // Get available space after toolbar
         ImVec2 availableSize = ImGui::GetContentRegionAvail();
         int availableWidth = (int)availableSize.x;
         int availableHeight = (int)availableSize.y;
@@ -45,31 +40,6 @@ void GamePanel::OnImGuiRender() {
         // Ensure minimum size
         if (availableWidth < 100) availableWidth = 100;
         if (availableHeight < 100) availableHeight = 100;
-
-        // Wrap game view in child window to prevent overlap with toolbar
-        ImGui::BeginChild("GameViewport", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-        // Recalculate available size inside the child window
-        availableSize = ImGui::GetContentRegionAvail();
-        availableWidth = (int)availableSize.x;
-        availableHeight = (int)availableSize.y;
-        if (availableWidth < 100) availableWidth = 100;
-        if (availableHeight < 100) availableHeight = 100;
-
-        // Optimize: Reduce render frequency when window is not focused
-        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        static int unfocusedFrameCounter = 0;
-        bool shouldRender = true;
-
-        if (!isFocused) {
-            unfocusedFrameCounter++;
-            // Render unfocused panel every 3rd frame instead of every frame
-            if (unfocusedFrameCounter % 3 != 0) {
-                shouldRender = false;
-            }
-        } else {
-            unfocusedFrameCounter = 0;
-        }
 
         // Always render at a fixed base resolution (e.g., 1920x1080 for 16:9)
         const int baseRenderWidth = 1920;
@@ -81,36 +51,25 @@ void GamePanel::OnImGuiRender() {
         CalculateViewportDimensions(availableWidth, availableHeight,
                                   displayWidth, displayHeight, offsetX, offsetY);
 
-        // Apply scale factor
-        displayWidth = (int)((float)displayWidth * viewportScale);
-        displayHeight = (int)((float)displayHeight * viewportScale);
-
-        // Recalculate offsets for centering after scaling
-        offsetX = (availableWidth - displayWidth) * 0.5f;
-        offsetY = (availableHeight - displayHeight) * 0.5f;
-
         EditorState& editorState = EditorState::GetInstance();
 
         // Set cursor position to center the viewport
         ImVec2 startPos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(ImVec2(startPos.x + offsetX, startPos.y + offsetY));
 
-        // Only render if we should (optimization for unfocused panels)
-        if (shouldRender) {
-            // Always render the scene at base resolution (no stretching)
-            // Use GAME-specific framebuffer to avoid conflicts with Scene panel
-            SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
+        // Always render the scene at base resolution (no stretching)
+        // Use GAME-specific framebuffer to avoid conflicts with Scene panel
+        SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
 
-            if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
-                // Render 3D scene with game logic running
-                SceneRenderer::RenderScene(); // This will run with game logic
-            } else {
-                // Render scene preview with game camera (no game logic)
-                SceneRenderer::RenderScene(); // This should show the game camera view
-            }
-
-            SceneRenderer::EndGameRender();
+        if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
+            // Render 3D scene with game logic running
+            SceneRenderer::RenderScene(); // This will run with game logic
+        } else {
+            // Render scene preview with game camera (no game logic)
+            SceneRenderer::RenderScene(); // This should show the game camera view
         }
+
+        SceneRenderer::EndGameRender();
 
         // Get the texture from Game framebuffer (not Scene framebuffer)
         unsigned int sceneTexture = SceneRenderer::GetGameTexture();
@@ -150,42 +109,28 @@ void GamePanel::OnImGuiRender() {
                 uv0, uv1  // Use calculated crop coordinates
             );
 
-            // Auto-focus on interaction (any mouse click)
-            if (ImGui::IsItemHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
-                                           ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
-                                           ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
-                ImGui::SetWindowFocus();
-            }
-
+            // Draw border around viewport for clarity
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             ImVec2 pos = ImGui::GetItemRectMin();
             ImVec2 pos_max = ImGui::GetItemRectMax();
-            draw_list->AddRect(pos, pos_max, IM_COL32(40, 40, 40, 255));
+            draw_list->AddRect(pos, pos_max, IM_COL32(100, 100, 100, 255));
         }
         else {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "Game View - Framebuffer not ready");
             ImGui::Text("Size: %dx%d", displayWidth, displayHeight);
         }
-
-        ImGui::EndChild(); // End GameViewport child window
     }
     ImGui::End();
-
-    ImGui::PopStyleColor(2);
 }
 
 void GamePanel::RenderResolutionPanel() {
-    
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.20f, 0.20f, 0.20f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.15f, 0.15f, 0.15f, 1.0f)); // Subtle border
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 4)); // Padding inside toolbar
+    // Begin toolbar
+    if (ImGui::BeginChild("ResolutionToolbar", ImVec2(0, 35), true, ImGuiWindowFlags_NoScrollbar)) {
 
-    // Taller toolbar to fit content properly
-    if (ImGui::BeginChild("ResolutionToolbar", ImVec2(0, 32), true, ImGuiWindowFlags_NoScrollbar)) {
-
-        // Resolution dropdown (no label, just combo)
-        ImGui::SetNextItemWidth(180);
+        // Resolution dropdown
+        ImGui::Text("Resolution:");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(200);
 
         std::string previewText;
         if (freeAspect) {
@@ -225,27 +170,26 @@ void GamePanel::RenderResolutionPanel() {
         // Custom aspect ratio input
         if (useCustomAspectRatio) {
             ImGui::SameLine();
-            ImGui::SetNextItemWidth(60);
-            ImGui::DragFloat("##AspectRatio", &customAspectRatio, 0.01f, 0.1f, 10.0f, "%.2f:1");
+            ImGui::SetNextItemWidth(80);
+            ImGui::DragFloat("##AspectRatio", &customAspectRatio, 0.01f, 0.1f, 10.0f, "%.2f");
         }
 
-        // Display current resolution info (Unity-style, on same line)
-        if (!freeAspect && !useCustomAspectRatio) {
+        // Info display
+        ImGui::SameLine();
+        ImGui::Separator();
+        ImGui::SameLine();
+
+        if (freeAspect) {
+            ImGui::Text("Mode: Free Aspect");
+        } else if (useCustomAspectRatio) {
+            ImGui::Text("Aspect: %.2f:1", customAspectRatio);
+        } else {
             const auto& res = resolutions[selectedResolutionIndex];
-            ImGui::SameLine();
-            ImGui::TextDisabled("%dx%d", res.width, res.height);
+            float aspectRatio = (float)res.width / (float)res.height;
+            ImGui::Text("%dx%d (%.2f:1)", res.width, res.height, aspectRatio);
         }
-
-        
-        ImGui::SameLine();
-        ImGui::Spacing();
-        ImGui::SameLine();
-        EditorComponents::DrawScaleSlider("Scale", &viewportScale, 0.1f, 2.0f, 80.0f);
     }
     ImGui::EndChild();
-
-    ImGui::PopStyleVar(2); // Pop ItemSpacing and WindowPadding
-    ImGui::PopStyleColor(2); // Pop ChildBg and Border
 }
 
 void GamePanel::CalculateViewportDimensions(int availableWidth, int availableHeight,

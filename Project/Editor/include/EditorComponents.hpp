@@ -8,35 +8,6 @@
 class EditorComponents {
 public:
 
-    // ===== Unity-Style Panel Background Colors =====
-    // Asset Browser/Project panel - Medium grey (matches Unity)
-    static constexpr ImVec4 PANEL_BG_ASSET_BROWSER = ImVec4(0.22f, 0.22f, 0.22f, 1.0f);
-
-    // Performance/utility panels - Same as Inspector (matches Unity)
-    static constexpr ImVec4 PANEL_BG_UTILITY = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
-
-    // Hierarchy panel - Same as Inspector/Performance for consistency
-    static constexpr ImVec4 PANEL_BG_HIERARCHY = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
-
-    // Inspector panel - MEDIUM-LIGHT grey
-    static constexpr ImVec4 PANEL_BG_INSPECTOR = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
-
-    // Scene/Game panels - Darker than Asset Browser
-    static constexpr ImVec4 PANEL_BG_VIEWPORT = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
-
-    // Scene header (darker than hierarchy for visible contrast)
-    static constexpr ImVec4 PANEL_BG_SCENE_HEADER = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
-
-    // ===== Unity-Style Slider Colors =====
-    static constexpr ImVec4 SLIDER_BG = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);           // Dark background
-    static constexpr ImVec4 SLIDER_GRAB = ImVec4(0.50f, 0.50f, 0.50f, 1.0f);         // Grey grab handle
-    static constexpr ImVec4 SLIDER_GRAB_ACTIVE = ImVec4(0.60f, 0.60f, 0.60f, 1.0f); // Lighter when active
-
-    // ===== Unity-Style Dropdown/Combo Colors =====
-    static constexpr ImVec4 COMBO_HEADER = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);         // Unity grey-blue selection
-    static constexpr ImVec4 COMBO_HEADER_HOVERED = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Subtle grey hover
-    static constexpr ImVec4 COMBO_HEADER_ACTIVE = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);  // Match selected
-
     // Button Colors (RGB 0-1 range)
     static constexpr ImVec4 DRAG_DROP_BUTTON_BG = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);          // Dark background
     static constexpr ImVec4 DRAG_DROP_BUTTON_HOVER = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);       // Same as bg - no hover effect
@@ -88,27 +59,6 @@ public:
      * @return True if currently being dragged over (ready to accept payload)
      */
     static bool DrawDragDropSlot(const char* label, const std::string& displayText, float width, const char* tooltip);
-
-    /**
-     * @brief Draws a Unity-style scale slider with label and value display
-     * @param label Label text (e.g., "Scale")
-     * @param value Pointer to the scale value
-     * @param min Minimum value
-     * @param max Maximum value
-     * @param sliderWidth Width of the slider (default 100)
-     * @return True if value was changed
-     */
-    static bool DrawScaleSlider(const char* label, float* value, float min = 0.1f, float max = 2.0f, float sliderWidth = 100.0f);
-
-    /**
-     * @brief Push Unity-style combo/dropdown colors
-     */
-    static void PushComboColors();
-
-    /**
-     * @brief Pop Unity-style combo/dropdown colors
-     */
-    static void PopComboColors();
 
 private:
     // Helper to draw the custom highlight border

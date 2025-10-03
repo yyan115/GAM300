@@ -42,8 +42,6 @@ private:
     void DrawParticleComponent(Entity entity);
     void DrawAudioComponent(Entity entity);
     void DrawLightComponents(Entity entity);
-    void DrawColliderComponent(Entity entity);
-    void DrawRigidBodyComponent(Entity entity);
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyMaterialToModel(Entity entity, const GUID_128& materialGuid);
     void ApplyMaterialToModelByPath(Entity entity, const std::string& materialPath);

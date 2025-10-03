@@ -54,43 +54,6 @@ bool EditorComponents::DrawDragDropSlot(const char* label, const std::string& di
     return false;
 }
 
-bool EditorComponents::DrawScaleSlider(const char* label, float* value, float min, float max, float sliderWidth) {
-    
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, SLIDER_BG);
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, SLIDER_BG);
-    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, SLIDER_BG);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, SLIDER_GRAB);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, SLIDER_GRAB_ACTIVE);
-
-    // Draw label
-    ImGui::Text("%s", label);
-    ImGui::SameLine();
-
-    // Draw slider with proper linear behavior
-    ImGui::SetNextItemWidth(sliderWidth);
-    char sliderID[64];
-    snprintf(sliderID, sizeof(sliderID), "##%sSlider", label);
-    bool changed = ImGui::SliderFloat(sliderID, value, min, max, "%.2f", ImGuiSliderFlags_None);
-
-    // Draw value display on same line
-    ImGui::SameLine();
-    ImGui::Text("%.1fx", *value);
-
-    ImGui::PopStyleColor(5);
-
-    return changed;
-}
-
-void EditorComponents::PushComboColors() {
-    ImGui::PushStyleColor(ImGuiCol_Header, COMBO_HEADER);
-    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, COMBO_HEADER_HOVERED);
-    ImGui::PushStyleColor(ImGuiCol_HeaderActive, COMBO_HEADER_ACTIVE);
-}
-
-void EditorComponents::PopComboColors() {
-    ImGui::PopStyleColor(3);
-}
-
 void EditorComponents::DrawHighlightBorder() {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 p_min = ImGui::GetItemRectMin();

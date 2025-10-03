@@ -68,7 +68,7 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
         UpdateCameraVectors();
     }
 
-    
+    // Unity-style panning: Middle mouse button to pan target
     if (isMiddleMousePressed) {
         // Calculate right and up vectors relative to the camera
         glm::vec3 right = Right;

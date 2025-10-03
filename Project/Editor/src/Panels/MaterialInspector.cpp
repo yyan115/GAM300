@@ -87,12 +87,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
 
     bool materialChanged = false;
 
-    // Colors section
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
-    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
-    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
+    // Colors section - Unity style
     bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
-    ImGui::PopStyleColor(3);
 
     // Add lock button on the same line as Colors header if requested
     if (showLockButton && isLocked && lockCallback) {
@@ -154,11 +150,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
     }
 
     // Textures section
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
-    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
-    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
     if (ImGui::CollapsingHeader("Textures")) {
-        ImGui::PopStyleColor(3);
         // Texture type mappings
         static const std::vector<std::pair<Material::TextureType, std::string>> textureTypes = {
             {Material::TextureType::DIFFUSE, "Diffuse"},
@@ -182,7 +174,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            
+            // Unity-style texture slot layout
             ImGui::Text("%s:", name.c_str());
             ImGui::SameLine();
 
@@ -193,7 +185,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
-            // Texture display field (drag-drop target)
+            // Texture display field (drag-drop target) - Unity style
             std::string textureDisplay;
             if (currentPath.empty()) {
                 textureDisplay = "None (Texture)";
@@ -203,7 +195,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 textureDisplay = pathObj.filename().string();
             }
 
-            
+            // Unity-style drag-drop slot
             EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
             // Drag-drop target for textures with visual feedback
@@ -302,8 +294,6 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Pop the unique ID
             ImGui::PopID();
         }
-    } else {
-        ImGui::PopStyleColor(3); // Pop header colors if not open
     }
 
     // Save button - always show it for material editing (outside collapsing headers)

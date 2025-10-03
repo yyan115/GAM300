@@ -23,7 +23,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "TimeManager.hpp"
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
-#include "Engine.h"
 
 /******************************************************************************/
 /*!
@@ -211,19 +210,6 @@ void ParticleSystem::Update()
         }
 
         if (!particleComp.isVisible) continue;
-
-        // Only update particle physics if:
-        // 1. Game is running/paused, OR
-        // 2. Playing in editor AND not paused
-        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() || Engine::IsPaused() ||
-                                    (particleComp.isPlayingInEditor && !particleComp.isPausedInEditor);
-
-        if (!shouldUpdateParticles) {
-            // Still submit to renderer (to show existing particles), but don't update physics or emit new particles
-            auto renderItem = std::make_unique<ParticleComponent>(particleComp);
-            gfxManager.Submit(std::move(renderItem));
-            continue;
-        }
 
         // Update particle physics
         UpdateParticles(particleComp, dt);

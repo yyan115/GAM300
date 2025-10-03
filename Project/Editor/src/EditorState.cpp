@@ -6,7 +6,6 @@
 #include <ECS/ECSRegistry.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioManager.hpp"
-#include "Scene/SceneManager.hpp"
 
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
@@ -45,9 +44,6 @@ EditorState::State EditorState::GetState() const {
 void EditorState::Play() {
     State currentState = GetState();
     if (currentState == State::EDIT_MODE) {
-        // Save the current scene state before entering play mode
-        SceneManager::GetInstance().SaveTempScene();
-
         SetState(State::PLAY_MODE);
 
         // Ensure FMOD global paused flag cleared so audio can play
@@ -96,6 +92,8 @@ void EditorState::Pause() {
 }
 
 void EditorState::Stop() {
+    SetState(State::EDIT_MODE);
+
     // Stop all audio playback in FMOD and reset components
     AudioManager::GetInstance().StopAll();
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -105,11 +103,6 @@ void EditorState::Stop() {
             ac.Stop();
         }
     }
-
-    // Reload the scene to the saved state before play mode
-    SceneManager::GetInstance().ReloadTempScene();
-
-    SetState(State::EDIT_MODE);
 }
 
 void EditorState::SetSelectedEntity(Entity entity) {

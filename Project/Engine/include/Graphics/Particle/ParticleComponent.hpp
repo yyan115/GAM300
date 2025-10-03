@@ -89,8 +89,6 @@ public:
 
     float timeSinceEmission = 0.0f;
     bool isEmitting = true;
-    bool isPlayingInEditor = false;  // Manual play control in editor
-    bool isPausedInEditor = false;   // Manual pause control in editor
 
     ParticleComponent() = default;
     ~ParticleComponent() = default;

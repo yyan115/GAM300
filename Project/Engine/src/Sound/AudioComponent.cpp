@@ -206,7 +206,7 @@ void AudioComponent::UpdateComponent() {
 
     UpdatePlaybackState();
 
-    // Handle PlayOnAwake: auto-play behavior
+    // Handle PlayOnAwake: Unity-style auto-play behavior
     if (PlayOnAwake) {
         if (!PlayOnAwakeTriggered && !GetIsPlaying() && HasValidClip() && !IsPlaying) {
             if (Engine::IsPlayMode()) {

@@ -42,13 +42,7 @@
       "name": "joltphysics",
       "default-features": false,
       "features": ["rtti", "debugrenderer", "profiler"],
-      "$comment": "Physics engine - locked to 5.4.0 to match Android version exactly"
-    }
-  ],
-  "overrides": [
-    {
-      "name": "joltphysics",
-      "version": "5.4.0"
+      "$comment": "Physics engine - prebuilt for consistent toolchain across team"
     }
   ],
   "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149"
