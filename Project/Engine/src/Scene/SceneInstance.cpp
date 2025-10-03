@@ -187,7 +187,7 @@ void SceneInstance::Initialize() {
 		sunLightComp.specular = glm::vec3(0.5f);
 		sunLightComp.enabled = true;
 		ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
-		ecsManager.lightingSystem->RegisterEntity(sunLight);
+		//ecsManager.lightingSystem->RegisterEntity(sunLight);
 
 		// Create point lights
 		std::vector<Vector3D> pointLightPositions = {
@@ -219,7 +219,7 @@ void SceneInstance::Initialize() {
 			pointLightComp.quadratic = 0.032f;
 			pointLightComp.enabled = true;
 			ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
-			ecsManager.lightingSystem->RegisterEntity(pointLight);
+			//ecsManager.lightingSystem->RegisterEntity(pointLight);
 
 		}
 
@@ -243,7 +243,7 @@ void SceneInstance::Initialize() {
 		spotLightComp.outerCutOff = 0.966f;
 		spotLightComp.enabled = true;
 		ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
-		ecsManager.lightingSystem->RegisterEntity(spotLight);
+		//ecsManager.lightingSystem->RegisterEntity(spotLight);
 	}
 	ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 	
