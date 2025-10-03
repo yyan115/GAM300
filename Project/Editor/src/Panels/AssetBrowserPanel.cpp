@@ -35,6 +35,10 @@ std::string DraggedModelPath;
 GUID_128 DraggedAudioGuid = {0, 0};
 std::string DraggedAudioPath;
 
+// Global drag-drop state for cross-window font dragging
+GUID_128 DraggedFontGuid = {0, 0};
+std::string DraggedFontPath;
+
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 
@@ -620,10 +624,11 @@ void AssetBrowserPanel::RenderAssetGrid()
                            lowerExt == ".dae" || lowerExt == ".3ds");
             bool isAudio = (lowerExt == ".wav" || lowerExt == ".ogg" ||
                            lowerExt == ".mp3" || lowerExt == ".flac");
+            bool isFont = (lowerExt == ".ttf" || lowerExt == ".otf");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -652,6 +657,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Use a simple payload - just a flag that dragging is active
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
+                } else if (isFont) {
+                    // Send font path directly
+                    ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();

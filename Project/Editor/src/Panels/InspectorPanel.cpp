@@ -24,17 +24,21 @@
 #include <chrono>
 #include <glm/glm.hpp>
 
-// Global drag-drop state for cross-window material dragging (declared in AssetBrowserPanel.cpp)
+// Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
 extern std::string DraggedMaterialPath;
 
-// Global drag-drop state for cross-window model dragging (declared in AssetBrowserPanel.cpp)
+// Global drag-drop state for cross-window model dragging
 extern GUID_128 DraggedModelGuid;
 extern std::string DraggedModelPath;
 
-// Global drag-drop state for cross-window audio dragging (declared in AssetBrowserPanel.cpp)
+// Global drag-drop state for cross-window audio dragging
 extern GUID_128 DraggedAudioGuid;
 extern std::string DraggedAudioPath;
+
+// Global drag-drop state for cross-window font dragging
+extern GUID_128 DraggedFontGuid;
+extern std::string DraggedFontPath;
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -1375,6 +1379,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "SpriteRenderComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<TextRenderComponent>(entity)) {
+					if (ImGui::MenuItem("Text Renderer")) {
+						AddComponent(entity, "TextRenderComponent");
+					}
+				}
 				if (!ecsManager.HasComponent<ParticleComponent>(entity)) {
 					if (ImGui::MenuItem("Particle System")) {
 						AddComponent(entity, "ParticleComponent");
@@ -1603,6 +1612,48 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added ParticleComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "TextRenderComponent") {
+			// Load default font and shader GUIDs (matching SceneInstance.cpp)
+			std::string defaultFontPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf";
+			GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile(defaultFontPath);
+			GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
+
+			// Create component using constructor (matching SceneInstance.cpp pattern)
+			TextRenderComponent component("New Text", 48, fontGUID, shaderGUID);
+
+			// Set additional default values
+			component.color = Vector3D(1.0f, 1.0f, 1.0f); // White
+			component.alignment = TextRenderComponent::Alignment::LEFT;
+			component.alignmentInt = 0;
+			component.is3D = false;
+			component.isVisible = true;
+			component.position = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
+			component.scale = 1.0f;
+
+			// Load font and shader resources
+			if (std::filesystem::exists(defaultFontPath)) {
+				component.font = ResourceManager::GetInstance().GetFontResource(defaultFontPath);
+			} else {
+				std::cerr << "[Inspector] Warning: Default font not found at " << defaultFontPath << std::endl;
+			}
+
+			component.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("text"));
+			if (!component.shader) {
+				std::cerr << "[Inspector] Warning: Failed to load text shader" << std::endl;
+			}
+
+			ecsManager.AddComponent<TextRenderComponent>(entity, component);
+
+			// Ensure entity has a Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				transform.localPosition = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Text positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added TextRenderComponent to entity " << entity << std::endl;
+		}
 		else if (componentType == "ColliderComponent") {
 			ColliderComponent component;
 			// Set default box shape - shape will be created by physics system
@@ -1730,6 +1781,14 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "SpriteRenderComponent") {
 				ecsManager.RemoveComponent<SpriteRenderComponent>(request.entity);
 				std::cout << "[Inspector] Removed SpriteRenderComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "TextRenderComponent") {
+				ecsManager.RemoveComponent<TextRenderComponent>(request.entity);
+				std::cout << "[Inspector] Removed TextRenderComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ParticleComponent") {
+				ecsManager.RemoveComponent<ParticleComponent>(request.entity);
+				std::cout << "[Inspector] Removed ParticleComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);

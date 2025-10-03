@@ -41,13 +41,14 @@ jobs:
             git clone https://github.com/Microsoft/vcpkg.git
         }
 
-        cd vcpkg
-
-        # Bootstrap vcpkg
-        .\bootstrap-vcpkg.bat
+        # Bootstrap vcpkg if needed
+        if (!(Test-Path "vcpkg\vcpkg.exe")) {
+            Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
+            & "vcpkg\bootstrap-vcpkg.bat"
+        }
 
         # Integrate with Visual Studio
-        .\vcpkg.exe integrate install
+        & "vcpkg\vcpkg.exe" integrate install
 
         Write-Host "vcpkg setup complete!" -ForegroundColor Green
 
