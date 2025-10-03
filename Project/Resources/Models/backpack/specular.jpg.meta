@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 5,
+        "guid": "00404bb323f3ceaf-0002d62d8000000b",
+        "source": "../../Resources/Models/backpack/specular.jpg",
+        "compiled": "../../Resources/Models/backpack/specular.dds",
+        "last_compiled": "2025-10-03 09:49:53.4698326"
+    },
+    "TextureMetaData": {
+        "id": 0,
+        "type": "diffuse",
+        "unit": -1
+    }
+}

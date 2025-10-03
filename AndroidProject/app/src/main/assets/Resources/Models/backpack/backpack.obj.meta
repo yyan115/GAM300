@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 5,
+        "guid": "005a6bbb3646f366-0002d479f600000f",
+        "source": "../../Resources/Models/backpack/backpack.obj",
+        "compiled": "../../Resources/Models/backpack/backpack.mesh",
+        "android_compiled": "Resources/Models/backpack/backpack_android.mesh",
+        "last_compiled": "2025-10-02 18:29:05.8658039"
+    }
+}

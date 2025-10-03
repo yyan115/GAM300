@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 5,
+        "guid": "005a6bbb177ad4e1-0002d47a02000023",
+        "source": "../../Resources/Shaders/default",
+        "compiled": "../../Resources/Shaders/default.shader",
+        "android_compiled": "Resources/Shaders/default.shader",
+        "last_compiled": "2025-10-02 18:29:05.8906669"
+    }
+}

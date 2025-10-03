@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 5,
+        "guid": "005a6bbb67811a86-0002d47a04000039",
+        "source": "../../Resources/Textures/awesomeface.png",
+        "compiled": "../../Resources/Textures/awesomeface.dds",
+        "android_compiled": "Resources/Textures/awesomeface_android.ktx",
+        "last_compiled": "2025-10-02 18:29:04.4949064"
+    },
+    "TextureMetaData": {
+        "id": 0,
+        "type": "diffuse",
+        "unit": -1
+    }
+}

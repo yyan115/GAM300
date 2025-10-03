@@ -190,7 +190,8 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
 void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
 {
-    assert(!entityName.empty() && "Entity name cannot be empty");
+    if (!renamingEntity)
+        assert(!entityName.empty() && "Entity name cannot be empty");
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -265,7 +266,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                                      << ") is3D=" << sprite.is3D << std::endl;
                             // For 2D sprites, use the sprite position instead of transform
                             if (!sprite.is3D) {
-                                entityPos = sprite.position;
+                                entityPos = sprite.position.ConvertToGLM();
                                 std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
                             }
                         } else if (hasText) {

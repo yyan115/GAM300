@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 5,
+        "guid": "005a6bbb4c4ad793-0002d479fa000013",
+        "source": "../../Resources/Models/backpack/normal.png",
+        "compiled": "../../Resources/Models/backpack/normal.dds",
+        "android_compiled": "Resources/Models/backpack/normal_android.ktx",
+        "last_compiled": "2025-10-02 18:28:39.8488961"
+    },
+    "TextureMetaData": {
+        "id": 0,
+        "type": "diffuse",
+        "unit": -1
+    }
+}

@@ -119,6 +119,16 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ModelRenderComponent", v, alloc);
         }
+        if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& c = ecs.GetComponent<SpriteRenderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("SpriteRenderComponent", v, alloc);
+        }
+        if (ecs.HasComponent<TextRenderComponent>(entity)) {
+            auto& c = ecs.GetComponent<TextRenderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("TextRenderComponent", v, alloc);
+        }
         //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
         //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
         //    rapidjson::Value v = serializeComponentToValue(c);
@@ -128,11 +138,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ChildrenComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ChildrenComponent", v, alloc);
-        }
-        if (ecs.HasComponent<TextRenderComponent>(entity)) {
-            auto& c = ecs.GetComponent<TextRenderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("TextRenderComponent", v, alloc);
         }
         if (ecs.HasComponent<ParentComponent>(entity)) {
             auto& c = ecs.GetComponent<ParentComponent>(entity);
@@ -429,6 +434,38 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                     modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
 
                     ecs.AddComponent<ModelRenderComponent>(newEnt, modelComp);
+                }
+            }
+        }
+
+        // SpriteRenderComponent
+        if (comps.HasMember("SpriteRenderComponent")) {
+            const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+
+            if (mv.IsObject()) {
+                if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
+                    const auto& arr = mv["data"];
+                    SpriteRenderComponent spriteComp{};
+                    GUID_string textureGUIDStr = mv["data"][0].GetString();
+                    GUID_string shaderGUIDStr = mv["data"][1].GetString();
+                    spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
+                    spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+
+                    // Sprite position
+                    readVec3Generic(mv["data"][2], spriteComp.position);
+                    // Sprite scale
+                    readVec3Generic(mv["data"][3], spriteComp.scale);
+                    // Sprite rotation
+                    spriteComp.rotation = mv["data"][4]["data"].GetFloat();
+                    // Sprite color
+                    readVec3Generic(mv["data"][5], spriteComp.color);
+                    spriteComp.alpha = mv["data"][6]["data"].GetFloat();
+                    spriteComp.is3D = mv["data"][7]["data"].GetBool();
+                    spriteComp.enableBillboard = mv["data"][8]["data"].GetBool();
+                    spriteComp.layer = mv["data"][9]["data"].GetInt();
+                    readVec3Generic(mv["data"][10], spriteComp.saved3DPosition);
+
+                    ecs.AddComponent<SpriteRenderComponent>(newEnt, spriteComp);
                 }
             }
         }

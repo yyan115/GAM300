@@ -439,7 +439,8 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 				const char* texturePath = (const char*)payload->Data;
 
 				// Load texture using ResourceManager
-				sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+				sprite.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
+				sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(sprite.textureGUID, texturePath);
 
 				if (sprite.texture) {
 					sprite.texturePath = texturePath; // Store the path for display
@@ -475,14 +476,14 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 				// Sync sprite.position with Transform before saving (in case user moved via Transform)
 				if (ecsManager.HasComponent<Transform>(entity)) {
 					Transform& transform = ecsManager.GetComponent<Transform>(entity);
-					sprite.position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+					sprite.position = Vector3D(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
 				}
 				// Save current 3D position
 				sprite.saved3DPosition = sprite.position;
 
 				// Set sprite to center of viewport (using screen coordinates)
 				// For 2D mode, position is in pixels from top-left
-				sprite.position = glm::vec3(RunTimeVar::window.width / 2.0f, RunTimeVar::window.height / 2.0f, 0.0f);
+				sprite.position = Vector3D(RunTimeVar::window.width / 2.0f, RunTimeVar::window.height / 2.0f, 0.0f);
 				sprite.is3D = false;
 			}
 			else if (!is2D && !sprite.is3D) {
@@ -1149,7 +1150,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ModelRenderComponent component; // Use default constructor
 
 			// Set default shader GUID for new components
-			component.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
+			component.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
 
 			// Load the default shader
 			std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(component.shaderGUID);
@@ -1179,10 +1180,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			SpriteRenderComponent component;
 			component.shader = shader;
+			component.shaderGUID = spriteShaderGUID;
 			component.texture = nullptr; // Will be set via drag-and-drop
 			component.is3D = false; // Default to 2D
 			component.isVisible = true;
-			component.scale = glm::vec3(100.0f, 100.0f, 1.0f); // Default 100x100 pixels for 2D
+			component.scale = Vector3D(100.0f, 100.0f, 1.0f); // Default 100x100 pixels for 2D
 
 			ecsManager.AddComponent<SpriteRenderComponent>(entity, component);
 

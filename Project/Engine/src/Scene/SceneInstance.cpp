@@ -72,16 +72,15 @@ void SceneInstance::Initialize() {
 		NameComponent& spriteName = ecsManager.GetComponent<NameComponent>(sprite);
 		spriteName.name = "sprite_test";
 		// Load resources first
-		auto spriteTexture = ResourceManager::GetInstance().GetResource<Texture>(AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png");
-		auto spriteShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite")); 
+		auto spriteTexture = MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png");
+		auto spriteShader = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"));
 		// Add component with constructor parameters
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite, SpriteRenderComponent{ spriteTexture, spriteShader });
 		// Get reference and configure
 		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(sprite);
-		spriteComponent.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent.is3D = false;  // 2D screen space
-		spriteComponent.position = glm::vec3(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
-		spriteComponent.scale = glm::vec3(200.0f, 200.0f, 1.0f);
+		spriteComponent.position = Vector3D(25.0f, 700.0f, 0.0f);  // Screen coordinates (pixels)
+		spriteComponent.scale = Vector3D(200.0f, 200.0f, 1.0f);
 		spriteComponent.isVisible = true;
 
 		// With billboard effect
@@ -91,15 +90,12 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
 		NameComponent& spriteName3D = ecsManager.GetComponent<NameComponent>(sprite3D);
 		spriteName3D.name = "sprite_3d_test";
-		auto spriteTexture3D = ResourceManager::GetInstance().GetResource<Texture>(AssetManager::GetInstance().GetRootAssetDirectory() + "/Textures/awesomeface.png");
-		auto spriteShader3D = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("sprite"));
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3D, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3D = ecsManager.GetComponent<SpriteRenderComponent>(sprite3D);
-		spriteComponent3D.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent3D.is3D = true;
-		spriteComponent3D.position = glm::vec3(2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
-		spriteComponent3D.saved3DPosition = glm::vec3(2.0f, 1.0f, 0.0f);  // Initialize saved position
-		spriteComponent3D.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3D.position = Vector3D(2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
+		spriteComponent3D.saved3DPosition = Vector3D(2.0f, 1.0f, 0.0f);  // Initialize saved position
+		spriteComponent3D.scale = Vector3D(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3D.isVisible = true;
 	
 		// Without billboard effect
@@ -111,11 +107,10 @@ void SceneInstance::Initialize() {
 		spriteName3D.name = "sprite_3d_flat_test";
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
-		spriteComponent3DFlat.texturePath = "Resources/Textures/awesomeface.png";  // Set texture path for inspector
 		spriteComponent3DFlat.is3D = true;
-		spriteComponent3DFlat.position = glm::vec3(-2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
-		spriteComponent3DFlat.saved3DPosition = glm::vec3(-2.0f, 1.0f, 0.0f);  // Initialize saved position
-		spriteComponent3DFlat.scale = glm::vec3(0.5f, 0.5f, 0.5f);  // World units, not pixels
+		spriteComponent3DFlat.position = Vector3D(-2.0f, 1.0f, 0.0f);  // Set position for 3D rendering
+		spriteComponent3DFlat.saved3DPosition = Vector3D(-2.0f, 1.0f, 0.0f);  // Initialize saved position
+		spriteComponent3DFlat.scale = Vector3D(0.5f, 0.5f, 0.5f);  // World units, not pixels
 		spriteComponent3DFlat.isVisible = true;
 		spriteComponent3DFlat.enableBillboard = false;
 	
@@ -272,9 +267,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
 	//fpsTextComponent.text = TimeManager::GetFps();
-	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
