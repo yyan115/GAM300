@@ -68,7 +68,8 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalRotation(kachujin, { 0, 0, 0 });
 		NameComponent& kachujinName = ecsManager.GetComponent<NameComponent>(kachujin);
 		kachujinName.name = "Kachujin";
-		ecsManager.AddComponent<ModelRenderComponent>(kachujin, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/kachujin/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(kachujin, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/kachujin/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
+			MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 		ModelRenderComponent& kachujinModel = ecsManager.GetComponent<ModelRenderComponent>(kachujin);
 		ecsManager.AddComponent<AnimationComponent>(kachujin, AnimationComponent(&*kachujinModel.model));
 		AnimationComponent& kachujinAnimation = ecsManager.GetComponent<AnimationComponent>(kachujin);
