@@ -78,6 +78,7 @@ private:
     void HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight);
     void RenderViewGizmo(float sceneWidth, float sceneHeight);
     void DrawGameViewportIndicator();
+    void DrawColliderGizmos();
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);
