@@ -5,6 +5,7 @@
 
 // Include Engine logging to access the GUI queue
 #include "Logging.hpp"
+#include "EditorComponents.hpp"
 
 ConsolePanel::ConsolePanel() 
     : EditorPanel("Console", true) {
@@ -14,7 +15,11 @@ ConsolePanel::ConsolePanel()
 void ConsolePanel::OnImGuiRender() {
     // Drain Engine log queue FIRST, before any ImGui rendering, to ensure new messages appear immediately
     DrainEngineLogQueue();
+
     
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_ASSET_BROWSER);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_ASSET_BROWSER);
+
     if (ImGui::Begin(name.c_str(), &isOpen)) {
         // Filter checkboxes
         ImGui::Checkbox("Info", &showInfo); ImGui::SameLine();
@@ -117,6 +122,8 @@ void ConsolePanel::OnImGuiRender() {
         }
     }
     ImGui::End();
+
+    ImGui::PopStyleColor(2);
 }
 
 void ConsolePanel::DrainEngineLogQueue() {
