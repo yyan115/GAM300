@@ -531,7 +531,7 @@ void AssetBrowserPanel::RenderDirectoryNode(const std::filesystem::path& directo
             try {
                 std::vector<std::filesystem::path> subdirectories;
                 for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-                    if (entry.is_directory() && entry.path().generic_string().find("Shaders") == std::string::npos) {
+                    if (entry.is_directory() && entry.path().generic_string().find("Shaders") == std::string::npos) { // Don't show Shaders folder
                         subdirectories.push_back(entry.path());
                     }
                 }

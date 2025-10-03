@@ -193,6 +193,7 @@
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
+    <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
