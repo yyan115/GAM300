@@ -110,7 +110,7 @@ void ScenePanel::DrawGameViewportIndicator() {
 
     // Draw the rectangle using ImGui
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    ImU32 color = IM_COL32(180, 180, 180, 255); // Light gray (Unity-style)
+    ImU32 color = IM_COL32(180, 180, 180, 255); // Light gray
     float thickness = 2.0f;
 
     drawList->AddLine(screenTopLeft, screenTopRight, color, thickness);
@@ -460,8 +460,25 @@ void ScenePanel::OnImGuiRender()
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
+        // Optimize: Reduce render frequency when window is not focused
+        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+        static int unfocusedFrameCounter = 0;
+        bool shouldRender = true;
+
+        if (!isFocused) {
+            unfocusedFrameCounter++;
+            // Render unfocused panel every 3rd frame instead of every frame
+            if (unfocusedFrameCounter % 3 != 0) {
+                shouldRender = false;
+            }
+        } else {
+            unfocusedFrameCounter = 0;
+        }
+
         // Render the scene with our editor camera to the framebuffer
-        RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
+        if (shouldRender) {
+            RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
+        }
 
         // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
@@ -497,6 +514,13 @@ void ScenePanel::OnImGuiRender()
             // Hover state for input routing
             // Use flags to ensure hover works correctly when docked with other panels
             isSceneHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+            // Auto-focus on interaction (any mouse click)
+            if (isSceneHovered && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+                                   ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
+                                   ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+                ImGui::SetWindowFocus();
+            }
 
             // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
@@ -594,7 +618,7 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
         SceneRenderer::EndSceneRender();
 
         // Now both the visual representation AND ImGuizmo overlay use our editor camera
-        // This gives us proper Unity-style editor controls
+        // This gives us proper editor controls
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in RenderSceneWithEditorCamera: ", e.what(), "\n");

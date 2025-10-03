@@ -29,7 +29,7 @@ enum class AudioSourceState {
     Paused
 };
 
-// AudioManager: Unity-style singleton backend for FMOD system management
+// AudioManager: singleton backend for FMOD system management
 // Handles low-level audio operations, channel management, and global audio state
 class ENGINE_API AudioManager {
 public:

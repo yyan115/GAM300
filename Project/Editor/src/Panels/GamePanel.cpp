@@ -56,6 +56,21 @@ void GamePanel::OnImGuiRender() {
         if (availableWidth < 100) availableWidth = 100;
         if (availableHeight < 100) availableHeight = 100;
 
+        // Optimize: Reduce render frequency when window is not focused
+        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+        static int unfocusedFrameCounter = 0;
+        bool shouldRender = true;
+
+        if (!isFocused) {
+            unfocusedFrameCounter++;
+            // Render unfocused panel every 3rd frame instead of every frame
+            if (unfocusedFrameCounter % 3 != 0) {
+                shouldRender = false;
+            }
+        } else {
+            unfocusedFrameCounter = 0;
+        }
+
         // Always render at a fixed base resolution (e.g., 1920x1080 for 16:9)
         const int baseRenderWidth = 1920;
         const int baseRenderHeight = 1080;
@@ -80,19 +95,22 @@ void GamePanel::OnImGuiRender() {
         ImVec2 startPos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(ImVec2(startPos.x + offsetX, startPos.y + offsetY));
 
-        // Always render the scene at base resolution (no stretching)
-        // Use GAME-specific framebuffer to avoid conflicts with Scene panel
-        SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
+        // Only render if we should (optimization for unfocused panels)
+        if (shouldRender) {
+            // Always render the scene at base resolution (no stretching)
+            // Use GAME-specific framebuffer to avoid conflicts with Scene panel
+            SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
 
-        if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
-            // Render 3D scene with game logic running
-            SceneRenderer::RenderScene(); // This will run with game logic
-        } else {
-            // Render scene preview with game camera (no game logic)
-            SceneRenderer::RenderScene(); // This should show the game camera view
+            if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
+                // Render 3D scene with game logic running
+                SceneRenderer::RenderScene(); // This will run with game logic
+            } else {
+                // Render scene preview with game camera (no game logic)
+                SceneRenderer::RenderScene(); // This should show the game camera view
+            }
+
+            SceneRenderer::EndGameRender();
         }
-
-        SceneRenderer::EndGameRender();
 
         // Get the texture from Game framebuffer (not Scene framebuffer)
         unsigned int sceneTexture = SceneRenderer::GetGameTexture();
@@ -132,7 +150,13 @@ void GamePanel::OnImGuiRender() {
                 uv0, uv1  // Use calculated crop coordinates
             );
 
-            
+            // Auto-focus on interaction (any mouse click)
+            if (ImGui::IsItemHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) ||
+                                           ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
+                                           ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+                ImGui::SetWindowFocus();
+            }
+
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             ImVec2 pos = ImGui::GetItemRectMin();
             ImVec2 pos_max = ImGui::GetItemRectMax();

@@ -10,6 +10,7 @@
 #include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
+#include <Graphics/GraphicsManager.hpp>
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
@@ -462,8 +463,8 @@ void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
 		}
 
 		
-		float buttonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
 
 		// Texture drag-drop target with visual feedback
 		if (EditorComponents::BeginDragDropTarget()) {
@@ -686,6 +687,61 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 
 		ImGui::PushID("ParticleComponent");
 
+		// Play/Pause/Stop buttons for editor preview (shows in Scene panel)
+		float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+		// Play button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPlayingInEditor && !particle.isPausedInEditor ? ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0))) {
+			particle.isPlayingInEditor = true;
+			particle.isPausedInEditor = false;
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Play particle preview in Scene panel");
+		}
+
+		ImGui::PopStyleColor(3);
+		ImGui::SameLine();
+
+		// Pause button
+		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPausedInEditor ? ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0))) {
+			if (particle.isPlayingInEditor) {
+				particle.isPausedInEditor = !particle.isPausedInEditor;
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Pause particle preview (keeps existing particles)");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		// Stop button (full width)
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+		if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+			particle.isPlayingInEditor = false;
+			particle.isPausedInEditor = false;
+			particle.particles.clear();  // Clear all particles on stop
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Stop and clear all particles");
+		}
+
+		ImGui::PopStyleColor(3);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
 		// Texture drag-drop slot
 		ImGui::Text("Texture:");
 		ImGui::SameLine();
@@ -705,8 +761,8 @@ void InspectorPanel::DrawParticleComponent(Entity entity) {
 		}
 
 		
-		float buttonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), buttonWidth);
+		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
+		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
 
 		// Texture drag-drop target with visual feedback
 		if (EditorComponents::BeginDragDropTarget()) {
@@ -853,7 +909,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
 
 		ImGui::PushID("AudioComponent");
 
-		// Audio Clip drag-drop slot (Unity-style)
+		// Audio Clip drag-drop slot
 		ImGui::Text("Clip:");
 		ImGui::SameLine();
 

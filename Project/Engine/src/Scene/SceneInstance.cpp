@@ -293,6 +293,10 @@ void SceneInstance::Draw() {
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+	// Set to false so game view shows ALL sprites (not filtered by 2D/3D mode)
+	gfxManager.SetRenderingForEditor(false);
+
 	//RenderSystem::getInstance().BeginFrame();
 	gfxManager.BeginFrame();
 	gfxManager.Clear();
