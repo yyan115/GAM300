@@ -7,9 +7,6 @@
 #include <filesystem>
 #include <atomic>
 #include "Logging.hpp"
-#include "ECS/ECSRegistry.hpp"
-#include "Sound/AudioComponent.hpp"
-#include "Transform/TransformComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -24,26 +21,26 @@ AudioManager& AudioManager::GetInstance() {
     return inst;
 }
 
-AudioManager::AudioManager() : system(nullptr) {}
+AudioManager::AudioManager() {}
 
 bool AudioManager::Initialise() {
-    std::lock_guard<std::mutex> lock(mtx);
-    if (system) return true;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (System) return true;
 
-    shuttingDown.store(false);
+    ShuttingDown.store(false);
 
-    FMOD_RESULT result = FMOD_System_Create(&system, FMOD_VERSION);
+    FMOD_RESULT result = FMOD_System_Create(&System, FMOD_VERSION);
     if (result != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Create failed: ", FMOD_ErrorString(result), "\n");
-        system = nullptr;
+        System = nullptr;
         return false;
     }
 
-    result = FMOD_System_Init(system, 512, FMOD_INIT_NORMAL, nullptr);
+    result = FMOD_System_Init(System, 512, FMOD_INIT_NORMAL, nullptr);
     if (result != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Init failed: ", FMOD_ErrorString(result), "\n");
-        FMOD_System_Release(system);
-        system = nullptr;
+        FMOD_System_Release(System);
+        System = nullptr;
         return false;
     }
 
@@ -53,7 +50,7 @@ bool AudioManager::Initialise() {
 
 void AudioManager::Shutdown() {
     // Use atomic exchange to ensure shutdown runs only once
-    if (shuttingDown.exchange(true)) {
+    if (ShuttingDown.exchange(true)) {
         return; // Already shutting down or shut down
     }
 
@@ -63,26 +60,26 @@ void AudioManager::Shutdown() {
     std::vector<FMOD_CHANNELGROUP*> groups;
 
     {
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard<std::mutex> lock(Mutex);
 
         // Stop and collect all channels
-        for (auto& kv : channelMap) {
-            if (kv.second.channel) {
-                channels.push_back(kv.second.channel);
-                kv.second.state = AudioSourceState::Stopped;
+        for (auto& kv : ChannelMap) {
+            if (kv.second.Channel) {
+                channels.push_back(kv.second.Channel);
+                kv.second.State = AudioSourceState::Stopped;
             }
         }
-        channelMap.clear();
+        ChannelMap.clear();
 
         // Collect channel groups
-        for (auto& kv : busMap) {
+        for (auto& kv : BusMap) {
             if (kv.second) groups.push_back(kv.second);
         }
-        busMap.clear();
+        BusMap.clear();
 
         // Take ownership of system
-        sys = system;
-        system = nullptr;
+        sys = System;
+        System = nullptr;
     }
 
     // Release FMOD resources outside of mutex
@@ -103,45 +100,23 @@ void AudioManager::Shutdown() {
 }
 
 void AudioManager::Update() {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    // Phase 1: Update FMOD system and internal state (requires lock)
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (!system) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
 
-        // Update FMOD system
-        FMOD_System_Update(system);
+    // Update FMOD system - handles all active channels
+    FMOD_System_Update(System);
 
-        // Update channel states and cleanup stopped channels
-        CleanupStoppedChannels();
-    }
-
-    // Phase 2: Update audio components (no lock held)
-    // Get all entities with AudioComponents outside of the lock
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
-
-    for (const auto& entity : allEntities) {
-        if (ecsManager.HasComponent<AudioComponent>(entity)) {
-            AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
-            audioComp.UpdateComponent();
-
-            // Update spatial audio position from Transform if applicable
-            if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
-                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                /*Vector3D worldPos = transform.worldMatrix.GetTranslation();
-                audioComp.OnTransformChanged(worldPos);*/
-            }
-        }
-    }
+    // Cleanup stopped channels to prevent memory leaks
+    CleanupStoppedChannels();
 }
 
 ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
-    if (shuttingDown.load() || globalPaused.load()) return 0;
+    if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system || !audioAsset || !audioAsset->sound) {
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System || !audioAsset || !audioAsset->sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAudio called with invalid parameters.\n");
         return 0;
     }
@@ -149,7 +124,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);  // Play paused
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
         return 0;
@@ -159,28 +134,28 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_MODE channelMode = FMOD_DEFAULT;
     channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
     FMOD_Channel_SetMode(channel, channelMode);
-	std::cout << "loop mode set to: " << (loop ? "FMOD_LOOP_NORMAL" : "FMOD_LOOP_OFF") << std::endl;
+    
     // Set loop count: -1 == infinite loop, 0 == play once
     int loopCount = loop ? -1 : 0;
     FMOD_Channel_SetLoopCount(channel, loopCount);
 
     // Apply volume with master volume
-    float finalVolume = volume * masterVolume.load();
+    float finalVolume = volume * MasterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
-    res = FMOD_Channel_SetPaused(channel, false);  // Ensure unpaused
+    res = FMOD_Channel_SetPaused(channel, false);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] Failed to unpause channel: %s\n", FMOD_ErrorString(res));
     }
 
-    ChannelHandle chId = nextChannelHandle++;
+    ChannelHandle chId = NextChannelHandle++;
     ChannelData chd;
-    chd.channel = channel;
-    chd.id = chId;
-    chd.state = AudioSourceState::Playing;
-    chd.assetPath = audioAsset->assetPath;
-    channelMap[chId] = chd;
+    chd.Channel = channel;
+    chd.Id = chId;
+    chd.State = AudioSourceState::Playing;
+    chd.AssetPath = audioAsset->assetPath;
+    ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
 
@@ -188,15 +163,15 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
 }
 
 ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
-    if (shuttingDown.load() || globalPaused.load()) return 0;
+    if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system || !audioAsset || !audioAsset->sound) return 0;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
         return 0;
@@ -213,19 +188,19 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
     FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
 
-    float finalVolume = volume * attenuation * masterVolume.load();
+    float finalVolume = volume * attenuation * MasterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
     FMOD_Channel_SetPaused(channel, false);
 
-    ChannelHandle chId = nextChannelHandle++;
+    ChannelHandle chId = NextChannelHandle++;
     ChannelData chd;
-    chd.channel = channel;
-    chd.id = chId;
-    chd.state = AudioSourceState::Playing;
-    chd.assetPath = audioAsset->assetPath;
-    channelMap[chId] = chd;
+    chd.Channel = channel;
+    chd.Id = chId;
+    chd.State = AudioSourceState::Playing;
+    chd.AssetPath = audioAsset->assetPath;
+    ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
 
@@ -233,10 +208,10 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
 }
 
 ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
-    if (shuttingDown.load() || globalPaused.load()) return 0;
+    if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system || !audioAsset || !audioAsset->sound) return 0;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
     if (!group) return 0;
@@ -244,7 +219,7 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel
-    FMOD_RESULT res = FMOD_System_PlaySound(system, audioAsset->sound, nullptr, true, &channel);
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
         return 0;
@@ -259,19 +234,19 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
     FMOD_Channel_SetMode(channel, channelMode);
     FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
 
-    float finalVolume = volume * masterVolume.load();
+    float finalVolume = volume * MasterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
     FMOD_Channel_SetPaused(channel, false);
 
-    ChannelHandle chId = nextChannelHandle++;
+    ChannelHandle chId = NextChannelHandle++;
     ChannelData chd;
-    chd.channel = channel;
-    chd.id = chId;
-    chd.state = AudioSourceState::Playing;
-    chd.assetPath = audioAsset->assetPath;
-    channelMap[chId] = chd;
+    chd.Channel = channel;
+    chd.Id = chId;
+    chd.State = AudioSourceState::Playing;
+    chd.AssetPath = audioAsset->assetPath;
+    ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
 
@@ -279,211 +254,211 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
 }
 
 void AudioManager::Stop(ChannelHandle channel) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end()) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end()) return;
 
-    if (it->second.channel) {
-        FMOD_Channel_Stop(it->second.channel);
-        it->second.state = AudioSourceState::Stopped;
+    if (it->second.Channel) {
+        FMOD_Channel_Stop(it->second.Channel);
+        it->second.State = AudioSourceState::Stopped;
     }
-    channelMap.erase(it);
+    ChannelMap.erase(it);
 }
 
 void AudioManager::StopAll() {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    for (auto& kv : channelMap) {
-        if (kv.second.channel) {
-            FMOD_Channel_Stop(kv.second.channel);
-            kv.second.state = AudioSourceState::Stopped;
+    std::lock_guard<std::mutex> lock(Mutex);
+    for (auto& kv : ChannelMap) {
+        if (kv.second.Channel) {
+            FMOD_Channel_Stop(kv.second.Channel);
+            kv.second.State = AudioSourceState::Stopped;
         }
     }
-    channelMap.clear();
+    ChannelMap.clear();
 }
 
 void AudioManager::Pause(ChannelHandle channel) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_Channel_SetPaused(it->second.channel, true);
-    it->second.state = AudioSourceState::Paused;
+    FMOD_Channel_SetPaused(it->second.Channel, true);
+    it->second.State = AudioSourceState::Paused;
 }
 
 void AudioManager::Resume(ChannelHandle channel) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_Channel_SetPaused(it->second.channel, false);
-    it->second.state = AudioSourceState::Playing;
+    FMOD_Channel_SetPaused(it->second.Channel, false);
+    it->second.State = AudioSourceState::Playing;
 }
 
 bool AudioManager::IsPlaying(ChannelHandle channel) {
-    if (shuttingDown.load()) return false;
+    if (ShuttingDown.load()) return false;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return false;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return false;
 
     FMOD_BOOL playing = 0;
-    FMOD_Channel_IsPlaying(it->second.channel, &playing);
-    return playing != 0 && it->second.state == AudioSourceState::Playing;
+    FMOD_Channel_IsPlaying(it->second.Channel, &playing);
+    return playing != 0 && it->second.State == AudioSourceState::Playing;
 }
 
 bool AudioManager::IsPaused(ChannelHandle channel) {
-    if (shuttingDown.load()) return false;
+    if (ShuttingDown.load()) return false;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end()) return false;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end()) return false;
 
-    return it->second.state == AudioSourceState::Paused;
+    return it->second.State == AudioSourceState::Paused;
 }
 
 AudioSourceState AudioManager::GetState(ChannelHandle channel) {
-    if (shuttingDown.load()) return AudioSourceState::Stopped;
+    if (ShuttingDown.load()) return AudioSourceState::Stopped;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end()) return AudioSourceState::Stopped;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end()) return AudioSourceState::Stopped;
 
     UpdateChannelState(it->first);
-    return it->second.state;
+    return it->second.State;
 }
 
 void AudioManager::SetChannelVolume(ChannelHandle channel, float volume) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    float finalVolume = volume * masterVolume.load();
-    FMOD_Channel_SetVolume(it->second.channel, finalVolume);
+    float finalVolume = volume * MasterVolume.load();
+    FMOD_Channel_SetVolume(it->second.Channel, finalVolume);
 }
 
 void AudioManager::SetChannelPitch(ChannelHandle channel, float pitch) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_Channel_SetPitch(it->second.channel, pitch);
+    FMOD_Channel_SetPitch(it->second.Channel, pitch);
 }
 
 void AudioManager::SetChannelLoop(ChannelHandle channel, bool loop) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
     FMOD_MODE mode = loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
-    FMOD_Channel_SetMode(it->second.channel, mode);
+    FMOD_Channel_SetMode(it->second.Channel, mode);
 }
 
 void AudioManager::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
     FMOD_VECTOR pos = { position.x, position.y, position.z };
     FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
-    FMOD_Channel_Set3DAttributes(it->second.channel, &pos, &vel);
+    FMOD_Channel_Set3DAttributes(it->second.Channel, &pos, &vel);
 }
 
 FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
-    auto it = busMap.find(busName);
-    if (it != busMap.end()) return it->second;
+    auto it = BusMap.find(busName);
+    if (it != BusMap.end()) return it->second;
 
-    if (!system) return nullptr;
+    if (!System) return nullptr;
 
     FMOD_CHANNELGROUP* group = nullptr;
-    FMOD_RESULT res = FMOD_System_CreateChannelGroup(system, busName.c_str(), &group);
+    FMOD_RESULT res = FMOD_System_CreateChannelGroup(System, busName.c_str(), &group);
     if (res != FMOD_OK || !group) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create bus ", busName, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
     }
 
-    busMap[busName] = group;
+    BusMap[busName] = group;
     return group;
 }
 
 void AudioManager::SetBusVolume(const std::string& busName, float volume) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = busMap.find(busName);
-    if (it == busMap.end() || !it->second) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = BusMap.find(busName);
+    if (it == BusMap.end() || !it->second) return;
 
     FMOD_ChannelGroup_SetVolume(it->second, volume);
 }
 
 void AudioManager::SetBusPaused(const std::string& busName, bool paused) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    auto it = busMap.find(busName);
-    if (it == busMap.end() || !it->second) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = BusMap.find(busName);
+    if (it == BusMap.end() || !it->second) return;
 
     FMOD_ChannelGroup_SetPaused(it->second, paused);
 }
 
 void AudioManager::SetMasterVolume(float volume) {
-    masterVolume.store(volume);
+    MasterVolume.store(volume);
     
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
 
     // Update all existing channels
-    for (auto& kv : channelMap) {
-        if (kv.second.channel) {
+    for (auto& kv : ChannelMap) {
+        if (kv.second.Channel) {
             float currentVolume;
-            FMOD_Channel_GetVolume(kv.second.channel, &currentVolume);
-            FMOD_Channel_SetVolume(kv.second.channel, currentVolume * volume);
+            FMOD_Channel_GetVolume(kv.second.Channel, &currentVolume);
+            FMOD_Channel_SetVolume(kv.second.Channel, currentVolume * volume);
         }
     }
 }
 
 float AudioManager::GetMasterVolume() const {
-    return masterVolume.load();
+    return MasterVolume.load();
 }
 
 void AudioManager::SetGlobalPaused(bool paused) {
-    globalPaused.store(paused);
+    GlobalPaused.store(paused);
     
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) return;
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
 
     // Apply to all channels
-    for (auto& kv : channelMap) {
-        if (kv.second.channel && kv.second.state == AudioSourceState::Playing) {
-            FMOD_Channel_SetPaused(kv.second.channel, paused);
+    for (auto& kv : ChannelMap) {
+        if (kv.second.Channel && kv.second.State == AudioSourceState::Playing) {
+            FMOD_Channel_SetPaused(kv.second.Channel, paused);
         }
     }
 }
 
 FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
-    if (shuttingDown.load()) return nullptr;
+    if (ShuttingDown.load()) return nullptr;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) {
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSound called but system not initialized.\n");
         return nullptr;
     }
@@ -494,7 +469,7 @@ FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
     // REMOVED: Android-specific block – now handled by Audio::LoadResource via platform abstraction
 
     // Fallback to file system loading (assumes path is resolvable by caller, e.g., ResourceManager)
-    res = FMOD_System_CreateSound(system, assetPath.c_str(), FMOD_LOOP_OFF, nullptr, &sound);
+    res = FMOD_System_CreateSound(System, assetPath.c_str(), FMOD_LOOP_OFF, nullptr, &sound);
     if (res != FMOD_OK || !sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create sound for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
@@ -504,10 +479,10 @@ FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
 }
 
 FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath) {
-    if (shuttingDown.load() || !data || length == 0) return nullptr;
+    if (ShuttingDown.load() || !data || length == 0) return nullptr;
 
-    std::lock_guard<std::mutex> lock(mtx);
-    if (!system) {
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory called but system not initialized.\n");
         return nullptr;
     }
@@ -517,7 +492,7 @@ FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int l
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.length = length;
 
-    FMOD_RESULT res = FMOD_System_CreateSound(system, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
+    FMOD_RESULT res = FMOD_System_CreateSound(System, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
     if (res != FMOD_OK || !sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory failed for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
@@ -527,9 +502,9 @@ FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int l
 }
 
 void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
-    if (shuttingDown.load()) return;
+    if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
+    std::lock_guard<std::mutex> lock(Mutex);
     if (!sound) return;
 
     FMOD_RESULT res = FMOD_Sound_Release(sound);
@@ -541,43 +516,43 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 void AudioManager::CleanupStoppedChannels() {
     std::vector<ChannelHandle> toErase;
     
-    for (auto& kv : channelMap) {
-        if (kv.second.channel) {
+    for (auto& kv : ChannelMap) {
+        if (kv.second.Channel) {
             FMOD_BOOL playing = 0;
-            FMOD_Channel_IsPlaying(kv.second.channel, &playing);
+            FMOD_Channel_IsPlaying(kv.second.Channel, &playing);
             
-            if (!playing && kv.second.state != AudioSourceState::Paused) {
-                kv.second.state = AudioSourceState::Stopped;
+            if (!playing && kv.second.State != AudioSourceState::Paused) {
+                kv.second.State = AudioSourceState::Stopped;
                 toErase.push_back(kv.first);
             }
         }
     }
     
     for (auto id : toErase) {
-        channelMap.erase(id);
+        ChannelMap.erase(id);
     }
 }
 
 bool AudioManager::IsChannelValid(ChannelHandle channel) {
-    auto it = channelMap.find(channel);
-    return it != channelMap.end() && it->second.channel != nullptr;
+    auto it = ChannelMap.find(channel);
+    return it != ChannelMap.end() && it->second.Channel != nullptr;
 }
 
 void AudioManager::UpdateChannelState(ChannelHandle channel) {
-    auto it = channelMap.find(channel);
-    if (it == channelMap.end() || !it->second.channel) return;
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
     FMOD_BOOL playing = 0;
     FMOD_BOOL paused = 0;
     
-    FMOD_Channel_IsPlaying(it->second.channel, &playing);
-    FMOD_Channel_GetPaused(it->second.channel, &paused);
+    FMOD_Channel_IsPlaying(it->second.Channel, &playing);
+    FMOD_Channel_GetPaused(it->second.Channel, &paused);
 
     if (!playing) {
-        it->second.state = AudioSourceState::Stopped;
+        it->second.State = AudioSourceState::Stopped;
     } else if (paused) {
-        it->second.state = AudioSourceState::Paused;
+        it->second.State = AudioSourceState::Paused;
     } else {
-        it->second.state = AudioSourceState::Playing;
+        it->second.State = AudioSourceState::Playing;
     }
 }

@@ -168,13 +168,14 @@ bool Shader::SetupShader(const std::string& path) {
 			GLsizei actualLength = 0;
 			glGetShaderInfoLog(vertexShader, logLength, &actualLength, &errorLog[0]);
 			errorLog[actualLength] = '\0';
+			ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n", &errorLog[0], "\n");
 
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << &errorLog[0] << std::endl;
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Vertex shader compilation failed (length %d, actual %d): %s", logLength, actualLength, &errorLog[0]);
 #endif
 		} else {
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED - No error log available" << std::endl;
+			ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED - No error log available", "\n");
+
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Vertex shader compilation failed - No error log available");
 			// Check OpenGL ES context version and capabilities
@@ -223,13 +224,13 @@ bool Shader::SetupShader(const std::string& path) {
 			GLsizei actualLength = 0;
 			glGetShaderInfoLog(fragmentShader, logLength, &actualLength, &errorLog[0]);
 			errorLog[actualLength] = '\0';
+			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n", &errorLog[0], "\n");
 
-			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << &errorLog[0] << std::endl;
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Fragment shader compilation failed (length %d, actual %d): %s", logLength, actualLength, &errorLog[0]);
 #endif
 		} else {
-			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED - No error log available" << std::endl;
+			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED - No error log available", "\n");
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Fragment shader compilation failed - No error log available");
 			GLenum error = glGetError();
@@ -265,7 +266,8 @@ bool Shader::SetupShader(const std::string& path) {
 			glGetProgramInfoLog(ID, logLength, &actualLength, &infoLog[0]);
 			infoLog[actualLength] = '\0';
 
-			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << &infoLog[0] << std::endl;
+			ENGINE_PRINT("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", &infoLog[0], "\n");
+
 #ifdef __ANDROID__
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed (length %d, actual %d): %s", logLength, actualLength, &infoLog[0]);
 #endif
@@ -298,7 +300,6 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 	std::filesystem::path p(path);
 	if (!SetupShader(path)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
-		//std::cerr << "[SHADER]: Shader compilation failed. Aborting resource compilation.\n";
 		return std::string{};
 	}
 
@@ -313,8 +314,11 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 	
 	if (!forAndroid)
 		shaderPath = (p.parent_path() / p.stem()).generic_string() + ".shader";
-	else
-		shaderPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + ".shader";
+	else {
+		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+		shaderPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".shader";
+	}
 
 	// Ensure parent directories exist
 	p = shaderPath;
@@ -332,40 +336,45 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 		if (forAndroid) {
 			// Copy the .vert and .frag source files as well for fallback.
 			try {
-				std::string vertPath = path + ".vert";
+				std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+				assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+
+				std::string vertPath = assetPathAndroid + ".vert";
 				std::string androidVertPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / vertPath).generic_string();
-				std::string fragPath = path + ".frag";
+				std::string fragPath = assetPathAndroid + ".frag";
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
-				std::filesystem::copy_file(vertPath, androidVertPath,
+				std::filesystem::copy_file(path + ".vert", androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
-				std::filesystem::copy_file(fragPath, androidFragPath,
+				std::filesystem::copy_file(path + ".frag", androidFragPath,
 					std::filesystem::copy_options::overwrite_existing);
 			}
 			catch (const std::filesystem::filesystem_error& e) {
-				std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Asset] Copy failed: ", e.what(), "\n");
+				return std::string{};
 			}
 
-			return shaderPath;
 		}
 	}
 
-	if (!forAndroid) {
-		// Save the binary code to the root project folder as well.
-		p = (FileUtilities::GetSolutionRootDir() / shaderPath);
-		shaderFile.open(p.generic_string(), std::ios::binary);
-		if (shaderFile.is_open()) {
-			// Write the binary format to the file.
-			shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
-			// Write the binary length to the file.
-			shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
-			// Write the binary code to the file.
-			shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
-			shaderFile.close();
-			return shaderPath;
-		}
-	}
+	return shaderPath;
 
-	return std::string{};
+	//if (!forAndroid) {
+	//	// Save the binary code to the root project folder as well.
+	//	p = (FileUtilities::GetSolutionRootDir() / shaderPath);
+	//	shaderFile.open(p.generic_string(), std::ios::binary);
+	//	if (shaderFile.is_open()) {
+	//		// Write the binary format to the file.
+	//		shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
+	//		// Write the binary length to the file.
+	//		shaderFile.write(reinterpret_cast<const char*>(&binaryLength), sizeof(binaryLength));
+	//		// Write the binary code to the file.
+	//		shaderFile.write(reinterpret_cast<const char*>(binaryData.data()), binaryData.size());
+	//		shaderFile.close();
+	//		return shaderPath;
+	//	}
+	//}
+
+	//return std::string{};
 }
 
 bool Shader::LoadResource(const std::string& resourcePath, const std::string& assetPath)
@@ -384,7 +393,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
-		std::cerr << "[SHADER] ERROR: Platform not available for asset discovery!" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER] ERROR: Platform not available for asset discovery!", "\n");
 		return false;
 	}
 
@@ -420,7 +429,6 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 #ifndef ANDROID
 			if (CompileToResource(assetPath).empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
-				//std::cerr << "[SHADER]: Recompilation failed. Aborting load." << std::endl;
 				return false;
 			}
 #else
@@ -465,13 +473,13 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 	//	return true;
 	//}
 	else {
-		std::cerr << "[SHADER]: Shader file not found: " << resourcePath << ", attempting to compile from source" << std::endl;
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader file not found: ", resourcePath, ", attempting to compile from source", "\n");
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_WARN, "GAM300", "[SHADER]: Shader file not found: %s, attempting to compile from source", resourcePath.c_str());
 #endif
 		// Fallback to regular shader compilation if binary file is not found
 		if (!SetupShader(resourcePath)) {
-			std::cerr << "[SHADER]: Shader compilation from source failed. Aborting load." << std::endl;
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation from source failed. Aborting load.", "\n");
 #ifdef ANDROID
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[SHADER]: Shader compilation from source failed. Aborting load.");
 #endif
@@ -480,7 +488,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER]: Successfully compiled shader from source: %s", assetPath.c_str());
 #endif
-		std::cout << "[SHADER]: Successfully compiled shader from source: " << resourcePath << std::endl;
+		ENGINE_PRINT("[SHADER]: Successfully compiled shader from source: ", resourcePath, "\n");
 		return true;
 	}
 }
@@ -625,7 +633,6 @@ GLint Shader::getUniformLocation(const std::string& name)
 	if (location == -1)
 	{
 		ENGINE_PRINT("Warning: Uniform '" , name , "' not found in shader ID: ", ID, "\n");
-		//std::cout << "Warning: Uniform '" << name << "' not found in shader ID: " << ID << std::endl;
 	}
 
 	return location;

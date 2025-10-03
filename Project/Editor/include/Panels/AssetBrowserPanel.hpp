@@ -1,20 +1,14 @@
 #pragma once
 #include "EditorPanel.hpp"
-#include "Utilities/GUID.hpp"
 #include <filesystem>
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
-#include <mutex>
-#include <queue>
-#include <thread>
 #include <atomic>
-#include "imgui.h"
-
-// Include FileWatch for hot-reloading
-#include "FileWatch.hpp"
+#include <FileWatch.hpp>
+#include "Utilities/GUID.hpp"
 
 /**
  * @brief Unity-like Asset Browser panel for managing and viewing project assets.
@@ -63,6 +57,9 @@ private:
     std::vector<AssetInfo> currentAssets;
     std::unordered_set<GUID_128> selectedAssets;
     GUID_128 lastSelectedAsset;
+    bool isOpeningScene = false;
+    AssetInfo selectedScene;
+    std::string pendingNavigation;
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };
@@ -76,6 +73,15 @@ private:
     // Delete confirmation state
     bool showDeleteConfirmation{ false };
     AssetInfo assetToDelete;
+
+    // Thumbnail cache for texture previews (GUID -> Texture ID)
+    // Using uint32_t instead of GLuint to avoid OpenGL dependency in header
+    std::unordered_map<uint64_t, uint32_t> thumbnailCache;
+    static constexpr int THUMBNAIL_SIZE = 96;
+    
+    // Directory tree state
+    std::unordered_set<std::string> expandedDirectories;
+    bool needsTreeSync{ false };
 
     // UI methods
     void RenderToolbar();
@@ -112,10 +118,16 @@ private:
     void ConfirmDeleteAsset();
     void RevealInExplorer(const AssetInfo& asset);
     void CopyAssetPath(const AssetInfo& asset);
+    void RenameAsset(const AssetInfo& asset, const std::string& newName);
 
     // Asset creation
     void CreateNewMaterial();
     void CreateNewFolder();
+
+    // Scene operations
+    void CreateNewScene(const std::string& directory);
+    void OpenScene(const AssetInfo& selectedScene);
+    void ShowOpenSceneConfirmation();
 
     // Rename functionality
     void StartRenameAsset(const GUID_128& guid);
@@ -132,4 +144,13 @@ private:
 
     // Icon retrieval
     std::string GetAssetIcon(const AssetInfo& asset) const;
+
+    // Thumbnail management (Unity-like)
+    uint32_t GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath);
+    void ClearThumbnailCache();
+    void RemoveThumbnailFromCache(const GUID_128& guid);
+    
+    // Directory tree helpers
+    void EnsureDirectoryExpanded(const std::string& directoryPath);
+    void SyncTreeWithCurrentDirectory();
 };

@@ -24,9 +24,12 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 
 void GraphicsManager::Shutdown()
 {
+	ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
+
 	renderQueue.clear();
 	currentCamera = nullptr;
-	//std::cout << "[GraphicsManager] Shutdown" << std::endl;
+	mainECS.spriteSystem->Shutdown();
+	mainECS.particleSystem->Shutdown();
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
@@ -37,7 +40,7 @@ void GraphicsManager::BeginFrame()
 
 void GraphicsManager::EndFrame()
 {
-
+	
 }
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
@@ -69,6 +72,18 @@ void GraphicsManager::SetCamera(Camera* camera)
 	currentCamera = camera;
 }
 
+void GraphicsManager::SetViewportSize(int width, int height)
+{
+	viewportWidth = width;
+	viewportHeight = height;
+}
+
+void GraphicsManager::GetViewportSize(int& width, int& height) const
+{
+	width = viewportWidth;
+	height = viewportHeight;
+}
+
 void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 {
 	if (renderItem && renderItem->isVisible)
@@ -79,10 +94,13 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 
 void GraphicsManager::Render()
 {
+	if (auto* platform = WindowManager::GetPlatform()) {
+		platform->MakeContextCurrent();
+	}
+
 	if (!currentCamera) 
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
-		//std::cerr << "[GraphicsManager] Warning: No camera set for rendering!" << std::endl;
 		return;
 	}
 
@@ -100,22 +118,42 @@ void GraphicsManager::Render()
 		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
 		const SpriteRenderComponent* spriteItem = dynamic_cast<const SpriteRenderComponent*>(renderItem.get());
 		const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get());
+		const ParticleComponent* particleItem = dynamic_cast<const ParticleComponent*>(renderItem.get());
 
 		if (modelItem)
 		{
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderModel");
+#endif
 			RenderModel(*modelItem);
 		}
 		else if (textItem)
 		{
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderText");
+#endif
 			RenderText(*textItem);
 		}
 		else if (spriteItem)
 		{
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderSprite");
+#endif
 			RenderSprite(*spriteItem);
 		}
 		else if (debugItem)
 		{
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderDebugDraw");
+#endif
 			RenderDebugDraw(*debugItem);
+		}
+		else if (particleItem)
+		{
+#ifdef ANDROID
+			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderParticles");
+#endif
+			RenderParticles(*particleItem);
 		}
 	}
 }
@@ -134,12 +172,11 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
 
 	// Apply lighting
-	/*ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
 	if (ecsManager.lightingSystem) 
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
-	}*/
-	ApplyLighting(*item.shader);
+	}
 
 	// Draw the model with entity material
 	item.model->Draw(*item.shader, *currentCamera, item.material);
@@ -147,93 +184,79 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	//std::cout << "rendered model\n";
 }
 
-void GraphicsManager::ApplyLighting(Shader& shader)
-{
-	// Moved directly from your ModelSystem::applyLighting method
-	LightManager& lightManager = LightManager::getInstance();
-
-	// Apply directional light
-	const auto& dirLight = lightManager.getDirectionalLight();
-	shader.setVec3("dirLight.direction", dirLight.direction);
-	shader.setVec3("dirLight.ambient", dirLight.ambient);
-	shader.setVec3("dirLight.diffuse", dirLight.diffuse);
-	shader.setVec3("dirLight.specular", dirLight.specular);
-
-	// Apply point lights
-	const auto& pointLights = lightManager.getPointLights();
-	for (size_t i = 0; i < pointLights.size() && i < 4; i++) 
-	{
-		std::string base = "pointLights[" + std::to_string(i) + "]";
-		shader.setVec3(base + ".position", pointLights[i].position);
-		shader.setVec3(base + ".ambient", pointLights[i].ambient);
-		shader.setVec3(base + ".diffuse", pointLights[i].diffuse);
-		shader.setVec3(base + ".specular", pointLights[i].specular);
-		shader.setFloat(base + ".constant", pointLights[i].constant);
-		shader.setFloat(base + ".linear", pointLights[i].linear);
-		shader.setFloat(base + ".quadratic", pointLights[i].quadratic);
-	}
-
-	// Apply spotlight
-	if (lightManager.isSpotLightEnabled() && currentCamera) 
-	{
-		const auto& spotLight = lightManager.getSpotLight();
-		shader.setVec3("spotLight.position", currentCamera->Position);
-		shader.setVec3("spotLight.direction", currentCamera->Front);
-		shader.setVec3("spotLight.ambient", spotLight.ambient);
-		shader.setVec3("spotLight.diffuse", spotLight.diffuse);
-		shader.setVec3("spotLight.specular", spotLight.specular);
-		shader.setFloat("spotLight.constant", spotLight.constant);
-		shader.setFloat("spotLight.linear", spotLight.linear);
-		shader.setFloat("spotLight.quadratic", spotLight.quadratic);
-		shader.setFloat("spotLight.cutOff", spotLight.cutOff);
-		shader.setFloat("spotLight.outerCutOff", spotLight.outerCutOff);
-	}
-}
-
 void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix)
 {
 	shader.setMat4("model", modelMatrix);
 
-	if (currentCamera) 
+	if (currentCamera)
 	{
-		glm::mat4 view = currentCamera->GetViewMatrix();
-		shader.setMat4("view", view);
-
-		// Get window dimensions with safety checks
-		//int windowWidth = WindowManager::GetWindowWidth();
-		//int windowHeight = WindowManager::GetWindowHeight();
+		// Use viewport dimensions if set (for editor/scene panel), otherwise fallback to window dimensions
+		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
 
 		// Prevent division by zero and ensure minimum dimensions
-		//if (windowWidth <= 0) windowWidth = 1;
-		//if (windowHeight <= 0) windowHeight = 1;
+		if (renderWidth <= 0) renderWidth = 1;
+		if (renderHeight <= 0) renderHeight = 1;
 
-		if (RunTimeVar::window.width <= 0) RunTimeVar::window.width = 1;
-		if (RunTimeVar::window.height <= 0) RunTimeVar::window.height = 1;
-
-
-		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+		float aspectRatio = (float)renderWidth / (float)renderHeight;
 
 		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
 		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
 		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
 
-		glm::mat4 projection = glm::perspective(
-			glm::radians(currentCamera->Zoom),
-			aspectRatio,
-			0.1f, 100.0f
-		);
-		shader.setMat4("projection", projection);
+		glm::mat4 view;
+		glm::mat4 projection;
 
+		// In 2D editor mode, use orthographic projection with camera position as center
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use identity view matrix for 2D (camera doesn't rotate)
+			view = glm::mat4(1.0f);
+
+			// Create orthographic projection centered on camera's XY position
+			// The camera position represents the center of the view in pixel space
+			// Apply OrthoZoomLevel to the viewport size (1.0 = normal, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
+			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
+			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
+			float halfWidth = viewWidth * 0.5f;
+			float halfHeight = viewHeight * 0.5f;
+			float left = currentCamera->Position.x - halfWidth;
+			float right = currentCamera->Position.x + halfWidth;
+			float bottom = currentCamera->Position.y - halfHeight;
+			float top = currentCamera->Position.y + halfHeight;
+
+			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
+
+		} else {
+			// 3D mode or game mode: use perspective projection
+			view = currentCamera->GetViewMatrix();
+			projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				aspectRatio,
+				0.1f, 100.0f
+			);
+		}
+
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
 		shader.setVec3("cameraPos", currentCamera->Position);
 	}
 }
 
 void GraphicsManager::RenderText(const TextRenderComponent& item)
 {
-	if (!item.isVisible || !item.font || !item.shader || item.text.empty()) 
+	if (!item.isVisible || !item.font || !item.shader || item.text.empty())
 	{
 		return;
 	}
+
+	if (!item.is3D && IsRenderingForEditor() && !Is2DMode())
+	{
+		return;
+	}
+
+	// Enable depth testing for 3D text
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
 
 	// Enable blending for text transparency
 	glEnable(GL_BLEND);
@@ -244,15 +267,26 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	item.shader->setVec3("textColor", item.color.ConvertToGLM());
 
 	// Set up matrices based on whether it's 2D or 3D text
-	if (item.is3D) 
+	if (item.is3D)
 	{
 		// 3D text rendering - use normal 3D matrices
-		SetupMatrices(*item.shader, item.transform.ConvertToGLM());
+		// 3D text uses Transform component scale (in model matrix)
+		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
+		SetupMatrices(*item.shader, modelMatrix);
 	}
-	else 
+	else
 	{
 		// 2D screen space text rendering
-		Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use the editor camera's view/projection matrices
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
+			modelMatrix = glm::scale(modelMatrix, glm::vec3(item.scale, item.scale, 1.0f));
+			SetupMatrices(*item.shader, modelMatrix);
+		} else {
+			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
+			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+		}
 	}
 
 	// Bind VAO and render each character
@@ -263,7 +297,6 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	if (!fontVAO || !fontVBO) 
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
-		//std::cerr << "[GraphicsManager] Font VAO/VBO not initialized!" << std::endl;
 		glDisable(GL_BLEND);
 		return;
 	}
@@ -273,32 +306,36 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	float x = 0.0f;
 	float y = 0.0f;
 
+	// For 3D text, scale down from pixels to world units (1 pixel = 0.01 units)
+	// 3D text uses Transform scale (already in model matrix), 2D text uses item.scale
+	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
+	float finalScale = item.is3D ? worldScaleFactor : (item.scale * worldScaleFactor);
+
 	// Calculate starting position based on alignment
-	if (item.alignment == TextRenderComponent::Alignment::CENTER) 
+	if (item.alignment == TextRenderComponent::Alignment::CENTER)
 	{
-		x = -item.font->GetTextWidth(item.text, item.scale) / 2.0f;
+		x = -item.font->GetTextWidth(item.text, finalScale) / 2.0f;
 	}
 
-	else if (item.alignment == TextRenderComponent::Alignment::RIGHT) 
+	else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
 	{
-		x = -item.font->GetTextWidth(item.text, item.scale);
+		x = -item.font->GetTextWidth(item.text, finalScale);
 	}
 
 	// Iterate through all characters
-	for (char c : item.text) 
+	for (char c : item.text)
 	{
 		const Character& ch = item.font->GetCharacter(c);
 		if (ch.textureID == 0) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
-			//std::cerr << "Character '" << c << "' has no texture!" << std::endl;
 			continue;
 		}
 
-		float xpos = x + ch.bearing.x * item.scale;
-		float ypos = y - (ch.size.y - ch.bearing.y) * item.scale;
+		float xpos = x + ch.bearing.x * finalScale;
+		float ypos = y - (ch.size.y - ch.bearing.y) * finalScale;
 
-		float w = ch.size.x * item.scale;
-		float h = ch.size.y * item.scale;
+		float w = ch.size.x * finalScale;
+		float h = ch.size.y * finalScale;
 
 		// Update VBO for each character
 		float vertices[6][4] = {
@@ -321,23 +358,26 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		x += (ch.advance >> 6) * item.scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+		x += (ch.advance >> 6) * finalScale; // Bitshift by 6 to get value in pixels (2^6 = 64)
 	}
 
 	fontVAO->Unbind();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE); // Restore depth writing
 }
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale)
 {
 	glm::mat4 projection = glm::ortho(0.0f, (float)WindowManager::GetWindowWidth(), 0.0f, (float)WindowManager::GetWindowHeight());
+	glm::mat4 view = glm::mat4(1.0f); // Identity matrix for 2D
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);  // Use position as-is
 	model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
 
 	shader.setMat4("projection", projection);
+	shader.setMat4("view", view);
 	shader.setMat4("model", model);
 }
 
@@ -423,9 +463,83 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 #endif
 }
 
+void GraphicsManager::RenderParticles(const ParticleComponent& item) {
+#ifdef ANDROID
+	assert(eglGetCurrentContext() != EGL_NO_CONTEXT);
+#endif
+	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	glDepthMask(GL_FALSE);
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "item.particleShader->Activate");
+#endif
+	item.particleShader->Activate();
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setup camera matrices ONCE for all particles");
+#endif
+	// Setup camera matrices ONCE for all particles
+	if (currentCamera) {
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		item.particleShader->setMat4("view", view);
+
+		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, 100.0f
+		);
+		item.particleShader->setMat4("projection", projection);
+
+		// Send camera vectors for billboard calculations in vertex shader
+		glm::vec3 cameraRight = glm::normalize(glm::cross(currentCamera->Front, currentCamera->Up));
+		item.particleShader->setVec3("cameraRight", cameraRight);
+		item.particleShader->setVec3("cameraUp", currentCamera->Up);
+	}
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Bind texture if available");
+#endif
+	// Bind texture if available
+	if (item.particleTexture) {
+		glActiveTexture(GL_TEXTURE0);
+		item.particleTexture->Bind(0);
+		item.particleShader->setInt("particleTexture", 0);
+	}
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Draw ALL particles with ONE instanced draw call using indices");
+#endif
+	// Draw ALL particles with ONE instanced draw call using indices
+	item.particleVAO->Bind();
+	if (item.quadEBO) item.quadEBO->Bind();  // explicitly ensure EBO is bound
+	GLint eboBinding = 0;
+	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboBinding);
+	assert(eboBinding != 0 && "VAO has no EBO bound after setup");
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Binded");
+#endif
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, item.particles.size());
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "glDrawElementsInstanced");
+#endif
+	item.particleVAO->Unbind();
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Unbinded");
+#endif
+	//item.quadEBO->Unbind();
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+}
+
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 {
-	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO) 
+	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO)
 	{
 		return;
 	}
@@ -444,14 +558,14 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec2("uvScale", item.uvScale);
 
 	// Set up matrices based on rendering mode
-	if (item.is3D) 
+	if (item.is3D)
 	{
 		// 3D world space sprite (billboard)
 		glm::mat4 modelMatrix = glm::mat4(1.0f);
 		modelMatrix = glm::translate(modelMatrix, item.position);
 
 		// Optional: Make sprite face camera (billboard effect)
-		if (currentCamera && item.enableBillboard) 
+		if (currentCamera && item.enableBillboard)
 		{
 			// Create rotation matrix to face camera
 			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
@@ -469,20 +583,48 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		}
 
 		// Apply rotation if specified
-		if (item.rotation != 0.0f) 
+		if (item.rotation != 0.0f)
 		{
 			modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 
-		// Apply scale
+		// Apply scale first
 		modelMatrix = glm::scale(modelMatrix, item.scale);
+
+		// Center the sprite AFTER scaling: offset by half the scaled size
+		// The quad is 0,0 to 1,1, so after scaling it's 0,0 to scale.x,scale.y
+		// Offset by -scale/2 to center it
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
 
 		Setup3DSpriteMatrices(*item.shader, modelMatrix);
 	}
-	else 
+	else
 	{
 		// 2D screen space sprite
-		Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+		// When rendering for editor in 2D mode, use the editor camera's projection (pixel-based orthographic)
+		// Otherwise, use the standard window-based projection for game/runtime
+		if (IsRenderingForEditor() && Is2DMode()) {
+			// Use the editor camera's view/projection matrices (already set up)
+			// Render the sprite like a 3D sprite but in 2D space
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			modelMatrix = glm::translate(modelMatrix, item.position);
+
+			// Apply rotation
+			if (item.rotation != 0.0f) {
+				modelMatrix = glm::rotate(modelMatrix, glm::radians(item.rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+
+			// Apply scale first
+			modelMatrix = glm::scale(modelMatrix, item.scale);
+
+			// Center the sprite AFTER scaling
+			modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
+
+			Setup3DSpriteMatrices(*item.shader, modelMatrix);
+		} else {
+			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
+			Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+		}
 	}
 
 	// Bind texture
@@ -491,10 +633,19 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setInt("spriteTexture", 0);
 
 	item.spriteVAO->Bind();
+	//item.spriteEBO->Bind();
+
+	GLint ebo = 0;
+	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &ebo);
+	if (ebo == 0) {
+		ENGINE_LOG_ERROR("VAO %d has no EBO bound!" + std::to_string(item.spriteVAO->ID));
+	}
+
 	// The SpriteSystem should have already bound the VAO, so just draw
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	item.spriteVAO->Unbind();
+	item.spriteEBO->Unbind();
 	// Unbind texture
 	item.texture->Unbind(0);
 
@@ -506,22 +657,28 @@ void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& pos
 {
 
 	// Use orthographic projection for 2D sprites
-	glm::mat4 projection = glm::ortho(0.0f, (float)RunTimeVar::window.width,
-		0.0f, (float)RunTimeVar::window.height);
+	// Use viewport dimensions (render target size) instead of window dimensions
+	GLint renderWidth = (RunTimeVar::window.viewportWidth > 0) ? RunTimeVar::window.viewportWidth : RunTimeVar::window.width;
+	GLint renderHeight = (RunTimeVar::window.viewportHeight > 0) ? RunTimeVar::window.viewportHeight : RunTimeVar::window.height;
+	glm::mat4 projection = glm::ortho(0.0f, (float)renderWidth,
+		0.0f, (float)renderHeight);
 
 	// Create model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);
 
 	// Apply rotation around the center of the sprite
-	if (rotation != 0.0f) 
+	if (rotation != 0.0f)
 	{
-		model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f));
 		model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
 	}
 
+	// Apply scale first
 	model = glm::scale(model, scale);
+
+	// Center the sprite AFTER scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
+	// This makes the position represent the center instead of the corner
+	model = glm::translate(model, glm::vec3(-0.5f, -0.5f, 0.0f));
 	shader.setMat4("projection", projection);
 	shader.setMat4("model", model);
 	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D

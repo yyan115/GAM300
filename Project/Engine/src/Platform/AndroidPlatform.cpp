@@ -6,6 +6,8 @@
 #include <functional>
 #include <android/log.h>
 #include "WindowManager.hpp"
+#include "Input/InputManager.hpp"
+#include "Input/VirtualControls.hpp"
 
 AndroidPlatform::AndroidPlatform() 
     : window(nullptr)
@@ -103,12 +105,20 @@ bool AndroidPlatform::IsWindowFocused() {
 }
 
 bool AndroidPlatform::IsKeyPressed(Input::Key key) {
-    // Simple stub - would need proper key mapping
+    // Check if key is in our state array (convert engine key to index)
+    int keyIndex = static_cast<int>(key);
+    if (keyIndex >= 0 && keyIndex < 512) {
+        return keyStates[keyIndex];
+    }
     return false;
 }
 
 bool AndroidPlatform::IsMouseButtonPressed(Input::MouseButton button) {
-    // Android touch events would be mapped to mouse buttons
+    // Check if mouse button is in our state array
+    int buttonIndex = static_cast<int>(button);
+    if (buttonIndex >= 0 && buttonIndex < 8) {
+        return mouseButtonStates[buttonIndex];
+    }
     return false;
 }
 
@@ -330,6 +340,101 @@ bool AndroidPlatform::FileExists(const std::string& path) {
         return true;
     }
     return false;
+}
+
+// Input handling implementation
+void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
+    // Convert pixel coordinates to normalized (0-1) coordinates
+    float normalizedX = x / static_cast<float>(windowWidth);
+    float normalizedY = y / static_cast<float>(windowHeight);
+    
+    // First check if touch hits virtual controls
+    bool isPressed = (action == 0); // Only ACTION_DOWN counts as pressed
+    bool handledByVirtualControls = false;
+    
+    if (action == 0 || action == 2) {
+        // ACTION_DOWN or ACTION_MOVE - check if touch hits virtual controls
+        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, isPressed);
+    } else if (action == 1) {
+        // ACTION_UP - release any pressed virtual controls
+        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, false);
+    }
+    
+    // If not handled by virtual controls, treat as camera look (mouse input)
+    if (!handledByVirtualControls) {
+        // Update mouse position
+        mouseX = static_cast<double>(x);
+        mouseY = static_cast<double>(y);
+        
+        // Map touch actions to mouse button events for camera look
+        Input::MouseButton button = Input::MouseButton::LEFT;
+        int buttonIndex = static_cast<int>(button);
+        
+        switch (action) {
+            case 0: // ACTION_DOWN
+                if (buttonIndex >= 0 && buttonIndex < 8) {
+                    mouseButtonStates[buttonIndex] = true;
+                }
+                // Initialize mouse position to current touch to prevent jump
+                InputManager::OnMousePositionEvent(mouseX, mouseY);
+                InputManager::OnMouseButtonEvent(button, Input::KeyAction::PRESS);
+                break;
+                
+            case 1: // ACTION_UP
+                if (buttonIndex >= 0 && buttonIndex < 8) {
+                    mouseButtonStates[buttonIndex] = false;
+                }
+                InputManager::OnMouseButtonEvent(button, Input::KeyAction::RELEASE);
+                break;
+                
+            case 2: // ACTION_MOVE
+                // Just update position for camera look, button state unchanged
+                break;
+        }
+        
+        // Always update mouse position for InputManager (camera look)
+        InputManager::OnMousePositionEvent(mouseX, mouseY);
+    }
+    
+    __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Touch event: action=%d, pos=(%.1f, %.1f), virtual=%s", 
+                       action, x, y, handledByVirtualControls ? "true" : "false");
+}
+
+void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {
+    // Map Android key codes to engine keys
+    Input::Key engineKey = Input::Key::UNKNOWN;
+    
+    // Map common Android keys
+    switch (keyCode) {
+        case 4:   // KEYCODE_BACK
+            engineKey = Input::Key::ESC;
+            break;
+        case 25:  // KEYCODE_VOLUME_DOWN  
+            engineKey = Input::Key::DOWN;
+            break;
+        case 24:  // KEYCODE_VOLUME_UP
+            engineKey = Input::Key::UP;
+            break;
+        case 62:  // KEYCODE_SPACE
+            engineKey = Input::Key::SPACE;
+            break;
+        // Add more key mappings as needed
+    }
+    
+    if (engineKey != Input::Key::UNKNOWN) {
+        Input::KeyAction engineAction = (action == 0) ? Input::KeyAction::PRESS : Input::KeyAction::RELEASE;
+        
+        // Update local state
+        int keyIndex = static_cast<int>(engineKey);
+        if (keyIndex >= 0 && keyIndex < 512) {
+            keyStates[keyIndex] = (action == 0);
+        }
+        
+        // Notify InputManager
+        InputManager::OnKeyEvent(engineKey, engineAction);
+        
+        __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Key event: keyCode=%d, action=%d, engineKey=%d", keyCode, action, static_cast<int>(engineKey));
+    }
 }
 
 #endif // ANDROID

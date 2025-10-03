@@ -2,7 +2,6 @@
 #include "Engine.h"
 #include <string>
 #include <memory>
-#include <iostream>
 #include "Sound/AudioManager.hpp"
 #include "Math/Vector3D.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -10,32 +9,39 @@
 // Forward declare Audio class to avoid including the header
 class Audio;
 
+// AudioComponent: Unity-style AudioSource component for ECS entities
+// Mirrors Unity's AudioSource API and behavior patterns
 struct ENGINE_API AudioComponent {
     // Unity-like public properties (Inspector editable)
-    std::string AudioAssetPath;
-    float Volume{ 1.0f };
-    float Pitch{ 1.0f };
-    bool Loop{ false };
-    bool PlayOnStart{ false };
-    bool Spatialize{ false };
-    float MinDistance{ 1.0f };
-    float MaxDistance{ 100.0f };
-    float Attenuation{ 1.0f };
-    bool Mute{ false };
-    int Priority{ 128 }; // Unity-like priority (0-256)
-    std::string BusName; // Channel group assignment
+    std::string Clip;            // Audio asset path (Unity: AudioClip reference)
+    float Volume{ 1.0f };        // Volume multiplier (0.0 - 1.0)
+    float Pitch{ 1.0f };         // Pitch multiplier (0.1 - 3.0)
+    bool Loop{ false };          // Loop the audio
+    bool PlayOnAwake{ false };   // Auto-play when entity is enabled (Unity naming)
+    bool Mute{ false };          // Mute the audio source
+    int Priority{ 128 };         // Channel priority (0-256, Unity standard)
+    
+    // 3D Audio Properties (Unity-style)
+    bool Spatialize{ false };    // Enable 3D spatial audio
+    float MinDistance{ 1.0f };   // Distance for full volume
+    float MaxDistance{ 100.0f }; // Distance for minimum volume
+    float SpatialBlend{ 1.0f };  // 2D (0.0) to 3D (1.0) blend
+    
+    // Output routing
+    std::string OutputAudioMixerGroup;  // Bus/Mixer group (Unity naming)
 
-    // Runtime state (read-only)
-    ChannelHandle CurrentChannel{ 0 };
-    AudioSourceState State{ AudioSourceState::Stopped };
+    // Runtime state (read-only in Unity inspector)
+    bool IsPlaying{ false };
+    bool IsPaused{ false };
     Vector3D Position{ 0.0f, 0.0f, 0.0f };
 
 private:
-    // Internal cached asset
-    std::shared_ptr<Audio> audioAsset{ nullptr };
-    bool assetLoaded{ false };
-    bool wasPlayingBeforePause{ false };
-    bool playOnStartTriggered{ false };
+    // Internal state
+    ChannelHandle CurrentChannel{ 0 };
+    std::shared_ptr<Audio> CachedAudioAsset{ nullptr };
+    bool AssetLoaded{ false };
+    bool WasPlayingBeforePause{ false };
+    bool PlayOnAwakeTriggered{ false };
 
 public:
     AudioComponent();
@@ -43,32 +49,38 @@ public:
 
     // Unity-like API
     void Play();
-    void PlayOneShot(); // Play without affecting current state
+    void PlayDelayed(float delay);        // Unity: Play with delay
+    void PlayOneShot(std::shared_ptr<Audio> clip = nullptr); // Unity: One-shot playback
+    void PlayScheduled(double time);      // Unity: Scheduled playback (placeholder)
     void Stop();
     void Pause();
-    void UnPause(); // Resume from pause
+    void UnPause();
     
-    // State queries
-    bool IsPlaying() const;
-    bool IsPaused() const;
-    bool IsStopped() const;
+    // State queries (Unity-style properties)
+    bool GetIsPlaying() const;
+    bool GetIsPaused() const;
+    AudioSourceState GetState() const;
     
-    // Property setters (with immediate effect if playing)
+    // Property setters (with immediate effect if playing - Unity behavior)
     void SetVolume(float newVolume);
     void SetPitch(float newPitch);
     void SetLoop(bool shouldLoop);
     void SetMute(bool shouldMute);
     void SetSpatialize(bool enable);
+    void SetSpatialBlend(float blend);
+    void SetOutputAudioMixerGroup(const std::string& groupName);
+    
+    // Position updates (for spatial audio)
     void SetPosition(const Vector3D& pos);
-    void SetBus(const std::string& busName);
+    void OnTransformChanged(const Vector3D& newPosition);
 
     // Asset management
-    void SetAudioAssetPath(const std::string& path);
-    bool HasValidAsset() const;
+    void SetClip(const std::string& clipPath);
+    void SetClip(std::shared_ptr<Audio> clip);
+    bool HasValidClip() const;
     
-    // For ECS system integration
-    void UpdateComponent(); // Called by AudioManager each frame
-    void OnTransformChanged(const Vector3D& newPosition); // Called by transform system
+    // For ECS AudioSystem integration
+    void UpdateComponent();
 
 private:
     // Internal helpers
@@ -76,4 +88,5 @@ private:
     void UpdateChannelProperties();
     void UpdatePlaybackState();
     ChannelHandle PlayInternal(bool oneShot = false);
+    void StopInternal();
 };

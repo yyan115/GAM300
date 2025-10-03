@@ -17,7 +17,6 @@ bool DebugDrawSystem::Initialise()
 
     CreatePrimitiveGeometry();
     ENGINE_PRINT("[DebugDrawSystem] Initialized", "\n");
-    //std::cout << "[DebugDrawSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -33,7 +32,6 @@ void DebugDrawSystem::Update()
 
     if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Error: Required debug resources are null!\n");
-        //std::cerr << "Error: Required debug resources are null!" << std::endl;
         debugQueue.clear();
         return;
     }
@@ -56,7 +54,6 @@ void DebugDrawSystem::Update()
 void DebugDrawSystem::Shutdown()
 {
     ENGINE_PRINT("[DebugDrawSystem] Shutdown\n");
-    //std::cout << "[DebugDrawSystem] Shutdown" << std::endl;
 }
 
 void DebugDrawSystem::CreatePrimitiveGeometry()
