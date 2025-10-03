@@ -4,5 +4,5 @@
 
 struct ChildrenComponent {
 	REFL_SERIALIZABLE
-	std::vector<Entity> children; // Children entity IDs
+	std::vector<GUID_128> children; // Children entity IDs
 };

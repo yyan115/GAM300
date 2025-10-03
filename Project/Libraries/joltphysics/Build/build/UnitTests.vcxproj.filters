@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\UnitTests.dir\cmake_pch.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\ArrayTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\BinaryHeapTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\FPFlushDenormalsTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\HashCombineTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\InsertionSortTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\JobSystemTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\LinearCurveTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\PreciseMathTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\ScopeExitTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\STLLocalAllocatorTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\StringToolsTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\QuickSortTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\UnorderedSetTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Core\UnorderedMapTest.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\ClosestPointTests.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\ConvexHullBuilderTest.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\EllipseTest.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\EPATests.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\GJKTests.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\PlaneTests.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Geometry\RayAABoxTests.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\BVec16Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\DMat44Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\DVec3Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\EigenValueSymmetricTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\HalfFloatTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\Mat44Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\MathTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\MatrixTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\QuatTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\UVec4Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\TrigonometryTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\Vec3Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\Vec4Tests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Math\VectorTests.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ActiveEdgesTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\BroadPhaseTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\CastShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\CharacterVirtualTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\CollideShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\CollidePointTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\CollisionGroupTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ContactListenerTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ConvexVsTrianglesTest.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\DistanceConstraintTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\EstimateCollisionResponseTest.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\HeightFieldShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\HingeConstraintTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\MotionQualityLinearCastTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\MutableCompoundShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ObjectLayerPairFilterTableTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ObjectLayerPairFilterMaskTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\OffsetCenterOfMassShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\PathConstraintTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\PhysicsDeterminismTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\PhysicsStepListenerTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\PhysicsTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\RayShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\SensorTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ShapeFilterTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\ShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\SixDOFConstraintTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\SliderConstraintTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\SoftBodyTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\SubShapeIDTest.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\TaperedCylinderShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\TransformedShapeTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Physics\WheeledVehicleTests.cpp">
+      <Filter>Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\PhysicsTestContext.cpp" />
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\UnitTestFramework.cpp" />
+    <ClCompile Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\ObjectStream\ObjectStreamTest.cpp">
+      <Filter>ObjectStream</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\doctest.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\Layers.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\LoggingBodyActivationListener.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\LoggingContactListener.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\PhysicsTestContext.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\UnitTestFramework.h" />
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\UnitTests.dir\Debug\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\UnitTests.dir\Release\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\UnitTests.dir\Distribution\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\UnitTests\UnitTests.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{BECB14A6-62AD-3ADD-AE7F-96BDCAB5AA1A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Geometry">
+      <UniqueIdentifier>{FA7B7F92-AFDE-3B6F-BB89-1CFC885C6E84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{0CF30194-4571-3C61-8F37-5A013A8B9B1A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ObjectStream">
+      <UniqueIdentifier>{C1D8B0F3-729F-34C0-830F-B6ED809527D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Physics">
+      <UniqueIdentifier>{EC7A8B3C-F341-39DD-957C-3BDA16730EAD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Precompile Header File">
+      <UniqueIdentifier>{92926116-3C45-3971-BB25-A96DA1A0F62E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{006B1BA6-7A4D-3A12-918A-F7C6911A646D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

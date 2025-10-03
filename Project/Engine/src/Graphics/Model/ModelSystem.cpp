@@ -20,8 +20,10 @@ bool ModelSystem::Initialise()
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
         std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+        std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
         modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
         modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+        modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
@@ -36,6 +38,10 @@ void ModelSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+    // Get current view mode and check if rendering for editor
+    bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
+    bool is3DMode = gfxManager.Is3DMode();
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
 #endif
@@ -43,6 +49,12 @@ void ModelSystem::Update()
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip all 3D models in 2D mode ONLY when rendering for editor
+        // Game window should always show all models
+        if (isRenderingForEditor && !is3DMode) {
+            continue;
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
 #endif
