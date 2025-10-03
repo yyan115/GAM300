@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\CMakeFiles\f63c165617d04023cf6a1f7724a3364b\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{63CF13CA-7564-397F-ABD8-A3B37C1B1D67}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

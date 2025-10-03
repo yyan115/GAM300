@@ -545,8 +545,7 @@ bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::st
 		}
 
 		std::shared_ptr<AssetMeta> assetMeta;
-		assetMeta = assetMetaMap.find(guid)->second;
-		assetMeta = material->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+		assetMeta = material->GenerateBaseMetaFile(guid, filePath, compiledPath);
 		assetMetaMap[guid] = assetMeta;
 		ENGINE_PRINT("[AssetManager] Compiled updated material: ", filePath, " to ", compiledPath, "\n\n");
 
