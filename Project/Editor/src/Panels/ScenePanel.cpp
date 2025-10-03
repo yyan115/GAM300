@@ -488,7 +488,8 @@ void ScenePanel::OnImGuiRender()
             }
 
             // Hover state for input routing
-            isSceneHovered = ImGui::IsWindowHovered();
+            // Use flags to ensure hover works correctly when docked with other panels
+            isSceneHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
             // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
