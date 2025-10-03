@@ -1214,10 +1214,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				ecsManager.AddComponent<Transform>(entity, transform);
 			}
 
-			// Register entity with lighting system
-			if (ecsManager.lightingSystem) {
-				ecsManager.lightingSystem->RegisterEntity(entity);
-			}
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
 
 			std::cout << "[Inspector] Added DirectionalLightComponent to entity " << entity << std::endl;
 		}
@@ -1241,10 +1241,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				std::cout << "[Inspector] Added Transform component for PointLight positioning" << std::endl;
 			}
 
-			// Register entity with lighting system
-			if (ecsManager.lightingSystem) {
-				ecsManager.lightingSystem->RegisterEntity(entity);
-			}
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
 
 			std::cout << "[Inspector] Added PointLightComponent to entity " << entity << std::endl;
 		}
@@ -1270,10 +1270,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				ecsManager.AddComponent<Transform>(entity, transform);
 			}
 
-			// Register entity with lighting system
-			if (ecsManager.lightingSystem) {
-				ecsManager.lightingSystem->RegisterEntity(entity);
-			}
+			//// Register entity with lighting system
+			//if (ecsManager.lightingSystem) {
+			//	ecsManager.lightingSystem->RegisterEntity(entity);
+			//}
 
 			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
 		}
