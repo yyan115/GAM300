@@ -60,7 +60,6 @@ struct BoneInfo
 	glm::mat4 offset;
 };
 
-class Model : public IAsset {
 class ENGINE_API Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;

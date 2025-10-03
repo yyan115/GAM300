@@ -126,6 +126,7 @@
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Animation\AnimationComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -177,7 +178,6 @@
     <ClCompile Include="src\Graphics\Bone.cpp" />
     <ClCompile Include="src\Animation\Animation.cpp" />
     <ClCompile Include="src\Animation\Animator.cpp" />
-    <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
@@ -194,6 +194,7 @@
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
+    <ClCompile Include="src\Animation\AnimationComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

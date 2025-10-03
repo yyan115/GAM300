@@ -7,17 +7,17 @@ class Animator
 public:
 	Animator(Animation* animation);
 
-	void UpdateAnimation(float dt);
+	void UpdateAnimation(float dt, bool isLoop);
 
 	void PlayAnimation(Animation* pAnimation);
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform);
 
 	std::vector<glm::mat4> GetFinalBoneMatrices() { return mFinalBoneMatrices; }
+	float GetCurrentTime() const { return mCurrentTime; }
 
 private:
 	Animation* mCurrentAnimation;
 	float mCurrentTime;
-	float mDeltaTime;
 	std::vector<glm::mat4> mFinalBoneMatrices;
 };

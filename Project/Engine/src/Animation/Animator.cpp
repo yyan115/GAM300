@@ -3,7 +3,6 @@
 
 Animator::Animator(Animation* animation)
 {
-	mDeltaTime = 0.0f;
 	mCurrentTime = 0.0f;
 	mCurrentAnimation = animation;
 	mFinalBoneMatrices.reserve(100);
@@ -11,16 +10,26 @@ Animator::Animator(Animation* animation)
 		mFinalBoneMatrices.push_back(glm::mat4(1.0f));
 }
 
-void Animator::UpdateAnimation(float dt)
+void Animator::UpdateAnimation(float dt, bool isLoop)
 {
-	mDeltaTime = dt;
+	if (!mCurrentAnimation) return; // No animation to play
+	
+	float tps = mCurrentAnimation->GetTicksPerSecond();
+	if (tps <= 0.0f) tps = 25.0f; // Default to 25 if invalid
 
-	if (mCurrentAnimation)
+	mCurrentTime += tps * dt;
+	float duration = mCurrentAnimation->GetDuration();
+	if (isLoop)
 	{
-		mCurrentTime += mCurrentAnimation->GetTicksPerSecond() * dt;
-		mCurrentTime = fmod(mCurrentTime, mCurrentAnimation->GetDuration());
-		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+		mCurrentTime = fmod(mCurrentTime, duration);
 	}
+	else
+	{
+		if (mCurrentTime > duration)
+			mCurrentTime = duration;
+	}
+
+	CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 }
 
 void Animator::PlayAnimation(Animation* pAnimation)

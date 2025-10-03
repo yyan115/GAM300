@@ -52,11 +52,11 @@ void SceneInstance::Initialize() {
 
 		Entity backpackEntt3 = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
-		ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .5f, .5f, .5f });
-		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 50, 70, 20 });
+		ecsManager.transformSystem->SetLocalScale(backpackEntt3, { .01f, .01f, .01f });
+		ecsManager.transformSystem->SetLocalRotation(backpackEntt3, { 0, 0, 0 });
 		NameComponent& backpack3Name = ecsManager.GetComponent<NameComponent>(backpackEntt3);
 		backpack3Name.name = "indiana jones";
-		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
+		ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")) });
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt3, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
 
