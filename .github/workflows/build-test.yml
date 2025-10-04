@@ -32,23 +32,29 @@ jobs:
         sdk-version: 22621
 
     - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/Project/vcpkg'
-        vcpkgGitCommitId: '62efe42f53b1886a20cbeb22ee9a27736d20f149'
-        vcpkgJsonGlob: 'Project/vcpkg.json'
+      run: |
+        Write-Host "Setting up vcpkg..." -ForegroundColor Cyan
+        cd Project
+
+        if (!(Test-Path "vcpkg")) {
+          Write-Host "Cloning vcpkg..." -ForegroundColor Yellow
+          git clone https://github.com/Microsoft/vcpkg.git
+        }
+
+        cd vcpkg
+        git fetch
+        git checkout master
+        git pull
+
+        Write-Host "Bootstrapping vcpkg..." -ForegroundColor Cyan
+        .\bootstrap-vcpkg.bat
+
+        Write-Host "vcpkg setup complete!" -ForegroundColor Green
 
     - name: Install vcpkg Dependencies
       run: |
         Write-Host "Installing vcpkg dependencies..." -ForegroundColor Cyan
         cd Project
-
-        if (!(Test-Path "vcpkg/vcpkg.exe")) {
-          Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
-          cd vcpkg
-          .\bootstrap-vcpkg.bat
-          cd ..
-        }
 
         Write-Host "Installing dependencies from vcpkg.json..." -ForegroundColor Cyan
         .\vcpkg\vcpkg install --triplet=x64-windows
