@@ -21,6 +21,7 @@
   ],
   "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149",
   "vcpkg-configuration": {
-    "overlay-ports": ["./vcpkg-custom-ports"]
+    "overlay-ports": ["./vcpkg-custom-ports"],
+    "overlay-triplets": ["./vcpkg-triplets"]
   }
 }
