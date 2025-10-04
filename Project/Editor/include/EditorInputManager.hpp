@@ -17,9 +17,9 @@
 class EditorInputManager {
 public:
     struct MouseState {
-        glm::vec2 position;
-        glm::vec2 delta;
-        glm::vec2 lastPosition;
+        glm::vec2 position{};
+        glm::vec2 delta{};
+        glm::vec2 lastPosition{};
         bool firstMouse = true;
         float scrollDelta = 0.0f;
 

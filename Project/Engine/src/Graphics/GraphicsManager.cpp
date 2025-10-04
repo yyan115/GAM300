@@ -20,6 +20,7 @@ GraphicsManager& GraphicsManager::GetInstance()
 bool GraphicsManager::Initialize(int window_width, int window_height)
 {
 	return false;
+	(void)window_width, window_height;
 }
 
 void GraphicsManager::Shutdown()

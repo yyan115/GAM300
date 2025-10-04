@@ -227,7 +227,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
 		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
 		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
-		NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
+		//NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
 		spriteName3D.name = "sprite_3d_flat_test";
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
@@ -374,6 +374,15 @@ void SceneInstance::Initialize() {
 	}
 	ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 	
+
+	// Add FPS text (mainly for android to see FPS)
+	fpsText = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
@@ -407,9 +416,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	//fpsTextComponent.text = TimeManager::GetFps();
-	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	fpsTextComponent.text = std::to_string(TimeManager::GetFps());
+	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 

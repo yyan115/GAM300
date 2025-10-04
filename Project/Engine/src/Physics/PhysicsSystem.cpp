@@ -37,7 +37,7 @@ static void JoltTrace(const char* fmt, ...)
     va_end(a);
 }
 
-static bool JoltAssertFailed(const char* expr, const char* msg, const char* file, JPH::uint line)
+inline bool JoltAssertFailed(const char* expr, const char* msg, const char* file, JPH::uint line)
 {
     fprintf(stderr, "[Jolt Assert] %s : %s (%s:%u)\n", expr, msg ? msg : "", file, (unsigned)line);
     return false;
@@ -151,18 +151,18 @@ void PhysicsSystem::Update(float dt) {
 	physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
 
 
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	//GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+	//ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	////GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
-	// Submit all related physics components in
-	for (const auto& entity : entities)
-	{
-		auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
-		auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
-		//auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
+	//// Submit all related physics components in
+	//for (const auto& entity : entities)
+	//{
+	//	auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
+	//	auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
+	//	auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
 
 
-	}
+	//}
 }
 
 void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {

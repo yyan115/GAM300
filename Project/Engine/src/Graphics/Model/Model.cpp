@@ -466,10 +466,11 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
         material->SetTexture(static_cast<Material::TextureType>(type), std::move(textureInfo));
     }
+	(void)typeName;
 }
 
-std::string Model::CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
-    std::filesystem::path p(modelPath);
+std::string Model::CompileToMesh(const std::string& modelPathParam, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+    std::filesystem::path p(modelPathParam);
     std::string meshPath{};
     if (!forAndroid) {
         meshPath = (p.parent_path() / p.stem()).generic_string() + ".mesh";

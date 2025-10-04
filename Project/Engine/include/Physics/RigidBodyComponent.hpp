@@ -13,7 +13,7 @@ struct RigidBodyComponent {
 	int motionID;
 	bool ccd = false; // continuous collision detection
 
-	Motion motion;
+	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static
 	bool motion_dirty = false;        // if you change Motion, flip this to trigger recreate
 	uint32_t collider_seen_version = 0; // last applied Collider::version

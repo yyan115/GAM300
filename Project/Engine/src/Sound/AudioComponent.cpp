@@ -76,6 +76,7 @@ void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
 }
 
 void AudioComponent::PlayScheduled(double time) {
+    (void)time;
     // TODO: Implement scheduled playback
     ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayScheduled not yet implemented\n");
     Play();

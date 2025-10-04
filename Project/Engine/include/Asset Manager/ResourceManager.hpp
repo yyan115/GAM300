@@ -19,9 +19,9 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include "Sound/Audio.hpp"
 
-class ENGINE_API ResourceManager {
+class ResourceManager {
 public:
-	static ResourceManager& GetInstance();
+	ENGINE_API static ResourceManager& GetInstance();
 
 	template <typename T>
 	std::shared_ptr<T> GetResourceFromGUID(const GUID_128& guid, const std::string& assetPath) {
@@ -219,6 +219,7 @@ public:
 		bool reload = false)
 	{
 		return GetResource<T>(assetPath);
+		(void)guid,reload, resourcePath;
 	}
 
 private:

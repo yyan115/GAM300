@@ -18,7 +18,7 @@ void EditorState::SetState(State newState) {
     State oldState = GetState();
     if (oldState != newState) {
         // Convert EditorState::State to Engine::GameState and delegate to Engine
-        GameState engineState;
+        GameState engineState{};
         switch (newState) {
             case State::EDIT_MODE: engineState = GameState::EDIT_MODE; break;
             case State::PLAY_MODE: engineState = GameState::PLAY_MODE; break;

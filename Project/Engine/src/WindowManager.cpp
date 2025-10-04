@@ -203,7 +203,7 @@ void WindowManager::SetWindowTitle(const char* _title) {
 void WindowManager::window_focus_callback(PlatformWindow window, int focused) {
 
     //if (!focused && !isFullscreen && !DuckEngine::isEditor)  glfwIconifyWindow(ptrWindow);  // Minimizes the window
-	(void)focused;
+	(void)focused,window;
     //UNREFERENCED_PARAMETER(window);
     //isFocused = focused != 0;
 }

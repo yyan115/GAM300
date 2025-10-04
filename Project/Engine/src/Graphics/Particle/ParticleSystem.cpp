@@ -235,7 +235,7 @@ void ParticleSystem::Update()
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-    float dt = TimeManager::GetDeltaTime();
+    float dt = static_cast<float>(TimeManager::GetDeltaTime());
 
     for (const auto& entity : entities)
     {

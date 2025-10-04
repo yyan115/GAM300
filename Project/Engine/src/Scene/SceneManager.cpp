@@ -19,7 +19,7 @@
 	#pragma comment(lib, "shell32.lib")
 #endif
 
-ENGINE_API SceneManager::~SceneManager() {
+SceneManager::~SceneManager() {
 	//ExitScene();
 }
 
@@ -35,7 +35,7 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
+void SceneManager::LoadScene(const std::string& scenePath) {
 #if 1
 	// Exit and clean up the current scene if it exists.
 	if (currentScene) 
@@ -238,7 +238,7 @@ void SceneManager::ExitScene() {
 	}
 }
 
-ENGINE_API void SceneManager::SaveScene() 
+void SceneManager::SaveScene() 
 {
     Serializer::SerializeScene(currentScenePath);
 
