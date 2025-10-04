@@ -1715,8 +1715,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ColliderComponent component;
 			// Set default box shape - shape will be created by physics system
 			component.shapeType = ColliderShapeType::Box;
+			component.shapeTypeID = static_cast<int>(component.shapeType);
 			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
 			component.layer = Layers::MOVING;
+			component.layerID = static_cast<int>(component.layer);
 			component.shape = nullptr; // Physics system will create the shape
 			component.version = 1; // Mark as needing creation
 
@@ -1734,6 +1736,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "RigidBodyComponent") {
 			RigidBodyComponent component;
 			component.motion = Motion::Dynamic;
+			component.motionID = static_cast<int>(component.motion);
 			component.ccd = false;
 
 			ecsManager.AddComponent<RigidBodyComponent>(entity, component);
@@ -1951,6 +1954,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes))) {
 			collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
+			collider.shapeTypeID = currentShapeType;
 			collider.version++; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();
@@ -2017,6 +2021,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##PhysicsLayer", &currentLayer, layers, IM_ARRAYSIZE(layers))) {
 			collider.layer = static_cast<JPH::ObjectLayer>(currentLayer);
+			collider.layerID = static_cast<int>(collider.layer);
 			collider.version++; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();
@@ -2044,6 +2049,7 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
 			rigidBody.motion = static_cast<Motion>(currentMotion);
+			rigidBody.motionID = currentMotion;
 			rigidBody.motion_dirty = true; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();

@@ -23,6 +23,9 @@ public:
 
 	void SaveScene();
 
+	void InitializeScenePhysics();
+	void ShutDownScenePhysics();
+
 	// Saves the current scene to a temporary file.
 	// To be called when the play button is pressed in the editor to save the scene state just before hitting play.
 	void SaveTempScene();

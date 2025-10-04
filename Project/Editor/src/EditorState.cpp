@@ -7,6 +7,7 @@
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Scene/SceneManager.hpp"
+#include "Physics/PhysicsSystem.hpp"
 
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
@@ -64,6 +65,9 @@ void EditorState::Play() {
                 }
             }
         }
+
+        SceneManager::GetInstance().InitializeScenePhysics();
+
     } else if (currentState == State::PAUSED) {
         SetState(State::PLAY_MODE);
 
@@ -105,6 +109,8 @@ void EditorState::Stop() {
             ac.Stop();
         }
     }
+
+    SceneManager::GetInstance().ShutDownScenePhysics();
 
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();

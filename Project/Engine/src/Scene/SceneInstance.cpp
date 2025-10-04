@@ -72,6 +72,7 @@ void SceneInstance::Initialize() {
 
 		RigidBodyComponent& rb = ecsManager.GetComponent<RigidBodyComponent>(physicsBoxObj);
 		rb.motion = Motion::Dynamic;
+		rb.motionID = static_cast<int>(rb.motion);
 		rb.ccd = false;
 		rb.transform_dirty = true;
 		rb.motion_dirty = true;
@@ -80,6 +81,7 @@ void SceneInstance::Initialize() {
 		ColliderComponent& col = ecsManager.GetComponent<ColliderComponent>(physicsBoxObj);
 		col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
 		col.layer = Layers::MOVING;
+		col.layerID = static_cast<int>(col.layer);
 		col.version++;
 
 		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
@@ -99,6 +101,7 @@ void SceneInstance::Initialize() {
 
 		auto& floorRb = ecsManager.GetComponent<RigidBodyComponent>(floor);
 		floorRb.motion = Motion::Static;
+		floorRb.motionID = static_cast<int>(floorRb.motion);
 		floorRb.ccd = false;
 		floorRb.transform_dirty = true;
 		floorRb.motion_dirty = true;
@@ -108,6 +111,7 @@ void SceneInstance::Initialize() {
 		// Large, thin box: 200 x 1 x 200 (half-extents 100,0.5,100)
 		floorCol.shape = new JPH::BoxShape(JPH::Vec3(100.f, 0.5f, 100.f));
 		floorCol.layer = Layers::NON_MOVING;
+		floorCol.layerID = static_cast<int>(floorCol.layer);
 		floorCol.version++;
 
 		// ---- SECOND DYNAMIC BACKPACK (Sphere shape for bouncy behavior) ----
@@ -123,6 +127,7 @@ void SceneInstance::Initialize() {
 
 		auto& backpack2Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack2);
 		backpack2Rb.motion = Motion::Dynamic;
+		backpack2Rb.motionID = static_cast<int>(backpack2Rb.motion);
 		backpack2Rb.ccd = false;
 		backpack2Rb.transform_dirty = true;
 		backpack2Rb.motion_dirty = true;
@@ -132,6 +137,7 @@ void SceneInstance::Initialize() {
 		// Sphere shape for better bouncing
 		backpack2Col.shape = new JPH::SphereShape(0.6f);
 		backpack2Col.layer = Layers::MOVING;
+		backpack2Col.layerID = static_cast<int>(backpack2Col.layer);
 		backpack2Col.version++;
 
 		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
@@ -154,6 +160,7 @@ void SceneInstance::Initialize() {
 
 		auto& backpack3Rb = ecsManager.GetComponent<RigidBodyComponent>(backpack3);
 		backpack3Rb.motion = Motion::Dynamic;
+		backpack3Rb.motionID = static_cast<int>(backpack3Rb.motion);
 		backpack3Rb.ccd = false;
 		backpack3Rb.transform_dirty = true;
 		backpack3Rb.motion_dirty = true;
@@ -163,6 +170,7 @@ void SceneInstance::Initialize() {
 		// Box shape with different size
 		backpack3Col.shape = new JPH::BoxShape(JPH::Vec3(0.4f, 0.4f, 0.4f));
 		backpack3Col.layer = Layers::MOVING;
+		backpack3Col.layerID = static_cast<int>(backpack3Col.layer);
 		backpack3Col.version++;
 
 		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
@@ -171,8 +179,6 @@ void SceneInstance::Initialize() {
 		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
 		NameComponent& physicsBackpack3Name = ecsManager.GetComponent<NameComponent>(backpack3);
 		physicsBackpack3Name.name = "Box Backpack";
-
-		ecsManager.physicsSystem->physicsAuthoring(ecsManager);
 
 		Entity backpackEntt3 = ecsManager.CreateEntity();
 		ecsManager.transformSystem->SetLocalPosition(backpackEntt3, { -2, 0.5f, 0 });
@@ -388,6 +394,13 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
+void SceneInstance::InitializePhysics() {
+	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ecsManager.physicsSystem->Initialise();
+	ecsManager.physicsSystem->physicsAuthoring(ecsManager);
+	ENGINE_LOG_INFO("Physics system initialized");
+}
+
 void SceneInstance::Update(double dt) {
 	dt;
 
@@ -509,9 +522,13 @@ void SceneInstance::Exit() {
 	// Exit systems.
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
+	ShutDownPhysics();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
+}
+
+void SceneInstance::ShutDownPhysics() {
+	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
 }
 
 void SceneInstance::processInput(float deltaTime)

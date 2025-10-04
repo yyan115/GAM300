@@ -12,10 +12,12 @@ public:
 	~SceneInstance() override = default;
 
 	void Initialize() override;
+	void InitializePhysics() override;
 
 	void Update(double dt) override;
 	void Draw() override;
 	void Exit() override;
+	void ShutDownPhysics() override;
 	void processInput(float deltaTime); // temp function
 
 	const unsigned int SCR_WIDTH = 800;

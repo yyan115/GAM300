@@ -936,7 +936,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             // Add ModelRenderComponent with semi-transparent material
             ModelRenderComponent previewRenderer;
             previewRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-            previewRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+            previewRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
 
             // Create ghost material
             auto ghostMaterial = std::make_shared<Material>();

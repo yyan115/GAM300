@@ -55,6 +55,9 @@ ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 	std::filesystem::path p(currentScenePath);
 	currentSceneName = p.stem().generic_string();
 
+    // MUST MAKE SURE JOLTPHYSICS IS INITIALIZED FIRST.
+    currentScene->InitializePhysics();
+
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
     
@@ -369,16 +372,24 @@ ENGINE_API void SceneManager::SaveScene()
 //    }
 }
 
+void SceneManager::InitializeScenePhysics() {
+    currentScene->InitializePhysics();
+}
+
+void SceneManager::ShutDownScenePhysics() {
+    currentScene->ShutDownPhysics();
+}
+
 void SceneManager::SaveTempScene() {
 	// Serialize the current scene data to a temporary file.
 	std::string tempScenePath = currentScenePath + ".temp";
-	//Serializer::GetInstance().SerializeScene(tempScenePath);
+	Serializer::SerializeScene(tempScenePath);
 }
 
 void SceneManager::ReloadTempScene() {
 	std::string tempScenePath = currentScenePath + ".temp";
 	if (std::filesystem::exists(tempScenePath)) {
-		//Serializer::GetInstance().ReloadScene(tempScenePath);
+		Serializer::ReloadScene(tempScenePath, currentScenePath);
 	}
 	else {
 		// Handle the case where the temp file doesn't exist

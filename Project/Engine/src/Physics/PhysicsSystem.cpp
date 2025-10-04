@@ -292,25 +292,33 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 }
 
 void PhysicsSystem::Shutdown() {
-	//JPH::UnregisterTypes();
-    JPH::BodyInterface& bi = physics.GetBodyInterface();
-	for (auto& e : entities) {
-		auto& rb = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<RigidBodyComponent>(e);
-		if (!rb.id.IsInvalid()) {
-			bi.RemoveBody(rb.id);
-			bi.DestroyBody(rb.id);
-			rb.id = JPH::BodyID();
-		}
-	}
-    for (auto& e : entities) {
+    // 1. Remove and destroy all bodies
+    auto& bi = physics.GetBodyInterface();
+    for (auto e : entities) {
+        auto& rb = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<RigidBodyComponent>(e);
+        if (!rb.id.IsInvalid()) {
+            bi.RemoveBody(rb.id);
+            bi.DestroyBody(rb.id);
+            rb.id = JPH::BodyID();
+        }
+    }
+
+    // 2. Drop collider shapes
+    for (auto e : entities) {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         auto& col = ecs.GetComponent<ColliderComponent>(e);
-        col.shape = nullptr;    // drop RefConst<Shape>
+        col.shape = nullptr;
     }
-    entities.clear();
+    //entities.clear();
 
+    // 3. Destroy PhysicsSystem *before* releasing job/temp allocators
+    //physics.~PhysicsSystem();   // or wrap in unique_ptr and reset()
+
+    // 4. Now release allocators
     jobs.reset();
     temp.reset();
-    /*delete JPH::Factory::sInstance;
-	JPH::Factory::sInstance = nullptr;*/
+
+    // 5. Finally unregister types if you registered them
+    // JPH::UnregisterTypes();
 }
+
