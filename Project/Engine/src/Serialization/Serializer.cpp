@@ -426,7 +426,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
             if (mv.IsObject()) {
                 if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    const auto& arr = mv["data"];
                     ModelRenderComponent modelComp{};
                     GUID_string modelGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
@@ -446,7 +445,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
             if (mv.IsObject()) {
                 if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    const auto& arr = mv["data"];
                     SpriteRenderComponent spriteComp{};
                     GUID_string textureGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
