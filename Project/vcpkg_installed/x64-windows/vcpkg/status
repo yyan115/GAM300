@@ -1,0 +1,44 @@
+Package: vcpkg-cmake-config
+Version: 2024-05-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 611a627ac7393d6c4333c7cad872b6ef27539a8e8e255633e46c5704e4157a16
+Status: install ok installed
+
+Package: vcpkg-cmake
+Version: 2024-04-23
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 48bb59063f9948720ed4565e08c78fbd07e183a7d9d4f77b6d061a96648ff1dc
+Status: install ok installed
+
+Package: joltphysics
+Version: 5.4.0
+Depends: vcpkg-cmake, vcpkg-cmake-config
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 5caf11822f73455c981856594d5d70b2c5e8838d41bd9f1b93f100c26d684c34
+Description: A multi core friendly rigid body physics and collision detection library suitable for games and VR applications
+Status: install ok installed
+
+Package: joltphysics
+Feature: debugrenderer
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enable debug renderer in Debug and Release builds
+Status: install ok installed
+
+Package: joltphysics
+Feature: profiler
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enable the profiler in Debug and Release builds
+Status: install ok installed
+
+Package: joltphysics
+Feature: rtti
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enable C++ RTTI
+Status: install ok installed
+

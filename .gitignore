@@ -9,8 +9,8 @@ Project/Build
 .claude
 
 # vcpkg - ignore entire directory (clone fresh for each dev environment)
-Project/vcpkg/
-Project/vcpkg_installed/
+#Project/vcpkg/
+#Project/vcpkg_installed/
 
 # Android Studio
 AndroidProject/.idea/
