@@ -3,13 +3,13 @@
   "spdxVersion": "SPDX-2.2",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "documentNamespace": "https://spdx.org/spdxdocs/joltphysics-x64-windows-5.4.0-4fab101c-f40e-4efb-992a-0f35cd1d40a7",
-  "name": "joltphysics:x64-windows@5.4.0 5caf11822f73455c981856594d5d70b2c5e8838d41bd9f1b93f100c26d684c34",
+  "documentNamespace": "https://spdx.org/spdxdocs/joltphysics-x64-windows-5.4.0-852d5680-1e28-4e7e-adfa-c2bec594dc4b",
+  "name": "joltphysics:x64-windows@5.4.0 c60cea679f6a6be1f68048709c1a697e9ffdfa706c7910356c94893dc46097a4",
   "creationInfo": {
     "creators": [
       "Tool: vcpkg-2025-09-03-4580816534ed8fd9634ac83d46471440edd82dfe"
     ],
-    "created": "2025-10-04T09:15:58Z"
+    "created": "2025-10-04T09:49:35Z"
   },
   "relationships": [
     {
@@ -1618,7 +1618,7 @@
       "name": "joltphysics",
       "SPDXID": "SPDXRef-port",
       "versionInfo": "5.4.0",
-      "downloadLocation": "git+https://github.com/Microsoft/vcpkg@d0873a89f936087ba852859224f55342173eacb8",
+      "downloadLocation": "NOASSERTION",
       "homepage": "https://github.com/jrouwe/JoltPhysics",
       "licenseConcluded": "MIT",
       "licenseDeclared": "NOASSERTION",
@@ -1629,7 +1629,7 @@
     {
       "name": "joltphysics:x64-windows",
       "SPDXID": "SPDXRef-binary",
-      "versionInfo": "5caf11822f73455c981856594d5d70b2c5e8838d41bd9f1b93f100c26d684c34",
+      "versionInfo": "c60cea679f6a6be1f68048709c1a697e9ffdfa706c7910356c94893dc46097a4",
       "downloadLocation": "NONE",
       "licenseConcluded": "MIT",
       "licenseDeclared": "NOASSERTION",
@@ -1658,7 +1658,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "01d71d971066d2e7d38e52a0fd1ded0b32c1105fa4d13a779cc2f81a70747231"
+          "checksumValue": "350dd46881fef325091d4f26377dcc8604112efaefdf543970a214438c6109b2"
         }
       ],
       "licenseConcluded": "NOASSERTION",
@@ -1694,7 +1694,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "d769cd955247703f849790c7c6c6cc2c1d2784fafc3867e9ebc374e2e3b74897"
+          "checksumValue": "0e304ac2d36806591223882f63c5cce2b6b19b725f5cbdd7f23a0c7fd5223bf9"
         }
       ],
       "licenseConcluded": "NOASSERTION",
@@ -5414,7 +5414,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "aa6f9ee8ab4a3c9850dddb4a4e045f3695e3ed4603b179c269d85b0228c4d7c9"
+          "checksumValue": "988d73963c0448b9b78ac34fd4b274024d6ce5e8d6a4a3004c05894a36db73cd"
         }
       ],
       "licenseConcluded": "NOASSERTION",
