@@ -73,6 +73,27 @@ jobs:
 
         Write-Host "vcpkg dependencies installed successfully!" -ForegroundColor Green
 
+    - name: Verify vcpkg Installation Structure
+      run: |
+        Write-Host "Checking vcpkg installation structure..." -ForegroundColor Cyan
+        cd Project\Engine
+
+        if (Test-Path "vcpkg_installed") {
+          Write-Host "vcpkg_installed directory exists!" -ForegroundColor Green
+          Write-Host "Contents of vcpkg_installed:" -ForegroundColor Cyan
+          Get-ChildItem -Path "vcpkg_installed" -Recurse -Depth 3 | Select-Object FullName | Format-List
+
+          # Check for Jolt headers specifically
+          if (Test-Path "vcpkg_installed\x64-windows\include\Jolt") {
+            Write-Host "Found Jolt headers at: vcpkg_installed\x64-windows\include\Jolt" -ForegroundColor Green
+          } else {
+            Write-Warning "Jolt headers not found at expected path!"
+          }
+        } else {
+          Write-Error "vcpkg_installed directory not found!"
+          exit 1
+        }
+
     - name: Verify Library Structure
       run: |
         Write-Host "Verifying Libraries folder structure..." -ForegroundColor Cyan
