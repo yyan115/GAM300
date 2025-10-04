@@ -1191,7 +1191,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
@@ -1274,7 +1274,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
@@ -1334,7 +1334,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
