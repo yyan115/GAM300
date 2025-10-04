@@ -79,7 +79,7 @@ void ECSManager::Initialize() {
 	physicsSystem = RegisterSystem<PhysicsSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<Transform>());
+		//signature.set(GetComponentID<Transform>());
 		signature.set(GetComponentID<ColliderComponent>());
 		signature.set(GetComponentID<RigidBodyComponent>());
 		SetSystemSignature<PhysicsSystem>(signature);

@@ -256,7 +256,7 @@ void InspectorPanel::OnImGuiRender() {
 							t.isDirty = true;
 							ImGui::EndDisabled();
 
-							ImGui::TreePop();
+							//ImGui::TreePop();
 							ImGui::Separator();
 						}
 					}
@@ -295,7 +295,7 @@ void InspectorPanel::OnImGuiRender() {
 							}
 							ImGui::EndDisabled();
 
-							ImGui::TreePop();
+							//ImGui::TreePop();
 							ImGui::Separator();
 						}
 					}
