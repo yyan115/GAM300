@@ -19,9 +19,17 @@ bool ModelSystem::Initialise()
     for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
         modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+#ifndef ANDROID
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
         modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+#else
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
+        modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+#endif
+        std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
+        if (!materialPath.empty())
+            modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
@@ -36,6 +44,10 @@ void ModelSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+    // Get current view mode and check if rendering for editor
+    bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
+    bool is3DMode = gfxManager.Is3DMode();
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
 #endif
@@ -43,6 +55,12 @@ void ModelSystem::Update()
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip all 3D models in 2D mode ONLY when rendering for editor
+        // Game window should always show all models
+        if (isRenderingForEditor && !is3DMode) {
+            continue;
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
 #endif

@@ -5,26 +5,23 @@
 #include <filesystem>
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
-#include "Graphics/TextRendering/Font.hpp"
 #include "Utilities/FileUtilities.hpp"
-#include "Sound/Audio.hpp"
 #include "Logging.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
-// Forward declarations to avoid including heavy headers
-class Audio;
-class Texture;
-class Model;
-class Shader;
+#include <typeindex>
+#include <any>
+#include "Graphics/Texture.h"
+#include "Graphics/Model/Model.h"
+#include "Graphics/ShaderClass.h"
+#include "Graphics/TextRendering/Font.hpp"
+#include "Sound/Audio.hpp"
 
 class ENGINE_API ResourceManager {
 public:
-	static ResourceManager& GetInstance() {
-		static ResourceManager instance;
-		return instance;
-	}
+	static ResourceManager& GetInstance();
 
 	template <typename T>
 	std::shared_ptr<T> GetResourceFromGUID(const GUID_128& guid, const std::string& assetPath) {
@@ -34,7 +31,12 @@ public:
 			return it->second;
 		}
 		else {
+#ifdef ANDROID
+			std::string androidAssetPath = assetPath.substr(assetPath.find("Resources"));
+			return GetResource<T>(androidAssetPath);
+#else
 			return GetResource<T>(assetPath);
+#endif
 		}
 	}
 
@@ -45,7 +47,12 @@ public:
 			return it->second;
 		}
 		else {
+#ifdef ANDROID
+			std::string androidAssetPath = assetPath.substr(assetPath.find("Resources"));
+			return GetFontResource(androidAssetPath, fontSize);
+#else
 			return GetFontResource(assetPath, fontSize);
+#endif
 		}
 	}
 
@@ -176,6 +183,10 @@ public:
 		return shaderExtensions.find(extension) != shaderExtensions.end();
 	}
 
+	bool IsExtensionMesh(const std::string& extension) const {
+		return modelExtensions.find(extension) != modelExtensions.end();
+	}
+
 	bool IsResourceLoaded(const GUID_128& guid) {
 		if (GetResourceMap<Texture>().find(guid) != GetResourceMap<Texture>().end()) return true;
 		else if (GetResourceMap<Model>().find(guid) != GetResourceMap<Model>().end()) return true;
@@ -188,18 +199,21 @@ public:
 	static std::string GetPlatformShaderPath(const std::string& baseShaderName) {
 #ifdef ANDROID
 		return "Resources/Shaders/" + baseShaderName + "android";
+#endif
+#ifdef EDITOR
+		return "../../Resources/Shaders/" + baseShaderName;
 #else
 		return "Resources/Shaders/" + baseShaderName;
 #endif
 	}
 
 	template <typename T>
-	std::shared_ptr<T> LoadFromMeta(const GUID_128& guid,
+	std::shared_ptr<T> GetResourceFromMeta(const GUID_128& guid,
 		const std::string& resourcePath,
 		const std::string& assetPath,
 		bool reload = false)
 	{
-		return LoadResource<T>(guid, resourcePath, assetPath, reload);
+		return GetResource<T>(assetPath);
 	}
 
 private:
@@ -221,22 +235,33 @@ private:
 		supportedResourceExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
 	};
 
-	/**
-	 * \brief Returns a singleton container for the asset type T.
-	 *
-	 * \tparam T The type of the assets.
-	 * \return A reference to the map of assets for the specified type.
-	 */
+	///**
+	// * \brief Returns a singleton container for the asset type T.
+	// *
+	// * \tparam T The type of the assets.
+	// * \return A reference to the map of assets for the specified type.
+	// */
+	//template <typename T>
+	//std::unordered_map<GUID_128, std::shared_ptr<T>>& GetResourceMap() {
+	//	static std::unordered_map<GUID_128, std::shared_ptr<T>> resourceMap;
+	//	return resourceMap;
+	//}
+
+	std::unordered_map<std::type_index, std::any> resourceMaps;
 	template <typename T>
 	std::unordered_map<GUID_128, std::shared_ptr<T>>& GetResourceMap() {
-		static std::unordered_map<GUID_128, std::shared_ptr<T>> resourceMap;
-		return resourceMap;
+		auto& anyMap = resourceMaps[typeid(T)];
+		if (!anyMap.has_value()) {
+			anyMap = std::unordered_map<GUID_128, std::shared_ptr<T>>{};
+		}
+		return *std::any_cast<std::unordered_map<GUID_128, std::shared_ptr<T>>>(&anyMap);
 	}
 
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Target resource path: %s", resourcePath.c_str());
 #endif
 		std::shared_ptr<T> resource;
 		if (!reload) {

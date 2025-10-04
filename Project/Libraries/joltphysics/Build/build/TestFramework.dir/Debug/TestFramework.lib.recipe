@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\x64\Debug\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\FontVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\LineVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\TriangleDepthVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\TriangleVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\UIVertexShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\FontPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\LinePixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\TriangleDepthPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\TrianglePixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\UIPixelShader.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>D:\SIT\Y3T1\GAM300\Project\Libraries\joltphysics\Build\build\Debug\UIPixelShaderUntextured.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

@@ -16,6 +16,7 @@
 #include <Graphics/Particle/ParticleSystem.hpp>
 #include <Sound/AudioSystem.hpp>
 
+class PhysicsSystem;
 class ENGINE_API ECSManager {
 public:
 	ECSManager() { Initialize(); };
@@ -109,6 +110,7 @@ public:
 	std::shared_ptr<ModelSystem> modelSystem;
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
+	std::shared_ptr<PhysicsSystem> physicsSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;

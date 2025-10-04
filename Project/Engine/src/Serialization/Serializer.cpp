@@ -8,6 +8,9 @@
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
+#include "Hierarchy/EntityGUIDRegistry.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -63,6 +66,7 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         return;
     }
     ECSManager& ecs = *ecsPtr;
+    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
     // Iterate entities
     for (auto entity : ecs.GetAllEntities())
@@ -74,6 +78,18 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value idv;
             idv.SetUint64(static_cast<uint64_t>(entity)); // adapt if entity type differs
             entObj.AddMember("id", idv, alloc);
+            // convert GUID to string
+            GUID_string entityGUIDStr =
+                GUIDUtilities::ConvertGUID128ToString(
+                    guidRegistry.GetGUIDByEntity(static_cast<Entity>(entity)));
+
+            // create a RapidJSON string value with allocator
+            rapidjson::Value guidv;
+            guidv.SetString(entityGUIDStr.c_str(),
+                static_cast<rapidjson::SizeType>(entityGUIDStr.length()),
+                alloc);
+
+            entObj.AddMember("guid", guidv, alloc);
         }
 
         rapidjson::Value compsObj(rapidjson::kObjectType);
@@ -105,6 +121,21 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ModelRenderComponent", v, alloc);
         }
+        if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& c = ecs.GetComponent<SpriteRenderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("SpriteRenderComponent", v, alloc);
+        }
+        if (ecs.HasComponent<TextRenderComponent>(entity)) {
+            auto& c = ecs.GetComponent<TextRenderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("TextRenderComponent", v, alloc);
+        }
+        if (ecs.HasComponent<ParticleComponent>(entity)) {
+            auto& c = ecs.GetComponent<ParticleComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ParticleComponent", v, alloc);
+        }
         //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
         //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
         //    rapidjson::Value v = serializeComponentToValue(c);
@@ -114,11 +145,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ChildrenComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ChildrenComponent", v, alloc);
-        }
-        if (ecs.HasComponent<TextRenderComponent>(entity)) {
-            auto& c = ecs.GetComponent<TextRenderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("TextRenderComponent", v, alloc);
         }
         if (ecs.HasComponent<ParentComponent>(entity)) {
             auto& c = ecs.GetComponent<ParentComponent>(entity);
@@ -172,39 +198,33 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 }
 
 void Serializer::DeserializeScene(const std::string& scenePath) {
+    ENGINE_LOG_INFO("[Serializer] Deserializing scene: " + scenePath);
     using namespace std;
     namespace fs = std::filesystem;
 
-    fs::path pathToOpen = scenePath;
-    if (!fs::exists(pathToOpen)) {
-        // fallback to filename-only (in case save used only filename)
-        pathToOpen = pathToOpen.filename();
+    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+    IPlatform* platform = WindowManager::GetPlatform();
+    if (!platform) {
+        ENGINE_LOG_DEBUG("[Serializer] ERROR: Platform not available for asset discovery!");
+        return;
     }
-
-    if (!fs::exists(pathToOpen)) {
-        std::cerr << "[CreateEntitiesFromJson] no scene JSON file found: " << scenePath << "\n";
+    if (!platform->FileExists(scenePath)) {
+        ENGINE_LOG_DEBUG("[Serializer]: Scene file not found: " + scenePath);
         return;
     }
 
-    std::ifstream ifs(pathToOpen.string(), std::ios::binary);
-    if (!ifs) {
-        std::cerr << "[CreateEntitiesFromJson] failed to open: " << pathToOpen.string() << "\n";
-        return;
-    }
-
-    std::stringstream ss;
-    ss << ifs.rdbuf();
-    std::string jsonStr = ss.str();
-    ifs.close();
-
+    std::vector<uint8_t> metaFileData = platform->ReadAsset(scenePath);
     rapidjson::Document doc;
-    if (doc.Parse(jsonStr.c_str()).HasParseError()) {
-        std::cerr << "[CreateEntitiesFromJson] JSON parse error in: " << pathToOpen.string() << "\n";
-        return;
+    if (!metaFileData.empty()) {
+        rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+        doc.ParseStream(ms);
+    }
+    if (doc.HasParseError()) {
+        ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + scenePath);
     }
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
-        std::cerr << "[CreateEntitiesFromJson] no entities array in JSON: " << pathToOpen.string() << "\n";
+        ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
         return;
     }
 
@@ -317,11 +337,21 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
+        Entity newEnt{};
         uint64_t oldId = 0;
         if (entObj.HasMember("id") && entObj["id"].IsUint64()) oldId = entObj["id"].GetUint64();
         else if (entObj.HasMember("id") && entObj["id"].IsUint()) oldId = static_cast<uint64_t>(entObj["id"].GetUint());
-
-        Entity newEnt = ecs.CreateEntity();
+        if (entObj.HasMember("guid")) {
+            GUID_string guidStr = entObj["guid"].GetString();
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            newEnt = ecs.CreateEntityWithGUID(guid);
+            ENGINE_LOG_INFO("Entity " + std::to_string(newEnt) + " created with GUID " + guidStr);
+        }
+        else {
+            // Fallback for if there is no GUID, but it shouldn't happen.
+            newEnt = ecs.CreateEntity();
+            ENGINE_LOG_WARN("Entity created with no GUID!");
+        }
 
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];
@@ -400,10 +430,44 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                     ModelRenderComponent modelComp{};
                     GUID_string modelGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
+                    GUID_string materialGUIDStr = mv["data"][2].GetString();
                     modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
                     modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+                    modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
 
                     ecs.AddComponent<ModelRenderComponent>(newEnt, modelComp);
+                }
+            }
+        }
+
+        // SpriteRenderComponent
+        if (comps.HasMember("SpriteRenderComponent")) {
+            const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+
+            if (mv.IsObject()) {
+                if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
+                    const auto& arr = mv["data"];
+                    SpriteRenderComponent spriteComp{};
+                    GUID_string textureGUIDStr = mv["data"][0].GetString();
+                    GUID_string shaderGUIDStr = mv["data"][1].GetString();
+                    spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
+                    spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+
+                    // Sprite position
+                    readVec3Generic(mv["data"][2], spriteComp.position);
+                    // Sprite scale
+                    readVec3Generic(mv["data"][3], spriteComp.scale);
+                    // Sprite rotation
+                    spriteComp.rotation = mv["data"][4]["data"].GetFloat();
+                    // Sprite color
+                    readVec3Generic(mv["data"][5], spriteComp.color);
+                    spriteComp.alpha = mv["data"][6]["data"].GetFloat();
+                    spriteComp.is3D = mv["data"][7]["data"].GetBool();
+                    spriteComp.enableBillboard = mv["data"][8]["data"].GetBool();
+                    spriteComp.layer = mv["data"][9]["data"].GetInt();
+                    readVec3Generic(mv["data"][10], spriteComp.saved3DPosition);
+
+                    ecs.AddComponent<SpriteRenderComponent>(newEnt, spriteComp);
                 }
             }
         }
@@ -429,11 +493,39 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             }
         }
 
+        // ParticleComponent
+        if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ParticleComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                ParticleComponent particleComp{};
+                const auto& d = tv["data"];
+                GUID_string guidStr = d[0].GetString();
+                particleComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                readVec3Generic(d[1], particleComp.emitterPosition);
+                particleComp.emissionRate = d[2]["data"].GetFloat();
+                particleComp.maxParticles = d[3]["data"].GetInt();
+                particleComp.particleLifetime = d[4]["data"].GetFloat();
+                particleComp.startSize = d[5]["data"].GetFloat();
+                particleComp.endSize = d[6]["data"].GetFloat();
+                readVec3Generic(d[7], particleComp.startColor);
+                particleComp.startColorAlpha = d[8]["data"].GetFloat();
+                readVec3Generic(d[9], particleComp.endColor);
+                particleComp.endColorAlpha = d[10]["data"].GetFloat();
+                readVec3Generic(d[11], particleComp.gravity);
+                particleComp.velocityRandomness = d[12]["data"].GetFloat();
+                readVec3Generic(d[13], particleComp.initialVelocity);
+                ecs.AddComponent<ParticleComponent>(newEnt, particleComp);
+            }
+        }
+
         // ParentComponent
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
             ParentComponent parentComp{};
-            parentComp.parent = parentCompJSON["data"][0]["data"].GetUint();
+            GUID_string parentGUIDStr = parentCompJSON["data"][0].GetString();
+            parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
             ecs.AddComponent(newEnt, parentComp);
         }
 
@@ -444,7 +536,8 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             if (childrenCompJSON.HasMember("data")) {
                 const auto& childrenVectorJSON = childrenCompJSON["data"][0]["data"].GetArray();
                 for (const auto& childJSON : childrenVectorJSON) {
-                    childrenComp.children.push_back(childJSON["data"].GetUint());
+                    GUID_string childGUIDStr = childJSON.GetString();
+                    childrenComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
                 }
             }
 
@@ -453,5 +546,5 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
     } // end for entities
 
-    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << pathToOpen.string() << "\n";
+    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }

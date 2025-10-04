@@ -1,17 +1,20 @@
 #include "pch.h"
 #include "GUIManager.hpp"
-#include "imgui.h"
-#include "imgui_internal.h" 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "ImGuizmo.h"
 #include "Graphics/SceneRenderer.hpp"
 #include "WindowManager.hpp"
 #include "EditorState.hpp"
-#include "../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
+#include "Scene/SceneManager.hpp"
 #include "Logging.hpp"
 
-#include "Scene/SceneManager.hpp"
+// External libraries
+#include <imgui.h>
+#include <imgui_internal.h> 
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <ImGuizmo.h>
+#include <IconsFontAwesome6.h>
+#include <filesystem>
+
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
@@ -21,7 +24,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
-#include <Asset Manager/AssetManager.hpp>
+#include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 
 
@@ -46,7 +49,12 @@ void GUIManager::Initialize() {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable Docking
 
-	io.IniFilename = "imgui.ini";
+	// Load default layout from Editor's imgui.ini if build's imgui.ini doesn't exist
+	if (!std::filesystem::exists("imgui.ini")) {
+		std::filesystem::path editorIni = "../../../Project/Editor/imgui.ini";
+		std::cout << "Loading default editor layout from: " << editorIni << std::endl;
+		ImGui::LoadIniSettingsFromDisk(editorIni.string().c_str());
+	}
 	
 	CreateEditorTheme();
 
@@ -239,7 +247,7 @@ void GUIManager::CreateDockspace() {
 					if (hierarchyPanel) hierarchyPanel->SetOpen(true);
 					if (inspectorPanel) inspectorPanel->SetOpen(true);
 					if (consolePanel) consolePanel->SetOpen(true);
-					if (performancePanel) performancePanel->SetOpen(true);
+					if (performancePanel) performancePanel->SetOpen(false); // Don't enable by default
 					if (assetBrowserPanel) assetBrowserPanel->SetOpen(true);
 				}
 
@@ -252,78 +260,98 @@ void GUIManager::CreateDockspace() {
 }
 
 void GUIManager::RenderMenuBar() {
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            // if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
-            //     // TODO: New scene functionality
-            // }
-            // if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
-            //     std::string filepath = "Resources/Scenes/scene.json";
-            //     // TEMP
-            //     if (!std::filesystem::exists(filepath)) {
-            //         std::cerr << "No saved scene yet! Save scene first!" << std::endl;
-            //     }
-            //     else {
-            //         SceneManager::GetInstance().LoadScene(filepath);
-            //     }
-            // }
-            if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) {
-                SceneManager::GetInstance().SaveScene();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem(ICON_FA_DESKTOP " Compile Assets for Desktop")) {
-                AssetManager::GetInstance().CompileAllAssetsForDesktop();
-            }
-            if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
-                AssetManager::GetInstance().CompileAllAssetsForAndroid();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
-                // TODO: Exit application
-            }
-            ImGui::EndMenu();
-        }
+	if (ImGui::BeginMainMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			// if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
+			//     // TODO: New scene functionality
+			// }
+			// if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
+			//     std::string filepath = "Resources/Scenes/scene.json";
+			//     // TEMP
+			//     if (!std::filesystem::exists(filepath)) {
+			//         std::cerr << "No saved scene yet! Save scene first!" << std::endl;
+			//     }
+			//     else {
+			//         SceneManager::GetInstance().LoadScene(filepath);
+			//     }
+			// }
+			if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) {
+				SceneManager::GetInstance().SaveScene();
+			}
+			ImGui::Separator();
+			ImGui::BeginDisabled(AssetManager::GetInstance().androidCompilationStatus.isCompiling);
+			if (ImGui::MenuItem(ICON_FA_MOBILE_SCREEN_BUTTON " Compile Assets for Android")) {
+				AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture = std::async(std::launch::async, [] {
+					return AssetManager::GetInstance().CompileAllAssetsForAndroid();
+					});
+			}
+			ImGui::EndDisabled();
+			ImGui::Separator();
+			if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
+				// TODO: Exit application
+			}
+			ImGui::EndMenu();
+		}
 
-        if (ImGui::BeginMenu("Edit")) {
-            if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Undo", "Ctrl+Z")) {
-                // TODO: Undo functionality
-            }
-            if (ImGui::MenuItem(ICON_FA_ROTATE_RIGHT " Redo", "Ctrl+Y")) {
-                // TODO: Redo functionality
-            }
-            ImGui::EndMenu();
-        }
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Undo", "Ctrl+Z")) {
+				// TODO: Undo functionality
+			}
+			if (ImGui::MenuItem(ICON_FA_ROTATE_RIGHT " Redo", "Ctrl+Y")) {
+				// TODO: Redo functionality
+			}
+			ImGui::EndMenu();
+		}
 
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem(ICON_FA_ROTATE " Reset Layout")) {
-                // Reset to default docking layout
-                dockspaceInitialized = false;
-            }
-            ImGui::EndMenu();
-        }
+		if (ImGui::BeginMenu("View")) {
+			if (ImGui::MenuItem(ICON_FA_ROTATE " Reset Layout")) {
+				// Reset to default docking layout
+				dockspaceInitialized = false;
+			}
+			ImGui::EndMenu();
+		}
 
-        if (ImGui::BeginMenu("Window")) {
-            if (panelManager) {
-                // Panel toggles
-                for (const auto& panel : panelManager->GetAllPanels()) {
-                    bool isOpen = panel->IsOpen();
-                    if (ImGui::MenuItem(panel->GetName().c_str(), nullptr, &isOpen)) {
-                        panel->SetOpen(isOpen);
-                    }
-                }
-            }
-            ImGui::EndMenu();
-        }
+		if (ImGui::BeginMenu("Window")) {
+			if (panelManager) {
+				// Panel toggles
+				for (const auto& panel : panelManager->GetAllPanels()) {
+					bool isOpen = panel->IsOpen();
+					if (ImGui::MenuItem(panel->GetName().c_str(), nullptr, &isOpen)) {
+						panel->SetOpen(isOpen);
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
 
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " About")) {
-                // TODO: About dialog
-            }
-            ImGui::EndMenu();
-        }
+		if (ImGui::BeginMenu("Help")) {
+			if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " About")) {
+				// TODO: About dialog
+			}
+			ImGui::EndMenu();
+		}
 
-        ImGui::EndMainMenuBar();
-    }
+		ImGui::EndMainMenuBar();
+	}
+
+	// For now temporarily put here.
+	if (AssetManager::GetInstance().androidCompilationStatus.finishedCompiling) {
+		std::vector<std::string> remainingToCompile = AssetManager::GetInstance().androidCompilationStatus.assetCompilationFuture.get();
+		ENGINE_LOG_INFO("[GUIManager] Compiling shaders and meshes...");
+		for (const auto& path : remainingToCompile) {
+			AssetManager::GetInstance().CompileAsset(path, true, true);
+		}
+		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
+		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
+	}
+	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
+	{
+		ImGui::Begin("Compiling assets for Android...");
+		float fraction = (float)AssetManager::GetInstance().androidCompilationStatus.numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
+		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
+		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
+		ImGui::End();
+	}
 }
 
 void GUIManager::CreateEditorTheme() {
@@ -359,25 +387,30 @@ void GUIManager::CreateEditorTheme() {
 	colors[ImGuiCol_Border] = ImVec4(0.28f, 0.28f, 0.28f, 1.0f);       // Medium gray border
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.10f, 0.10f, 0.10f, 0.5f); // Subtle shadow
 
-	// Text
-	colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.0f);         // White text
+	// Text - Unity-style brighter white
+	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);         // Brighter white text like Unity
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.0f); // Gray text for disabled items
 
-	// Headers
-	colors[ImGuiCol_Header] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);       // Header background
-	colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Hovered header
-	colors[ImGuiCol_HeaderActive] = ImVec4(0.33f, 0.33f, 0.33f, 1.0f); // Active header
+	// Headers - Unity-style grey-blue selection (for combo boxes, selectables, etc.)
+	colors[ImGuiCol_Header] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);         // Unity grey-blue selection
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);  // Subtle grey hover
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);   // Match selected
 
-	// Buttons
-	colors[ImGuiCol_Button] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);       // Button background
+	// Buttons - Unity-style
+	colors[ImGuiCol_Button] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);       // Button background
 	colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Hovered button
-	colors[ImGuiCol_ButtonActive] = ImVec4(0.33f, 0.33f, 0.33f, 1.0f); // Active button
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f); // Active button
 
-	// Tabs
-	colors[ImGuiCol_Tab] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);          // Tab background
-	colors[ImGuiCol_TabHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);   // Hovered tab
-	colors[ImGuiCol_TabActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);    // Active tab
-	colors[ImGuiCol_TabUnfocused] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f); // Unfocused tab
+	// Frame (for input fields, combo boxes, etc.) - Unity-style
+	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);        // Frame background
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f); // Hovered frame
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);  // Active frame
+
+	// Tabs - Unity-style: active tabs are LIGHTER, inactive are DARKER
+	colors[ImGuiCol_Tab] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);          // Inactive tab (darker)
+	colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);   // Hovered tab
+	colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);    // Active tab (lighter - matches window bg)
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.16f, 0.16f, 0.16f, 1.0f); // Unfocused tab (darker)
 	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.22f, 0.22f, 0.22f, 1.0f); // Unfocused active tab
 
 	// Title Bar (for windows)

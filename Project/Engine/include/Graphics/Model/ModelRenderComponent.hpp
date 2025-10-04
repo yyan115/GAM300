@@ -18,6 +18,7 @@ public:
 	bool overrideFromPrefab = false;
 	GUID_128 modelGUID{};
 	GUID_128 shaderGUID{};
+	GUID_128 materialGUID{};
 	Matrix4x4 transform;
 	bool isVisible = true;
 
@@ -27,8 +28,8 @@ public:
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;
 
-	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID)
-		: modelGUID(m_GUID), shaderGUID(s_GUID), transform(), isVisible(true) { }
+	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID, GUID_128 mat_GUID)
+		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) { }
 	ModelRenderComponent() = default;
 	~ModelRenderComponent() = default;
 

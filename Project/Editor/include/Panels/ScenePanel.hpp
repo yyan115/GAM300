@@ -26,6 +26,23 @@ public:
      */
     void OnImGuiRender() override;
 
+    /**
+     * @brief Reposition camera for 2D/3D mode switching
+     * @param target The target position to look at
+     */
+    void SetCameraTarget(const glm::vec3& target);
+
+    /**
+     * @brief Reset camera zoom to default (1.0)
+     */
+    void ResetCameraZoom() { editorCamera.OrthoZoomLevel = 1.0f; }
+
+    /**
+     * @brief Set camera zoom level
+     * @param zoom Zoom level (1.0 = normal, >1.0 = zoomed out, <1.0 = zoomed in)
+     */
+    void SetCameraZoom(float zoom) { editorCamera.OrthoZoomLevel = zoom; }
+
 private:
     void AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize);
 
@@ -60,6 +77,8 @@ private:
     void RenderSceneWithEditorCamera(int width, int height);
     void HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight);
     void RenderViewGizmo(float sceneWidth, float sceneHeight);
+    void DrawGameViewportIndicator();
+    void DrawColliderGizmos();
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);

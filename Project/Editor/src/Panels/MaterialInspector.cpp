@@ -1,5 +1,6 @@
 #include "Panels/MaterialInspector.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include "EditorComponents.hpp"
 #include "imgui.h"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Texture.h>
@@ -86,8 +87,12 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
 
     bool materialChanged = false;
 
-    // Colors section - Unity style
+    // Colors section
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
     bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::PopStyleColor(3);
 
     // Add lock button on the same line as Colors header if requested
     if (showLockButton && isLocked && lockCallback) {
@@ -149,7 +154,11 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
     }
 
     // Textures section
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
     if (ImGui::CollapsingHeader("Textures")) {
+        ImGui::PopStyleColor(3);
         // Texture type mappings
         static const std::vector<std::pair<Material::TextureType, std::string>> textureTypes = {
             {Material::TextureType::DIFFUSE, "Diffuse"},
@@ -173,7 +182,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            // Unity-style texture slot layout
+            
             ImGui::Text("%s:", name.c_str());
             ImGui::SameLine();
 
@@ -187,21 +196,24 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Texture display field (drag-drop target)
             std::string textureDisplay;
             if (currentPath.empty()) {
-                textureDisplay = "None (Drag texture here)";
+                textureDisplay = "None (Texture)";
             } else {
                 // Show just the filename for cleaner display
                 std::filesystem::path pathObj(currentPath);
                 textureDisplay = pathObj.filename().string();
             }
 
-            ImGui::Button(textureDisplay.c_str(), ImVec2(textureFieldWidth, 0));
+            
+            EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
-            // Drag-drop target for textures
-            if (ImGui::BeginDragDropTarget()) {
+            // Drag-drop target for textures with visual feedback
+            if (EditorComponents::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
                     // Extract texture path from payload
                     const char* texturePath = (const char*)payload->Data;
                     std::string pathStr(texturePath, payload->DataSize);
+                    // strip trailing nulls
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                     // Use the original path as-is since it already has the correct relative path
                     std::string assetPathStr = pathStr;
@@ -214,7 +226,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     materialChanged = true;
                     std::cout << "[MaterialInspector] Successfully set texture path on material: " << assetPathStr << std::endl;
                 }
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
             }
 
             // Remove button (X) - centered
@@ -290,6 +302,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Pop the unique ID
             ImGui::PopID();
         }
+    } else {
+        ImGui::PopStyleColor(3); // Pop header colors if not open
     }
 
     // Save button - always show it for material editing (outside collapsing headers)
@@ -300,26 +314,28 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
         std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
+        material->CompileUpdatedAssetToResource(assetPath);
+        //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
         
         // Use the Material's CompileToResource method
-        std::string compiledPath = material->CompileToResource(absoluteSavePathStr);
-        if (!compiledPath.empty()) {
-            std::cout << "[MaterialInspector] Material saved successfully: " << compiledPath << std::endl;
+        //std::string compiledPath = material->CompileToResource(absoluteSavePathStr);
+        //if (!compiledPath.empty()) {
+        //    std::cout << "[MaterialInspector] Material saved successfully: " << compiledPath << std::endl;
 
-            // Force ResourceManager to reload the material from disk to update cache
-            std::cout << "[MaterialInspector] Forcing ResourceManager cache reload for: " << absoluteSavePathStr << std::endl;
-            auto reloadedMaterial = ResourceManager::GetInstance().GetResource<Material>(absoluteSavePathStr, true);
-            if (reloadedMaterial) {
-                std::cout << "[MaterialInspector] Successfully reloaded material in ResourceManager cache: " << reloadedMaterial->GetName() << " with " << reloadedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
-            } else {
-                std::cout << "[MaterialInspector] Failed to reload material in ResourceManager cache" << std::endl;
-            }
+        //    // Force ResourceManager to reload the material from disk to update cache
+        //    std::cout << "[MaterialInspector] Forcing ResourceManager cache reload for: " << absoluteSavePathStr << std::endl;
+        //    auto reloadedMaterial = ResourceManager::GetInstance().GetResource<Material>(absoluteSavePathStr, true);
+        //    if (reloadedMaterial) {
+        //        std::cout << "[MaterialInspector] Successfully reloaded material in ResourceManager cache: " << reloadedMaterial->GetName() << " with " << reloadedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+        //    } else {
+        //        std::cout << "[MaterialInspector] Failed to reload material in ResourceManager cache" << std::endl;
+        //    }
 
-            materialChanged = false; // Reset change flag after save
-        }
-        else {
-            std::cout << "[MaterialInspector] Failed to save material to: " << absoluteSavePathStr << std::endl;
-        }
+        //    materialChanged = false; // Reset change flag after save
+        //}
+        //else {
+        //    std::cout << "[MaterialInspector] Failed to save material to: " << absoluteSavePathStr << std::endl;
+        //}
     }
     if (materialChanged) {
         ImGui::SameLine();
@@ -381,6 +397,7 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
+        modelRenderer.materialGUID = materialGuid;
         std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity" << std::endl;
     }
     catch (const std::exception& e) {

@@ -49,6 +49,7 @@ struct ParticleInstanceData {
 class ParticleSystem : public System {
 public:
     bool Initialise();
+    bool InitialiseParticles();
     void Update();
     void Shutdown();
 
@@ -61,4 +62,5 @@ private:
 
     std::mt19937 rng;
     std::uniform_real_distribution<float> dist{ -1.0f, 1.0f };
+    bool particleSystemInitialised = false;
 };

@@ -49,7 +49,9 @@ std::string Font::CompileToResource(const std::string& assetPath, bool forAndroi
         outPath = (p.parent_path() / p.stem()).generic_string() + ".font";
     }
     else {
-        outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string() + "_android.font";
+        std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+        assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+        outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.font";
     }
 
     // Ensure parent directories exist
@@ -64,16 +66,16 @@ std::string Font::CompileToResource(const std::string& assetPath, bool forAndroi
     fontResource.write(reinterpret_cast<const char*>(fontData.data()), size);
     fontResource.close();
 
-    if (!forAndroid) {
-        // Save the mesh file to the root project Resources folder as well.
-        try {
-            std::filesystem::copy_file(outPath, (FileUtilities::GetSolutionRootDir() / outPath).generic_string(),
-                std::filesystem::copy_options::overwrite_existing);
-        }
-        catch (const std::filesystem::filesystem_error& e) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FONT] Copy failed: ", e.what(), "\n");
-        }
-    }
+    //if (!forAndroid) {
+    //    // Save the mesh file to the root project Resources folder as well.
+    //    try {
+    //        std::filesystem::copy_file(outPath, (FileUtilities::GetSolutionRootDir() / outPath).generic_string(),
+    //            std::filesystem::copy_options::overwrite_existing);
+    //    }
+    //    catch (const std::filesystem::filesystem_error& e) {
+    //        std::cerr << "[FONT] Copy failed: " << e.what() << std::endl;
+    //    }
+    //}
 
     return outPath;
 }

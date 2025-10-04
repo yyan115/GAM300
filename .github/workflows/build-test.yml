@@ -30,7 +30,30 @@ jobs:
       uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
       with:
         sdk-version: 22621
-    
+
+    - name: Setup vcpkg
+      run: |
+        Write-Host "Setting up vcpkg for dependency management..." -ForegroundColor Cyan
+        cd Project
+
+        # Clone vcpkg if not already present
+        if (!(Test-Path "vcpkg")) {
+            git clone https://github.com/Microsoft/vcpkg.git
+        }
+
+        # Bootstrap vcpkg if needed
+        if (!(Test-Path "vcpkg\vcpkg.exe")) {
+            Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
+            $bootstrapPath = Join-Path (Get-Location) "vcpkg\bootstrap-vcpkg.bat"
+            & cmd.exe /c $bootstrapPath
+        }
+
+        # Integrate with Visual Studio
+        $vcpkgPath = Join-Path (Get-Location) "vcpkg\vcpkg.exe"
+        & $vcpkgPath integrate install
+
+        Write-Host "vcpkg setup complete!" -ForegroundColor Green
+
     - name: Verify Library Structure
       run: |
         Write-Host "Verifying Libraries folder structure..." -ForegroundColor Cyan

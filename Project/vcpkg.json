@@ -37,6 +37,18 @@
     {
       "name": "gli",
       "$comment": "OpenGL Image library for DDS, KTX, and KMG texture formats"
+    },
+    {
+      "name": "joltphysics",
+      "default-features": false,
+      "features": ["rtti", "debugrenderer", "profiler"],
+      "$comment": "Physics engine - locked to 5.4.0 to match Android version exactly"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "joltphysics",
+      "version": "5.4.0"
     }
   ],
   "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149"
