@@ -368,6 +368,15 @@ void SceneInstance::Initialize() {
 	}
 	ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 	
+
+	// Add FPS text (mainly for android to see FPS)
+	fpsText = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
@@ -394,9 +403,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	//fpsTextComponent.text = TimeManager::GetFps();
-	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	fpsTextComponent.text = TimeManager::GetFps();
+	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
