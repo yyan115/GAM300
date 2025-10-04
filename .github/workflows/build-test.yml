@@ -38,6 +38,28 @@ jobs:
         vcpkgGitCommitId: '62efe42f53b1886a20cbeb22ee9a27736d20f149'
         vcpkgJsonGlob: 'Project/vcpkg.json'
 
+    - name: Install vcpkg Dependencies
+      run: |
+        Write-Host "Installing vcpkg dependencies..." -ForegroundColor Cyan
+        cd Project
+
+        if (!(Test-Path "vcpkg/vcpkg.exe")) {
+          Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          cd ..
+        }
+
+        Write-Host "Installing dependencies from vcpkg.json..." -ForegroundColor Cyan
+        .\vcpkg\vcpkg install --triplet=x64-windows
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "vcpkg install failed!"
+          exit 1
+        }
+
+        Write-Host "vcpkg dependencies installed successfully!" -ForegroundColor Green
+
     - name: Verify Library Structure
       run: |
         Write-Host "Verifying Libraries folder structure..." -ForegroundColor Cyan
