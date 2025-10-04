@@ -16,6 +16,7 @@ void Animator::UpdateAnimation(float dt, bool isLoop)
 	if (tps <= 0.0f) tps = 25.0f; // Default to 25 if invalid
 
 	mCurrentTime += tps * dt;
+
 	float duration = mCurrentAnimation->GetDuration();
 	if (isLoop)
 	{

@@ -13,7 +13,7 @@ public:
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform);
 
-	std::vector<glm::mat4> GetFinalBoneMatrices() { return mFinalBoneMatrices; }
+	const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return mFinalBoneMatrices; }
 	float GetCurrentTime() const { return mCurrentTime; }
 
 private:

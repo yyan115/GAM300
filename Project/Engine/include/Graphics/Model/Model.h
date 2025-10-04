@@ -51,6 +51,8 @@ public:
 };
 #endif
 
+class Animator;
+
 struct BoneInfo
 {
 	// Id is index in finalBoneMatrices
@@ -87,6 +89,10 @@ public:
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
 	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
 
+	// Helper function to get/bind animator
+	Animator* GetAnimator() const { return animator; }
+	void BindAnimator(Animator* a) { animator = a; }
+
 private:
 	//void loadModel(const std::string& path);
 	void ProcessNode(aiNode* node, const aiScene* scene);
@@ -98,4 +104,7 @@ private:
 	// Bone data
 	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
 	int mBoneCounter = 0;
+
+	Animator* animator = nullptr;
+	
 };

@@ -1,5 +1,6 @@
 
-#include "pch.h"#include "Animation/AnimationSystem.hpp"
+#include "pch.h"
+#include "Animation/AnimationSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
@@ -10,16 +11,20 @@ bool AnimationSystem::Initialise()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities)
 	{
-		auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
-		if(modelComp.model)
+		auto modelCompOpt = ecsManager.TryGetComponent<ModelRenderComponent>(entity);
+		if (modelCompOpt.has_value())
 		{
-			animComp.SetModel(&*modelComp.model);
-			animComp.AddClipFromFile("Resources/Models/kachujin/Animation/KachujinAnimation.fbx");
-			animComp.Play();
+			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+			auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
+			if (modelComp.model)
+			{
+				animComp.SetModel(&*modelComp.model);
+				animComp.AddClipFromFile("Resources/Models/kachujin/Animation/Slash.fbx");
+				animComp.Play();
+			}
+			else
+				std::cout << "[AnimationSystem] Warning: Entity " << entity << " has no model assigned for AnimationComponent.\n";
 		}
-		else
-			std::cout << "[AnimationSystem] Warning: Entity " << entity << " has no model assigned for AnimationComponent.\n";
 	}
 	
 	ENGINE_PRINT("[AnimationSystem] Initialized\n");

@@ -7,6 +7,14 @@
 AnimationComponent::AnimationComponent(Model* model) : model(model) 
 {
     animator = std::make_unique<Animator>(nullptr); // set clip later
+    if(model)
+		model->BindAnimator(animator.get());
+}
+
+AnimationComponent::~AnimationComponent() 
+{
+    if(model && model->GetAnimator() == animator.get())
+        model->BindAnimator(nullptr); // unbind from model if needed
 }
 
 AnimationComponent::AnimationComponent(const AnimationComponent& other)
@@ -113,10 +121,11 @@ void AnimationComponent::AddClipFromFile(const std::string& path)
 
 void AnimationComponent::SetModel(Model* m) 
 {
+    if(model && model->GetAnimator() == animator.get())
+		model->BindAnimator(nullptr); // unbind from old model if needed
     model = m;
-    clips.clear();
-    activeClip = 0;
-    animator = std::make_unique<Animator>(nullptr);
+    if (model)
+		model->BindAnimator(EnsureAnimator());
 }
 
 
@@ -143,6 +152,16 @@ void AnimationComponent::SetClip(size_t index)
 
 Animator& AnimationComponent::GetAnimator() { return *animator; }
 const Animator& AnimationComponent::GetAnimator() const { return *animator; }
+Animator* AnimationComponent::GetAnimatorPtr() { return animator.get(); }
+const Animator* AnimationComponent::GetAnimatorPtr() const { return animator.get(); }
+
+Animator* AnimationComponent::EnsureAnimator() 
+{
+    if (!animator)
+        animator = std::make_unique<Animator>(nullptr); // no clip yet
+    return animator.get();
+}
+
 Animation& AnimationComponent::GetClip(size_t i) { return *clips[i]; }
 const Animation& AnimationComponent::GetClip(size_t i) const { return *clips[i]; }
 const std::vector<std::unique_ptr<Animation>>& AnimationComponent::GetClips() const { return clips; }

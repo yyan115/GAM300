@@ -8,6 +8,8 @@ class ENGINE_API AnimationComponent
 public:
 	AnimationComponent() = default; // must provide Model*
 
+    ~AnimationComponent();
+
     AnimationComponent(Model* model);
 
     AnimationComponent(const AnimationComponent& other);
@@ -40,6 +42,10 @@ public:
     // Access for systems that need it
     Animator& GetAnimator();
     const Animator& GetAnimator() const;
+	Animator* GetAnimatorPtr();
+	const Animator* GetAnimatorPtr() const;
+	Animator* EnsureAnimator(); // create if missing
+
     Animation& GetClip(size_t i);
     const Animation& GetClip(size_t i) const;
     const std::vector<std::unique_ptr<Animation>>& GetClips() const;
@@ -48,7 +54,7 @@ public:
     // UI state (can be private with getters if you prefer)
     bool  isPlay = false;
     bool  isLoop = true;
-    float speed = 1.0f;
+    float speed = 0.5f;
 
 private:
     // Data

@@ -14,6 +14,7 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 #include "Logging.hpp"
+#include <Animation/Animator.hpp>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -978,7 +979,7 @@ void Model::Draw(Shader& shader, const Camera& camera)
 			continue;
 		}
 #endif
-
+        
 		meshes[i].Draw(shader, camera);
 
 #ifdef ANDROID
@@ -996,6 +997,30 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 //#endif
+
+	// Check if the model has an animator
+	bool isAnim = (animator != nullptr);
+	const std::vector<glm::mat4>* finalBoneMatrices = nullptr;
+
+    if (isAnim)
+    {
+		const auto& transform = animator->GetFinalBoneMatrices();
+        if(transform.empty())
+			isAnim = false;
+        else
+			finalBoneMatrices = &transform;
+    }
+
+	shader.setBool("isAnimated", isAnim);
+    if (isAnim)
+    {
+		constexpr size_t MAX_BONES = 100;
+		const auto& transform = *finalBoneMatrices;
+        const size_t numBones = std::min(transform.size(), MAX_BONES);
+
+        for (size_t i = 0; i < numBones; ++i)
+            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transform[i]);
+	}
 
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{

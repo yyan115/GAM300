@@ -7,20 +7,20 @@
 
 struct AssimpNodeData
 {
-    glm::mat4 transformation;
-    std::string name;
-    int childrenCount;
-    std::vector<AssimpNodeData> children;
+    glm::mat4 transformation{};
+    std::string name{};
+    int childrenCount{};
+    std::vector<AssimpNodeData> children{};
 };
 
 class Animation
 {
 private:
-    float mDuration;
-    int mTicksPerSecond;
-    std::vector<Bone> mBones;
-    std::map<std::string, BoneInfo> mBoneInfoMap;
-	AssimpNodeData mRootNode;
+    float mDuration{};
+    int mTicksPerSecond{};
+    std::vector<Bone> mBones{};
+    std::map<std::string, BoneInfo> mBoneInfoMap{};
+    AssimpNodeData mRootNode{};
 
 public:
 	
