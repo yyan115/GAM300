@@ -32,27 +32,11 @@ jobs:
         sdk-version: 22621
 
     - name: Setup vcpkg
-      run: |
-        Write-Host "Setting up vcpkg for dependency management..." -ForegroundColor Cyan
-        cd Project
-
-        # Clone vcpkg if not already present
-        if (!(Test-Path "vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git
-        }
-
-        # Bootstrap vcpkg if needed
-        if (!(Test-Path "vcpkg\vcpkg.exe")) {
-            Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
-            $bootstrapPath = Join-Path (Get-Location) "vcpkg\bootstrap-vcpkg.bat"
-            & cmd.exe /c $bootstrapPath
-        }
-
-        # Integrate with Visual Studio
-        $vcpkgPath = Join-Path (Get-Location) "vcpkg\vcpkg.exe"
-        & $vcpkgPath integrate install
-
-        Write-Host "vcpkg setup complete!" -ForegroundColor Green
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/Project/vcpkg'
+        vcpkgGitCommitId: '62efe42f53b1886a20cbeb22ee9a27736d20f149'
+        vcpkgJsonGlob: 'Project/vcpkg.json'
 
     - name: Verify Library Structure
       run: |
@@ -107,19 +91,19 @@ jobs:
       run: |
         Write-Host "Building GAM300.sln with configuration: ${{ matrix.configuration }}" -ForegroundColor Cyan
         cd Project
-        
-        # Build entire solution - MSBuild will handle dependencies
-        msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:minimal /p:WarningLevel=3
-        
+
+        # Build entire solution - vcpkg integration is automatic via manifest mode
+        msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:minimal /p:WarningLevel=3 /p:VcpkgEnableManifest=true
+
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Build failed for configuration ${{ matrix.configuration }}!"
-            
+
             # Show more detailed error info
             Write-Host "Re-running with detailed verbosity..." -ForegroundColor Yellow
-            msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:detailed
+            msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:detailed /p:VcpkgEnableManifest=true
             exit 1
         }
-        
+
         Write-Host "Build successful for ${{ matrix.configuration }}!" -ForegroundColor Green
     
     - name: List Build Directory Contents
