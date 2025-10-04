@@ -230,9 +230,6 @@ void InspectorPanel::OnImGuiRender() {
                             ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
                         }
                         ImGui::EndDisabled();
-
-                        
-                        
                         ImGui::Separator();
                     }
 
@@ -254,45 +251,21 @@ void InspectorPanel::OnImGuiRender() {
                         }
                     }
 
-                    // Draw ModelRenderComponent if it exists
-                    if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
-                        if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent")) {
-                            auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
-
-                            DrawOverrideToggleIfPresent<ModelRenderComponent>(ecsManager, displayEntity, "ModelRender");
-
-                            bool followPrefab = false;
-                            if constexpr (has_override_flag<ModelRenderComponent>::value) followPrefab = !m.overrideFromPrefab;
-
-                            ImGui::BeginDisabled(followPrefab);
-                            {
-                                DrawModelRenderComponent(displayEntity);
-                            }
-                            ImGui::EndDisabled();
-                        }
-                    }
-
-					// Layer dropdown
-					ImGui::Text("Layer");
-					ImGui::SameLine(80);
-					ImGui::SetNextItemWidth(-1);
-					const char* layers[] = { "Default", "UI", "Water", "Ignore Raycast", "PostProcessing" };
-					static int currentLayer = 0;
-					ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
-
-					ImGui::Separator();
-
-					// Draw Transform component if it exists
-					if (ecsManager.HasComponent<Transform>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-							DrawTransformComponent(displayEntity);
-						}
-					}
-
 					// Draw ModelRenderComponent if it exists
 					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
 						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent")) {
-							DrawModelRenderComponent(displayEntity);
+							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
+
+							DrawOverrideToggleIfPresent<ModelRenderComponent>(ecsManager, displayEntity, "ModelRender");
+
+							bool followPrefab = false;
+							if constexpr (has_override_flag<ModelRenderComponent>::value) followPrefab = !m.overrideFromPrefab;
+
+							ImGui::BeginDisabled(followPrefab);
+							{
+								DrawModelRenderComponent(displayEntity);
+							}
+							ImGui::EndDisabled();
 						}
 					}
 
