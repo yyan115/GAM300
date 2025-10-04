@@ -95,7 +95,7 @@ void DebugDrawSystem::CreateCubeGeometry()
     // Position attribute
     cubeGeometry.vao->LinkAttrib(*cubeGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
-    cubeGeometry.indexCount = indices.size();
+    cubeGeometry.indexCount = static_cast<unsigned int>(indices.size());
     cubeGeometry.vao->Unbind();
 }
 
@@ -146,7 +146,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
             glm::vec3 midpoint = glm::normalize(vertices[i1] + vertices[i2]) * scale;
             vertices.push_back(midpoint);
-            int index = vertices.size() - 1;
+            int index = static_cast<int>(vertices.size()) - 1;
             midpointCache[key] = index;
             return index;
             };
@@ -191,7 +191,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
     sphereGeometry.vao->LinkAttrib(*sphereGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
-    sphereGeometry.indexCount = indices.size();
+    sphereGeometry.indexCount = static_cast<unsigned int>(indices.size());
     sphereGeometry.vao->Unbind();
 }
 

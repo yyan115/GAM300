@@ -26,12 +26,12 @@ public:
 private:
     // Asset information structure
     struct AssetInfo {
-        std::string filePath;
-        std::string fileName;
-        std::string extension;
-        GUID_128 guid;
-        bool isDirectory;
-        std::filesystem::file_time_type lastWriteTime;
+        std::string filePath{};
+        std::string fileName{};
+        std::string extension{};
+        GUID_128 guid{};
+        bool isDirectory{};
+        std::filesystem::file_time_type lastWriteTime{};
 
         AssetInfo() = default;
         AssetInfo(const std::string& path, const GUID_128& g, bool isDir);
@@ -49,38 +49,38 @@ private:
     };
 
     // UI state
-    std::string currentDirectory;
-    std::string rootAssetDirectory;
-    std::vector<std::string> pathBreadcrumbs;
-    std::string searchQuery;
-    AssetType selectedAssetType;
-    std::vector<AssetInfo> currentAssets;
-    std::unordered_set<GUID_128> selectedAssets;
-    GUID_128 lastSelectedAsset;
+    std::string currentDirectory{};
+    std::string rootAssetDirectory{};
+    std::vector<std::string> pathBreadcrumbs{};
+    std::string searchQuery{};
+    AssetType selectedAssetType{};
+    std::vector<AssetInfo> currentAssets{};
+    std::unordered_set<GUID_128> selectedAssets{};
+    GUID_128 lastSelectedAsset{};
     bool isOpeningScene = false;
-    AssetInfo selectedScene;
-    std::string pendingNavigation;
+    AssetInfo selectedScene{};
+    std::string pendingNavigation{};
 
     // Hot-reloading state
     std::atomic<bool> refreshPending{ false };
-    std::unique_ptr<filewatch::FileWatch<std::string>> fileWatcher;
+    std::unique_ptr<filewatch::FileWatch<std::string>> fileWatcher{};
 
     // Rename state
     bool isRenaming{ false };
     char renameBuffer[256]{ 0 };
-    GUID_128 renamingAsset;
+    GUID_128 renamingAsset{};
 
     // Delete confirmation state
     bool showDeleteConfirmation{ false };
-    AssetInfo assetToDelete;
+    AssetInfo assetToDelete{};
 
     // Thumbnail cache for texture previews (GUID -> Texture ID)
     // Using uint32_t instead of GLuint to avoid OpenGL dependency in header
-    std::unordered_map<uint64_t, uint32_t> thumbnailCache;
+    std::unordered_map<uint64_t, uint32_t> thumbnailCache{};
     static constexpr int THUMBNAIL_SIZE = 96;
     
     // Directory tree state
-    std::unordered_set<std::string> expandedDirectories;
+    std::unordered_set<std::string> expandedDirectories{};
     bool needsTreeSync{ false };
 
     // UI methods

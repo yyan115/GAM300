@@ -4,9 +4,9 @@
 #include "../Utilities/GUID.hpp"
 #include <iostream>
 
-class ENGINE_API EntityGUIDRegistry {
+class EntityGUIDRegistry {
 public:
-	static EntityGUIDRegistry& GetInstance();
+	ENGINE_API static EntityGUIDRegistry& GetInstance();
 
 	void Register(Entity entityID, const GUID_128& guid) {
 		guidToEntityMap[guid] = entityID;
@@ -28,7 +28,7 @@ public:
 		}
 
 		std::cerr << "[EntityGUIDRegistry] ERROR: GUID not found in registry." << std::endl;
-		return -1; // or some invalid entity value
+		return static_cast<Entity>(-1); // or some invalid entity value
 	}
 
 	GUID_128 GetGUIDByEntity(Entity entityID) const {

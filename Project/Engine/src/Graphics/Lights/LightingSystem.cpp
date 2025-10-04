@@ -108,10 +108,10 @@ void LightingSystem::CollectLightData()
             if (light.enabled && !directionalLightData.hasDirectionalLight)
             {
                 directionalLightData.hasDirectionalLight = true;
-                directionalLightData.direction = light.direction;
-                directionalLightData.ambient = light.ambient;
-                directionalLightData.diffuse = light.diffuse;
-                directionalLightData.specular = light.specular;
+                directionalLightData.direction = light.direction.ConvertToGLM();
+                directionalLightData.ambient = light.ambient.ConvertToGLM();
+                directionalLightData.diffuse = light.diffuse.ConvertToGLM();
+                directionalLightData.specular = light.specular.ConvertToGLM();
             }
         }
 
@@ -132,9 +132,9 @@ void LightingSystem::CollectLightData()
                     }
 
                     pointLightData.positions.push_back(position);
-                    pointLightData.ambient.push_back(light.ambient);
-                    pointLightData.diffuse.push_back(light.diffuse);
-                    pointLightData.specular.push_back(light.specular);
+                    pointLightData.ambient.push_back(light.ambient.ConvertToGLM());
+                    pointLightData.diffuse.push_back(light.diffuse.ConvertToGLM());
+                    pointLightData.specular.push_back(light.specular.ConvertToGLM());
                     pointLightData.constant.push_back(light.constant);
                     pointLightData.linear.push_back(light.linear);
                     pointLightData.quadratic.push_back(light.quadratic);
@@ -169,10 +169,10 @@ void LightingSystem::CollectLightData()
                     }
 
                     spotLightData.positions.push_back(position);
-                    spotLightData.directions.push_back(light.direction);
-                    spotLightData.ambient.push_back(light.ambient);
-                    spotLightData.diffuse.push_back(light.diffuse);
-                    spotLightData.specular.push_back(light.specular);
+                    spotLightData.directions.push_back(light.direction.ConvertToGLM());
+                    spotLightData.ambient.push_back(light.ambient.ConvertToGLM());
+                    spotLightData.diffuse.push_back(light.diffuse.ConvertToGLM());
+                    spotLightData.specular.push_back(light.specular.ConvertToGLM());
                     spotLightData.constant.push_back(light.constant);
                     spotLightData.linear.push_back(light.linear);
                     spotLightData.quadratic.push_back(light.quadratic);

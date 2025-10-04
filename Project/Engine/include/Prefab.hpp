@@ -14,7 +14,7 @@ using EntityID = std::size_t;
 using ComponentID = uint8_t;
 using AssetID = unsigned;
 
-class ENGINE_API Prefab {
+class Prefab {
 public:
 	Prefab(PrefabID id, AssetID assetId);
 

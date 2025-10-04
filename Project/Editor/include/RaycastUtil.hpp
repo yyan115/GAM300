@@ -29,7 +29,7 @@ public:
     struct RaycastHit {
         Entity entity = INVALID_ENTITY;
         float distance = std::numeric_limits<float>::max();
-        glm::vec3 point;
+        glm::vec3 point{};
         bool hit = false;
     };
 

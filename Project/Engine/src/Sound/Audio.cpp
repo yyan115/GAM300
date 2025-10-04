@@ -16,20 +16,20 @@
 #include "Platform/AndroidPlatform.h"
 #endif
 
-std::string Audio::CompileToResource(const std::string& assetPath, bool forAndroid) {
-    if (!std::filesystem::exists(assetPath)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] File does not exist: ", assetPath, "\n");
+std::string Audio::CompileToResource(const std::string& assetPathParam, bool forAndroid) {
+    if (!std::filesystem::exists(assetPathParam)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] File does not exist: ", assetPathParam, "\n");
         return std::string{};
     }
 
-    if (std::filesystem::is_directory(assetPath)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Path is a directory, not a file: ", assetPath, "\n");
+    if (std::filesystem::is_directory(assetPathParam)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Path is a directory, not a file: ", assetPathParam, "\n");
         return std::string{};
     }
 
     // For audio files, we copy them directly since FMOD handles various formats natively
     // Unlike fonts which compile to .font files, audio keeps original extension
-    std::filesystem::path p(assetPath);
+    std::filesystem::path p(assetPathParam);
     std::string outPath{};
     
     if (!forAndroid) {
@@ -38,7 +38,7 @@ std::string Audio::CompileToResource(const std::string& assetPath, bool forAndro
     }
     else {
         // For Android, copy to android resources path
-        std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+        std::string assetPathAndroid = assetPathParam.substr(assetPathParam.find("Resources"));
         outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
     }
 
@@ -51,7 +51,7 @@ std::string Audio::CompileToResource(const std::string& assetPath, bool forAndro
 
         try {
             // Copy the audio file to the Android assets location
-            std::filesystem::copy_file(assetPath, outPath, std::filesystem::copy_options::overwrite_existing);
+            std::filesystem::copy_file(assetPathParam, outPath, std::filesystem::copy_options::overwrite_existing);
         }
         catch (const std::filesystem::filesystem_error& e) {
             ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Failed to copy audio file for Android: ", e.what(), "\n");
@@ -59,13 +59,13 @@ std::string Audio::CompileToResource(const std::string& assetPath, bool forAndro
         }
     }
 
-    ENGINE_PRINT("[Audio] Successfully compiled audio resource: ", assetPath, " to ", outPath, "\n");
+    ENGINE_PRINT("[Audio] Successfully compiled audio resource: ", assetPathParam, " to ", outPath, "\n");
     return outPath;
 }
 
-bool Audio::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
+bool Audio::LoadResource(const std::string& resourcePath, const std::string& assetPathParam) {
     // Store paths
-    this->assetPath = assetPath.empty() ? resourcePath : assetPath;
+    this->assetPath = assetPathParam.empty() ? resourcePath : assetPathParam;
 
     // Clean up existing sound if any
     if (sound) {
@@ -89,7 +89,7 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
     }
 
     // Create sound from memory (FMOD handles it)
-    sound = audioSys.CreateSoundFromMemory(audioData.data(), audioData.size(), this->assetPath);
+    sound = audioSys.CreateSoundFromMemory(audioData.data(), static_cast<unsigned int>(audioData.size()), this->assetPath);
     if (!sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Failed to create FMOD sound for: ", resourcePath, "\n");
         return false;
@@ -99,7 +99,7 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
     return true;
 }
 
-bool Audio::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
+bool Audio::ReloadResource(const std::string& resourcePath, const std::string& assetPathParam) {
     // Release existing sound if any
     if (sound && !this->assetPath.empty()) {
         AudioManager::GetInstance().ReleaseSound(sound, this->assetPath);
@@ -107,10 +107,12 @@ bool Audio::ReloadResource(const std::string& resourcePath, const std::string& a
     }
 
     // Load new resource
-    return LoadResource(resourcePath, assetPath);
+    return LoadResource(resourcePath, assetPathParam);
 }
 
-std::shared_ptr<AssetMeta> Audio::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+std::shared_ptr<AssetMeta> Audio::ExtendMetaFile(const std::string& assetPathParam, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+    (void)assetPathParam; // Suppress unused parameter warning
+    (void)forAndroid; // Suppress unused parameter warning
     // Audio files don't need extended metadata beyond the base AssetMeta
     // Could potentially add audio-specific metadata like:
     // - Duration

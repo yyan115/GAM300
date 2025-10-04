@@ -11,6 +11,8 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
+#include <Sound/AudioComponent.hpp>
+#include <Graphics/Lights/LightComponent.hpp>
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -150,6 +152,32 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ParentComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ParentComponent", v, alloc);
+        }
+
+        if (ecs.HasComponent<AudioComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioComponent", v, alloc);
+        }
+        if (ecs.HasComponent<LightComponent>(entity)) {
+            auto& c = ecs.GetComponent<LightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("LightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<DirectionalLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("DirectionalLightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<PointLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<PointLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("PointLightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<SpotLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("SpotLightComponent", v, alloc);
         }
 
         entObj.AddMember("components", compsObj, alloc);
@@ -426,7 +454,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
             if (mv.IsObject()) {
                 if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    const auto& arr = mv["data"];
                     ModelRenderComponent modelComp{};
                     GUID_string modelGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
@@ -446,7 +473,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
             if (mv.IsObject()) {
                 if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    const auto& arr = mv["data"];
                     SpriteRenderComponent spriteComp{};
                     GUID_string textureGUIDStr = mv["data"][0].GetString();
                     GUID_string shaderGUIDStr = mv["data"][1].GetString();
@@ -517,6 +543,98 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                 particleComp.velocityRandomness = d[12]["data"].GetFloat();
                 readVec3Generic(d[13], particleComp.initialVelocity);
                 ecs.AddComponent<ParticleComponent>(newEnt, particleComp);
+            }
+        }
+
+        // DirectionalLightComponent
+        if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["DirectionalLightComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                DirectionalLightComponent dirLightComp{};
+                const auto& d = tv["data"];
+                readVec3Generic(d[0], dirLightComp.color);
+                dirLightComp.intensity = d[1]["data"].GetFloat();
+                dirLightComp.enabled = d[2]["data"].GetBool();
+                readVec3Generic(d[3], dirLightComp.direction);
+                readVec3Generic(d[4], dirLightComp.ambient);
+                readVec3Generic(d[5], dirLightComp.diffuse);
+                readVec3Generic(d[6], dirLightComp.specular);
+                ecs.AddComponent<DirectionalLightComponent>(newEnt, dirLightComp);
+            }
+        }
+
+        // SpotLightComponent
+        if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["SpotLightComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                SpotLightComponent spotlightComp{};
+                const auto& d = tv["data"];
+                readVec3Generic(d[0], spotlightComp.color);
+                spotlightComp.intensity = d[1]["data"].GetFloat();
+                spotlightComp.enabled = d[2]["data"].GetBool();
+                readVec3Generic(d[3], spotlightComp.direction);
+                spotlightComp.cutOff = d[4]["data"].GetFloat();
+                spotlightComp.constant = d[5]["data"].GetFloat();
+                spotlightComp.linear = d[6]["data"].GetFloat();
+                spotlightComp.quadratic = d[7]["data"].GetFloat();
+                readVec3Generic(d[8], spotlightComp.ambient);
+                readVec3Generic(d[9], spotlightComp.diffuse);
+                readVec3Generic(d[10], spotlightComp.specular);
+                ecs.AddComponent<SpotLightComponent>(newEnt, spotlightComp);
+            }
+        }
+
+        // PointLightComponent
+        if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["PointLightComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                PointLightComponent pointLightComp{};
+                const auto& d = tv["data"];
+                readVec3Generic(d[0], pointLightComp.color);
+                pointLightComp.intensity = d[1]["data"].GetFloat();
+                pointLightComp.enabled = d[2]["data"].GetBool();
+                pointLightComp.constant = d[3]["data"].GetFloat();
+                pointLightComp.linear = d[4]["data"].GetFloat();
+                pointLightComp.quadratic = d[5]["data"].GetFloat();
+                readVec3Generic(d[6], pointLightComp.ambient);
+                readVec3Generic(d[7], pointLightComp.diffuse);
+                readVec3Generic(d[8], pointLightComp.specular);
+                ecs.AddComponent<PointLightComponent>(newEnt, pointLightComp);
+            }
+        }
+
+        // AudioComponent
+        if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioComponent"];
+
+            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+            if (tv.HasMember("data") && tv["data"].IsArray()) {
+                AudioComponent audioComp{};
+                const auto& d = tv["data"];
+                GUID_string guidStr = d[0].GetString();
+                audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                audioComp.SetClip(d[1]["data"].GetString());
+                audioComp.SetVolume(d[2]["data"].GetFloat());
+                audioComp.SetPitch(d[3]["data"].GetFloat());
+                audioComp.SetLoop(d[4]["data"].GetBool());
+                audioComp.PlayOnAwake = d[5]["data"].GetBool();
+                audioComp.SetMute(d[6]["data"].GetBool());
+                audioComp.Priority = d[7]["data"].GetInt();
+                audioComp.SetSpatialize(d[8]["data"].GetBool());
+                audioComp.MinDistance = d[9]["data"].GetFloat();
+                audioComp.MaxDistance = d[10]["data"].GetFloat();
+                audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
+                audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
+                audioComp.IsPlaying = d[13]["data"].GetBool();
+                audioComp.IsPaused = d[14]["data"].GetBool();
+                readVec3Generic(d[15], audioComp.Position);
+                ecs.AddComponent<AudioComponent>(newEnt, audioComp);
             }
         }
 

@@ -5,14 +5,15 @@
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
 
-class ENGINE_API Texture : public IAsset {
+class Texture : public IAsset {
 public:
+
 	GLuint ID{};
-	std::string type;
+	//std::string type;
 	GLint unit;
 	GLenum target;
 
-	Texture();
+	ENGINE_API Texture();
 	Texture(const char* texType, GLint slot);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
@@ -23,13 +24,21 @@ public:
 	GLenum GetFormatFromExtension(const std::string& filePath);
 
 	// Assigns a texture unit to a texture
-	void texUnit(Shader& shader, const char* uniform, GLuint unit);
+	void texUnit(Shader& shader, const char* uniform, GLuint tUnit);
 	// Binds a texture
 	void Bind(GLint runtimeUnit);
 	// Unbinds a texture
 	void Unbind(GLint runtimeUnit);
 	// Deletes a texture
 	void Delete();
+
+	std::string GetType();
+
+private:
+	//GLuint ID{};
+	std::string type;
+	//GLint unit;
+	//GLenum target;
 };
 
 struct TextureInfo {

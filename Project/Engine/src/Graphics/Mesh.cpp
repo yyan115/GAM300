@@ -181,7 +181,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 			if (!textures[i]) continue;
 
 			std::string num;
-			std::string type = textures[i]->type;
+			std::string type = textures[i]->GetType();
 
 			if (type == "diffuse") {
 				num = std::to_string(numDiffuse++);

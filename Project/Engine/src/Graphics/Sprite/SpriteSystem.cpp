@@ -171,7 +171,10 @@ void SpriteSystem::Shutdown()
 void SpriteSystem::InitializeSpriteQuad()
 {
     if (spriteQuadInitialized) return;
-    ENGINE_LOG_INFO("InitializeSpriteQuad");
+    ENGINE_LOG_INFO("[SpriteSystem] InitializeSpriteQuad");
+#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Thread ID: %ld", gettid());
+#endif
 
     // Define a unit quad (0,0 to 1,1) with texture coordinates - only 4 vertices
     float vertices[] = {

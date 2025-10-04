@@ -84,6 +84,7 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromTransform(const Matrix4x4& transfor
 }
 
 RaycastUtil::AABB RaycastUtil::CreateAABBFromSprite(const glm::vec3& position, const glm::vec3& scale, bool is3D) {
+	(void)is3D;
     glm::vec3 halfSize = scale * 0.5f;
 
     // For both 2D and 3D sprites, position is now the center (after rendering fix)
@@ -273,7 +274,7 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
 
         // Check if entity has Transform component
         if (ecsManager.HasComponent<Transform>(entity)) {
-            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            //auto& transform = ecsManager.GetComponent<Transform>(entity);
 
             // Convert column-major float array (ImGuizmo/GLM format) to row-major Matrix4x4
             // ImGuizmo provides column-major, Matrix4x4 is row-major

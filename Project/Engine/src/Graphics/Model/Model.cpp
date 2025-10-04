@@ -466,10 +466,11 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
         material->SetTexture(static_cast<Material::TextureType>(type), std::move(textureInfo));
     }
+	(void)typeName;
 }
 
-std::string Model::CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
-    std::filesystem::path p(modelPath);
+std::string Model::CompileToMesh(const std::string& modelPathParam, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+    std::filesystem::path p(modelPathParam);
     std::string meshPath{};
     if (!forAndroid) {
         meshPath = (p.parent_path() / p.stem()).generic_string() + ".mesh";
@@ -705,21 +706,21 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                     // Assign the texture type
                     switch (texType) {
                     case Material::TextureType::DIFFUSE:
-                        texture->type = "diffuse";
+                        texture->GetType() = "diffuse";
                         break;
                     case Material::TextureType::SPECULAR:
-                        texture->type = "specular";
+                        texture->GetType() = "specular";
                         break;
                     case Material::TextureType::NORMAL:
-                        texture->type = "normal";
+                        texture->GetType() = "normal";
                         break;
                     case Material::TextureType::EMISSIVE:
-                        texture->type = "emissive";
+                        texture->GetType() = "emissive";
                         break;
                         // Add other cases as needed
                     default:
                         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-                        texture->type = "unknown";
+                        texture->GetType() = "unknown";
                         break;
                     }
                 }

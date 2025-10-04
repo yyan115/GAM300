@@ -5,7 +5,7 @@
 
 // AudioSystem: ECS system that manages AudioComponent updates
 // Handles per-frame updates for all audio components and spatial audio synchronization
-class ENGINE_API AudioSystem : public System {
+class AudioSystem : public System {
 public:
     AudioSystem() = default;
     ~AudioSystem() = default;

@@ -53,6 +53,11 @@ bool ParticleSystem::InitialiseParticles()
 {
     if (particleSystemInitialised) return true;
 
+    ENGINE_LOG_INFO("[ParticleSystem] InitialiseParticles");
+#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Thread ID: %ld", gettid());
+#endif
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     for (const auto& entity : entities)
@@ -61,9 +66,11 @@ bool ParticleSystem::InitialiseParticles()
 
         // Get the texture and shader first.
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(particleComp.textureGUID);
+        ENGINE_LOG_INFO("[ParticleSystem] Texture Path: " + texturePath);
         particleComp.texturePath = texturePath;
         particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
         std::string shaderPath = ResourceManager::GetPlatformShaderPath("particle");
+        ENGINE_LOG_INFO("[ParticleSystem] Shader Path: " + shaderPath);
         particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 
         // Setup VAO
@@ -201,12 +208,34 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
 void ParticleSystem::Update()
 {
 #ifdef ANDROID
+    // Ensure the EGL context is current
+    if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] Failed to make EGL context current in Update()");
+        return;
+    }
+
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLContext context = eglGetCurrentContext();
+    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+
+    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL CONTEXT NOT CURRENT - skipping draw!");
+        return;
+    }
+
+    // Additional check: verify the surface is still valid
+    EGLint surfaceWidth, surfaceHeight;
+    if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
+        !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL surface is invalid - skipping draw!");
+        return;
+    }
     InitialiseParticles(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
 #endif
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-    float dt = TimeManager::GetDeltaTime();
+    float dt = static_cast<float>(TimeManager::GetDeltaTime());
 
     for (const auto& entity : entities)
     {

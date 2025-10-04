@@ -4,6 +4,27 @@
 #include "Sound/Audio.hpp"
 #include "Logging.hpp"
 
+#pragma region Reflection
+REFL_REGISTER_START(AudioComponent)
+    REFL_REGISTER_PROPERTY(audioGUID)
+    REFL_REGISTER_PROPERTY(Clip)
+    REFL_REGISTER_PROPERTY(Volume)
+    REFL_REGISTER_PROPERTY(Pitch)
+    REFL_REGISTER_PROPERTY(Loop)
+    REFL_REGISTER_PROPERTY(PlayOnAwake)
+    REFL_REGISTER_PROPERTY(Mute)
+    REFL_REGISTER_PROPERTY(Priority)
+    REFL_REGISTER_PROPERTY(Spatialize)
+    REFL_REGISTER_PROPERTY(MinDistance)
+    REFL_REGISTER_PROPERTY(MaxDistance)
+    REFL_REGISTER_PROPERTY(SpatialBlend)
+    REFL_REGISTER_PROPERTY(OutputAudioMixerGroup)
+    REFL_REGISTER_PROPERTY(IsPlaying)
+    REFL_REGISTER_PROPERTY(IsPaused)
+    REFL_REGISTER_PROPERTY(Position)
+REFL_REGISTER_END
+#pragma endregion
+
 AudioComponent::AudioComponent() {}
 
 AudioComponent::~AudioComponent() {
@@ -25,6 +46,7 @@ void AudioComponent::Play() {
 }
 
 void AudioComponent::PlayDelayed(float delay) {
+    (void)delay;
     // TODO: Implement delayed playback (requires timing system)
     ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayDelayed not yet implemented\n");
     Play();
@@ -54,6 +76,7 @@ void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
 }
 
 void AudioComponent::PlayScheduled(double time) {
+    (void)time;
     // TODO: Implement scheduled playback
     ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayScheduled not yet implemented\n");
     Play();

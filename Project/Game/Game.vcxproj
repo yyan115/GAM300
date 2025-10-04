@@ -159,6 +159,9 @@
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

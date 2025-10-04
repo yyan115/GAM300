@@ -18,11 +18,26 @@
 #include "Sound/Audio.hpp"
 #include <future>
 
-class ENGINE_API AssetManager {
-public:
-	static AssetManager& GetInstance();
+#ifdef _WIN32
+#ifdef ENGINE_EXPORTS
+#define ENGINE_API __declspec(dllexport)
+#else
+#define ENGINE_API __declspec(dllimport)
+#endif
+#else
+// Linux/GCC
+#ifdef ENGINE_EXPORTS
+#define ENGINE_API __attribute__((visibility("default")))
+#else
+#define ENGINE_API
+#endif
+#endif
 
-	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
+class AssetManager {
+public:
+	ENGINE_API static AssetManager& GetInstance();
+
+	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
 	void AddAssetMetaToMap(const std::string& assetPath);
 
 	template <typename T>
@@ -65,13 +80,13 @@ public:
 
 	bool IsAssetCompiled(GUID_128 guid);
 	bool IsAssetCompiled(const std::string& assetPath);
-	void UnloadAsset(const std::string& assetPath);
+	void ENGINE_API UnloadAsset(const std::string& assetPath);
 
 	//void UnloadAllAssets() {
 	//	assetMetaMap.clear();
 	//}
 
-	GUID_128 GetGUID128FromAssetMeta(const std::string& assetPath);
+	GUID_128 ENGINE_API GetGUID128FromAssetMeta(const std::string& assetPath);
 	
 	template <typename T>
 	std::shared_ptr<T> LoadByGUID(const GUID_128& guid)
@@ -88,26 +103,26 @@ public:
 		return ResourceManager::GetInstance().GetResourceFromMeta<T>(guid, meta->compiledFilePath, meta->sourceFilePath);
 	}
 
-	std::shared_ptr<AssetMeta> GetAssetMeta(GUID_128 guid);
+	std::shared_ptr<AssetMeta> ENGINE_API GetAssetMeta(GUID_128 guid);
 
 	void InitializeSupportedExtensions();
 	std::unordered_set<std::string>& GetSupportedExtensions();
 	const std::unordered_set<std::string>& GetShaderExtensions() const;
-	bool IsAssetExtensionSupported(const std::string& extension) const;
-	bool IsExtensionMetaFile(const std::string& extension) const;
+	bool ENGINE_API IsAssetExtensionSupported(const std::string& extension) const;
+	bool ENGINE_API IsExtensionMetaFile(const std::string& extension) const;
 	bool IsExtensionShaderVertFrag(const std::string& extension) const;
-	bool IsExtensionTexture(const std::string& extension) const;
-	bool IsExtensionMaterial(const std::string& extension) const;
+	bool ENGINE_API IsExtensionTexture(const std::string& extension) const;
+	bool ENGINE_API IsExtensionMaterial(const std::string& extension) const;
 
-	bool HandleMetaFileDeletion(const std::string& metaFilePath);
-	bool HandleResourceFileDeletion(const std::string& resourcePath);
+	bool ENGINE_API HandleMetaFileDeletion(const std::string& metaFilePath);
+	bool ENGINE_API HandleResourceFileDeletion(const std::string& resourcePath);
 
-	std::string GetAssetPathFromGUID(const GUID_128 guid);
-	std::vector<std::string> CompileAllAssetsForAndroid();
+	std::string ENGINE_API GetAssetPathFromGUID(const GUID_128 guid);
+	std::vector<std::string> ENGINE_API CompileAllAssetsForAndroid();
 	std::vector<std::string> CompileAllAssetsForDesktop();
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);
-	std::string GetRootAssetDirectory() const;
+	std::string ENGINE_API GetRootAssetDirectory() const;
 
 	enum class Event {
 		added,
@@ -117,8 +132,8 @@ public:
 		renamed_new
 	};
 
-	void AddToEventQueue(AssetManager::Event event, const std::filesystem::path& assetPath);
-	void RunEventQueue();
+	void ENGINE_API AddToEventQueue(AssetManager::Event event, const std::filesystem::path& assetPath);
+	void ENGINE_API RunEventQueue();
 
 	const std::filesystem::path& GetAndroidResourcesPath();
 	std::string ExtractRelativeAndroidPath(const std::string& fullAndroidPath);
@@ -132,7 +147,7 @@ public:
 		int numCompiledAssets = 0;
 	} androidCompilationStatus;
 
-	int GetAssetMetaMapSize();
+	int ENGINE_API GetAssetMetaMapSize();
 
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;

@@ -51,14 +51,14 @@ public:
 };
 #endif
 
-class ENGINE_API Model : public IAsset {
+class Model : public IAsset {
 public:
 	std::vector<Mesh> meshes;
 	std::string directory;
     std::string modelName;
     std::string modelPath;
 
-	Model();
+	ENGINE_API Model();
 	virtual ~Model() = default;
 	//Model(const std::string& filePath);
     std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

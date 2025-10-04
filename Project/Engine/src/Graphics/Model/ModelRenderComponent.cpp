@@ -3,7 +3,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(ModelRenderComponent)
-	REFL_REGISTER_PROPERTY(overrideFromPrefab)
+	//REFL_REGISTER_PROPERTY(overrideFromPrefab)
 	REFL_REGISTER_PROPERTY(modelGUID)
 	REFL_REGISTER_PROPERTY(shaderGUID)
 	REFL_REGISTER_PROPERTY(materialGUID)
