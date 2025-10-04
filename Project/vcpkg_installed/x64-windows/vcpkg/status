@@ -17,7 +17,7 @@ Version: 5.4.0
 Depends: vcpkg-cmake, vcpkg-cmake-config
 Architecture: x64-windows
 Multi-Arch: same
-Abi: c60cea679f6a6be1f68048709c1a697e9ffdfa706c7910356c94893dc46097a4
+Abi: 9517da169aa6a012001faa0358ba80ef9230b945d1395214b67e2a3edc499473
 Description: A multi core friendly rigid body physics and collision detection library suitable for games and VR applications
 Status: install ok installed
 

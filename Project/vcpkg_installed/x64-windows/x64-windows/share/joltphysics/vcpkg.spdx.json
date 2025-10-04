@@ -3,13 +3,13 @@
   "spdxVersion": "SPDX-2.2",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "documentNamespace": "https://spdx.org/spdxdocs/joltphysics-x64-windows-5.4.0-852d5680-1e28-4e7e-adfa-c2bec594dc4b",
-  "name": "joltphysics:x64-windows@5.4.0 c60cea679f6a6be1f68048709c1a697e9ffdfa706c7910356c94893dc46097a4",
+  "documentNamespace": "https://spdx.org/spdxdocs/joltphysics-x64-windows-5.4.0-548c19ca-472f-4ae6-8819-e954d31e7eb6",
+  "name": "joltphysics:x64-windows@5.4.0 9517da169aa6a012001faa0358ba80ef9230b945d1395214b67e2a3edc499473",
   "creationInfo": {
     "creators": [
       "Tool: vcpkg-2025-09-03-4580816534ed8fd9634ac83d46471440edd82dfe"
     ],
-    "created": "2025-10-04T09:49:35Z"
+    "created": "2025-10-04T10:33:32Z"
   },
   "relationships": [
     {
@@ -1629,7 +1629,7 @@
     {
       "name": "joltphysics:x64-windows",
       "SPDXID": "SPDXRef-binary",
-      "versionInfo": "c60cea679f6a6be1f68048709c1a697e9ffdfa706c7910356c94893dc46097a4",
+      "versionInfo": "9517da169aa6a012001faa0358ba80ef9230b945d1395214b67e2a3edc499473",
       "downloadLocation": "NONE",
       "licenseConcluded": "MIT",
       "licenseDeclared": "NOASSERTION",
@@ -1658,7 +1658,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "350dd46881fef325091d4f26377dcc8604112efaefdf543970a214438c6109b2"
+          "checksumValue": "1c0993f07142793108c6cd0ba36476310209fb3e54a447863b6dac1accf3552f"
         }
       ],
       "licenseConcluded": "NOASSERTION",
@@ -1694,7 +1694,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "0e304ac2d36806591223882f63c5cce2b6b19b725f5cbdd7f23a0c7fd5223bf9"
+          "checksumValue": "ae31182e6921dc6a296ffe4e3655f053a621cf3552bdcd2743dce346be55311a"
         }
       ],
       "licenseConcluded": "NOASSERTION",
@@ -5414,7 +5414,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "988d73963c0448b9b78ac34fd4b274024d6ce5e8d6a4a3004c05894a36db73cd"
+          "checksumValue": "c66c2aa206076f402a4301d8f47074467da88bf90d961032b7354255a3dbab28"
         }
       ],
       "licenseConcluded": "NOASSERTION",
