@@ -823,7 +823,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                 }
             }
         } catch (const std::exception& e) {
-            // Silently handle any errors in light visualization
+            ENGINE_PRINT("[ScenePanel] Failed to delete entity: ", e.what(), "\n");
         }
     }
 
@@ -1406,6 +1406,6 @@ void ScenePanel::DrawColliderGizmos() {
         }
     }
     catch (const std::exception& e) {
-        // Silently fail - entity might have been deleted
+        ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
     }
 }

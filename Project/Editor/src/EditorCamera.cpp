@@ -56,7 +56,7 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
                                float mouseDeltaX, float mouseDeltaY, float scrollDelta, bool is2DMode) {
 
     if (!isWindowHovered) return;
-
+	(void)deltaTime; // Unused for now, but could be used for smoothing
     // Only allow camera rotation in 3D mode
     if (isAltPressed && isLeftMousePressed && !is2DMode) {
         Yaw -= mouseDeltaX * OrbitSensitivity;
