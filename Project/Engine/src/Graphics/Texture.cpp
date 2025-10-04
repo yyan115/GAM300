@@ -174,8 +174,8 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.ktx";
 		// Ensure parent directories exist
-		std::filesystem::path p(outPath);
-		std::filesystem::create_directories(p.parent_path());
+		std::filesystem::path newPath(outPath);
+		std::filesystem::create_directories(newPath.parent_path());
 		gli::save(tex, outPath);
 		
 		// TEST CONVERT BACK TO PNG SEE IF IT'S CORRECT.
@@ -401,12 +401,12 @@ GLenum Texture::GetFormatFromExtension(const std::string& filepath) {
 	}
 }
 
-void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
+void Texture::texUnit(Shader& shader, const char* uniform, GLuint tUnit)
 {
 	// Shader needs to be activated before changing the value of a uniform
 	shader.Activate();
 	// Sets the value of the uniform
-	shader.setInt(uniform, unit);
+	shader.setInt(uniform, tUnit);
 }
 
 void Texture::Bind(GLint runtimeUnit)
