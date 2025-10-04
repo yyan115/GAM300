@@ -158,7 +158,7 @@ void PhysicsSystem::Update(float dt) {
 	{
 		auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
 		auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
-		auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
+		//auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
 
 
 	}
@@ -264,7 +264,7 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 
     for (auto &e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        //auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         JPH::RVec3 pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);

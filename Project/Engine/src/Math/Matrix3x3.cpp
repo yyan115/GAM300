@@ -33,6 +33,7 @@ REFL_REGISTER_END;
 static inline void assert_rc(int r, int c) 
 {
     assert(r >= 0 && r < 3 && c >= 0 && c < 3);
+    (void)c;
 }
 
 // ============================

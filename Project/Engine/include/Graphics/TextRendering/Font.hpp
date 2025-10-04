@@ -17,7 +17,7 @@ struct Character {
 	unsigned int advance;
 };
 
-class ENGINE_API Font : public IAsset {
+class Font : public IAsset {
 public:
 	Font(unsigned int fontSize = 48);
 	~Font();

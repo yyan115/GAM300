@@ -6,6 +6,7 @@
 #include "ECS/ECSRegistry.hpp"
 
 void AudioSystem::Update(float deltaTime) {
+	(void)deltaTime; // Unused for now
     // First, update the AudioManager's internal FMOD system
     AudioManager::GetInstance().Update();
     
