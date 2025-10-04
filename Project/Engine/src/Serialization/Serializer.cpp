@@ -11,6 +11,8 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
+#include <Sound/AudioComponent.hpp>
+#include <Graphics/Lights/LightComponent.hpp>
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -150,6 +152,32 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ParentComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ParentComponent", v, alloc);
+        }
+
+        if (ecs.HasComponent<AudioComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioComponent", v, alloc);
+        }
+        if (ecs.HasComponent<LightComponent>(entity)) {
+            auto& c = ecs.GetComponent<LightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("LightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<DirectionalLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("DirectionalLightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<PointLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<PointLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("PointLightComponent", v, alloc);
+        }
+        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+            auto& c = ecs.GetComponent<SpotLightComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("SpotLightComponent", v, alloc);
         }
 
         entObj.AddMember("components", compsObj, alloc);
