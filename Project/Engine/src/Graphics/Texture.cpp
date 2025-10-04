@@ -421,3 +421,7 @@ void Texture::Delete()
 {
 	glDeleteTextures(1, &ID);
 }
+
+std::string Texture::GetType() {
+	return type;
+}

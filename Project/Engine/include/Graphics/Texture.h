@@ -7,8 +7,9 @@
 
 class ENGINE_API Texture : public IAsset {
 public:
+
 	GLuint ID{};
-	std::string type;
+	//std::string type;
 	GLint unit;
 	GLenum target;
 
@@ -30,6 +31,14 @@ public:
 	void Unbind(GLint runtimeUnit);
 	// Deletes a texture
 	void Delete();
+
+	std::string GetType();
+
+private:
+	//GLuint ID{};
+	std::string type;
+	//GLint unit;
+	//GLenum target;
 };
 
 struct TextureInfo {

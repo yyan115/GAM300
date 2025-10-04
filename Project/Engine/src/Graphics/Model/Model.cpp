@@ -705,21 +705,21 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                     // Assign the texture type
                     switch (texType) {
                     case Material::TextureType::DIFFUSE:
-                        texture->type = "diffuse";
+                        texture->GetType() = "diffuse";
                         break;
                     case Material::TextureType::SPECULAR:
-                        texture->type = "specular";
+                        texture->GetType() = "specular";
                         break;
                     case Material::TextureType::NORMAL:
-                        texture->type = "normal";
+                        texture->GetType() = "normal";
                         break;
                     case Material::TextureType::EMISSIVE:
-                        texture->type = "emissive";
+                        texture->GetType() = "emissive";
                         break;
                         // Add other cases as needed
                     default:
                         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-                        texture->type = "unknown";
+                        texture->GetType() = "unknown";
                         break;
                     }
                 }
