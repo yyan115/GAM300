@@ -18,6 +18,7 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
+#include "PrefabLinkComponent.hpp"
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -63,6 +64,10 @@ static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const 
         ImGui::SameLine();
         ImGui::TextDisabled("(Instance)");
     }
+}
+
+static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
+	return ecs.HasComponent<PrefabLinkComponent>(e);
 }
 
 
@@ -199,73 +204,99 @@ void InspectorPanel::OnImGuiRender() {
 					}
 					ImGui::Separator();
 
-                    // Draw NameComponent if it exists
-                    if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
-                        auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
+					// --- Name component ---
+					if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
+						auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
+						const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
 
-                        DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Name");
+						// Only instances get the toggle
+						if (isInstance) {
+							// your helper already checks has_override_flag
+							DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Override From Prefab (Instance)");
+						}
 
-                        bool followPrefab = false;
-                        if constexpr (has_override_flag<NameComponent>::value) followPrefab = !nc.overrideFromPrefab;
+						bool followPrefab = false;
+						if (isInstance) {
+							if constexpr (has_override_flag<NameComponent>::value)
+								followPrefab = !nc.overrideFromPrefab;
+						}
 
-                        ImGui::BeginDisabled(followPrefab);
-                        {
-                            DrawNameComponent(displayEntity);
-                            ImGui::Spacing();
+						ImGui::BeginDisabled(followPrefab);
+						{
+							char buf[128] = {};
+							std::snprintf(buf, sizeof(buf), "%s", nc.name.c_str());
+							if (ImGui::InputText("Name", buf, sizeof(buf))) nc.name = buf;
+						}
+						ImGui::EndDisabled();
 
-                            // Tag dropdown
-                            ImGui::Text("Tag");
-                            ImGui::SameLine(80);
-                            ImGui::SetNextItemWidth(-1);
-                            const char* tags[] = { "Untagged", "Player", "Enemy", "UI", "Camera", "Light" };
-                            static int currentTag = 0;
-                            ImGui::Combo("##Tag", &currentTag, tags, IM_ARRAYSIZE(tags));
+						ImGui::Separator();
+					}
 
-                            // Layer dropdown
-                            ImGui::Text("Layer");
-                            ImGui::SameLine(80);
-                            ImGui::SetNextItemWidth(-1);
-                            const char* layers[] = { "Default", "UI", "Water", "Ignore Raycast", "PostProcessing" };
-                            static int currentLayer = 0;
-                            ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
-                        }
-                        ImGui::EndDisabled();
-                        ImGui::Separator();
-                    }
+					// --- Transform component ---
+					if (ecsManager.HasComponent<Transform>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
+							auto& t = ecsManager.GetComponent<Transform>(displayEntity);
+							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
 
-                    // Draw Transform component if it exists
-                    if (ecsManager.HasComponent<Transform>(displayEntity)) {
-                        if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-                            auto& t = ecsManager.GetComponent<Transform>(displayEntity);
-
-                            DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Transform");
-
-                            bool followPrefab = false;
-                            if constexpr (has_override_flag<Transform>::value) followPrefab = !t.overrideFromPrefab;
-
-                            ImGui::BeginDisabled(followPrefab);
-                            {
-                                DrawTransformComponent(displayEntity);
-                            }
-                            ImGui::EndDisabled();
-                        }
-                    }
-
-					// Draw ModelRenderComponent if it exists
-					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent")) {
-							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
-
-							DrawOverrideToggleIfPresent<ModelRenderComponent>(ecsManager, displayEntity, "ModelRender");
+							// Only instances get the toggle
+							if (isInstance) {
+								DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Override From Prefab (Instance)");
+							}
 
 							bool followPrefab = false;
-							if constexpr (has_override_flag<ModelRenderComponent>::value) followPrefab = !m.overrideFromPrefab;
+							if (isInstance) {
+								if constexpr (has_override_flag<Transform>::value)
+									followPrefab = !t.overrideFromPrefab;
+							}
+
+							ImGui::BeginDisabled(followPrefab);
+							ImGui::DragFloat3("Position", &t.localPosition.x, 0.01f);
+							ImGui::DragFloat3("Rotation", &t.localRotation.x, 0.5f);
+							ImGui::DragFloat3("Scale", &t.localScale.x, 0.01f);
+							t.isDirty = true;
+							ImGui::EndDisabled();
+
+							ImGui::TreePop();
+							ImGui::Separator();
+						}
+					}
+
+					// --- Model Renderer ---
+					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent",
+							ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
+							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
+
+							// Only prefab *instances* get the override toggle
+							if (isInstance) {
+								DrawOverrideToggleIfPresent<ModelRenderComponent>(
+									ecsManager, displayEntity, "Override From Prefab (Instance)");
+							}
+
+							bool followPrefab = false;
+							if (isInstance) {
+								if constexpr (has_override_flag<ModelRenderComponent>::value) {
+									followPrefab = !m.overrideFromPrefab;   // disabled when following prefab
+								}
+							}
 
 							ImGui::BeginDisabled(followPrefab);
 							{
-								DrawModelRenderComponent(displayEntity);
+								// --- your existing UI for ModelRenderComponent goes here ---
+								// Examples (replace with your real fields/controls):
+								ImGui::TextUnformatted("Model / Shader");
+								ImGui::Text("Model GUID:  %s", (m.modelGUID.high || m.modelGUID.low) ? "set" : "empty");
+								ImGui::Text("Shader GUID: %s", (m.shaderGUID.high || m.shaderGUID.low) ? "set" : "empty");
+
+								// If you have drag-drop targets / pickers for model & shader, keep them here.
+								// They’ll auto-disable when followPrefab == true.
 							}
 							ImGui::EndDisabled();
+
+							ImGui::TreePop();
+							ImGui::Separator();
 						}
 					}
 
