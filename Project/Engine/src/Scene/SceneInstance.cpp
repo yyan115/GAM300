@@ -221,7 +221,7 @@ void SceneInstance::Initialize() {
 		ecsManager.transformSystem->SetLocalPosition(sprite3D, { -2.0f, 1.0f, 0.0f });  // World coordinates
 		ecsManager.transformSystem->SetLocalScale(sprite3D, { 1.0f, 1.0f, 1.0f });
 		ecsManager.transformSystem->SetLocalRotation(sprite3D, { 0, 0, 0 });
-		NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
+		//NameComponent& spriteName3DFlat = ecsManager.GetComponent<NameComponent>(sprite3DFlat);
 		spriteName3D.name = "sprite_3d_flat_test";
 		ecsManager.AddComponent<SpriteRenderComponent>(sprite3DFlat, SpriteRenderComponent{ spriteTexture, spriteShader });
 		auto& spriteComponent3DFlat = ecsManager.GetComponent<SpriteRenderComponent>(sprite3DFlat);
@@ -404,7 +404,7 @@ void SceneInstance::Update(double dt) {
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	fpsTextComponent.text = TimeManager::GetFps();
+	fpsTextComponent.text = std::to_string(TimeManager::GetFps());
 	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());

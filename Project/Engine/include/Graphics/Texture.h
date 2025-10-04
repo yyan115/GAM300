@@ -5,7 +5,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
 
-class ENGINE_API Texture : public IAsset {
+class Texture : public IAsset {
 public:
 
 	GLuint ID{};
@@ -13,7 +13,7 @@ public:
 	GLint unit;
 	GLenum target;
 
-	Texture();
+	ENGINE_API Texture();
 	Texture(const char* texType, GLint slot);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

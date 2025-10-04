@@ -28,7 +28,7 @@ public:
 		}
 
 		std::cerr << "[EntityGUIDRegistry] ERROR: GUID not found in registry." << std::endl;
-		return -1; // or some invalid entity value
+		return static_cast<Entity>(-1); // or some invalid entity value
 	}
 
 	GUID_128 GetGUIDByEntity(Entity entityID) const {

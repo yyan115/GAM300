@@ -40,7 +40,7 @@ REFL_REGISTER_END;
 // For asserts
 static inline void assert_rc4(int r, int c) {
     assert(r >= 0 && r < 4 && c >= 0 && c < 4);
-    (void)c;
+    (void)c,r;
 }
 
 // ============================
@@ -269,6 +269,7 @@ Matrix4x4 Matrix4x4::Inversed() const {
     Matrix4x4 inv;
     bool ok = TryInverse(inv);
     assert(ok && "Matrix4x4 is singular");
+	(void)ok;
     return inv;
 }
 

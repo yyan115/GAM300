@@ -1113,9 +1113,9 @@ void InspectorPanel::ApplyMaterialToModel(Entity entity, const GUID_128& materia
 		// If material doesn't have a name, set it from the filename
 		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
 			std::filesystem::path path(materialMeta->sourceFilePath);
-			std::string name = path.stem().string(); // Get filename without extension
-			material->SetName(name);
-			std::cout << "[InspectorPanel] Set material name to: " << name << std::endl;
+			std::string matName = path.stem().string(); // Get filename without extension
+			material->SetName(matName);
+			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
 		}
 
 		// Apply the material to the entire entity (like Unity)
@@ -1153,9 +1153,9 @@ void InspectorPanel::ApplyMaterialToModelByPath(Entity entity, const std::string
 		// If material doesn't have a name, set it from the filename
 		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
 			std::filesystem::path path(materialPath);
-			std::string name = path.stem().string(); // Get filename without extension
-			material->SetName(name);
-			std::cout << "[InspectorPanel] Set material name to: " << name << std::endl;
+			std::string matName = path.stem().string(); // Get filename without extension
+			material->SetName(matName);
+			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
 		}
 
 		// Apply the material to the entire entity (like Unity)
@@ -1773,7 +1773,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 	// Collapsing header on same line
 	ImGui::SameLine();
-	bool isOpen = ImGui::CollapsingHeader(label, flags);
+	bool checkisOpen = ImGui::CollapsingHeader(label, flags);
 
 	
 	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
@@ -1806,11 +1806,11 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	ImGui::PopStyleColor(3);
 
 	
-	if (isOpen) {
+	if (checkisOpen) {
 		ImGui::Spacing();
 	}
 
-	return isOpen;
+	return checkisOpen;
 }
 
 void InspectorPanel::ProcessPendingComponentRemovals() {

@@ -146,7 +146,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
             glm::vec3 midpoint = glm::normalize(vertices[i1] + vertices[i2]) * scale;
             vertices.push_back(midpoint);
-            int index = vertices.size() - 1;
+            int index = static_cast<int>(vertices.size()) - 1;
             midpointCache[key] = index;
             return index;
             };
