@@ -278,7 +278,16 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
 	glBindTexture(target, ID);
-	glCompressedTexImage2D(target, 0, format.Internal, texture.extent().x, texture.extent().y, 0, texture.size(), texture.data());
+	glCompressedTexImage2D(
+		target,
+		0,
+		format.Internal,
+		static_cast<GLsizei>(texture.extent().x),
+		static_cast<GLsizei>(texture.extent().y),
+		0,
+		static_cast<GLsizei>(texture.size()),
+		texture.data()
+	);
 
 	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 

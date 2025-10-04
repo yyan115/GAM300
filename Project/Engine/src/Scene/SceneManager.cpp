@@ -13,7 +13,7 @@
 #include "Logging.hpp"
 
 ENGINE_API SceneManager::~SceneManager() {
-	//ExitScene();
+	ExitScene();
 }
 
 // Temporary function to load the test scene.
