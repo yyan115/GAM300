@@ -4,9 +4,9 @@
 #include "../Utilities/GUID.hpp"
 #include <iostream>
 
-class ENGINE_API EntityGUIDRegistry {
+class EntityGUIDRegistry {
 public:
-	static EntityGUIDRegistry& GetInstance();
+	ENGINE_API static EntityGUIDRegistry& GetInstance();
 
 	void Register(Entity entityID, const GUID_128& guid) {
 		guidToEntityMap[guid] = entityID;

@@ -18,17 +18,17 @@
 #include <Animation/AnimationSystem.hpp>
 
 class PhysicsSystem;
-class ENGINE_API ECSManager {
+class ECSManager {
 public:
 	ECSManager() { Initialize(); };
 	~ECSManager() {};
 
-	void Initialize();
+	void ENGINE_API Initialize();
 
-	Entity CreateEntity();
+	Entity ENGINE_API CreateEntity();
 	Entity CreateEntityWithGUID(const GUID_128& guid);
 
-	void DestroyEntity(Entity entity);
+	void ENGINE_API DestroyEntity(Entity entity);
 
 	void ClearAllEntities();
 

@@ -492,7 +492,7 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 
 std::string Material::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	std::filesystem::path p(assetPath);
-	p = ResolveToProjectRoot(p);
+	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 
@@ -556,7 +556,7 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 
 std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath) {
 	std::filesystem::path p(assetPath);
-	p = ResolveToProjectRoot(p);
+	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
@@ -641,6 +641,8 @@ bool Material::ReloadResource(const std::string& resourcePath, const std::string
 }
 
 std::shared_ptr<AssetMeta> Material::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+	(void)assetPath; // Suppress unused parameter warning
+	(void)forAndroid; // Suppress unused parameter warning
 	// Materials don't need extended meta data for now
 	return currentMetaData;
 }

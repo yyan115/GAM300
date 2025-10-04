@@ -202,6 +202,11 @@ bool AndroidPlatform::InitializeGraphics() {
         return false;
     }
 
+    const char* versionStr = (const char*)glGetString(GL_VERSION);
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "GL_VERSION: %s", versionStr);
+#endif
+
     // Get surface dimensions
     eglQuerySurface(display, surface, EGL_WIDTH, &windowWidth);
     eglQuerySurface(display, surface, EGL_HEIGHT, &windowHeight);

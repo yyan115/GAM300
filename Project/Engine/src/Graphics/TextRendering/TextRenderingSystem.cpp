@@ -13,9 +13,14 @@ bool TextRenderingSystem::Initialise()
     for (const auto& entity : entities) {
         auto& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.fontGUID);
-        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.shaderGUID);
         textComp.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComp.fontGUID, fontPath, textComp.fontSize);
+#ifndef ANDROID
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.shaderGUID);
         textComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComp.shaderGUID, shaderPath);
+#else
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("text");
+        textComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+#endif
     }
 
     ENGINE_PRINT("[TextSystem] Initialized\n");

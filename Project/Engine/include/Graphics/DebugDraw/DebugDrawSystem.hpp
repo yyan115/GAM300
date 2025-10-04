@@ -10,7 +10,7 @@
 
 class Model;
 
-class ENGINE_API DebugDrawSystem : public System {
+class DebugDrawSystem : public System {
 public:
     DebugDrawSystem() = default;
     ~DebugDrawSystem() = default;

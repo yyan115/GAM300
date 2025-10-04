@@ -594,7 +594,6 @@ void AssetBrowserPanel::RenderAssetGrid()
     }
 
     bool anyItemClickedInGrid = false; // on click (on the same frame only)
-    bool anyItemSelectedInGrid = false; // persists as long as item is selected
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;
@@ -610,7 +609,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
         const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-        bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
+        //bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
         // drag source: prefab -> scene, material/texture -> inspector
         if (!asset.isDirectory) {

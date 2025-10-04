@@ -61,26 +61,6 @@ void SceneInstance::Initialize() {
 			MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat")});
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
-
-		Entity kachujin = ecsManager.CreateEntity();
-		ecsManager.transformSystem->SetLocalPosition(kachujin, { -1.0, -0.35f, 0.8 });
-		ecsManager.transformSystem->SetLocalScale(kachujin, { .005f, .005f, .005f });
-		ecsManager.transformSystem->SetLocalRotation(kachujin, { 0, 0, 0 });
-		NameComponent& kachujinName = ecsManager.GetComponent<NameComponent>(kachujin);
-		kachujinName.name = "Kachujin";
-		ecsManager.AddComponent<ModelRenderComponent>(kachujin, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/kachujin/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
-			MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
-		ModelRenderComponent& kachujinModel = ecsManager.GetComponent<ModelRenderComponent>(kachujin);
-		ecsManager.AddComponent<AnimationComponent>(kachujin, AnimationComponent(&*kachujinModel.model));
-		AnimationComponent& kachujinAnimation = ecsManager.GetComponent<AnimationComponent>(kachujin);
-		kachujinAnimation.SetModel(&*kachujinModel.model);
-		kachujinAnimation.AddClipFromFile("Resources/Models/kachujin/Animation/KachujinAnimation.fbx");
-		kachujinAnimation.Play();
-		
-		// GRAPHICS TEST CODE
-		ecsManager.transformSystem->Initialise();
-		ecsManager.modelSystem->Initialise();
-		ecsManager.debugDrawSystem->Initialise();
 		
 		//PHYSICS TEST CODE
 		ecsManager.physicsSystem->Initialise();
@@ -105,7 +85,7 @@ void SceneInstance::Initialize() {
 		col.layer = Layers::MOVING;
 		col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		
 		// ---- FLOOR (static, invisible) ----
@@ -157,7 +137,7 @@ void SceneInstance::Initialize() {
 		backpack2Col.layer = Layers::MOVING;
 		backpack2Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack2, NameComponent{});
@@ -188,7 +168,7 @@ void SceneInstance::Initialize() {
 		backpack3Col.layer = Layers::MOVING;
 		backpack3Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
@@ -318,79 +298,88 @@ void SceneInstance::Initialize() {
 	{
 		ecsManager.lightingSystem->Initialise();
 
-		// Create a directional light (sun)
-		Entity sunLight = ecsManager.CreateEntity();
-		NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
-		sunName.name = "Sun";
-		ecsManager.AddComponent<Transform>(sunLight, Transform{});
+		//// Create a directional light (sun)
+		//Entity sunLight = ecsManager.CreateEntity();
+		//NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
+		//sunName.name = "Sun";
+		//ecsManager.AddComponent<Transform>(sunLight, Transform{});
 
-		DirectionalLightComponent sunLightComp;
-		sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-		sunLightComp.ambient = glm::vec3(0.05f);
-		sunLightComp.diffuse = glm::vec3(0.4f);
-		sunLightComp.specular = glm::vec3(0.5f);
-		sunLightComp.enabled = true;
-		ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
-		//ecsManager.lightingSystem->RegisterEntity(sunLight);
+		//DirectionalLightComponent sunLightComp;
+		//sunLightComp.direction = Vector3D(-0.2f, -1.0f, -0.3f);
+		//sunLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+		//sunLightComp.diffuse = Vector3D(0.4f, 0.4f, 0.4f);
+		//sunLightComp.specular = Vector3D(0.5f, 0.5f, 0.5f);
+		//sunLightComp.enabled = true;
+		//ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+		////ecsManager.lightingSystem->RegisterEntity(sunLight);
 
-		// Create point lights
-		std::vector<Vector3D> pointLightPositions = {
-			Vector3D(0.7f,  0.2f,  2.0f),
-			Vector3D(2.3f, -3.3f, -4.0f),
-			Vector3D(-4.0f,  2.0f, -12.0f),
-			Vector3D(0.0f,  0.0f, -3.0f)
-		};
+		//// Create point lights
+		//std::vector<Vector3D> pointLightPositions = {
+		//	Vector3D(0.7f,  0.2f,  2.0f),
+		//	Vector3D(2.3f, -3.3f, -4.0f),
+		//	Vector3D(-4.0f,  2.0f, -12.0f),
+		//	Vector3D(0.0f,  0.0f, -3.0f)
+		//};
 
-		for (size_t i = 0; i < pointLightPositions.size(); i++)
-		{
-			Entity pointLight = ecsManager.CreateEntity();
-			NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
-			pointLightName.name = "Point Light " + std::to_string(i);
-			ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
-			ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
-			// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+		//for (size_t i = 0; i < pointLightPositions.size(); i++)
+		//{
+		//	Entity pointLight = ecsManager.CreateEntity();
+		//	NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
+		//	pointLightName.name = "Point Light " + std::to_string(i);
+		//	ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
+		//	ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
+		//	// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
-			// Test Model
-			ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
-				MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		//	// Test Model
+		//	ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
+		//		MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
-			PointLightComponent pointLightComp;
-			pointLightComp.ambient = glm::vec3(0.05f);
-			pointLightComp.diffuse = glm::vec3(0.8f);
-			pointLightComp.specular = glm::vec3(1.0f);
-			pointLightComp.constant = 1.0f;
-			pointLightComp.linear = 0.09f;
-			pointLightComp.quadratic = 0.032f;
-			pointLightComp.enabled = true;
-			ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
-			//ecsManager.lightingSystem->RegisterEntity(pointLight);
+		//	PointLightComponent pointLightComp;
+		//	pointLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+		//	pointLightComp.diffuse = Vector3D(0.8f, 0.8f, 0.8f);
+		//	pointLightComp.specular = Vector3D(1.0f, 1.0f, 1.0f);
+		//	pointLightComp.constant = 1.0f;
+		//	pointLightComp.linear = 0.09f;
+		//	pointLightComp.quadratic = 0.032f;
+		//	pointLightComp.enabled = true;
+		//	ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+		//	//ecsManager.lightingSystem->RegisterEntity(pointLight);
 
-		}
+		//}
 
-		// Create a spot light that follows the camera
-		Entity spotLight = ecsManager.CreateEntity();
-		NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
-		spotLightName.name = "Flashlight";
-		ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f });
-		//ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
-		// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+		//// Create a spot light that follows the camera
+		//Entity spotLight = ecsManager.CreateEntity();
+		//NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
+		//spotLightName.name = "Flashlight";
+		//ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f });
+		////ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
+		//// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
-		SpotLightComponent spotLightComp;
-		spotLightComp.direction = camera.Front;
-		spotLightComp.ambient = glm::vec3(0.0f);
-		spotLightComp.diffuse = glm::vec3(1.0f);
-		spotLightComp.specular = glm::vec3(1.0f);
-		spotLightComp.constant = 1.0f;
-		spotLightComp.linear = 0.09f;
-		spotLightComp.quadratic = 0.032f;
-		spotLightComp.cutOff = 0.976f;
-		spotLightComp.outerCutOff = 0.966f;
-		spotLightComp.enabled = true;
-		ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
-		//ecsManager.lightingSystem->RegisterEntity(spotLight);
+		//SpotLightComponent spotLightComp;
+		//spotLightComp.direction = Vector3D::ConvertGLMToVector3D(camera.Front);
+		//spotLightComp.ambient = Vector3D::Zero();
+		//spotLightComp.diffuse = Vector3D::Ones();
+		//spotLightComp.specular = Vector3D::Ones();
+		//spotLightComp.constant = 1.0f;
+		//spotLightComp.linear = 0.09f;
+		//spotLightComp.quadratic = 0.032f;
+		//spotLightComp.cutOff = 0.976f;
+		//spotLightComp.outerCutOff = 0.966f;
+		//spotLightComp.enabled = true;
+		//ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+		////ecsManager.lightingSystem->RegisterEntity(spotLight);
 	}
 	ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 	
+
+	// Add FPS text (mainly for android to see FPS)
+	fpsText = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+
 	// Sets camera
 	gfxManager.SetCamera(&camera);
 
@@ -418,9 +407,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	//fpsTextComponent.text = TimeManager::GetFps();
-	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	fpsTextComponent.text = TimeManager::GetFps();
+	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
@@ -533,7 +522,6 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
 #endif
 
-//std::cout << "drawn\n";
 }
 
 void SceneInstance::Exit() {

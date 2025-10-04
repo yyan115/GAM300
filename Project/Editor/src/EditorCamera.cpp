@@ -36,7 +36,7 @@ glm::mat4 EditorCamera::GetProjectionMatrix(float aspectRatio) const {
 glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const {
     // For 2D mode, create an orthographic projection with zoom support
     // OrthoZoomLevel: 1.0 = normal (1:1 pixel mapping), 0.5 = zoomed in 2x, 2.0 = zoomed out 2x
-
+    (void)aspectRatio;
     // Apply zoom to viewport size
     float viewWidth = viewportWidth * OrthoZoomLevel;
     float viewHeight = viewportHeight * OrthoZoomLevel;
@@ -56,7 +56,7 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
                                float mouseDeltaX, float mouseDeltaY, float scrollDelta, bool is2DMode) {
 
     if (!isWindowHovered) return;
-
+	(void)deltaTime; // Unused for now, but could be used for smoothing
     // Only allow camera rotation in 3D mode
     if (isAltPressed && isLeftMousePressed && !is2DMode) {
         Yaw -= mouseDeltaX * OrbitSensitivity;

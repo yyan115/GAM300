@@ -749,7 +749,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                     );
 
                     // Apply rotation to light direction
-                    glm::vec4 localDir = glm::vec4(light.direction, 0.0f);
+                    glm::vec4 localDir = glm::vec4(light.direction.ConvertToGLM(), 0.0f);
                     glm::vec4 worldDir = entityMat * localDir;
                     glm::vec3 normalizedWorldDir = glm::normalize(glm::vec3(worldDir));
 
@@ -823,7 +823,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                 }
             }
         } catch (const std::exception& e) {
-            // Silently handle any errors in light visualization
+            ENGINE_PRINT("[ScenePanel] Failed to delete entity: ", e.what(), "\n");
         }
     }
 
@@ -1406,6 +1406,6 @@ void ScenePanel::DrawColliderGizmos() {
         }
     }
     catch (const std::exception& e) {
-        // Silently fail - entity might have been deleted
+        ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
     }
 }

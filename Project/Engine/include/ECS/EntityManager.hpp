@@ -8,7 +8,7 @@
 #include "Signature.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
 
-class ENGINE_API EntityManager {
+class EntityManager {
 public:
 	EntityManager();
 
@@ -16,9 +16,9 @@ public:
 
 	void DestroyEntity(Entity entity);
 
-	Signature GetEntitySignature(Entity entity) const;
+	Signature ENGINE_API GetEntitySignature(Entity entity) const;
 
-	void SetEntitySignature(Entity entity, Signature signature);
+	void ENGINE_API SetEntitySignature(Entity entity, Signature signature);
 
 	uint32_t GetActiveEntityCount() const;
 
@@ -28,7 +28,7 @@ public:
 
 	bool IsActive(Entity entity) const;
 
-	std::vector<Entity> GetActiveEntities() const;
+	std::vector<Entity> ENGINE_API GetActiveEntities() const;
 
 	std::vector<Entity> GetAllEntities() const;
 

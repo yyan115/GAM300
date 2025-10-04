@@ -31,10 +31,12 @@ public:
 			return it->second;
 		}
 		else {
-#ifdef ANDROID
-			std::string androidAssetPath = assetPath.substr(assetPath.find("Resources"));
-			return GetResource<T>(androidAssetPath);
+#ifndef EDITOR
+			std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
+			ENGINE_LOG_INFO("[ResourceManager] Calling GetResource<T> with: " + gameAssetPath);
+			return GetResource<T>(gameAssetPath);
 #else
+			ENGINE_LOG_INFO("[ResourceManager] Calling GetResource<T> with: " + assetPath);
 			return GetResource<T>(assetPath);
 #endif
 		}
@@ -47,9 +49,9 @@ public:
 			return it->second;
 		}
 		else {
-#ifdef ANDROID
-			std::string androidAssetPath = assetPath.substr(assetPath.find("Resources"));
-			return GetFontResource(androidAssetPath, fontSize);
+#ifndef EDITOR
+			std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
+			return GetFontResource(gameAssetPath, fontSize);
 #else
 			return GetFontResource(assetPath, fontSize);
 #endif
@@ -57,11 +59,14 @@ public:
 	}
 
 	template <typename T>
-	std::shared_ptr<T> GetResource(const std::string& assetPath, bool forceLoad = false) {
+	std::shared_ptr<T> GetResource(std::string assetPath, bool forceLoad = false) {
 		static_assert(!std::is_same_v<T, Font>,
 			"Calling ResourceManager::GetInstance().GetResource() to get a font is forbidden. Use GetFontResource() instead.");
 
 		auto& resourceMap = GetResourceMap<T>();
+#ifndef EDITOR
+		assetPath = assetPath.substr(assetPath.find("Resources"));
+#endif
 		std::filesystem::path filePathObj(assetPath);
 		std::string filePath = filePathObj.generic_string();
 

@@ -5,6 +5,14 @@
 #include <android/log.h>
 #endif
 
+// Utility function
+inline void ClearGLErrors()
+{
+	while (glGetError() != GL_NO_ERROR) {
+		// keep looping until no errors remain
+	}
+}
+
 VAO::VAO()
 {
 	//glGenVertexArrays(1, &ID);
@@ -21,7 +29,7 @@ VAO::~VAO()
 void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
 {
 	VBO.Bind();
-	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
+	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, static_cast<GLsizei>(stride), offset);
 	glEnableVertexAttribArray(layout);
 	VBO.Unbind();
 }
@@ -29,7 +37,7 @@ void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, 
 void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor = 0) 
 {
 	VBO.Bind();
-	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
+	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, static_cast<GLsizei>(stride), offset);
 	glEnableVertexAttribArray(layout);
 	if (divisor > 0)
 	{
@@ -48,18 +56,22 @@ void VAO::Bind()
 		EGLDisplay display = eglGetCurrentDisplay();
 		EGLContext context = eglGetCurrentContext();
 		if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Trying to generate VAO without active OpenGL context!");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Trying to generate VAO without active OpenGL context!");
 			return;
 		}
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] OpenGL context valid, calling glGenVertexArrays");
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] OpenGL context valid, calling glGenVertexArrays");
+		EGLContext ctx = eglGetCurrentContext();
+		EGLSurface surf = eglGetCurrentSurface(EGL_DRAW);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "eglGetCurrentContext=%p, eglGetCurrentSurface=%p", ctx, surf);
+
 #endif
-		glGenVertexArrays(1, &ID);  // Temp workaround for refactoring - pulled out Mesh that uses VAO, but need default constructor, but
-		// genVertex will crash if glfw isn't init yet, so we will init only when binding
+		ClearGLErrors();
+		glGenVertexArrays(1, &ID);  
 #ifdef ANDROID
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glGenVertexArrays completed, Generated VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Error generating VAO: 0x%x", error);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Error generating VAO: 0x%x", error);
 			return;
 		}
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] VAO generation successful, no OpenGL errors");
@@ -75,15 +87,15 @@ void VAO::Bind()
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glBindVertexArray completed for VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Error binding VAO %u: 0x%x", ID, error);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Error binding VAO %u: 0x%x", ID, error);
 		} /*else {
 			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] VAO %u bound successfully", ID);
 		}*/
 #endif
 	} else {
-//#ifdef ANDROID
-//		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Cannot bind VAO - ID is 0 (generation failed)");
-//#endif
+#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[VAO] Cannot bind VAO - ID is 0 (generation failed)");
+#endif
 	}
 }
 

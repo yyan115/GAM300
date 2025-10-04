@@ -5,7 +5,7 @@
 enum class Motion { Static, Kinematic, Dynamic };
 
 struct RigidBodyComponent {
-	Motion motion;
+	Motion motion{};
 	JPH::BodyID id = JPH::BodyID();
 	bool ccd = false; // continuous collision detection
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static

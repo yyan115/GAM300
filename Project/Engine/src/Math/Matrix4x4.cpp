@@ -40,6 +40,7 @@ REFL_REGISTER_END;
 // For asserts
 static inline void assert_rc4(int r, int c) {
     assert(r >= 0 && r < 4 && c >= 0 && c < 4);
+    (void)c;
 }
 
 // ============================

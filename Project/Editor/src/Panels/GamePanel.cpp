@@ -89,7 +89,7 @@ void GamePanel::OnImGuiRender() {
         offsetX = (availableWidth - displayWidth) * 0.5f;
         offsetY = (availableHeight - displayHeight) * 0.5f;
 
-        EditorState& editorState = EditorState::GetInstance();
+        //EditorState& editorState = EditorState::GetInstance();
 
         // Set cursor position to center the viewport
         ImVec2 startPos = ImGui::GetCursorPos();
