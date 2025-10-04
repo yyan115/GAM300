@@ -200,6 +200,9 @@
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -263,13 +266,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\joltphysics</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\joltphysics;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
@@ -279,13 +282,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;EDITOR;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Libraries\joltphysics</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\joltphysics</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Engine.lib;Game.lib;glfw3.lib;assimp-vc143-mt.lib;opengl32.lib;imgui.lib</AdditionalDependencies>
       <AdditionalOptions>/VERBOSE:LIB %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -302,13 +305,13 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\joltphysics</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libraries\joltphysics;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
@@ -320,13 +323,13 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Libraries\joltphysics</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\joltphysics\Build\build\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Engine.lib;Game.lib;glfw3.lib;assimp-vc143-mt.lib;opengl32.lib;imgui.lib;Jolt.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
