@@ -13,6 +13,7 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
+#include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 
@@ -45,6 +46,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<AnimationComponent>();
+	RegisterComponent<PrefabLinkComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -79,7 +81,7 @@ void ECSManager::Initialize() {
 	physicsSystem = RegisterSystem<PhysicsSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<Transform>());
+		//signature.set(GetComponentID<Transform>());
 		signature.set(GetComponentID<ColliderComponent>());
 		signature.set(GetComponentID<RigidBodyComponent>());
 		SetSystemSignature<PhysicsSystem>(signature);

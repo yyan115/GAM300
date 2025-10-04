@@ -5,7 +5,7 @@ plugins {
 android {
     namespace 'com.gam300.game'
     compileSdk 36
-    ndkVersion "29.0.14033849"
+    ndkVersion '27.0.12077973'
 
     defaultConfig {
         applicationId "com.gam300.game"

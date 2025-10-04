@@ -139,7 +139,7 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                     ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with SpriteRenderComponent (is3D=", sprite.is3D, ")\n");
 
                     // Get sprite position from Transform if it exists, otherwise use sprite's position
-                    glm::vec3 spritePosition = sprite.position;
+                    glm::vec3 spritePosition = sprite.position.ConvertToGLM();
                     if (ecsManager.HasComponent<Transform>(entity)) {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
                         spritePosition = glm::vec3(transform.worldMatrix.m.m03,
@@ -148,7 +148,7 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                     }
 
                     // Create AABB from the sprite's position and scale
-                    entityAABB = CreateAABBFromSprite(spritePosition, sprite.scale, sprite.is3D);
+                    entityAABB = CreateAABBFromSprite(spritePosition, sprite.scale.ConvertToGLM(), sprite.is3D);
                     hasValidAABB = true;
 
                     ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Sprite) AABB: min("
@@ -242,9 +242,9 @@ bool RaycastUtil::GetEntityTransform(Entity entity, float outMatrix[16], bool is
             float rotationRadians = glm::radians(sprite.rotation);
 
             // Create transformation matrices
-            glm::mat4 translation = glm::translate(glm::mat4(1.0f), sprite.position);
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), sprite.position.ConvertToGLM());
             glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), rotationRadians, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z axis
-            glm::mat4 scale = glm::scale(glm::mat4(1.0f), sprite.scale);
+            glm::mat4 scale = glm::scale(glm::mat4(1.0f), sprite.scale.ConvertToGLM());
 
             // Combine: TRS order
             glm::mat4 transformMatrix = translation * rotation * scale;
@@ -351,8 +351,8 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
 
             // For 3D sprites, position is already the center (no conversion needed)
             // Update sprite properties directly
-            sprite.position = position;
-            sprite.scale = scale;
+            sprite.position = Vector3D::ConvertGLMToVector3D(position);
+            sprite.scale = Vector3D::ConvertGLMToVector3D(scale);
             sprite.rotation = glm::degrees(eulerAngles.z); // Convert back to degrees and use Z rotation
 
             return true;

@@ -19,6 +19,7 @@
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
 #include "Scene/SceneManager.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
 #include <FileWatch.hpp>
@@ -34,6 +35,10 @@ std::string DraggedModelPath;
 // Global drag-drop state for cross-window audio dragging
 GUID_128 DraggedAudioGuid = {0, 0};
 std::string DraggedAudioPath;
+
+// Global drag-drop state for cross-window font dragging
+GUID_128 DraggedFontGuid = {0, 0};
+std::string DraggedFontPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
@@ -620,10 +625,11 @@ void AssetBrowserPanel::RenderAssetGrid()
                            lowerExt == ".dae" || lowerExt == ".3ds");
             bool isAudio = (lowerExt == ".wav" || lowerExt == ".ogg" ||
                            lowerExt == ".mp3" || lowerExt == ".flac");
+            bool isFont = (lowerExt == ".ttf" || lowerExt == ".otf");
             bool isPrefab = (lowerExt == ".prefab");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -652,6 +658,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Use a simple payload - just a flag that dragging is active
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
+                } else if (isFont) {
+                    // Send font path directly
+                    ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -666,6 +676,31 @@ void AssetBrowserPanel::RenderAssetGrid()
                 }
             }
         }
+
+        // double click
+        if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            if (asset.isDirectory) {
+                NavigateToDirectory(asset.filePath);
+            }
+            else {
+                std::string lowerExt = asset.extension;
+                std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+                if (lowerExt == ".prefab") {
+                    GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+
+                    // Open the prefab editor
+                    PrefabEditor::Open(asset.filePath);
+                    // Early return so the rest of this frame doesn't re-use selection state
+                    ImGui::PopID();
+                    ImGui::EndGroup();
+                    break;
+                }
+                else {
+                    ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
+                }
+            }
+        }
+
         ImDrawList* dl = ImGui::GetWindowDrawList();
         ImVec2 rectMin = ImGui::GetItemRectMin();
         ImVec2 rectMax = ImGui::GetItemRectMax();
@@ -797,6 +832,11 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (shouldSelect) {
             bool ctrl = io.KeyCtrl;
             SelectAsset(asset.guid, ctrl);
+            // If user selects a prefab asset, don't leave it selected for Inspector
+            if (!asset.isDirectory) {
+                std::string le = asset.extension;
+                std::transform(le.begin(), le.end(), le.begin(), ::tolower);
+            }
         }
 
         bool selected = IsAssetSelected(asset.guid);
@@ -1088,22 +1128,36 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
 }
 
 void AssetBrowserPanel::SelectAsset(const GUID_128& guid, bool multiSelect) {
-    if (!multiSelect) {
-        selectedAssets.clear();
-    }
+    if (!multiSelect) selectedAssets.clear();
 
     if (selectedAssets.count(guid)) {
         selectedAssets.erase(guid);
-        // If deselecting the last selected asset, clear global selection
         if (lastSelectedAsset.high == guid.high && lastSelectedAsset.low == guid.low) {
-            GUIManager::SetSelectedAsset(GUID_128{0, 0});
+            GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+        }
+        return;
+    }
+
+    selectedAssets.insert(guid);
+    lastSelectedAsset = guid;
+
+    // Determine if this guid corresponds to a prefab in the current grid
+    bool isPrefab = false;
+    for (const auto& a : currentAssets) {
+        if (a.guid.high == guid.high && a.guid.low == guid.low) {
+            std::string le = a.extension;
+            std::transform(le.begin(), le.end(), le.begin(), ::tolower);
+            isPrefab = (le == ".prefab");
+            break;
         }
     }
-    else {
-        selectedAssets.insert(guid);
-        lastSelectedAsset = guid;
-        // Set the globally selected asset for the Inspector
+
+    // Keep highlight either way; only non-prefabs wake the Inspector
+    if (!isPrefab) {
         GUIManager::SetSelectedAsset(guid);
+    }
+    else {
+        GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
     }
 }
 

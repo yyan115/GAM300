@@ -552,7 +552,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->Activate();
 
 	// Set sprite-specific uniforms
-	glm::vec4 spriteColor = glm::vec4(item.color, item.alpha);
+	glm::vec4 spriteColor = glm::vec4(item.color.ConvertToGLM(), item.alpha);
 	item.shader->setVec4("spriteColor", spriteColor);
 	item.shader->setVec2("uvOffset", item.uvOffset);
 	item.shader->setVec2("uvScale", item.uvScale);
@@ -562,13 +562,13 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	{
 		// 3D world space sprite (billboard)
 		glm::mat4 modelMatrix = glm::mat4(1.0f);
-		modelMatrix = glm::translate(modelMatrix, item.position);
+		modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
 
 		// Optional: Make sprite face camera (billboard effect)
 		if (currentCamera && item.enableBillboard)
 		{
 			// Create rotation matrix to face camera
-			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position);
+			glm::vec3 forward = glm::normalize(currentCamera->Position - item.position.ConvertToGLM());
 			glm::vec3 up = currentCamera->Up;
 			glm::vec3 right = glm::normalize(glm::cross(forward, up));
 			up = glm::cross(right, forward);
@@ -589,7 +589,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		}
 
 		// Apply scale first
-		modelMatrix = glm::scale(modelMatrix, item.scale);
+		modelMatrix = glm::scale(modelMatrix, item.scale.ConvertToGLM());
 
 		// Center the sprite AFTER scaling: offset by half the scaled size
 		// The quad is 0,0 to 1,1, so after scaling it's 0,0 to scale.x,scale.y
@@ -607,7 +607,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 			// Use the editor camera's view/projection matrices (already set up)
 			// Render the sprite like a 3D sprite but in 2D space
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
-			modelMatrix = glm::translate(modelMatrix, item.position);
+			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
 
 			// Apply rotation
 			if (item.rotation != 0.0f) {
@@ -615,7 +615,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 			}
 
 			// Apply scale first
-			modelMatrix = glm::scale(modelMatrix, item.scale);
+			modelMatrix = glm::scale(modelMatrix, item.scale.ConvertToGLM());
 
 			// Center the sprite AFTER scaling
 			modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.5f, -0.5f, 0.0f));
@@ -623,7 +623,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 			Setup3DSpriteMatrices(*item.shader, modelMatrix);
 		} else {
 			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
-			Setup2DSpriteMatrices(*item.shader, item.position, item.scale, item.rotation);
+			Setup2DSpriteMatrices(*item.shader, item.position.ConvertToGLM(), item.scale.ConvertToGLM(), item.rotation);
 		}
 	}
 

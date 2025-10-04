@@ -42,6 +42,7 @@
     <ClCompile Include="src\EditorInputManager.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
     <ClCompile Include="src\Panels\MaterialInspector.cpp" />
+    <ClCompile Include="src\Panels\PrefabEditorPanel.cpp" />
     <ClCompile Include="src\RaycastUtil.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Panels\ConsolePanel.cpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="include\EditorInputManager.hpp" />
     <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
     <ClInclude Include="include\Panels\PerformancePanel.hpp" />
+    <ClInclude Include="include\Panels\PrefabEditorPanel.hpp" />
     <ClInclude Include="include\RaycastUtil.hpp" />
     <ClInclude Include="include\Panels\ConsolePanel.hpp" />
     <ClInclude Include="include\Panels\EditorPanel.hpp" />

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 6,
+        "guid": "003155569abe29b2-0002d702fa00001b",
+        "source": "../../Resources/Models/backpack/specular.jpg",
+        "compiled": "../../Resources/Models/backpack/specular.dds",
+        "android_compiled": "Resources/Models/backpack/specular_android.ktx",
+        "last_compiled": "2025-10-03 17:33:20.3619960"
+    },
+    "TextureMetaData": {
+        "id": 0,
+        "type": "diffuse",
+        "unit": -1
+    }
+}

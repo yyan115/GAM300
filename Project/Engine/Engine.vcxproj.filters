@@ -137,6 +137,7 @@
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Animation\AnimationSystem.hpp" />
+    <ClInclude Include="include\PrefabLinkComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -212,6 +213,8 @@
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\Animation\AnimationSystem.cpp" />
     <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
+    <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

@@ -34,6 +34,13 @@ public:
 		++nextComponentID;
 	}
 
+	template<typename T>
+	bool IsRegistered() const
+	{
+		const std::string typeName = GetReadableTypeName<T>();
+		return components.find(typeName) != components.end();
+	}
+
 	template <typename T>
 	ComponentID GetComponentID() {
 		std::string typeName = GetReadableTypeName<T>();

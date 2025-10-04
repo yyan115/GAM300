@@ -18,6 +18,7 @@
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
     <ClCompile Include="src\Panels\MaterialInspector.cpp" />
+    <ClCompile Include="src\Panels\PrefabEditorPanel.cpp" />
     <ClCompile Include="src\EditorComponents.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -29,6 +30,7 @@
     <ClInclude Include="include\Panels\PlayControlPanel.hpp" />
     <ClInclude Include="include\Panels\PerformancePanel.hpp" />
     <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
+    <ClInclude Include="include\Panels\PrefabEditorPanel.hpp" />
     <ClInclude Include="include\EditorComponents.hpp" />
   </ItemGroup>
   <ItemGroup>

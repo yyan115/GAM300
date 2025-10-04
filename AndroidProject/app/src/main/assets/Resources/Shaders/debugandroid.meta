@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 6,
+        "guid": "00315556cd2cf3dd-0002d702fa000025",
+        "source": "../../Resources/Shaders/debugandroid",
+        "compiled": "../../Resources/Shaders/debugandroid.shader",
+        "android_compiled": "Resources/Shaders/debugandroid.shader",
+        "last_compiled": "2025-10-03 17:33:20.6535894"
+    }
+}
