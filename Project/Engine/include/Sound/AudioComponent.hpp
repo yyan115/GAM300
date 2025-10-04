@@ -11,7 +11,9 @@ class Audio;
 
 // AudioComponent: AudioSource component for ECS entities
 // Mirrors Unity's AudioSource API and behavior patterns
-struct ENGINE_API AudioComponent {
+struct ENGINE_API AudioComponent 
+{
+    REFL_SERIALIZABLE
     // Unity-like public properties (Inspector editable)
     std::string Clip;            // Audio asset path (Unity: AudioClip reference)
     float Volume{ 1.0f };        // Volume multiplier (0.0 - 1.0)
