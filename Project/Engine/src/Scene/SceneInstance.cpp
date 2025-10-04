@@ -300,76 +300,76 @@ void SceneInstance::Initialize() {
 	{
 		ecsManager.lightingSystem->Initialise();
 
-		// Create a directional light (sun)
-		Entity sunLight = ecsManager.CreateEntity();
-		NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
-		sunName.name = "Sun";
-		ecsManager.AddComponent<Transform>(sunLight, Transform{});
+		//// Create a directional light (sun)
+		//Entity sunLight = ecsManager.CreateEntity();
+		//NameComponent& sunName = ecsManager.GetComponent<NameComponent>(sunLight);
+		//sunName.name = "Sun";
+		//ecsManager.AddComponent<Transform>(sunLight, Transform{});
 
-		DirectionalLightComponent sunLightComp;
-		sunLightComp.direction = Vector3D(-0.2f, -1.0f, -0.3f);
-		sunLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
-		sunLightComp.diffuse = Vector3D(0.4f, 0.4f, 0.4f);
-		sunLightComp.specular = Vector3D(0.5f, 0.5f, 0.5f);
-		sunLightComp.enabled = true;
-		ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
-		//ecsManager.lightingSystem->RegisterEntity(sunLight);
+		//DirectionalLightComponent sunLightComp;
+		//sunLightComp.direction = Vector3D(-0.2f, -1.0f, -0.3f);
+		//sunLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+		//sunLightComp.diffuse = Vector3D(0.4f, 0.4f, 0.4f);
+		//sunLightComp.specular = Vector3D(0.5f, 0.5f, 0.5f);
+		//sunLightComp.enabled = true;
+		//ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
+		////ecsManager.lightingSystem->RegisterEntity(sunLight);
 
-		// Create point lights
-		std::vector<Vector3D> pointLightPositions = {
-			Vector3D(0.7f,  0.2f,  2.0f),
-			Vector3D(2.3f, -3.3f, -4.0f),
-			Vector3D(-4.0f,  2.0f, -12.0f),
-			Vector3D(0.0f,  0.0f, -3.0f)
-		};
+		//// Create point lights
+		//std::vector<Vector3D> pointLightPositions = {
+		//	Vector3D(0.7f,  0.2f,  2.0f),
+		//	Vector3D(2.3f, -3.3f, -4.0f),
+		//	Vector3D(-4.0f,  2.0f, -12.0f),
+		//	Vector3D(0.0f,  0.0f, -3.0f)
+		//};
 
-		for (size_t i = 0; i < pointLightPositions.size(); i++)
-		{
-			Entity pointLight = ecsManager.CreateEntity();
-			NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
-			pointLightName.name = "Point Light " + std::to_string(i);
-			ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
-			ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
-			// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+		//for (size_t i = 0; i < pointLightPositions.size(); i++)
+		//{
+		//	Entity pointLight = ecsManager.CreateEntity();
+		//	NameComponent& pointLightName = ecsManager.GetComponent<NameComponent>(pointLight);
+		//	pointLightName.name = "Point Light " + std::to_string(i);
+		//	ecsManager.transformSystem->SetLocalPosition(pointLight, pointLightPositions[i]);
+		//	ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f });
+		//	// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
-			// Test Model
-			ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
-				MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		//	// Test Model
+		//	ecsManager.AddComponent<ModelRenderComponent>(pointLight, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/FinalBaseMesh.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
+		//		MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
-			PointLightComponent pointLightComp;
-			pointLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
-			pointLightComp.diffuse = Vector3D(0.8f, 0.8f, 0.8f);
-			pointLightComp.specular = Vector3D(1.0f, 1.0f, 1.0f);
-			pointLightComp.constant = 1.0f;
-			pointLightComp.linear = 0.09f;
-			pointLightComp.quadratic = 0.032f;
-			pointLightComp.enabled = true;
-			ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
-			//ecsManager.lightingSystem->RegisterEntity(pointLight);
+		//	PointLightComponent pointLightComp;
+		//	pointLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+		//	pointLightComp.diffuse = Vector3D(0.8f, 0.8f, 0.8f);
+		//	pointLightComp.specular = Vector3D(1.0f, 1.0f, 1.0f);
+		//	pointLightComp.constant = 1.0f;
+		//	pointLightComp.linear = 0.09f;
+		//	pointLightComp.quadratic = 0.032f;
+		//	pointLightComp.enabled = true;
+		//	ecsManager.AddComponent<PointLightComponent>(pointLight, pointLightComp);
+		//	//ecsManager.lightingSystem->RegisterEntity(pointLight);
 
-		}
+		//}
 
-		// Create a spot light that follows the camera
-		Entity spotLight = ecsManager.CreateEntity();
-		NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
-		spotLightName.name = "Flashlight";
-		ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f });
-		//ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
-		// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
+		//// Create a spot light that follows the camera
+		//Entity spotLight = ecsManager.CreateEntity();
+		//NameComponent& spotLightName = ecsManager.GetComponent<NameComponent>(spotLight);
+		//spotLightName.name = "Flashlight";
+		//ecsManager.transformSystem->SetLocalPosition(spotLight, Vector3D{ 0.f, 0.f, 3.f });
+		////ecsManager.transformSystem->SetLocalScale(pointLight, { .01f, .01f, .01f }); // IF NEEDED
+		//// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
-		SpotLightComponent spotLightComp;
-		spotLightComp.direction = Vector3D::ConvertGLMToVector3D(camera.Front);
-		spotLightComp.ambient = Vector3D::Zero();
-		spotLightComp.diffuse = Vector3D::Ones();
-		spotLightComp.specular = Vector3D::Ones();
-		spotLightComp.constant = 1.0f;
-		spotLightComp.linear = 0.09f;
-		spotLightComp.quadratic = 0.032f;
-		spotLightComp.cutOff = 0.976f;
-		spotLightComp.outerCutOff = 0.966f;
-		spotLightComp.enabled = true;
-		ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
-		//ecsManager.lightingSystem->RegisterEntity(spotLight);
+		//SpotLightComponent spotLightComp;
+		//spotLightComp.direction = Vector3D::ConvertGLMToVector3D(camera.Front);
+		//spotLightComp.ambient = Vector3D::Zero();
+		//spotLightComp.diffuse = Vector3D::Ones();
+		//spotLightComp.specular = Vector3D::Ones();
+		//spotLightComp.constant = 1.0f;
+		//spotLightComp.linear = 0.09f;
+		//spotLightComp.quadratic = 0.032f;
+		//spotLightComp.cutOff = 0.976f;
+		//spotLightComp.outerCutOff = 0.966f;
+		//spotLightComp.enabled = true;
+		//ecsManager.AddComponent<SpotLightComponent>(spotLight, spotLightComp);
+		////ecsManager.lightingSystem->RegisterEntity(spotLight);
 	}
 	ENGINE_PRINT("[Scene] Lighting system entity count: ", ecsManager.lightingSystem->entities.size(), "\n");
 	

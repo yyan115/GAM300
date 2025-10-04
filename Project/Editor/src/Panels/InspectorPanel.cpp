@@ -1008,6 +1008,7 @@ void InspectorPanel::DrawAudioComponent(Entity entity) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
 				// Use global drag data set by AssetBrowserPanel
 				audio.SetClip(DraggedAudioPath);
+				audio.audioGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(DraggedAudioPath);
 			}
 			ImGui::EndDragDropTarget();
 		}

@@ -62,6 +62,7 @@ ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 	currentScene->Initialize();
 #else
 #pragma region NEW
+    // OPENS FILE DIALOG TO OPEN A SPECIFIC SCENE, TO BE IMPLEMENTED M2.
     namespace fs = std::filesystem;
     std::string chosenPath;
 
@@ -236,133 +237,136 @@ void SceneManager::ExitScene() {
 
 ENGINE_API void SceneManager::SaveScene() 
 {
-    namespace fs = std::filesystem;
-    std::string targetPath;
+    Serializer::SerializeScene(currentScenePath);
 
-#if defined(_WIN32)
-
-    // Try modern Vista+ dialog first (IFileSaveDialog)
-    bool gotPath = false;
-    HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    bool coInitialized = SUCCEEDED(hrCo);
-
-    if (coInitialized)
-    {
-        IFileSaveDialog* pFileSave = nullptr;
-        HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileSave));
-        if (SUCCEEDED(hr) && pFileSave)
-        {
-            const COMDLG_FILTERSPEC fileTypes[] =
-            {
-                { L"JSON Files (*.json)", L"*.json" },
-                { L"All Files (*.*)",     L"*.*"   }
-            };
-
-            pFileSave->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
-            pFileSave->SetDefaultExtension(L"json");
-            pFileSave->SetFileName(L"scene.json"); // suggested filename
-
-            hr = pFileSave->Show(nullptr); // pass HWND if available
-            if (SUCCEEDED(hr))
-            {
-                IShellItem* pItem = nullptr;
-                if (SUCCEEDED(pFileSave->GetResult(&pItem)) && pItem)
-                {
-                    PWSTR pszFilePath = nullptr;
-                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath)
-                    {
-                        fs::path chosen(pszFilePath);
-                        targetPath = chosen.string();
-                        CoTaskMemFree(pszFilePath);
-                        gotPath = true;
-                    }
-                    pItem->Release();
-                }
-            }
-            else
-            {
-                // If user cancelled, HRESULT == HRESULT_FROM_WIN32(ERROR_CANCELLED)
-                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
-                {
-                    // User cancelled the save dialog — do nothing.
-                    pFileSave->Release();
-                    if (coInitialized) CoUninitialize();
-                    return;
-                }
-            }
-
-            pFileSave->Release();
-        }
-        // Uninitialize COM for this call (matching CoInitializeEx)
-        if (coInitialized) CoUninitialize();
-    }
-
-    // If modern dialog didn't succeed (either COM failed or dialog not available), fallback to legacy API
-    #pragma region MISSING WINDOWS LIB
-        //if (!gotPath)
-        //{
-        //    wchar_t szFile[MAX_PATH] = L"scene.json";
-        //    OPENFILENAMEW ofn = {};
-        //    ofn.lStructSize = sizeof(ofn);
-        //    ofn.hwndOwner = nullptr; // replace with your HWND if available
-        //    ofn.lpstrFile = szFile;
-        //    ofn.nMaxFile = ARRAYSIZE(szFile);
-        //    ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0";
-        //    ofn.lpstrTitle = L"Save scene as...";
-        //    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
-
-        //    if (GetSaveFileNameW(&ofn))
-        //    {
-        //        fs::path chosen(szFile);
-        //        targetPath = chosen.string();
-        //        gotPath = true;
-        //    }
-        //    else
-        //    {
-        //        DWORD err = CommDlgExtendedError();
-        //        if (err != 0)
-        //        {
-        //            ENGINE_LOG_WARN("[SaveScene] GetSaveFileNameW failed, error = " + err);
-        //        }
-        //        else
-        //        {
-        //            // user cancelled the legacy dialog as well -> abort
-        //            return;
-        //        }
-        //    }
-        //}
-    #pragma endregion
-
-#else
-    // Non-Windows (mobile / other): DO NOT call any OS desktop dialogs.
-    // Fallback to a safe default filename. Serializer has its own fallback behavior
-    // for directory creation — it will try to write to cwd if needed.
-    targetPath = "scene.json";
-    ENGINE_LOG_INFO("[SaveScene] Non-Windows platform; using fallback filename: " + targetPath);
-#endif
-
-    // Final guard: ensure we have a target path
-    if (targetPath.empty())
-    {
-        ENGINE_LOG_WARN("[SaveScene] No valid target path provided; aborting save.");
-        return;
-    }
-
-    // Call serializer. Wrap in try/catch to prevent exceptions bubbling up.
-    try
-    {
-        // If Serializer signature differs (bool return, etc.), adapt this call accordingly.
-        Serializer::SerializeScene(targetPath);
-        ENGINE_LOG_INFO("[SaveScene] serialize requested for: " + targetPath);
-    }
-    catch (const std::exception& ex)
-    {
-        ENGINE_LOG_WARN("[SaveScene] exception while saving scene: " + static_cast<std::string>(ex.what()));
-    }
-    catch (...)
-    {
-        ENGINE_LOG_WARN("[SaveScene] unknown exception while saving scene");
-    }
+// COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
+//    namespace fs = std::filesystem;
+//    std::string targetPath;
+//
+//#if defined(_WIN32)
+//
+//    // Try modern Vista+ dialog first (IFileSaveDialog)
+//    bool gotPath = false;
+//    HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+//    bool coInitialized = SUCCEEDED(hrCo);
+//
+//    if (coInitialized)
+//    {
+//        IFileSaveDialog* pFileSave = nullptr;
+//        HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileSave));
+//        if (SUCCEEDED(hr) && pFileSave)
+//        {
+//            const COMDLG_FILTERSPEC fileTypes[] =
+//            {
+//                { L"Scene Files (*.scene)", L"*.scene" },
+//                { L"All Files (*.*)",     L"*.*"   }
+//            };
+//
+//            pFileSave->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
+//            pFileSave->SetDefaultExtension(L"scene");
+//            pFileSave->SetFileName(L"New Scene.scene"); // suggested filename
+//
+//            hr = pFileSave->Show(nullptr); // pass HWND if available
+//            if (SUCCEEDED(hr))
+//            {
+//                IShellItem* pItem = nullptr;
+//                if (SUCCEEDED(pFileSave->GetResult(&pItem)) && pItem)
+//                {
+//                    PWSTR pszFilePath = nullptr;
+//                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath)
+//                    {
+//                        fs::path chosen(pszFilePath);
+//                        targetPath = chosen.string();
+//                        CoTaskMemFree(pszFilePath);
+//                        gotPath = true;
+//                    }
+//                    pItem->Release();
+//                }
+//            }
+//            else
+//            {
+//                // If user cancelled, HRESULT == HRESULT_FROM_WIN32(ERROR_CANCELLED)
+//                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+//                {
+//                    // User cancelled the save dialog — do nothing.
+//                    pFileSave->Release();
+//                    if (coInitialized) CoUninitialize();
+//                    return;
+//                }
+//            }
+//
+//            pFileSave->Release();
+//        }
+//        // Uninitialize COM for this call (matching CoInitializeEx)
+//        if (coInitialized) CoUninitialize();
+//    }
+//
+//    // If modern dialog didn't succeed (either COM failed or dialog not available), fallback to legacy API
+//    #pragma region MISSING WINDOWS LIB
+//        //if (!gotPath)
+//        //{
+//        //    wchar_t szFile[MAX_PATH] = L"scene.json";
+//        //    OPENFILENAMEW ofn = {};
+//        //    ofn.lStructSize = sizeof(ofn);
+//        //    ofn.hwndOwner = nullptr; // replace with your HWND if available
+//        //    ofn.lpstrFile = szFile;
+//        //    ofn.nMaxFile = ARRAYSIZE(szFile);
+//        //    ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0";
+//        //    ofn.lpstrTitle = L"Save scene as...";
+//        //    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+//
+//        //    if (GetSaveFileNameW(&ofn))
+//        //    {
+//        //        fs::path chosen(szFile);
+//        //        targetPath = chosen.string();
+//        //        gotPath = true;
+//        //    }
+//        //    else
+//        //    {
+//        //        DWORD err = CommDlgExtendedError();
+//        //        if (err != 0)
+//        //        {
+//        //            ENGINE_LOG_WARN("[SaveScene] GetSaveFileNameW failed, error = " + err);
+//        //        }
+//        //        else
+//        //        {
+//        //            // user cancelled the legacy dialog as well -> abort
+//        //            return;
+//        //        }
+//        //    }
+//        //}
+//    #pragma endregion
+//
+//#else
+//    // Non-Windows (mobile / other): DO NOT call any OS desktop dialogs.
+//    // Fallback to a safe default filename. Serializer has its own fallback behavior
+//    // for directory creation — it will try to write to cwd if needed.
+//    targetPath = "scene.json";
+//    ENGINE_LOG_INFO("[SaveScene] Non-Windows platform; using fallback filename: " + targetPath);
+//#endif
+//
+//    // Final guard: ensure we have a target path
+//    if (targetPath.empty())
+//    {
+//        ENGINE_LOG_WARN("[SaveScene] No valid target path provided; aborting save.");
+//        return;
+//    }
+//
+//    // Call serializer. Wrap in try/catch to prevent exceptions bubbling up.
+//    try
+//    {
+//        // If Serializer signature differs (bool return, etc.), adapt this call accordingly.
+//        Serializer::SerializeScene(targetPath);
+//        ENGINE_LOG_INFO("[SaveScene] serialize requested for: " + targetPath);
+//    }
+//    catch (const std::exception& ex)
+//    {
+//        ENGINE_LOG_WARN("[SaveScene] exception while saving scene: " + static_cast<std::string>(ex.what()));
+//    }
+//    catch (...)
+//    {
+//        ENGINE_LOG_WARN("[SaveScene] unknown exception while saving scene");
+//    }
 }
 
 void SceneManager::SaveTempScene() {
