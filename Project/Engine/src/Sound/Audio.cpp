@@ -89,7 +89,7 @@ bool Audio::LoadResource(const std::string& resourcePath, const std::string& ass
     }
 
     // Create sound from memory (FMOD handles it)
-    sound = audioSys.CreateSoundFromMemory(audioData.data(), audioData.size(), this->assetPath);
+    sound = audioSys.CreateSoundFromMemory(audioData.data(), static_cast<unsigned int>(audioData.size()), this->assetPath);
     if (!sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] Failed to create FMOD sound for: ", resourcePath, "\n");
         return false;
@@ -111,6 +111,8 @@ bool Audio::ReloadResource(const std::string& resourcePath, const std::string& a
 }
 
 std::shared_ptr<AssetMeta> Audio::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+    (void)assetPath; // Suppress unused parameter warning
+    (void)forAndroid; // Suppress unused parameter warning
     // Audio files don't need extended metadata beyond the base AssetMeta
     // Could potentially add audio-specific metadata like:
     // - Duration

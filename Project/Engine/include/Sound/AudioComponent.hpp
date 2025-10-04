@@ -11,7 +11,7 @@ class Audio;
 
 // AudioComponent: AudioSource component for ECS entities
 // Mirrors Unity's AudioSource API and behavior patterns
-struct ENGINE_API AudioComponent 
+struct AudioComponent 
 {
     REFL_SERIALIZABLE
     // Unity-like public properties (Inspector editable)
@@ -46,17 +46,17 @@ private:
     bool PlayOnAwakeTriggered{ false };
 
 public:
-    AudioComponent();
-    ~AudioComponent();
+    ENGINE_API AudioComponent();
+    ENGINE_API ~AudioComponent();
 
     // Unity-like API
-    void Play();
+    void ENGINE_API Play();
     void PlayDelayed(float delay);        // Unity: Play with delay
     void PlayOneShot(std::shared_ptr<Audio> clip = nullptr); // Unity: One-shot playback
     void PlayScheduled(double time);      // Unity: Scheduled playback (placeholder)
-    void Stop();
-    void Pause();
-    void UnPause();
+    void ENGINE_API Stop();
+    void ENGINE_API Pause();
+    void ENGINE_API UnPause();
     
     // State queries
     bool GetIsPlaying() const;
@@ -69,7 +69,7 @@ public:
     void SetLoop(bool shouldLoop);
     void SetMute(bool shouldMute);
     void SetSpatialize(bool enable);
-    void SetSpatialBlend(float blend);
+    void ENGINE_API SetSpatialBlend(float blend);
     void SetOutputAudioMixerGroup(const std::string& groupName);
     
     // Position updates (for spatial audio)
@@ -77,12 +77,12 @@ public:
     void OnTransformChanged(const Vector3D& newPosition);
 
     // Asset management
-    void SetClip(const std::string& clipPath);
+    void ENGINE_API SetClip(const std::string& clipPath);
     void SetClip(std::shared_ptr<Audio> clip);
     bool HasValidClip() const;
     
     // For ECS AudioSystem integration
-    void UpdateComponent();
+    void ENGINE_API UpdateComponent();
 
 private:
     // Internal helpers

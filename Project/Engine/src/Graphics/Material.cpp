@@ -641,6 +641,8 @@ bool Material::ReloadResource(const std::string& resourcePath, const std::string
 }
 
 std::shared_ptr<AssetMeta> Material::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+	(void)assetPath; // Suppress unused parameter warning
+	(void)forAndroid; // Suppress unused parameter warning
 	// Materials don't need extended meta data for now
 	return currentMetaData;
 }

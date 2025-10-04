@@ -36,7 +36,7 @@ glm::mat4 EditorCamera::GetProjectionMatrix(float aspectRatio) const {
 glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const {
     // For 2D mode, create an orthographic projection with zoom support
     // OrthoZoomLevel: 1.0 = normal (1:1 pixel mapping), 0.5 = zoomed in 2x, 2.0 = zoomed out 2x
-
+    (void)aspectRatio;
     // Apply zoom to viewport size
     float viewWidth = viewportWidth * OrthoZoomLevel;
     float viewHeight = viewportHeight * OrthoZoomLevel;
