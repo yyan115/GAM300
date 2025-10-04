@@ -149,7 +149,14 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	gli::extent2d extent(dstTexture.dwWidth, dstTexture.dwHeight);
 
 	gli::texture2d tex(fmt, extent, 1); // 1 mip-map level
-	std::memcpy(tex.data(), dstTexture.pData, dstTexture.dwDataSize);
+	if (dstTexture.pData != nullptr && dstTexture.dwDataSize > 0)
+	{
+		std::memcpy(tex.data(), dstTexture.pData, dstTexture.dwDataSize);
+	}
+	else
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: dstTexture.pData is null or dwDataSize is zero. Skipping memcpy.\n");
+	}
 
 	// Save the texture to a DDS file.
 	std::filesystem::path p(assetPath);
@@ -420,4 +427,8 @@ void Texture::Unbind(GLint runtimeUnit)
 void Texture::Delete()
 {
 	glDeleteTextures(1, &ID);
+}
+
+std::string Texture::GetType() {
+	return type;
 }

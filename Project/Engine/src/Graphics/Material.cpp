@@ -492,7 +492,7 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 
 std::string Material::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	std::filesystem::path p(assetPath);
-	p = ResolveToProjectRoot(p);
+	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 
@@ -556,7 +556,7 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 
 std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath) {
 	std::filesystem::path p(assetPath);
-	p = ResolveToProjectRoot(p);
+	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");

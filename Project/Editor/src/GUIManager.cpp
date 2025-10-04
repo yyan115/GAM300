@@ -5,6 +5,8 @@
 #include "EditorState.hpp"
 #include "Scene/SceneManager.hpp"
 #include "Logging.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
 
 // External libraries
 #include <imgui.h>
@@ -24,8 +26,6 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
-#include "Asset Manager/AssetManager.hpp"
-#include "Asset Manager/MetaFilesManager.hpp"
 
 
 // Static member definitions
@@ -355,26 +355,33 @@ void GUIManager::RenderMenuBar() {
 }
 
 void GUIManager::CreateEditorTheme() {
-	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-	// Set updark theme
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui::StyleColorsDark();
-	ImGuiStyle& style = ImGui::GetStyle();
-	io.Fonts->Clear();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    io.Fonts->Clear();
 
-	// Load main font
-	ImFont* mainFont = io.Fonts->AddFontFromFileTTF("Resources/Inter.ttf", 18.0f);
+    // Use ImGui's DisplayFramebufferScale for better cross-monitor/DPI handling
+    float main_scale = io.DisplayFramebufferScale.x;
+    if (main_scale < 1.0f) main_scale = 1.0f;  // Fallback to avoid shrinking below 100%
 
-	// Merge FontAwesome icons
-	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	ImFontConfig icons_config;
-	icons_config.MergeMode = true;
-	icons_config.PixelSnapH = true;
-	icons_config.GlyphMinAdvanceX = 18.0f; // Match main font size
-	io.Fonts->AddFontFromFileTTF("Resources/Fonts/fa-solid-900.ttf", 18.0f, &icons_config, icons_ranges);
-	style.ScaleAllSizes(main_scale);        // Bake a fixed style scale
-	io.ConfigDpiScaleFonts = true;          // This will scale fonts but _NOT_ scale sizes/padding
-	io.ConfigDpiScaleViewports = true;
+    // Scale font size based on DPI (base 18.0f, adjusted for scale)
+    float font_size = 18.0f * main_scale;
+    ImFont* mainFont = io.Fonts->AddFontFromFileTTF("Resources/Inter.ttf", font_size);
+
+    // Merge FontAwesome icons (scale accordingly)
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = font_size;  // Match scaled font size
+    io.Fonts->AddFontFromFileTTF("Resources/Fonts/fa-solid-900.ttf", font_size, &icons_config, icons_ranges);
+
+    // Apply scaling to UI elements
+    style.ScaleAllSizes(main_scale);
+
+    // Enable DPI scaling for fonts and viewports
+    io.ConfigDpiScaleFonts = true;
+    io.ConfigDpiScaleViewports = true;
 
 	ImVec4* colors = style.Colors;
 

@@ -46,6 +46,7 @@ void AudioComponent::Play() {
 }
 
 void AudioComponent::PlayDelayed(float delay) {
+    (void)delay;
     // TODO: Implement delayed playback (requires timing system)
     ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayDelayed not yet implemented\n");
     Play();

@@ -35,6 +35,9 @@ function(import_jolt)
             # Enable RTTI for Android using Jolt's official option
             set(CPP_RTTI_ENABLED ON CACHE BOOL "Enable RTTI for Jolt on Android" FORCE)
             set(CPP_EXCEPTIONS_ENABLED ON CACHE BOOL "Enable exceptions for Jolt on Android" FORCE)
+
+            # Enable position independent code for shared library linking
+            set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Enable -fPIC for Android" FORCE)
         endif()
 
         # Download Jolt first (but don't build yet) so we can patch it

@@ -31,9 +31,9 @@ enum class AudioSourceState {
 
 // AudioManager: singleton backend for FMOD system management
 // Handles low-level audio operations, channel management, and global audio state
-class ENGINE_API AudioManager {
+class AudioManager {
 public:
-    static AudioManager& GetInstance();
+    ENGINE_API static AudioManager& GetInstance();
 
     // Lifecycle - explicit management only
     bool Initialise();
@@ -48,7 +48,7 @@ public:
     ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
     
     void Stop(ChannelHandle channel);
-    void StopAll();
+    void ENGINE_API StopAll();
     void Pause(ChannelHandle channel);
     void Resume(ChannelHandle channel);
     
@@ -71,7 +71,7 @@ public:
     // Global audio settings
     void SetMasterVolume(float volume);
     float GetMasterVolume() const;
-    void SetGlobalPaused(bool paused);
+    void ENGINE_API SetGlobalPaused(bool paused);
 
     // Resource management helpers
     FMOD_SOUND* CreateSound(const std::string& assetPath);

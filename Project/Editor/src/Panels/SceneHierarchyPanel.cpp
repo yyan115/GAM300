@@ -564,7 +564,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     if (cameraEntity == static_cast<Entity>(-1)) return cameraEntity;
 
     try {
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        //ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
         // TODO: Add CameraComponent when it exists
         // For now just create empty entity with transform

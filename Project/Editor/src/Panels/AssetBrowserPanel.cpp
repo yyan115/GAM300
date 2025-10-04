@@ -609,7 +609,7 @@ void AssetBrowserPanel::RenderAssetGrid()
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
         const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-        bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
+        //bool doubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered();
 
         // drag source: prefab -> scene, material/texture -> inspector
         if (!asset.isDirectory) {

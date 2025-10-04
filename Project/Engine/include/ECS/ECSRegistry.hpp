@@ -13,20 +13,20 @@
  * This design improves engine flexibility by enabling better scene management, isolated simulations, and potential
  * parallel execution of different worlds.
  */
-class ENGINE_API ECSRegistry {
+class ECSRegistry {
 public:
 	// Delete copy constructor and assignment operator to enforce singleton pattern.
 	ECSRegistry(const ECSRegistry&) = delete;
 	ECSRegistry& operator=(const ECSRegistry&) = delete;
 
-	static ECSRegistry& GetInstance();
+	ENGINE_API static ECSRegistry& GetInstance();
 
 	ECSManager& CreateECSManager(const std::string& name);
 	void DestroyECSManager(const std::string& name);
 	ECSManager& GetECSManager(const std::string& name);
 
 	void SetActiveECSManager(const std::string& name);
-	ECSManager& GetActiveECSManager();
+	ENGINE_API ECSManager& GetActiveECSManager();
 
 	void RenameECSManager(const std::string& oldName, const std::string& newName) {
 		if (oldName == newName) return;
