@@ -57,8 +57,14 @@ jobs:
         Write-Host "Installing vcpkg dependencies..." -ForegroundColor Cyan
         cd Project
 
+        # Copy vcpkg.json to Engine directory for proper vcpkg manifest mode
+        Write-Host "Copying vcpkg.json to Engine directory..." -ForegroundColor Cyan
+        Copy-Item "vcpkg.json" "Engine\vcpkg.json" -Force
+
+        # Install dependencies from Engine directory so vcpkg_installed goes to the right place
         Write-Host "Installing dependencies from vcpkg.json..." -ForegroundColor Cyan
-        .\vcpkg\vcpkg install --triplet=x64-windows
+        cd Engine
+        ..\vcpkg\vcpkg install --triplet=x64-windows
 
         if ($LASTEXITCODE -ne 0) {
           Write-Error "vcpkg install failed!"
