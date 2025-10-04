@@ -523,7 +523,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Binded");
 #endif
-	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(item.particles.size()));
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, item.particles.size());
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "glDrawElementsInstanced");
 #endif

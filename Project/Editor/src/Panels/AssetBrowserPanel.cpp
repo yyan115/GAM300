@@ -594,6 +594,7 @@ void AssetBrowserPanel::RenderAssetGrid()
     }
 
     bool anyItemClickedInGrid = false; // on click (on the same frame only)
+    bool anyItemSelectedInGrid = false; // persists as long as item is selected
     ImGuiIO& io = ImGui::GetIO();
 
     int index = 0;

@@ -95,7 +95,7 @@ void DebugDrawSystem::CreateCubeGeometry()
     // Position attribute
     cubeGeometry.vao->LinkAttrib(*cubeGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
-    cubeGeometry.indexCount = static_cast<unsigned int>(indices.size());
+    cubeGeometry.indexCount = indices.size();
     cubeGeometry.vao->Unbind();
 }
 
@@ -191,7 +191,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
     sphereGeometry.vao->LinkAttrib(*sphereGeometry.vbo, 0, 3, GL_FLOAT, sizeof(glm::vec3), (void*)0);
 
-    sphereGeometry.indexCount = static_cast<unsigned int>(indices.size());
+    sphereGeometry.indexCount = indices.size();
     sphereGeometry.vao->Unbind();
 }
 
