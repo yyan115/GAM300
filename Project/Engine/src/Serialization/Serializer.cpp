@@ -871,14 +871,14 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.shapeTypeID = d[2]["data"].GetInt();
         colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[3], colliderComp.boxHalfExtents);
-        switch (colliderComp.shapeType)
-        {
-        case ColliderShapeType::Box:
-            colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
-            break;
-        default:
-            break;
-        }
+        //switch (colliderComp.shapeType)
+        //{
+        //case ColliderShapeType::Box:
+        //    colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
+        //    break;
+        //default:
+        //    break;
+        //}
     }
 }
 

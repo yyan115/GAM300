@@ -134,6 +134,19 @@ bool PhysicsSystem::Initialise() {
     );
     bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);*/
 
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    for (const auto& entity : entities) {
+        auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+        switch (collider.shapeType)
+        {
+        case ColliderShapeType::Box:
+            collider.shape = new JPH::BoxShape((JPH::Vec3(collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z)));
+            break;
+        default:
+            break;
+        }
+    }
+
     return true;
 }
 
