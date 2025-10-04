@@ -5,10 +5,7 @@
 
 class SceneManager {
 public:
-	static SceneManager& GetInstance() {
-		static SceneManager instance;
-		return instance;
-	}
+	static ENGINE_API SceneManager& GetInstance();
 
 	// Temporary function to load the test scene.
 	void LoadTestScene();
@@ -23,8 +20,8 @@ public:
 
 	void ENGINE_API SaveScene();
 
-	void InitializeScenePhysics();
-	void ShutDownScenePhysics();
+	void ENGINE_API InitializeScenePhysics();
+	void ENGINE_API ShutDownScenePhysics();
 
 	// Saves the current scene to a temporary file.
 	// To be called when the play button is pressed in the editor to save the scene state just before hitting play.

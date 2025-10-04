@@ -36,7 +36,7 @@ auto getStringFromValue = [](const rapidjson::Value& v, std::string& out) -> boo
     };
 
 // read a Vector3D stored as either [x,y,z] or typed {"type":"Vector3D","data":[{...},{...},{...}]}
-auto readVec3Generic = [&](const rapidjson::Value& val, Vector3D& out)->bool {
+auto readVec3Generic = [](const rapidjson::Value& val, Vector3D& out)->bool {
     if (val.IsArray()) return readVec3FromArray(val, out);
     if (val.IsObject() && val.HasMember("data") && val["data"].IsArray()) {
         const auto& darr = val["data"];
@@ -54,7 +54,7 @@ auto readVec3Generic = [&](const rapidjson::Value& val, Vector3D& out)->bool {
     };
 
 // read quaternion stored as typed object or plain array [w,x,y,z]
-auto readQuatGeneric = [&](const rapidjson::Value& val, double& outW, double& outX, double& outY, double& outZ)->bool {
+auto readQuatGeneric = [](const rapidjson::Value& val, double& outW, double& outX, double& outY, double& outZ)->bool {
     if (val.IsArray() && val.Size() >= 4) {
         outW = val[0].GetDouble();
         outX = val[1].GetDouble();
@@ -524,7 +524,7 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
-        Entity currEnt = static_cast<Entity>(i);
+        Entity currEnt = entObj["id"].GetUint();
 
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];

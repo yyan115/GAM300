@@ -284,14 +284,7 @@ void InspectorPanel::OnImGuiRender() {
 
 							ImGui::BeginDisabled(followPrefab);
 							{
-								// --- your existing UI for ModelRenderComponent goes here ---
-								// Examples (replace with your real fields/controls):
-								ImGui::TextUnformatted("Model / Shader");
-								ImGui::Text("Model GUID:  %s", (m.modelGUID.high || m.modelGUID.low) ? "set" : "empty");
-								ImGui::Text("Shader GUID: %s", (m.shaderGUID.high || m.shaderGUID.low) ? "set" : "empty");
-
-								// If you have drag-drop targets / pickers for model & shader, keep them here.
-								// They’ll auto-disable when followPrefab == true.
+								DrawModelRenderComponent(displayEntity);
 							}
 							ImGui::EndDisabled();
 

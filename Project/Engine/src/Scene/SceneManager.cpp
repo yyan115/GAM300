@@ -23,6 +23,11 @@ SceneManager::~SceneManager() {
 	//ExitScene();
 }
 
+SceneManager& SceneManager::GetInstance() {
+    static SceneManager instance;
+    return instance;
+}
+
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
 	ECSRegistry::GetInstance().CreateECSManager("Resources/Scenes/FakeScene.scene");
