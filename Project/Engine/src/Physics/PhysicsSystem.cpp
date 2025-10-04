@@ -147,6 +147,7 @@ void PhysicsSystem::Update(float dt) {
 	}
 #endif
 
+    if (entities.empty()) return;
 	physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
 
 

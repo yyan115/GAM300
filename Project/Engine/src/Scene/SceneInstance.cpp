@@ -58,11 +58,6 @@ void SceneInstance::Initialize() {
 			MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat")});
 		//ecsManager.AddComponent<ModelRenderComponent>(backpackEntt2, ModelRenderComponent{ ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj"),
 		//	ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"))});
-
-		// GRAPHICS TEST CODE
-		ecsManager.transformSystem->Initialise();
-		ecsManager.modelSystem->Initialise();
-		ecsManager.debugDrawSystem->Initialise();
 		
 		//PHYSICS TEST CODE
 		ecsManager.physicsSystem->Initialise();
@@ -87,7 +82,7 @@ void SceneInstance::Initialize() {
 		col.layer = Layers::MOVING;
 		col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(physicsBoxObj, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		
 		// ---- FLOOR (static, invisible) ----
@@ -139,7 +134,7 @@ void SceneInstance::Initialize() {
 		backpack2Col.layer = Layers::MOVING;
 		backpack2Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack2, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack2, NameComponent{});
@@ -170,7 +165,7 @@ void SceneInstance::Initialize() {
 		backpack3Col.layer = Layers::MOVING;
 		backpack3Col.version++;
 
-		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("../../Resources/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
+		ecsManager.AddComponent<ModelRenderComponent>(backpack3, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/backpack/backpack.obj"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")), MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 		// Add name component
 		ecsManager.AddComponent<NameComponent>(backpack3, NameComponent{});
