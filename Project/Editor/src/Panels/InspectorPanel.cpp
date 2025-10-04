@@ -1285,20 +1285,20 @@ void InspectorPanel::DrawLightComponents(Entity entity) {
 				// Direction visualization
 				ImGui::SameLine();
 				if (ImGui::Button("Normalize")) {
-					light.direction = glm::normalize(light.direction);
+					light.direction = light.direction.Normalized();
 				}
 
 				// Show direction as normalized vector and common presets
-				glm::vec3 normalizedDir = glm::normalize(light.direction);
+				Vector3D normalizedDir = light.direction.Normalized();
 				ImGui::Text("Normalized: (%.2f, %.2f, %.2f)", normalizedDir.x, normalizedDir.y, normalizedDir.z);
 
 				// Common direction presets
 				ImGui::Text("Presets:");
-				if (ImGui::Button("Down")) light.direction = glm::vec3(0.0f, -1.0f, 0.0f);
+				if (ImGui::Button("Down")) light.direction = Vector3D(0.0f, -1.0f, 0.0f);
 				ImGui::SameLine();
-				if (ImGui::Button("Forward-Down")) light.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+				if (ImGui::Button("Forward-Down")) light.direction = Vector3D(-0.2f, -1.0f, -0.3f);
 				ImGui::SameLine();
-				if (ImGui::Button("Side-Down")) light.direction = glm::vec3(-1.0f, -1.0f, 0.0f);
+				if (ImGui::Button("Side-Down")) light.direction = Vector3D(-1.0f, -1.0f, 0.0f);
 
 				// Visual direction indicator
 				ImGui::Text("Direction Visualization:");
@@ -1311,7 +1311,7 @@ void InspectorPanel::DrawLightComponents(Entity entity) {
 				draw_list->AddCircle(center, 40.0f, IM_COL32(100, 100, 100, 255), 0, 2.0f);
 
 				// Draw direction arrow (project 3D direction to 2D)
-				glm::vec3 dir = glm::normalize(light.direction);
+				Vector3D dir = light.direction.Normalized();
 				ImVec2 arrow_end = ImVec2(center.x + dir.x * 35.0f, center.y + dir.y * 35.0f);
 				draw_list->AddLine(center, arrow_end, IM_COL32(255, 255, 0, 255), 3.0f);
 
@@ -1558,10 +1558,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "DirectionalLightComponent") {
 			DirectionalLightComponent component;
 			// Set reasonable default values (matching SceneInstance.cpp)
-			component.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-			component.ambient = glm::vec3(0.05f);
-			component.diffuse = glm::vec3(0.4f);
-			component.specular = glm::vec3(0.5f);
+			component.direction = Vector3D(-0.2f, -1.0f, -0.3f);
+			component.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+			component.diffuse = Vector3D(0.4f, 0.4f, 0.4f);
+			component.specular = Vector3D(0.5f, 0.5f, 0.5f);
 			component.enabled = true;
 
 			ecsManager.AddComponent<DirectionalLightComponent>(entity, component);
@@ -1582,9 +1582,9 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "PointLightComponent") {
 			PointLightComponent component;
 			// Set reasonable default values (matching SceneInstance.cpp)
-			component.ambient = glm::vec3(0.05f);
-			component.diffuse = glm::vec3(0.8f);
-			component.specular = glm::vec3(1.0f);
+			component.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+			component.diffuse = Vector3D(0.8f, 0.8f, 0.8f);
+			component.specular = Vector3D(1.0f, 1.0f, 1.0f);
 			component.constant = 1.0f;
 			component.linear = 0.09f;
 			component.quadratic = 0.032f;
@@ -1609,10 +1609,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "SpotLightComponent") {
 			SpotLightComponent component;
 			// Set reasonable default values (matching SceneInstance.cpp)
-			component.direction = glm::vec3(0.0f, 0.0f, -1.0f);
-			component.ambient = glm::vec3(0.0f);
-			component.diffuse = glm::vec3(1.0f);
-			component.specular = glm::vec3(1.0f);
+			component.direction = Vector3D(0.0f, 0.0f, -1.0f);
+			component.ambient = Vector3D::Zero();
+			component.diffuse = Vector3D::Ones();
+			component.specular = Vector3D::Ones();
 			component.constant = 1.0f;
 			component.linear = 0.09f;
 			component.quadratic = 0.032f;

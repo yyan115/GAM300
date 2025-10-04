@@ -307,10 +307,10 @@ void SceneInstance::Initialize() {
 		ecsManager.AddComponent<Transform>(sunLight, Transform{});
 
 		DirectionalLightComponent sunLightComp;
-		sunLightComp.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-		sunLightComp.ambient = glm::vec3(0.05f);
-		sunLightComp.diffuse = glm::vec3(0.4f);
-		sunLightComp.specular = glm::vec3(0.5f);
+		sunLightComp.direction = Vector3D(-0.2f, -1.0f, -0.3f);
+		sunLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+		sunLightComp.diffuse = Vector3D(0.4f, 0.4f, 0.4f);
+		sunLightComp.specular = Vector3D(0.5f, 0.5f, 0.5f);
 		sunLightComp.enabled = true;
 		ecsManager.AddComponent<DirectionalLightComponent>(sunLight, sunLightComp);
 		//ecsManager.lightingSystem->RegisterEntity(sunLight);
@@ -337,9 +337,9 @@ void SceneInstance::Initialize() {
 				MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Backpack Material.mat") });
 
 			PointLightComponent pointLightComp;
-			pointLightComp.ambient = glm::vec3(0.05f);
-			pointLightComp.diffuse = glm::vec3(0.8f);
-			pointLightComp.specular = glm::vec3(1.0f);
+			pointLightComp.ambient = Vector3D(0.05f, 0.05f, 0.05f);
+			pointLightComp.diffuse = Vector3D(0.8f, 0.8f, 0.8f);
+			pointLightComp.specular = Vector3D(1.0f, 1.0f, 1.0f);
 			pointLightComp.constant = 1.0f;
 			pointLightComp.linear = 0.09f;
 			pointLightComp.quadratic = 0.032f;
@@ -358,10 +358,10 @@ void SceneInstance::Initialize() {
 		// ecsManager.transformSystem->SetLocalRotation(pointLight, {}); // IF NEEDED
 
 		SpotLightComponent spotLightComp;
-		spotLightComp.direction = camera.Front;
-		spotLightComp.ambient = glm::vec3(0.0f);
-		spotLightComp.diffuse = glm::vec3(1.0f);
-		spotLightComp.specular = glm::vec3(1.0f);
+		spotLightComp.direction = Vector3D::ConvertGLMToVector3D(camera.Front);
+		spotLightComp.ambient = Vector3D::Zero();
+		spotLightComp.diffuse = Vector3D::Ones();
+		spotLightComp.specular = Vector3D::Ones();
 		spotLightComp.constant = 1.0f;
 		spotLightComp.linear = 0.09f;
 		spotLightComp.quadratic = 0.032f;

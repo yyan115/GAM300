@@ -205,6 +205,7 @@
     <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
+    <ClCompile Include="src\Graphics\Lights\LightComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

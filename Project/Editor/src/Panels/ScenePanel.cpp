@@ -749,7 +749,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                     );
 
                     // Apply rotation to light direction
-                    glm::vec4 localDir = glm::vec4(light.direction, 0.0f);
+                    glm::vec4 localDir = glm::vec4(light.direction.ConvertToGLM(), 0.0f);
                     glm::vec4 worldDir = entityMat * localDir;
                     glm::vec3 normalizedWorldDir = glm::normalize(glm::vec3(worldDir));
 
