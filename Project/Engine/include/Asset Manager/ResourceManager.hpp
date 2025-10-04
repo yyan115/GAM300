@@ -33,8 +33,10 @@ public:
 		else {
 #ifndef EDITOR
 			std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
+			ENGINE_LOG_INFO("[ResourceManager] Calling GetResource<T> with: " + gameAssetPath);
 			return GetResource<T>(gameAssetPath);
 #else
+			ENGINE_LOG_INFO("[ResourceManager] Calling GetResource<T> with: " + assetPath);
 			return GetResource<T>(assetPath);
 #endif
 		}
