@@ -12,11 +12,11 @@ public:
 	PhysicsSystem() = default;
 	~PhysicsSystem() = default;
 
-	bool Initialise();
+	bool InitialiseJolt();
+	void Initialise(ECSManager& ecsManager);
 
 	void Update(float dt);
 
-	void physicsAuthoring(ECSManager& ecsManager);
 	void physicsSyncBack(ECSManager& ecsManager);
 	void Shutdown();
 

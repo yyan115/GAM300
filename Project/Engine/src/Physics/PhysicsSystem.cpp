@@ -45,7 +45,7 @@ inline bool JoltAssertFailed(const char* expr, const char* msg, const char* file
 
 
 
-bool PhysicsSystem::Initialise() {
+bool PhysicsSystem::InitialiseJolt() {
     // Jolt one-time bootstrap
     static bool joltInitialized = false;
     if (!joltInitialized) {
@@ -134,51 +134,23 @@ bool PhysicsSystem::Initialise() {
     );
     bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);*/
 
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-    for (const auto& entity : entities) {
-        auto& collider = ecs.GetComponent<ColliderComponent>(entity);
-        switch (collider.shapeType)
-        {
-        case ColliderShapeType::Box:
-            collider.shape = new JPH::BoxShape((JPH::Vec3(collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z)));
-            break;
-        default:
-            break;
-        }
-    }
+    //auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    //for (const auto& entity : entities) {
+    //    auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+    //    switch (collider.shapeType)
+    //    {
+    //    case ColliderShapeType::Box:
+    //        collider.shape = new JPH::BoxShape((JPH::Vec3(collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z)));
+    //        break;
+    //    default:
+    //        break;
+    //    }
+    //}
 
     return true;
 }
 
-
-
-void PhysicsSystem::Update(float dt) {
-#ifdef __ANDROID__
-	static int updateCount = 0;
-	if (updateCount++ % 60 == 0) { // Log every 60 frames
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, dt=%f, entities=%zu", dt, entities.size());
-	}
-#endif
-
-    if (entities.empty()) return;
-	physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
-
-
-	//ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	////GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-
-	//// Submit all related physics components in
-	//for (const auto& entity : entities)
-	//{
-	//	auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
-	//	auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
-	//	auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
-
-
-	//}
-}
-
-void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
+void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
 #endif
@@ -266,6 +238,32 @@ void PhysicsSystem::physicsAuthoring(ECSManager& ecsManager) {
     }
 }
 
+void PhysicsSystem::Update(float dt) {
+#ifdef __ANDROID__
+    static int updateCount = 0;
+    if (updateCount++ % 60 == 0) { // Log every 60 frames
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, dt=%f, entities=%zu", dt, entities.size());
+    }
+#endif
+
+    if (entities.empty()) return;
+    physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
+
+
+    //ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    ////GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+
+    //// Submit all related physics components in
+    //for (const auto& entity : entities)
+    //{
+    //	auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
+    //	auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
+    //	auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
+
+
+    //}
+}
+
 void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 	auto& bi = physics.GetBodyInterface();
 
@@ -328,8 +326,8 @@ void PhysicsSystem::Shutdown() {
     //physics.~PhysicsSystem();   // or wrap in unique_ptr and reset()
 
     // 4. Now release allocators
-    jobs.reset();
-    temp.reset();
+    //jobs.reset();
+    //temp.reset();
 
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
