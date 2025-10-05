@@ -1802,7 +1802,12 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	ImGui::SameLine();
 	bool checkisOpen = ImGui::CollapsingHeader(label, flags);
 
-	
+	// Check for right-click on the collapsing header
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+		std::string popupName = "ComponentContextMenu_" + componentType;
+		ImGui::OpenPopup(popupName.c_str());
+	}
+
 	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 	ImGui::PushID((label + std::string("_gear")).c_str());
 	if (ImGui::SmallButton(ICON_FA_GEAR)) {
@@ -1818,15 +1823,15 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({entity, componentType});
 		}
-		if (ImGui::MenuItem("Reset")) {
-			// TODO: Implement reset functionality
-		}
-		if (ImGui::MenuItem("Copy Component")) {
-			// TODO: Implement copy functionality
-		}
-		if (ImGui::MenuItem("Paste Component Values")) {
-			// TODO: Implement paste functionality
-		}
+		//if (ImGui::MenuItem("Reset")) {
+		//	// TODO: Implement reset functionality
+		//}
+		//if (ImGui::MenuItem("Copy Component")) {
+		//	// TODO: Implement copy functionality
+		//}
+		//if (ImGui::MenuItem("Paste Component Values")) {
+		//	// TODO: Implement paste functionality
+		//}
 		ImGui::EndPopup();
 	}
 
