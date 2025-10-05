@@ -106,17 +106,13 @@ private:
 };
 
 // Convenience macros for profiling
-#ifdef NDEBUG
-    // In release builds, profiling can be disabled via compile flag
-    #ifndef ENABLE_PROFILING
-        #define PROFILE_SCOPE(name)
-        #define PROFILE_FUNCTION()
-    #else
-        #define PROFILE_SCOPE(name) ProfileZone profileZone##__LINE__(name)
-        #define PROFILE_FUNCTION() ProfileZone profileZone##__LINE__(__FUNCTION__)
-    #endif
+// Note: Profiling is enabled by default in all builds
+// To disable in release builds, define DISABLE_PROFILING
+#if defined(DISABLE_PROFILING)
+    #define PROFILE_SCOPE(name)
+    #define PROFILE_FUNCTION()
 #else
-    // In debug builds, profiling is always enabled
+    // Profiling enabled - works in both debug and release
     #define PROFILE_SCOPE(name) ProfileZone profileZone##__LINE__(name)
     #define PROFILE_FUNCTION() ProfileZone profileZone##__LINE__(__FUNCTION__)
 #endif

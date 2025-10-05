@@ -122,7 +122,11 @@ void PerformanceProfiler::BeginZone(const char* zoneName) {
 }
 
 void PerformanceProfiler::EndZone(const char* zoneName, double durationMs) {
-    if (!profilingEnabled) return;
+    if (!profilingEnabled) {
+        // Debug: Log why zone was not recorded
+        // Uncomment for debugging: ENGINE_PRINT("[Profiler] Zone '", zoneName, "' skipped - profiling disabled\n");
+        return;
+    }
     
     std::lock_guard<std::mutex> lock(mutex);
     
@@ -133,6 +137,9 @@ void PerformanceProfiler::EndZone(const char* zoneName, double durationMs) {
         newZone.zoneName = zoneName;
         newZone.AddSample(durationMs);
         zoneStats[zoneName] = newZone;
+        
+        // Debug: Uncomment to see when zones are added
+        // ENGINE_PRINT("[Profiler] New zone added: '", zoneName, "' with ", durationMs, "ms\n");
     } else {
         // Update existing zone
         it->second.AddSample(durationMs);
