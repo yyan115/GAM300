@@ -12,6 +12,8 @@ Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
 Resources/Kenney Mini.font
+Resources/Materials/backpack.mat
+Resources/Materials/backpack.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta

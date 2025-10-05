@@ -2968,7 +2968,7 @@
         },
         {
             "id": 12,
-            "guid": "004f2ed9d99a1c06-0002dbc328000005",
+            "guid": "00219e880ddfafb7-0002dbe112000009",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"

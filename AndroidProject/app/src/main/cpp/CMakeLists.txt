@@ -109,12 +109,32 @@ add_custom_command(
     VERBATIM
 )
 
+# Detect host platform for NDK path (Windows vs Linux)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(NDK_HOST_TAG "windows-x86_64")
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+    set(NDK_HOST_TAG "linux-x86_64")
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(NDK_HOST_TAG "darwin-x86_64")
+else()
+    message(FATAL_ERROR "Unsupported host platform: ${CMAKE_HOST_SYSTEM_NAME}")
+endif()
+
+# Copy C++ shared library from NDK (required by libgam300android.so)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libc++_shared.so
+    COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_NDK}/toolchains/llvm/prebuilt/${NDK_HOST_TAG}/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/
+    COMMENT "Copying C++ shared library from NDK to jniLibs"
+    VERBATIM
+)
+
 # Create custom target to ensure libraries are copied
 add_custom_target(copy_libraries ALL
     DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libEngine.so
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libfmod.so
         ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libassimp.so
+        ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a/libc++_shared.so
 )
 
 # Create our JNI bridge library (just the bridge, not Game sources)
