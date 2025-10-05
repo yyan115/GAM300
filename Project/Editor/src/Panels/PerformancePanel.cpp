@@ -123,20 +123,50 @@ void PerformancePanel::RenderFrameTimeGraph() {
     
     // Target frame times for reference
     ImGui::TextDisabled("Targets: 16.67ms (60 FPS) | 33.33ms (30 FPS)");
+    ImGui::TextDisabled("Scale: 0-60ms (Y-axis: 0, 20, 40, 60)");
     
-    // Plot graph with better scaling
-    float scaleMax = std::max(maxFrameTime * 1.1f, 20.0f); // Minimum 20ms scale
-    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+    // Create graph with left margin for Y-axis labels
+    ImGui::Dummy(ImVec2(40.0f, 0.0f)); // Left margin for Y-axis labels
+    ImGui::SameLine();
+    ImVec2 graphPos = ImGui::GetCursorScreenPos();
+    float graphWidth = ImGui::GetContentRegionAvail().x - 40.0f; // Account for left margin
+    float graphHeightPx = graphHeight * 1.5f; // Same height as zone graphs
+    
+    // Plot graph with histogram for better readability
+    float scaleMax = 60.0f; // Fixed scale - better range for typical frame times
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
-    ImGui::PlotLines("##FrameTime", 
+    ImGui::PlotHistogram("##FrameTime", 
         history.frameTimes.data(), 
         static_cast<int>(history.frameTimes.size()),
         static_cast<int>(history.currentIndex),
         "Frame Time (ms)",
         0.0f, 
         scaleMax,
-        ImVec2(0, graphHeight * 1.5f)); // Taller graph
+        ImVec2(graphWidth, graphHeightPx));
     ImGui::PopStyleColor(2);
+    
+    // Add Y-axis scale indicators and gridlines (positioned to the left of graph)
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImU32 textColor = IM_COL32(255, 255, 255, 180); // White with transparency
+    ImU32 gridColor = IM_COL32(100, 100, 100, 60); // Light gray gridlines
+    
+    // Y-axis labels and gridlines at key positions (left side of graph)
+    float y0 = graphPos.y + graphHeightPx - (0.0f / scaleMax) * graphHeightPx;
+    float y20 = graphPos.y + graphHeightPx - (20.0f / scaleMax) * graphHeightPx;
+    float y40 = graphPos.y + graphHeightPx - (40.0f / scaleMax) * graphHeightPx;
+    float y60 = graphPos.y + graphHeightPx - (60.0f / scaleMax) * graphHeightPx;
+    
+    // Draw gridlines across the graph
+    drawList->AddLine(ImVec2(graphPos.x, y20), ImVec2(graphPos.x + graphWidth, y20), gridColor, 1.0f);
+    drawList->AddLine(ImVec2(graphPos.x, y40), ImVec2(graphPos.x + graphWidth, y40), gridColor, 1.0f);
+    drawList->AddLine(ImVec2(graphPos.x, y60), ImVec2(graphPos.x + graphWidth, y60), gridColor, 1.0f);
+    
+    // Draw Y-axis labels (positioned to the left, no background rectangles)
+    drawList->AddText(ImVec2(graphPos.x - 35, y0 - 9), textColor, "0");
+    drawList->AddText(ImVec2(graphPos.x - 40, y20 - 9), textColor, "20");
+    drawList->AddText(ImVec2(graphPos.x - 40, y40 - 9), textColor, "40");
+    drawList->AddText(ImVec2(graphPos.x - 40, y60 - 9), textColor, "60");
     
     // Performance indicators legend
     ImGui::Spacing();
@@ -185,20 +215,50 @@ void PerformancePanel::RenderFpsGraph() {
     
     // FPS targets
     ImGui::TextDisabled("Targets: 60 FPS (smooth) | 30 FPS (acceptable)");
+    ImGui::TextDisabled("Scale: 0-700 FPS (Y-axis: 0, 200, 400, 600)");
     
-    // Plot graph with better styling
-    float scaleMax = std::max(maxFps * 1.1f, 120.0f); // Show up to 120 FPS minimum
-    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.2f, 1.0f, 0.5f, 1.0f));
+    // Create graph with left margin for Y-axis labels
+    ImGui::Dummy(ImVec2(40.0f, 0.0f)); // Left margin for Y-axis labels
+    ImGui::SameLine();
+    ImVec2 graphPos = ImGui::GetCursorScreenPos();
+    float graphWidth = ImGui::GetContentRegionAvail().x - 40.0f; // Account for left margin
+    float graphHeightPx = graphHeight * 1.5f; // Same height as zone graphs
+    
+    // Plot graph with histogram for better readability
+    float scaleMax = 700.0f; // Fixed scale - accommodates high FPS
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 1.0f, 0.5f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
-    ImGui::PlotLines("##FPS", 
+    ImGui::PlotHistogram("##FPS", 
         history.fpsHistory.data(), 
         static_cast<int>(history.fpsHistory.size()),
         static_cast<int>(history.currentIndex),
         "FPS",
         0.0f, 
         scaleMax,
-        ImVec2(0, graphHeight * 1.5f)); // Taller graph
+        ImVec2(graphWidth, graphHeightPx));
     ImGui::PopStyleColor(2);
+    
+    // Add Y-axis scale indicators and gridlines (positioned to the left of graph)
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImU32 textColor = IM_COL32(255, 255, 255, 180); // White with transparency
+    ImU32 gridColor = IM_COL32(100, 100, 100, 60); // Light gray gridlines
+    
+    // Y-axis labels and gridlines at key positions (left side of graph)
+    float y0 = graphPos.y + graphHeightPx - (0.0f / scaleMax) * graphHeightPx;
+    float y200 = graphPos.y + graphHeightPx - (200.0f / scaleMax) * graphHeightPx;
+    float y400 = graphPos.y + graphHeightPx - (400.0f / scaleMax) * graphHeightPx;
+    float y600 = graphPos.y + graphHeightPx - (600.0f / scaleMax) * graphHeightPx;
+    
+    // Draw gridlines across the graph
+    drawList->AddLine(ImVec2(graphPos.x, y200), ImVec2(graphPos.x + graphWidth, y200), gridColor, 1.0f);
+    drawList->AddLine(ImVec2(graphPos.x, y400), ImVec2(graphPos.x + graphWidth, y400), gridColor, 1.0f);
+    drawList->AddLine(ImVec2(graphPos.x, y600), ImVec2(graphPos.x + graphWidth, y600), gridColor, 1.0f);
+    
+    // Draw Y-axis labels (positioned to the left, no background rectangles)
+    drawList->AddText(ImVec2(graphPos.x - 35, y0 - 9), textColor, "0");
+    drawList->AddText(ImVec2(graphPos.x - 43, y200 - 9), textColor, "200");
+    drawList->AddText(ImVec2(graphPos.x - 43, y400 - 9), textColor, "400");
+    drawList->AddText(ImVec2(graphPos.x - 43, y600 - 9), textColor, "600");
     
     // FPS guide
     ImGui::Spacing();
