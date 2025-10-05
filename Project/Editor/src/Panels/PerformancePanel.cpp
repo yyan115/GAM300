@@ -8,6 +8,7 @@
 #include "Engine.h"
 #include <algorithm>
 #include <unordered_set>
+#include <IconsFontAwesome6.h>
 
 PerformancePanel::PerformancePanel()
     : EditorPanel("Performance", false) {
@@ -413,11 +414,11 @@ void PerformancePanel::RenderZoneStatistics() {
             
             const char* icon;
             if (isEcsSystem) {
-                icon = "\u2699";  // Gear for ECS systems
+                icon = ICON_FA_GEAR;  // Gear for ECS systems
             } else {
-                icon = data.avgTime > 5.0 ? "\u26A0" :  // Warning
-                      data.avgTime > 1.0 ? "\u25CF" :  // Circle
-                      "\u2713";  // Check
+                icon = data.avgTime > 5.0 ? ICON_FA_TRIANGLE_EXCLAMATION :  // Warning
+                      data.avgTime > 1.0 ? ICON_FA_CIRCLE :  // Circle
+                      ICON_FA_CHECK;  // Check
             }
             
             ImVec4 iconColor = isEcsSystem ? ImVec4(0.4f, 0.7f, 1.0f, 1.0f) : GetTimingColor(data.avgTime);
@@ -506,7 +507,7 @@ void PerformancePanel::RenderZoneStatistics() {
     // ECS systems summary
     if (!ecsSystemNames.empty()) {
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "| \u2699 = ECS System");
+        ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "| %s = ECS System", ICON_FA_GEAR);
     }
 }
 
