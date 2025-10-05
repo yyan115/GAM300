@@ -680,6 +680,10 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) {
                 NavigateToDirectory(asset.filePath);
+
+                ImGui::PopID();
+                ImGui::EndGroup();
+                break;
             }
             else {
                 std::string lowerExt = asset.extension;
@@ -1363,6 +1367,7 @@ void AssetBrowserPanel::ShowOpenSceneConfirmation() {
         ImGui::Separator();
 
         if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            SceneManager::GetInstance().ShutDownScenePhysics();
             SceneManager::GetInstance().LoadScene(selectedScene.filePath);
             ImGui::CloseCurrentPopup();
         }

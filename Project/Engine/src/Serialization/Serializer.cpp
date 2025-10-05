@@ -353,6 +353,10 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + scenePath);
     }
 
+    if (!doc.IsObject()) {
+        return;
+    }
+
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
         return;
