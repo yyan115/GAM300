@@ -1,23 +1,17 @@
 #pragma once
 
 #include "Engine.h"
-#include <string>
-#include <vector>
-#include <chrono>
-#include <mutex>
-#include <unordered_map>
-#include <memory>
 
 #ifndef DISABLE_PROFILING
 #if defined(_DEBUG) || defined(DEBUG)
-#define DISABLE_PROFILING 0
+#define DISABLE_PROFILING 0 
 #else
-#define DISABLE_PROFILING 1
+#define DISABLE_PROFILING 0 // for now make it enable for all builds
 #endif
 #endif
 
 // Performance zone timing data with history
-struct ENGINE_API ZoneTimingData {
+struct ZoneTimingData {
     std::string zoneName;
     double avgTime = 0.0;      // Average time in milliseconds
     double minTime = 999999.0; // Minimum time in milliseconds
@@ -36,7 +30,7 @@ struct ENGINE_API ZoneTimingData {
 };
 
 // Frame timing history for graphs
-struct ENGINE_API FrameTimingHistory {
+struct FrameTimingHistory {
     std::vector<float> frameTimes;     // Frame times in ms
     std::vector<float> fpsHistory;     // FPS values
     size_t maxFrames = 300;            // Configurable history size
@@ -49,7 +43,7 @@ struct ENGINE_API FrameTimingHistory {
 };
 
 // RAII-based profiling zone (optimized - no BeginZone call needed)
-class ENGINE_API ProfileZone {
+class ProfileZone {
 public:
     explicit ProfileZone(const char* zoneName);
     ~ProfileZone();
@@ -64,13 +58,13 @@ private:
 };
 
 // Main performance profiler class (singleton)
-class ENGINE_API PerformanceProfiler {
+class PerformanceProfiler {
 public:
-    static PerformanceProfiler& GetInstance();
+    ENGINE_API static PerformanceProfiler& GetInstance();
     
     // Frame management - call once per frame
-    void BeginFrame();
-    void EndFrame();
+    void ENGINE_API BeginFrame();
+    void ENGINE_API EndFrame();
     
     // Zone recording (called by ProfileZone RAII class)
     void EndZone(const char* zoneName, double durationMs);
@@ -80,17 +74,9 @@ public:
     const std::unordered_map<std::string, ZoneTimingData>& GetZoneStatistics() const { return zoneStats; }
     
     // Configuration
-    void SetHistorySize(size_t maxFrames);
-    void ClearHistory();
+    void ENGINE_API ClearHistory();
     void EnableProfiling(bool enable) { profilingEnabled = enable; }
     bool IsProfilingEnabled() const { return profilingEnabled; }
-    
-    // Current frame info (pascalCase for variables)
-    double GetCurrentFrameTime() const { return currentFrameTime; }
-    double GetCurrentFps() const { return currentFps; }
-    
-    // Get list of all zone names for UI
-    std::vector<std::string> GetZoneNames() const;
     
 private:
     PerformanceProfiler() = default;
@@ -109,8 +95,6 @@ private:
     
     // Current frame tracking
     std::chrono::high_resolution_clock::time_point frameStartTime;
-    double currentFrameTime = 0.0;
-    double currentFps = 0.0;
     
     // State
     bool profilingEnabled = false;

@@ -3,6 +3,7 @@
 #include "ECS/System.hpp"
 #include "ECS/ECSRegistry.hpp"
 //#include "Physics/JoltInclude.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 #include "Physics/PhysicsSystem.hpp"
 #include "Physics/CollisionFilters.hpp"
@@ -239,6 +240,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 }
 
 void PhysicsSystem::Update(float dt) {
+    PROFILE_FUNCTION();
 #ifdef __ANDROID__
     static int updateCount = 0;
     if (updateCount++ % 60 == 0) { // Log every 60 frames

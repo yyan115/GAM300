@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Performance/PerformanceProfiler.hpp"
-#include <algorithm>
 
 // ===== ZoneTimingData Implementation =====
 
@@ -100,8 +99,8 @@ void PerformanceProfiler::EndFrame() {
     auto frameEndTime = std::chrono::high_resolution_clock::now();
     auto frameDuration = std::chrono::duration_cast<std::chrono::microseconds>(frameEndTime - frameStartTime);
     
-    currentFrameTime = frameDuration.count() / 1000.0; // Convert to milliseconds
-    currentFps = currentFrameTime > 0.0 ? 1000.0 / currentFrameTime : 0.0;
+    double currentFrameTime = frameDuration.count() / 1000.0; // Convert to milliseconds
+    double currentFps = currentFrameTime > 0.0 ? 1000.0 / currentFrameTime : 0.0;
     
     std::lock_guard<std::mutex> lock(mutex);
     frameHistory.AddFrame(currentFrameTime, currentFps);
@@ -125,21 +124,6 @@ void PerformanceProfiler::EndZone(const char* zoneName, double durationMs) {
         // Update existing zone
         it->second.AddSample(durationMs);
     }
-}
-
-std::vector<std::string> PerformanceProfiler::GetZoneNames() const {
-    std::lock_guard<std::mutex> lock(mutex);
-    std::vector<std::string> names;
-    names.reserve(zoneStats.size());
-    for (const auto& pair : zoneStats) {
-        names.push_back(pair.first);
-    }
-    return names;
-}
-
-void PerformanceProfiler::SetHistorySize(size_t maxFrames) {
-    std::lock_guard<std::mutex> lock(mutex);
-    frameHistory.SetMaxFrames(maxFrames);
 }
 
 void PerformanceProfiler::ClearHistory() {

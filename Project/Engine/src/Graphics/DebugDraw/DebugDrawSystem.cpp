@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 std::vector<DebugDrawData> DebugDrawSystem::debugQueue; 
 
@@ -22,6 +23,7 @@ bool DebugDrawSystem::Initialise()
 
 void DebugDrawSystem::Update()
 {
+    PROFILE_FUNCTION();
     if (debugQueue.empty()) return;
 
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();

@@ -4,6 +4,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <Graphics/GraphicsManager.hpp>
+#include "Performance/PerformanceProfiler.hpp"
 
 bool LightingSystem::Initialise()
 {
@@ -13,6 +14,7 @@ bool LightingSystem::Initialise()
 
 void LightingSystem::Update()
 {
+    PROFILE_FUNCTION();
 	CollectLightData();
 }
 

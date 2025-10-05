@@ -8,6 +8,7 @@
 #include "Graphics/EBO.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 bool SpriteSystem::Initialise()
 {
@@ -37,6 +38,7 @@ bool SpriteSystem::Initialise()
 
 void SpriteSystem::Update()
 {
+	PROFILE_FUNCTION();
 #ifdef ANDROID
     InitializeSpriteQuad(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
 #endif
