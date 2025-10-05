@@ -19,6 +19,7 @@ private:
     void RenderFrameTimeGraph();
     void RenderFpsGraph();
     void RenderZoneStatistics();
+    void RenderZoneGraph(const std::string& zoneName);
     
     // Helper to get color based on timing
     ImVec4 GetTimingColor(double timeMs) const;
@@ -28,4 +29,7 @@ private:
     bool showFpsGraph = true;
     bool showZoneStats = true;
     float graphHeight = 80.0f;
+    
+    // Selected zone for detailed graph view
+    std::string selectedZone;
 };

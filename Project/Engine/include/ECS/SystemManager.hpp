@@ -59,6 +59,11 @@ public:
 		}
 	}
 
+	// Get all registered systems (for profiling UI)
+	const std::unordered_map<std::string, std::shared_ptr<System>>& GetAllSystems() const {
+		return systems;
+	}
+
 private:
 	std::unordered_map<std::string, Signature> signatures{}; // Map from system type name to its signature.
 	std::unordered_map<std::string, std::shared_ptr<System>> systems{}; // Map from system type name to a system instance.

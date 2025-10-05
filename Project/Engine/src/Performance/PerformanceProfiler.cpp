@@ -11,6 +11,15 @@ void ZoneTimingData::AddSample(double timeMs) {
     minTime = std::min(minTime, timeMs);
     maxTime = std::max(maxTime, timeMs);
     avgTime = totalTime / sampleCount;
+    
+    // Add to history for graphing
+    if (history.size() < maxHistory) {
+        history.push_back(static_cast<float>(timeMs));
+    } else {
+        history[historyIndex] = static_cast<float>(timeMs);
+        historyFilled = true;
+    }
+    historyIndex = (historyIndex + 1) % maxHistory;
 }
 
 void ZoneTimingData::Reset() {
@@ -19,6 +28,9 @@ void ZoneTimingData::Reset() {
     maxTime = 0.0;
     sampleCount = 0;
     totalTime = 0.0;
+    history.clear();
+    historyIndex = 0;
+    historyFilled = false;
 }
 
 // ===== FrameTimingHistory Implementation =====
@@ -58,7 +70,7 @@ void FrameTimingHistory::SetMaxFrames(size_t newMaxFrames) {
 ProfileZone::ProfileZone(const char* zoneName) 
     : zoneName(zoneName)
     , startTime(std::chrono::high_resolution_clock::now()) {
-    PerformanceProfiler::GetInstance().BeginZone(zoneName);
+    // Timing starts here - no BeginZone call needed
 }
 
 ProfileZone::~ProfileZone() {
@@ -74,26 +86,6 @@ ProfileZone::~ProfileZone() {
 PerformanceProfiler& PerformanceProfiler::GetInstance() {
     static PerformanceProfiler instance;
     return instance;
-}
-
-void PerformanceProfiler::Initialize() {
-    std::lock_guard<std::mutex> lock(mutex);
-    
-    if (initialized) {
-        return;
-    }
-    
-    frameHistory.Clear();
-    zoneStats.clear();
-    initialized = true;
-}
-
-void PerformanceProfiler::Shutdown() {
-    std::lock_guard<std::mutex> lock(mutex);
-    
-    frameHistory.Clear();
-    zoneStats.clear();
-    initialized = false;
 }
 
 void PerformanceProfiler::BeginFrame() {
@@ -115,16 +107,8 @@ void PerformanceProfiler::EndFrame() {
     frameHistory.AddFrame(currentFrameTime, currentFps);
 }
 
-
-void PerformanceProfiler::BeginZone(const char* zoneName) {
-    // Zone start is tracked by ProfileZone's constructor timestamp
-    // This function can be used for additional setup if needed
-}
-
 void PerformanceProfiler::EndZone(const char* zoneName, double durationMs) {
     if (!profilingEnabled) {
-        // Debug: Log why zone was not recorded
-        // Uncomment for debugging: ENGINE_PRINT("[Profiler] Zone '", zoneName, "' skipped - profiling disabled\n");
         return;
     }
     
@@ -137,13 +121,20 @@ void PerformanceProfiler::EndZone(const char* zoneName, double durationMs) {
         newZone.zoneName = zoneName;
         newZone.AddSample(durationMs);
         zoneStats[zoneName] = newZone;
-        
-        // Debug: Uncomment to see when zones are added
-        // ENGINE_PRINT("[Profiler] New zone added: '", zoneName, "' with ", durationMs, "ms\n");
     } else {
         // Update existing zone
         it->second.AddSample(durationMs);
     }
+}
+
+std::vector<std::string> PerformanceProfiler::GetZoneNames() const {
+    std::lock_guard<std::mutex> lock(mutex);
+    std::vector<std::string> names;
+    names.reserve(zoneStats.size());
+    for (const auto& pair : zoneStats) {
+        names.push_back(pair.first);
+    }
+    return names;
 }
 
 void PerformanceProfiler::SetHistorySize(size_t maxFrames) {

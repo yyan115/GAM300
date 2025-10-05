@@ -103,6 +103,11 @@ public:
 	std::vector<Entity> GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
+	
+	// Get system manager for profiling access
+	const SystemManager* GetSystemManager() const {
+		return systemManager.get();
+	}
 
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 

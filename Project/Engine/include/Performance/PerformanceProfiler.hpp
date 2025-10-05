@@ -8,7 +8,15 @@
 #include <unordered_map>
 #include <memory>
 
-// Performance zone timing data
+#ifndef DISABLE_PROFILING
+#if defined(_DEBUG) || defined(DEBUG)
+#define DISABLE_PROFILING 0
+#else
+#define DISABLE_PROFILING 1
+#endif
+#endif
+
+// Performance zone timing data with history
 struct ENGINE_API ZoneTimingData {
     std::string zoneName;
     double avgTime = 0.0;      // Average time in milliseconds
@@ -16,6 +24,12 @@ struct ENGINE_API ZoneTimingData {
     double maxTime = 0.0;      // Maximum time in milliseconds
     uint32_t sampleCount = 0;  // Number of samples recorded
     double totalTime = 0.0;    // Total accumulated time
+    
+    // History for graphing (last N samples)
+    std::vector<float> history;
+    size_t maxHistory = 300;
+    size_t historyIndex = 0;
+    bool historyFilled = false;
     
     void AddSample(double timeMs);
     void Reset();
@@ -34,10 +48,10 @@ struct ENGINE_API FrameTimingHistory {
     void SetMaxFrames(size_t maxFrames);
 };
 
-// RAII-based profiling zone
+// RAII-based profiling zone (optimized - no BeginZone call needed)
 class ENGINE_API ProfileZone {
 public:
-    ProfileZone(const char* zoneName);
+    explicit ProfileZone(const char* zoneName);
     ~ProfileZone();
     
     // Disable copy and move
@@ -54,16 +68,11 @@ class ENGINE_API PerformanceProfiler {
 public:
     static PerformanceProfiler& GetInstance();
     
-    // Lifecycle
-    void Initialize();
-    void Shutdown();
-    
     // Frame management - call once per frame
     void BeginFrame();
     void EndFrame();
     
     // Zone recording (called by ProfileZone RAII class)
-    void BeginZone(const char* zoneName);
     void EndZone(const char* zoneName, double durationMs);
     
     // Data access for UI
@@ -79,6 +88,9 @@ public:
     // Current frame info (pascalCase for variables)
     double GetCurrentFrameTime() const { return currentFrameTime; }
     double GetCurrentFps() const { return currentFps; }
+    
+    // Get list of all zone names for UI
+    std::vector<std::string> GetZoneNames() const;
     
 private:
     PerformanceProfiler() = default;
@@ -101,14 +113,13 @@ private:
     double currentFps = 0.0;
     
     // State
-    bool profilingEnabled = true;
-    bool initialized = false;
+    bool profilingEnabled = false;
 };
 
 // Convenience macros for profiling
 // Note: Profiling is enabled by default in all builds
 // To disable in release builds, define DISABLE_PROFILING
-#if defined(DISABLE_PROFILING)
+#if DISABLE_PROFILING
     #define PROFILE_SCOPE(name)
     #define PROFILE_FUNCTION()
 #else

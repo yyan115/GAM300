@@ -39,24 +39,12 @@ int main() {
         //Update deltaTime at start of Frame
         //TimeManager::UpdateDeltaTime();
 
-        {
-            PROFILE_SCOPE("EngineUpdate");
             Engine::Update();
-        }
-        
-        {
-            PROFILE_SCOPE("GameManagerUpdate");
             GameManager::Update();
-        }
-
-        // Render 3D content to FBO
-        {
-            PROFILE_SCOPE("EngineDraw");
             Engine::StartDraw();
             //Engine::Draw();
             GUIManager::Render();
             Engine::EndDraw();
-        }
 		
         // WindowManager handles buffer swapping for editor
         //WindowManager::SwapBuffers();

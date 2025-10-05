@@ -7,6 +7,7 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Math/Matrix3x3.hpp>
+#include "Performance/PerformanceProfiler.hpp"
 
 void TransformSystem::Initialise() {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -32,6 +33,8 @@ void TransformSystem::Initialise() {
 }
 
 void TransformSystem::Update() {
+	PROFILE_FUNCTION(); // Will automatically show as "Transform" in profiler UI
+	
 	//for (auto& [entities, transform] : transformSystem.forEach()) {
 	//ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	//for (const auto& entity : entities) {

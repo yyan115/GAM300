@@ -108,17 +108,8 @@ void AudioManager::Update() {
     std::lock_guard<std::mutex> lock(Mutex);
     if (!System) return;
 
-    // Update FMOD system - handles all active channels
-    {
-        PROFILE_SCOPE("FMODSystemUpdate");
         FMOD_System_Update(System);
-    }
-
-    // Cleanup stopped channels to prevent memory leaks
-    {
-        PROFILE_SCOPE("CleanupStoppedChannels");
         CleanupStoppedChannels();
-    }
 }
 
 ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {

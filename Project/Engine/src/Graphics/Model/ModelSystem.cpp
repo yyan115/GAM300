@@ -8,6 +8,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -38,6 +39,8 @@ bool ModelSystem::Initialise()
 
 void ModelSystem::Update()
 {
+    PROFILE_FUNCTION(); // Will automatically show as "Model" in profiler UI
+    
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() called");
 #endif

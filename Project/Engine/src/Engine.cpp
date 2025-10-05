@@ -44,10 +44,6 @@ bool Engine::Initialize() {
 		return false;
 	}
 	
-	// Initialize performance profiler
-	PerformanceProfiler::GetInstance().Initialize();
-	ENGINE_PRINT("[Engine] PerformanceProfiler initialized\n");
-	
 	SetGameState(GameState::PLAY_MODE);
 	WindowManager::Initialize(SCR_WIDTH, SCR_HEIGHT, TEMP::windowTitle.c_str());
 
@@ -581,19 +577,15 @@ bool Engine::InitializeAssets() {
 }
 
 void Engine::Update() {
-    PROFILE_FUNCTION();
-
     TimeManager::UpdateDeltaTime();
     
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
-        PROFILE_SCOPE("SceneUpdate");
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 	}
 }
 
 void Engine::StartDraw() {
-    PROFILE_FUNCTION();
     
 #ifdef ANDROID
     // Ensure context is current before rendering
@@ -635,7 +627,6 @@ void Engine::StartDraw() {
 }
 
 void Engine::Draw() {
-    PROFILE_FUNCTION();
     
 #ifdef ANDROID
     // Ensure the EGL context is current
@@ -678,9 +669,7 @@ void Engine::Draw() {
 #endif
 }
 
-void Engine::EndDraw() {
-    PROFILE_FUNCTION();
-    
+void Engine::EndDraw() {    
 	WindowManager::SwapBuffers();
 
 	// Only process input if the game should be running (not paused)
@@ -693,7 +682,6 @@ void Engine::EndDraw() {
 
 void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
-	PerformanceProfiler::GetInstance().Shutdown();
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();

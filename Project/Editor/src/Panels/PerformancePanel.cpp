@@ -4,7 +4,10 @@
 #include "TimeManager.hpp"
 #include "EditorComponents.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "Engine.h"
 #include <algorithm>
+#include <unordered_set>
 
 PerformancePanel::PerformancePanel()
     : EditorPanel("Performance", false) {
@@ -46,6 +49,7 @@ void PerformancePanel::OnImGuiRender() {
         // Profiling controls
         bool profilingEnabled = profiler.IsProfilingEnabled();
         if (ImGui::Checkbox("Enable Profiling", &profilingEnabled)) {
+            profiler.ClearHistory();
             profiler.EnableProfiling(profilingEnabled);
         }
         
@@ -138,11 +142,11 @@ void PerformancePanel::RenderFrameTimeGraph() {
     ImGui::Spacing();
     ImGui::TextDisabled("Performance Guide:");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "\u2588 Good (<1ms)");
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Good (<16ms)");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "\u2588 Monitor (1-5ms)");
+    ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), " | Monitor (<35ms)");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "\u2588 Critical (>5ms)");
+    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), " | Critical (>35ms)");
 }
 
 void PerformancePanel::RenderFpsGraph() {
@@ -200,19 +204,79 @@ void PerformancePanel::RenderFpsGraph() {
     ImGui::Spacing();
     ImGui::TextDisabled("FPS Guide:");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "\u2588 >60 FPS");
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ">60 FPS");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), "\u2588 30-60 FPS");
+    ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.0f, 1.0f), " | 30-60 FPS");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "\u2588 <30 FPS");
+    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), " | <30 FPS");
+}
+
+void PerformancePanel::RenderZoneGraph(const std::string& zoneName) {
+    auto& profiler = PerformanceProfiler::GetInstance();
+    const auto& zoneStats = profiler.GetZoneStatistics();
+    
+    auto it = zoneStats.find(zoneName);
+    if (it == zoneStats.end()) {
+        ImGui::TextDisabled("Zone not found: %s", zoneName.c_str());
+        return;
+    }
+    
+    const auto& data = it->second;
+    
+    if (data.history.empty()) {
+        ImGui::TextDisabled("No history data available for this zone yet");
+        return;
+    }
+    
+    // Header for selected zone
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+    ImGui::Text("Zone Performance: %s", zoneName.c_str());
+    ImGui::PopStyleColor();
+    
+    // Statistics
+    ImGui::Text("Avg: %.3f ms | Min: %.3f ms | Max: %.3f ms | Samples: %u", 
+                data.avgTime, data.minTime, data.maxTime, data.sampleCount);
+    
+    // Calculate scale for graph
+    float scaleMax = std::max<float>(static_cast<float>(data.maxTime * 1.1f), 1.0f); // Minimum 1ms scale
+    
+    // Plot the zone's history
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.8f, 0.5f, 1.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
+    ImGui::PlotLines("##ZoneHistory", 
+        data.history.data(), 
+        static_cast<int>(data.history.size()),
+        static_cast<int>(data.historyIndex),
+        zoneName.c_str(),
+        0.0f, 
+        scaleMax,
+        ImVec2(0, graphHeight * 1.5f));
+    ImGui::PopStyleColor(2);
+    
+    // Show average line reference
+    ImGui::TextDisabled("Reference: Average is at %.3f ms", data.avgTime);
 }
 
 void PerformancePanel::RenderZoneStatistics() {
     auto& profiler = PerformanceProfiler::GetInstance();
     const auto& zoneStats = profiler.GetZoneStatistics();
     
+    // Get ECS system names for auto-highlighting
+    std::unordered_set<std::string> ecsSystemNames;
+	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (auto* systemManager = ecsManager.GetSystemManager()) {
+        for (const auto& [typeName, system] : systemManager->GetAllSystems()) {
+            if (system) {
+                // Get clean system name from the system itself
+                std::string systemName = system->GetSystemName();
+                ecsSystemNames.insert(systemName);
+            }
+        }
+    }
+    
     // Debug info
-    ImGui::Text("Total Zones: %zu | Profiling: %s", zoneStats.size(), 
+    ImGui::Text("Total Zones: %zu | ECS Systems: %zu | Profiling: %s", 
+                zoneStats.size(), ecsSystemNames.size(),
                 profiler.IsProfilingEnabled() ? "ON" : "OFF");
     
     if (zoneStats.empty()) {
@@ -220,15 +284,15 @@ void PerformancePanel::RenderZoneStatistics() {
         ImGui::TextDisabled("No profiling zones recorded yet");
         ImGui::Spacing();
         ImGui::Text("Troubleshooting:");
-        ImGui::BulletText("Ensure PROFILE_FUNCTION() or PROFILE_SCOPE() macros are used in code");
-        ImGui::BulletText("Check that BeginFrame()/EndFrame() are called in main loop");
-        ImGui::BulletText("Verify profiling is enabled (checkbox above)");
+        ImGui::BulletText("Add PROFILE_FUNCTION() at the start of functions to track");
+        ImGui::BulletText("Add PROFILE_SCOPE(\"name\") for specific code sections");
+        ImGui::BulletText("BeginFrame()/EndFrame() calls are now automatic");
         ImGui::BulletText("Run the application for a few frames to collect data");
         return;
     }
     
     ImGui::Separator();
-    ImGui::Text("Click column headers to sort");
+    ImGui::Text("Click a zone name to see its graph | Click column headers to sort");
     
     // Enhanced table with better styling
     ImGuiTableFlags flags = ImGuiTableFlags_Borders | 
@@ -255,27 +319,72 @@ void PerformancePanel::RenderZoneStatistics() {
             });
         
         // Display each zone with enhanced styling
-        int rowNum = 0;
         for (const auto& [zoneName, data] : sortedZones) {
             ImGui::TableNextRow();
             
-            // Row background color based on performance
-            ImVec4 rowColor = data.avgTime > 5.0 ? ImVec4(0.3f, 0.1f, 0.1f, 0.5f) :
-                             data.avgTime > 1.0 ? ImVec4(0.3f, 0.2f, 0.1f, 0.3f) :
-                             ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            // Check if this is an ECS system (highlight differently)
+            bool isEcsSystem = false;
+            for (const auto& sysName : ecsSystemNames) {
+                if (zoneName.find(sysName) != std::string::npos) {
+                    isEcsSystem = true;
+                    break;
+                }
+            }
+            
+            // Row background color based on performance and type
+            ImVec4 rowColor;
+            if (isEcsSystem) {
+                // ECS systems get blue tint
+                rowColor = data.avgTime > 5.0 ? ImVec4(0.3f, 0.1f, 0.2f, 0.5f) :
+                          data.avgTime > 1.0 ? ImVec4(0.2f, 0.2f, 0.3f, 0.3f) :
+                          ImVec4(0.1f, 0.1f, 0.2f, 0.2f);
+            } else {
+                rowColor = data.avgTime > 5.0 ? ImVec4(0.3f, 0.1f, 0.1f, 0.5f) :
+                          data.avgTime > 1.0 ? ImVec4(0.3f, 0.2f, 0.1f, 0.3f) :
+                          ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+            }
+            
             if (rowColor.w > 0.0f) {
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(rowColor));
             }
             
-            // Zone name with icon based on performance
+            // Zone name with icon based on type and performance
             ImGui::TableNextColumn();
-            const char* icon = data.avgTime > 5.0 ? "\u26A0" :  // Warning
-                              data.avgTime > 1.0 ? "\u25CF" :  // Circle
-                              "\u2713";  // Check
-            ImVec4 iconColor = GetTimingColor(data.avgTime);
+            
+            const char* icon;
+            if (isEcsSystem) {
+                icon = "\u2699";  // Gear for ECS systems
+            } else {
+                icon = data.avgTime > 5.0 ? "\u26A0" :  // Warning
+                      data.avgTime > 1.0 ? "\u25CF" :  // Circle
+                      "\u2713";  // Check
+            }
+            
+            ImVec4 iconColor = isEcsSystem ? ImVec4(0.4f, 0.7f, 1.0f, 1.0f) : GetTimingColor(data.avgTime);
             ImGui::TextColored(iconColor, "%s", icon);
             ImGui::SameLine();
-            ImGui::Text("%s", zoneName.c_str());
+            
+            // Make zone name clickable to show graph
+            bool isSelected = (selectedZone == zoneName);
+            if (isSelected) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, 1.0f));
+            }
+            
+            if (ImGui::Selectable(zoneName.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap)) {
+                selectedZone = (selectedZone == zoneName) ? "" : zoneName;
+            }
+            
+            if (isSelected) {
+                ImGui::PopStyleColor();
+            }
+            
+            if (ImGui::IsItemHovered()) {
+                if (isEcsSystem) {
+                    ImGui::SetTooltip("ECS System - Click to see performance graph");
+                } else {
+                    ImGui::SetTooltip("Click to see performance graph");
+                }
+            }
             
             // Average time with bold formatting for high values
             ImGui::TableNextColumn();
@@ -311,11 +420,16 @@ void PerformancePanel::RenderZoneStatistics() {
             // Sample count
             ImGui::TableNextColumn();
             ImGui::Text("%u", data.sampleCount);
-            
-            rowNum++;
         }
         
         ImGui::EndTable();
+    }
+    
+    // Show graph for selected zone
+    if (!selectedZone.empty()) {
+        ImGui::Spacing();
+        ImGui::Separator();
+        RenderZoneGraph(selectedZone);
     }
     
     // Summary statistics
@@ -328,13 +442,19 @@ void PerformancePanel::RenderZoneStatistics() {
     ImGui::Text("Total measured time per frame: %.3f ms", totalAvgTime);
     ImGui::SameLine();
     ImGui::TextDisabled("(sum of all zone averages)");
+    
+    // ECS systems summary
+    if (!ecsSystemNames.empty()) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "| \u2699 = ECS System");
+    }
 }
 
 ImVec4 PerformancePanel::GetTimingColor(double timeMs) const {
-    // Color coding: green < 1ms, orange < 5ms, red >= 5ms
-    if (timeMs < 1.0) {
+    // Color coding: green < 16ms, orange < 35ms, red >= 35ms
+    if (timeMs < 16.0) {
         return ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // Green
-    } else if (timeMs < 5.0) {
+    } else if (timeMs < 35.0) {
         return ImVec4(1.0f, 0.65f, 0.0f, 1.0f); // Orange
     } else {
         return ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
