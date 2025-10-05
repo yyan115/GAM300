@@ -1549,6 +1549,9 @@ void AssetBrowserPanel::ConfirmRename() {
                 // Perform the rename
                 if (oldPath != newPath && std::filesystem::exists(oldPath)) {
                     std::filesystem::rename(oldPath, newPath);
+                    auto assetMeta = AssetManager::GetInstance().GetAssetMeta(asset.guid);
+                    if (assetMeta)
+                        assetMeta->sourceFilePath = newPath.generic_string();
 
                     // Also rename the .meta file if it exists
                     std::filesystem::path oldMetaPath = oldPath;
