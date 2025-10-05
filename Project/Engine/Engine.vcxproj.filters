@@ -133,6 +133,7 @@
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\PrefabLinkComponent.hpp" />
+    <ClInclude Include="include\Performance\PerformanceProfiler.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -208,6 +209,7 @@
     <ClCompile Include="src\Graphics\Lights\LightComponent.cpp" />
     <ClCompile Include="src\Physics\RigidBodyComponent.cpp" />
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
+    <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

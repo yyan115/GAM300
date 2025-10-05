@@ -1,8 +1,11 @@
 #pragma once
 #include "EditorPanel.hpp"
+#include "imgui.h"
+#include <vector>
+#include <string>
 
 /**
- * @brief Panel that displays performance metrics like FPS and delta time
+ * @brief Panel that displays performance metrics like FPS, frame time graphs, and zone statistics
  */
 class PerformancePanel : public EditorPanel {
 public:
@@ -11,4 +14,18 @@ public:
 
 protected:
     void OnImGuiRender() override;
+
+private:
+    void RenderFrameTimeGraph();
+    void RenderFpsGraph();
+    void RenderZoneStatistics();
+    
+    // Helper to get color based on timing
+    ImVec4 GetTimingColor(double timeMs) const;
+    
+    // UI state (pascalCase for variables)
+    bool showFrameTimeGraph = true;
+    bool showFpsGraph = true;
+    bool showZoneStats = true;
+    float graphHeight = 80.0f;
 };

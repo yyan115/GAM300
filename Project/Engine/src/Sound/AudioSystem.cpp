@@ -4,8 +4,10 @@
 #include "Sound/AudioManager.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 void AudioSystem::Update(float deltaTime) {
+	PROFILE_FUNCTION();
 	(void)deltaTime; // Unused for now
     // First, update the AudioManager's internal FMOD system
     AudioManager::GetInstance().Update();

@@ -60,6 +60,7 @@
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Logging.hpp" />
+    <ClInclude Include="include\Performance\PerformanceProfiler.hpp" />
     <ClInclude Include="include\Physics\CollisionFilters.hpp" />
     <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Physics\JoltInclude.hpp" />
@@ -191,6 +192,7 @@
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
+    <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
     <ClCompile Include="src\Physics\CollisionFilters.cpp" />
     <ClCompile Include="src\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="src\Physics\RigidBodyComponent.cpp" />
