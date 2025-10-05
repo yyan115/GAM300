@@ -60,6 +60,9 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 	std::filesystem::path p(currentScenePath);
 	currentSceneName = p.stem().generic_string();
 
+    // MUST MAKE SURE JOLTPHYSICS IS INITIALIZED FIRST.
+    currentScene->InitializeJoltPhysics();
+
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
     

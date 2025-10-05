@@ -12,6 +12,7 @@ public:
 	~SceneInstance() override = default;
 
 	void Initialize() override;
+	void InitializeJoltPhysics() override;
 	void InitializePhysics() override;
 
 	void Update(double dt) override;

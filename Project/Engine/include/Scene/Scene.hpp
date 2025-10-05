@@ -8,6 +8,7 @@ public:
 	virtual ~IScene() = default;
 
 	virtual void Initialize() = 0;
+	virtual void InitializeJoltPhysics() = 0;
 	virtual void InitializePhysics() = 0;
 	virtual void Update(double dt) = 0;
 	virtual void Draw() = 0;

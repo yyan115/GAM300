@@ -64,10 +64,14 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
+void SceneInstance::InitializeJoltPhysics() {
+	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ecsManager.physicsSystem->InitialiseJolt();
+}
+
 void SceneInstance::InitializePhysics() {
 	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	ecsManager.physicsSystem->Initialise();
-	ecsManager.physicsSystem->physicsAuthoring(ecsManager);
+	ecsManager.physicsSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Physics system initialized");
 }
 
