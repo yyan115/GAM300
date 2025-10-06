@@ -20,6 +20,7 @@
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/PhysicsSystem.hpp>
 
+#include "Graphics/Camera/CameraComponent.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -45,6 +46,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<PrefabLinkComponent>();
+	RegisterComponent<CameraComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -113,6 +115,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
 		SetSystemSignature<AudioSystem>(signature);
+	}
+
+	cameraSystem = RegisterSystem<CameraSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<CameraComponent>()); 
+		SetSystemSignature<CameraSystem>(signature); 
 	}
 }
 

@@ -31,6 +31,7 @@ void GraphicsManager::Shutdown()
 	currentCamera = nullptr;
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
+	mainECS.cameraSystem->Shutdown();
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
