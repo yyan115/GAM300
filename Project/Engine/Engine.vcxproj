@@ -38,6 +38,8 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
+    <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
@@ -166,6 +168,7 @@
   <ItemGroup>
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
+    <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
     <ClCompile Include="src\Asset Manager\Asset.cpp" />
