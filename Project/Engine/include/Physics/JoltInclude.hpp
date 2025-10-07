@@ -11,7 +11,7 @@
 #endif
 
 // Android: Defines come from CMake (Engine/CMakeLists.txt) to match FetchContent build
-// DO NOT define them here for Android or you'll get ABI mismatches!
+// DO NOT define them here for Android or there will be errors
 
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
