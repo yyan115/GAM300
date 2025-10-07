@@ -30,10 +30,20 @@ public:
 
 	Camera* GetActiveCamera() { return activeCamera.get(); }
 
+	// Zoom control
+	void ZoomCamera(Entity cameraEntity, float zoomDelta); 
+	void SetZoom(Entity cameraEntity, float zoomLevel); 
+
+	// Camera shake
+	void ShakeCamera(Entity cameraEntity, float intensity, float duration);
+	void StopShake(Entity cameraEntity);
+
+	void UpdateCameraFromComponent(Entity entity);
 private:
 	Entity activeCameraEntity = 0;
 	std::unique_ptr<Camera> activeCamera;
 
-	void UpdateCameraFromComponent(Entity entity);
 	Entity FindHighestPriorityCamera();
+
+	void UpdateCameraShake(Entity entity, float deltaTime);
 };

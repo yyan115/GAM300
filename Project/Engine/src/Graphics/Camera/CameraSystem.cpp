@@ -16,6 +16,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Transform/TransformComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Logging.hpp"
+#include "TimeManager.hpp"
 
 bool CameraSystem::Initialise()
 {
@@ -49,6 +50,17 @@ void CameraSystem::Update()
 		if (activeCameraEntity != 0)
 		{
 			ENGINE_PRINT("[CameraSystem] Switched to camera entity: ", activeCameraEntity, "\n");
+		}
+	}
+
+	// Update all active cameras (for shake effects)
+	float deltaTime = (float)TimeManager::GetDeltaTime();
+	for (const auto& entity : entities)
+	{
+		auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
+		if (camComp.isActive)
+		{
+			UpdateCameraShake(entity, deltaTime);
 		}
 	}
 
@@ -143,4 +155,109 @@ Entity CameraSystem::FindHighestPriorityCamera()
 	}
 
 	return highest;
+}
+
+void CameraSystem::UpdateCameraShake(Entity entity, float deltaTime)
+{
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
+
+	if (!camComp.isShaking)
+	{
+		camComp.shakeOffset = glm::vec3(0.f);
+		return;
+	}
+
+	camComp.shakeTimer += deltaTime;
+	
+	if (camComp.shakeTimer >= camComp.shakeDuration)
+	{
+		camComp.isShaking = false;
+		camComp.shakeOffset = glm::vec3(0.f);
+		camComp.shakeTimer = 0.f;
+		return;
+	}
+
+	float decay = 1.f - (camComp.shakeTimer / camComp.shakeDuration);
+	float currentIntensity = camComp.shakeIntensity * decay;
+
+	float time = camComp.shakeTimer * camComp.shakeFrequency;
+	camComp.shakeOffset.x = sin(time * 1.3f) * currentIntensity;
+	camComp.shakeOffset.y = sin(time * 1.7f) * currentIntensity;
+	camComp.shakeOffset.z = sin(time * 1.1f) * currentIntensity * 0.5f; // Less Z shake
+}
+
+void CameraSystem::ZoomCamera(Entity cameraEntity, float zoomDelta)
+{
+	if (entities.find(cameraEntity) == entities.end())
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
+		return;
+	}
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& camComp = ecsManager.GetComponent<CameraComponent>(cameraEntity);
+
+	if (camComp.projectionType == ProjectionType::PERSPECTIVE)
+	{
+		// Zoom by changing FOV
+		camComp.fov -= zoomDelta * camComp.zoomSpeed;
+		camComp.fov = glm::clamp(camComp.fov, camComp.minZoom, camComp.maxZoom);
+	}
+	else
+	{
+		// Orthographic zoom by changing ortho size
+		camComp.orthoSize -= zoomDelta * camComp.zoomSpeed * 0.1f;
+		camComp.orthoSize = glm::clamp(camComp.orthoSize, camComp.minZoom, camComp.maxZoom);
+	}
+}
+
+void CameraSystem::SetZoom(Entity cameraEntity, float zoomLevel)
+{
+	if (entities.find(cameraEntity) == entities.end())
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
+		return;
+	}
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& camComp = ecsManager.GetComponent<CameraComponent>(cameraEntity);
+
+	if (camComp.projectionType == ProjectionType::PERSPECTIVE)
+	{
+		camComp.fov = glm::clamp(zoomLevel, camComp.minZoom, camComp.maxZoom);
+	}
+	else
+	{
+		camComp.orthoSize = glm::clamp(zoomLevel, camComp.minZoom, camComp.maxZoom);
+	}
+}
+
+void CameraSystem::ShakeCamera(Entity cameraEntity, float intensity, float duration)
+{
+	if (entities.find(cameraEntity) == entities.end())
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
+		return;
+	}
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& camComp = ecsManager.GetComponent<CameraComponent>(cameraEntity);
+
+	camComp.isShaking = true;
+	camComp.shakeIntensity = intensity;
+	camComp.shakeDuration = duration;
+	camComp.shakeTimer = 0.f;
+}
+
+void CameraSystem::StopShake(Entity cameraEntity)
+{
+	if (entities.find(cameraEntity) == entities.end()) return;
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& camComp = ecsManager.GetComponent<CameraComponent>(cameraEntity);
+
+	camComp.isShaking = false;
+	camComp.shakeOffset = glm::vec3(0.f);
+	camComp.shakeTimer = 0.f;
 }

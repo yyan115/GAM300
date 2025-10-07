@@ -252,6 +252,16 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKey(Input::Key::D))
 		camera->ProcessKeyboard(RIGHT, deltaTime);
 
+	// Zoom with keys (N to zoom out, M to zoom in)
+	if (InputManager::GetKey(Input::Key::N))
+		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime);  // Zoom out
+	if (InputManager::GetKey(Input::Key::M))
+		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
+
+	// Test camera shake with Spacebar
+	if (InputManager::GetKeyDown(Input::Key::SPACE))
+		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
+
 	// MADE IT so that you must drag to look around
 	// 
 	// Only process mouse look when left mouse button is held down
@@ -299,6 +309,7 @@ void SceneInstance::processInput(float deltaTime)
 	}
 
 	// Sync camera position back to transform
+	camComp.fov = camera->Zoom;
 	Vector3D newPos(camera->Position.x, camera->Position.y, camera->Position.z);
 	mainECS.transformSystem->SetLocalPosition(activeCam, newPos);
 }

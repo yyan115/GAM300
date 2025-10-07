@@ -39,6 +39,19 @@ public:
     float movementSpeed = 2.5f;
     float mouseSensitivity = 0.1f;
 
+    // Zoom settings
+    float minZoom = 1.0f;     // Min FOV for perspective / min ortho size
+    float maxZoom = 90.0f;    // Max FOV for perspective / max ortho size
+    float zoomSpeed = 5.0f;   // How fast to zoom
+
+    // Camera shake settings
+    bool isShaking = false;
+    float shakeIntensity = 0.0f;
+    float shakeDuration = 0.0f;
+    float shakeTimer = 0.0f;
+    float shakeFrequency = 25.0f;  // How fast the shake oscillates
+    glm::vec3 shakeOffset = glm::vec3(0.0f);  // Current shake offset
+
     CameraComponent() = default;
     ~CameraComponent() = default;
 };
