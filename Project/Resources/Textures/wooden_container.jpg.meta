@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556c7aa916e-0002d702fa000043",
+        "version": 7,
+        "guid": "0075194eb8d32699-0002e2a24a00003d",
         "source": "../../Resources/Textures/wooden_container.jpg",
         "compiled": "../../Resources/Textures/wooden_container.dds",
-        "last_compiled": "2025-10-05 13:43:37.5962706"
+        "last_compiled": "2025-10-08 03:12:37.9209965"
     },
     "TextureMetaData": {
         "id": 0,

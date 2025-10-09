@@ -76,7 +76,7 @@ public:
 	}
 
 	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
-	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material);
+	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
 
 	bool IsAssetCompiled(GUID_128 guid);
 	bool IsAssetCompiled(const std::string& assetPath);
@@ -253,5 +253,5 @@ private:
 	}
 
 	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
-	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material);
+	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
 };

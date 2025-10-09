@@ -295,8 +295,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 //#endif
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
-    std::string materialPath = modelName + "_" + material->GetName() + ".mat";
-    AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material);
+    std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
+    material->SetName(modelName + "_" + material->GetName());
+    AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
     return Mesh(vertices, indices, material);
 }
 
@@ -515,30 +516,30 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
 			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             std::string meshName = mesh.material->GetName();
             meshFile.write(meshName.data(), nameLength); // Writes actual characters
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetEmissive()), sizeof(mesh.material->GetEmissive()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetShininess()), sizeof(mesh.material->GetShininess()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetOpacity()), sizeof(mesh.material->GetOpacity()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetEmissive()), sizeof(mesh.material->GetEmissive()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetShininess()), sizeof(mesh.material->GetShininess()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetOpacity()), sizeof(mesh.material->GetOpacity()));
 
-            // Write PBR properties to the file as binary data.
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetMetallic()), sizeof(mesh.material->GetMetallic()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetRoughness()), sizeof(mesh.material->GetRoughness()));
-		    meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAO()), sizeof(mesh.material->GetAO()));
+   //         // Write PBR properties to the file as binary data.
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetMetallic()), sizeof(mesh.material->GetMetallic()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetRoughness()), sizeof(mesh.material->GetRoughness()));
+		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAO()), sizeof(mesh.material->GetAO()));
 
-            // Write texture info to the file as binary data.
-			size_t textureCount = mesh.material->GetAllTextureInfo().size();
-			meshFile.write(reinterpret_cast<const char*>(&textureCount), sizeof(textureCount));
-            auto& allTextureInfo = mesh.material->GetAllTextureInfo();
-            for (auto it = allTextureInfo.begin(); it != allTextureInfo.end(); ++it) {
-                // Write texture type
-				meshFile.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
-				// Write texture path length and path
-				size_t pathLength = it->second->filePath.size();
-				meshFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
-                meshFile.write(it->second->filePath.data(), pathLength);
-            }
+   //         // Write texture info to the file as binary data.
+			//size_t textureCount = mesh.material->GetAllTextureInfo().size();
+			//meshFile.write(reinterpret_cast<const char*>(&textureCount), sizeof(textureCount));
+   //         auto& allTextureInfo = mesh.material->GetAllTextureInfo();
+   //         for (auto it = allTextureInfo.begin(); it != allTextureInfo.end(); ++it) {
+   //             // Write texture type
+			//	meshFile.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
+			//	// Write texture path length and path
+			//	size_t pathLength = it->second->filePath.size();
+			//	meshFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
+   //             meshFile.write(it->second->filePath.data(), pathLength);
+   //         }
         }
 
 		meshFile.close();
@@ -567,7 +568,7 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
     // Set model name from asset path
     if (!assetPath.empty()) {
         std::filesystem::path p(assetPath);
-        modelName = p.filename().generic_string();
+        modelName = p.stem().generic_string();
         modelPath = assetPath;
     }
 //#ifdef __ANDROID__
@@ -620,115 +621,118 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             offset += indexCount * sizeof(GLuint);
 
             // Read material properties from the file.
-            std::shared_ptr<Material> material = std::make_shared<Material>();
+            //std::shared_ptr<Material> material = std::make_shared<Material>();
             // Name
             size_t nameLength;
             std::memcpy(&nameLength, buffer.data() + offset, sizeof(nameLength));
             offset += sizeof(nameLength);
-            std::string meshName(nameLength, '\0'); // Pre-size the string
-            std::memcpy(&meshName[0], buffer.data() + offset, nameLength);
+            std::string matName(nameLength, '\0'); // Pre-size the string
+            std::memcpy(&matName[0], buffer.data() + offset, nameLength);
             offset += nameLength;
-            material->SetName(meshName);
-            // Ambient
-            glm::vec3 ambient;
-            std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
-            offset += sizeof(ambient);
-            material->SetAmbient(ambient);
-            // Diffuse
-            glm::vec3 diffuse;
-            std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
-            offset += sizeof(diffuse);
-            material->SetDiffuse(diffuse);
-            // Specular
-            glm::vec3 specular;
-            std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
-            offset += sizeof(specular);
-            material->SetSpecular(specular);
-            // Emissive
-            glm::vec3 emissive;
-            std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
-            offset += sizeof(emissive);
-            material->SetEmissive(emissive);
-            // Shininess
-            float shininess;
-            std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
-            offset += sizeof(shininess);
-            material->SetShininess(shininess);
-            // Opacity
-            float opacity;
-            std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
-            offset += sizeof(opacity);
-            material->SetOpacity(opacity);
-            // Metallic
-            float metallic;
-            std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
-            offset += sizeof(metallic);
-            material->SetMetallic(metallic);
-            // Roughness
-            float roughness;
-            std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
-            offset += sizeof(roughness);
-            material->SetRoughness(roughness);
-            // AO
-            float ao;
-            std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
-            offset += sizeof(ao);
-            material->SetAO(ao);
+            std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + matName + ".mat";
+            // Load the material
+            auto material = ResourceManager::GetInstance().GetResource<Material>(materialPath);
+//            material->SetName(meshName);
+//            // Ambient
+//            glm::vec3 ambient;
+//            std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
+//            offset += sizeof(ambient);
+//            material->SetAmbient(ambient);
+//            // Diffuse
+//            glm::vec3 diffuse;
+//            std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
+//            offset += sizeof(diffuse);
+//            material->SetDiffuse(diffuse);
+//            // Specular
+//            glm::vec3 specular;
+//            std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
+//            offset += sizeof(specular);
+//            material->SetSpecular(specular);
+//            // Emissive
+//            glm::vec3 emissive;
+//            std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
+//            offset += sizeof(emissive);
+//            material->SetEmissive(emissive);
+//            // Shininess
+//            float shininess;
+//            std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
+//            offset += sizeof(shininess);
+//            material->SetShininess(shininess);
+//            // Opacity
+//            float opacity;
+//            std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
+//            offset += sizeof(opacity);
+//            material->SetOpacity(opacity);
+//            // Metallic
+//            float metallic;
+//            std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
+//            offset += sizeof(metallic);
+//            material->SetMetallic(metallic);
+//            // Roughness
+//            float roughness;
+//            std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
+//            offset += sizeof(roughness);
+//            material->SetRoughness(roughness);
+//            // AO
+//            float ao;
+//            std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
+//            offset += sizeof(ao);
+//            material->SetAO(ao);
+//
+//            // Read texture paths from the file.
+//            size_t textureCount;
+//            std::vector<std::shared_ptr<Texture>> textures;
+//            std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
+//            offset += sizeof(textureCount);
+//            for (size_t j = 0; j < textureCount; ++j) {
+//                Material::TextureType texType;
+//                std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
+//                offset += sizeof(texType);
+//                size_t pathLength;
+//                std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
+//                offset += sizeof(pathLength);
+//                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
+//                // strip trailing nulls
+//                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
+//                offset += pathLength;
+//
+//                // Load texture via Resource Manager
+//#ifndef ANDROID
+//                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+//#else
+//                texturePath = texturePath.substr(texturePath.find("Resources"));
+//                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+//#endif
+//                if (texture) {
+//                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+//                    material->SetTexture(texType, std::move(textureInfo));
+//
+//                    // Assign the texture type
+//                    switch (texType) {
+//                    case Material::TextureType::DIFFUSE:
+//                        texture->GetType() = "diffuse";
+//                        break;
+//                    case Material::TextureType::SPECULAR:
+//                        texture->GetType() = "specular";
+//                        break;
+//                    case Material::TextureType::NORMAL:
+//                        texture->GetType() = "normal";
+//                        break;
+//                    case Material::TextureType::EMISSIVE:
+//                        texture->GetType() = "emissive";
+//                        break;
+//                        // Add other cases as needed
+//                    default:
+//                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+//                        texture->GetType() = "unknown";
+//                        break;
+//                    }
+//                }
+//
+//                textures.push_back(texture);
+//            }
 
-            // Read texture paths from the file.
-            size_t textureCount;
-            std::vector<std::shared_ptr<Texture>> textures;
-            std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
-            offset += sizeof(textureCount);
-            for (size_t j = 0; j < textureCount; ++j) {
-                Material::TextureType texType;
-                std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
-                offset += sizeof(texType);
-                size_t pathLength;
-                std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
-                offset += sizeof(pathLength);
-                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
-                // strip trailing nulls
-                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
-                offset += pathLength;
-
-                // Load texture via Resource Manager
-#ifndef ANDROID
-                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-#else
-                texturePath = texturePath.substr(texturePath.find("Resources"));
-                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-#endif
-                if (texture) {
-                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-                    material->SetTexture(texType, std::move(textureInfo));
-
-                    // Assign the texture type
-                    switch (texType) {
-                    case Material::TextureType::DIFFUSE:
-                        texture->GetType() = "diffuse";
-                        break;
-                    case Material::TextureType::SPECULAR:
-                        texture->GetType() = "specular";
-                        break;
-                    case Material::TextureType::NORMAL:
-                        texture->GetType() = "normal";
-                        break;
-                    case Material::TextureType::EMISSIVE:
-                        texture->GetType() = "emissive";
-                        break;
-                        // Add other cases as needed
-                    default:
-                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-                        texture->GetType() = "unknown";
-                        break;
-                    }
-                }
-
-                textures.push_back(texture);
-            }
-
-            meshes.emplace_back(vertices, indices, textures, material);
+            meshes.emplace_back(vertices, indices, material);
         }
 
         return true;

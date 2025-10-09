@@ -38,7 +38,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
-	stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(false);
 	// Reads the image from a file and stores it in bytes
 	unsigned char* bytes = nullptr;
 

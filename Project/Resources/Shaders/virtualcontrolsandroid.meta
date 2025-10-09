@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "003155568ace02cf-0002d702fa00003b",
+        "version": 7,
+        "guid": "0075194ef26a919a-0002e2a24a000035",
         "source": "../../Resources/Shaders/virtualcontrolsandroid",
         "compiled": "../../Resources/Shaders/virtualcontrolsandroid.shader",
-        "last_compiled": "2025-10-05 13:43:37.3468513"
+        "last_compiled": "2025-10-08 03:12:37.7841063"
     }
 }

@@ -179,7 +179,7 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 	}
 }
 
-bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material) {
+bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -189,12 +189,17 @@ bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shar
 		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 	}
 
-	auto it = assetMetaMap.find(guid);
-	if (it != assetMetaMap.end()) {
-		return true;
+	if (!forceCompile) {
+		auto it = assetMetaMap.find(guid);
+		if (it != assetMetaMap.end()) {
+			return true;
+		}
+		else {
+			return CompileUpdatedMaterialToResource(guid, filePath, material, forceCompile);
+		}
 	}
 	else {
-		return CompileUpdatedMaterialToResource(guid, filePath, material);
+		return CompileUpdatedMaterialToResource(guid, filePath, material, forceCompile);
 	}
 }
 
@@ -534,9 +539,9 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 	return true;
 }
 
-bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material) {
+bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile) {
 	// If the asset is not already loaded, load and store it using the GUID.
-	if (assetMetaMap.find(guid) == assetMetaMap.end()) {
+	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
 		std::string compiledPath = material->CompileUpdatedAssetToResource(filePath);
 		if (compiledPath.empty()) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile updated material: ", filePath, "\n");
