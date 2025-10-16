@@ -10,6 +10,7 @@
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Physics/PhysicsContactListener.hpp"
 #include <cstdarg>
 
 #ifdef __ANDROID__
@@ -147,7 +148,8 @@ bool PhysicsSystem::InitialiseJolt() {
     //        break;
     //    }
     //}
-
+    static MyContactListener contactListener;
+    physics.SetContactListener(&contactListener);
     return true;
 }
 
@@ -170,10 +172,16 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         // Create shape if it doesn't exist or if version changed
         if (!col.shape || rb.collider_seen_version != col.version) {
             switch (col.shapeType) {
-                case ColliderShapeType::Box:
-                    col.shape = new JPH::BoxShape(JPH::Vec3(col.boxHalfExtents.x, col.boxHalfExtents.y, col.boxHalfExtents.z));
-                    break;
-                case ColliderShapeType::Sphere:
+                // When creating the shape:
+            case ColliderShapeType::Box:
+                col.shape = new JPH::BoxShape(JPH::Vec3(
+                    col.boxHalfExtents.x * tr.localScale.x,  // Apply scale!
+                    col.boxHalfExtents.y * tr.localScale.y,
+                    col.boxHalfExtents.z * tr.localScale.z
+                ));
+            break;
+            
+            case ColliderShapeType::Sphere:
                     col.shape = new JPH::SphereShape(col.sphereRadius);
                     break;
                 case ColliderShapeType::Capsule:
@@ -184,6 +192,18 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                     break;
             }
         }
+
+
+        // FIX: Set proper collision layer based on motion type
+        // Static and Kinematic objects should be on NON_MOVING layer
+        // Dynamic objects should be on MOVING layer
+        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic) {
+            col.layer = Layers::NON_MOVING;  // Should be 0
+        }
+        else {
+            col.layer = Layers::MOVING;      // Should be 1
+        }
+
 
         // 1) Create if not created yet
         if (rb.id.IsInvalid()) {
@@ -205,6 +225,23 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
+
+
+
+            // ADD THIS DETAILED LOGGING:
+            std::cout << "========================================" << std::endl;
+            std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
+            std::cout << "  Entity: " << e << std::endl;
+            std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
+                motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
+            std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
+                col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
+                col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
+            std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
+            std::cout << "  Layer: " << col.layer << std::endl;
+            std::cout << "========================================" << std::endl;
+
+
 
 #ifdef __ANDROID__
             __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Created body: id=%u, motion=%d, pos=(%f,%f,%f)",
@@ -282,7 +319,9 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         JPH::RVec3 pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-        JPH::QuatArg rot = JPH::Quat::sIdentity();
+        //JPH::QuatArg rot = JPH::Quat::sIdentity();
+        JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
+            tr.localRotation.z, tr.localRotation.w);
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
         if (rb.id.IsInvalid()) continue;
