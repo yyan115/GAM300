@@ -20,6 +20,7 @@
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
 #include "Input/VirtualControls.hpp"
@@ -42,6 +43,7 @@ bool Engine::Initialize() {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize logging system!\n");
 		return false;
 	}
+	
 	SetGameState(GameState::PLAY_MODE);
 	WindowManager::Initialize(SCR_WIDTH, SCR_HEIGHT, TEMP::windowTitle.c_str());
 
@@ -575,7 +577,6 @@ bool Engine::InitializeAssets() {
 }
 
 void Engine::Update() {
-
     TimeManager::UpdateDeltaTime();
     
 	// Only update the scene if the game should be running (not paused)
@@ -585,6 +586,7 @@ void Engine::Update() {
 }
 
 void Engine::StartDraw() {
+    
 #ifdef ANDROID
     // Ensure context is current before rendering
     WindowManager::GetPlatform()->MakeContextCurrent();
@@ -625,6 +627,7 @@ void Engine::StartDraw() {
 }
 
 void Engine::Draw() {
+    
 #ifdef ANDROID
     // Ensure the EGL context is current
     if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
@@ -666,7 +669,7 @@ void Engine::Draw() {
 #endif
 }
 
-void Engine::EndDraw() {
+void Engine::EndDraw() {    
 	WindowManager::SwapBuffers();
 
 	// Only process input if the game should be running (not paused)

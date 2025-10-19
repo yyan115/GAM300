@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       DesktopPlatform.cpp
+\author     Yan Yu
+\date       Oct 8, 2025
+\brief      Implementation of Desktop platform abstraction layer using GLFW for
+            window management, input callbacks, and filesystem-based asset loading
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 
 #ifndef ANDROID
@@ -277,14 +291,17 @@ void DesktopPlatform::ErrorCallback(int error, const char* description) {
 
 void DesktopPlatform::FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+	(void)window;
 }
 
 void DesktopPlatform::FocusCallback(GLFWwindow* window, int focused) {
+	(void)focused,window;
     // Handle focus changes if needed
 }
 
 // Input callback implementations
 void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	(void)mods, scancode, window;
     Input::Key engineKey = GLFWKeyToEngineKey(key);
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
 
@@ -294,6 +311,7 @@ void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int
 }
 
 void DesktopPlatform::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    (void)mods,window;
     Input::MouseButton engineButton = GLFWButtonToEngineButton(button);
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
 
@@ -304,10 +322,12 @@ void DesktopPlatform::MouseButtonCallback(GLFWwindow* window, int button, int ac
 
 void DesktopPlatform::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
     InputManager::OnMousePositionEvent(xpos, ypos);
+	(void)window;
 }
 
 void DesktopPlatform::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     InputManager::OnScrollEvent(xoffset, yoffset);
+	(void)window;
 }
 
 // Helper functions for input mapping

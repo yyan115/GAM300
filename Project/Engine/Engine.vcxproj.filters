@@ -138,6 +138,9 @@
     <ClInclude Include="include\Input\VirtualControls.hpp" />
     <ClInclude Include="include\Animation\AnimationSystem.hpp" />
     <ClInclude Include="include\PrefabLinkComponent.hpp" />
+    <ClInclude Include="include\Performance\PerformanceProfiler.hpp" />
+    <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
+    <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -216,6 +219,10 @@
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
     <ClCompile Include="src\Graphics\Lights\LightComponent.cpp" />
+    <ClCompile Include="src\Physics\RigidBodyComponent.cpp" />
+    <ClCompile Include="src\Physics\ColliderComponent.cpp" />
+    <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
+    <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

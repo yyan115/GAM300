@@ -680,7 +680,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
         // Check if entity should show gizmo based on 2D/3D mode
-        EditorState& editorState = EditorState::GetInstance();
+        //EditorState& editorState = EditorState::GetInstance();
         bool is2DMode = editorState.Is2DMode();
         bool entityIs3D = RaycastUtil::IsEntity3D(selectedEntity);
 
@@ -766,11 +766,11 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
                     // Get screen positions for custom drawing
-                    ImVec2 windowPos = ImGui::GetWindowPos();
-                    ImVec2 windowSize = ImGui::GetWindowSize();
+                    ImVec2 windowPosCust = ImGui::GetWindowPos();
+                    ImVec2 windowSizeCust = ImGui::GetWindowSize();
 
                     // Transform positions to screen space manually for the arrow
-                    glm::mat4 view = glm::mat4(
+                    glm::mat4 matView = glm::mat4(
                         viewMatrix[0], viewMatrix[4], viewMatrix[8], viewMatrix[12],
                         viewMatrix[1], viewMatrix[5], viewMatrix[9], viewMatrix[13],
                         viewMatrix[2], viewMatrix[6], viewMatrix[10], viewMatrix[14],
@@ -784,18 +784,18 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
                         projMatrix[3], projMatrix[7], projMatrix[11], projMatrix[15]
                     );
 
-                    glm::vec4 startScreen = proj * view * glm::vec4(entityPos, 1.0f);
-                    glm::vec4 endScreen = proj * view * glm::vec4(arrowEndPos, 1.0f);
+                    glm::vec4 startScreen = proj * matView * glm::vec4(entityPos, 1.0f);
+                    glm::vec4 endScreen = proj * matView * glm::vec4(arrowEndPos, 1.0f);
 
                     if (startScreen.w > 0 && endScreen.w > 0) {
                         // Convert to screen coordinates
                         ImVec2 startPos = ImVec2(
-                            windowPos.x + (startScreen.x / startScreen.w * 0.5f + 0.5f) * windowSize.x,
-                            windowPos.y + (1.0f - (startScreen.y / startScreen.w * 0.5f + 0.5f)) * windowSize.y
+                            windowPosCust.x + (startScreen.x / startScreen.w * 0.5f + 0.5f) * windowSizeCust.x,
+                            windowPosCust.y + (1.0f - (startScreen.y / startScreen.w * 0.5f + 0.5f)) * windowSizeCust.y
                         );
                         ImVec2 endPos = ImVec2(
-                            windowPos.x + (endScreen.x / endScreen.w * 0.5f + 0.5f) * windowSize.x,
-                            windowPos.y + (1.0f - (endScreen.y / endScreen.w * 0.5f + 0.5f)) * windowSize.y
+                            windowPosCust.x + (endScreen.x / endScreen.w * 0.5f + 0.5f) * windowSizeCust.x,
+                            windowPosCust.y + (1.0f - (endScreen.y / endScreen.w * 0.5f + 0.5f)) * windowSizeCust.y
                         );
 
                         // Draw arrow
@@ -936,7 +936,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             // Add ModelRenderComponent with semi-transparent material
             ModelRenderComponent previewRenderer;
             previewRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-            previewRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>("Resources/Shaders/default");
+            previewRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
 
             // Create ghost material
             auto ghostMaterial = std::make_shared<Material>();
@@ -1102,6 +1102,8 @@ void ScenePanel::RenderModelPreview(float sceneWidth, float sceneHeight) {
             ENGINE_PRINT("[ScenePanel] Error updating preview material: ", e.what(), "\n");
         }
     }
+
+    (void)sceneWidth, sceneHeight;
 }
 
 Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {

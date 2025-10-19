@@ -14,5 +14,6 @@ void main()
     FragColor = texColor * spriteColor;
 
     // Discard transparent pixels to avoid rendering them
-
+    if (FragColor.a < 0.01)
+        discard;
 }

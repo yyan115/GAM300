@@ -25,6 +25,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Platform/IPlatform.h"
 #include "Engine.h"
 #include "Asset Manager/AssetManager.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 /******************************************************************************/
 /*!
@@ -207,6 +208,7 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
 /******************************************************************************/
 void ParticleSystem::Update()
 {
+	PROFILE_FUNCTION();
 #ifdef ANDROID
     // Ensure the EGL context is current
     if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
@@ -235,7 +237,7 @@ void ParticleSystem::Update()
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-    float dt = TimeManager::GetDeltaTime();
+    float dt = static_cast<float>(TimeManager::GetDeltaTime());
 
     for (const auto& entity : entities)
     {

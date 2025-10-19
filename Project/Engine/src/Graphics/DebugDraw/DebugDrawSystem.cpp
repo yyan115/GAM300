@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 std::vector<DebugDrawData> DebugDrawSystem::debugQueue; 
 
@@ -22,6 +23,7 @@ bool DebugDrawSystem::Initialise()
 
 void DebugDrawSystem::Update()
 {
+    PROFILE_FUNCTION();
     if (debugQueue.empty()) return;
 
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
@@ -146,7 +148,7 @@ void DebugDrawSystem::CreateSphereGeometry()
 
             glm::vec3 midpoint = glm::normalize(vertices[i1] + vertices[i2]) * scale;
             vertices.push_back(midpoint);
-            int index = vertices.size() - 1;
+            int index = static_cast<int>(vertices.size()) - 1;
             midpointCache[key] = index;
             return index;
             };

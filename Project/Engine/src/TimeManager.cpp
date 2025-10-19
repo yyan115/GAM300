@@ -6,13 +6,13 @@
 #include "Platform/IPlatform.h"
 
 void TimeManager::UpdateDeltaTime() {
-    const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
+    //const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
 
     double currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
     //double currentTime = glfwGetTime();
-    double frameTime = currentTime - RunTimeVar::lastFrameTime;
+    //double frameTime = currentTime - RunTimeVar::lastFrameTime;
 
-    double remainingTime = targetDeltaTime - frameTime;
+    //double remainingTime = targetDeltaTime - frameTime;
 
     //Limit to 60 FPS?
     //// Sleep only if we have at least 5 ms remaining

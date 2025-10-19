@@ -20,6 +20,7 @@ GraphicsManager& GraphicsManager::GetInstance()
 bool GraphicsManager::Initialize(int window_width, int window_height)
 {
 	return false;
+	(void)window_width, window_height;
 }
 
 void GraphicsManager::Shutdown()
@@ -30,6 +31,7 @@ void GraphicsManager::Shutdown()
 	currentCamera = nullptr;
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
+	mainECS.cameraSystem->Shutdown();
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 

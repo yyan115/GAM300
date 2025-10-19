@@ -680,6 +680,10 @@ void AssetBrowserPanel::RenderAssetGrid()
         if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (asset.isDirectory) {
                 NavigateToDirectory(asset.filePath);
+
+                ImGui::PopID();
+                ImGui::EndGroup();
+                break;
             }
             else {
                 std::string lowerExt = asset.extension;
@@ -797,9 +801,9 @@ void AssetBrowserPanel::RenderAssetGrid()
 
         if (!asset.isDirectory) {
             // Begin drag drop code for PREFABS
-            std::string lowerExt = asset.extension;
-            std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
-            if (lowerExt == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            std::string lowerExtPref = asset.extension;
+            std::transform(lowerExtPref.begin(), lowerExtPref.end(), lowerExtPref.begin(), ::tolower);
+            if (lowerExtPref == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
                     ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
@@ -1291,10 +1295,17 @@ void AssetBrowserPanel::CopyAssetPath(const AssetInfo& asset) {
         EmptyClipboard();
         HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, relativePath.size() + 1);
         if (hMem) {
-            memcpy(GlobalLock(hMem), relativePath.c_str(), relativePath.size() + 1);
-            GlobalUnlock(hMem);
-            SetClipboardData(CF_TEXT, hMem);
-            ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
+            void* pMem = GlobalLock(hMem);
+            if (pMem) {
+                memcpy(pMem, relativePath.c_str(), relativePath.size() + 1);
+                GlobalUnlock(hMem);
+                SetClipboardData(CF_TEXT, hMem);
+                ENGINE_PRINT("[AssetBrowserPanel] Copy to clipboard: ", relativePath, "\n");
+            }
+            else {
+                GlobalFree(hMem); // Clean up if lock failed
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to lock global memory for clipboard.\n");
+            }
         }
         CloseClipboard();
     }
@@ -1356,6 +1367,7 @@ void AssetBrowserPanel::ShowOpenSceneConfirmation() {
         ImGui::Separator();
 
         if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            SceneManager::GetInstance().ShutDownScenePhysics();
             SceneManager::GetInstance().LoadScene(selectedScene.filePath);
             ImGui::CloseCurrentPopup();
         }
@@ -1537,6 +1549,9 @@ void AssetBrowserPanel::ConfirmRename() {
                 // Perform the rename
                 if (oldPath != newPath && std::filesystem::exists(oldPath)) {
                     std::filesystem::rename(oldPath, newPath);
+                    auto assetMeta = AssetManager::GetInstance().GetAssetMeta(asset.guid);
+                    if (assetMeta)
+                        assetMeta->sourceFilePath = newPath.generic_string();
 
                     // Also rename the .meta file if it exists
                     std::filesystem::path oldMetaPath = oldPath;

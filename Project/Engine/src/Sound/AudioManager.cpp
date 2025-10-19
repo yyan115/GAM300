@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <atomic>
 #include "Logging.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -100,16 +101,15 @@ void AudioManager::Shutdown() {
 }
 
 void AudioManager::Update() {
+    PROFILE_FUNCTION();
+    
     if (ShuttingDown.load()) return;
 
     std::lock_guard<std::mutex> lock(Mutex);
     if (!System) return;
 
-    // Update FMOD system - handles all active channels
-    FMOD_System_Update(System);
-
-    // Cleanup stopped channels to prevent memory leaks
-    CleanupStoppedChannels();
+        FMOD_System_Update(System);
+        CleanupStoppedChannels();
 }
 
 ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {

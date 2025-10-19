@@ -322,7 +322,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
     {
-        ImGuiIO& io = ImGui::GetIO();
+        //ImGuiIO& io = ImGui::GetIO();
 
         // Start a drag from this row?
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
@@ -490,17 +490,17 @@ void SceneHierarchyPanel::AddNestedChildren(Entity entity, std::set<Entity>& nes
     nestedChildren.insert(entity);
 }
 
-Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& name) {
+Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         Entity newEntity = ecsManager.CreateEntity();
 
         // Update the name (NameComponent and Transform are already added by CreateEntity)
         if (ecsManager.HasComponent<NameComponent>(newEntity)) {
-            ecsManager.GetComponent<NameComponent>(newEntity).name = name;
+            ecsManager.GetComponent<NameComponent>(newEntity).name = Pathname;
         }
 
-        std::cout << "[SceneHierarchy] Created empty entity '" << name << "' with ID " << newEntity << std::endl;
+        std::cout << "[SceneHierarchy] Created empty entity '" << Pathname << "' with ID " << newEntity << std::endl;
 
         return newEntity;
     } catch (const std::exception& e) {

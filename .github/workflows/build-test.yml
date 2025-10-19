@@ -33,26 +33,66 @@ jobs:
 
     - name: Setup vcpkg
       run: |
-        Write-Host "Setting up vcpkg for dependency management..." -ForegroundColor Cyan
+        Write-Host "Setting up vcpkg..." -ForegroundColor Cyan
         cd Project
 
-        # Clone vcpkg if not already present
-        if (!(Test-Path "vcpkg")) {
-            git clone https://github.com/Microsoft/vcpkg.git
+        # Remove existing vcpkg if it exists (clean slate)
+        if (Test-Path "vcpkg") {
+          Write-Host "Removing existing vcpkg directory..." -ForegroundColor Yellow
+          Remove-Item -Recurse -Force vcpkg
         }
 
-        # Bootstrap vcpkg if needed
-        if (!(Test-Path "vcpkg\vcpkg.exe")) {
-            Write-Host "Bootstrapping vcpkg..." -ForegroundColor Yellow
-            $bootstrapPath = Join-Path (Get-Location) "vcpkg\bootstrap-vcpkg.bat"
-            & cmd.exe /c $bootstrapPath
-        }
+        Write-Host "Cloning vcpkg..." -ForegroundColor Cyan
+        git clone https://github.com/Microsoft/vcpkg.git
 
-        # Integrate with Visual Studio
-        $vcpkgPath = Join-Path (Get-Location) "vcpkg\vcpkg.exe"
-        & $vcpkgPath integrate install
+        cd vcpkg
+
+        Write-Host "Bootstrapping vcpkg..." -ForegroundColor Cyan
+        .\bootstrap-vcpkg.bat
 
         Write-Host "vcpkg setup complete!" -ForegroundColor Green
+
+    - name: Install vcpkg Dependencies
+      run: |
+        Write-Host "Installing vcpkg dependencies..." -ForegroundColor Cyan
+        cd Project
+
+        # Copy vcpkg.json to Engine directory for proper vcpkg manifest mode
+        Write-Host "Copying vcpkg.json to Engine directory..." -ForegroundColor Cyan
+        Copy-Item "vcpkg.json" "Engine\vcpkg.json" -Force
+
+        # Install dependencies from Engine directory so vcpkg_installed goes to the right place
+        Write-Host "Installing dependencies from vcpkg.json..." -ForegroundColor Cyan
+        cd Engine
+        ..\vcpkg\vcpkg install --triplet=x64-windows
+
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "vcpkg install failed!"
+          exit 1
+        }
+
+        Write-Host "vcpkg dependencies installed successfully!" -ForegroundColor Green
+
+    - name: Verify vcpkg Installation Structure
+      run: |
+        Write-Host "Checking vcpkg installation structure..." -ForegroundColor Cyan
+        cd Project\Engine
+
+        if (Test-Path "vcpkg_installed") {
+          Write-Host "vcpkg_installed directory exists!" -ForegroundColor Green
+          Write-Host "Contents of vcpkg_installed:" -ForegroundColor Cyan
+          Get-ChildItem -Path "vcpkg_installed" -Recurse -Depth 3 | Select-Object FullName | Format-List
+
+          # Check for Jolt headers specifically
+          if (Test-Path "vcpkg_installed\x64-windows\include\Jolt") {
+            Write-Host "Found Jolt headers at: vcpkg_installed\x64-windows\include\Jolt" -ForegroundColor Green
+          } else {
+            Write-Warning "Jolt headers not found at expected path!"
+          }
+        } else {
+          Write-Error "vcpkg_installed directory not found!"
+          exit 1
+        }
 
     - name: Verify Library Structure
       run: |
@@ -107,19 +147,19 @@ jobs:
       run: |
         Write-Host "Building GAM300.sln with configuration: ${{ matrix.configuration }}" -ForegroundColor Cyan
         cd Project
-        
-        # Build entire solution - MSBuild will handle dependencies
-        msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:minimal /p:WarningLevel=3
-        
+
+        # Build entire solution - vcpkg integration is automatic via manifest mode
+        msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:minimal /p:WarningLevel=3 /p:VcpkgEnableManifest=true
+
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Build failed for configuration ${{ matrix.configuration }}!"
-            
+
             # Show more detailed error info
             Write-Host "Re-running with detailed verbosity..." -ForegroundColor Yellow
-            msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:detailed
+            msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:detailed /p:VcpkgEnableManifest=true
             exit 1
         }
-        
+
         Write-Host "Build successful for ${{ matrix.configuration }}!" -ForegroundColor Green
     
     - name: List Build Directory Contents

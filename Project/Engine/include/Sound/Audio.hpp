@@ -6,8 +6,8 @@ typedef struct FMOD_SOUND FMOD_SOUND;
 
 class Audio : public IAsset {
 public:
-	FMOD_SOUND* sound;
-	std::string assetPath;
+	FMOD_SOUND* sound{};
+	std::string assetPath{};
 
 	// Match IAsset interface
 	std::string ENGINE_API CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

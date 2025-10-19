@@ -4,6 +4,12 @@ GAM300 - Team Marbles - C
 
 Custom 3D game engine writtein in C++. Supports cross platform for Windows, Linux, and android. MacOS TBD.
 
+Our engine is called Engine Engine, as a tribute to the Engines back in 1900s. Shout out to my favorite engines!
+
+## Quick Start
+
+Run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirements for Windows, Linux and android.
+
 ## Project Structure
 
 The project supports using either Visual Studio or Visual Studio Code. Android Studio is required for Android development.
@@ -66,13 +72,15 @@ Some additional library set ups may be required but not covered as everyone shou
 
 ### Visual Studios
 
+Run setup-vcpkg.bat to set up vcpkg.
+
 Install Visual Studio and open the .sln file.
 
 Select the compile option (Debug, Release, EditorDebug, EditorRelease) and select default project to run. Do note that the compile options are project dependent, I.E. Trying to compile and run the game using EditorDebug or EditorRelease will not work, and vice versa trying to compile and run the editor using Debug or Release will not work.
 
 Do note that Visual Studios DOES NOT USE CMake.
 
-Visual Studio does not use vcpkg. It uses precompiled binaries downloaded from the internet.
+Visual Studio uses vcpkg and precompiled binaries downloaded from the internet. It will eventually all be migrated to vcpkg.
 
 ### Visual Studio Code
 
@@ -102,7 +110,9 @@ Some Android binaries are not available, so some of them are manually compiled. 
 
 ### Frequent Errors for Android Studio
 
-If you see any CMake error, try running -clean-cmake.bat. Then, clean project in Android Studio. Then try running again.
+On first install, you might need to clean project before it can build.
+
+If you see any CMake error, try running clean-android.bat. Then, clean project in Android Studio. Then try running again.
 
 If you see something like ndk="" as an error, you might need to run setup-android-ndk.bat and restart your computer.
 

@@ -36,7 +36,7 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
 Mesh::~Mesh()
 {
 	vao.Delete();
-	ebo.Delete();
+	//ebo.Delete();
 }
 
 void Mesh::setupMesh()

@@ -250,6 +250,7 @@ std::string MetaFilesManager::GetResourceNameFromAssetFile(const std::string& as
 		return resourcePath;
 	}
 #endif
+	return "";
 }
 
 bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {

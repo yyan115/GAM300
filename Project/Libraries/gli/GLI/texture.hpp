@@ -194,16 +194,16 @@ namespace gli
 		void store(extent_type const& TexelCoord, size_type Layer, size_type Face, size_type Level, gen_type const& Texel);
 
 	protected:
-		std::shared_ptr<storage_type> Storage;
-		target_type Target;
-		format_type Format;
-		size_type BaseLayer;
-		size_type MaxLayer;
-		size_type BaseFace;
-		size_type MaxFace;
-		size_type BaseLevel;
-		size_type MaxLevel;
-		swizzles_type Swizzles;
+		std::shared_ptr<storage_type> Storage{};
+		target_type Target{};
+		format_type Format{};
+		size_type BaseLayer{};
+		size_type MaxLayer{};
+		size_type BaseFace{};
+		size_type MaxFace{};
+		size_type BaseLevel{};
+		size_type MaxLevel{};
+		swizzles_type Swizzles{};
 
 		// Pre compute at texture instance creation some information for faster access to texels
 		struct cache
@@ -283,12 +283,12 @@ namespace gli
 				return ((Layer * this->Faces) + Face) * this->Levels + Level;
 			}
 
-			size_type Faces;
-			size_type Levels;
-			std::vector<data_type*> BaseAddresses;
-			std::array<extent_type, 16> ImageExtent;
-			std::array<size_type, 16> ImageMemorySize;
-			size_type GlobalMemorySize;
+			size_type Faces{};
+			size_type Levels{};
+			std::vector<data_type*> BaseAddresses{};
+			std::array<extent_type, 16> ImageExtent{};
+			std::array<size_type, 16> ImageMemorySize{};
+			size_type GlobalMemorySize{};
 		} Cache;
 	};
 }//namespace gli

@@ -16,14 +16,14 @@
 #include "Particle/ParticleComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 
-class ENGINE_API GraphicsManager {
+class GraphicsManager {
 public:
 	enum class ViewMode {
 		VIEW_3D,      // 3D mode - show 3D models and 3D sprites
 		VIEW_2D       // 2D mode - show 2D sprites only in screen space
 	};
 
-	static GraphicsManager& GetInstance();
+	ENGINE_API static GraphicsManager& GetInstance();
 
 	// Initialization
 	bool Initialize(int window_width, int window_height);
@@ -39,7 +39,7 @@ public:
     Camera* GetCurrentCamera() const { return currentCamera; }
 
     // Viewport management (for editor/scene panel rendering with correct aspect ratio)
-    void SetViewportSize(int width, int height);
+    void ENGINE_API SetViewportSize(int width, int height);
     void GetViewportSize(int& width, int& height) const;
 
     // View mode management (2D/3D toggle)

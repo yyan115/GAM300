@@ -18,6 +18,7 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
+#include "PrefabLinkComponent.hpp"
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -63,6 +64,10 @@ static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const 
         ImGui::SameLine();
         ImGui::TextDisabled("(Instance)");
     }
+}
+
+static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
+	return ecs.HasComponent<PrefabLinkComponent>(e);
 }
 
 
@@ -199,73 +204,92 @@ void InspectorPanel::OnImGuiRender() {
 					}
 					ImGui::Separator();
 
-                    // Draw NameComponent if it exists
-                    if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
-                        auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
+					// --- Name component ---
+					if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
+						auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
+						const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
 
-                        DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Name");
+						// Only instances get the toggle
+						if (isInstance) {
+							// your helper already checks has_override_flag
+							DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Override From Prefab (Instance)");
+						}
 
-                        bool followPrefab = false;
-                        if constexpr (has_override_flag<NameComponent>::value) followPrefab = !nc.overrideFromPrefab;
+						bool followPrefab = false;
+						if (isInstance) {
+							if constexpr (has_override_flag<NameComponent>::value)
+								followPrefab = !nc.overrideFromPrefab;
+						}
 
-                        ImGui::BeginDisabled(followPrefab);
-                        {
-                            DrawNameComponent(displayEntity);
-                            ImGui::Spacing();
+						ImGui::BeginDisabled(followPrefab);
+						{
+							char buf[128] = {};
+							std::snprintf(buf, sizeof(buf), "%s", nc.name.c_str());
+							if (ImGui::InputText("Name", buf, sizeof(buf))) nc.name = buf;
+						}
+						ImGui::EndDisabled();
 
-                            // Tag dropdown
-                            ImGui::Text("Tag");
-                            ImGui::SameLine(80);
-                            ImGui::SetNextItemWidth(-1);
-                            const char* tags[] = { "Untagged", "Player", "Enemy", "UI", "Camera", "Light" };
-                            static int currentTag = 0;
-                            ImGui::Combo("##Tag", &currentTag, tags, IM_ARRAYSIZE(tags));
+						ImGui::Separator();
+					}
 
-                            // Layer dropdown
-                            ImGui::Text("Layer");
-                            ImGui::SameLine(80);
-                            ImGui::SetNextItemWidth(-1);
-                            const char* layers[] = { "Default", "UI", "Water", "Ignore Raycast", "PostProcessing" };
-                            static int currentLayer = 0;
-                            ImGui::Combo("##Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
-                        }
-                        ImGui::EndDisabled();
-                        ImGui::Separator();
-                    }
+					// --- Transform component ---
+					if (ecsManager.HasComponent<Transform>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
+							auto& t = ecsManager.GetComponent<Transform>(displayEntity);
+							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
 
-                    // Draw Transform component if it exists
-                    if (ecsManager.HasComponent<Transform>(displayEntity)) {
-                        if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-                            auto& t = ecsManager.GetComponent<Transform>(displayEntity);
-
-                            DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Transform");
-
-                            bool followPrefab = false;
-                            if constexpr (has_override_flag<Transform>::value) followPrefab = !t.overrideFromPrefab;
-
-                            ImGui::BeginDisabled(followPrefab);
-                            {
-                                DrawTransformComponent(displayEntity);
-                            }
-                            ImGui::EndDisabled();
-                        }
-                    }
-
-					// Draw ModelRenderComponent if it exists
-					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent")) {
-							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
-
-							DrawOverrideToggleIfPresent<ModelRenderComponent>(ecsManager, displayEntity, "ModelRender");
+							// Only instances get the toggle
+							if (isInstance) {
+								DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Override From Prefab (Instance)");
+							}
 
 							bool followPrefab = false;
-							if constexpr (has_override_flag<ModelRenderComponent>::value) followPrefab = !m.overrideFromPrefab;
+							if (isInstance) {
+								if constexpr (has_override_flag<Transform>::value)
+									followPrefab = !t.overrideFromPrefab;
+							}
+
+							ImGui::BeginDisabled(followPrefab);
+							ImGui::DragFloat3("Position", &t.localPosition.x, 0.01f);
+							ImGui::DragFloat3("Rotation", &t.localRotation.x, 0.5f);
+							ImGui::DragFloat3("Scale", &t.localScale.x, 0.01f);
+							t.isDirty = true;
+							ImGui::EndDisabled();
+
+							//ImGui::TreePop();
+							ImGui::Separator();
+						}
+					}
+
+					// --- Model Renderer ---
+					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent",
+							ImGuiTreeNodeFlags_DefaultOpen))
+						{
+							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
+							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
+
+							// Only prefab *instances* get the override toggle
+							if (isInstance) {
+								DrawOverrideToggleIfPresent<ModelRenderComponent>(
+									ecsManager, displayEntity, "Override From Prefab (Instance)");
+							}
+
+							bool followPrefab = false;
+							if (isInstance) {
+								if constexpr (has_override_flag<ModelRenderComponent>::value) {
+									followPrefab = !m.overrideFromPrefab;   // disabled when following prefab
+								}
+							}
 
 							ImGui::BeginDisabled(followPrefab);
 							{
 								DrawModelRenderComponent(displayEntity);
 							}
 							ImGui::EndDisabled();
+
+							//ImGui::TreePop();
+							ImGui::Separator();
 						}
 					}
 
@@ -1113,9 +1137,9 @@ void InspectorPanel::ApplyMaterialToModel(Entity entity, const GUID_128& materia
 		// If material doesn't have a name, set it from the filename
 		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
 			std::filesystem::path path(materialMeta->sourceFilePath);
-			std::string name = path.stem().string(); // Get filename without extension
-			material->SetName(name);
-			std::cout << "[InspectorPanel] Set material name to: " << name << std::endl;
+			std::string matName = path.stem().string(); // Get filename without extension
+			material->SetName(matName);
+			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
 		}
 
 		// Apply the material to the entire entity (like Unity)
@@ -1153,9 +1177,9 @@ void InspectorPanel::ApplyMaterialToModelByPath(Entity entity, const std::string
 		// If material doesn't have a name, set it from the filename
 		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
 			std::filesystem::path path(materialPath);
-			std::string name = path.stem().string(); // Get filename without extension
-			material->SetName(name);
-			std::cout << "[InspectorPanel] Set material name to: " << name << std::endl;
+			std::string matName = path.stem().string(); // Get filename without extension
+			material->SetName(matName);
+			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
 		}
 
 		// Apply the material to the entire entity (like Unity)
@@ -1715,8 +1739,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ColliderComponent component;
 			// Set default box shape - shape will be created by physics system
 			component.shapeType = ColliderShapeType::Box;
+			component.shapeTypeID = static_cast<int>(component.shapeType);
 			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
 			component.layer = Layers::MOVING;
+			component.layerID = static_cast<int>(component.layer);
 			component.shape = nullptr; // Physics system will create the shape
 			component.version = 1; // Mark as needing creation
 
@@ -1734,6 +1760,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "RigidBodyComponent") {
 			RigidBodyComponent component;
 			component.motion = Motion::Dynamic;
+			component.motionID = static_cast<int>(component.motion);
 			component.ccd = false;
 
 			ecsManager.AddComponent<RigidBodyComponent>(entity, component);
@@ -1773,9 +1800,14 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 	// Collapsing header on same line
 	ImGui::SameLine();
-	bool isOpen = ImGui::CollapsingHeader(label, flags);
+	bool checkisOpen = ImGui::CollapsingHeader(label, flags);
 
-	
+	// Check for right-click on the collapsing header
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+		std::string popupName = "ComponentContextMenu_" + componentType;
+		ImGui::OpenPopup(popupName.c_str());
+	}
+
 	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 	ImGui::PushID((label + std::string("_gear")).c_str());
 	if (ImGui::SmallButton(ICON_FA_GEAR)) {
@@ -1791,26 +1823,26 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({entity, componentType});
 		}
-		if (ImGui::MenuItem("Reset")) {
-			// TODO: Implement reset functionality
-		}
-		if (ImGui::MenuItem("Copy Component")) {
-			// TODO: Implement copy functionality
-		}
-		if (ImGui::MenuItem("Paste Component Values")) {
-			// TODO: Implement paste functionality
-		}
+		//if (ImGui::MenuItem("Reset")) {
+		//	// TODO: Implement reset functionality
+		//}
+		//if (ImGui::MenuItem("Copy Component")) {
+		//	// TODO: Implement copy functionality
+		//}
+		//if (ImGui::MenuItem("Paste Component Values")) {
+		//	// TODO: Implement paste functionality
+		//}
 		ImGui::EndPopup();
 	}
 
 	ImGui::PopStyleColor(3);
 
 	
-	if (isOpen) {
+	if (checkisOpen) {
 		ImGui::Spacing();
 	}
 
-	return isOpen;
+	return checkisOpen;
 }
 
 void InspectorPanel::ProcessPendingComponentRemovals() {
@@ -1951,6 +1983,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes))) {
 			collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
+			collider.shapeTypeID = currentShapeType;
 			collider.version++; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();
@@ -2017,6 +2050,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##PhysicsLayer", &currentLayer, layers, IM_ARRAYSIZE(layers))) {
 			collider.layer = static_cast<JPH::ObjectLayer>(currentLayer);
+			collider.layerID = static_cast<int>(collider.layer);
 			collider.version++; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();
@@ -2044,6 +2078,7 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 		EditorComponents::PushComboColors();
 		if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
 			rigidBody.motion = static_cast<Motion>(currentMotion);
+			rigidBody.motionID = currentMotion;
 			rigidBody.motion_dirty = true; // Mark for recreation
 		}
 		EditorComponents::PopComboColors();

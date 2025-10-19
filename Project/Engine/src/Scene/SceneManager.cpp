@@ -19,8 +19,13 @@
 	#pragma comment(lib, "shell32.lib")
 #endif
 
-ENGINE_API SceneManager::~SceneManager() {
+SceneManager::~SceneManager() {
 	//ExitScene();
+}
+
+SceneManager& SceneManager::GetInstance() {
+    static SceneManager instance;
+    return instance;
 }
 
 // Temporary function to load the test scene.
@@ -35,7 +40,7 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
+void SceneManager::LoadScene(const std::string& scenePath) {
 #if 1
 	// Exit and clean up the current scene if it exists.
 	if (currentScene) 
@@ -54,6 +59,9 @@ ENGINE_API void SceneManager::LoadScene(const std::string& scenePath) {
 	currentScenePath = scenePath;
 	std::filesystem::path p(currentScenePath);
 	currentSceneName = p.stem().generic_string();
+
+    // MUST MAKE SURE JOLTPHYSICS IS INITIALIZED FIRST.
+    currentScene->InitializeJoltPhysics();
 
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
@@ -235,7 +243,7 @@ void SceneManager::ExitScene() {
 	}
 }
 
-ENGINE_API void SceneManager::SaveScene() 
+void SceneManager::SaveScene() 
 {
     Serializer::SerializeScene(currentScenePath);
 
@@ -369,16 +377,24 @@ ENGINE_API void SceneManager::SaveScene()
 //    }
 }
 
+void SceneManager::InitializeScenePhysics() {
+    currentScene->InitializePhysics();
+}
+
+void SceneManager::ShutDownScenePhysics() {
+    currentScene->ShutDownPhysics();
+}
+
 void SceneManager::SaveTempScene() {
 	// Serialize the current scene data to a temporary file.
 	std::string tempScenePath = currentScenePath + ".temp";
-	//Serializer::GetInstance().SerializeScene(tempScenePath);
+	Serializer::SerializeScene(tempScenePath);
 }
 
 void SceneManager::ReloadTempScene() {
 	std::string tempScenePath = currentScenePath + ".temp";
 	if (std::filesystem::exists(tempScenePath)) {
-		//Serializer::GetInstance().ReloadScene(tempScenePath);
+		Serializer::ReloadScene(tempScenePath, currentScenePath);
 	}
 	else {
 		// Handle the case where the temp file doesn't exist

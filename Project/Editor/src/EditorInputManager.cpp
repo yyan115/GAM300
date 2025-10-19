@@ -72,6 +72,7 @@ bool EditorInputManager::IsWindowHovered(const char* windowName) {
     // Check if the specific window is hovered
     // For now, we'll use ImGui::IsWindowHovered() but this could be enhanced
     // to check specific window names if needed
+	(void)windowName;
     return ImGui::IsWindowHovered();
 }
 
@@ -83,6 +84,7 @@ bool EditorInputManager::ShouldHandleCameraInput(const char* windowName) {
     // Only handle camera input if the specified window is hovered
     // Allow camera input unless we're typing in a text field
     return ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered();
+	(void)windowName;
 }
 
 bool EditorInputManager::IsGizmoShortcutPressed(int gizmoType) {

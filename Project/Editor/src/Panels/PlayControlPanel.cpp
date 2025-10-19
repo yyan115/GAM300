@@ -136,8 +136,8 @@ void PlayControlPanel::RenderTransformTools() {
     float toolButtonHeight = 30.0f; // Same height as play/stop buttons
     
     // Center transform tools vertically in the toolbar
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    float menuBarHeight = ImGui::GetFrameHeight();
+    //ImGuiViewport* viewport = ImGui::GetMainViewport();
+    //float menuBarHeight = ImGui::GetFrameHeight();
     float toolbarHeight = ImGui::GetFrameHeight() + 18.0f; // Same as toolbar size
     float centerY = (toolbarHeight - toolButtonHeight) * 0.5f;
     ImGui::SetCursorPosY(centerY);
@@ -282,9 +282,9 @@ void PlayControlPanel::RenderTransformTools() {
                     }
 
                     // Center camera at the middle of the game viewport
-                    float centerX = gameWidth / 2.0f;
-                    float centerY = gameHeight / 2.0f;
-                    scenePanel->SetCameraTarget(glm::vec3(centerX, centerY, 0.0f));
+                    float centerOfX = gameWidth / 2.0f;
+                    float centerOfY = gameHeight / 2.0f;
+                    scenePanel->SetCameraTarget(glm::vec3(centerOfX, centerOfY, 0.0f));
 
                     // Set zoom to show the full rectangle (zoom out more)
                     // OrthoZoomLevel: 1.0 = 1:1 pixel mapping, larger = zoomed out more

@@ -7,6 +7,7 @@
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Scene/SceneManager.hpp"
+#include "Physics/PhysicsSystem.hpp"
 
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
@@ -17,7 +18,7 @@ void EditorState::SetState(State newState) {
     State oldState = GetState();
     if (oldState != newState) {
         // Convert EditorState::State to Engine::GameState and delegate to Engine
-        GameState engineState;
+        GameState engineState{};
         switch (newState) {
             case State::EDIT_MODE: engineState = GameState::EDIT_MODE; break;
             case State::PLAY_MODE: engineState = GameState::PLAY_MODE; break;
@@ -64,6 +65,9 @@ void EditorState::Play() {
                 }
             }
         }
+
+        SceneManager::GetInstance().InitializeScenePhysics();
+
     } else if (currentState == State::PAUSED) {
         SetState(State::PLAY_MODE);
 
@@ -105,6 +109,8 @@ void EditorState::Stop() {
             ac.Stop();
         }
     }
+
+    SceneManager::GetInstance().ShutDownScenePhysics();
 
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();

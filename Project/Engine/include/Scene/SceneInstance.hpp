@@ -12,20 +12,23 @@ public:
 	~SceneInstance() override = default;
 
 	void Initialize() override;
+	void InitializeJoltPhysics() override;
+	void InitializePhysics() override;
 
 	void Update(double dt) override;
 	void Draw() override;
 	void Exit() override;
+	void ShutDownPhysics() override;
 	void processInput(float deltaTime); // temp function
 
 	const unsigned int SCR_WIDTH = 800;
 	const unsigned int SCR_HEIGHT = 600;
 
 	// camera
-	Camera camera{ glm::vec3(0.0f, 0.0f, 3.0f) };
+	/*Camera camera{ glm::vec3(0.0f, 0.0f, 3.0f) };
 	float lastX = SCR_WIDTH / 2.0f;
 	float lastY = SCR_HEIGHT / 2.0f;
-	bool firstMouse = true;
+	bool firstMouse = true;*/
 
 	std::shared_ptr<Model> backpackModel;
 	std::shared_ptr<Shader> shader;

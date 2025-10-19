@@ -15,7 +15,7 @@
 #include <Graphics/Sprite/SpriteSystem.hpp>
 #include <Graphics/Particle/ParticleSystem.hpp>
 #include <Sound/AudioSystem.hpp>
-#include <Animation/AnimationSystem.hpp>
+#include "Graphics/Camera/CameraSystem.hpp"
 
 class PhysicsSystem;
 class ECSManager {
@@ -104,6 +104,11 @@ public:
 	std::vector<Entity> GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
+	
+	// Get system manager for profiling access
+	const SystemManager* GetSystemManager() const {
+		return systemManager.get();
+	}
 
 	// STORE SHARED POINTERS TO SYSTEMS HERE
 	// e.g., 
@@ -117,6 +122,7 @@ public:
 	std::shared_ptr<ParticleSystem> particleSystem;
 	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<AnimationSystem> animationSystem;
+	std::shared_ptr<CameraSystem> cameraSystem;
 
 private:
 	template <typename T>

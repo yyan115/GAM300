@@ -3,16 +3,108 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "ECS/ECSRegistry.hpp"
-#include <ECS/NameComponent.hpp>
-#include <Graphics/Model/ModelRenderComponent.hpp>
-#include <Graphics/TextRendering/TextRenderComponent.hpp>
-#include <Hierarchy/ParentComponent.hpp>
-#include <Hierarchy/ChildrenComponent.hpp>
-#include "Hierarchy/EntityGUIDRegistry.hpp"
-#include <Platform/IPlatform.h>
-#include <WindowManager.hpp>
-#include <Sound/AudioComponent.hpp>
-#include <Graphics/Lights/LightComponent.hpp>
+
+// ---------- helpers ----------
+auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
+    if (!a.IsArray() || a.Size() < 3) return false;
+    out.x = static_cast<float>(a[0].GetDouble());
+    out.y = static_cast<float>(a[1].GetDouble());
+    out.z = static_cast<float>(a[2].GetDouble());
+    return true;
+    };
+
+auto getNumberFromValue = [](const rapidjson::Value& v, double& out) -> bool {
+    if (v.IsNumber()) { out = v.GetDouble(); return true; }
+    if (v.IsObject() && v.HasMember("data")) {
+        const auto& d = v["data"];
+        if (d.IsNumber()) { out = d.GetDouble(); return true; }
+        if (d.IsObject() && d.HasMember("data") && d["data"].IsNumber()) { out = d["data"].GetDouble(); return true; }
+    }
+    return false;
+    };
+
+auto getBoolFromValue = [](const rapidjson::Value& v, bool& out) -> bool {
+    if (v.IsBool()) { out = v.GetBool(); return true; }
+    if (v.IsObject() && v.HasMember("data") && v["data"].IsBool()) { out = v["data"].GetBool(); return true; }
+    return false;
+    };
+
+auto getStringFromValue = [](const rapidjson::Value& v, std::string& out) -> bool {
+    if (v.IsString()) { out = v.GetString(); return true; }
+    if (v.IsObject() && v.HasMember("data") && v["data"].IsString()) { out = v["data"].GetString(); return true; }
+    return false;
+    };
+
+// read a Vector3D stored as either [x,y,z] or typed {"type":"Vector3D","data":[{...},{...},{...}]}
+auto readVec3Generic = [](const rapidjson::Value& val, Vector3D& out)->bool {
+    if (val.IsArray()) return readVec3FromArray(val, out);
+    if (val.IsObject() && val.HasMember("data") && val["data"].IsArray()) {
+        const auto& darr = val["data"];
+        if (darr.Size() >= 3) {
+            double x, y, z;
+            if (getNumberFromValue(darr[0], x) && getNumberFromValue(darr[1], y) && getNumberFromValue(darr[2], z)) {
+                out.x = static_cast<float>(x);
+                out.y = static_cast<float>(y);
+                out.z = static_cast<float>(z);
+                return true;
+            }
+        }
+    }
+    return false;
+    };
+
+// read quaternion stored as typed object or plain array [w,x,y,z]
+auto readQuatGeneric = [](const rapidjson::Value& val, double& outW, double& outX, double& outY, double& outZ)->bool {
+    if (val.IsArray() && val.Size() >= 4) {
+        outW = val[0].GetDouble();
+        outX = val[1].GetDouble();
+        outY = val[2].GetDouble();
+        outZ = val[3].GetDouble();
+        return true;
+    }
+    if (val.IsObject() && val.HasMember("data") && val["data"].IsArray()) {
+        const auto& darr = val["data"];
+        if (darr.Size() >= 4) {
+            if (getNumberFromValue(darr[0], outW) && getNumberFromValue(darr[1], outX)
+                && getNumberFromValue(darr[2], outY) && getNumberFromValue(darr[3], outZ)) {
+                return true;
+            }
+        }
+    }
+    return false;
+    };
+
+// convert quaternion (w,x,y,z) -> Euler degrees (roll, pitch, yaw) in Vector3D (x=roll, y=pitch, z=yaw)
+auto quatToEulerDeg = [](double w, double x, double y, double z) -> Vector3D {
+    // safe pi
+    const double PI = std::acos(-1.0);
+    // roll (x-axis rotation)
+    double sinr_cosp = 2.0 * (w * x + y * z);
+    double cosr_cosp = 1.0 - 2.0 * (x * x + y * y);
+    double roll = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = 2.0 * (w * y - z * x);
+    double pitch;
+    if (std::abs(sinp) >= 1)
+        pitch = std::copysign(PI / 2.0, sinp); // use 90 degrees if out of range
+    else
+        pitch = std::asin(sinp);
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2.0 * (w * z + x * y);
+    double cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
+    double yaw = std::atan2(siny_cosp, cosy_cosp);
+
+    const double RAD2DEG = 180.0 / PI;
+    return Vector3D{
+        static_cast<float>(roll * RAD2DEG),
+        static_cast<float>(pitch * RAD2DEG),
+        static_cast<float>(yaw * RAD2DEG)
+    };
+    };
+
+// ---------- end helpers ----------
 
 void Serializer::SerializeScene(const std::string& scenePath) {
     namespace fs = std::filesystem;
@@ -179,6 +271,16 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("SpotLightComponent", v, alloc);
         }
+        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+            auto& c = ecs.GetComponent<RigidBodyComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("RigidBodyComponent", v, alloc);
+        }
+        if (ecs.HasComponent<ColliderComponent>(entity)) {
+            auto& c = ecs.GetComponent<ColliderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ColliderComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -251,6 +353,10 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + scenePath);
     }
 
+    if (!doc.IsObject()) {
+        return;
+    }
+
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
         return;
@@ -258,128 +364,12 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
     ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-    // ---------- helpers ----------
-    auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
-        if (!a.IsArray() || a.Size() < 3) return false;
-        out.x = static_cast<float>(a[0].GetDouble());
-        out.y = static_cast<float>(a[1].GetDouble());
-        out.z = static_cast<float>(a[2].GetDouble());
-        return true;
-        };
-
-    auto getNumberFromValue = [](const rapidjson::Value& v, double& out) -> bool {
-        if (v.IsNumber()) { out = v.GetDouble(); return true; }
-        if (v.IsObject() && v.HasMember("data")) {
-            const auto& d = v["data"];
-            if (d.IsNumber()) { out = d.GetDouble(); return true; }
-            if (d.IsObject() && d.HasMember("data") && d["data"].IsNumber()) { out = d["data"].GetDouble(); return true; }
-        }
-        return false;
-        };
-
-    auto getBoolFromValue = [](const rapidjson::Value& v, bool& out) -> bool {
-        if (v.IsBool()) { out = v.GetBool(); return true; }
-        if (v.IsObject() && v.HasMember("data") && v["data"].IsBool()) { out = v["data"].GetBool(); return true; }
-        return false;
-        };
-
-    auto getStringFromValue = [](const rapidjson::Value& v, std::string& out) -> bool {
-        if (v.IsString()) { out = v.GetString(); return true; }
-        if (v.IsObject() && v.HasMember("data") && v["data"].IsString()) { out = v["data"].GetString(); return true; }
-        return false;
-        };
-
-    // read a Vector3D stored as either [x,y,z] or typed {"type":"Vector3D","data":[{...},{...},{...}]}
-    auto readVec3Generic = [&](const rapidjson::Value& val, Vector3D& out)->bool {
-        if (val.IsArray()) return readVec3FromArray(val, out);
-        if (val.IsObject() && val.HasMember("data") && val["data"].IsArray()) {
-            const auto& darr = val["data"];
-            if (darr.Size() >= 3) {
-                double x, y, z;
-                if (getNumberFromValue(darr[0], x) && getNumberFromValue(darr[1], y) && getNumberFromValue(darr[2], z)) {
-                    out.x = static_cast<float>(x);
-                    out.y = static_cast<float>(y);
-                    out.z = static_cast<float>(z);
-                    return true;
-                }
-            }
-        }
-        return false;
-        };
-
-    // read quaternion stored as typed object or plain array [w,x,y,z]
-    auto readQuatGeneric = [&](const rapidjson::Value& val, double& outW, double& outX, double& outY, double& outZ)->bool {
-        if (val.IsArray() && val.Size() >= 4) {
-            outW = val[0].GetDouble();
-            outX = val[1].GetDouble();
-            outY = val[2].GetDouble();
-            outZ = val[3].GetDouble();
-            return true;
-        }
-        if (val.IsObject() && val.HasMember("data") && val["data"].IsArray()) {
-            const auto& darr = val["data"];
-            if (darr.Size() >= 4) {
-                if (getNumberFromValue(darr[0], outW) && getNumberFromValue(darr[1], outX)
-                    && getNumberFromValue(darr[2], outY) && getNumberFromValue(darr[3], outZ)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-        };
-
-    // convert quaternion (w,x,y,z) -> Euler degrees (roll, pitch, yaw) in Vector3D (x=roll, y=pitch, z=yaw)
-    auto quatToEulerDeg = [](double w, double x, double y, double z) -> Vector3D {
-        // safe pi
-        const double PI = std::acos(-1.0);
-        // roll (x-axis rotation)
-        double sinr_cosp = 2.0 * (w * x + y * z);
-        double cosr_cosp = 1.0 - 2.0 * (x * x + y * y);
-        double roll = std::atan2(sinr_cosp, cosr_cosp);
-
-        // pitch (y-axis rotation)
-        double sinp = 2.0 * (w * y - z * x);
-        double pitch;
-        if (std::abs(sinp) >= 1)
-            pitch = std::copysign(PI / 2.0, sinp); // use 90 degrees if out of range
-        else
-            pitch = std::asin(sinp);
-
-        // yaw (z-axis rotation)
-        double siny_cosp = 2.0 * (w * z + x * y);
-        double cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
-        double yaw = std::atan2(siny_cosp, cosy_cosp);
-
-        const double RAD2DEG = 180.0 / PI;
-        return Vector3D{
-            static_cast<float>(roll * RAD2DEG),
-            static_cast<float>(pitch * RAD2DEG),
-            static_cast<float>(yaw * RAD2DEG)
-        };
-        };
-
-    // ---------- end helpers ----------
-
     const rapidjson::Value& ents = doc["entities"];
     for (rapidjson::SizeType i = 0; i < ents.Size(); ++i) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
-        Entity newEnt{};
-        uint64_t oldId = 0;
-        if (entObj.HasMember("id") && entObj["id"].IsUint64()) oldId = entObj["id"].GetUint64();
-        else if (entObj.HasMember("id") && entObj["id"].IsUint()) oldId = static_cast<uint64_t>(entObj["id"].GetUint());
-        if (entObj.HasMember("guid")) {
-            GUID_string guidStr = entObj["guid"].GetString();
-            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
-            newEnt = ecs.CreateEntityWithGUID(guid);
-            ENGINE_LOG_INFO("Entity " + std::to_string(newEnt) + " created with GUID " + guidStr);
-        }
-        else {
-            // Fallback for if there is no GUID, but it shouldn't happen.
-            newEnt = ecs.CreateEntity();
-            ENGINE_LOG_WARN("Entity created with no GUID!");
-        }
+        Entity newEnt = CreateEntityViaGUID(entObj);
 
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];
@@ -387,282 +377,527 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         // NameComponent
         if (comps.HasMember("NameComponent")) {
             const rapidjson::Value& nv = comps["NameComponent"];
-            std::string name;
-            if (nv.IsObject() && nv.HasMember("name") && nv["name"].IsString()) name = nv["name"].GetString();
-            else if (nv.IsString()) name = nv.GetString();
-            else if (nv.IsObject() && nv.HasMember("data")) getStringFromValue(nv["data"], name);
-
-            if (!name.empty()) {
-                try {
-                    ecs.GetComponent<NameComponent>(newEnt).name = name;
-                }
-                catch (...) {
-                    NameComponent nc; nc.name = name;
-                    ecs.AddComponent<NameComponent>(newEnt, nc);
-                }
-            }
+            ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
+            auto& nameComp = ecs.GetComponent<NameComponent>(newEnt);
+            DeserializeNameComponent(nameComp, nv);
         }
 
         // Transform
         if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
             const rapidjson::Value& t = comps["Transform"];
-            Vector3D pos{ 0.f,0.f,0.f }, rot{ 0.f,0.f,0.f }, scale{ 1.f,1.f,1.f };
-
-            // legacy simple arrays
-            if (t.HasMember("position") && t["position"].IsArray()) readVec3FromArray(t["position"], pos);
-            else if (t.HasMember("localPosition") && t["localPosition"].IsArray()) readVec3FromArray(t["localPosition"], pos);
-
-            if (t.HasMember("rotation") && t["rotation"].IsArray()) readVec3FromArray(t["rotation"], rot);
-            else if (t.HasMember("localRotation") && t["localRotation"].IsArray()) readVec3FromArray(t["localRotation"], rot);
-
-            if (t.HasMember("scale") && t["scale"].IsArray()) readVec3FromArray(t["scale"], scale);
-            else if (t.HasMember("localScale") && t["localScale"].IsArray()) readVec3FromArray(t["localScale"], scale);
-
-            // typed Transform (your format): data is an array; observed order in your file is: position, scale, rotation(quaternion), ...
-            if (t.HasMember("data") && t["data"].IsArray()) {
-                const auto& darr = t["data"];
-                if (darr.Size() > 0) {
-                    readVec3Generic(darr[0], pos); // index 0 -> position
-                }
-                if (darr.Size() > 1) {
-                    Vector3D maybeScale{ 1.f,1.f,1.f };
-                    if (readVec3Generic(darr[1], maybeScale)) scale = maybeScale; // index 1 -> scale
-                }
-                if (darr.Size() > 2) {
-                    double w = 1, x = 0, y = 0, z = 0;
-                    if (readQuatGeneric(darr[2], w, x, y, z)) { // index 2 -> quaternion
-                        rot = quatToEulerDeg(w, x, y, z);
-                    }
-                }
-            }
-
-            if (ecs.transformSystem) {
-                ecs.transformSystem->SetLocalPosition(newEnt, pos);
-                ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees in your code
-                ecs.transformSystem->SetLocalScale(newEnt, scale);
-            }
-            else
-            {
-                Transform tf; tf.localPosition = pos; tf.localRotation = Quaternion::FromEulerDegrees(rot); tf.localScale = scale;
-                ecs.AddComponent<Transform>(newEnt, tf);
-            }
+            ecs.AddComponent<Transform>(newEnt, Transform{});
+            DeserializeTransformComponent(newEnt, t);
         }
 
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
-
-            if (mv.IsObject()) {
-                if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    ModelRenderComponent modelComp{};
-                    GUID_string modelGUIDStr = mv["data"][0].GetString();
-                    GUID_string shaderGUIDStr = mv["data"][1].GetString();
-                    GUID_string materialGUIDStr = mv["data"][2].GetString();
-                    modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
-                    modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
-                    modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
-
-                    ecs.AddComponent<ModelRenderComponent>(newEnt, modelComp);
-                }
-            }
+            ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
+            DeserializeModelComponent(modelComp, mv);
         }
 
         // SpriteRenderComponent
         if (comps.HasMember("SpriteRenderComponent")) {
             const rapidjson::Value& mv = comps["SpriteRenderComponent"];
-
-            if (mv.IsObject()) {
-                if (mv.HasMember("data") && mv["data"].IsArray() && mv["data"].Size() > 0) {
-                    SpriteRenderComponent spriteComp{};
-                    GUID_string textureGUIDStr = mv["data"][0].GetString();
-                    GUID_string shaderGUIDStr = mv["data"][1].GetString();
-                    spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
-                    spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
-
-                    // Sprite position
-                    readVec3Generic(mv["data"][2], spriteComp.position);
-                    // Sprite scale
-                    readVec3Generic(mv["data"][3], spriteComp.scale);
-                    // Sprite rotation
-                    spriteComp.rotation = mv["data"][4]["data"].GetFloat();
-                    // Sprite color
-                    readVec3Generic(mv["data"][5], spriteComp.color);
-                    spriteComp.alpha = mv["data"][6]["data"].GetFloat();
-                    spriteComp.is3D = mv["data"][7]["data"].GetBool();
-                    spriteComp.enableBillboard = mv["data"][8]["data"].GetBool();
-                    spriteComp.layer = mv["data"][9]["data"].GetInt();
-                    readVec3Generic(mv["data"][10], spriteComp.saved3DPosition);
-
-                    ecs.AddComponent<SpriteRenderComponent>(newEnt, spriteComp);
-                }
-            }
+            ecs.AddComponent<SpriteRenderComponent>(newEnt, SpriteRenderComponent{});
+            auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(newEnt);
+            DeserializeSpriteComponent(spriteComp, mv);
         }
 
         // TextRenderComponent
         if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["TextRenderComponent"];
-
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                TextRenderComponent textComp{};
-                const auto& d = tv["data"];
-                textComp.text = d[0]["data"].GetString();
-                textComp.fontSize = d[1]["data"].GetUint();
-                textComp.fontGUID = GUIDUtilities::ConvertStringToGUID128(d[2].GetString());
-                textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(d[3].GetString());
-                readVec3Generic(d[4], textComp.position);
-                readVec3Generic(d[5], textComp.color);
-                textComp.scale = d[6]["data"].GetFloat();
-                textComp.is3D = d[7]["data"].GetBool();
-                textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[9]["data"].GetInt());
-                ecs.AddComponent<TextRenderComponent>(newEnt, textComp);
-            }
+            ecs.AddComponent<TextRenderComponent>(newEnt, TextRenderComponent{});
+            auto& textComp = ecs.GetComponent<TextRenderComponent>(newEnt);
+            DeserializeTextComponent(textComp, tv);
         }
 
         // ParticleComponent
         if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["ParticleComponent"];
-
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                ParticleComponent particleComp{};
-                const auto& d = tv["data"];
-                GUID_string guidStr = d[0].GetString();
-                particleComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-                readVec3Generic(d[1], particleComp.emitterPosition);
-                particleComp.emissionRate = d[2]["data"].GetFloat();
-                particleComp.maxParticles = d[3]["data"].GetInt();
-                particleComp.particleLifetime = d[4]["data"].GetFloat();
-                particleComp.startSize = d[5]["data"].GetFloat();
-                particleComp.endSize = d[6]["data"].GetFloat();
-                readVec3Generic(d[7], particleComp.startColor);
-                particleComp.startColorAlpha = d[8]["data"].GetFloat();
-                readVec3Generic(d[9], particleComp.endColor);
-                particleComp.endColorAlpha = d[10]["data"].GetFloat();
-                readVec3Generic(d[11], particleComp.gravity);
-                particleComp.velocityRandomness = d[12]["data"].GetFloat();
-                readVec3Generic(d[13], particleComp.initialVelocity);
-                ecs.AddComponent<ParticleComponent>(newEnt, particleComp);
-            }
+            ecs.AddComponent<ParticleComponent>(newEnt, ParticleComponent{});
+            auto& particleComp = ecs.GetComponent<ParticleComponent>(newEnt);
+            DeserializeParticleComponent(particleComp, tv);
         }
 
         // DirectionalLightComponent
         if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["DirectionalLightComponent"];
-
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                DirectionalLightComponent dirLightComp{};
-                const auto& d = tv["data"];
-                readVec3Generic(d[0], dirLightComp.color);
-                dirLightComp.intensity = d[1]["data"].GetFloat();
-                dirLightComp.enabled = d[2]["data"].GetBool();
-                readVec3Generic(d[3], dirLightComp.direction);
-                readVec3Generic(d[4], dirLightComp.ambient);
-                readVec3Generic(d[5], dirLightComp.diffuse);
-                readVec3Generic(d[6], dirLightComp.specular);
-                ecs.AddComponent<DirectionalLightComponent>(newEnt, dirLightComp);
-            }
+            ecs.AddComponent<DirectionalLightComponent>(newEnt, DirectionalLightComponent{});
+            auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(newEnt);
+            DeserializeDirLightComponent(dirLightComp, tv);
         }
 
         // SpotLightComponent
         if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["SpotLightComponent"];
-
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                SpotLightComponent spotlightComp{};
-                const auto& d = tv["data"];
-                readVec3Generic(d[0], spotlightComp.color);
-                spotlightComp.intensity = d[1]["data"].GetFloat();
-                spotlightComp.enabled = d[2]["data"].GetBool();
-                readVec3Generic(d[3], spotlightComp.direction);
-                spotlightComp.cutOff = d[4]["data"].GetFloat();
-                spotlightComp.constant = d[5]["data"].GetFloat();
-                spotlightComp.linear = d[6]["data"].GetFloat();
-                spotlightComp.quadratic = d[7]["data"].GetFloat();
-                readVec3Generic(d[8], spotlightComp.ambient);
-                readVec3Generic(d[9], spotlightComp.diffuse);
-                readVec3Generic(d[10], spotlightComp.specular);
-                ecs.AddComponent<SpotLightComponent>(newEnt, spotlightComp);
-            }
+            ecs.AddComponent<SpotLightComponent>(newEnt, SpotLightComponent{});
+            auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(newEnt);
+            DeserializeSpotLightComponent(spotlightComp, tv);
         }
 
         // PointLightComponent
         if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["PointLightComponent"];
-
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                PointLightComponent pointLightComp{};
-                const auto& d = tv["data"];
-                readVec3Generic(d[0], pointLightComp.color);
-                pointLightComp.intensity = d[1]["data"].GetFloat();
-                pointLightComp.enabled = d[2]["data"].GetBool();
-                pointLightComp.constant = d[3]["data"].GetFloat();
-                pointLightComp.linear = d[4]["data"].GetFloat();
-                pointLightComp.quadratic = d[5]["data"].GetFloat();
-                readVec3Generic(d[6], pointLightComp.ambient);
-                readVec3Generic(d[7], pointLightComp.diffuse);
-                readVec3Generic(d[8], pointLightComp.specular);
-                ecs.AddComponent<PointLightComponent>(newEnt, pointLightComp);
-            }
+            ecs.AddComponent<PointLightComponent>(newEnt, PointLightComponent{});
+            auto& pointLightComp = ecs.GetComponent<PointLightComponent>(newEnt);
+            DeserializePointLightComponent(pointLightComp, tv);
         }
 
         // AudioComponent
         if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioComponent"];
+            ecs.AddComponent<AudioComponent>(newEnt, AudioComponent{});
+            auto& audioComp = ecs.GetComponent<AudioComponent>(newEnt);
+            DeserializeAudioComponent(audioComp, tv);
+        }
 
-            // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
-            if (tv.HasMember("data") && tv["data"].IsArray()) {
-                AudioComponent audioComp{};
-                const auto& d = tv["data"];
-                GUID_string guidStr = d[0].GetString();
-                audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-                audioComp.SetClip(d[1]["data"].GetString());
-                audioComp.SetVolume(d[2]["data"].GetFloat());
-                audioComp.SetPitch(d[3]["data"].GetFloat());
-                audioComp.SetLoop(d[4]["data"].GetBool());
-                audioComp.PlayOnAwake = d[5]["data"].GetBool();
-                audioComp.SetMute(d[6]["data"].GetBool());
-                audioComp.Priority = d[7]["data"].GetInt();
-                audioComp.SetSpatialize(d[8]["data"].GetBool());
-                audioComp.MinDistance = d[9]["data"].GetFloat();
-                audioComp.MaxDistance = d[10]["data"].GetFloat();
-                audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
-                audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
-                audioComp.IsPlaying = d[13]["data"].GetBool();
-                audioComp.IsPaused = d[14]["data"].GetBool();
-                readVec3Generic(d[15], audioComp.Position);
-                ecs.AddComponent<AudioComponent>(newEnt, audioComp);
-            }
+        // RigidBodyComponent
+        if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["RigidBodyComponent"];
+            ecs.AddComponent<RigidBodyComponent>(newEnt, RigidBodyComponent{});
+            auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
+            DeserializeRigidBodyComponent(rbComp, tv);
+        }
+
+        // ColliderComponent
+        if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ColliderComponent"];
+            ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
+            auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
+            DeserializeColliderComponent(colliderComp, tv);
         }
 
         // ParentComponent
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
-            ParentComponent parentComp{};
-            GUID_string parentGUIDStr = parentCompJSON["data"][0].GetString();
-            parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
-            ecs.AddComponent(newEnt, parentComp);
+            ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
+            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
         }
 
         // ChildrenComponent
         if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
             const auto& childrenCompJSON = comps["ChildrenComponent"];
-            ChildrenComponent childrenComp{};
-            if (childrenCompJSON.HasMember("data")) {
-                const auto& childrenVectorJSON = childrenCompJSON["data"][0]["data"].GetArray();
-                for (const auto& childJSON : childrenVectorJSON) {
-                    GUID_string childGUIDStr = childJSON.GetString();
-                    childrenComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
-                }
-            }
-
-            ecs.AddComponent<ChildrenComponent>(newEnt, childrenComp);
+            ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
     } // end for entities
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
+}
+
+void Serializer::ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath) {
+    ENGINE_LOG_INFO("[Serializer] Reloading temp scene: " + tempScenePath);
+    using namespace std;
+    namespace fs = std::filesystem;
+
+    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+    IPlatform* platform = WindowManager::GetPlatform();
+    if (!platform) {
+        ENGINE_LOG_DEBUG("[Serializer] ERROR: Platform not available for asset discovery!");
+        return;
+    }
+    if (!platform->FileExists(tempScenePath)) {
+        ENGINE_LOG_DEBUG("[Serializer]: Scene file not found: " + tempScenePath);
+        return;
+    }
+
+    std::vector<uint8_t> metaFileData = platform->ReadAsset(tempScenePath);
+    rapidjson::Document doc;
+    if (!metaFileData.empty()) {
+        rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
+        doc.ParseStream(ms);
+    }
+    if (doc.HasParseError()) {
+        ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + tempScenePath);
+    }
+
+    if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
+        ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + tempScenePath);
+        return;
+    }
+
+    ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
+
+    const rapidjson::Value& ents = doc["entities"];
+    for (rapidjson::SizeType i = 0; i < ents.Size(); ++i) {
+        const rapidjson::Value& entObj = ents[i];
+        if (!entObj.IsObject()) continue;
+
+        Entity currEnt = entObj["id"].GetUint();
+
+        if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
+        const rapidjson::Value& comps = entObj["components"];
+
+        // NameComponent
+        if (comps.HasMember("NameComponent")) {
+            const rapidjson::Value& nv = comps["NameComponent"];
+            auto& nameComp = ecs.GetComponent<NameComponent>(currEnt);
+            DeserializeNameComponent(nameComp, nv);
+        }
+
+        // Transform
+        if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
+            const rapidjson::Value& t = comps["Transform"];
+            DeserializeTransformComponent(currEnt, t);
+        }
+
+        // ModelRenderComponent
+        if (comps.HasMember("ModelRenderComponent")) {
+            const rapidjson::Value& mv = comps["ModelRenderComponent"];
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
+            DeserializeModelComponent(modelComp, mv);
+        }
+
+        // SpriteRenderComponent
+        if (comps.HasMember("SpriteRenderComponent")) {
+            const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+            auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(currEnt);
+            DeserializeSpriteComponent(spriteComp, mv);
+        }
+
+        // TextRenderComponent
+        if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["TextRenderComponent"];
+            auto& textComp = ecs.GetComponent<TextRenderComponent>(currEnt);
+            DeserializeTextComponent(textComp, tv);
+        }
+
+        // ParticleComponent
+        if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ParticleComponent"];
+            auto& particleComp = ecs.GetComponent<ParticleComponent>(currEnt);
+            DeserializeParticleComponent(particleComp, tv);
+        }
+
+        // DirectionalLightComponent
+        if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["DirectionalLightComponent"];
+            auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(currEnt);
+            DeserializeDirLightComponent(dirLightComp, tv);
+        }
+
+        // SpotLightComponent
+        if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["SpotLightComponent"];
+            auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(currEnt);
+            DeserializeSpotLightComponent(spotlightComp, tv);
+        }
+
+        // PointLightComponent
+        if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["PointLightComponent"];
+            auto& pointLightComp = ecs.GetComponent<PointLightComponent>(currEnt);
+            DeserializePointLightComponent(pointLightComp, tv);
+        }
+
+        // AudioComponent
+        if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioComponent"];
+            auto& audioComp = ecs.GetComponent<AudioComponent>(currEnt);
+            DeserializeAudioComponent(audioComp, tv);
+        }
+
+        // RigidBodyComponent
+        if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["RigidBodyComponent"];
+            auto& rbComp = ecs.GetComponent<RigidBodyComponent>(currEnt);
+            DeserializeRigidBodyComponent(rbComp, tv);
+        }
+
+        // ColliderComponent
+        if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ColliderComponent"];
+            auto& colliderComp = ecs.GetComponent<ColliderComponent>(currEnt);
+            DeserializeColliderComponent(colliderComp, tv);
+        }
+
+        // ParentComponent
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
+        }
+
+        // ChildrenComponent
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
+    } // end for entities
+
+    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
+}
+
+Entity Serializer::CreateEntityViaGUID(const rapidjson::Value& entityJSON) {
+    if (entityJSON.HasMember("guid")) {
+        GUID_string guidStr = entityJSON["guid"].GetString();
+        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        Entity newEnt = ECSRegistry::GetInstance().GetActiveECSManager().CreateEntityWithGUID(guid);
+        ENGINE_LOG_INFO("Entity " + std::to_string(newEnt) + " created with GUID " + guidStr);
+        return newEnt;
+    }
+    else {
+        // Fallback for if there is no GUID, but it shouldn't happen.
+        Entity newEnt = ECSRegistry::GetInstance().GetActiveECSManager().CreateEntity();
+        ENGINE_LOG_WARN("Entity created with no GUID!");
+        return newEnt;
+    }
+}
+
+void Serializer::DeserializeNameComponent(NameComponent& nameComp, const rapidjson::Value& nameJSON) {
+    std::string name;
+    if (nameJSON.IsObject() && nameJSON.HasMember("name") && nameJSON["name"].IsString()) name = nameJSON["name"].GetString();
+    else if (nameJSON.IsString()) name = nameJSON.GetString();
+    else if (nameJSON.IsObject() && nameJSON.HasMember("data")) getStringFromValue(nameJSON["data"], name);
+
+    if (!name.empty()) {
+        nameComp.name = name;
+    }
+}
+
+void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t) {
+    Vector3D pos{ 0.f,0.f,0.f }, rot{ 0.f,0.f,0.f }, scale{ 1.f,1.f,1.f };
+    // legacy simple arrays
+    if (t.HasMember("position") && t["position"].IsArray()) readVec3FromArray(t["position"], pos);
+    else if (t.HasMember("localPosition") && t["localPosition"].IsArray()) readVec3FromArray(t["localPosition"], pos);
+
+    if (t.HasMember("rotation") && t["rotation"].IsArray()) readVec3FromArray(t["rotation"], rot);
+    else if (t.HasMember("localRotation") && t["localRotation"].IsArray()) readVec3FromArray(t["localRotation"], rot);
+
+    if (t.HasMember("scale") && t["scale"].IsArray()) readVec3FromArray(t["scale"], scale);
+    else if (t.HasMember("localScale") && t["localScale"].IsArray()) readVec3FromArray(t["localScale"], scale);
+
+    // typed Transform (your format): data is an array; observed order in your file is: position, scale, rotation(quaternion), ...
+    if (t.HasMember("data") && t["data"].IsArray()) {
+        const auto& darr = t["data"];
+        if (darr.Size() > 0) {
+            readVec3Generic(darr[0], pos); // index 0 -> position
+        }
+        if (darr.Size() > 1) {
+            Vector3D maybeScale{ 1.f,1.f,1.f };
+            if (readVec3Generic(darr[1], maybeScale)) scale = maybeScale; // index 1 -> scale
+        }
+        if (darr.Size() > 2) {
+            double w = 1, x = 0, y = 0, z = 0;
+            if (readQuatGeneric(darr[2], w, x, y, z)) { // index 2 -> quaternion
+                rot = quatToEulerDeg(w, x, y, z);
+            }
+        }
+    }
+
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecs.transformSystem) {
+        ecs.transformSystem->SetLocalPosition(newEnt, pos);
+        ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees in your code
+        ecs.transformSystem->SetLocalScale(newEnt, scale);
+    }
+    else
+    {
+        Transform tf; tf.localPosition = pos; tf.localRotation = Quaternion::FromEulerDegrees(rot); tf.localScale = scale;
+    }
+}
+
+void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON) {
+    if (modelJSON.IsObject()) {
+        if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
+            GUID_string modelGUIDStr = modelJSON["data"][0].GetString();
+            GUID_string shaderGUIDStr = modelJSON["data"][1].GetString();
+            GUID_string materialGUIDStr = modelJSON["data"][2].GetString();
+            modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
+            modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+            modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
+        }
+    }
+}
+
+void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON) {
+    if (spriteJSON.IsObject()) {
+        if (spriteJSON.HasMember("data") && spriteJSON["data"].IsArray() && spriteJSON["data"].Size() > 0) {
+            GUID_string textureGUIDStr = spriteJSON["data"][0].GetString();
+            GUID_string shaderGUIDStr = spriteJSON["data"][1].GetString();
+            spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
+            spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+
+            // Sprite position
+            readVec3Generic(spriteJSON["data"][2], spriteComp.position);
+            // Sprite scale
+            readVec3Generic(spriteJSON["data"][3], spriteComp.scale);
+            // Sprite rotation
+            spriteComp.rotation = spriteJSON["data"][4]["data"].GetFloat();
+            // Sprite color
+            readVec3Generic(spriteJSON["data"][5], spriteComp.color);
+            spriteComp.alpha = spriteJSON["data"][6]["data"].GetFloat();
+            spriteComp.is3D = spriteJSON["data"][7]["data"].GetBool();
+            spriteComp.enableBillboard = spriteJSON["data"][8]["data"].GetBool();
+            spriteComp.layer = spriteJSON["data"][9]["data"].GetInt();
+            readVec3Generic(spriteJSON["data"][10], spriteComp.saved3DPosition);
+        }
+    }
+}
+
+void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (textJSON.HasMember("data") && textJSON["data"].IsArray()) {
+        const auto& d = textJSON["data"];
+        textComp.text = d[0]["data"].GetString();
+        textComp.fontSize = d[1]["data"].GetUint();
+        textComp.fontGUID = GUIDUtilities::ConvertStringToGUID128(d[2].GetString());
+        textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(d[3].GetString());
+        readVec3Generic(d[4], textComp.position);
+        readVec3Generic(d[5], textComp.color);
+        textComp.scale = d[6]["data"].GetFloat();
+        textComp.is3D = d[7]["data"].GetBool();
+        textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[9]["data"].GetInt());
+    }
+}
+
+void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, const rapidjson::Value& particleJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (particleJSON.HasMember("data") && particleJSON["data"].IsArray()) {
+        const auto& d = particleJSON["data"];
+        GUID_string guidStr = d[0].GetString();
+        particleComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        readVec3Generic(d[1], particleComp.emitterPosition);
+        particleComp.emissionRate = d[2]["data"].GetFloat();
+        particleComp.maxParticles = d[3]["data"].GetInt();
+        particleComp.particleLifetime = d[4]["data"].GetFloat();
+        particleComp.startSize = d[5]["data"].GetFloat();
+        particleComp.endSize = d[6]["data"].GetFloat();
+        readVec3Generic(d[7], particleComp.startColor);
+        particleComp.startColorAlpha = d[8]["data"].GetFloat();
+        readVec3Generic(d[9], particleComp.endColor);
+        particleComp.endColorAlpha = d[10]["data"].GetFloat();
+        readVec3Generic(d[11], particleComp.gravity);
+        particleComp.velocityRandomness = d[12]["data"].GetFloat();
+        readVec3Generic(d[13], particleComp.initialVelocity);
+    }
+}
+
+void Serializer::DeserializeDirLightComponent(DirectionalLightComponent& dirLightComp, const rapidjson::Value& dirLightJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (dirLightJSON.HasMember("data") && dirLightJSON["data"].IsArray()) {
+        const auto& d = dirLightJSON["data"];
+        readVec3Generic(d[0], dirLightComp.color);
+        dirLightComp.intensity = d[1]["data"].GetFloat();
+        dirLightComp.enabled = d[2]["data"].GetBool();
+        readVec3Generic(d[3], dirLightComp.direction);
+        readVec3Generic(d[4], dirLightComp.ambient);
+        readVec3Generic(d[5], dirLightComp.diffuse);
+        readVec3Generic(d[6], dirLightComp.specular);
+    }
+}
+
+void Serializer::DeserializeSpotLightComponent(SpotLightComponent& spotlightComp, const rapidjson::Value& spotLightJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (spotLightJSON.HasMember("data") && spotLightJSON["data"].IsArray()) {
+        const auto& d = spotLightJSON["data"];
+        readVec3Generic(d[0], spotlightComp.color);
+        spotlightComp.intensity = d[1]["data"].GetFloat();
+        spotlightComp.enabled = d[2]["data"].GetBool();
+        readVec3Generic(d[3], spotlightComp.direction);
+        spotlightComp.cutOff = d[4]["data"].GetFloat();
+        spotlightComp.constant = d[5]["data"].GetFloat();
+        spotlightComp.linear = d[6]["data"].GetFloat();
+        spotlightComp.quadratic = d[7]["data"].GetFloat();
+        readVec3Generic(d[8], spotlightComp.ambient);
+        readVec3Generic(d[9], spotlightComp.diffuse);
+        readVec3Generic(d[10], spotlightComp.specular);
+    }
+}
+
+void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightComp, const rapidjson::Value& pointLightJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (pointLightJSON.HasMember("data") && pointLightJSON["data"].IsArray()) {
+        const auto& d = pointLightJSON["data"];
+        readVec3Generic(d[0], pointLightComp.color);
+        pointLightComp.intensity = d[1]["data"].GetFloat();
+        pointLightComp.enabled = d[2]["data"].GetBool();
+        pointLightComp.constant = d[3]["data"].GetFloat();
+        pointLightComp.linear = d[4]["data"].GetFloat();
+        pointLightComp.quadratic = d[5]["data"].GetFloat();
+        readVec3Generic(d[6], pointLightComp.ambient);
+        readVec3Generic(d[7], pointLightComp.diffuse);
+        readVec3Generic(d[8], pointLightComp.specular);
+    }
+}
+
+void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
+        const auto& d = audioJSON["data"];
+        GUID_string guidStr = d[0].GetString();
+        audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        audioComp.SetClip(d[1]["data"].GetString());
+        audioComp.SetVolume(d[2]["data"].GetFloat());
+        audioComp.SetPitch(d[3]["data"].GetFloat());
+        audioComp.SetLoop(d[4]["data"].GetBool());
+        audioComp.PlayOnAwake = d[5]["data"].GetBool();
+        audioComp.SetMute(d[6]["data"].GetBool());
+        audioComp.Priority = d[7]["data"].GetInt();
+        audioComp.SetSpatialize(d[8]["data"].GetBool());
+        audioComp.MinDistance = d[9]["data"].GetFloat();
+        audioComp.MaxDistance = d[10]["data"].GetFloat();
+        audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
+        audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
+        audioComp.IsPlaying = d[13]["data"].GetBool();
+        audioComp.IsPaused = d[14]["data"].GetBool();
+        readVec3Generic(d[15], audioComp.Position);
+    }
+}
+
+void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
+        const auto& d = rbJSON["data"];
+        rbComp.motionID = d[0]["data"].GetInt();
+        rbComp.motion = static_cast<Motion>(rbComp.motionID);
+        rbComp.ccd = d[1]["data"].GetBool();
+        rbComp.transform_dirty = true;
+        rbComp.motion_dirty = true;
+        rbComp.collider_seen_version = 0;
+    }
+}
+
+void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON) {
+    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    if (colliderJSON.HasMember("data") && colliderJSON["data"].IsArray()) {
+        const auto& d = colliderJSON["data"];
+        colliderComp.layerID = d[0]["data"].GetInt();
+        colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
+        colliderComp.version = d[1]["data"].GetUint();
+        colliderComp.shapeTypeID = d[2]["data"].GetInt();
+        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        readVec3Generic(d[3], colliderComp.boxHalfExtents);
+        switch (colliderComp.shapeType)
+        {
+        case ColliderShapeType::Box:
+            colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON) {
+    GUID_string parentGUIDStr = parentJSON["data"][0].GetString();
+    parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
+}
+
+void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON) {
+    if (childJSON.HasMember("data")) {
+        childComp.children.clear();
+        const auto& childrenVectorJSON = childJSON["data"][0]["data"].GetArray();
+        for (const auto& childJSON : childrenVectorJSON) {
+            GUID_string childGUIDStr = childJSON.GetString();
+            childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
+        }
+    }
 }

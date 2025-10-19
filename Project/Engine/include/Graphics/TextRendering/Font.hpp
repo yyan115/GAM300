@@ -19,13 +19,13 @@ struct Character {
 
 class Font : public IAsset {
 public:
-	Font(unsigned int fontSize = 48);
+	ENGINE_API Font(unsigned int fontSize = 48);
 	~Font();
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
 	void Cleanup();
 	//bool LoadFont(const std::string& path, unsigned int fontSize);
-	bool LoadResource(const std::string& resourcePath, const std::string& assetPath, unsigned int newFontSize, bool setFontSize = true);
+	bool ENGINE_API LoadResource(const std::string& resourcePath, const std::string& assetPath, unsigned int newFontSize, bool setFontSize = true);
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 

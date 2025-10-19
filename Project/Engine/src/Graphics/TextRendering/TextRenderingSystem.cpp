@@ -6,6 +6,7 @@
 #include "Graphics/TextRendering/TextUtils.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <Asset Manager/AssetManager.hpp>
+#include "Performance/PerformanceProfiler.hpp"
 
 bool TextRenderingSystem::Initialise()
 {
@@ -29,6 +30,7 @@ bool TextRenderingSystem::Initialise()
 
 void TextRenderingSystem::Update()
 {
+    PROFILE_FUNCTION();
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 

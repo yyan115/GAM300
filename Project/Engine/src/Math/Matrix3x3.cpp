@@ -33,7 +33,7 @@ REFL_REGISTER_END;
 static inline void assert_rc(int r, int c) 
 {
     assert(r >= 0 && r < 3 && c >= 0 && c < 3);
-    (void)c;
+    (void)c,r;
 }
 
 // ============================
@@ -220,6 +220,7 @@ Matrix3x3 Matrix3x3::Inversed() const
     Matrix3x3 out;
     bool ok = TryInverse(out);
     assert(ok && "Matrix3x3 is singular");
+	(void)ok;
     return out;
 }
 
