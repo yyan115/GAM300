@@ -201,6 +201,8 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 view_di
 
 void main()
 {
+    if (texture(material.diffuseMap, TexCoords).a < 0.5) discard;
+
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
     
