@@ -167,33 +167,15 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
     // Create material from Assimp material
     std::shared_ptr<Material> material = nullptr;
-//#ifdef ANDROID
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Processing mesh material - mMaterialIndex=%d, total materials in scene=%d", mesh->mMaterialIndex, scene->mNumMaterials);
-//#endif
+
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
-
-//#ifdef ANDROID
-//        // Debug material properties to see what Assimp actually loaded
-//        aiString matFile;
-//        if (assimpMaterial->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), matFile) == AI_SUCCESS) {
-//            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Material has diffuse texture: %s", matFile.C_Str());
-//        } else {
-//            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Material has no diffuse texture in Assimp data");
-//        }
-//
-//        unsigned int textureCount = assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE);
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Assimp reports %u diffuse textures for this material", textureCount);
-//#endif
 
         // Create new material
         aiString materialName;
         assimpMaterial->Get(AI_MATKEY_NAME, materialName);
         material = std::make_shared<Material>(materialName.C_Str());
-//#ifdef ANDROID
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Created material from Assimp: %s, pointer=%p", materialName.C_Str(), material.get());
-//#endif
 
         // Load material properties
         aiColor3D color;
@@ -241,219 +223,22 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
         LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
 
-        // Diffuse textures
-//#ifdef __ANDROID__
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] About to call LoadMaterialTexture for diffuse textures");
-//#endif
-        //std::vector<std::shared_ptr<Texture>> diffuseMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
-//#ifdef __ANDROID__
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadMaterialTexture returned %zu diffuse textures", diffuseMaps.size());
-//#endif
-        //if (!diffuseMaps.empty()) {
-        //    material->SetTexture(TextureType::DIFFUSE, diffuseMaps[0]);
-        //}
-
-        // Specular textures
-        //std::vector<std::shared_ptr<Texture>> specularMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
-        //if (!specularMaps.empty()) 
-        //{
-        //    material->SetTexture(TextureType::SPECULAR, specularMaps[0]);
-        //}
-
-        // Normal maps
-        //std::vector<std::shared_ptr<Texture>> normalMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
-        //if (!normalMaps.empty()) 
-        //{
-        //    material->SetTexture(TextureType::NORMAL, normalMaps[0]);
-        //}
-
-        // Height maps
-        //std::vector<std::shared_ptr<Texture>> heightMaps = LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height");
-        //if (!heightMaps.empty()) {
-        //    material->SetTexture(TextureType::HEIGHT, heightMaps[0]);
-        //}
-
-        // Keep old texture list for backward compatibility
-        //textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        //textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
     }
 
     // If no material was created, use a default one
     if (!material)
     {
-//#ifdef ANDROID
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] No material found, creating default material");
-//#endif
         material = Material::CreateDefault();
-//#ifdef ANDROID
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Created default material, pointer=%p", material.get());
-//#endif
     }
-
-//#ifdef ANDROID
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Creating mesh with material pointer=%p", material.get());
-//#endif
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = modelName + "_" + material->GetName() + ".mat";
     AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material);
-    return Mesh(vertices, indices, material);
-}
 
-//std::vector<std::shared_ptr<Texture>> Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName)
-//{
-////#ifdef __ANDROID__
-////	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadMaterialTexture ENTRY - type:%d typeName:%s", (int)type, typeName.c_str());
-////#endif
-//	typeName;
-//	std::vector<std::shared_ptr<Texture>> textures;
-//	//TextureManager& textureManager = TextureManager::getInstance();
-//
-////#ifdef __ANDROID__
-////	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] About to call mat->GetTextureCount(type=%d)", (int)type);
-////#endif
-//	unsigned int textureCount = mat->GetTextureCount(type);
-////#ifdef __ANDROID__
-////	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] GetTextureCount returned: %u", textureCount);
-////#endif
-////#ifdef __ANDROID__
-////	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadMaterialTexture called - type:%d typeName:%s count:%u",
-////		(int)type, typeName.c_str(), textureCount);
-////#endif
-//
-////#ifdef __ANDROID__
-////	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] About to enter texture loading loop with textureCount=%u", textureCount);
-////#endif
-//	for (unsigned int i = 0; i < textureCount; i++)
-//	{
-////#ifdef __ANDROID__
-////		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Loop iteration %u: getting texture info", i);
-////#endif
-//		aiString str;
-//		mat->GetTexture(type, i, &str);
-////#ifdef __ANDROID__
-////		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] GetTexture returned: %s", str.C_Str());
-////#endif
-//		std::string texturePath = directory + '/' + str.C_Str();
-//
-////#ifdef __ANDROID__
-////		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Attempting to load texture: %s", texturePath.c_str());
-////#endif
-//
-//		// Use the asset manager
-//		std::shared_ptr<Texture> texture = nullptr;
-//
-//		// Check if we already have this texture loaded (texture sharing to save memory)
-//		//static std::unordered_map<std::string, std::shared_ptr<Texture>> textureCache;
-//		//auto cacheIt = textureCache.find(texturePath);
-//		//if (cacheIt != textureCache.end()) {
-//		//	texture = cacheIt->second;
-////#ifdef __ANDROID__
-////			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Using cached texture: %s", texturePath.c_str());
-////#endif
-//		//} else {
-//
-////#ifdef __ANDROID__
-////		// On Android, create texture directly from JPG data since we can't write DDS files
-////		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Creating texture directly from Android assets: %s", texturePath.c_str());
-////		texture = std::make_shared<Texture>(typeName.c_str(), -1);
-////
-////		// Load texture data directly from Android assets
-////		auto* platform = WindowManager::GetPlatform();
-////		if (platform) {
-////			AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
-////			AAssetManager* assetManager = androidPlatform->GetAssetManager();
-////
-////			if (assetManager) {
-////				AAsset* asset = AAssetManager_open(assetManager, texturePath.c_str(), AASSET_MODE_BUFFER);
-////				if (asset) {
-////					off_t assetLength = AAsset_getLength(asset);
-////					const unsigned char* assetData = (const unsigned char*)AAsset_getBuffer(asset);
-////
-////					if (assetData && assetLength > 0) {
-////						int widthImg, heightImg, numColCh;
-////						stbi_set_flip_vertically_on_load(true);
-////						unsigned char* bytes = stbi_load_from_memory(assetData, (int)assetLength, &widthImg, &heightImg, &numColCh, 0);
-////
-////						if (bytes) {
-////							// Generate OpenGL texture
-////							glGenTextures(1, &texture->ID);
-////							glBindTexture(GL_TEXTURE_2D, texture->ID);
-////							texture->target = GL_TEXTURE_2D;
-////
-////							// Configure texture parameters
-////							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-////							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-////							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-////							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-////
-////							// Upload texture data
-////							GLenum format = (numColCh == 4) ? GL_RGBA : GL_RGB;
-////							glTexImage2D(GL_TEXTURE_2D, 0, format, widthImg, heightImg, 0, format, GL_UNSIGNED_BYTE, bytes);
-////							glGenerateMipmap(GL_TEXTURE_2D);
-////
-////							// Cleanup
-////							stbi_image_free(bytes);
-////							glBindTexture(GL_TEXTURE_2D, 0);
-////
-////							__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully created texture from Android assets: %s (%dx%d, %d channels)", texturePath.c_str(), widthImg, heightImg, numColCh);
-////						} else {
-////							__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to decode texture from memory: %s", texturePath.c_str());
-////							texture.reset();
-////						}
-////					}
-////					AAsset_close(asset);
-////				} else {
-////					__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to open texture asset: %s", texturePath.c_str());
-////					texture.reset();
-////				}
-////			}
-////		}
-////#else
-//        //std::cout << "[MODEL] DEBUG: Attempting to compile texture: " << texturePath << std::endl;
-//        if (AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1)) {
-//			// Use the original texture path - ResourceManager will handle finding the compiled DDS
-//			//std::cout << "[MODEL] DEBUG: Compiled texture successfully, loading with original path: " << texturePath << std::endl;
-//#ifndef ANDROID
-//		    texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-//#else
-//            texturePath = texturePath.substr(texturePath.find("Resources"));
-//            texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-//#endif
-//		    //std::cout << "[MODEL] DEBUG: Loaded texture resource, valid: " << (texture != nullptr) << std::endl;
-//		    //if (texture) {
-//		        //std::cout << "[MODEL] DEBUG: Texture ID: " << texture->ID << ", type: " << texture->type << std::endl;
-//		    //}
-//
-//		}
-////#endif
-//
-//			//// Cache the newly created texture
-//			//if (texture) {
-//			//	textureCache[texturePath] = texture;
-//			//}
-//		//}
-//
-//		// Common code for both platforms after texture processing
-//		//if (texture) {
-//		textures.push_back(texture);
-//		std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-//		material->SetTexture(static_cast<Material::TextureType>(type), std::move(textureInfo));
-//
-//			//std::cout << "[MODEL] DEBUG: Texture set successfully on material, type: " << (int)type << ", path: " << texturePath << std::endl;
-////#ifdef __ANDROID__
-////			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Texture set successfully: %s", texturePath.c_str());
-////#endif
-//		//} else {
-//			//std::cout << "[MODEL] DEBUG: Failed to get texture resource: " << texturePath << std::endl;
-////#ifdef __ANDROID__
-////			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to get texture resource: %s", texturePath.c_str());
-////#endif
-//		//}
-//	}
-//
-//	return textures;
-//}
+    Mesh newMesh(vertices, indices, material);
+    newMesh.CalculateBoundingBox();
+    return newMesh;
+}
 
 void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName) {
     unsigned int textureCount = mat->GetTextureCount(type);
@@ -728,193 +513,14 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 textures.push_back(texture);
             }
 
-            meshes.emplace_back(vertices, indices, textures, material);
+            Mesh newMesh(vertices, indices, textures, material);
+            newMesh.CalculateBoundingBox(); 
+            meshes.push_back(std::move(newMesh));
         }
 
+        CalculateBoundingBox();
         return true;
     }
-//	std::ifstream meshFile(resourcePath, std::ios::binary);
-//
-////#ifdef __ANDROID__
-////    // On Android, always force OBJ loading to ensure textures are processed
-////    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Forcing OBJ processing on Android for textures");
-////    meshFile.close();
-////#endif
-//
-//    if (meshFile.is_open() && !meshFile.fail()) {
-//		// Read the number of meshes from the file.
-//        size_t meshCount;
-//		meshFile.read(reinterpret_cast<char*>(&meshCount), sizeof(meshCount));
-//
-//        // For each mesh, read its data from the file.
-//        for (size_t i = 0; i < meshCount; ++i) {
-//            size_t vertexCount, indexCount;
-//            // Read vertex and index count from the file.
-//            meshFile.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
-//			meshFile.read(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
-//
-//            // Read vertex data from the file.
-//			std::vector<Vertex> vertices(vertexCount);
-//            for (size_t j = 0; j < vertexCount; ++j) {
-//                Vertex v;
-//                meshFile.read(reinterpret_cast<char*>(&v.position), sizeof(v.position));
-//				meshFile.read(reinterpret_cast<char*>(&v.normal), sizeof(v.normal));
-//				meshFile.read(reinterpret_cast<char*>(&v.color), sizeof(v.color));
-//                meshFile.read(reinterpret_cast<char*>(&v.texUV), sizeof(v.texUV));
-//				vertices[j] = std::move(v);
-//            }
-//
-//			// Read index data from the file.
-//            std::vector<GLuint> indices(indexCount);
-//			meshFile.read(reinterpret_cast<char*>(indices.data()), indexCount * sizeof(GLuint));
-//
-//            // Read material properties from the file.
-//			std::shared_ptr<Material> material = std::make_shared<Material>();
-//            // Name
-//			size_t nameLength;
-//			meshFile.read(reinterpret_cast<char*>(&nameLength), sizeof(nameLength));
-//            std::string meshName(nameLength, '\0'); // Pre-size the string
-//			meshFile.read(reinterpret_cast<char*>(&meshName[0]), nameLength);
-//			material->SetName(meshName);
-//            // Ambient
-//            glm::vec3 ambient;
-//			meshFile.read(reinterpret_cast<char*>(&ambient), sizeof(ambient));
-//			material->SetAmbient(ambient);
-//            // Diffuse
-//			glm::vec3 diffuse;
-//			meshFile.read(reinterpret_cast<char*>(&diffuse), sizeof(diffuse));
-//			material->SetDiffuse(diffuse);
-//			// Specular
-//			glm::vec3 specular;
-//			meshFile.read(reinterpret_cast<char*>(&specular), sizeof(specular));
-//			material->SetSpecular(specular);
-//            // Emissive
-//            glm::vec3 emissive;
-//			meshFile.read(reinterpret_cast<char*>(&emissive), sizeof(emissive));
-//            material->SetEmissive(emissive);
-//            // Shininess
-//			float shininess;
-//			meshFile.read(reinterpret_cast<char*>(&shininess), sizeof(shininess));
-//            material->SetShininess(shininess);
-//			// Opacity
-//			float opacity;
-//            meshFile.read(reinterpret_cast<char*>(&opacity), sizeof(opacity));
-//			material->SetOpacity(opacity);
-//            // Metallic
-//			float metallic;
-//			meshFile.read(reinterpret_cast<char*>(&metallic), sizeof(metallic));
-//            material->SetMetallic(metallic);
-//			// Roughness
-//			float roughness;
-//            meshFile.read(reinterpret_cast<char*>(&roughness), sizeof(roughness));
-//			material->SetRoughness(roughness);
-//			// AO
-//            float ao;
-//			meshFile.read(reinterpret_cast<char*>(&ao), sizeof(ao));
-//			material->SetAO(ao);
-//
-//			// Read texture paths from the file.
-//			size_t textureCount;
-//            std::vector<std::shared_ptr<Texture>> textures;
-//            meshFile.read(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
-//            for (size_t j = 0; j < textureCount; ++j) {
-//                Material::TextureType texType;
-//				meshFile.read(reinterpret_cast<char*>(&texType), sizeof(texType));
-//				size_t pathLength;
-//				meshFile.read(reinterpret_cast<char*>(&pathLength), sizeof(pathLength));
-//				std::string texturePath(pathLength, '\0');
-//				meshFile.read(reinterpret_cast<char*>(&texturePath[0]), pathLength);
-//
-//                // Load texture via Resource Manager
-//				std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-//                if (texture) {
-//                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-//                    material->SetTexture(texType, std::move(textureInfo));
-//
-//                    // Assign the texture type
-//                    switch (texType) {
-//                        case Material::TextureType::DIFFUSE:
-//                            texture->type = "diffuse";
-//							break;
-//                        case Material::TextureType::SPECULAR:
-//							texture->type = "specular";
-//                            break;
-//						case Material::TextureType::NORMAL:
-//                            texture->type = "normal";
-//                            break;
-//						case Material::TextureType::EMISSIVE:
-//                            texture->type = "emissive";
-//                            break;
-//                        // Add other cases as needed
-//                        default:
-//							std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
-//                            texture->type = "unknown";
-//							break;
-//                    }
-//				}
-//
-//                textures.push_back(texture);
-//            }
-//
-//            meshes.emplace_back(vertices, indices, textures, material);
-//        }
-//
-//        return true;
-//    }
-
-//    // Fallback: If .mesh file doesn't exist, try to load from original .obj file
-//#ifdef ANDROID
-//    __android_log_print(ANDROID_LOG_WARN, "GAM300", "[MODEL] .mesh file not found: %s, attempting to load from .obj", resourcePath.c_str());
-//#endif
-//    std::cerr << "[MODEL] .mesh file not found: " << resourcePath << ", attempting to load from .obj" << std::endl;
-//
-//    // Try to load from original asset file using Assimp
-//    Assimp::Importer importer;
-//
-//#ifdef __ANDROID__
-//    // Set up custom IOSystem for Android AssetManager to access MTL files
-//    directory = assetPathFS.parent_path().generic_string();
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadResource: Setting up AndroidIOSystem with base dir: %s", directory.c_str());
-//    importer.SetIOHandler(new AndroidIOSystem(directory));
-//
-//    // On Android, we need to pass just the filename to Assimp since our IOSystem handles the full path
-//    std::string filename = assetPathFS.filename().generic_string();
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] LoadResource: Loading OBJ file: %s", filename.c_str());
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] About to call importer.ReadFile with filename: %s", filename.c_str());
-//    const aiScene* scene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs);
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] ReadFile completed, scene pointer: %p", scene);
-//#else
-//    // Check if we need to get file contents for Android
-//    const aiScene* scene = nullptr;
-//    scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
-//#endif
-//
-//#ifdef __ANDROID__
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Scene validation - scene:%p flags:%u rootNode:%p",
-//        scene, scene ? scene->mFlags : 0, scene ? scene->mRootNode : nullptr);
-//#endif
-//    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-//        std::cerr << "[MODEL] ERROR:ASSIMP:: " << importer.GetErrorString() << std::endl;
-//#ifdef ANDROID
-//        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] ERROR:ASSIMP:: %s", importer.GetErrorString());
-//#endif
-//        return false;
-//    }
-//
-//#ifdef __ANDROID__
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Scene validation passed, proceeding to ProcessNode");
-//#endif
-//
-//    // Set directory for texture loading
-//    directory = assetPathFS.parent_path().generic_string();
-//
-//    // Process the loaded scene
-//    ProcessNode(scene->mRootNode, scene);
-//
-//#ifdef ANDROID
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully loaded model from .obj: %s", assetPath.c_str());
-//#endif
-//    std::cout << "[MODEL] Successfully loaded model from .obj: " << assetPath << std::endl;
 
     return false;
 }

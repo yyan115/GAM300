@@ -116,6 +116,48 @@ void GraphicsManager::Render()
 		return;
 	}
 
+	if (frustumCullingEnabled) 
+	{
+		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
+
+		if (renderWidth <= 0) renderWidth = 1;
+		if (renderHeight <= 0) renderHeight = 1;
+
+		float aspectRatio = (float)renderWidth / (float)renderHeight;
+		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
+		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
+
+		glm::mat4 view;
+		glm::mat4 projection;
+
+		if (IsRenderingForEditor() && Is2DMode()) 
+		{
+			view = glm::mat4(1.0f);
+			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
+			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
+			float halfWidth = viewWidth * 0.5f;
+			float halfHeight = viewHeight * 0.5f;
+			float left = currentCamera->Position.x - halfWidth;
+			float right = currentCamera->Position.x + halfWidth;
+			float bottom = currentCamera->Position.y - halfHeight;
+			float top = currentCamera->Position.y + halfHeight;
+			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
+		}
+		else 
+		{
+			view = currentCamera->GetViewMatrix();
+			projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				aspectRatio,
+				0.1f, 100.0f
+			);
+		}
+
+		glm::mat4 viewProjection = projection * view;
+		viewFrustum.Update(viewProjection);
+	}
+
 	// Sort render queue by render order (lower numbers render first)
 	std::sort(renderQueue.begin(), renderQueue.end(),
 		[](const std::unique_ptr<IRenderComponent>& a, const std::unique_ptr<IRenderComponent>& b) {

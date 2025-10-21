@@ -79,6 +79,7 @@ void Mesh::setupMesh()
 	vao.Unbind();
 	ebo.Unbind();
 
+	CalculateBoundingBox();
 //#ifdef __ANDROID__
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] setupMesh completed successfully");
 //#endif

@@ -6,7 +6,7 @@
 #include "Texture.h"
 #include "Material.hpp"
 #include "Engine.h"
-
+#include "Frustum/Frustum.hpp"
 #include "Reflection/ReflectionBase.hpp"
 
 #ifdef ANDROID
@@ -74,9 +74,32 @@ public:
 #endif
 	}
 
+	AABB GetBoundingBox() const { return boundingBox; }
+
+	// Call this after loading vertices (in ProcessMesh or setupMesh)
+	void CalculateBoundingBox() 
+	{
+		if (vertices.empty()) 
+		{
+			boundingBox = AABB(glm::vec3(0.0f), glm::vec3(0.0f));
+			return;
+		}
+
+		glm::vec3 min(FLT_MAX);
+		glm::vec3 max(-FLT_MAX);
+
+		for (const auto& vertex : vertices) 
+		{
+			min = glm::min(min, vertex.position);
+			max = glm::max(max, vertex.position);
+		}
+
+		boundingBox = AABB(min, max);
+	}
 private:
 	VAO vao;
 	EBO ebo;
 	bool vaoSetup;
 	void setupMesh();
+	AABB boundingBox;
 };
