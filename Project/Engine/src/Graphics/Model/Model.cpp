@@ -327,18 +327,6 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
         }
 
 		meshFile.close();
-
-        //if (!forAndroid) {
-        //    // Save the mesh file to the root project Resources folder as well.
-        //    try {
-        //        std::filesystem::copy_file(meshPath, (FileUtilities::GetSolutionRootDir() / meshPath).generic_string(),
-        //            std::filesystem::copy_options::overwrite_existing);
-        //    }
-        //    catch (const std::filesystem::filesystem_error& e) {
-        //        std::cerr << "[MODEL] Copy failed: " << e.what() << std::endl;
-        //    }
-        //}
-
         return meshPath;
     }
 
@@ -514,11 +502,12 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             }
 
             Mesh newMesh(vertices, indices, textures, material);
-            newMesh.CalculateBoundingBox(); 
+            newMesh.CalculateBoundingBox();
             meshes.push_back(std::move(newMesh));
         }
 
         CalculateBoundingBox();
+
         return true;
     }
 

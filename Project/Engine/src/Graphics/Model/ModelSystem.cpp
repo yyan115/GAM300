@@ -99,7 +99,7 @@ void ModelSystem::Update()
 
                 // Log which entity was culled
 #ifdef _DEBUG
-                std::cout << "Entity " << entity << " culled\n";
+                //std::cout << "Entity " << entity << " culled\n";
 #endif
                 continue;
             }

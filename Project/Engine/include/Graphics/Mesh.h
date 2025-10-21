@@ -36,7 +36,8 @@ public:
 		material(other.material),
 		vao(),
 		ebo(indices),
-		vaoSetup(other.vaoSetup) {
+		vaoSetup(other.vaoSetup),
+		boundingBox(other.boundingBox) {
 		setupMesh();
 	}
 
@@ -52,6 +53,7 @@ public:
 			textures = other.textures;
 			material = other.material;
 			vaoSetup = other.vaoSetup;
+			boundingBox = other.boundingBox;
 
 			// Reconstruct EBO with new indices
 			ebo = EBO(indices);
@@ -67,7 +69,8 @@ public:
 		material(std::move(other.material)),
 		vao(std::move(other.vao)),
 		ebo(std::move(other.ebo)),
-		vaoSetup(other.vaoSetup) {
+		vaoSetup(other.vaoSetup), 
+		boundingBox(other.boundingBox) {
 		other.vaoSetup = false;
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Move constructor - moved material pointer from %p to %p", other.material.get(), material.get());
