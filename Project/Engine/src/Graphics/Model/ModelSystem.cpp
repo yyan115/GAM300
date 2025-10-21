@@ -117,9 +117,9 @@ void ModelSystem::Update()
 
     // Optional: Print stats every frame (remove in production!)
 #ifdef _DEBUG
- std::cout << "Culling: " << cullingStats.culledObjects << "/" 
-           << cullingStats.totalObjects << " (" 
-           << cullingStats.GetCulledPercentage() << "%)\n";
+ //std::cout << "Culling: " << cullingStats.culledObjects << "/" 
+ //          << cullingStats.totalObjects << " (" 
+ //          << cullingStats.GetCulledPercentage() << "%)\n";
 #endif
 }
 
