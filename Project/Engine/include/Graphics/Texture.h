@@ -14,7 +14,7 @@ public:
 	GLenum target;
 
 	ENGINE_API Texture();
-	Texture(const char* texType, GLint slot);
+	Texture(const char* texType, GLint slot, bool flipUVs);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
@@ -37,6 +37,7 @@ public:
 private:
 	//GLuint ID{};
 	std::string type;
+	bool flipUVs;
 	//GLint unit;
 	//GLenum target;
 };

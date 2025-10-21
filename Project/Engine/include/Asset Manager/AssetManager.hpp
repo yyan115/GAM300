@@ -75,7 +75,7 @@ public:
 		}
 	}
 
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
+	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
 	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
 
 	bool IsAssetCompiled(GUID_128 guid);
@@ -123,6 +123,7 @@ public:
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);
 	std::string ENGINE_API GetRootAssetDirectory() const;
+	std::string GetAssetPathFromAssetName(const std::string& assetName);
 
 	enum class Event {
 		added,
@@ -252,6 +253,6 @@ private:
 		return true;
 	}
 
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
 	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
 };

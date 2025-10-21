@@ -31,14 +31,14 @@
 #include "Logging.hpp"
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
-Texture::Texture(const char* texType, GLint slot) :
-	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D) {}
+Texture::Texture(const char* texType, GLint slot, bool flipUVs) :
+	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D), flipUVs(flipUVs) {}
 
 std::string Texture::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
-	stbi_set_flip_vertically_on_load(false);
+	stbi_set_flip_vertically_on_load(flipUVs);
 	// Reads the image from a file and stores it in bytes
 	unsigned char* bytes = nullptr;
 
@@ -332,12 +332,12 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
-	// Add ID
-	textureMetaData.AddMember("id", rapidjson::Value().SetInt(static_cast<int>(ID)), allocator);
+	//// Add ID
+	//textureMetaData.AddMember("id", rapidjson::Value().SetInt(static_cast<int>(ID)), allocator);
+	//// Add unit
+	//textureMetaData.AddMember("unit", rapidjson::Value().SetInt(static_cast<int>(unit)), allocator);
 	// Add type
 	textureMetaData.AddMember("type", rapidjson::Value().SetString(type.c_str(), allocator), allocator);
-	// Add unit
-	textureMetaData.AddMember("unit", rapidjson::Value().SetInt(static_cast<int>(unit)), allocator);
 
 	doc.AddMember("TextureMetaData", textureMetaData, allocator);
 

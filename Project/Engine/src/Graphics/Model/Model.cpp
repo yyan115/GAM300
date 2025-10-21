@@ -56,6 +56,32 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	}
 
 	directory = assetPath.substr(0, assetPath.find_last_of('/'));
+    // Check metadata
+    if (scene->mMetaData) {
+        for (unsigned int i = 0; i < scene->mMetaData->mNumProperties; ++i) {
+            const aiString* key = &scene->mMetaData->mKeys[i];
+            const aiMetadataEntry& entry = scene->mMetaData->mValues[i];
+
+            std::string keyStr = key->C_Str();
+            if (keyStr == "SourceAsset_Format") {
+				std::string format = static_cast<aiString*>(entry.mData)->C_Str();
+                if (format == "Wavefront Object Importer") {
+					ENGINE_PRINT("[MODEL] Detected OBJ format from metadata.\n");
+					modelFormat = ModelFormat::OBJ;
+					flipUVs = true; // OBJ files often need UV flipping
+                }
+                else if (format == "Autodesk FBX Importer") {
+					ENGINE_PRINT("[MODEL] Detected FBX format from metadata.\n");
+					modelFormat = ModelFormat::FBX;
+					flipUVs = false; // FBX files usually have correct UVs
+                }
+                else {
+                    // Unsupported for now.
+					modelFormat = ModelFormat::UNKNOWN;
+                }
+            }
+        }
+    }
 
 //#ifdef __ANDROID__
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Assimp loaded successfully: %u materials, %u meshes, directory: %s",
@@ -461,9 +487,18 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
     for (unsigned int i = 0; i < textureCount; i++) {
         aiString str;
         mat->GetTexture(type, i, &str);
-        std::string texturePath = directory + '/' + str.C_Str();
+		std::filesystem::path texPathObj(str.C_Str());
+		texPathObj = texPathObj.stem() / texPathObj.extension(); // Sanitize path
+
+        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(texPathObj.generic_string());
+		texPathObj = texturePath;
+        if (!std::filesystem::exists(texPathObj)) {
+            ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: ", texturePath, "\n");
+            continue;
+		}
         // Add a TextureInfo with no texture loaded to the material first.
         // The texture will be loaded when the model is rendered.
+        AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1, flipUVs, true);
         std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
         material->SetTexture(static_cast<Material::TextureType>(type), std::move(textureInfo));
     }

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Sound/Audio.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -132,7 +134,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	std::filesystem::path filePathObj(filePathStr);
 	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
-		return CompileTexture(filePathStr, "diffuse", -1, forceCompile, forAndroid);
+		return CompileTexture(filePathStr, "diffuse", -1, true, forceCompile, forAndroid);
 	}
 	else if (audioExtensions.find(extension) != audioExtensions.end()) {
 		return CompileAsset<Audio>(filePathStr, forceCompile, forAndroid);
@@ -155,7 +157,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	}
 }
 
-bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile, bool forAndroid) {
+bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -171,11 +173,11 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 			return true;
 		}
 		else {
-			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile, forAndroid);
+			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, flipUVs, forceCompile, forAndroid);
 		}
 	}
 	else {
-		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile, forAndroid);
+		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, flipUVs, forceCompile, forAndroid);
 	}
 }
 
@@ -501,10 +503,27 @@ std::string AssetManager::GetRootAssetDirectory() const {
 	return rootAssetDirectory;
 }
 
-bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile, bool forAndroid) {
+std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName) {
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Platform not available for asset discovery!", "\n");
+		return "";
+	}
+	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetDirectory, true);
+	for (std::string assetPath : assetFiles) {
+		std::filesystem::path p(assetPath);
+		std::string currentAssetName = (p.stem() / p.extension()).generic_string();
+		if (currentAssetName == assetName) {
+			return assetPath;
+		}
+	}
+}
+
+bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
 	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-		Texture texture{ texType, slot };
+		Texture texture{ texType, slot, flipUVs };
 		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 		if (compiledPath.empty()) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");

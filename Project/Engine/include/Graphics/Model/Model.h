@@ -71,6 +71,18 @@ public:
 	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
 
 private:
+    enum class ModelFormat {
+        UNKNOWN,
+        OBJ,
+        FBX,
+        GLTF,
+        GLB,
+        DAE,
+        STL,
+		PLY
+    } modelFormat;
+	bool flipUVs = false;
+
 	//void loadModel(const std::string& path);
 	void ProcessNode(aiNode* node, const aiScene* scene);
 	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
