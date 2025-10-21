@@ -53,7 +53,7 @@ void ModelSystem::Update()
 
     // Get frustum for culling
     const Frustum& frustum = gfxManager.GetFrustum();
-    bool enableCulling = gfxManager.IsFrustumCullingEnabled();
+    bool enableCulling = gfxManager.IsFrustumCullingEnabled() && !isRenderingForEditor;
     // Reset stats each frame
     cullingStats.Reset();
 

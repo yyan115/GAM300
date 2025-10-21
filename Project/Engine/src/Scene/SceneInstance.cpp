@@ -50,6 +50,8 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalPosition(testCamera, {0, 0, 3});
 	// Add camera component
 	CameraComponent camComp;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 100.f;
 	camComp.isActive = true;
 	camComp.priority = 0;
 	camComp.useFreeRotation = true;
