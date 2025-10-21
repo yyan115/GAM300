@@ -70,7 +70,8 @@ void Mesh::setupMesh()
 	vao.LinkAttrib(vbo, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
 	// Texture
 	vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
-
+	// Tangent (location = 4)
+	vao.LinkAttrib(vbo, 4, 3, GL_FLOAT, sizeof(Vertex), (void*)(11 * sizeof(float)));
 //#ifdef __ANDROID__
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Vertex attributes linked successfully");
 //#endif

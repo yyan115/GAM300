@@ -43,7 +43,7 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#else
 	// The function expects a file path and several post-processing options as its second argument
 	// aiProcess_Triangulate tells Assimp that if the model does not (entirely) consist of triangles, it should transform all the model's primitive shapes to triangles first.
-	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 //#endif
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
@@ -175,6 +175,18 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         else
         {
             vertex.texUV = glm::vec2(0.f, 0.f);
+        }
+
+        // Tangents from Assimp
+        if (mesh->HasTangentsAndBitangents())
+        {
+            vertex.tangent.x = mesh->mTangents[i].x;
+            vertex.tangent.y = mesh->mTangents[i].y;
+            vertex.tangent.z = mesh->mTangents[i].z;
+        }
+        else
+        {
+            vertex.tangent = glm::vec3(1.0f, 0.0f, 0.0f); // Default tangent
         }
 
         vertex.color = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -541,6 +553,8 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
                 meshFile.write(reinterpret_cast<const char*>(&v.normal), sizeof(v.normal));
                 meshFile.write(reinterpret_cast<const char*>(&v.color), sizeof(v.color));
                 meshFile.write(reinterpret_cast<const char*>(&v.texUV), sizeof(v.texUV));
+                meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
+                // meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
             }
 
 		    // Write index data to the file as binary data.
@@ -647,6 +661,8 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(v.color);
                 std::memcpy(&v.texUV, buffer.data() + offset, sizeof(v.texUV));
                 offset += sizeof(v.texUV);
+                // std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
+                // offset += sizeof(v.tangent);
                 vertices[j] = std::move(v);
             }
 

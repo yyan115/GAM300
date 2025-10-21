@@ -78,6 +78,7 @@ uniform int numSpotLights;
 
 out vec4 FragColor;
 in vec3 Normal;
+in vec3 Tangent;
 in vec3 FragPos;
 uniform vec3 cameraPos;
 
@@ -102,21 +103,23 @@ vec3 getMaterialAmbient() {
     return material.ambient;
 }
 
-vec3 getNormalFromMap() {
-    if (material.hasNormalMap) {
+vec3 getNormalFromMap() 
+{
+    if (material.hasNormalMap) 
+    {
         vec3 tangentNormal = texture(material.normalMap, TexCoords).xyz * 2.0 - 1.0;
         
-        // For simple normal mapping without tangent space
-        // This is a simplified approach - for full normal mapping you'd need tangent vectors
-        vec3 Q1 = dFdx(FragPos);
-        vec3 Q2 = dFdy(FragPos);
-        vec2 st1 = dFdx(TexCoords);
-        vec2 st2 = dFdy(TexCoords);
-        
+        // Construct TBN matrix using pre-calculated tangent
         vec3 N = normalize(Normal);
-        vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
-        vec3 B = -normalize(cross(N, T));
-        mat3 TBN = mat3(T, B, N);
+        vec3 T = normalize(Tangent);
+        
+        // Re-orthogonalize T with respect to N (Gram-Schmidt process)
+        T = normalize(T - dot(T, N) * N);
+        
+        // Calculate bitangent
+        vec3 B = cross(N, T);
+        
+        mat3 TBN = mat3(B, T, N);
         
         return normalize(TBN * tangentNormal);
     }
@@ -202,7 +205,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 view_di
 void main()
 {
     if (texture(material.diffuseMap, TexCoords).a < 0.5) discard;
-
+    
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
     
