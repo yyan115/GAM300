@@ -119,7 +119,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	dstTexture.dwPitch = 0;
 	dstTexture.format = forAndroid
 		? (needsAlpha ? CMP_FORMAT_ETC2_RGBA : CMP_FORMAT_ETC2_RGB)
-		: CMP_FORMAT_BC3;
+		: (type != "normal" ? CMP_FORMAT_BC3 : CMP_FORMAT_BC5);
 
 	dstTexture.dwDataSize = CMP_CalculateBufferSize(&dstTexture);
 	dstTexture.pData = (CMP_BYTE*)malloc(dstTexture.dwDataSize);
@@ -139,7 +139,8 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	// Save the compresed texture to a DDS file.
 	gli::format fmt = gli::FORMAT_UNDEFINED;
 	if (!forAndroid) {
-		fmt = gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16;
+		fmt = type != "normal" ? gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16
+			: gli::FORMAT_RG_ATI2N_UNORM_BLOCK16;
 	}
 	else {
 		fmt = needsAlpha ? gli::FORMAT_RGBA_ETC2_UNORM_BLOCK16

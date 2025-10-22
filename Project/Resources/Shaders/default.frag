@@ -103,24 +103,24 @@ vec3 getMaterialAmbient() {
     return material.ambient;
 }
 
-vec3 getNormalFromMap() 
+vec3 getNormalFromMap()
 {
-    if (material.hasNormalMap) 
+    if (material.hasNormalMap)
     {
-        vec3 tangentNormal = texture(material.normalMap, TexCoords).xyz * 2.0 - 1.0;
-        
-        // Construct TBN matrix using pre-calculated tangent
+        // Sample XY from normal map, remap from [0,1] → [-1,1]
+        vec2 enc = texture(material.normalMap, TexCoords).rg * 2.0 - 1.0;
+
+        // Reconstruct Z
+        float z = sqrt(max(0.0, 1.0 - dot(enc, enc)));
+        vec3 tangentNormal = normalize(vec3(enc, z));
+
+        // Construct TBN
         vec3 N = normalize(Normal);
         vec3 T = normalize(Tangent);
-        
-        // Re-orthogonalize T with respect to N (Gram-Schmidt process)
-        T = normalize(T - dot(T, N) * N);
-        
-        // Calculate bitangent
         vec3 B = cross(N, T);
-        
-        mat3 TBN = mat3(B, T, N);
-        
+
+        mat3 TBN = mat3(T, B, N);
+
         return normalize(TBN * tangentNormal);
     }
     return normalize(Normal);

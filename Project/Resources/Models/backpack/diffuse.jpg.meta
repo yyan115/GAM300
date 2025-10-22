@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "002d9db2580dbfae-0003051016000011",
+        "guid": "001e0d859b8cb8b9-0003084672000011",
         "source": "../../Resources/Models/backpack/diffuse.jpg",
         "compiled": "../../Resources/Models/backpack/diffuse.dds",
-        "last_compiled": "2025-10-21 04:35:24.4804892"
+        "last_compiled": "2025-10-22 09:49:46.2003206"
     },
     "TextureMetaData": {
         "type": "diffuse"

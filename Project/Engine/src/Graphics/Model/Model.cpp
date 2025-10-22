@@ -661,8 +661,8 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(v.color);
                 std::memcpy(&v.texUV, buffer.data() + offset, sizeof(v.texUV));
                 offset += sizeof(v.texUV);
-                // std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
-                // offset += sizeof(v.tangent);
+                 std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
+                 offset += sizeof(v.tangent);
                 vertices[j] = std::move(v);
             }
 

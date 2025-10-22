@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "002d9db2578566d3-0003051022000019",
+        "guid": "001e0d85ca5708e0-000308467c000019",
         "source": "../../Resources/Models/cube.obj",
         "compiled": "../../Resources/Models/cube.mesh",
-        "last_compiled": "2025-10-21 04:35:29.2368412"
+        "last_compiled": "2025-10-22 09:49:50.7008329"
     }
 }

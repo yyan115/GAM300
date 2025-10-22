@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "002d9db22aab41fa-0003051110000029",
+        "guid": "001e0d85c87dc15e-000308467e000029",
         "source": "../../Resources/Models/Kachujin/Kachujin_specular.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds",
-        "last_compiled": "2025-10-21 04:38:14.0122001"
+        "last_compiled": "2025-10-22 09:49:54.0394711"
     },
     "TextureMetaData": {
         "type": "specular"
