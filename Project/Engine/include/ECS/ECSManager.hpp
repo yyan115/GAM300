@@ -16,6 +16,7 @@
 #include <Graphics/Particle/ParticleSystem.hpp>
 #include <Sound/AudioSystem.hpp>
 #include "Graphics/Camera/CameraSystem.hpp"
+#include <Animation/AnimationSystem.hpp>
 
 class PhysicsSystem;
 class ECSManager {
