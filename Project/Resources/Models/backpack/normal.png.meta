@@ -4,9 +4,11 @@
         "guid": "001e0d85d7dbfc9f-0003084674000013",
         "source": "../../Resources/Models/backpack/normal.png",
         "compiled": "../../Resources/Models/backpack/normal.dds",
-        "last_compiled": "2025-10-22 09:49:48.5812807"
+        "last_compiled": "2025-10-22 16:16:15.0449158"
     },
     "TextureMetaData": {
-        "type": "diffuse"
+        "type": "normal",
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

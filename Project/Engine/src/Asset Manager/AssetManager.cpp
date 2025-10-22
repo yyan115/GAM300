@@ -157,7 +157,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	}
 }
 
-bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
+bool AssetManager::CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -178,6 +178,30 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 	}
 	else {
 		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, flipUVs, forceCompile, forAndroid);
+	}
+}
+
+bool AssetManager::CompileTexture(const std::string& filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile, bool forAndroid) {
+	GUID_128 guid{};
+	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
+		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
+		guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+	}
+	else {
+		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
+	}
+
+	if (!forceCompile) {
+		auto it = assetMetaMap.find(guid);
+		if (it != assetMetaMap.end()) {
+			return true;
+		}
+		else {
+			return CompileTextureToResource(guid, filePath.c_str(), textureMeta, forceCompile, forAndroid);
+		}
+	}
+	else {
+		return CompileTextureToResource(guid, filePath.c_str(), textureMeta, forceCompile, forAndroid);
 	}
 }
 
@@ -547,9 +571,41 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
 				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
 			}
+		}
 
-			// Copy compiled asset to root project Resources folder also.
-			//FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
+		return true;
+	}
+
+	return true;
+}
+
+bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile, bool forAndroid) {
+	// If the asset is not already loaded, load and store it using the GUID.
+	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
+		Texture texture{ textureMeta };
+		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
+		if (compiledPath.empty()) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+			return false;
+		}
+
+		std::shared_ptr<AssetMeta> assetMeta;
+		if (!forAndroid) {
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
+		}
+		else {
+			assetMeta = assetMetaMap.find(guid)->second;
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+		}
+		assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
+		assetMetaMap[guid] = assetMeta;
+		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+
+		if (!forAndroid) {
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
+			}
 		}
 
 		return true;

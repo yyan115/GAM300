@@ -4,9 +4,11 @@
         "guid": "001e0d85b06cdc42-000308467e00002b",
         "source": "../../Resources/Models/Kachujin/Kachujin_normal.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds",
-        "last_compiled": "2025-10-22 09:49:55.0051622"
+        "last_compiled": "2025-10-22 16:14:21.0267662"
     },
     "TextureMetaData": {
-        "type": "normal"
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
     }
 }

@@ -31,8 +31,11 @@
 #include "Logging.hpp"
 Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
 
-Texture::Texture(const char* texType, GLint slot, bool flipUVs) :
-	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D), flipUVs(flipUVs) {}
+Texture::Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps) :
+	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D), flipUVs(flipUVs), generateMipmaps(generateMipmaps) {}
+
+Texture::Texture(std::shared_ptr<TextureMeta> textureMeta) :
+	ID(0), type(textureMeta->type), unit(-1), target(GL_TEXTURE_2D), flipUVs(textureMeta->flipUVs), generateMipmaps(textureMeta->generateMipmaps) {}
 
 std::string Texture::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	// Stores the width, height, and the number of color channels of the image
@@ -253,8 +256,12 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		type = textureMetaData["type"].GetString();
 	}
 
-	if (textureMetaData.HasMember("unit")) {
-		unit = static_cast<GLuint>(textureMetaData["unit"].GetInt());
+	if (textureMetaData.HasMember("flipUVs")) {
+		flipUVs = static_cast<GLuint>(textureMetaData["flipUVs"].GetBool());
+	}
+
+	if (textureMetaData.HasMember("generateMipmaps")) {
+		generateMipmaps = static_cast<GLuint>(textureMetaData["generateMipmaps"].GetBool());
 	}
 
 	// Load the DDS file using GLI
@@ -297,10 +304,15 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		texture.data()
 	);
 
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	//// Generates MipMaps
-	//glGenerateMipmap(target);
+	// Generates MipMaps
+	if (generateMipmaps) {
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else {
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
 
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
@@ -333,12 +345,12 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
-	//// Add ID
-	//textureMetaData.AddMember("id", rapidjson::Value().SetInt(static_cast<int>(ID)), allocator);
-	//// Add unit
-	//textureMetaData.AddMember("unit", rapidjson::Value().SetInt(static_cast<int>(unit)), allocator);
 	// Add type
 	textureMetaData.AddMember("type", rapidjson::Value().SetString(type.c_str(), allocator), allocator);
+	// Add flip UVs
+	textureMetaData.AddMember("flipUVs", rapidjson::Value().SetBool(flipUVs), allocator);
+	// Add generate mipmaps
+	textureMetaData.AddMember("generateMipmaps", rapidjson::Value().SetBool(generateMipmaps), allocator);
 
 	doc.AddMember("TextureMetaData", textureMetaData, allocator);
 
@@ -376,7 +388,7 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	std::shared_ptr<TextureMeta> metaData = std::make_shared<TextureMeta>();
 	metaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
-	metaData->PopulateTextureMeta(ID, type, unit);
+	metaData->PopulateTextureMeta(type, flipUVs, generateMipmaps);
 	return metaData;
 }
 

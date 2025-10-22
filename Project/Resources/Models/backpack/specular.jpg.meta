@@ -4,9 +4,11 @@
         "guid": "001e0d85d7b5be7f-000308467a000017",
         "source": "../../Resources/Models/backpack/specular.jpg",
         "compiled": "../../Resources/Models/backpack/specular.dds",
-        "last_compiled": "2025-10-22 09:49:50.6941221"
+        "last_compiled": "2025-10-22 16:15:31.2960568"
     },
     "TextureMetaData": {
-        "type": "diffuse"
+        "type": "specular",
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

@@ -4,9 +4,11 @@
         "guid": "001e0d8591b7359f-0003084678000015",
         "source": "../../Resources/Models/backpack/roughness.jpg",
         "compiled": "../../Resources/Models/backpack/roughness.dds",
-        "last_compiled": "2025-10-22 09:49:49.4343376"
+        "last_compiled": "2025-10-22 16:16:31.2529044"
     },
     "TextureMetaData": {
-        "type": "diffuse"
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

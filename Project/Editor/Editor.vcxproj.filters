@@ -20,6 +20,7 @@
     <ClCompile Include="src\Panels\MaterialInspector.cpp" />
     <ClCompile Include="src\Panels\PrefabEditorPanel.cpp" />
     <ClCompile Include="src\EditorComponents.cpp" />
+    <ClCompile Include="src\Panels\AssetInspector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
     <ClInclude Include="include\Panels\PrefabEditorPanel.hpp" />
     <ClInclude Include="include\EditorComponents.hpp" />
+    <ClInclude Include="include\Panels\AssetInspector.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />

@@ -4,9 +4,11 @@
         "guid": "001e0d8585b26e74-000308466e00000b",
         "source": "../../Resources/Models/backpack/ao.jpg",
         "compiled": "../../Resources/Models/backpack/ao.dds",
-        "last_compiled": "2025-10-22 09:49:44.7004748"
+        "last_compiled": "2025-10-22 16:15:49.1282025"
     },
     "TextureMetaData": {
-        "type": "diffuse"
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

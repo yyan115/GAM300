@@ -35,13 +35,13 @@ void SceneInstance::Initialize() {
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	// Add FPS text (mainly for android to see FPS)
-	fpsText = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
-	ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-	TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-	TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
-	TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+	//// Add FPS text (mainly for android to see FPS)
+	//fpsText = ecsManager.CreateEntity();
+	//ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	//ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	//TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	//TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	//TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
 
 	// Sets camera
 	gfxManager.SetCamera(&camera);
