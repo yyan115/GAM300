@@ -91,14 +91,33 @@ public:
 	// Helper function to get/bind animator
 	Animator* GetAnimator() const { return animator; }
 	void BindAnimator(Animator* a) { animator = a; }
+    AABB GetBoundingBox() const { return modelBoundingBox; }
+
+    void CalculateBoundingBox() 
+    {
+        if (meshes.empty()) 
+        {
+            modelBoundingBox = AABB(glm::vec3(0.0f), glm::vec3(0.0f));
+            return;
+        }
+
+        glm::vec3 min(FLT_MAX);
+        glm::vec3 max(-FLT_MAX);
+
+        // Combine all mesh bounding boxes
+        for (const auto& mesh : meshes) 
+        {
+            AABB meshBox = mesh.GetBoundingBox();
+            min = glm::min(min, meshBox.min);
+            max = glm::max(max, meshBox.max);
+        }
+
+        modelBoundingBox = AABB(min, max);
+    }
 
 private:
-	//void loadModel(const std::string& path);
 	void ProcessNode(aiNode* node, const aiScene* scene);
 	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-
-	//std::vector<std::shared_ptr<Texture>> LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
-    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
 	
 	// Bone data
 	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
@@ -106,4 +125,6 @@ private:
 
 	Animator* animator = nullptr;
 	
+    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+    AABB modelBoundingBox;
 };

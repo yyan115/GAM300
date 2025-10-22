@@ -141,6 +141,7 @@
     <ClInclude Include="include\Performance\PerformanceProfiler.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
+    <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

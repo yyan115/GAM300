@@ -15,6 +15,7 @@
 #include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
+#include "Graphics/Frustum/Frustum.hpp"
 
 class GraphicsManager {
 public:
@@ -57,6 +58,11 @@ public:
 
     // Main rendering
     void Render();
+
+    // FRUSTUM CULLING FUNCTIONS:
+    void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
+    bool IsFrustumCullingEnabled() const { return frustumCullingEnabled; }
+    const Frustum& GetFrustum() const { return viewFrustum; }
 
 private:
     GraphicsManager() = default;
@@ -101,4 +107,8 @@ private:
     void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
         const glm::vec3& scale, float rotation);
     void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
+
+    // FRUSTUM MEMBERS:
+    Frustum viewFrustum;
+    bool frustumCullingEnabled = true;
 };

@@ -45,6 +45,7 @@
     <ClInclude Include="include\Graphics\Bone.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
+    <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
