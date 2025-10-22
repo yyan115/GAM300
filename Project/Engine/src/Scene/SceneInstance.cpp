@@ -67,6 +67,14 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
 	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
 
+	// Test Animation System
+	Entity testAnim = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(testAnim).name = "TestAnimationEntity";
+	ecsManager.GetComponent<Transform>(testAnim).localScale = Vector3D(0.01f, .01f, .01f);
+	ecsManager.GetComponent<Transform>(testAnim).localPosition = Vector3D(0.0f, -1.5f, -1.5f);
+	ecsManager.AddComponent<ModelRenderComponent>(testAnim, ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/kachujin/Kachujin.fbx"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),MetaFilesManager::GetGUID128FromAssetFile("Resources/Materials/backpack.mat") });
+	ecsManager.AddComponent<AnimationComponent>(testAnim, AnimationComponent{});
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");

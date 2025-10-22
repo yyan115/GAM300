@@ -21,6 +21,7 @@ bool AnimationSystem::Initialise()
 				animComp.SetModel(&*modelComp.model);
 				animComp.AddClipFromFile("Resources/Models/kachujin/Animation/Slash.fbx");
 				animComp.Play();
+				std::cout << "[AnimationSystem] Initialized AnimationComponent for Entity " << entity << " with model and animation clip.\n";
 			}
 			else
 				std::cout << "[AnimationSystem] Warning: Entity " << entity << " has no model assigned for AnimationComponent.\n";
