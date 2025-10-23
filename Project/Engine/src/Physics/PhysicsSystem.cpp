@@ -222,11 +222,14 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             bcs.mLinearDamping = 0.01f;     // Very low linear damping
             bcs.mAngularDamping = 0.01f;    // Very low angular damping
 
+
+
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
 
-
+            //to avoid spinning
+            bi.SetAngularVelocity(rb.id, JPH::Vec3::sZero());
 
             // ADD THIS DETAILED LOGGING:
             std::cout << "========================================" << std::endl;
@@ -276,7 +279,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     }
 }
 
-void PhysicsSystem::Update(float dt) {
+void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
     static int updateCount = 0;
@@ -286,7 +289,28 @@ void PhysicsSystem::Update(float dt) {
 #endif
 
     if (entities.empty()) return;
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
+
+    for (auto& e : entities) {
+        auto& tr = ecsManager.GetComponent<Transform>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+
+        bi.SetGravityFactor(rb.id, rb.gravityFactor);
+    }
+
+
+
+
+
+
     physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
+
+    PhysicsSyncBack(ecsManager);
+
+
+   //TO SIMULATE GRAVITY FOR INDIVIDUAL BODIES
+    //USING THE RB.ID GET THE BODY INTERFACE, THEN SET GRAVITYT FACTOR
 
 
     //ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -303,45 +327,46 @@ void PhysicsSystem::Update(float dt) {
     //}
 }
 
-void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
-	auto& bi = physics.GetBodyInterface();
+void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
+    auto& bi = physics.GetBodyInterface();
 
 #ifdef __ANDROID__
-	static int syncCount = 0;
-	if (syncCount++ % 60 == 0) { // Log every 60 frames
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsSyncBack called, entities=%zu", entities.size());
-	}
+    static int syncCount = 0;
+    if (syncCount++ % 60 == 0) {
+        __android_log_print(ANDROID_LOG_INFO, "GAM300",
+            "[Physics] physicsSyncBack called, entities=%zu", entities.size());
+}
 #endif
 
-    for (auto &e : entities) {
+    for (auto& e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
-        //auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        JPH::RVec3 pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-        //JPH::QuatArg rot = JPH::Quat::sIdentity();
-        JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
-            tr.localRotation.z, tr.localRotation.w);
-        JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
-
         if (rb.id.IsInvalid()) continue;
+
+        // Only sync Dynamic bodies (physics controls them)
+        // Kinematic/Static bodies are controlled by Transform, not physics
         if (rb.motion == Motion::Dynamic) {
-            JPH::RVec3 p; JPH::Quat r;
+            JPH::RVec3 p;
+            JPH::Quat r;
             bi.GetPositionAndRotation(rb.id, p, r);
-			tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
-			tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
+
+            // WRITE to ECS Transform (so renderer/other systems can see it)
+            tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
+            tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
             tr.isDirty = true;
 
 #ifdef __ANDROID__
-			// Debug: Log position for one dynamic body every 60 frames
-			if (syncCount % 60 == 0) {
-				__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Dynamic body pos: (%f, %f, %f)",
-					p.GetX(), p.GetY(), p.GetZ());
-			}
-#endif
+            if (syncCount % 60 == 0) {
+                __android_log_print(ANDROID_LOG_INFO, "GAM300",
+                    "[Physics] Dynamic body pos: (%f, %f, %f)",
+                    p.GetX(), p.GetY(), p.GetZ());
         }
+#endif
+    }
     }
 }
+
 
 void PhysicsSystem::Shutdown() {
     // 1. Remove and destroy all bodies
@@ -373,4 +398,3 @@ void PhysicsSystem::Shutdown() {
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
 }
-

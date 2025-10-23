@@ -15,9 +15,9 @@ public:
 	bool InitialiseJolt();
 	void Initialise(ECSManager& ecsManager);
 
-	void Update(float dt);
-
-	void physicsSyncBack(ECSManager& ecsManager);
+	void Update(float dt, ECSManager& ecsManager);	//SIMULATE PHYSICS e.g APPLY FORCES e.t.c
+	//void SyncDirtyComponents(ECSManager& ecsManager);	//APPLY INSPECTOR CHANGES TO JOLT
+	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
 
 	MyBroadPhaseLayerInterface broadphase;

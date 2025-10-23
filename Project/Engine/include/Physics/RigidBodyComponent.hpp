@@ -12,6 +12,7 @@ struct RigidBodyComponent {
 	REFL_SERIALIZABLE
 	int motionID;
 	bool ccd = false; // continuous collision detection
+	float gravityFactor = 1.0f;
 
 	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static

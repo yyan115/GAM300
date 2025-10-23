@@ -11,6 +11,7 @@
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
+#include <Physics/PhysicsSystem.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
 #include <Graphics/GraphicsManager.hpp>
@@ -2083,16 +2084,26 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 		}
 		EditorComponents::PopComboColors();
 
-		// CCD checkbox
-		ImGui::Text("CCD");
-		ImGui::SameLine();
-		if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) {
-			rigidBody.motion_dirty = true; // Mark for recreation
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
-		}
 
+		if (rigidBody.motion == Motion::Dynamic)
+		{
+			// CCD checkbox
+			ImGui::Text("CCD");
+			ImGui::SameLine();
+			if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) {
+				rigidBody.motion_dirty = true; // Mark for recreation
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
+			}
+
+			ImGui::Text("Gravity Factor");
+			ImGui::SameLine();
+			if (ImGui::DragFloat("##Gravity Factor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
+				rigidBody.motion_dirty = true; // optional: mark body for recreation
+			}			
+		}
+		 
 		ImGui::PopID();
 	}
 	catch (const std::exception& e) {
