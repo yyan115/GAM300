@@ -43,6 +43,9 @@
     <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\HDR\HDREffect.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\PostProcessEffect.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\PostProcessingManager.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
@@ -181,6 +184,8 @@
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
+    <ClCompile Include="src\Graphics\PostProcessing\PostProcessingManager.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteSystem.cpp" />
     <ClCompile Include="src\Graphics\TextRendering\Font.cpp" />

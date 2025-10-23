@@ -137,6 +137,9 @@
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
     <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\PostProcessEffect.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\PostProcessingManager.hpp" />
+    <ClInclude Include="include\Graphics\PostProcessing\HDR\HDREffect.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -214,6 +217,8 @@
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
     <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
+    <ClCompile Include="src\Graphics\PostProcessing\PostProcessingManager.cpp" />
+    <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
