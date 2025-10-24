@@ -38,6 +38,10 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\ECS\TagComponent.hpp" />
+    <ClInclude Include="include\ECS\LayerComponent.hpp" />
+    <ClInclude Include="include\ECS\TagManager.hpp" />
+    <ClInclude Include="include\ECS\LayerManager.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
     <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
@@ -169,6 +173,10 @@
   <ItemGroup>
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
+    <ClCompile Include="src\ECS\TagComponent.cpp" />
+    <ClCompile Include="src\ECS\LayerComponent.cpp" />
+    <ClCompile Include="src\ECS\TagManager.cpp" />
+    <ClCompile Include="src\ECS\LayerManager.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />

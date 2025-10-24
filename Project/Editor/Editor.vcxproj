@@ -55,6 +55,7 @@
     <ClCompile Include="src\Panels\GamePanel.cpp" />
     <ClCompile Include="src\Panels\PlayControlPanel.cpp" />
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
+    <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\EditorComponents.hpp" />
@@ -75,6 +76,7 @@
     <ClInclude Include="include\Panels\PanelManager.hpp" />
     <ClInclude Include="include\Panels\SceneHierarchyPanel.hpp" />
     <ClInclude Include="include\Panels\PlayControlPanel.hpp" />
+    <ClInclude Include="include\Panels\TagsLayersPanel.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">

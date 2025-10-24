@@ -18,9 +18,13 @@
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include "ECS/TagComponent.hpp"
+#include "ECS/LayerComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
 
 #include "Graphics/Camera/CameraComponent.hpp"
+#include <ECS/TagComponent.hpp>
+#include <ECS/LayerComponent.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -47,6 +51,8 @@ void ECSManager::Initialize() {
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<PrefabLinkComponent>();
 	RegisterComponent<CameraComponent>();
+	RegisterComponent<TagComponent>();
+	RegisterComponent<LayerComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -149,6 +155,10 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	defaultTransform.isDirty = true;
 
 	ecsManager.AddComponent<Transform>(entity, defaultTransform);
+
+	// Add default tag and layer components
+	ecsManager.AddComponent<TagComponent>(entity, TagComponent(0)); // Default to first tag
+	ecsManager.AddComponent<LayerComponent>(entity, LayerComponent(0)); // Default to first layer
 
 	return entity;
 }

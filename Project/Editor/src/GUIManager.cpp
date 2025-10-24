@@ -26,6 +26,7 @@
 #include "Panels/PlayControlPanel.hpp"
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
+#include "Panels/TagsLayersPanel.hpp"
 
 
 // Static member definitions
@@ -171,6 +172,11 @@ void GUIManager::SetupDefaultPanels() {
 	auto assetBrowserPanel = std::make_shared<AssetBrowserPanel>();
 	assert(assetBrowserPanel != nullptr && "Failed to create AssetBrowserPanel");
 	panelManager->RegisterPanel(assetBrowserPanel);
+
+	auto tagsLayersPanel = std::make_shared<TagsLayersPanel>();
+	assert(tagsLayersPanel != nullptr && "Failed to create TagsLayersPanel");
+	panelManager->RegisterPanel(tagsLayersPanel);
+
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
 }
 

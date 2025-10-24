@@ -1,4 +1,4 @@
-#include "pch.h"
+ #include "pch.h"
 #include "PrefabIO.hpp"
 #include "PrefabLinkComponent.hpp"
 
@@ -17,6 +17,8 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/TagComponent.hpp"
+#include "ECS/LayerComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
@@ -100,6 +102,16 @@ static void ApplyOne(ECSManager& ecs,
 {
     if (strcmp(typeName, "NameComponent") == 0) {
         ApplyReflectedComponent<NameComponent>(ecs, e, val, fromPrefabUpdate);
+        return;
+    }
+
+    if (strcmp(typeName, "TagComponent") == 0) {
+        ApplyReflectedComponent<TagComponent>(ecs, e, val, fromPrefabUpdate);
+        return;
+    }
+
+    if (strcmp(typeName, "LayerComponent") == 0) {
+        ApplyReflectedComponent<LayerComponent>(ecs, e, val, fromPrefabUpdate);
         return;
     }
 
@@ -289,6 +301,8 @@ ENGINE_API bool SaveEntityToPrefabFile(
     doc.SetObject();
 
     TryWrite<NameComponent>(ecs, e, "NameComponent", doc);
+    TryWrite<TagComponent>(ecs, e, "TagComponent", doc);
+    TryWrite<LayerComponent>(ecs, e, "LayerComponent", doc);
     TryWrite<Transform>(ecs, e, "Transform", doc);
     TryWrite<ModelRenderComponent>(ecs, e, "ModelRenderComponent", doc);
 

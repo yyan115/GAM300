@@ -19,6 +19,10 @@
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
 #include "PrefabLinkComponent.hpp"
+#include <ECS/TagComponent.hpp>
+#include <ECS/LayerComponent.hpp>
+#include <ECS/TagManager.hpp>
+#include <ECS/LayerManager.hpp>
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -230,6 +234,44 @@ void InspectorPanel::OnImGuiRender() {
 						}
 						ImGui::EndDisabled();
 
+						// Tag and Layer on the same line
+						if (ecsManager.HasComponent<TagComponent>(displayEntity) && ecsManager.HasComponent<LayerComponent>(displayEntity)) {
+							auto& tc = ecsManager.GetComponent<TagComponent>(displayEntity);
+							auto& lc = ecsManager.GetComponent<LayerComponent>(displayEntity);
+							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
+
+							bool followPrefabTag = false;
+							bool followPrefabLayer = false;
+							if (isInstance) {
+								if constexpr (has_override_flag<TagComponent>::value)
+									followPrefabTag = !tc.overrideFromPrefab;
+								if constexpr (has_override_flag<LayerComponent>::value)
+									followPrefabLayer = !lc.overrideFromPrefab;
+							}
+
+							// Tag dropdown
+							ImGui::BeginDisabled(followPrefabTag);
+							{
+								ImGui::Text("Tag");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(120.0f);
+								DrawTagComponent(displayEntity);
+							}
+							ImGui::EndDisabled();
+
+							ImGui::SameLine();
+
+							// Layer dropdown
+							ImGui::BeginDisabled(followPrefabLayer);
+							{
+								ImGui::Text("Layer");
+								ImGui::SameLine();
+								ImGui::SetNextItemWidth(120.0f);
+								DrawLayerComponent(displayEntity);
+							}
+							ImGui::EndDisabled();
+						}
+
 						ImGui::Separator();
 					}
 
@@ -392,6 +434,159 @@ void InspectorPanel::DrawNameComponent(Entity entity) {
 		ImGui::PopID();
 	} catch (const std::exception& e) {
 		ImGui::Text("Error accessing NameComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawTagComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		if (!ecsManager.HasComponent<TagComponent>(entity)) {
+			ecsManager.AddComponent<TagComponent>(entity, TagComponent{0});
+		}
+		TagComponent& tagComponent = ecsManager.GetComponent<TagComponent>(entity);
+
+		ImGui::PushID("TagComponent");
+
+		// Get available tags
+		const auto& availableTags = TagManager::GetInstance().GetAllTags();
+
+		// Create items for combo box, including "Add Tag..." option
+		std::vector<std::string> tagItems;
+		tagItems.reserve(availableTags.size() + 1);
+		for (const auto& tag : availableTags) {
+			tagItems.push_back(tag);
+		}
+		tagItems.push_back("Add Tag...");
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> tagItemPtrs;
+		tagItemPtrs.reserve(tagItems.size());
+		for (const auto& item : tagItems) {
+			tagItemPtrs.push_back(item.c_str());
+		}
+
+		// Ensure tagIndex is valid
+		if (tagComponent.tagIndex < 0 || tagComponent.tagIndex >= static_cast<int>(availableTags.size())) {
+			tagComponent.tagIndex = 0; // Default to first tag
+		}
+
+		// Combo box for tag selection
+		int currentTag = tagComponent.tagIndex;
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
+			if (currentTag >= 0 && currentTag < static_cast<int>(availableTags.size())) {
+				tagComponent.tagIndex = currentTag;
+			} else if (currentTag == static_cast<int>(availableTags.size())) {
+				// "Add Tag..." was selected - open Tags & Layers window
+				auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+				if (tagsLayersPanel) {
+					tagsLayersPanel->SetOpen(true);
+				}
+				// Reset selection to current tag
+				currentTag = tagComponent.tagIndex;
+			}
+		}
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing TagComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawLayerComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		if (!ecsManager.HasComponent<LayerComponent>(entity)) {
+			ecsManager.AddComponent<LayerComponent>(entity, LayerComponent{0});
+		}
+		LayerComponent& layerComponent = ecsManager.GetComponent<LayerComponent>(entity);
+
+		ImGui::PushID("LayerComponent");
+
+		// Get available layers
+		const auto& availableLayers = LayerManager::GetInstance().GetAllLayers();
+
+		// Create items for combo box (only show named layers)
+		std::vector<std::string> layerItems;
+		std::vector<int> layerIndices;
+		for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+			const std::string& layerName = availableLayers[i];
+			if (!layerName.empty()) {
+				layerItems.push_back(std::to_string(i) + ": " + layerName);
+				layerIndices.push_back(i);
+			}
+		}
+
+		// Add "Add Layer..." option
+		layerItems.push_back("Add Layer...");
+		std::vector<int> tempIndices = layerIndices;
+		tempIndices.push_back(-1); // Special value for "Add Layer..."
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> layerItemPtrs;
+		layerItemPtrs.reserve(layerItems.size());
+		for (const auto& item : layerItems) {
+			layerItemPtrs.push_back(item.c_str());
+		}
+
+		// Ensure layerIndex is valid
+		if (layerComponent.layerIndex < 0 || layerComponent.layerIndex >= LayerManager::MAX_LAYERS) {
+			layerComponent.layerIndex = 0; // Default to first layer
+		}
+
+		// Find current selection index in our filtered list
+		int currentSelection = -1;
+		for (size_t i = 0; i < layerIndices.size(); ++i) {
+			if (layerIndices[i] == layerComponent.layerIndex) {
+				currentSelection = static_cast<int>(i);
+				break;
+			}
+		}
+
+		// If current layer is not in the named list, add it
+		if (currentSelection == -1) {
+			const std::string& currentLayerName = layerComponent.GetLayerName();
+			if (!currentLayerName.empty()) {
+				std::string item = std::to_string(layerComponent.layerIndex) + ": " + currentLayerName;
+				layerItems.insert(layerItems.end() - 1, item); // Insert before "Add Layer..."
+				tempIndices.insert(tempIndices.end() - 1, layerComponent.layerIndex);
+				layerItemPtrs.insert(layerItemPtrs.end() - 1, layerItems[layerItems.size() - 2].c_str());
+				currentSelection = static_cast<int>(layerItems.size() - 2);
+			} else {
+				// Default to first item
+				currentSelection = 0;
+				layerComponent.layerIndex = layerIndices[0];
+			}
+		}
+
+		// Combo box for layer selection
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
+			if (currentSelection >= 0 && currentSelection < static_cast<int>(tempIndices.size())) {
+				int selectedIndex = tempIndices[currentSelection];
+				if (selectedIndex == -1) {
+					// "Add Layer..." was selected - open Tags & Layers window
+					auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+					if (tagsLayersPanel) {
+						tagsLayersPanel->SetOpen(true);
+					}
+					// Reset selection to current layer
+					currentSelection = -1;
+					for (size_t i = 0; i < layerIndices.size(); ++i) {
+						if (layerIndices[i] == layerComponent.layerIndex) {
+							currentSelection = static_cast<int>(i);
+							break;
+						}
+					}
+				} else {
+					layerComponent.layerIndex = selectedIndex;
+				}
+			}
+		}
+
+		ImGui::PopID();
+	} catch (const std::exception& e) {
+		ImGui::Text("Error accessing LayerComponent: %s", e.what());
 	}
 }
 
@@ -1524,6 +1719,21 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				ImGui::EndMenu();
 			}
 
+			// General Components
+			if (ImGui::BeginMenu("General")) {
+				if (!ecsManager.HasComponent<TagComponent>(entity)) {
+					if (ImGui::MenuItem("Tag")) {
+						AddComponent(entity, "TagComponent");
+					}
+				}
+				if (!ecsManager.HasComponent<LayerComponent>(entity)) {
+					if (ImGui::MenuItem("Layer")) {
+						AddComponent(entity, "LayerComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 		} catch (const std::exception& e) {
 			ImGui::Text("Error: %s", e.what());
 		}
@@ -1780,6 +1990,16 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			}
 
 			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "TagComponent") {
+			TagComponent component;
+			ecsManager.AddComponent<TagComponent>(entity, component);
+			std::cout << "[Inspector] Added TagComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "LayerComponent") {
+			LayerComponent component;
+			ecsManager.AddComponent<LayerComponent>(entity, component);
+			std::cout << "[Inspector] Added LayerComponent to entity " << entity << std::endl;
 		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
