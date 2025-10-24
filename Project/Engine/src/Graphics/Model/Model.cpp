@@ -434,8 +434,8 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(v.color);
                 std::memcpy(&v.texUV, buffer.data() + offset, sizeof(v.texUV));
                 offset += sizeof(v.texUV);
-                 std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
-                 offset += sizeof(v.tangent);
+                std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
+                offset += sizeof(v.tangent);
                 vertices[j] = std::move(v);
             }
 
@@ -456,112 +456,112 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + matName + ".mat";
             // Load the material
             auto material = ResourceManager::GetInstance().GetResource<Material>(materialPath);
-//            material->SetName(meshName);
-//            // Ambient
-//            glm::vec3 ambient;
-//            std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
-//            offset += sizeof(ambient);
-//            material->SetAmbient(ambient);
-//            // Diffuse
-//            glm::vec3 diffuse;
-//            std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
-//            offset += sizeof(diffuse);
-//            material->SetDiffuse(diffuse);
-//            // Specular
-//            glm::vec3 specular;
-//            std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
-//            offset += sizeof(specular);
-//            material->SetSpecular(specular);
-//            // Emissive
-//            glm::vec3 emissive;
-//            std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
-//            offset += sizeof(emissive);
-//            material->SetEmissive(emissive);
-//            // Shininess
-//            float shininess;
-//            std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
-//            offset += sizeof(shininess);
-//            material->SetShininess(shininess);
-//            // Opacity
-//            float opacity;
-//            std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
-//            offset += sizeof(opacity);
-//            material->SetOpacity(opacity);
-//            // Metallic
-//            float metallic;
-//            std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
-//            offset += sizeof(metallic);
-//            material->SetMetallic(metallic);
-//            // Roughness
-//            float roughness;
-//            std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
-//            offset += sizeof(roughness);
-//            material->SetRoughness(roughness);
-//            // AO
-//            float ao;
-//            std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
-//            offset += sizeof(ao);
-//            material->SetAO(ao);
-//
-//            // Read texture paths from the file.
-//            size_t textureCount;
-//            std::vector<std::shared_ptr<Texture>> textures;
-//            std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
-//            offset += sizeof(textureCount);
-//            for (size_t j = 0; j < textureCount; ++j) {
-//                Material::TextureType texType;
-//                std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
-//                offset += sizeof(texType);
-//                size_t pathLength;
-//                std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
-//                offset += sizeof(pathLength);
-//                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
-//                // strip trailing nulls
-//                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
-//                offset += pathLength;
-//
-//                // Load texture via Resource Manager
-//#ifndef ANDROID
-//                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-//#else
-//                texturePath = texturePath.substr(texturePath.find("Resources"));
-//                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-//#endif
-//                if (texture) {
-//                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-//                    material->SetTexture(texType, std::move(textureInfo));
-//
-//                    // Assign the texture type
-//                    switch (texType) {
-//                    case Material::TextureType::DIFFUSE:
-//                        texture->GetType() = "diffuse";
-//                        break;
-//                    case Material::TextureType::SPECULAR:
-//                        texture->GetType() = "specular";
-//                        break;
-//                    case Material::TextureType::NORMAL:
-//                        texture->GetType() = "normal";
-//                        break;
-//                    case Material::TextureType::EMISSIVE:
-//                        texture->GetType() = "emissive";
-//                        break;
-//                        // Add other cases as needed
-//                    default:
-//                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-//                        texture->GetType() = "unknown";
-//                        break;
-//                    }
-//                }
-//
-//                textures.push_back(texture);
-//            }
+            //            material->SetName(meshName);
+            //            // Ambient
+            //            glm::vec3 ambient;
+            //            std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
+            //            offset += sizeof(ambient);
+            //            material->SetAmbient(ambient);
+            //            // Diffuse
+            //            glm::vec3 diffuse;
+            //            std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
+            //            offset += sizeof(diffuse);
+            //            material->SetDiffuse(diffuse);
+            //            // Specular
+            //            glm::vec3 specular;
+            //            std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
+            //            offset += sizeof(specular);
+            //            material->SetSpecular(specular);
+            //            // Emissive
+            //            glm::vec3 emissive;
+            //            std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
+            //            offset += sizeof(emissive);
+            //            material->SetEmissive(emissive);
+            //            // Shininess
+            //            float shininess;
+            //            std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
+            //            offset += sizeof(shininess);
+            //            material->SetShininess(shininess);
+            //            // Opacity
+            //            float opacity;
+            //            std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
+            //            offset += sizeof(opacity);
+            //            material->SetOpacity(opacity);
+            //            // Metallic
+            //            float metallic;
+            //            std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
+            //            offset += sizeof(metallic);
+            //            material->SetMetallic(metallic);
+            //            // Roughness
+            //            float roughness;
+            //            std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
+            //            offset += sizeof(roughness);
+            //            material->SetRoughness(roughness);
+            //            // AO
+            //            float ao;
+            //            std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
+            //            offset += sizeof(ao);
+            //            material->SetAO(ao);
+            //
+            //            // Read texture paths from the file.
+            //            size_t textureCount;
+            //            std::vector<std::shared_ptr<Texture>> textures;
+            //            std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
+            //            offset += sizeof(textureCount);
+            //            for (size_t j = 0; j < textureCount; ++j) {
+            //                Material::TextureType texType;
+            //                std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
+            //                offset += sizeof(texType);
+            //                size_t pathLength;
+            //                std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
+            //                offset += sizeof(pathLength);
+            //                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
+            //                // strip trailing nulls
+            //                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
+            //                offset += pathLength;
+            //
+            //                // Load texture via Resource Manager
+            //#ifndef ANDROID
+            //                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+            //#else
+            //                texturePath = texturePath.substr(texturePath.find("Resources"));
+            //                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
+            //#endif
+            //                if (texture) {
+            //                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
+            //                    material->SetTexture(texType, std::move(textureInfo));
+            //
+            //                    // Assign the texture type
+            //                    switch (texType) {
+            //                    case Material::TextureType::DIFFUSE:
+            //                        texture->GetType() = "diffuse";
+            //                        break;
+            //                    case Material::TextureType::SPECULAR:
+            //                        texture->GetType() = "specular";
+            //                        break;
+            //                    case Material::TextureType::NORMAL:
+            //                        texture->GetType() = "normal";
+            //                        break;
+            //                    case Material::TextureType::EMISSIVE:
+            //                        texture->GetType() = "emissive";
+            //                        break;
+            //                        // Add other cases as needed
+            //                    default:
+            //                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+            //                        texture->GetType() = "unknown";
+            //                        break;
+            //                    }
+            //                }
+            //
+            //                textures.push_back(texture);
+            //            }
 
-        Mesh newMesh(vertices, indices, textures, material);
-        newMesh.CalculateBoundingBox();
-        meshes.push_back(std::move(newMesh));            
+            Mesh newMesh(vertices, indices, material);
+            newMesh.CalculateBoundingBox();
+            meshes.push_back(std::move(newMesh));
 
+        }
         CalculateBoundingBox();
-
         return true;
     }
 

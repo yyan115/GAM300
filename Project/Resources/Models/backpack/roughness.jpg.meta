@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001e0d8591b7359f-0003084678000015",
+        "guid": "001324b02d1c3553-00030dd4fa000015",
         "source": "../../Resources/Models/backpack/roughness.jpg",
         "compiled": "../../Resources/Models/backpack/roughness.dds",
-        "last_compiled": "2025-10-22 16:16:31.2529044"
+        "last_compiled": "2025-10-24 12:24:30.6952874"
     },
     "TextureMetaData": {
         "type": "diffuse",
