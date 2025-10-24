@@ -79,6 +79,7 @@ public:
 	
 	void Draw(Shader& shader, const Camera& camera);
 	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
+    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator);
 
 	// Helper functions for Bones
 	auto& GetBoneInfoMap() { return mBoneInfoMap; }
@@ -88,9 +89,7 @@ public:
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
 	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
 
-	// Helper function to get/bind animator
-	Animator* GetAnimator() const { return animator; }
-	void BindAnimator(Animator* a) { animator = a; }
+
     AABB GetBoundingBox() const { return modelBoundingBox; }
 
     void CalculateBoundingBox() 
@@ -122,8 +121,6 @@ private:
 	// Bone data
 	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
 	int mBoneCounter = 0;
-
-	Animator* animator = nullptr;
 	
     void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
     AABB modelBoundingBox;

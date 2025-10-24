@@ -17,15 +17,13 @@ bool AnimationSystem::Initialise()
 		{
 			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
 			auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
-			if (modelComp.model)
-			{
-				animComp.SetModel(&*modelComp.model);
-				animComp.AddClipFromFile("Resources/Models/kachujin/Animation/Slash.fbx");
-				animComp.Play();
-				std::cout << "[AnimationSystem] Initialized AnimationComponent for Entity " << entity << " with model and animation clip.\n";
-			}
-			else
-				std::cout << "[AnimationSystem] Warning: Entity " << entity << " has no model assigned for AnimationComponent.\n";
+
+			Animator* animator = animComp.EnsureAnimator();
+			modelComp.SetAnimator(animator);
+
+			animComp.AddClipFromFile("Resources/Models/kachujin/Kachujin.fbx", modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+			std::cout << "[AnimationSystem] AnimationComponent initialized for entity " << entity << "\n";
 		}
 	}
 	

@@ -4,25 +4,17 @@
 #include <assimp/postprocess.h>
 #include "Animation/AnimationComponent.hpp"
 
-AnimationComponent::AnimationComponent(Model* model) : model(model) 
+AnimationComponent::AnimationComponent()
 {
     animator = std::make_unique<Animator>(nullptr); // set clip later
-    if(model)
-		model->BindAnimator(animator.get());
 }
 
-AnimationComponent::~AnimationComponent() 
-{
-    if(model && model->GetAnimator() == animator.get())
-        model->BindAnimator(nullptr); // unbind from model if needed
-}
 
 AnimationComponent::AnimationComponent(const AnimationComponent& other)
     : isPlay(other.isPlay)
     , isLoop(other.isLoop)
     , speed(other.speed)
     , activeClip(other.activeClip)
-    , model(other.model)
 {
     // clone each clip
     clips.reserve(other.clips.size());
@@ -55,7 +47,6 @@ void swap(AnimationComponent& a, AnimationComponent& b) noexcept
     swap(a.isLoop, b.isLoop);
     swap(a.speed, b.speed);
     swap(a.activeClip, b.activeClip);
-    swap(a.model, b.model);
     swap(a.clips, b.clips);
     swap(a.animator, b.animator);
 }
@@ -76,50 +67,21 @@ void AnimationComponent::Update(float dt)
     }
 }
 
-void AnimationComponent::AddClipFromFile(const std::string& path)
+void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
-    if(!model) 
+	Assimp::Importer importer;
+
+	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
-        std::cerr << "AnimationComponent has no associated Model to resolve bones.\n";
+        ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
         return;
 	}
 
-	Assimp::Importer importer;
+	aiAnimation* aiAnim = scene->mAnimations[0]; // for now, just load the first animation
 
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate);
-
-    if (!scene || scene->mNumAnimations == 0)
-    {
-        std::cerr << "No animations found in file: " << path << "\n";
-        return;
-    }
-
-    for (unsigned int i = 0; i < scene->mNumAnimations; i++)
-    {
-        // Create one Animation for each aiAnimation
-        clips.push_back(std::make_unique<Animation>(
-            scene->mAnimations[i],   // the clip itself
-            scene->mRootNode,        // hierarchy for this model
-            model                    // resolve bone info from Model
-        ));
-
-		std::cout << "Loaded animation clip " << i << " from " << path << "\n\n\n\n\n";
-    }
-
-    if (!clips.empty()) 
-    {
-        activeClip = 0;
-        SyncAnimatorToActiveClip();
-    }
-}
-
-void AnimationComponent::SetModel(Model* m) 
-{
-    if(model && model->GetAnimator() == animator.get())
-		model->BindAnimator(nullptr); // unbind from old model if needed
-    model = m;
-    if (model)
-		model->BindAnimator(EnsureAnimator());
+    auto anim = std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
+	clips.push_back(std::move(anim));
 }
 
 

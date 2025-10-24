@@ -23,35 +23,37 @@ uniform bool isAnimated;
 
 void main()
 {
-   vec4 localPos = vec4(aPos, 1.0);
-vec3 localNrm = aNormal;
+    vec4 localPos = vec4(aPos, 1.0);
+    vec3 localNrm = aNormal;
 
-if (isAnimated) {
-    // position: weighted bone matrices
-    mat4 skin = mat4(0.0);
-    for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
-        int id = aBoneIds[i];
-        if (id < 0 || id >= MAX_BONES) continue;
-        skin += finalBonesMatrices[id] * aWeights[i];
+    if (isAnimated) 
+    {
+        // position: weighted bone matrices
+        mat4 skin = mat4(0.0);
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) 
+        {
+            int id = aBoneIds[i];
+            if (id < 0 || id >= MAX_BONES) continue;
+            skin += finalBonesMatrices[id] * aWeights[i];
+        }
+        localPos = skin * localPos;
+
+        // normal: weight the 3x3 parts (no inverse/transpose here)
+        vec3 n = vec3(0.0);
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+            int id = aBoneIds[i];
+            if (id < 0 || id >= MAX_BONES) continue;
+            n += mat3(finalBonesMatrices[id]) * aNormal * aWeights[i];
+        }
+        localNrm = normalize(n);
     }
-    localPos = skin * localPos;
 
-    // normal: weight the 3x3 parts (no inverse/transpose here)
-    vec3 n = vec3(0.0);
-    for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
-        int id = aBoneIds[i];
-        if (id < 0 || id >= MAX_BONES) continue;
-        n += mat3(finalBonesMatrices[id]) * aNormal * aWeights[i];
-    }
-    localNrm = normalize(n);
-}
+    // world transforms
+    vec4 worldPos = model * localPos;
+    FragPos = worldPos.xyz;
+    Normal  = normalize(mat3(transpose(inverse(model))) * localNrm);
 
-// world transforms
-vec4 worldPos = model * localPos;
-FragPos = worldPos.xyz;
-Normal  = normalize(mat3(transpose(inverse(model))) * localNrm);
-
-TexCoords   = aTexCoord;
-gl_Position = projection * view * worldPos;
+    TexCoords   = aTexCoord;
+    gl_Position = projection * view * worldPos;
 
 }

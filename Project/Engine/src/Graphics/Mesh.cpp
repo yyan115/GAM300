@@ -71,13 +71,11 @@ void Mesh::setupMesh()
 	// Texture
 	vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
-	// Bone IDs
-	glEnableVertexAttribArray(5);
-	glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, mBoneIDs));
+	//// Bone IDs
+	//vao.LinkAttrib(vbo, 5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, mBoneIDs));
 
-	// Weights
-	glEnableVertexAttribArray(6);
-	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, mWeights));
+	//// Weights
+	//vao.LinkAttrib(vbo, 6, 4, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, mWeights));
 
 	vao.Unbind();
 //#ifdef __ANDROID__

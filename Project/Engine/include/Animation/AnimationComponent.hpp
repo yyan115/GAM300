@@ -6,11 +6,9 @@
 class ENGINE_API AnimationComponent
 {
 public:
-	AnimationComponent() = default; // must provide Model*
+	AnimationComponent();
 
-    ~AnimationComponent();
-
-    AnimationComponent(Model* model);
+    ~AnimationComponent() = default;
 
     AnimationComponent(const AnimationComponent& other);
 
@@ -34,10 +32,7 @@ public:
     void SetClip(size_t index);      // choose a different clip
 
 	// Load Animation from file and add to clips
-	void AddClipFromFile(const std::string& path);
-
-	// Assign a new Model (if needed)
-	void SetModel(Model* m);
+	void AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
 
     // Access for systems that need it
     Animator& GetAnimator();
@@ -63,7 +58,6 @@ private:
 
     // Player
     std::unique_ptr<Animator> animator;
-    Model* model = nullptr;
 
     // Helpers
     void SyncAnimatorToActiveClip(); // call when clip changes

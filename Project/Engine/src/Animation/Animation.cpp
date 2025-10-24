@@ -5,12 +5,12 @@
 #include <assimp/scene.h>
 
 
-Animation::Animation(aiAnimation* animation, const aiNode* rootNode, Model* model) 
+Animation::Animation(aiAnimation* animation, const aiNode* rootNode, std::map<std::string, BoneInfo> boneInfoMap, int boneCount) 
 {
 	mDuration = animation->mDuration;
 	mTicksPerSecond = animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25;
 	ReadHeirarchyData(mRootNode, rootNode);
-	ReadMissingBones(animation, *model);
+	ReadMissingBones(animation, boneInfoMap, boneCount);
 }
 
 Bone* Animation::FindBone(const std::string& name)
@@ -25,11 +25,9 @@ Bone* Animation::FindBone(const std::string& name)
 	else return &(*iter);
 }
 
-void Animation::ReadMissingBones(const aiAnimation* animation, class Model& model)
+void Animation::ReadMissingBones(const aiAnimation* animation, std::map<std::string, BoneInfo> boneInfoMap, int boneCount)
 {
 	int size = animation->mNumChannels;
-	auto& boneInfoMap = model.GetBoneInfoMap(); //getting mBoneInfoMap from Model class
-	int& boneCount = model.GetBoneCount(); //getting the mBoneCounter from Model class
 
 	//reading channels(bones engaged in an animation and their keyframes)
 	for (int i = 0; i < size; i++)
@@ -43,7 +41,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, class Model& mode
 			boneCount++;
 		}
 
-		mBones.push_back(Bone(channel->mNodeName.data, boneInfoMap[channel->mNodeName.data].id, channel));
+		mBones.push_back(Bone(channel->mNodeName.data, boneInfoMap[boneName].id, channel));
 	}
 	mBoneInfoMap = boneInfoMap;
 }

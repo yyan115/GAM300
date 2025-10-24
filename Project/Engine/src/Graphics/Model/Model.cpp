@@ -594,30 +594,6 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 //#endif
 
-	// Check if the model has an animator
-	bool isAnim = (animator != nullptr);
-	const std::vector<glm::mat4>* finalBoneMatrices = nullptr;
-
-    if (isAnim)
-    {
-		const auto& transform = animator->GetFinalBoneMatrices();
-        if(transform.empty())
-			isAnim = false;
-        else
-			finalBoneMatrices = &transform;
-    }
-
-	shader.setBool("isAnimated", isAnim);
-    if (isAnim)
-    {
-		constexpr size_t MAX_BONES = 100;
-		const auto& transform = *finalBoneMatrices;
-        const size_t numBones = std::min(transform.size(), MAX_BONES);
-
-        for (size_t i = 0; i < numBones; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transform[i]);
-	}
-
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
 //#ifdef ANDROID
@@ -640,9 +616,58 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 	}
 
+	//std::cout << "Draw Entity with Material" << std::endl;
+
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
 //#endif
+}
+
+void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator)
+{
+    bool isAnim = false;
+    const std::vector<glm::mat4>* finalBoneMatrices = nullptr;
+
+    if (animator)
+    {
+        const auto& mats = animator->GetFinalBoneMatrices();
+        if (!mats.empty()) 
+        {
+            isAnim = true;
+            finalBoneMatrices = &mats;
+        }
+    }
+
+	shader.setBool("isAnimated", isAnim);
+
+    if (isAnim) 
+    {
+        constexpr size_t MAX_BONES = 100;
+        const auto& t = *finalBoneMatrices;
+        const size_t n = std::min(t.size(), MAX_BONES);
+        // Upload as you already do (or via one glUniformMatrix4fv with [0])
+        for (size_t i = 0; i < n; ++i)
+            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+    }
+
+
+    for (size_t i = 0; i < meshes.size(); ++i)
+    {
+        // Use entity material if available, otherwise use mesh default
+        std::shared_ptr<Material> meshMaterial = entityMaterial ? entityMaterial : meshes[i].material;
+        if (meshMaterial && meshMaterial != meshes[i].material) {
+            // Temporarily override the mesh material for this draw call
+            std::shared_ptr<Material> originalMaterial = meshes[i].material;
+            meshes[i].material = meshMaterial;
+            meshes[i].Draw(shader, camera);
+            meshes[i].material = originalMaterial; // Restore original
+        }
+        else {
+            meshes[i].Draw(shader, camera);
+        }
+    }
+
+	//std::cout << "Draw Entity with Material and Animator" << std::endl;
 }
 
 #ifdef __ANDROID__
