@@ -46,6 +46,7 @@ extern std::string DraggedFontPath;
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
 #include <RunTimeVar.hpp>
+#include <Panels/AssetInspector.hpp>
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
 template <typename T>
@@ -1242,6 +1243,19 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 		// Get selected asset for lock callback
 		GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
 
+		// Lock/Unlock callback
+		auto lockCallback = [this, selectedAsset]() {
+			inspectorLocked = !inspectorLocked;
+			if (inspectorLocked) {
+				lockedAsset = selectedAsset;
+				lockedEntity = static_cast<Entity>(-1);
+			}
+			else {
+				lockedEntity = static_cast<Entity>(-1);
+				lockedAsset = { 0, 0 };
+			}
+			};
+
 		// Handle different asset types
 		if (extension == ".mat") {
 			// Check if we have a cached material for this asset
@@ -1267,20 +1281,13 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
                 }
             }
 
-			// Use cached material with lock button
-			auto lockCallback = [this, selectedAsset]() {
-				inspectorLocked = !inspectorLocked;
-				if (inspectorLocked) {
-					lockedAsset = selectedAsset;
-					lockedEntity = static_cast<Entity>(-1);
-				} else {
-					lockedEntity = static_cast<Entity>(-1);
-					lockedAsset = {0, 0};
-				}
-			};
-
 			MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath, true, &inspectorLocked, lockCallback);
-		} else {
+		} 
+		else if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
+			std::shared_ptr<AssetMeta> assetMeta = AssetManager::GetInstance().GetAssetMeta(selectedAsset);
+			AssetInspector::DrawAssetMetaInfo(assetMeta, sourceFilePath, true, &inspectorLocked, lockCallback);
+		}
+		else {
 			ImGui::Text("Asset type not supported for editing in Inspector");
 		}
 

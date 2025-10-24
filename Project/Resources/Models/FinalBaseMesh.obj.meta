@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556d384f01c-0002d702fa000021",
+        "version": 7,
+        "guid": "001324b0647f6059-00030dd4fe000021",
         "source": "../../Resources/Models/FinalBaseMesh.obj",
         "compiled": "../../Resources/Models/FinalBaseMesh.mesh",
-        "last_compiled": "2025-10-05 13:43:37.0458926"
+        "last_compiled": "2025-10-24 12:24:32.1036850"
     }
 }

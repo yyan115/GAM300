@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001324b053e77f3e-00030dd500000027",
+        "source": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.png",
+        "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.dds",
+        "last_compiled": "2025-10-24 12:24:32.7785295"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -71,13 +71,16 @@ void Mesh::setupMesh()
 	// Texture
 	vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
-	//// Bone IDs
-	//vao.LinkAttrib(vbo, 5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, mBoneIDs));
+	// Tangent (location = 4)
+	vao.LinkAttrib(vbo, 4, 3, GL_FLOAT, sizeof(Vertex), (void*)(11 * sizeof(float)));
+	
+	// Bone IDs
+	vao.LinkAttrib(vbo, 5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, mBoneIDs));
 
-	//// Weights
-	//vao.LinkAttrib(vbo, 6, 4, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, mWeights));
+	// Weights
+	vao.LinkAttrib(vbo, 6, 4, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, mWeights));
 
-	vao.Unbind();
+
 //#ifdef __ANDROID__
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Vertex attributes linked successfully");
 //#endif

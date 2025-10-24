@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556f6527655-0002d702f6000013",
+        "version": 7,
+        "guid": "001324b065c4dcfe-00030dd4f200000d",
         "source": "../../Resources/Models/backpack/backpack.obj",
         "compiled": "../../Resources/Models/backpack/backpack.mesh",
-        "last_compiled": "2025-10-05 13:43:28.8104636"
+        "last_compiled": "2025-10-24 12:24:26.2250331"
     }
 }

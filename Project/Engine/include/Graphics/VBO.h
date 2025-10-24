@@ -15,6 +15,7 @@ struct Vertex {
 
 	int mBoneIDs[MaxBoneInfluences];
 	float mWeights[MaxBoneInfluences];
+	glm::vec3 tangent;
 };
 
 // VBO stores multiple vertices on the GPU memory

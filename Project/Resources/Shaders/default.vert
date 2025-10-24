@@ -3,18 +3,21 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec3 aColor;
 layout (location = 3) in vec2 aTexCoord;
+layout (location = 4) in vec3 aTangent;
 
 layout (location = 5) in ivec4 aBoneIds;
 layout (location = 6) in vec4 aWeights;
 
 out vec3 FragPos;
 out vec3 Normal;
+out vec3 Tangent;
 out vec3 color;
 out vec2 TexCoords;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat3 normalMatrix;
 
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
@@ -25,6 +28,8 @@ void main()
 {
     vec4 localPos = vec4(aPos, 1.0);
     vec3 localNrm = aNormal;
+
+    Tangent = normalMatrix * aTangent;
 
     if (isAnimated) 
     {

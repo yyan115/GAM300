@@ -1,14 +1,14 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556d87c733c-0002d702fa00003f",
+        "version": 7,
+        "guid": "001324b054c82999-00030dd50800004f",
         "source": "../../Resources/Textures/container2.png",
         "compiled": "../../Resources/Textures/container2.dds",
-        "last_compiled": "2025-10-05 13:43:37.4737564"
+        "last_compiled": "2025-10-24 12:24:36.4827402"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

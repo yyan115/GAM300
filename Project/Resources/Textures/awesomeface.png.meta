@@ -1,14 +1,14 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556c1bd6336-0002d702fa00003d",
+        "version": 7,
+        "guid": "001324b064f00fec-00030dd50800004d",
         "source": "../../Resources/Textures/awesomeface.png",
         "compiled": "../../Resources/Textures/awesomeface.dds",
-        "last_compiled": "2025-10-05 13:43:37.3936432"
+        "last_compiled": "2025-10-24 12:24:36.4361045"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

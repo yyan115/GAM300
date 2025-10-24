@@ -14,7 +14,8 @@ public:
 	GLenum target;
 
 	ENGINE_API Texture();
-	Texture(const char* texType, GLint slot);
+	Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
+	Texture(std::shared_ptr<TextureMeta> textureMeta);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
@@ -32,11 +33,13 @@ public:
 	// Deletes a texture
 	void Delete();
 
-	std::string GetType();
+	ENGINE_API std::string GetType();
 
 private:
 	//GLuint ID{};
 	std::string type;
+	bool flipUVs;
+	bool generateMipmaps;
 	//GLint unit;
 	//GLenum target;
 };

@@ -6,6 +6,8 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 
+const std::array<std::string, 3> TextureMeta::textureTypes = { "diffuse", "specular", "normal" };
+
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver)
 {
 	guid = _guid;
@@ -59,11 +61,11 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 }
 
-void TextureMeta::PopulateTextureMeta(uint32_t _ID, const std::string& _type, uint32_t _unit)
+void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps)
 {
-	ID = _ID;
 	type = _type;
-	unit = _unit;
+	flipUVs = _flipUVs;
+	generateMipmaps = _generateMipmaps;
 }
 
 void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
@@ -87,15 +89,13 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	}
 
 	const auto& assetMetaData = doc["TextureMetaData"];
-	if (assetMetaData.HasMember("id")) {
-		ID = static_cast<uint32_t>(assetMetaData["id"].GetInt());
-	}
-
 	if (assetMetaData.HasMember("type")) {
 		type = assetMetaData["type"].GetString();
 	}
-
-	if (assetMetaData.HasMember("unit")) {
-		unit = assetMetaData["unit"].GetInt();
+	if (assetMetaData.HasMember("flipUVs")) {
+		flipUVs = assetMetaData["flipUVs"].GetBool();
+	}
+	if (assetMetaData.HasMember("generateMipmaps")) {
+		generateMipmaps = assetMetaData["generateMipmaps"].GetBool();
 	}
 }

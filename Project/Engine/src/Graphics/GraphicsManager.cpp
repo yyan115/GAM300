@@ -223,7 +223,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	item.shader->Activate();
 
 	// Set up all matrices and uniforms
-	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
+	SetupMatrices(*item.shader,item.transform.ConvertToGLM(), true);
 
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
@@ -241,9 +241,16 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	//std::cout << "rendered model\n";
 }
 
-void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix)
+void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix, bool includeNormalMatrix)
 {
 	shader.setMat4("model", modelMatrix);
+
+	// Only calculate and send normal matrix if needed (for lit objects)
+	if (includeNormalMatrix)
+	{
+		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+		shader.setMat3("normalMatrix", normalMatrix);
+	}
 
 	if (currentCamera)
 	{
