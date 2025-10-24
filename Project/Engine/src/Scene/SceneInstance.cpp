@@ -18,6 +18,7 @@
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -35,16 +36,35 @@ void SceneInstance::Initialize() {
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	//// Add FPS text (mainly for android to see FPS)
-	//fpsText = ecsManager.CreateEntity();
-	//ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
-	//ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-	//TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-	//TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
-	//TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
-
+	// Add FPS text (mainly for android to see FPS)
+	// fpsText = ecsManager.CreateEntity();
+	// ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	// ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	// TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	// TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	// TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+	
+	// Test Camera Component
+	Entity testCamera = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(testCamera).name = "main camera";
+	ecsManager.transformSystem->SetLocalPosition(testCamera, {0, 0, 3});
+	// Add camera component
+	CameraComponent camComp;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 100.f;
+	camComp.isActive = true;
+	camComp.priority = 0;
+	camComp.useFreeRotation = true;
+	camComp.yaw = -90.0f;
+	camComp.pitch = 0.0f;
+	camComp.fov = 45.0f;
+	ecsManager.AddComponent<CameraComponent>(testCamera, camComp);
+	// Initialize camera system
+	ecsManager.cameraSystem->Initialise();
 	// Sets camera
-	gfxManager.SetCamera(&camera);
+	gfxManager.SetCamera(ecsManager.cameraSystem->GetActiveCamera());
+	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
+	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
@@ -91,6 +111,7 @@ void SceneInstance::Update(double dt) {
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
 	mainECS.physicsSystem->physicsSyncBack(mainECS);
 	mainECS.transformSystem->Update();
+	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
@@ -116,7 +137,8 @@ void SceneInstance::Draw() {
 	//transform = glm::scale(transform, glm::vec3(0.1f, 0.1f, 0.1f));
 	//RenderSystem::getInstance().Submit(backpackModel, transform, shader);
 
-	gfxManager.SetCamera(&camera);
+	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+
 	if (mainECS.modelSystem)
 	{
 		mainECS.modelSystem->Update();
@@ -210,21 +232,47 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKeyDown(Input::Key::ESC))
 		WindowManager::SetWindowShouldClose();
 
+	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	Entity activeCam = mainECS.cameraSystem->GetActiveCameraEntity();
+
+	if (activeCam == 0) return;
+
+	auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+
+	// Only process input if using free rotation (gameplay camera)
+	if (!camComp.useFreeRotation) return;
+
+	Camera* camera = mainECS.cameraSystem->GetActiveCamera();
+
 	float cameraSpeed = 2.5f * deltaTime;
 	if (InputManager::GetKey(Input::Key::W))
-		camera.Position += cameraSpeed * camera.Front;
+		camera->ProcessKeyboard(FORWARD, deltaTime);
 	if (InputManager::GetKey(Input::Key::S))
-		camera.Position -= cameraSpeed * camera.Front;
+		camera->ProcessKeyboard(BACKWARD, deltaTime);
 	if (InputManager::GetKey(Input::Key::A))
-		camera.Position -= glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
+		camera->ProcessKeyboard(LEFT, deltaTime);
 	if (InputManager::GetKey(Input::Key::D))
-		camera.Position += glm::normalize(glm::cross(camera.Front, camera.Up)) * cameraSpeed;
+		camera->ProcessKeyboard(RIGHT, deltaTime);
+
+	// Zoom with keys (N to zoom out, M to zoom in)
+	if (InputManager::GetKey(Input::Key::N))
+		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime);  // Zoom out
+	if (InputManager::GetKey(Input::Key::M))
+		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
+
+	// Test camera shake with Spacebar
+	if (InputManager::GetKeyDown(Input::Key::SPACE))
+		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
 	// MADE IT so that you must drag to look around
 	// 
 	// Only process mouse look when left mouse button is held down
 	if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
 	{
+		static float lastX = 0.0f;
+		static float lastY = 0.0f;
+		static bool firstMouse = true;
+
 		float xpos = (float)InputManager::GetMouseX();
 		float ypos = (float)InputManager::GetMouseY();
 
@@ -253,11 +301,17 @@ void SceneInstance::processInput(float deltaTime)
 		lastX = xpos;
 		lastY = ypos;
 
-		camera.ProcessMouseMovement(xoffset, yoffset);
+		camera->ProcessMouseMovement(xoffset, yoffset);
 	}
 	else
 	{
 		// When mouse button is released, reset for next touch
+		static bool firstMouse = true;
 		firstMouse = true;
 	}
+
+	// Sync camera position back to transform
+	camComp.fov = camera->Zoom;
+	Vector3D newPos(camera->Position.x, camera->Position.y, camera->Position.z);
+	mainECS.transformSystem->SetLocalPosition(activeCam, newPos);
 }

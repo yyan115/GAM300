@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       AndroidPlatform.h
+\author     Yan Yu
+\date       Oct 8, 2025
+\brief      Platform abstraction layer for Android, implementing the IPlatform interface
+            for Android-specific window, graphics, input, and asset management
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #pragma once
 
 #include "IPlatform.h"

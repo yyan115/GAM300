@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       AndroidPlatform.cpp
+\author     Yan Yu
+\date       Oct 8, 2025
+\brief      Implementation of Android platform abstraction layer with EGL context
+            management, asset loading via AssetManager, and touch input handling
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 
 #ifdef ANDROID

@@ -18,7 +18,6 @@ const float SPEED = 2.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
-
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
 {
@@ -36,6 +35,10 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+
+    // Zoom limits (configurable) - ADDED THESE
+    float MinZoom = 1.0f;
+    float MaxZoom = 90.0f;
 
     // 2D orthographic zoom level (1.0 = normal size, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
     float OrthoZoomLevel;
@@ -77,7 +80,6 @@ public:
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
-
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -103,13 +105,14 @@ public:
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
+    // UPDATED THIS METHOD TO USE MinZoom/MaxZoom
     void ProcessMouseScroll(float yoffset)
     {
         Zoom -= (float)yoffset;
-        if (Zoom < 1.0f)
-            Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+        if (Zoom < MinZoom)
+            Zoom = MinZoom;
+        if (Zoom > MaxZoom)
+            Zoom = MaxZoom;
     }
 
     glm::vec3 GetPosition() const

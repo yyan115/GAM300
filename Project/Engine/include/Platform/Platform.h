@@ -1,3 +1,17 @@
+/* Start Header ************************************************************************/
+/*!
+\file       Platform.h
+\author     Yan Yu
+\date       Oct 8, 2025
+\brief      Platform-specific type definitions and includes for cross-platform support
+            between Android and Desktop platforms
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #pragma once
 
 // Include OpenGL abstraction first so GLFW doesn't include OpenGL headers
