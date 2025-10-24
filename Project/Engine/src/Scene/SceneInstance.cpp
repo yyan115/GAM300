@@ -101,9 +101,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	fpsTextComponent.text = std::to_string(TimeManager::GetFps());
-	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	//fpsTextComponent.text = std::to_string(TimeManager::GetFps());
+	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
