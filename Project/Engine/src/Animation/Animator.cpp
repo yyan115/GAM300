@@ -35,8 +35,12 @@ void Animator::PlayAnimation(Animation* pAnimation)
 {
 	mCurrentAnimation = pAnimation;
 	mCurrentTime = 0.0f;
-	if(pAnimation)
-		mFinalBoneMatrices.assign(pAnimation->GetBoneIDMap().size(), glm::mat4(1.0f));
+	if (pAnimation) 
+	{
+		size_t n = pAnimation->GetBoneIDMap().size();
+		mFinalBoneMatrices.assign(n ? n : 1, glm::mat4(1.0f));
+	}
+
 }
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)

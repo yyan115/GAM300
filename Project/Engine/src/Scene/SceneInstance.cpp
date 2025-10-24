@@ -94,6 +94,14 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Animation system initialized");
 	InitializePhysics();
 
+	//glEnable(GL_DEBUG_OUTPUT);
+	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	//glDebugMessageCallback(
+	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
+	//		fprintf(stderr, "GL: %s\n", msg);
+	//	},
+	//	nullptr);
+
 	ENGINE_PRINT("Scene Initialized\n");
 }
 

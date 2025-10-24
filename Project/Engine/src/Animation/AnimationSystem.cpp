@@ -12,7 +12,8 @@ bool AnimationSystem::Initialise()
 	for (const auto& entity : entities)
 	{
 		auto modelCompOpt = ecsManager.TryGetComponent<ModelRenderComponent>(entity);
-		if (modelCompOpt.has_value())
+		auto animCompOpt = ecsManager.TryGetComponent<AnimationComponent>(entity);
+		if (modelCompOpt.has_value() && animCompOpt.has_value())
 		{
 			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
 			auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);

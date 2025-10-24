@@ -66,18 +66,12 @@ void AnimationComponent::Update(float dt)
 
 
     if (isPlay && !clips.empty())
-    {
-
-
+    {   
         animator->UpdateAnimation(dt * speed, isLoop);
         if (!isLoop)
         {
-			float dur = clips[activeClip]->GetDuration() / clips[activeClip]->GetTicksPerSecond();
-            if (animator->GetCurrentTime() >= dur)
-            {
-				isPlay = false; // stop at end
-            }
-
+            const float durTicks = clips[activeClip]->GetDuration();       // ticks
+            if (animator->GetCurrentTime() >= durTicks) isPlay = false;
         }
     }
 }
