@@ -297,7 +297,11 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         bi.SetGravityFactor(rb.id, rb.gravityFactor);
+        bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));
+        //std::cout << "angular velocity is " << bi.GetAngularVelocity(rb.id) << std::endl;
+
     }
+     
 
 
 

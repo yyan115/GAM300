@@ -2493,7 +2493,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "Matrix4x4",
@@ -2660,7 +2660,24 @@
                         },
                         {
                             "type": "float",
-                            "data": -1
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         }
                     ]
                 },
@@ -2935,6 +2952,23 @@
                         {
                             "type": "float",
                             "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         }
                     ]
                 },
@@ -4037,6 +4071,23 @@
                         {
                             "type": "float",
                             "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         }
                     ]
                 },
@@ -4078,7 +4129,7 @@
         },
         {
             "id": 17,
-            "guid": "007dc1873d76fec7-00030b60c6000001",
+            "guid": "003b77573fa0fecd-0003100c60000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -4350,7 +4401,7 @@
         },
         {
             "id": 18,
-            "guid": "007dc1875d1ab850-00030b60c6000003",
+            "guid": "003b775743136bc0-0003100c60000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"

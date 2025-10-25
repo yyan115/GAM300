@@ -2096,12 +2096,22 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 			if (ImGui::IsItemHovered()) {
 				ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
 			}
-
+			//GRAVITY 
 			ImGui::Text("Gravity Factor");
 			ImGui::SameLine();
 			if (ImGui::DragFloat("##Gravity Factor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
 				rigidBody.motion_dirty = true; // optional: mark body for recreation
 			}			
+			//ANGULAR VELOCITY
+			ImGui::Text("Angular Velocity");
+			ImGui::SameLine();
+			float vel[3] = { rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z};
+			if (ImGui::DragFloat3("##Angular Velocity", vel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
+				rigidBody.angularVel.x = vel[0];
+				rigidBody.angularVel.y = vel[1];
+				rigidBody.angularVel.z = vel[2];
+				rigidBody.motion_dirty = true; // optional: mark body for recreation
+			}
 		}
 		 
 		ImGui::PopID();

@@ -1,6 +1,7 @@
 #pragma once
 #include "Physics/JoltInclude.hpp"
 #include "Reflection/ReflectionBase.hpp"
+#include "Math/Vector3D.hpp"
 
 enum class Motion : int { 
 	Static = 0, 
@@ -13,6 +14,7 @@ struct RigidBodyComponent {
 	int motionID;
 	bool ccd = false; // continuous collision detection
 	float gravityFactor = 1.0f;
+	Vector3D angularVel = { 0.0f,0.0f,0.0f };
 
 	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static
