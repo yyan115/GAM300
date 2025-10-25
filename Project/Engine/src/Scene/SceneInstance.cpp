@@ -137,6 +137,12 @@ void SceneInstance::Draw() {
 	//transform = glm::scale(transform, glm::vec3(0.1f, 0.1f, 0.1f));
 	//RenderSystem::getInstance().Submit(backpackModel, transform, shader);
 
+	// Update camera from component (syncs Transform position to Camera object even in edit mode)
+	Entity activeCameraEntity = mainECS.cameraSystem->GetActiveCameraEntity();
+	if (activeCameraEntity != 0) {
+		mainECS.cameraSystem->UpdateCameraFromComponent(activeCameraEntity);
+	}
+
 	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
 
 	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
