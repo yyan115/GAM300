@@ -8,6 +8,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
+#include <Graphics/Camera/CameraComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
@@ -378,6 +379,13 @@ void InspectorPanel::OnImGuiRender() {
 					if (ecsManager.HasComponent<RigidBodyComponent>(displayEntity)) {
 						if (DrawComponentHeaderWithRemoval("RigidBody", displayEntity, "RigidBodyComponent")) {
 							DrawRigidBodyComponent(displayEntity);
+						}
+					}
+
+					// Draw Camera Component if present
+					if (ecsManager.HasComponent<CameraComponent>(displayEntity)) {
+						if (DrawComponentHeaderWithRemoval("Camera", displayEntity, "CameraComponent")) {
+							DrawCameraComponent(displayEntity);
 						}
 					}
 
@@ -1704,6 +1712,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				ImGui::EndMenu();
 			}
 
+			// Camera Components
+			if (ImGui::BeginMenu("Camera")) {
+				if (!ecsManager.HasComponent<CameraComponent>(entity)) {
+					if (ImGui::MenuItem("Camera")) {
+						AddComponent(entity, "CameraComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 			// Physics Components
 			if (ImGui::BeginMenu("Physics")) {
 				if (!ecsManager.HasComponent<ColliderComponent>(entity)) {
@@ -2001,6 +2019,34 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<LayerComponent>(entity, component);
 			std::cout << "[Inspector] Added LayerComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "CameraComponent") {
+			CameraComponent component;
+			// Set reasonable defaults
+			component.isActive = false;  // Don't activate immediately
+			component.priority = 0;
+			component.fov = 45.0f;
+			component.nearPlane = 0.1f;
+			component.farPlane = 100.0f;
+			component.projectionType = ProjectionType::PERSPECTIVE;
+			component.useFreeRotation = true;
+			component.yaw = -90.0f;
+			component.pitch = 0.0f;
+			component.movementSpeed = 2.5f;
+			component.mouseSensitivity = 0.1f;
+			component.minZoom = 1.0f;
+			component.maxZoom = 90.0f;
+
+			ecsManager.AddComponent<CameraComponent>(entity, component);
+
+			// Ensure entity has Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Camera positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added CameraComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -2117,6 +2163,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
 				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CameraComponent") {
+				ecsManager.RemoveComponent<CameraComponent>(request.entity);
+				std::cout << "[Inspector] Removed CameraComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -2324,5 +2374,144 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 	}
 	catch (const std::exception& e) {
 		ImGui::Text("Error rendering RigidBodyComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawCameraComponent(Entity entity) {
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		CameraComponent& camera = ecsManager.GetComponent<CameraComponent>(entity);
+
+		ImGui::PushID("CameraComponent");
+
+		// Active & Priority
+		ImGui::Checkbox("Active", &camera.isActive);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Enable this camera for gameplay. Highest priority active camera will be used.");
+		}
+
+		ImGui::Text("Priority");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		ImGui::DragInt("##Priority", &camera.priority, 1, -100, 100);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Higher priority cameras are selected first when active");
+		}
+
+		ImGui::Separator();
+
+		// Projection Type
+		ImGui::Text("Projection");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		const char* projectionTypes[] = { "Perspective", "Orthographic" };
+		int currentProjection = static_cast<int>(camera.projectionType);
+		EditorComponents::PushComboColors();
+		if (ImGui::Combo("##ProjectionType", &currentProjection, projectionTypes, IM_ARRAYSIZE(projectionTypes))) {
+			camera.projectionType = static_cast<ProjectionType>(currentProjection);
+		}
+		EditorComponents::PopComboColors();
+
+		// Projection Settings
+		if (camera.projectionType == ProjectionType::PERSPECTIVE) {
+			ImGui::Text("FOV");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::SliderFloat("##FOV", &camera.fov, 1.0f, 120.0f, "%.1f");
+		} else {
+			ImGui::Text("Ortho Size");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##OrthoSize", &camera.orthoSize, 0.1f, 0.1f, 100.0f, "%.2f");
+		}
+
+		// Clipping Planes
+		ImGui::Text("Near Plane");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		ImGui::DragFloat("##NearPlane", &camera.nearPlane, 0.01f, 0.001f, camera.farPlane - 0.1f, "%.3f");
+
+		ImGui::Text("Far Plane");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-1);
+		ImGui::DragFloat("##FarPlane", &camera.farPlane, 1.0f, camera.nearPlane + 0.1f, 10000.0f, "%.1f");
+
+		ImGui::Separator();
+
+		// Rotation Mode
+		ImGui::Checkbox("Free Rotation", &camera.useFreeRotation);
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Use yaw/pitch for FPS-style camera. Uncheck for look-at target camera.");
+		}
+
+		if (camera.useFreeRotation) {
+			// Yaw & Pitch
+			ImGui::Text("Yaw");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##Yaw", &camera.yaw, 1.0f, -180.0f, 180.0f, "%.1f");
+
+			ImGui::Text("Pitch");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##Pitch", &camera.pitch, 1.0f, -89.0f, 89.0f, "%.1f");
+		} else {
+			// Target & Up vectors
+			ImGui::Text("Target");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat3("##Target", &camera.target.x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+			ImGui::Text("Up");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat3("##Up", &camera.up.x, 0.1f, -1.0f, 1.0f, "%.2f");
+		}
+
+		ImGui::Separator();
+
+		// Movement Settings
+		if (ImGui::CollapsingHeader("Movement Settings", ImGuiTreeNodeFlags_None)) {
+			ImGui::Indent();
+
+			ImGui::Text("Speed");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##MovementSpeed", &camera.movementSpeed, 0.1f, 0.1f, 100.0f, "%.2f");
+
+			ImGui::Text("Sensitivity");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##MouseSensitivity", &camera.mouseSensitivity, 0.01f, 0.01f, 2.0f, "%.3f");
+
+			ImGui::Unindent();
+		}
+
+		// Zoom Settings
+		if (ImGui::CollapsingHeader("Zoom Settings", ImGuiTreeNodeFlags_None)) {
+			ImGui::Indent();
+
+			ImGui::Text("Min Zoom");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##MinZoom", &camera.minZoom, 0.1f, 0.1f, camera.maxZoom - 1.0f, "%.1f");
+
+			ImGui::Text("Max Zoom");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##MaxZoom", &camera.maxZoom, 0.1f, camera.minZoom + 1.0f, 180.0f, "%.1f");
+
+			ImGui::Text("Zoom Speed");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##ZoomSpeed", &camera.zoomSpeed, 0.1f, 0.1f, 20.0f, "%.2f");
+
+			ImGui::Unindent();
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error rendering CameraComponent: %s", e.what());
 	}
 }

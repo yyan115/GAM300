@@ -139,6 +139,9 @@ void SceneInstance::Draw() {
 
 	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
 
+	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
+	gfxManager.UpdateFrustum();
+
 	if (mainECS.modelSystem)
 	{
 		mainECS.modelSystem->Update();

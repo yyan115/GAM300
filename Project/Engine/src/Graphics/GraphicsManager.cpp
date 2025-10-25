@@ -104,19 +104,14 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	}
 }
 
-void GraphicsManager::Render()
+void GraphicsManager::UpdateFrustum()
 {
-	if (auto* platform = WindowManager::GetPlatform()) {
-		platform->MakeContextCurrent();
-	}
-
-	if (!currentCamera) 
+	if (!currentCamera)
 	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
 		return;
 	}
 
-	if (frustumCullingEnabled) 
+	if (frustumCullingEnabled)
 	{
 		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
 		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
@@ -131,7 +126,7 @@ void GraphicsManager::Render()
 		glm::mat4 view;
 		glm::mat4 projection;
 
-		if (IsRenderingForEditor() && Is2DMode()) 
+		if (IsRenderingForEditor() && Is2DMode())
 		{
 			view = glm::mat4(1.0f);
 			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
@@ -144,7 +139,7 @@ void GraphicsManager::Render()
 			float top = currentCamera->Position.y + halfHeight;
 			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
 		}
-		else 
+		else
 		{
 			view = currentCamera->GetViewMatrix();
 			projection = glm::perspective(
@@ -157,6 +152,22 @@ void GraphicsManager::Render()
 		glm::mat4 viewProjection = projection * view;
 		viewFrustum.Update(viewProjection);
 	}
+}
+
+void GraphicsManager::Render()
+{
+	if (auto* platform = WindowManager::GetPlatform()) {
+		platform->MakeContextCurrent();
+	}
+
+	if (!currentCamera)
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
+		return;
+	}
+
+	// Update frustum for culling
+	UpdateFrustum();
 
 	// Sort render queue by render order (lower numbers render first)
 	std::sort(renderQueue.begin(), renderQueue.end(),

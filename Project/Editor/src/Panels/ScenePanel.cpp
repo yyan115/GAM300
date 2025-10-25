@@ -14,6 +14,7 @@
 #include "Hierarchy/ParentComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Material.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -528,6 +529,7 @@ void ScenePanel::OnImGuiRender()
 
             // Draw collider gizmos for selected entity
             DrawColliderGizmos();
+            DrawCameraGizmos();
 
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
@@ -1409,5 +1411,196 @@ void ScenePanel::DrawColliderGizmos() {
     }
     catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
+    }
+}
+
+void ScenePanel::DrawCameraGizmos() {
+    Entity selectedEntity = GUIManager::GetSelectedEntity();
+    if (selectedEntity == static_cast<Entity>(-1)) return;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Only draw if entity has a camera component
+        if (!ecsManager.HasComponent<CameraComponent>(selectedEntity)) return;
+        if (!ecsManager.HasComponent<Transform>(selectedEntity)) return;
+
+        CameraComponent& camera = ecsManager.GetComponent<CameraComponent>(selectedEntity);
+        Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+
+        // Get window and viewport info
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        float aspectRatio = windowSize.x / windowSize.y;
+
+        // Build editor view-projection matrix
+        glm::mat4 view = editorCamera.GetViewMatrix();
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+        glm::mat4 vp = projection * view;
+
+        // Get camera world position from transform
+        glm::vec3 camPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+
+        // Calculate camera forward, right, up vectors
+        glm::vec3 camForward, camRight, camUp;
+        if (camera.useFreeRotation) {
+            // Use yaw/pitch to calculate direction
+            float yawRad = glm::radians(camera.yaw);
+            float pitchRad = glm::radians(camera.pitch);
+            camForward.x = cos(yawRad) * cos(pitchRad);
+            camForward.y = sin(pitchRad);
+            camForward.z = sin(yawRad) * cos(pitchRad);
+            camForward = glm::normalize(camForward);
+        } else {
+            // Use target direction
+            camForward = glm::normalize(camera.target);
+        }
+        camRight = glm::normalize(glm::cross(camForward, camera.up));
+        camUp = glm::normalize(glm::cross(camRight, camForward));
+
+        // Get ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+
+        // Project 3D point to screen space
+        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
+            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
+            if (clipSpace.w <= 0.0001f) {
+                isVisible = false;
+                return ImVec2(-10000, -10000);
+            }
+            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
+            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
+            isVisible = true;
+            return ImVec2(screenX, screenY);
+        };
+
+        // Colors
+        ImU32 frustumColor = IM_COL32(255, 255, 255, 255);  // White
+        ImU32 directionColor = IM_COL32(255, 255, 255, 255);  // White
+
+        // ==== 1. Draw Camera Direction Arrow ====
+        glm::vec3 arrowEnd = camPos + camForward * 1.5f;
+        bool vis1, vis2;
+        ImVec2 startScreen = projectToScreen(camPos, vis1);
+        ImVec2 endScreen = projectToScreen(arrowEnd, vis2);
+
+        if (vis1 && vis2) {
+            // Draw arrow line
+            drawList->AddLine(startScreen, endScreen, directionColor, 3.0f);
+
+            // Arrow head
+            ImVec2 dir = ImVec2(endScreen.x - startScreen.x, endScreen.y - startScreen.y);
+            float len = sqrt(dir.x * dir.x + dir.y * dir.y);
+            if (len > 0) {
+                dir.x /= len;
+                dir.y /= len;
+                ImVec2 perp = ImVec2(-dir.y, dir.x);
+
+                ImVec2 head1 = ImVec2(endScreen.x - dir.x * 12 + perp.x * 6, endScreen.y - dir.y * 12 + perp.y * 6);
+                ImVec2 head2 = ImVec2(endScreen.x - dir.x * 12 - perp.x * 6, endScreen.y - dir.y * 12 - perp.y * 6);
+
+                drawList->AddLine(endScreen, head1, directionColor, 2.5f);
+                drawList->AddLine(endScreen, head2, directionColor, 2.5f);
+            }
+        }
+
+        // ==== 2. Draw Camera Frustum ====
+        float nearDist = camera.nearPlane;
+        float farDist = glm::min(camera.farPlane, 20.0f);  // Cap far plane for visualization
+
+        float nearHeight, nearWidth, farHeight, farWidth;
+        if (camera.projectionType == ProjectionType::PERSPECTIVE) {
+            // Calculate frustum dimensions for perspective camera
+            float fovRad = glm::radians(camera.fov);
+            nearHeight = 2.0f * nearDist * tan(fovRad / 2.0f);
+            nearWidth = nearHeight * aspectRatio;
+            farHeight = 2.0f * farDist * tan(fovRad / 2.0f);
+            farWidth = farHeight * aspectRatio;
+        } else {
+            // Orthographic camera - constant size
+            nearHeight = camera.orthoSize * 2.0f;
+            nearWidth = nearHeight * aspectRatio;
+            farHeight = nearHeight;
+            farWidth = nearWidth;
+        }
+
+        // Calculate frustum corner points in world space
+        glm::vec3 nearCenter = camPos + camForward * nearDist;
+        glm::vec3 farCenter = camPos + camForward * farDist;
+
+        // Near plane corners
+        glm::vec3 nearCorners[4] = {
+            nearCenter + camUp * (nearHeight * 0.5f) - camRight * (nearWidth * 0.5f),  // Top-left
+            nearCenter + camUp * (nearHeight * 0.5f) + camRight * (nearWidth * 0.5f),  // Top-right
+            nearCenter - camUp * (nearHeight * 0.5f) + camRight * (nearWidth * 0.5f),  // Bottom-right
+            nearCenter - camUp * (nearHeight * 0.5f) - camRight * (nearWidth * 0.5f)   // Bottom-left
+        };
+
+        // Far plane corners
+        glm::vec3 farCorners[4] = {
+            farCenter + camUp * (farHeight * 0.5f) - camRight * (farWidth * 0.5f),  // Top-left
+            farCenter + camUp * (farHeight * 0.5f) + camRight * (farWidth * 0.5f),  // Top-right
+            farCenter - camUp * (farHeight * 0.5f) + camRight * (farWidth * 0.5f),  // Bottom-right
+            farCenter - camUp * (farHeight * 0.5f) - camRight * (farWidth * 0.5f)   // Bottom-left
+        };
+
+        // Project corners to screen
+        ImVec2 nearScreenCorners[4];
+        ImVec2 farScreenCorners[4];
+        bool nearVisible[4], farVisible[4];
+
+        for (int i = 0; i < 4; i++) {
+            nearScreenCorners[i] = projectToScreen(nearCorners[i], nearVisible[i]);
+            farScreenCorners[i] = projectToScreen(farCorners[i], farVisible[i]);
+        }
+
+        // Draw near plane rectangle
+        for (int i = 0; i < 4; i++) {
+            int next = (i + 1) % 4;
+            if (nearVisible[i] && nearVisible[next]) {
+                drawList->AddLine(nearScreenCorners[i], nearScreenCorners[next], frustumColor, 2.0f);
+            }
+        }
+
+        // Draw far plane rectangle
+        for (int i = 0; i < 4; i++) {
+            int next = (i + 1) % 4;
+            if (farVisible[i] && farVisible[next]) {
+                drawList->AddLine(farScreenCorners[i], farScreenCorners[next], frustumColor, 2.0f);
+            }
+        }
+
+        // Draw connecting lines (near to far)
+        for (int i = 0; i < 4; i++) {
+            if (nearVisible[i] && farVisible[i]) {
+                drawList->AddLine(nearScreenCorners[i], farScreenCorners[i], frustumColor, 2.0f);
+            }
+        }
+
+        // ==== 3. Draw Camera Icon ====
+        bool camIconVis;
+        ImVec2 iconPos = projectToScreen(camPos, camIconVis);
+        if (camIconVis) {
+            // Draw camera body (rectangle)
+            drawList->AddRectFilled(
+                ImVec2(iconPos.x - 8, iconPos.y - 6),
+                ImVec2(iconPos.x + 8, iconPos.y + 6),
+                IM_COL32(200, 200, 200, 200)
+            );
+            drawList->AddRect(
+                ImVec2(iconPos.x - 8, iconPos.y - 6),
+                ImVec2(iconPos.x + 8, iconPos.y + 6),
+                frustumColor,
+                0.0f, 0, 2.0f
+            );
+
+            // Draw lens (circle)
+            drawList->AddCircleFilled(iconPos, 4.0f, IM_COL32(150, 150, 150, 255));
+            drawList->AddCircle(iconPos, 4.0f, IM_COL32(255, 255, 255, 255), 0, 1.5f);
+        }
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error drawing camera gizmos: ", e.what(), "\n");
     }
 }

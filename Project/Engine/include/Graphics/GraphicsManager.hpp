@@ -62,6 +62,7 @@ public:
     void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
     bool IsFrustumCullingEnabled() const { return frustumCullingEnabled; }
     const Frustum& GetFrustum() const { return viewFrustum; }
+    void UpdateFrustum(); // Update frustum based on current camera and viewport
 
 private:
     GraphicsManager() = default;
