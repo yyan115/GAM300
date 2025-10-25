@@ -648,6 +648,11 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 //#endif
 
+
+    bool isAnim = false;
+
+	shader.setBool("isAnimated", isAnim);
+
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
 //#ifdef ANDROID
@@ -670,7 +675,6 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 	}
 
-	//std::cout << "Draw Entity with Material" << std::endl;
 
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
@@ -721,7 +725,6 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         }
     }
 
-	//std::cout << "Draw Entity with Material and Animator" << std::endl;
 }
 
 #ifdef __ANDROID__
