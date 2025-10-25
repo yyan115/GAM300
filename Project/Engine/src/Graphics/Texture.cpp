@@ -317,6 +317,37 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
 
+#ifdef EDITOR
+	// Reconstruct the BC5 preview for the asset browser if it's a normal map
+	if (type == "normal") {
+		// Decompress BC5 to RGBA
+		CMP_Texture srcTexture = {};
+		srcTexture.dwSize = sizeof(CMP_Texture);
+		srcTexture.dwWidth = texture.extent().x;
+		srcTexture.dwHeight = texture.extent().y;
+		srcTexture.format = CMP_FORMAT_BC5;
+		srcTexture.dwDataSize = static_cast<CMP_DWORD>(texture.size());
+		srcTexture.pData = reinterpret_cast<CMP_BYTE*>(texture.data());
+
+		CMP_Texture dstTexture = {};
+		dstTexture.dwSize = sizeof(CMP_Texture);
+		dstTexture.dwWidth = srcTexture.dwWidth;
+		dstTexture.dwHeight = srcTexture.dwHeight;
+		dstTexture.format = CMP_FORMAT_RGBA_8888;  // Use RGBA instead of RG
+		dstTexture.dwDataSize = CMP_CalculateBufferSize(&dstTexture);
+		dstTexture.pData = (CMP_BYTE*)malloc(dstTexture.dwDataSize);
+
+		CMP_CompressOptions options = {};
+		options.dwSize = sizeof(options);
+
+		CMP_ERROR status = CMP_ConvertTexture(&srcTexture, &dstTexture, &options, nullptr);
+		if (status == CMP_OK) {
+			ReconstructBC5Preview(dstTexture.pData, dstTexture.dwWidth, dstTexture.dwHeight);
+			free(dstTexture.pData);
+		}
+	}
+#endif
+
 	//std::cout << "[TEXTURE] DEBUG: Texture loading completed successfully! Final ID: " << ID << std::endl;
 	return true;
 }
@@ -444,4 +475,50 @@ void Texture::Delete()
 
 std::string Texture::GetType() {
 	return type;
+}
+
+void Texture::ReconstructBC5Preview(const uint8_t* rgbaTexData, int texWidth, int texHeight) {
+	std::vector<uint8_t> outRGBA;
+	outRGBA.resize(texWidth * texHeight * 4);
+
+	for (int i = 0; i < texWidth * texHeight; i++) {
+		// BC5 stores normals in RG channels after decompression
+		// The values are in [0,255] representing normalized range
+		uint8_t rByte = rgbaTexData[i * 4 + 0];
+		uint8_t gByte = rgbaTexData[i * 4 + 1];
+
+		// Convert [0,255] to [-1,1]
+		// Standard encoding: 128 = 0.0, 0 = -1.0, 255 = +1.0
+		float nx = (rByte - 128.0f) / 127.0f;
+		float ny = (gByte - 128.0f) / 127.0f;
+
+		// Clamp to [-1, 1]
+		nx = std::max(-1.0f, std::min(1.0f, nx));
+		ny = std::max(-1.0f, std::min(1.0f, ny));
+
+		// Reconstruct Z (always positive for standard normal maps)
+		float nz = sqrtf(std::max(0.0f, 1.0f - nx * nx - ny * ny));
+
+		// Convert normal vector to RGB color [0,255]
+		// (0,0,1) normal should map to (128,128,255) = light blue
+		outRGBA[i * 4 + 0] = (uint8_t)((nx + 1.0f) * 127.5f);  // R
+		outRGBA[i * 4 + 1] = (uint8_t)((ny + 1.0f) * 127.5f);  // G
+		outRGBA[i * 4 + 2] = (uint8_t)((nz + 1.0f) * 127.5f);  // B
+		outRGBA[i * 4 + 3] = 255;
+	}
+
+	// Generate OpenGL texture for preview
+	glGenTextures(1, &previewID);
+	glBindTexture(GL_TEXTURE_2D, previewID);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, outRGBA.data());
+
+	// Set filtering and wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

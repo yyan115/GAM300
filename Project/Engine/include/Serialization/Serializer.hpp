@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
 #include <ECS/NameComponent.hpp>
+#include "ECS/TagComponent.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "ECS/TagManager.hpp"
+#include "ECS/layerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
@@ -36,6 +40,8 @@ public:
 	static void DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON);
 	static void DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON);
 	static void DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON);
+	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
+	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
 
 private:
 	Serializer() = delete;

@@ -35,6 +35,8 @@ public:
 
 private:
     void DrawNameComponent(Entity entity);
+    void DrawTagComponent(Entity entity);
+    void DrawLayerComponent(Entity entity);
     void DrawTransformComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
     void DrawSpriteRenderComponent(Entity entity);
