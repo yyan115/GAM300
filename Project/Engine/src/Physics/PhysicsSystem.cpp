@@ -216,20 +216,17 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
             if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
             
-            // Set physics material properties for bouncing
-            bcs.mRestitution = 0.8f;        // High bounciness
-            bcs.mFriction = 0.3f;           // Moderate friction
-            bcs.mLinearDamping = 0.01f;     // Very low linear damping
-            bcs.mAngularDamping = 0.01f;    // Very low angular damping
+            // Set default physics material properties
+            bcs.mRestitution = 0.0f;   // no bounce unless material is assigned     //Bounciness
+            bcs.mFriction = 0.6f;      // Moderate friction applied                 //Friction (Jolt doesnt separate
 
 
+            bcs.mLinearDamping = rb.linearDamping; //linear direction slowdown
+            bcs.mAngularDamping = rb.angularDamping;//rotational slowdown
 
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
-
-            //to avoid spinning
-            bi.SetAngularVelocity(rb.id, JPH::Vec3::sZero());
 
             // ADD THIS DETAILED LOGGING:
             std::cout << "========================================" << std::endl;
@@ -288,6 +285,8 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
     }
 #endif
 
+    //bi -> jolt
+    //rb -> ECS
     if (entities.empty()) return;
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
@@ -296,10 +295,12 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        bi.SetGravityFactor(rb.id, rb.gravityFactor);
-        bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));
-        //std::cout << "angular velocity is " << bi.GetAngularVelocity(rb.id) << std::endl;
+        bi.SetGravityFactor(rb.id, rb.gravityFactor);   
+        //bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));  //updated in physics system and not by inspector
+        bi.SetIsSensor(rb.id, rb.isTrigger);
 
+        rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(rb.id));
+        rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(rb.id));
     }
      
 
@@ -311,24 +312,6 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
     physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
 
     PhysicsSyncBack(ecsManager);
-
-
-   //TO SIMULATE GRAVITY FOR INDIVIDUAL BODIES
-    //USING THE RB.ID GET THE BODY INTERFACE, THEN SET GRAVITYT FACTOR
-
-
-    //ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    ////GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-
-    //// Submit all related physics components in
-    //for (const auto& entity : entities)
-    //{
-    //	auto& rigidBodyComponent = ecsManager.GetComponent<RigidBodyComponent>(entity);
-    //	auto& transformComponent = ecsManager.GetComponent<Transform>(entity);
-    //	auto& colliderComponent = ecsManager.GetComponent<ColliderComponent>(entity);
-
-
-    //}
 }
 
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {

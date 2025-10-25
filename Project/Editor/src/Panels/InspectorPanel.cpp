@@ -2066,6 +2066,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		Transform& transform = ecsManager.GetComponent<Transform>(entity);		//just for info tab
 		RigidBodyComponent& rigidBody = ecsManager.GetComponent<RigidBodyComponent>(entity);
 
 		ImGui::PushID("RigidBodyComponent");
@@ -2084,38 +2085,102 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 		}
 		EditorComponents::PopComboColors();
 
+		//isTrigger CheckBox
+		ImGui::Checkbox("##IsTrigger", &rigidBody.isTrigger);
+		ImGui::SameLine();
+		ImGui::Text("Is Trigger");
 
 		if (rigidBody.motion == Motion::Dynamic)
 		{
+			/*"USE AUTO MASS
+			* MASS
+			* LINEAR DAMPING
+			* ANGULAR DAMPING
+			* GRAVITY SCALE
+			* CCD
+			*/
+
+
 			// CCD checkbox
-			ImGui::Text("CCD");
-			ImGui::SameLine();
-			if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) {
+			if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) 
 				rigidBody.motion_dirty = true; // Mark for recreation
-			}
-			if (ImGui::IsItemHovered()) {
+
+			ImGui::SameLine();
+			ImGui::Text("CCD");
+
+			if (ImGui::IsItemHovered()) 
 				ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
-			}
+
+
+			//LINEAR & ANGULAR DAMPING
+			ImGui::DragFloat("##Linear Damping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::SameLine();
+			ImGui::Text("Linear Damping");
+
+			ImGui::DragFloat("##Angular Damping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::SameLine();
+			ImGui::Text("Angular Damping");
+
+
+
 			//GRAVITY 
+			ImGui::DragFloat("##Gravity Factor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::SameLine();
 			ImGui::Text("Gravity Factor");
-			ImGui::SameLine();
-			if (ImGui::DragFloat("##Gravity Factor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
-				rigidBody.motion_dirty = true; // optional: mark body for recreation
-			}			
-			//ANGULAR VELOCITY
-			ImGui::Text("Angular Velocity");
-			ImGui::SameLine();
-			float vel[3] = { rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z};
-			if (ImGui::DragFloat3("##Angular Velocity", vel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
-				rigidBody.angularVel.x = vel[0];
-				rigidBody.angularVel.y = vel[1];
-				rigidBody.angularVel.z = vel[2];
-				rigidBody.motion_dirty = true; // optional: mark body for recreation
-			}
 		}
-		 
+
+
+
+		if (ImGui::CollapsingHeader("Info", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::BeginDisabled(); // Grey out all widgets inside
+
+			// Position
+			float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
+			ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
+			ImGui::SameLine();
+			ImGui::Text("Position");
+
+			// Rotation
+			float rotation[3] = { transform.localRotation.x, transform.localRotation.y, transform.localRotation.z };
+			ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.3f");
+			ImGui::SameLine();
+			ImGui::Text("Rotation");
+
+			// Linear Velocity
+			float linearVel[3] = { rigidBody.linearVel.x, rigidBody.linearVel.y, rigidBody.linearVel.z };
+			ImGui::DragFloat3("##LinearVelocity", linearVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::SameLine();
+			ImGui::Text("Linear Velocity");
+
+
+			// Angular Velocity
+			float angularVel[3] = { rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z };
+			ImGui::DragFloat3("##AngularVelocity", angularVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			ImGui::SameLine();
+			ImGui::Text("Angular Velocity");
+
+
+/*
+LINEAR VELOCITY
+ANGULAR VELOCITY
+INERTIA
+
+*/
+
+
+
+
+
+
+
+
+			ImGui::EndDisabled();
+		}
+
 		ImGui::PopID();
 	}
+
 	catch (const std::exception& e) {
 		ImGui::Text("Error rendering RigidBodyComponent: %s", e.what());
 	}
