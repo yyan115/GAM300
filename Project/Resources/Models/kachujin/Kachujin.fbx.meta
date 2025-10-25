@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "0007d01f44fe8bf5-0002d8891e000003",
+        "version": 7,
+        "guid": "00266d4996ca3255-00030de288000003",
         "source": "../../Resources/Models/kachujin/Kachujin.fbx",
         "compiled": "../../Resources/Models/kachujin/Kachujin.mesh",
-        "last_compiled": "2025-10-24 09:41:12.1763516"
+        "last_compiled": "2025-10-24 12:53:30.7432718"
     }
 }

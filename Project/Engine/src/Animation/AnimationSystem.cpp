@@ -21,7 +21,7 @@ bool AnimationSystem::Initialise()
 			Animator* animator = animComp.EnsureAnimator();
 			modelComp.SetAnimator(animator);
 
-			animComp.AddClipFromFile("Resources/Models/kachujin/Kachujin.fbx", modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+			//animComp.AddClipFromFile("Resources/Models/kachujin/Kachujin.fbx", modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
 
 			std::cout << "[AnimationSystem] AnimationComponent initialized for entity " << entity << "\n";
 		}
