@@ -1,11 +1,17 @@
 {
     "entities": [
         {
-            "id": 2,
+            "id": 0,
             "guid": "002d9db24b3560c8-000305117200005b",
             "components": {
                 "NameComponent": {
                     "name": "Empty Entity"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -241,12 +247,18 @@
             }
         },
         {
-            "id": 3,
+            "id": 1,
             "guid": "002d9db22fca9133-000305117e00005f",
             "components": {
                 "NameComponent": {
                     "name": "Kachujin G Rosales"
                 },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -383,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001e0d858e843e2d-000308467c000025",
-                        "001e0d8594619efc-0003084686000037",
+                        "001324b020528bac-00030dd500000025",
+                        "001324b0431e932c-00030dd508000037",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -464,12 +476,18 @@
             }
         },
         {
-            "id": 4,
+            "id": 2,
             "guid": "002d9db20c2f2190-00030511c4000063",
             "components": {
                 "NameComponent": {
                     "name": "backpack"
                 },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -606,8 +624,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001e0d85f1a8e5df-000308467000000d",
-                        "001e0d8594619efc-0003084686000037",
+                        "001324b065c4dcfe-00030dd4f200000d",
+                        "001324b0431e932c-00030dd508000037",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -687,11 +705,17 @@
             }
         },
         {
-            "id": 7,
+            "id": 3,
             "guid": "000ea3095420a78b-0003057a14000007",
             "components": {
                 "NameComponent": {
                     "name": "Empty Entity"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -922,11 +946,17 @@
             }
         },
         {
-            "id": 10,
-            "guid": "00171231f974bcd2-0003089398000001",
+            "id": 5,
+            "guid": "0007aee979d514c4-00030fe8e0000001",
             "components": {
                 "NameComponent": {
-                    "name": "FPSText"
+                    "name": "main camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -944,7 +974,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 3
                                 }
                             ]
                         },
@@ -1039,7 +1069,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 3
                                 },
                                 {
                                     "type": "float",
@@ -1058,140 +1088,64 @@
                                     "data": 1
                                 }
                             ]
-                        }
-                    ]
-                },
-                "TextRenderComponent": {
-                    "type": "TextRenderComponent",
-                    "data": [
-                        {
-                            "type": "std::string",
-                            "data": "FPS PLACEHOLDER"
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 30
-                        },
-                        "001e0d85ac414a54-000308466e000007",
-                        "001e0d85c364c9a2-0003084686000047",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
                         }
                     ]
                 }
             }
+        }
+    ],
+    "tags": [
+        "Untagged",
+        "Respawn",
+        "Finish",
+        "EditorOnly",
+        "MainCamera",
+        "Player",
+        "GameController",
+        "Enemy",
+        "NPC",
+        "Collectible"
+    ],
+    "layers": [
+        {
+            "index": 0,
+            "name": "Default"
+        },
+        {
+            "index": 1,
+            "name": "TransparentFX"
+        },
+        {
+            "index": 2,
+            "name": "Ignore Raycast"
+        },
+        {
+            "index": 3,
+            "name": "Water"
+        },
+        {
+            "index": 4,
+            "name": "UI"
+        },
+        {
+            "index": 5,
+            "name": "Player"
+        },
+        {
+            "index": 6,
+            "name": "Enemy"
+        },
+        {
+            "index": 7,
+            "name": "Ground"
+        },
+        {
+            "index": 8,
+            "name": "Obstacle"
+        },
+        {
+            "index": 9,
+            "name": "Collectible"
         }
     ]
 }

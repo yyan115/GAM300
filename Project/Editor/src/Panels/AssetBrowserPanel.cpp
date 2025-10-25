@@ -1632,11 +1632,15 @@ uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std
     // Get the texture from ResourceManager.
     texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(guid, assetPath);
 
-    // Don't show normal maps because it will appear 'yellow-ish' due to the compression method used.
     if (texture && texture->ID != 0 && texture->GetType() != "normal") {
         // Cache the texture ID for future use
         thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->ID);
         return static_cast<uint32_t>(texture->ID);
+    }
+    // Special case for normal maps as thumbnails
+    else if (texture && texture->GetType() == "normal" && texture->previewID != 0) {
+        thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->previewID);
+		return static_cast<uint32_t>(texture->previewID);
     }
 
     return 0; // Return 0 if failed to load

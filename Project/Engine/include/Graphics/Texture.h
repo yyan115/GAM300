@@ -13,6 +13,9 @@ public:
 	GLint unit;
 	GLenum target;
 
+	// Asset browser preview thumbnail (for normal maps)
+	GLuint previewID{};
+
 	ENGINE_API Texture();
 	Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
 	Texture(std::shared_ptr<TextureMeta> textureMeta);
@@ -34,6 +37,10 @@ public:
 	void Delete();
 
 	ENGINE_API std::string GetType();
+
+	// Asset browser preview thumbnail (for normal maps)
+	void ReconstructBC5Preview(
+		const uint8_t* rgbaTexData, int texWidth, int texHeight);
 
 private:
 	//GLuint ID{};
