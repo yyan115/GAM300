@@ -31,27 +31,36 @@ void main()
 
     Tangent = normalMatrix * aTangent;
 
-    if (isAnimated) 
+    if (isAnimated)
     {
-        // position: weighted bone matrices
-        mat4 skin = mat4(0.0);
-        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) 
-        {
-            int id = aBoneIds[i];
-            if (id < 0 || id >= MAX_BONES) continue;
-            skin += finalBonesMatrices[id] * aWeights[i];
-        }
-        localPos = skin * localPos;
-
-        // normal: weight the 3x3 parts (no inverse/transpose here)
-        vec3 n = vec3(0.0);
+        // Position skin
+        mat4 acc = mat4(0.0);
+        float wsum = 0.0;
         for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
             int id = aBoneIds[i];
-            if (id < 0 || id >= MAX_BONES) continue;
-            n += mat3(finalBonesMatrices[id]) * aNormal * aWeights[i];
+            float w = aWeights[i];
+            if (id >= 0 && id < MAX_BONES && w > 0.0) {
+                acc  += finalBonesMatrices[id] * w;
+                wsum += w;
+            }
         }
-        localNrm = normalize(n);
+        mat4 skin = (wsum > 0.0) ? acc / wsum : mat4(1.0);
+        localPos = skin * localPos;
+
+        // Normal skin (same fallback)
+        vec3 nacc = vec3(0.0);
+        float nsum = 0.0;
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+            int id = aBoneIds[i];
+            float w = aWeights[i];
+            if (id >= 0 && id < MAX_BONES && w > 0.0) {
+                nacc += (mat3(finalBonesMatrices[id]) * aNormal) * w;
+                nsum += w;
+            }
+        }
+        localNrm = (nsum > 0.0) ? normalize(nacc) : aNormal;
     }
+
 
     // world transforms
     vec4 worldPos = model * localPos;
