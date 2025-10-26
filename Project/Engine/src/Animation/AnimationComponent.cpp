@@ -81,11 +81,27 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
 	aiAnimation* aiAnim = scene->mAnimations[0]; // for now, just load the first animation
 
     auto anim = std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
-	clips.push_back(std::move(anim));
+	clips.emplace_back(std::move(anim));
+
+    if(clips.size() == 1)
+    {
+        // first clip added, set as active
+        activeClip = 0;
+        EnsureAnimator();
+		animator->PlayAnimation(clips[0].get());
+	}
 }
 
 
-void AnimationComponent::Play() { isPlay = true; }
+void AnimationComponent::Play() 
+{
+    isPlay = true; 
+    if (!clips.empty())
+    {
+		EnsureAnimator();
+		animator->PlayAnimation(clips[activeClip].get());
+    }
+}
 void AnimationComponent::Pause() { isPlay = false; }
 
 void AnimationComponent::Stop() 

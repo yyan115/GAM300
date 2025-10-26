@@ -20,6 +20,59 @@
 #include <android/log.h>
 #endif
 
+
+static void DebugPrintSkinningStats(
+    const std::vector<Vertex>& verts,
+    const std::map<std::string, BoneInfo>& boneMap,
+    const char* meshName)
+{
+    size_t hasAny = 0;
+    float minSum = 10.f, maxSum = -10.f;
+    int   maxBoneIdSeen = -1;
+
+    for (size_t i = 0; i < verts.size(); ++i) {
+        const auto& v = verts[i];
+
+        // Count non-empty influences and clamp-sum
+        int nonEmpty = 0;
+        float sum = 0.f;
+        for (int k = 0; k < MaxBoneInfluences; ++k) {
+            if (v.mBoneIDs[k] >= 0 && v.mWeights[k] > 0.f) {
+                ++nonEmpty;
+                sum += v.mWeights[k];
+                maxBoneIdSeen = std::max(maxBoneIdSeen, v.mBoneIDs[k]);
+            }
+        }
+
+        if (nonEmpty > 0) {
+            ++hasAny;
+            minSum = std::min(minSum, sum);
+            maxSum = std::max(maxSum, sum);
+
+            // Optional: print a few sample vertices
+            if (hasAny <= 5) {
+                std::cout << "[Skin] vtx " << i
+                    << " IDs=(" << v.mBoneIDs[0] << "," << v.mBoneIDs[1]
+                    << "," << v.mBoneIDs[2] << "," << v.mBoneIDs[3] << ")"
+                    << " W=(" << v.mWeights[0] << "," << v.mWeights[1]
+                    << "," << v.mWeights[2] << "," << v.mWeights[3] << ")"
+                    << " sum=" << sum << "\n";
+            }
+        }
+    }
+
+    std::cout << "[Skin] Mesh '" << (meshName ? meshName : "?")
+        << "': verts=" << verts.size()
+        << " boneMapSize=" << boneMap.size()
+        << " vertsWithInfluences=" << hasAny
+        << " weightSum(min..max)=" << minSum << ".." << maxSum
+        << " maxBoneIdSeen=" << maxBoneIdSeen
+        << "\n";
+}
+
+
+
+
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
 }
@@ -274,6 +327,7 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 	// Extract bone weights for vertices
 	ExtractBoneWeightForVertices(vertices, mesh, scene);
+    DebugPrintSkinningStats(vertices, mBoneInfoMap, mesh->mName.C_Str());
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
@@ -838,16 +892,18 @@ void Model::SetVertexBoneDataToDefault(Vertex& vertex)
 
 void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
 {
-    for (int i = 0; i < MaxBoneInfluences; ++i)
-    {
-        if (vertex.mBoneIDs[i] < 0)
-        {
-            vertex.mBoneIDs[i] = boneID;
-            vertex.mWeights[i] = weight;
-            break;
-        }
+    // try empty slot first
+    for (int i = 0; i < MaxBoneInfluences; ++i) {
+        if (vertex.mBoneIDs[i] < 0) { vertex.mBoneIDs[i] = boneID; vertex.mWeights[i] = weight; return; }
     }
+    // otherwise keep the top-4 weights
+    int minI = 0;
+    for (int i = 1; i < MaxBoneInfluences; ++i)
+        if (vertex.mWeights[i] < vertex.mWeights[minI]) minI = i;
+
+    if (weight > vertex.mWeights[minI]) { vertex.mBoneIDs[minI] = boneID; vertex.mWeights[minI] = weight; }
 }
+
 
 inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
 {
@@ -861,34 +917,41 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
 
 void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 {
+    // 1) assign influences
     for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
     {
         int boneID = -1;
         std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
-        if (mBoneInfoMap.find(boneName) == mBoneInfoMap.end())
-        {
-            BoneInfo newBoneInfo;
-            newBoneInfo.id = mBoneCounter;
-			newBoneInfo.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix); // Transpose for glm
-            mBoneInfoMap[boneName] = newBoneInfo;
-            boneID = mBoneCounter;
-            mBoneCounter++;
+
+        if (mBoneInfoMap.find(boneName) == mBoneInfoMap.end()) {
+            BoneInfo info;
+            info.id = mBoneCounter;
+            info.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix);
+            mBoneInfoMap[boneName] = info;
+            boneID = mBoneCounter++;
         }
-        else
-        {
-			boneID = mBoneInfoMap[boneName].id;
+        else {
+            boneID = mBoneInfoMap[boneName].id;
         }
 
-		assert(boneID != -1);
-        auto weights = mesh->mBones[boneIndex]->mWeights;
+        auto* weights = mesh->mBones[boneIndex]->mWeights;
         int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+        for (int wi = 0; wi < numWeights; ++wi) {
+            int   vtx = weights[wi].mVertexId;
+            float w = weights[wi].mWeight;
+            assert(vtx < static_cast<int>(vertices.size()));
+            SetVertexBoneData(vertices[vtx], boneID, w);
+        }
+    }
 
-        for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
-        {
-            int vertexID = weights[weightIndex].mVertexId;
-            float weight = weights[weightIndex].mWeight;
-            assert(vertexID <= vertices.size());
-            SetVertexBoneData(vertices[vertexID], boneID, weight);
-		}
+    // 2) normalize each vertex's 4 weights
+    for (auto& v : vertices) {
+        float s = v.mWeights[0] + v.mWeights[1] + v.mWeights[2] + v.mWeights[3];
+        if (s > 0.0f) {
+            for (int i = 0; i < MaxBoneInfluences; ++i)
+                v.mWeights[i] /= s;
+        }
     }
 }
+
+
