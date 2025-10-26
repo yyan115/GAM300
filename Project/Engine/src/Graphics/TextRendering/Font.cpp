@@ -9,6 +9,10 @@
 
 Font::Font(unsigned int fontSize) : fontSize(fontSize) {}
 
+Font::Font(std::shared_ptr<AssetMeta> fontMeta, unsigned int fontSize) : fontSize(fontSize) {
+    fontMeta;
+}
+
 Font::~Font()
 {
 	Cleanup();
@@ -390,5 +394,5 @@ void Font::Cleanup()
 std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
     assetPath, currentMetaData, forAndroid;
-    return std::shared_ptr<AssetMeta>();
+    return currentMetaData;
 }

@@ -19,6 +19,10 @@ Material::Material() : m_name("DefaultMaterial") {
 Material::Material(const std::string& name) : m_name(name) {
 }
 
+Material::Material(std::shared_ptr<AssetMeta> metaData) {
+	metaData;
+}
+
 void Material::SetAmbient(const glm::vec3 ambient)
 {
 	m_ambient = ambient;

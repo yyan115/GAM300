@@ -8,4 +8,10 @@ class AssetInspector {
 public:
 	// GUI rendering method
 	static void DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, const std::string& assetPath, bool showLockButton = false, bool* isLocked = nullptr, std::function<void()> lockCallback = nullptr);
+
+private:
+	static GUID_128 currentAssetGUID;
+	static std::shared_ptr<AssetMeta> currentAssetMeta;
+	static std::shared_ptr<TextureMeta> currentTextureMeta;
+	static std::shared_ptr<ModelMeta> currentModelMeta;
 };

@@ -14,8 +14,8 @@ class Shader : public IAsset {
 public:
     GLuint ID{};
 
-    //Shader() {};
-	//Shader(const char* vertexFile, const char* fragmentFile);
+    Shader() = default;
+    Shader(std::shared_ptr<AssetMeta> shaderMeta);
 
     ENGINE_API std::string CompileToResource(const std::string& path, bool forAndroid = false) override;
     ENGINE_API bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;

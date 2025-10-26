@@ -57,12 +57,15 @@ public:
 	std::string directory;
     std::string modelName;
     std::string modelPath;
+    std::shared_ptr<ModelMeta> metaData;
 
 	ENGINE_API Model();
+    Model(const Model& other) = default;
+    ENGINE_API Model(std::shared_ptr<AssetMeta> modelMeta);
 	virtual ~Model() = default;
 	//Model(const std::string& filePath);
     std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
-	std::string CompileToMesh(const std::string& modelPath, const std::vector<Mesh>& meshesToCompile, bool forAndroid = false);
+	std::string CompileToMesh(const std::string& modelPath, std::vector<Mesh>& meshesToCompile, bool forAndroid = false);
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;

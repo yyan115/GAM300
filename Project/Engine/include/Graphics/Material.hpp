@@ -29,6 +29,7 @@ public:
 
 	ENGINE_API Material();
 	Material(const std::string& name);
+	ENGINE_API Material(std::shared_ptr<AssetMeta> metaData);
 	~Material() = default;
 
 	Material(const Material&) = delete;

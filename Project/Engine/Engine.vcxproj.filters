@@ -137,6 +137,10 @@
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
     <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
+    <ClInclude Include="include\ECS\TagComponent.hpp" />
+    <ClInclude Include="include\ECS\LayerComponent.hpp" />
+    <ClInclude Include="include\ECS\TagManager.hpp" />
+    <ClInclude Include="include\ECS\LayerManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -214,6 +218,26 @@
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
     <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
+    <ClCompile Include="src\ECS\TagComponent.cpp" />
+    <ClCompile Include="src\ECS\LayerComponent.cpp" />
+    <ClCompile Include="src\ECS\TagManager.cpp" />
+    <ClCompile Include="src\ECS\LayerManager.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\allocator.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\clusterizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexanalyzer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexcodec.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexgenerator.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\overdrawoptimizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\partition.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\quantization.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\rasterizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\simplifier.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\spatialorder.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\stripifier.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vcacheoptimizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vertexcodec.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vertexfilter.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vfetchoptimizer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

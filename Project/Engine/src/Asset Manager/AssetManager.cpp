@@ -114,6 +114,10 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 		assetMeta = std::make_shared<TextureMeta>();
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
 	}
+	else if (modelExtensions.find(extension) != modelExtensions.end()) {
+		assetMeta = std::make_shared<ModelMeta>();
+		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
+	}
 	else {
 		assetMeta = std::make_shared<AssetMeta>();
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
@@ -547,7 +551,11 @@ std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName
 bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
 	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-		Texture texture{ texType, slot, flipUVs };
+		Texture texture{};
+		texture.metaData->type = texType;
+		texture.metaData->flipUVs = flipUVs;
+		texture.unit = slot;
+
 		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 		if (compiledPath.empty()) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");

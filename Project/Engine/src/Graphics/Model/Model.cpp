@@ -14,6 +14,12 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 #include "Logging.hpp"
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+
+#ifdef EDITOR
+#include <meshoptimizer.h>
+#endif
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -21,6 +27,11 @@
 
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
+    metaData = std::make_shared<ModelMeta>();
+}
+
+Model::Model(std::shared_ptr<AssetMeta> modelMeta) {
+	metaData = static_pointer_cast<ModelMeta>(modelMeta);
 }
 
 // Forward declaration for get_file_contents
@@ -302,7 +313,40 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
 	(void)typeName;
 }
 
-std::string Model::CompileToMesh(const std::string& modelPathParam, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+    // Optimize the meshes.
+    if (metaData->optimizeMeshes) {
+        for (auto& mesh : meshesToCompile) {
+            // Remove redundant vertices (e.g. the same position, normal, UV, etc.) and reindex the mesh.
+            std::vector<unsigned int> remap(mesh.indices.size());
+            size_t vertex_count = meshopt_generateVertexRemap(
+                remap.data(),
+                mesh.indices.data(), mesh.indices.size(),
+                mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex));
+
+            std::vector<Vertex> newVertices(vertex_count);
+            std::vector<unsigned int> newIndices(mesh.indices.size());
+
+            meshopt_remapVertexBuffer(newVertices.data(), mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex), remap.data());
+            meshopt_remapIndexBuffer(newIndices.data(), mesh.indices.data(), mesh.indices.size(), remap.data());
+
+            mesh.vertices.swap(newVertices);
+            mesh.indices.swap(newIndices);
+
+            // Run vertex cache optimization.
+            // Reduces the number of vertex shader invocations by reordering triangles.
+            meshopt_optimizeVertexCache(mesh.indices.data(), mesh.indices.data(), mesh.indices.size(), mesh.vertices.size());
+
+            // Run overdraw optimization.
+            // Reduces overdraw by reordering triangles.
+            meshopt_optimizeOverdraw(mesh.indices.data(), mesh.indices.data(), mesh.indices.size(), &mesh.vertices[0].position.x, mesh.vertices.size(), sizeof(Vertex), 1.05f);
+
+            // Run vertex fetch optimization.
+            // Optimizes the vertex buffer for GPU vertex fetch.
+            meshopt_optimizeVertexFetch(mesh.vertices.data(), mesh.indices.data(), mesh.indices.size(), mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex));
+        }
+    }
+
     std::filesystem::path p(modelPathParam);
     std::string meshPath{};
     if (!forAndroid) {
@@ -575,8 +619,41 @@ bool Model::ReloadResource(const std::string& resourcePath, const std::string& a
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
-    assetPath, currentMetaData, forAndroid;
-    return std::shared_ptr<AssetMeta>();
+    std::string metaFilePath{};
+    if (!forAndroid) {
+        metaFilePath = assetPath + ".meta";
+    }
+    else {
+        std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+        metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".meta";
+    }
+    std::ifstream ifs(metaFilePath);
+    std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+
+    rapidjson::Document doc;
+    doc.Parse(jsonContent.c_str());
+    ifs.close();
+
+    auto& allocator = doc.GetAllocator();
+
+    rapidjson::Value modelMetaData(rapidjson::kObjectType);
+
+    modelMetaData.AddMember("optimizeMeshes", rapidjson::Value().SetBool(metaData->optimizeMeshes), allocator);
+
+    doc.AddMember("ModelMetaData", modelMetaData, allocator);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    std::ofstream metaFile(metaFilePath);
+    metaFile << buffer.GetString();
+    metaFile.close();
+
+    std::shared_ptr<ModelMeta> newMetaData = std::make_shared<ModelMeta>();
+    newMetaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
+    newMetaData->PopulateModelMeta(metaData->optimizeMeshes);
+    return newMetaData;
 }
 
 void Model::Draw(Shader& shader, const Camera& camera)

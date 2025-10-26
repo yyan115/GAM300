@@ -20,6 +20,7 @@ struct Character {
 class Font : public IAsset {
 public:
 	ENGINE_API Font(unsigned int fontSize = 48);
+	Font(std::shared_ptr<AssetMeta> fontMeta, unsigned int fontSize = 48);
 	~Font();
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

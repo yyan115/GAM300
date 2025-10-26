@@ -16,6 +16,10 @@
 #include "Platform/AndroidPlatform.h"
 #endif
 
+Audio::Audio(std::shared_ptr<AssetMeta> assetMeta) {
+    assetMeta;
+}
+
 std::string Audio::CompileToResource(const std::string& assetPathParam, bool forAndroid) {
     if (!std::filesystem::exists(assetPathParam)) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Audio] File does not exist: ", assetPathParam, "\n");
