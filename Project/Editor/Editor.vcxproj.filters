@@ -21,6 +21,9 @@
     <ClCompile Include="src\Panels\PrefabEditorPanel.cpp" />
     <ClCompile Include="src\EditorComponents.cpp" />
     <ClCompile Include="src\Panels\AssetInspector.cpp" />
+    <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
+    <ClCompile Include="src\InspectorCustomRenderers.cpp" />
+    <ClCompile Include="src\ReflectionRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
@@ -34,6 +37,8 @@
     <ClInclude Include="include\Panels\PrefabEditorPanel.hpp" />
     <ClInclude Include="include\EditorComponents.hpp" />
     <ClInclude Include="include\Panels\AssetInspector.hpp" />
+    <ClInclude Include="include\Panels\TagsLayersPanel.hpp" />
+    <ClInclude Include="include\ReflectionRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\GUIManager.hpp" />
