@@ -155,17 +155,17 @@ bool PhysicsSystem::InitialiseJolt() {
 
 void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 #ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
+    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
 #endif
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
-    for (auto &e : entities) {
+    for (auto& e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-		JPH::RVec3Arg pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+        JPH::RVec3Arg pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
 
@@ -179,17 +179,17 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                     col.boxHalfExtents.y * tr.localScale.y,
                     col.boxHalfExtents.z * tr.localScale.z
                 ));
-            break;
-            
+                break;
+
             case ColliderShapeType::Sphere:
-                    col.shape = new JPH::SphereShape(col.sphereRadius);
-                    break;
-                case ColliderShapeType::Capsule:
-                    col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight, col.capsuleRadius);
-                    break;
-                case ColliderShapeType::Cylinder:
-                    col.shape = new JPH::CylinderShape(col.cylinderHalfHeight, col.cylinderRadius);
-                    break;
+                col.shape = new JPH::SphereShape(col.sphereRadius);
+                break;
+            case ColliderShapeType::Capsule:
+                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight, col.capsuleRadius);
+                break;
+            case ColliderShapeType::Cylinder:
+                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight, col.cylinderRadius);
+                break;
             }
         }
 
@@ -215,31 +215,47 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
             if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
-            
+
             // Set default physics material properties
-            bcs.mRestitution = 0.0f;   // no bounce unless material is assigned     //Bounciness
+            bcs.mRestitution = 0.4f;   // no bounce unless material is assigned     //Bounciness
             bcs.mFriction = 0.6f;      // Moderate friction applied                 //Friction (Jolt doesnt separate
-
-
             bcs.mLinearDamping = rb.linearDamping; //linear direction slowdown
             bcs.mAngularDamping = rb.angularDamping;//rotational slowdown
+
+            bcs.mRotation = JPH::Quat::sIdentity();
 
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
 
-            // ADD THIS DETAILED LOGGING:
-            std::cout << "========================================" << std::endl;
-            std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
-            std::cout << "  Entity: " << e << std::endl;
-            std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
-                motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
-            std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
-                col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
-                col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
-            std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
-            std::cout << "  Layer: " << col.layer << std::endl;
-            std::cout << "========================================" << std::endl;
+            //// ADD THIS DETAILED LOGGING:
+            //std::cout << "========================================" << std::endl;
+            //std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
+            //std::cout << "  Entity: " << e << std::endl;
+            //std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
+            //    motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
+            //std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
+            //    col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
+            //    col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
+            //std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
+            //std::cout << "  Layer: " << col.layer << std::endl;
+            //std::cout << "========================================" << std::endl;
+
+
+            // In Initialise(), print for both bodies:
+            std::cout << "Entity " << e << std::endl;
+            std::cout << "  Scale: " << tr.localScale << std::endl;
+            std::cout << "  Half extents: " << col.boxHalfExtents << std::endl;
+            std::cout << "  Final box size: " << (col.boxHalfExtents * tr.localScale) << std::endl;
+            std::cout << "  Position: " << tr.localPosition << std::endl;
+
+            // For the floor specifically:
+            if (rb.id.GetIndex() == 1) {
+                float floorTop = tr.localPosition.y + (col.boxHalfExtents.y * tr.localScale.y);
+                float floorBottom = tr.localPosition.y - (col.boxHalfExtents.y * tr.localScale.y);
+                std::cout << "FLOOR top Y: " << floorTop << std::endl;
+                std::cout << "FLOOR bottom Y: " << floorBottom << std::endl;
+            }
 
 
 
@@ -268,14 +284,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
             bi.MoveKinematic(rb.id, pos, rot, /*dt*/ 0.0f /* or pass dt if you have it here */);
             rb.transform_dirty = false;
-        }
+    }
         else if (rb.motion == Motion::Static && rb.transform_dirty) {
             bi.SetPositionAndRotation(rb.id, pos, rot, JPH::EActivation::DontActivate);
             rb.transform_dirty = false;
         }
-    }
 }
-
+}
 void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -295,25 +310,39 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        bi.SetGravityFactor(rb.id, rb.gravityFactor);   
+        bi.SetGravityFactor(rb.id, rb.gravityFactor);
         //bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));  //updated in physics system and not by inspector
         bi.SetIsSensor(rb.id, rb.isTrigger);
 
         rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(rb.id));
         rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(rb.id));
+
+        //ISSUE:: angular vel changes upon collision via gravity.
+        if (rb.id.GetIndex() == 0)
+        {
+            if (rb.angularVel.x > 0 || rb.angularVel.y > 0 || rb.angularVel.z > 0)
+                std::cout << "angular vel is " << rb.angularVel << std::endl;
+            else
+                std::cout << "nope dont have" << std::endl;
+        }
+
     }
-     
 
+    //channge this so that fixed dt is passed here instead...
+    const float FIXED_PHYSICS_DT = 1.0f / 60.0f;
+    static float physicsAccumulator = 0.0f;
+    physicsAccumulator += dt;
+    // Run physics in fixed steps
+    while (physicsAccumulator >= FIXED_PHYSICS_DT) {
+        physics.Update(FIXED_PHYSICS_DT, /*collisionSteps=*/4, temp.get(), jobs.get());
+        physicsAccumulator -= FIXED_PHYSICS_DT;
+    }
 
-
-
-
-
-    physics.Update(dt, /*collisionSteps=*/4, temp.get(), jobs.get()); // Increased collision steps for better response
-
-    PhysicsSyncBack(ecsManager);
+    // Note: Don't sync back every frame, only after physics updates
+    if (physicsAccumulator < FIXED_PHYSICS_DT) {
+        PhysicsSyncBack(ecsManager);
+    }
 }
-
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     auto& bi = physics.GetBodyInterface();
 

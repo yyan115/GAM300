@@ -2493,7 +2493,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "Matrix4x4",
@@ -2667,15 +2667,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0000407983
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 8.52077e-12
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000407993
+                                    "data": 0
                                 }
                             ]
                         },
@@ -2684,15 +2684,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.0000194612
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -5.35274e-15
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000194608
+                                    "data": 0
                                 }
                             ]
                         },
@@ -2706,7 +2706,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 0.95
                         }
                     ]
                 },
@@ -3026,7 +3026,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.05
+                            "data": 0.95
                         }
                     ]
                 },
@@ -4174,7 +4174,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.05
+                            "data": 0.95
                         }
                     ]
                 },
@@ -4630,7 +4630,7 @@
         },
         {
             "id": 19,
-            "guid": "006c850cf71b1a14-0003108d92000001",
+            "guid": "007cd008bf393504-0003152b3e000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -4902,7 +4902,7 @@
         },
         {
             "id": 20,
-            "guid": "006c850cff2bd642-0003108d92000003",
+            "guid": "007cd008d63da27b-0003152b3e000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"

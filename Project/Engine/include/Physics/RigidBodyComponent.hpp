@@ -20,7 +20,7 @@ struct RigidBodyComponent {
 	REFL_SERIALIZABLE
 	int motionID;
 
-	bool ccd		= false; // continuous collision detection
+	bool ccd		= true; // continuous collision detection
 	bool isTrigger	= false;
 
 	float gravityFactor = 1.0f;
@@ -29,7 +29,7 @@ struct RigidBodyComponent {
 	Vector3D linearVel = { 0.0f, 0.0f,0.0f };
 
 	float linearDamping = 0.0f;
-	float angularDamping = 0.05f;
+	float angularDamping = 0.95f;
 
 
 
