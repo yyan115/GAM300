@@ -1,15 +1,15 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556c0cac7b5-0002d702f6000011",
+        "version": 7,
+        "guid": "001324b05f664adc-00030dd4f000000b",
         "source": "../../Resources/Models/backpack/ao.jpg",
         "compiled": "../../Resources/Models/backpack/ao.dds",
         "android_compiled": "Resources/Models/backpack/ao_android.ktx",
-        "last_compiled": "2025-10-05 13:52:55.9083693"
+        "last_compiled": "2025-10-27 16:57:40.4327893"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

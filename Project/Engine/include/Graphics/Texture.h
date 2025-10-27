@@ -17,7 +17,7 @@ public:
 	GLuint previewID{};
 
 	ENGINE_API Texture();
-	Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
+	Texture(const char* texType, GLint slot, bool flipUVs = false, bool generateMipmaps = true);
 	Texture(std::shared_ptr<TextureMeta> textureMeta);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

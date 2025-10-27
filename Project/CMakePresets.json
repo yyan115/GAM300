@@ -14,7 +14,8 @@
       "binaryDir": "${sourceDir}/Build/cmake-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
@@ -25,7 +26,8 @@
       "binaryDir": "${sourceDir}/Build/cmake-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
@@ -36,7 +38,8 @@
       "binaryDir": "${sourceDir}/Build/cmake-editor-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "EditorDebug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
@@ -47,7 +50,8 @@
       "binaryDir": "${sourceDir}/Build/cmake-editor-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "EditorRelease",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {

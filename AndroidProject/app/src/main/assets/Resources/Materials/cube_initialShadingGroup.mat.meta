@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001324b054a7c981-00030dd4fe00001b",
+        "source": "../../Resources/Materials/cube_initialShadingGroup.mat",
+        "compiled": "../../Resources/Materials/cube_initialShadingGroup.mat",
+        "android_compiled": "Resources/Materials/cube_initialShadingGroup_android.mat",
+        "last_compiled": "2025-10-27 16:57:23.4305333"
+    }
+}

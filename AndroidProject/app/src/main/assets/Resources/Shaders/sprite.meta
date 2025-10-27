@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556d6fef8e3-0002d702fa000033",
+        "version": 7,
+        "guid": "001324b06bd121cf-00030dd508000043",
         "source": "../../Resources/Shaders/sprite",
         "compiled": "../../Resources/Shaders/sprite.shader",
         "android_compiled": "Resources/Shaders/sprite.shader",
-        "last_compiled": "2025-10-05 13:54:02.3128928"
+        "last_compiled": "2025-10-27 16:59:25.0591964"
     }
 }

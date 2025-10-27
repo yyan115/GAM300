@@ -30,6 +30,8 @@ add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 set_target_properties(Engine PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
+    # Ensure runtime library is set correctly for this target (including PCH)
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>:Debug>DLL"
 )
 
 # Define ENGINE_EXPORTS when building the shared library
@@ -42,6 +44,14 @@ target_compile_definitions(Engine PRIVATE
     $<$<CONFIG:EditorDebug>:_DEBUG;EDITOR=1;JPH_DEBUG_RENDERER;JPH_PROFILE_ENABLED>
     $<$<CONFIG:EditorRelease>:NDEBUG;EDITOR;JPH_DEBUG_RENDERER>
 )
+
+# Force correct runtime library flags for Engine target (including PCH compilation)
+if(MSVC)
+    target_compile_options(Engine PRIVATE
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>:/MDd>
+        $<$<OR:$<CONFIG:Release>,$<CONFIG:EditorRelease>>:/MD>
+    )
+endif()
 
 # Windows-specific definitions
 if(WIN32)
@@ -152,7 +162,7 @@ else()
         PRIVATE
             # All dependencies are PRIVATE - Game/Editor only see Engine.h
             glm::glm
-            unofficial::joltphysics::Jolt
+            Jolt::Jolt
             assimp::assimp
             glfw
             Freetype::Freetype

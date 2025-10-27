@@ -1,18 +1,26 @@
 cmake_minimum_required(VERSION 3.20)
 
-# vcpkg integration - ONLY for desktop (Windows/Linux), NOT Android
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
-    if(DEFINED ENV{VCPKG_ROOT})
-        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-        set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-    else()
-        message(WARNING "vcpkg not found. Install vcpkg or set VCPKG_ROOT environment variable.")
-    endif()
+# Enable modern MSVC runtime library selection (MUST be before project())
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
 endif()
 
-# Project definition
+# Project definition - MUST come before vcpkg for proper compiler detection
 project(GAM300 VERSION 1.0.0 LANGUAGES CXX C)
+
+# vcpkg integration (Visual Studio 2022 handles this automatically via vcpkg.json)
+# For command-line builds: Set VCPKG_ROOT env var or pass -DCMAKE_TOOLCHAIN_FILE
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+    if(DEFINED ENV{VCPKG_ROOT})
+        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+        message(STATUS "Using vcpkg from VCPKG_ROOT: $ENV{VCPKG_ROOT}")
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+        message(STATUS "Using local vcpkg: ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg")
+    else()
+        message(STATUS "vcpkg toolchain not found - Visual Studio should handle this via vcpkg.json")
+    endif()
+endif()
 
 # C++ Standard - Engine and Editor use C++20, Game uses C++17
 # Individual targets will override as needed
@@ -52,11 +60,16 @@ if(MSVC)
         /permissive-                # Standards conformance mode
     )
 
-    # Configuration-specific flags
-    set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /MDd" CACHE STRING "" FORCE)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MD /DNDEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_CXX_FLAGS_EDITORDEBUG "/Zi /Od /MDd" CACHE STRING "" FORCE)
-    set(CMAKE_CXX_FLAGS_EDITORRELEASE "/O2 /MD /DNDEBUG" CACHE STRING "" FORCE)
+    # Configuration-specific flags (runtime library set via policy below)
+    set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_EDITORDEBUG "/Zi /Od" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS_EDITORRELEASE "/O2 /DNDEBUG" CACHE STRING "" FORCE)
+
+    # Set MSVC runtime library policy - CMake will add /MD or /MDd automatically
+    # Debug and EditorDebug use /MDd (MultiThreadedDebugDLL)
+    # Release and EditorRelease use /MD (MultiThreadedDLL)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>:Debug>DLL")
 
     # Linker flags
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG" CACHE STRING "" FORCE)
@@ -91,6 +104,8 @@ else()
     find_package(OpenGL REQUIRED)
 
     # Find all vcpkg packages
+    # Note: Visual Studio 2022 installs these automatically via vcpkg.json
+    # If you see errors, run: vcpkg install
     find_package(assimp CONFIG REQUIRED)
     find_package(glfw3 CONFIG REQUIRED)
     find_package(Freetype REQUIRED)
@@ -101,7 +116,8 @@ else()
     find_package(gli CONFIG REQUIRED)
 
     # Jolt Physics from vcpkg (not FetchContent on desktop!)
-    find_package(unofficial-joltphysics CONFIG REQUIRED)
+    # Package name: joltphysics, CMake target: Jolt::Jolt
+    find_package(Jolt CONFIG REQUIRED)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         find_package(PkgConfig REQUIRED)

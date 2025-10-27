@@ -44,7 +44,7 @@ if !errorlevel! neq 0 (
 )
 
 echo [4/4] Integrating vcpkg with Visual Studio...
-vcpkg.exe integrate install
+vcpkg.exe install
 if !errorlevel! neq 0 (
     echo ERROR: Failed to integrate vcpkg with Visual Studio
     pause

@@ -71,6 +71,13 @@ target_link_libraries(Editor
     PRIVATE
         Engine  # shared library
         Game    # static library
+        # Editor code directly uses these vcpkg packages
+        glm::glm
+        glad::glad
+        glfw
+        rapidjson
+        assimp::assimp
+        Freetype::Freetype
 )
 
 # Platform-specific linking
@@ -91,22 +98,17 @@ add_custom_command(TARGET Editor POST_BUILD
 
 # Platform-specific: Copy required DLLs/shared libraries for Editor
 if(WIN32)
-    # Copy assimp DLL (check both possible locations)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/Assimp/bin/x64/assimp-vc143-mt.dll")
-        add_custom_command(TARGET Editor POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${CMAKE_SOURCE_DIR}/Libraries/Assimp/bin/x64/assimp-vc143-mt.dll
-                $<TARGET_FILE_DIR:Editor>
-            COMMENT "Copying assimp DLL"
-        )
-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll")
-        add_custom_command(TARGET Editor POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
-                $<TARGET_FILE_DIR:Editor>
-            COMMENT "Copying assimp DLL"
-        )
-    endif()
+    # Copy vcpkg DLLs manually (debug vs release)
+    # vcpkg's applocal.ps1 should do this, but we'll do it manually to be sure
+    set(VCPKG_BIN_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows")
+
+    # Copy all vcpkg DLLs (debug for Debug/EditorDebug, release for Release/EditorRelease)
+    add_custom_command(TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>,${VCPKG_BIN_DIR}/debug/bin,${VCPKG_BIN_DIR}/bin>
+            $<TARGET_FILE_DIR:Editor>
+        COMMENT "Copying vcpkg DLLs"
+    )
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Copy FMOD .so (if not already copied by Engine)
