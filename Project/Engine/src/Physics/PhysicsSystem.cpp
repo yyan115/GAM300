@@ -10,7 +10,6 @@
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Physics/PhysicsContactListener.hpp"
 #include <cstdarg>
 
 #ifdef __ANDROID__
@@ -217,8 +216,8 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
 
             // Set default physics material properties
-            bcs.mRestitution = 0.4f;   // no bounce unless material is assigned     //Bounciness
-            bcs.mFriction = 0.6f;      // Moderate friction applied                 //Friction (Jolt doesnt separate
+            bcs.mRestitution = 0.2f;   // no bounce unless material is assigned     //Bounciness
+            bcs.mFriction = 0.5f;      // Moderate friction applied                 //Friction (Jolt doesnt separate
             bcs.mLinearDamping = rb.linearDamping; //linear direction slowdown
             bcs.mAngularDamping = rb.angularDamping;//rotational slowdown
 
@@ -291,7 +290,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         }
 }
 }
-void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
+void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
     static int updateCount = 0;
@@ -299,50 +298,30 @@ void PhysicsSystem::Update(float dt, ECSManager& ecsManager) {
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, dt=%f, entities=%zu", dt, entities.size());
     }
 #endif
-
-    //bi -> jolt
-    //rb -> ECS
     if (entities.empty()) return;
-    JPH::BodyInterface& bi = physics.GetBodyInterface();
 
+    // Sync ECS -> Jolt (before physics step)
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
     for (auto& e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         bi.SetGravityFactor(rb.id, rb.gravityFactor);
-        //bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));  //updated in physics system and not by inspector
         bi.SetIsSensor(rb.id, rb.isTrigger);
 
+        // Read back velocities from physics engine
         rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(rb.id));
         rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(rb.id));
-
-        //ISSUE:: angular vel changes upon collision via gravity.
-        if (rb.id.GetIndex() == 0)
-        {
-            if (rb.angularVel.x > 0 || rb.angularVel.y > 0 || rb.angularVel.z > 0)
-                std::cout << "angular vel is " << rb.angularVel << std::endl;
-            else
-                std::cout << "nope dont have" << std::endl;
-        }
-
     }
 
-    //channge this so that fixed dt is passed here instead...
-    const float FIXED_PHYSICS_DT = 1.0f / 60.0f;
-    static float physicsAccumulator = 0.0f;
-    physicsAccumulator += dt;
-    // Run physics in fixed steps
-    while (physicsAccumulator >= FIXED_PHYSICS_DT) {
-        physics.Update(FIXED_PHYSICS_DT, /*collisionSteps=*/4, temp.get(), jobs.get());
-        physicsAccumulator -= FIXED_PHYSICS_DT;
-    }
-
-    // Note: Don't sync back every frame, only after physics updates
-    if (physicsAccumulator < FIXED_PHYSICS_DT) {
-        PhysicsSyncBack(ecsManager);
-    }
+    // Run physics with fixed timestep (dt is already fixed from TimeManager)
+    physics.Update(fixedDt, /*collisionSteps=*/8, temp.get(), jobs.get());
+    
+    // Sync Jolt -> ECS (after physics step)
+    PhysicsSyncBack(ecsManager);
 }
+
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     auto& bi = physics.GetBodyInterface();
 

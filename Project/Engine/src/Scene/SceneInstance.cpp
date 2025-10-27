@@ -106,7 +106,7 @@ void SceneInstance::Update(double dt) {
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
-	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	//mainECS.physicsSystem->physicsSyncBack(mainECS);
 	mainECS.transformSystem->Update();
 	mainECS.cameraSystem->Update();

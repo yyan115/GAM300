@@ -4630,7 +4630,7 @@
         },
         {
             "id": 19,
-            "guid": "007cd008bf393504-0003152b3e000001",
+            "guid": "00328bc688ed2df9-00031598ce000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -4902,7 +4902,7 @@
         },
         {
             "id": 20,
-            "guid": "007cd008d63da27b-0003152b3e000003",
+            "guid": "00328bc6e5c49345-00031598ce000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
