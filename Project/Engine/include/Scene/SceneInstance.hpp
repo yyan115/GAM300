@@ -4,7 +4,7 @@
 #include "Graphics/TextRendering/Font.hpp"
 #include <Scene/Scene.hpp>
 #include <Graphics/GraphicsManager.hpp>
-
+#include "ECS/ECSManager.hpp"
 class SceneInstance : public IScene {
 public:
 	SceneInstance() = default;
@@ -36,4 +36,7 @@ public:
 	// Text rendering members
 	std::shared_ptr<Font> testFont;
 	std::shared_ptr<Shader> textShader;
+
+private:
+	void CreateHDRTestScene(ECSManager& ecsManager); // Testing 
 };

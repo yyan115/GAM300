@@ -219,6 +219,18 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		return;
 	}
 
+	// DEBUG: Check if entity material exists
+	static int debugCount = 0;
+	if (debugCount++ % 300 == 0) {
+		if (item.material) {
+			auto emissive = item.material->GetEmissive();
+			ENGINE_PRINT("[RenderModel] Entity has material: ", item.material->GetName(),
+				" - Emissive: (", emissive.r, ", ", emissive.g, ", ", emissive.b, ")\n");
+		}
+		else {
+			ENGINE_PRINT("[RenderModel] Entity has NO material override\n");
+		}
+	}
 	// Activate the shader
 	item.shader->Activate();
 

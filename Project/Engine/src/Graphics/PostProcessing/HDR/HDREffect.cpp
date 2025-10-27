@@ -46,7 +46,15 @@ void HDREffect::Shutdown()
 void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int width, int height)
 {
     if (!enabled || !shader) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[HDREffect] Apply called but shader not ready! enabled=", enabled, " shader=", (shader != nullptr), "\n");
         return;
+    }
+
+    static bool firstCall = true;
+    if (firstCall) {
+        ENGINE_PRINT("[HDREffect] First Apply call - inputTex: ", inputTexture, " outputFBO: ", outputFBO, " size: ", width, "x", height, "\n");
+        ENGINE_PRINT("[HDREffect] Shader ID: ", shader->ID, "\n");
+        firstCall = false;
     }
 
     // Bind output framebuffer

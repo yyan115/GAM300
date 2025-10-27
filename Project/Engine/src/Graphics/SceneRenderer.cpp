@@ -9,6 +9,7 @@
 #include "WindowManager.hpp"
 #include <iostream>
 #include "Logging.hpp"
+#include <Graphics/PostProcessing/PostProcessingManager.hpp>
 
 // Static member definitions for SCENE panel
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
@@ -65,8 +66,16 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "SceneRenderer: Framebuffer not complete!\n");
     }
 
+    // Check for OpenGL errors immediately
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SceneRenderer] OpenGL error: ", err, "\n");
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    ENGINE_PRINT("[SceneRenderer] Scene framebuffer created (", width, "x", height, ")\n");
+    ENGINE_PRINT("[SceneRenderer] Scene FBO ID: ", sceneFrameBuffer, ", Scene Texture ID: ", sceneColorTexture, "\n");
     return sceneFrameBuffer;
 }
 
@@ -102,6 +111,7 @@ void SceneRenderer::BeginSceneRender(int width, int height)
 {
     // Create or resize framebuffer if needed
     if (sceneFrameBuffer == 0 || width != sceneWidth || height != sceneHeight) {
+        ENGINE_PRINT("[SceneRenderer] Calling CreateSceneFramebuffer from BeginSceneRender\n");
         CreateSceneFramebuffer(width, height);
     }
 
@@ -109,8 +119,9 @@ void SceneRenderer::BeginSceneRender(int width, int height)
     WindowManager::SetViewportDimensions(width, height);
 
     // Bind framebuffer and set viewport
-    glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
-    glViewport(0, 0, width, height);
+    /*glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
+    glViewport(0, 0, width, height);*/
+    PostProcessingManager::GetInstance().BeginHDRRender(width, height);
 
     // Enable depth testing for 3D rendering
     glEnable(GL_DEPTH_TEST);
@@ -119,6 +130,7 @@ void SceneRenderer::BeginSceneRender(int width, int height)
 void SceneRenderer::EndSceneRender()
 {
     // Unbind framebuffer (render to screen again)
+    PostProcessingManager::GetInstance().EndHDRRender(sceneFrameBuffer, sceneWidth, sceneHeight); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

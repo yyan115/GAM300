@@ -2,6 +2,15 @@
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Logging.hpp"
 #include <glad/glad.h>
+#include <WindowManager.hpp>
+
+// Add to PostProcessingManager.cpp
+void CheckGLError(const char* location) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[OpenGL Error] at ", location, ": ", err, "\n");
+    }
+}
 
 PostProcessingManager& PostProcessingManager::GetInstance() 
 {
@@ -43,7 +52,7 @@ bool PostProcessingManager::Initialize()
     // Future effects will be initialized here
     // bloomEffect = std::make_unique<BloomEffect>();
     // if (!bloomEffect->Initialize()) { return false; }
-
+    CreateHDRFramebuffer(RunTimeVar::window.width, RunTimeVar::window.height);
     initialized = true;
     ENGINE_PRINT("[PostProcessingManager] Initialized successfully\n");
     return true;
@@ -73,6 +82,18 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Not initialized!\n");
         return;
+    }
+
+    static int frameCount = 0;
+    if (frameCount++ % 60 == 0) {
+        if (hdrEffect && hdrEffect->IsEnabled()) {
+            ENGINE_PRINT("[Process] Applying HDR - Exposure: ", hdrEffect->GetExposure(),
+                " Gamma: ", hdrEffect->GetGamma(),
+                " Mode: ", (int)hdrEffect->GetToneMappingMode(), "\n");
+        }
+        else {
+            ENGINE_PRINT("[Process] HDR is DISABLED or NULL!\n");
+        }
     }
 
     // Current pipeline: HDR tone mapping only
@@ -110,6 +131,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CheckGLError("After Process");
 }
 
 unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
@@ -151,6 +173,7 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     ENGINE_PRINT("[PostProcessingManager] HDR framebuffer created (", width, "x", height, ")\n");
+    ENGINE_PRINT("[PostProcessingManager] HDR FBO ID: ", hdrFramebuffer, ", HDR Texture ID: ", hdrColorTexture, "\n");
     return hdrFramebuffer;
 }
 

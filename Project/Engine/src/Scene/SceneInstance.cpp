@@ -68,6 +68,19 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
 	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
 
+	// Configure HDR settings
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	if (hdrEffect) 
+	{
+		hdrEffect->SetEnabled(true);
+		hdrEffect->SetExposure(1.0f);
+		hdrEffect->SetGamma(2.2f);
+		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
+		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
+	}
+
+	CreateHDRTestScene(ecsManager);
+	
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -123,6 +136,7 @@ void SceneInstance::Update(double dt) {
 }
 
 void SceneInstance::Draw() {
+
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
@@ -312,9 +326,99 @@ void SceneInstance::processInput(float deltaTime)
 		static bool firstMouse = true;
 		firstMouse = true;
 	}
+	// Press P to print material debug info
+	if (InputManager::GetKeyDown(Input::Key::L)) {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
+		ENGINE_PRINT("===== HDR TEST CUBES DEBUG =====\n");
+		for (const auto& entity : ecsManager.modelSystem->entities) {
+			auto& name = ecsManager.GetComponent<NameComponent>(entity);
+			if (name.name.find("HDR Test Cube") != std::string::npos) {
+				auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+				if (modelComp.material) {
+					auto emissive = modelComp.material->GetEmissive();
+					ENGINE_PRINT(name.name, " - Emissive: (", emissive.r, ", ", emissive.g, ", ", emissive.b, ")\n");
+				}
+				else {
+					ENGINE_PRINT(name.name, " - NO MATERIAL!\n");
+				}
+			}
+		}
+	}
 	// Sync camera position back to transform
 	camComp.fov = camera->Zoom;
 	Vector3D newPos(camera->Position.x, camera->Position.y, camera->Position.z);
 	mainECS.transformSystem->SetLocalPosition(activeCam, newPos);
+}
+
+void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
+	ENGINE_PRINT("[HDR Test] Creating test scene with bright objects...\n");
+
+	// Get your cube model GUID (adjust path to your actual cube model)
+	std::string cubeModelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/cube.obj";
+	GUID_128 cubeModelGUID = MetaFilesManager::GetGUID128FromAssetFile(cubeModelPath);
+
+	// Get shader GUID
+	std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
+	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(shaderPath);
+
+	// Create 5 cubes with increasing brightness
+	for (int i = 0; i < 5; i++) {
+		Entity cube = ecsManager.CreateEntity();
+
+		// Set name
+		ecsManager.GetComponent<NameComponent>(cube).name = "HDR Test Cube " + std::to_string(i);
+
+		// Set transform - space them out horizontally
+		float xPos = (i - 2) * 2.0f; // -4, -2, 0, 2, 4
+		ecsManager.transformSystem->SetLocalPosition(cube, Vector3D(xPos, 0.0f, -5.0f));
+		ecsManager.transformSystem->SetLocalScale(cube, Vector3D(0.5f, 0.5f, 0.5f));
+
+		// Add model render component
+		ModelRenderComponent modelComp(cubeModelGUID, shaderGUID, GUID_128{});
+		ecsManager.AddComponent<ModelRenderComponent>(cube, modelComp);
+
+		// Create material with increasing emission (this is the key for HDR testing!)
+		auto material = std::make_shared<Material>("HDR Test Material " + std::to_string(i));
+
+		// Calculate brightness - ranges from 1.0 to 9.0
+		float brightness = 1.0f + i * 2.0f;
+
+		// Set emissive color (makes it glow)
+		material->SetEmissive(glm::vec3(brightness, brightness * 0.9f, brightness * 0.8f));
+
+		// Set basic material properties
+		material->SetDiffuse(glm::vec3(0.8f, 0.8f, 0.8f));
+		material->SetSpecular(glm::vec3(0.5f, 0.5f, 0.5f));
+		material->SetShininess(32.0f);
+
+		// Apply material to the model
+		ecsManager.GetComponent<ModelRenderComponent>(cube).SetMaterial(material);
+
+		ENGINE_PRINT("[HDR Test] Created cube ", i, " at x=", xPos, " with brightness=", brightness, "\n");
+	}
+
+	// Add a very bright point light to really test HDR
+	Entity brightLight = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(brightLight).name = "HDR Test Light";
+	ecsManager.transformSystem->SetLocalPosition(brightLight, Vector3D(0.0f, 3.0f, -3.0f));
+
+	// Use PointLightComponent instead of LightComponent
+	PointLightComponent lightComp;
+	lightComp.color = Vector3D(1.0f, 0.95f, 0.9f); // Warm white
+	lightComp.intensity = 5.0f; // VERY bright for HDR testing!
+	lightComp.constant = 1.0f;
+	lightComp.linear = 0.09f;
+	lightComp.quadratic = 0.032f;
+	lightComp.ambient = Vector3D(0.1f, 0.1f, 0.1f);
+	lightComp.diffuse = Vector3D(1.0f, 0.95f, 0.9f);
+	lightComp.specular = Vector3D(1.0f, 1.0f, 1.0f);
+	lightComp.enabled = true;
+
+	ecsManager.AddComponent<PointLightComponent>(brightLight, lightComp);
+
+	ENGINE_PRINT("[HDR Test] Test scene created successfully!\n");
+	ENGINE_PRINT("[HDR Test] Expected result:\n");
+	ENGINE_PRINT("[HDR Test] - WITHOUT HDR: All bright cubes would look similar (white)\n");
+	ENGINE_PRINT("[HDR Test] - WITH HDR: Each cube should have distinct brightness levels\n");
 }
