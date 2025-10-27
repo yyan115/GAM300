@@ -327,7 +327,6 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 	// Extract bone weights for vertices
 	ExtractBoneWeightForVertices(vertices, mesh, scene);
-    DebugPrintSkinningStats(vertices, mBoneInfoMap, mesh->mName.C_Str());
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
@@ -383,6 +382,9 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
 		size_t meshCount = meshesToCompile.size();
 		meshFile.write(reinterpret_cast<const char*>(&meshCount), sizeof(meshCount));
 
+		// For BoneMap writing
+		int meshIndex = 0;
+
 		// For each mesh, write its data to the file.
         for (const Mesh& mesh : meshesToCompile) {
 		    size_t vertexCount = mesh.vertices.size();
@@ -400,6 +402,8 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
                 meshFile.write(reinterpret_cast<const char*>(&v.texUV), sizeof(v.texUV));
                 meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
                 // meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
+				meshFile.write(reinterpret_cast<const char*>(v.mBoneIDs), sizeof(v.mBoneIDs));
+				meshFile.write(reinterpret_cast<const char*>(v.mWeights), sizeof(v.mWeights));
             }
 
 		    // Write index data to the file as binary data.
@@ -410,6 +414,8 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
 			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             std::string meshName = mesh.material->GetName();
             meshFile.write(meshName.data(), nameLength); // Writes actual characters
+
+
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
@@ -435,6 +441,33 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
    //             meshFile.write(it->second->filePath.data(), pathLength);
    //         }
         }
+
+        // Write BoneInfo map for the model
+        {
+            bool hasBones = !mBoneInfoMap.empty();
+            meshFile.write(reinterpret_cast<const char*>(&hasBones), sizeof(hasBones));
+
+            if (hasBones)
+            {
+                // Write the number of bones
+                meshFile.write(reinterpret_cast<const char*>(&mBoneCounter), sizeof(mBoneCounter));
+
+                // Write each bone's name and offset matrix
+                for (const auto& [name, info] : mBoneInfoMap)
+                {
+                    size_t nameLen = name.size();
+                    meshFile.write(reinterpret_cast<const char*>(&nameLen), sizeof(nameLen));   // Size of the name
+                    meshFile.write(name.data(), nameLen);   // Actual name string
+					meshFile.write(reinterpret_cast<const char*>(&info.id), sizeof(info.id));         // Bone ID
+                    meshFile.write(reinterpret_cast<const char*>(&info.offset), sizeof(info.offset)); // Offset matrix
+                }
+            }
+
+			// Clear bone info after writing
+			mBoneInfoMap.clear();
+			mBoneCounter = 0;
+        }
+
 
 		meshFile.close();
         return meshPath;
@@ -496,6 +529,11 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(v.texUV);
                 std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
                 offset += sizeof(v.tangent);
+				std::memcpy(&v.mBoneIDs, buffer.data() + offset, sizeof(v.mBoneIDs));
+				offset += sizeof(v.mBoneIDs);
+				std::memcpy(&v.mWeights, buffer.data() + offset, sizeof(v.mWeights));
+				offset += sizeof(v.mWeights);
+
                 vertices[j] = std::move(v);
             }
 
@@ -619,8 +657,52 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             Mesh newMesh(vertices, indices, material);
             newMesh.CalculateBoundingBox();
             meshes.push_back(std::move(newMesh));
-
         }
+
+        // Read BoneInfo Map
+        {
+			// Check if model has bones
+            bool hasBones = false;
+			std::memcpy(&hasBones, buffer.data() + offset, sizeof(hasBones));
+            offset += sizeof(hasBones);
+
+			// Clear existing bone info
+			mBoneInfoMap.clear();
+			mBoneCounter = 0;
+
+            if (hasBones)
+            {
+                // Read the number of bones
+                std::memcpy(&mBoneCounter, buffer.data() + offset, sizeof(mBoneCounter));
+                offset += sizeof(mBoneCounter);
+
+                // Read each bone's name and offset matrix
+                for (unsigned int i = 0; i < mBoneCounter; ++i)
+                {
+					// Get bone name
+					size_t nameLen = 0;
+                    std::memcpy(&nameLen, buffer.data() + offset, sizeof(nameLen));
+                    offset += sizeof(nameLen);
+
+					// Get actual name string
+                    std::string name(nameLen, '\0');
+                    std::memcpy(&name[0], buffer.data() + offset, nameLen);
+                    offset += nameLen;
+
+                    // Get Bone Info
+                    BoneInfo boneInfo;
+					memcpy(&boneInfo.id, buffer.data() + offset, sizeof(boneInfo.id));
+					offset += sizeof(boneInfo.id);
+					memcpy(&boneInfo.offset, buffer.data() + offset, sizeof(boneInfo.offset));
+					offset += sizeof(boneInfo.offset);
+					mBoneInfoMap[name] = boneInfo;
+                }
+			}
+
+            for (auto& [name, info] : mBoneInfoMap)
+				std::cout << "[BoneInfo] Bone '" << name << "' ID=" << info.id << "\n";
+        }
+
         CalculateBoundingBox();
         return true;
     }

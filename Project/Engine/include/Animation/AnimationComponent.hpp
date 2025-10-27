@@ -49,7 +49,7 @@ public:
     // UI state (can be private with getters if you prefer)
     bool  isPlay = false;
     bool  isLoop = true;
-    float speed = 0.5f;
+    float speed = 0.1f;
 
 private:
     // Data

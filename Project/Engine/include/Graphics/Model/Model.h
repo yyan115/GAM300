@@ -82,12 +82,12 @@ public:
     void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator);
 
 	// Helper functions for Bones
-	auto& GetBoneInfoMap() { return mBoneInfoMap; }
-	int& GetBoneCount() { return mBoneCounter; }
+	auto& GetBoneInfoMap() { return mBoneInfoMap;}
+    int& GetBoneCount() { return mBoneCounter; }
 
 	void SetVertexBoneDataToDefault(Vertex& vertex);
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
-	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+    void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
 
 
     AABB GetBoundingBox() const { return modelBoundingBox; }
