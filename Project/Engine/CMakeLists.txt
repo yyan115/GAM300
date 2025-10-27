@@ -23,154 +23,136 @@ file(GLOB_RECURSE ENGINE_HEADERS
 
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
-# Engine is ALWAYS a shared library
+# Engine is ALWAYS a shared library (DLL on Windows, .so on Linux/Android)
 add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+
+# C++ Standard for Engine
+set_target_properties(Engine PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)
 
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
-# Jolt Physics compile definitions:
-# For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
-#              Engine gets them automatically when linking to Jolt
-# For Desktop: Defines come from JoltInclude.hpp header
+# Configuration-specific preprocessor definitions matching Visual Studio
+target_compile_definitions(Engine PRIVATE
+    $<$<CONFIG:Debug>:_DEBUG;JPH_DEBUG_RENDERER;JPH_PROFILE_ENABLED>
+    $<$<CONFIG:Release>:NDEBUG;JPH_DEBUG_RENDERER>
+    $<$<CONFIG:EditorDebug>:_DEBUG;EDITOR=1;JPH_DEBUG_RENDERER;JPH_PROFILE_ENABLED>
+    $<$<CONFIG:EditorRelease>:NDEBUG;EDITOR;JPH_DEBUG_RENDERER>
+)
 
 # Windows-specific definitions
 if(WIN32)
-    target_compile_definitions(Engine PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(Engine PRIVATE
+        _CONSOLE
+        _CRT_SECURE_NO_WARNINGS
+    )
 endif()
 
-# Set symbol visibility for Linux
+# Set symbol visibility for shared library
 set_target_properties(Engine PROPERTIES
     CXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN YES
+    POSITION_INDEPENDENT_CODE ON
 )
 
-# Automatically include all subdirectories
-file(GLOB_RECURSE ENGINE_INCLUDE_SUBDIRS 
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
-)
-set(ENGINE_INCLUDE_DIRS 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-foreach(item ${ENGINE_INCLUDE_SUBDIRS})
-    if(IS_DIRECTORY ${item})
-        list(APPEND ENGINE_INCLUDE_DIRS ${item})
-    endif()
-endforeach()
-
-# Platform-specific dependencies
-if(ANDROID)
-    # Android build - using prebuilt libraries
-    message(STATUS "Android build - using prebuilt libraries")
-
-    # Define Android library paths
-    set(ANDROID_LIBS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/arm64")
-    set(ANDROID_HEADERS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/headers")
-
-    # Header-only libraries - include directories only
-    set(GLM_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}" CACHE STRING "GLM include directory")
-    set(RAPIDJSON_INCLUDE_DIRS "${ANDROID_HEADERS_DIR}/rapidjson" CACHE STRING "RapidJSON include directory")
-    
-    # Prebuilt static/shared libraries - use direct paths for reliability
-    set(SPDLOG_LIBRARY "${ANDROID_LIBS_DIR}/libspdlog.a")
-    set(FREETYPE_LIBRARY "${ANDROID_LIBS_DIR}/libfreetype.a")
-    set(ASSIMP_LIBRARY "${ANDROID_LIBS_DIR}/libassimp.so")
-    set(FMOD_LIBRARY "${ANDROID_LIBS_DIR}/libfmod.so")
-
-    # Verify all library files exist
-    if(NOT EXISTS ${SPDLOG_LIBRARY})
-        message(FATAL_ERROR "spdlog library not found: ${SPDLOG_LIBRARY}")
-    endif()
-    if(NOT EXISTS ${FREETYPE_LIBRARY})
-        message(FATAL_ERROR "freetype library not found: ${FREETYPE_LIBRARY}")
-    endif()
-    if(NOT EXISTS ${ASSIMP_LIBRARY})
-        message(FATAL_ERROR "assimp library not found: ${ASSIMP_LIBRARY}")
-    endif()
-    if(NOT EXISTS ${FMOD_LIBRARY})
-        message(FATAL_ERROR "fmod library not found: ${FMOD_LIBRARY}")
-    endif()
-
-    message(STATUS "Found Android prebuilt libraries:")
-    message(STATUS "  spdlog: ${SPDLOG_LIBRARY}")
-    message(STATUS "  freetype: ${FREETYPE_LIBRARY}")
-    message(STATUS "  assimp: ${ASSIMP_LIBRARY}")
-    message(STATUS "  fmod: ${FMOD_LIBRARY}")
-else()
-    # Desktop builds (Linux/Windows) use vcpkg packages
-    find_package(assimp CONFIG REQUIRED)
-    find_package(glfw3 CONFIG REQUIRED)
-    find_package(Freetype REQUIRED)
-    find_package(glad CONFIG REQUIRED)
-    find_package(glm CONFIG REQUIRED)
-    find_package(spdlog CONFIG REQUIRED)
-    find_package(RapidJSON CONFIG REQUIRED)
-    find_package(gli CONFIG REQUIRED)
+# Precompiled header support (matching Visual Studio)
+if(MSVC)
+    target_precompile_headers(Engine PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h>"
+    )
+    # Exclude glad.c from PCH
+    set_source_files_properties(
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/glad.c"
+        PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+    )
 endif()
 
-# Manual libraries that aren't available in vcpkg or need custom versions
+# Include directories
 target_include_directories(Engine
     PUBLIC
-        # Only expose the base include directory so consumers can do #include "Engine.h"
-        # NOT subdirectories - those are internal implementation
+        # Only expose the base include directory for consumers (Game, Editor)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
         # Engine internals can see everything
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${ENGINE_INCLUDE_DIRS}
-        # Keep manual libraries: ImGui (docking), FMOD (commercial)
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
 )
 
-# Add Android-specific headers (vcpkg handles desktop headers automatically)
+# Platform-specific dependencies and linking
 if(ANDROID)
+    # ============================================================================
+    # ANDROID BUILD - Using prebuilt libraries + FetchContent Jolt
+    # ============================================================================
+    message(STATUS "Android build - using prebuilt libraries")
+
+    # Define Android library paths
+    set(ANDROID_LIBS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/arm64")
+    set(ANDROID_HEADERS_DIR "${CMAKE_SOURCE_DIR}/Libraries/android/headers")
+
+    # Prebuilt static/shared libraries
+    set(SPDLOG_LIBRARY "${ANDROID_LIBS_DIR}/libspdlog.a")
+    set(FREETYPE_LIBRARY "${ANDROID_LIBS_DIR}/libfreetype.a")
+    set(ASSIMP_LIBRARY "${ANDROID_LIBS_DIR}/libassimp.so")
+    set(FMOD_LIBRARY "${ANDROID_LIBS_DIR}/libfmod.so")
+
+    # Verify all library files exist
+    foreach(LIB_FILE ${SPDLOG_LIBRARY} ${FREETYPE_LIBRARY} ${ASSIMP_LIBRARY} ${FMOD_LIBRARY})
+        if(NOT EXISTS ${LIB_FILE})
+            message(FATAL_ERROR "Android library not found: ${LIB_FILE}")
+        endif()
+    endforeach()
+
+    message(STATUS "Found Android prebuilt libraries:")
+    message(STATUS "  spdlog: ${SPDLOG_LIBRARY}")
+    message(STATUS "  freetype: ${FREETYPE_LIBRARY}")
+    message(STATUS "  assimp: ${ASSIMP_LIBRARY}")
+    message(STATUS "  fmod: ${FMOD_LIBRARY}")
+
+    # Android-specific headers
     target_include_directories(Engine
         PUBLIC
-            ${ANDROID_HEADERS_DIR}  # Base headers directory
-            ${ANDROID_HEADERS_DIR}/glm        # GLM specific path
-            ${ANDROID_HEADERS_DIR}/rapidjson  # RapidJSON specific path
-            ${ANDROID_HEADERS_DIR}/assimp     # Assimp specific path
-            ${ANDROID_HEADERS_DIR}/spdlog     # spdlog specific path
-            ${ANDROID_HEADERS_DIR}/freetype2  # freetype specific path
-            ${ANDROID_HEADERS_DIR}/fmod       # FMOD headers for Android
-            ${ANDROID_HEADERS_DIR}/GLI        # GLI headers for Android
+            ${ANDROID_HEADERS_DIR}
+            ${ANDROID_HEADERS_DIR}/glm
+            ${ANDROID_HEADERS_DIR}/rapidjson
+            ${ANDROID_HEADERS_DIR}/assimp
+            ${ANDROID_HEADERS_DIR}/spdlog
+            ${ANDROID_HEADERS_DIR}/freetype2
+            ${ANDROID_HEADERS_DIR}/fmod
+            ${ANDROID_HEADERS_DIR}/GLI
     )
-endif()
 
-# Platform-specific include directories section removed - now handled above
-
-# Platform-specific linking
-if(ANDROID)
-    # Android linking - using prebuilt libraries + FetchContent Jolt
+    # Android linking
     target_link_libraries(Engine
         PUBLIC
-            ${OPENGL_LIBRARIES}
-            # GLM and RapidJSON are header-only, no linking needed
+            ${OPENGL_LIBRARIES}  # GLESv3, EGL
         PRIVATE
-            # FetchContent Jolt Physics - PRIVATE so Game doesn't see it
-            Jolt
-            # Prebuilt libraries
+            Jolt                 # From FetchContent (ImportDependencies.cmake)
             ${SPDLOG_LIBRARY}
             ${FREETYPE_LIBRARY}
             ${ASSIMP_LIBRARY}
             ${FMOD_LIBRARY}
-            # Android system libraries
-            log  # Android log library
-            android  # Android NDK library
+            log                  # Android log library
+            android              # Android NDK library
     )
+
 else()
-    # Desktop linking (Linux/Windows) - vcpkg dependencies + FetchContent Jolt
+    # ============================================================================
+    # DESKTOP BUILD (Windows/Linux) - Using vcpkg packages
+    # ============================================================================
+    message(STATUS "Desktop build - using vcpkg packages")
+
+    # vcpkg targets are already found in main CMakeLists.txt
     target_link_libraries(Engine
         PUBLIC
             ${OPENGL_LIBRARIES}
         PRIVATE
-            # All dependencies are PRIVATE - Game only sees Engine.h
+            # All dependencies are PRIVATE - Game/Editor only see Engine.h
             glm::glm
-            Jolt
+            unofficial::joltphysics::Jolt
             assimp::assimp
             glfw
             Freetype::Freetype
@@ -180,34 +162,88 @@ else()
             gli
     )
 
-    # Platform-specific FMOD and system libraries
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        # Find FMOD library - try different possible names
+    # FMOD - Commercial library (manual integration, not in vcpkg)
+    target_include_directories(Engine PRIVATE
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
+    )
+
+    if(WIN32)
+        # Windows FMOD
+        target_link_libraries(Engine PRIVATE
+            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
+        )
+
+        # Post-build: Copy FMOD DLL to output directory
+        add_custom_command(TARGET Engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll
+                $<TARGET_FILE_DIR:Engine>
+            COMMENT "Copying FMOD DLL to output directory"
+        )
+
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # Linux FMOD
         find_library(FMOD_LIBRARY
             NAMES fmod libfmod.so.14.9 libfmod.so.14 libfmod.so
             PATHS ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64
             NO_DEFAULT_PATH
         )
+
         if(FMOD_LIBRARY)
             target_link_libraries(Engine PRIVATE
                 ${CMAKE_DL_LIBS}
-                pthread
+                Threads::Threads
                 ${FMOD_LIBRARY}
             )
             message(STATUS "Found FMOD library: ${FMOD_LIBRARY}")
+
+            # Set rpath for finding shared libraries
+            set_target_properties(Engine PROPERTIES
+                INSTALL_RPATH_USE_LINK_PATH TRUE
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64"
+            )
+
+            # Copy FMOD .so to output directory
+            add_custom_command(TARGET Engine POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/libfmod.so.14.9
+                    $<TARGET_FILE_DIR:Engine>
+                COMMENT "Copying FMOD .so to output directory"
+            )
         else()
-            message(FATAL_ERROR "FMOD library not found")
+            message(FATAL_ERROR "FMOD library not found for Linux")
         endif()
-    elseif(WIN32)
-        target_link_libraries(Engine PRIVATE
-            ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
-        )
     endif()
+
+    # Compressonator - Editor-only texture compression library
+    if(CMAKE_BUILD_TYPE MATCHES "^Editor")
+        target_include_directories(Engine PRIVATE
+            ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/include
+        )
+
+        if(WIN32)
+            target_link_libraries(Engine PRIVATE
+                $<$<CONFIG:EditorDebug>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MDd.lib>
+                $<$<CONFIG:EditorRelease>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD.lib>
+            )
+
+            # Suppress PDB mismatch warnings
+            target_link_options(Engine PRIVATE /ignore:4099)
+        endif()
+    endif()
+
 endif()
 
-# Set rpath so executables can find this shared library
-set_target_properties(Engine PROPERTIES
-    INSTALL_RPATH_USE_LINK_PATH TRUE
-    BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64"
-)
+# Print Engine configuration summary
+message(STATUS "----------------------------------------")
+message(STATUS "Engine Configuration:")
+message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ Standard: C++20")
+message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
+if(ANDROID)
+    message(STATUS "  Dependencies: Prebuilt + FetchContent")
+else()
+    message(STATUS "  Dependencies: vcpkg")
+endif()
+message(STATUS "----------------------------------------")

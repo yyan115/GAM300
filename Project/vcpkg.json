@@ -8,11 +8,11 @@
   "dependencies": [
     {
       "name": "assimp",
-      "$comment": "3D model loading and asset importing - using latest stable version"
+      "$comment": "3D model loading and asset importing"
     },
     {
-      "name": "glfw3", 
-      "$comment": "Cross-platform window management and input handling"
+      "name": "glfw3",
+      "$comment": "Cross-platform window management and input handling (desktop only)"
     },
     {
       "name": "freetype",
@@ -20,7 +20,7 @@
     },
     {
       "name": "glad",
-      "$comment": "OpenGL function loader - required for OpenGL 3.3+ context"
+      "$comment": "OpenGL function loader - required for OpenGL 3.3+ (desktop only)"
     },
     {
       "name": "glm",
@@ -42,13 +42,14 @@
       "name": "joltphysics",
       "default-features": false,
       "features": ["rtti", "debugrenderer", "profiler"],
-      "$comment": "Physics engine - locked to 5.4.0 to match Android version exactly"
+      "$comment": "Physics engine - version locked to 5.4.0 for consistency across platforms"
     }
   ],
   "overrides": [
     {
       "name": "joltphysics",
-      "version": "5.4.0"
+      "version": "5.4.0",
+      "$comment": "Match exact version used on Android via FetchContent"
     }
   ],
   "builtin-baseline": "62efe42f53b1886a20cbeb22ee9a27736d20f149"
