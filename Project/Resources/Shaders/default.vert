@@ -29,36 +29,59 @@ void main()
     vec4 localPos = vec4(aPos, 1.0);
     vec3 localNrm = aNormal;
 
-    Tangent = normalMatrix * aTangent;
-
     if (isAnimated)
     {
-        // Position skin
-        mat4 acc = mat4(0.0);
+        // --- Position skin ---
+        mat4 skin = mat4(0.0);
         float wsum = 0.0;
-        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) 
+        {
             int id = aBoneIds[i];
             float w = aWeights[i];
-            if (id >= 0 && id < MAX_BONES && w > 0.0) {
-                acc  += finalBonesMatrices[id] * w;
+            if (id >= 0 && id < MAX_BONES && w > 0.0) 
+            {
+                skin += finalBonesMatrices[id] * w;   // no divide
                 wsum += w;
             }
         }
-        mat4 skin = (wsum > 0.0) ? acc / wsum : mat4(1.0);
+
+        if (wsum == 0.0) skin = mat4(1.0);           // fallback for unweighted verts
         localPos = skin * localPos;
 
-        // Normal skin (same fallback)
+        // --- Normal skin (linear blend) ---
         vec3 nacc = vec3(0.0);
         float nsum = 0.0;
-        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) 
+        {
             int id = aBoneIds[i];
             float w = aWeights[i];
-            if (id >= 0 && id < MAX_BONES && w > 0.0) {
-                nacc += (mat3(finalBonesMatrices[id]) * aNormal) * w;
+            if (id >= 0 && id < MAX_BONES && w > 0.0) 
+            {
+                nacc += mat3(finalBonesMatrices[id]) * aNormal * w;
                 nsum += w;
             }
         }
+
         localNrm = (nsum > 0.0) ? normalize(nacc) : aNormal;
+
+        // --- Tangent skin (match normal handling) ---
+        vec3 tacc = vec3(0.0);
+        float tsum = 0.0;
+        for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) 
+        {
+            int id = aBoneIds[i];
+            float w = aWeights[i];
+            if (id >= 0 && id < MAX_BONES && w > 0.0) 
+            {
+                tacc += mat3(finalBonesMatrices[id]) * aTangent * w;
+                tsum += w;
+            }
+        }
+        Tangent = (tsum > 0.0) ? normalize(tacc) : aTangent;
+    }
+    else
+    {
+        Tangent = normalMatrix * aTangent; // static mesh path
     }
 
 
