@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 6,
+        "guid": "00436d8bf12595c2-000315428c000003",
+        "source": "../../Resources/Shaders/tonemapping",
+        "compiled": "../../Resources/Shaders/tonemapping.shader",
+        "last_compiled": "2025-10-27 08:01:10.5200569"
+    }
+}

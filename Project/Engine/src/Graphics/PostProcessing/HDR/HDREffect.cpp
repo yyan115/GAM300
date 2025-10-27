@@ -2,6 +2,7 @@
 #include "Graphics/PostProcessing/HDR/HDREffect.hpp"
 #include "Logging.hpp"
 #include <Asset Manager/ResourceManager.hpp>
+#include <Graphics/PostProcessing/PostProcessingManager.hpp>
 
 HDREffect::HDREffect()
     : PostProcessEffect("HDR Tone Mapping"),
@@ -21,17 +22,17 @@ bool HDREffect::Initialize()
 {
     ENGINE_PRINT("[HDREffect] Initializing...\n");
 
-    // Load tone mapping shader
-    std::string shaderPath = "Resources/Shaders/tonemapping";
-    auto shaderPtr = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("tonemapping");
 
-    if (!shaderPtr) 
+    GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(shaderPath);
+
+    shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(shaderGUID, shaderPath); 
+
+    if (!shader) 
     {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[HDREffect] Failed to load tone mapping shader!\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[HDREffect] Failed to load tone mapping shader from path: ", shaderPath, "\n"); 
         return false;
     }
-
-    shader = std::make_unique<Shader>(shaderPtr.get());
 
     ENGINE_PRINT("[HDREffect] Initialized successfully\n");
     return true;

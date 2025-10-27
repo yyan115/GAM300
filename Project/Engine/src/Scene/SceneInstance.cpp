@@ -25,6 +25,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 Entity fpsText;
 
@@ -33,6 +34,7 @@ void SceneInstance::Initialize() {
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
+
 	// WOON LI TEST CODE
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
@@ -219,6 +221,7 @@ void SceneInstance::Exit() {
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
+	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
