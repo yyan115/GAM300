@@ -23,7 +23,7 @@ public:
 	bool isVisible = true;
 
 	// Don't serialize these.
-	std::shared_ptr<Model> model;
+	std::shared_ptr<Model> model; 
 	std::shared_ptr<Shader> shader;
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;
@@ -49,6 +49,29 @@ public:
 		material = mat;
 	}
 
+	Vector3D CalculateModelHalfExtent(const Model& model) {
+		Vector3D minPt(FLT_MAX, FLT_MAX, FLT_MAX);
+		Vector3D maxPt(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		for (const auto& mesh : model.meshes) {
+			for (const auto& vertex : mesh.vertices) {
+				if (vertex.position.x < minPt.x) minPt.x = vertex.position.x;
+				if (vertex.position.y < minPt.y) minPt.y = vertex.position.y;
+				if (vertex.position.z < minPt.z) minPt.z = vertex.position.z;
+
+				if (vertex.position.x > maxPt.x) maxPt.x = vertex.position.x;
+				if (vertex.position.y > maxPt.y) maxPt.y = vertex.position.y;
+				if (vertex.position.z > maxPt.z) maxPt.z = vertex.position.z;
+			}
+		}
+
+		Vector3D halfExtent;
+		halfExtent.x = (maxPt.x - minPt.x) * 0.5f;
+		halfExtent.y = (maxPt.y - minPt.y) * 0.5f;
+		halfExtent.z = (maxPt.z - minPt.z) * 0.5f;
+
+		return halfExtent;
+	}
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }
 };

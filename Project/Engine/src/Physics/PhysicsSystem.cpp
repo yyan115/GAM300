@@ -178,6 +178,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                     col.boxHalfExtents.y * tr.localScale.y,
                     col.boxHalfExtents.z * tr.localScale.z
                 ));
+                
                 break;
 
             case ColliderShapeType::Sphere:
@@ -217,7 +218,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
             // Set default physics material properties
             bcs.mRestitution = 0.2f;   // no bounce unless material is assigned     //Bounciness
-            bcs.mFriction = 0.5f;      // Moderate friction applied                 //Friction (Jolt doesnt separate
+            bcs.mFriction = 0.5f;      // Moderate friction applied                 //Friction 
             bcs.mLinearDamping = rb.linearDamping; //linear direction slowdown
             bcs.mAngularDamping = rb.angularDamping;//rotational slowdown
 
@@ -227,35 +228,17 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
 
-            //// ADD THIS DETAILED LOGGING:
-            //std::cout << "========================================" << std::endl;
-            //std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
-            //std::cout << "  Entity: " << e << std::endl;
-            //std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
-            //    motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
-            //std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
-            //    col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
-            //    col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
-            //std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
-            //std::cout << "  Layer: " << col.layer << std::endl;
-            //std::cout << "========================================" << std::endl;
-
-
-            // In Initialise(), print for both bodies:
-            std::cout << "Entity " << e << std::endl;
-            std::cout << "  Scale: " << tr.localScale << std::endl;
-            std::cout << "  Half extents: " << col.boxHalfExtents << std::endl;
-            std::cout << "  Final box size: " << (col.boxHalfExtents * tr.localScale) << std::endl;
-            std::cout << "  Position: " << tr.localPosition << std::endl;
-
-            // For the floor specifically:
-            if (rb.id.GetIndex() == 1) {
-                float floorTop = tr.localPosition.y + (col.boxHalfExtents.y * tr.localScale.y);
-                float floorBottom = tr.localPosition.y - (col.boxHalfExtents.y * tr.localScale.y);
-                std::cout << "FLOOR top Y: " << floorTop << std::endl;
-                std::cout << "FLOOR bottom Y: " << floorBottom << std::endl;
-            }
-
+            std::cout << "========================================" << std::endl;
+            std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
+            std::cout << "  Entity: " << e << std::endl;
+            std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
+                motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
+            std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
+                col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
+                col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
+            std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
+            std::cout << "  Layer: " << col.layer << std::endl;
+            std::cout << "========================================" << std::endl;
 
 
 #ifdef __ANDROID__

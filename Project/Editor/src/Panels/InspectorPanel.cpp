@@ -1737,17 +1737,6 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cout << "[Inspector] Added TextRenderComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "ColliderComponent") {
-			ColliderComponent component;
-			// Set default box shape - shape will be created by physics system
-			component.shapeType = ColliderShapeType::Box;
-			component.shapeTypeID = static_cast<int>(component.shapeType);
-			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
-			component.layer = Layers::MOVING;
-			component.layerID = static_cast<int>(component.layer);
-			component.shape = nullptr; // Physics system will create the shape
-			component.version = 1; // Mark as needing creation
-
-			ecsManager.AddComponent<ColliderComponent>(entity, component);
 
 			// Ensure entity has Transform component
 			if (!ecsManager.HasComponent<Transform>(entity)) {
@@ -1755,6 +1744,25 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				ecsManager.AddComponent<Transform>(entity, transform);
 				std::cout << "[Inspector] Added Transform component for Collider" << std::endl;
 			}
+
+			ColliderComponent component;
+			// Set default box shape - shape will be created by physics system
+			component.shapeType = ColliderShapeType::Box;
+			component.shapeTypeID = static_cast<int>(component.shapeType);
+			if (ecsManager.HasComponent<ModelRenderComponent>(entity))
+			{
+				auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
+				auto& transform = ecsManager.GetComponent<Transform>(entity);
+				if (rc.model)
+					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
+			}
+			component.layer = Layers::MOVING;
+			component.layerID = static_cast<int>(component.layer);
+			component.shape = nullptr; // Physics system will create the shape
+			component.version = 1; // Mark as needing creation
+
+			ecsManager.AddComponent<ColliderComponent>(entity, component);
+
 
 			std::cout << "[Inspector] Added ColliderComponent to entity " << entity << std::endl;
 		}
