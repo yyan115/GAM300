@@ -180,6 +180,7 @@ void Material::BindTextures(Shader& shader) const
 				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(textureInfo->filePath);
 #else
 				std::string androidAssetPath = textureInfo->filePath.substr(textureInfo->filePath.find("Resources"));
+				ENGINE_LOG_DEBUG("[Material] Getting texture from: " + androidAssetPath);
 				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(androidAssetPath);
 #endif
 			}

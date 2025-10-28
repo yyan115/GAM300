@@ -114,6 +114,7 @@ AssetBrowserPanel::AssetBrowserPanel()
     
     // Always expand Resources folder by default (Unity behavior)
     expandedDirectories.insert(rootAssetDirectory);
+    RefreshAssets();
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
@@ -1189,23 +1190,9 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
 
     ImGui::Separator();
 
-
-    // Create submenu with delete option
-    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
-        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
-            CreateNewMaterial();
-        }
-
-        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
-            CreateNewFolder();
-        }
-
-        if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
+    if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
             DeleteAsset(asset);
         }
-
-        ImGui::EndMenu();
-    }
 }
 
 void AssetBrowserPanel::ShowCreateAssetMenu() {
