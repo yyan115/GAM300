@@ -6,7 +6,6 @@
 #include "Platform/AndroidPlatform.h"
 #include "Graphics/stb_image.h"
 #endif
-#include "Graphics/TextureManager.h"
 #include <iostream>
 #include <unordered_map>
 #include "Asset Manager/AssetManager.hpp"
@@ -290,7 +289,7 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(texPathObj.generic_string());
 		texPathObj = texturePath;
         if (!std::filesystem::exists(texPathObj)) {
-            ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: ", texturePath, "\n");
+            ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: " + texturePath + "\n");
             continue;
 		}
         // Add a TextureInfo with no texture loaded to the material first.

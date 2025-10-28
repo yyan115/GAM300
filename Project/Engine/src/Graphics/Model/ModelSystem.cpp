@@ -29,8 +29,9 @@ bool ModelSystem::Initialise()
         modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 #endif
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
-        if (!materialPath.empty())
+        if (!materialPath.empty()) {
             modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
+        }
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");

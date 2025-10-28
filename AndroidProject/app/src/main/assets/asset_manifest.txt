@@ -11,9 +11,21 @@ Resources/Fonts/Kenney Mini.ttf.meta
 Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
-Resources/Kenney Mini.font
-Resources/Materials/backpack.mat
-Resources/Materials/backpack.mat.meta
+Resources/Materials/.mat.mat
+Resources/Materials/.mat.mat.meta
+Resources/Materials/.mat.meta
+Resources/Materials/backpack_Scene_-_Root.mat
+Resources/Materials/backpack_Scene_-_Root.mat.meta
+Resources/Materials/cube_backup_initialShadingGroup.mat
+Resources/Materials/cube_backup_initialShadingGroup.mat.meta
+Resources/Materials/cube_initialShadingGroup.mat
+Resources/Materials/cube_initialShadingGroup.mat.meta
+Resources/Materials/FinalBaseMesh_default.mat
+Resources/Materials/FinalBaseMesh_default.mat.meta
+Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat
+Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat.meta
+Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat
+Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -32,7 +44,6 @@ Resources/Models/backpack/roughness.jpg.meta
 Resources/Models/backpack/specular.dds
 Resources/Models/backpack/specular.jpg
 Resources/Models/backpack/specular.jpg.meta
-Resources/Models/backpack.mesh
 Resources/Models/cube.mesh
 Resources/Models/cube.obj
 Resources/Models/cube.obj.meta
@@ -42,9 +53,23 @@ Resources/Models/cube_backup.obj.meta
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
+Resources/Models/Kachujin/Kachujin G Rosales.fbx
+Resources/Models/Kachujin/Kachujin G Rosales.fbx.meta
+Resources/Models/Kachujin/Kachujin G Rosales.mesh
+Resources/Models/Kachujin/Kachujin_diffuse.dds
+Resources/Models/Kachujin/Kachujin_diffuse.png
+Resources/Models/Kachujin/Kachujin_diffuse.png.meta
+Resources/Models/Kachujin/Kachujin_diffuse_body.dds
+Resources/Models/Kachujin/Kachujin_diffuse_body.png
+Resources/Models/Kachujin/Kachujin_diffuse_body.png.meta
+Resources/Models/Kachujin/Kachujin_normal.dds
+Resources/Models/Kachujin/Kachujin_normal.png
+Resources/Models/Kachujin/Kachujin_normal.png.meta
+Resources/Models/Kachujin/Kachujin_specular.dds
+Resources/Models/Kachujin/Kachujin_specular.png
+Resources/Models/Kachujin/Kachujin_specular.png.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
-Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
 Resources/Shaders/debugandroid.frag
 Resources/Shaders/debugandroid.meta
@@ -60,11 +85,9 @@ Resources/Shaders/defaultandroid.shader
 Resources/Shaders/defaultandroid.vert
 Resources/Shaders/light.frag
 Resources/Shaders/light.meta
-Resources/Shaders/light.shader
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
-Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.frag
 Resources/Shaders/particle.meta

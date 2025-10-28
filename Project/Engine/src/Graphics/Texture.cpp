@@ -304,6 +304,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		texture.data()
 	);
 
+#ifndef ANDROID
 	// Generates MipMaps
 	if (generateMipmaps) {
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -313,6 +314,9 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	else {
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
+#else
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#endif
 
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
@@ -376,6 +380,7 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
+	std::shared_ptr<TextureMeta> currentTextureMeta = static_pointer_cast<TextureMeta>(currentMetaData);
 	// Add type
 	textureMetaData.AddMember("type", rapidjson::Value().SetString(type.c_str(), allocator), allocator);
 	// Add flip UVs
