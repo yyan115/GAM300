@@ -347,7 +347,6 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
-	std::shared_ptr<TextureMeta> currentTextureMeta = static_pointer_cast<TextureMeta>(currentMetaData);
 	// Add type
 	textureMetaData.AddMember("type", rapidjson::Value().SetString(metaData->type.c_str(), allocator), allocator);
 	// Add flip UVs

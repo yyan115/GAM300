@@ -4,10 +4,10 @@
         "guid": "0066bb2680d19c02-000310ab7c000013",
         "source": "../../Resources/Models/backpack/normal.png",
         "compiled": "../../Resources/Models/backpack/normal.dds",
-        "last_compiled": "2025-10-25 14:17:08.9659267"
+        "last_compiled": "2025-10-28 06:25:21.3774118"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": true,
         "generateMipmaps": true
     }

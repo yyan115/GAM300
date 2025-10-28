@@ -4,6 +4,9 @@
         "guid": "0066bb26b874dfa4-000310ab8600001d",
         "source": "../../Resources/Models/cube_backup.obj",
         "compiled": "../../Resources/Models/cube_backup.mesh",
-        "last_compiled": "2025-10-25 14:14:27.5319622"
+        "last_compiled": "2025-10-28 06:26:31.8720257"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
     }
 }

@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "0031555688e017f2-0002d702fa000039",
+        "version": 7,
+        "guid": "0066bb26eed5ed14-000310ab8e000049",
         "source": "../../Resources/Shaders/textandroid",
         "compiled": "../../Resources/Shaders/textandroid.shader",
         "android_compiled": "Resources/Shaders/textandroid.shader",
-        "last_compiled": "2025-10-05 13:54:02.3084914"
+        "last_compiled": "2025-10-28 07:04:09.2709214"
     }
 }

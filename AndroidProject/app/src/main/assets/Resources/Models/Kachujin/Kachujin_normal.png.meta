@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0066bb26f4ce8085-000310ab8800002b",
+        "source": "../../Resources/Models/Kachujin/Kachujin_normal.png",
+        "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds",
+        "android_compiled": "Resources/Models/Kachujin/Kachujin_normal_android.ktx",
+        "last_compiled": "2025-10-28 07:03:26.1253133"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

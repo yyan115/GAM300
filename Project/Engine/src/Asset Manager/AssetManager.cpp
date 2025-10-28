@@ -161,6 +161,34 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	}
 }
 
+bool AssetManager::CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile, bool forAndroid) {
+	std::filesystem::path filePathObj(assetMeta->sourceFilePath);
+	std::string extension = filePathObj.extension().string();
+	if (textureExtensions.find(extension) != textureExtensions.end()) {
+		std::shared_ptr<TextureMeta> textureMeta = std::static_pointer_cast<TextureMeta>(assetMeta);
+		return CompileTexture(assetMeta->sourceFilePath, textureMeta, forceCompile, forAndroid);
+	}
+	else if (audioExtensions.find(extension) != audioExtensions.end()) {
+		return CompileAsset<Audio>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (fontExtensions.find(extension) != fontExtensions.end()) {
+		return CompileAsset<Font>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (modelExtensions.find(extension) != modelExtensions.end()) {
+		return CompileAsset<Model>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
+		return CompileAsset<Shader>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (materialExtensions.find(extension) != materialExtensions.end()) {
+		return CompileAsset<Material>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else {
+		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
+		return false;
+	}
+}
+
 bool AssetManager::CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
@@ -439,8 +467,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			continue;
 		}
 		else {
-			assetPath = pair.second->sourceFilePath;
-			CompileAsset(assetPath, true, true);
+			CompileAsset(pair.second, true, true);
 			++androidCompilationStatus.numCompiledAssets;
 		}
 	}

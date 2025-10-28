@@ -38,6 +38,7 @@ public:
 	ENGINE_API static AssetManager& GetInstance();
 
 	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
+	bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
 	void AddAssetMetaToMap(const std::string& assetPath);
 
 	/**

@@ -4,6 +4,9 @@
         "guid": "0066bb269b168449-000310ab86000019",
         "source": "../../Resources/Models/cube.obj",
         "compiled": "../../Resources/Models/cube.mesh",
-        "last_compiled": "2025-10-25 14:14:27.5266733"
+        "last_compiled": "2025-10-28 06:26:31.7483296"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
     }
 }

@@ -395,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001324b020528bac-00030dd500000025",
-                        "001324b0431e932c-00030dd508000037",
+                        "0066bb26f1ef68e3-000310ab86000025",
+                        "0066bb26cee1aeda-000310ab8e000037",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -624,8 +624,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001324b065c4dcfe-00030dd4f200000d",
-                        "001324b0431e932c-00030dd508000037",
+                        "0066bb26890bfe4e-000310ab7a00000d",
+                        "0066bb26cee1aeda-000310ab8e000037",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",

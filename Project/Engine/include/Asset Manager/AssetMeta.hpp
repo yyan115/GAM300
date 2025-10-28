@@ -40,6 +40,7 @@ public:
 class ModelMeta : public AssetMeta {
 public:
 	bool optimizeMeshes = true;
+	bool generateLODs = false;
 
 	ENGINE_API void PopulateModelMeta(bool _optimizeMesh);
 	ENGINE_API void PopulateAssetMetaFromFile(const std::string& metaFilePath) override;

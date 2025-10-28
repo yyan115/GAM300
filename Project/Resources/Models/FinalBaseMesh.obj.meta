@@ -4,6 +4,9 @@
         "guid": "0066bb26a6fb061f-000310ab86000021",
         "source": "../../Resources/Models/FinalBaseMesh.obj",
         "compiled": "../../Resources/Models/FinalBaseMesh.mesh",
-        "last_compiled": "2025-10-25 14:14:27.6460255"
+        "last_compiled": "2025-10-28 06:26:32.1133354"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
     }
 }

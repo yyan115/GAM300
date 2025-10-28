@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "0031555680ca4767-0002d702f6000005",
+        "version": 7,
+        "guid": "0066bb26928ce743-000310ab78000005",
         "source": "../../Resources/Fonts/fa-solid-900.ttf",
         "compiled": "../../Resources/Fonts/fa-solid-900.font",
         "android_compiled": "Resources/Fonts/fa-solid-900_android.font",
-        "last_compiled": "2025-10-05 13:52:39.7063353"
+        "last_compiled": "2025-10-28 07:01:58.8513505"
     }
 }
