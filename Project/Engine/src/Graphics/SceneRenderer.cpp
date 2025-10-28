@@ -264,8 +264,9 @@ void SceneRenderer::BeginGameRender(int width, int height)
     WindowManager::SetViewportDimensions(width, height);
 
     // Bind game framebuffer and set viewport
-    glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
-    glViewport(0, 0, width, height);
+    /*glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
+    glViewport(0, 0, width, height);*/
+    PostProcessingManager::GetInstance().BeginHDRRender(width, height);
 
     // Enable depth testing for 3D rendering
     glEnable(GL_DEPTH_TEST);
@@ -273,6 +274,7 @@ void SceneRenderer::BeginGameRender(int width, int height)
 
 void SceneRenderer::EndGameRender()
 {
+    PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
     // Unbind framebuffer (render to screen again)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

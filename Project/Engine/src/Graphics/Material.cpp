@@ -128,12 +128,12 @@ void Material::ApplyToShader(Shader& shader) const
 	//shader.setFloat("material.roughness", m_roughness);
 	//shader.setFloat("material.ao", m_ao);
 
-	 // DEBUG: Print emissive value
-	static int callCount = 0;
-	if (callCount++ % 300 == 0) { // Every 300 calls (about every 5 seconds at 60fps)
-		ENGINE_PRINT("[Material] Applying ", m_name, " - Emissive: (",
-			m_emissive.x, ", ", m_emissive.y, ", ", m_emissive.z, ")\n");
-	}
+	// DEBUG: Print emissive value
+	//static int callCount = 0;
+	//if (callCount++ % 300 == 0) { // Every 300 calls (about every 5 seconds at 60fps)
+	//	ENGINE_PRINT("[Material] Applying ", m_name, " - Emissive: (",
+	//		m_emissive.x, ", ", m_emissive.y, ", ", m_emissive.z, ")\n");
+	//}
 	// Bind textures
 	BindTextures(shader);
 }

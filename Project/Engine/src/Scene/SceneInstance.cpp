@@ -326,23 +326,18 @@ void SceneInstance::processInput(float deltaTime)
 		static bool firstMouse = true;
 		firstMouse = true;
 	}
-	// Press P to print material debug info
-	if (InputManager::GetKeyDown(Input::Key::L)) {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
-
-		ENGINE_PRINT("===== HDR TEST CUBES DEBUG =====\n");
-		for (const auto& entity : ecsManager.modelSystem->entities) {
-			auto& name = ecsManager.GetComponent<NameComponent>(entity);
-			if (name.name.find("HDR Test Cube") != std::string::npos) {
-				auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-				if (modelComp.material) {
-					auto emissive = modelComp.material->GetEmissive();
-					ENGINE_PRINT(name.name, " - Emissive: (", emissive.r, ", ", emissive.g, ", ", emissive.b, ")\n");
-				}
-				else {
-					ENGINE_PRINT(name.name, " - NO MATERIAL!\n");
-				}
-			}
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	if (hdrEffect) {
+		// Press 1/2 to decrease/increase exposure
+		if (InputManager::GetKeyDown(Input::Key::L)) {
+			float newExposure = hdrEffect->GetExposure() - 0.1f;
+			hdrEffect->SetExposure(std::max(0.1f, newExposure));
+			ENGINE_PRINT("[HDR] Exposure: ", hdrEffect->GetExposure(), "\n");
+		}
+		if (InputManager::GetKeyDown(Input::Key::M)) {
+			float newExposure = hdrEffect->GetExposure() + 0.1f;
+			hdrEffect->SetExposure(std::min(5.0f, newExposure));
+			ENGINE_PRINT("[HDR] Exposure: ", hdrEffect->GetExposure(), "\n");
 		}
 	}
 	// Sync camera position back to transform
