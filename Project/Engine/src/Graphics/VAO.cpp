@@ -34,6 +34,14 @@ void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, 
 	VBO.Unbind();
 }
 
+void VAO::LinkAttribInt(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
+{
+	VBO.Bind();
+	glVertexAttribIPointer(layout, numComponents, type, static_cast<GLsizei>(stride), offset);
+	glEnableVertexAttribArray(layout);
+	VBO.Unbind();
+}
+
 void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor = 0) 
 {
 	VBO.Bind();

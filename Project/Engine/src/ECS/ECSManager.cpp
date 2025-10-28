@@ -12,6 +12,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
+#include "Animation/AnimationComponent.hpp"
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
@@ -49,6 +50,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
+	RegisterComponent<AnimationComponent>();
 	RegisterComponent<PrefabLinkComponent>();
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
@@ -123,6 +125,13 @@ void ECSManager::Initialize() {
 		SetSystemSignature<AudioSystem>(signature);
 	}
 
+	animationSystem = RegisterSystem<AnimationSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<AnimationComponent>());
+		SetSystemSignature<AnimationSystem>(signature);
+	}
+	
 	cameraSystem = RegisterSystem<CameraSystem>();
 	{
 		Signature signature;
