@@ -14,6 +14,7 @@
 #include <Math/Matrix4x4.hpp>
 #include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
+#include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
 
 class GraphicsManager {

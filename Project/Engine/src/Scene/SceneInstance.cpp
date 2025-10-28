@@ -26,6 +26,9 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
 
+#include <Animation/AnimationComponent.hpp>
+#include <Animation/AnimationSystem.hpp>
+
 Entity fpsText;
 
 void SceneInstance::Initialize() {
@@ -66,6 +69,17 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
 	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
 
+	// Test Animation System
+	Entity testAnim = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(testAnim).name = "TestAnimationEntity";
+	ecsManager.GetComponent<Transform>(testAnim).localScale = Vector3D(0.01f, .01f, .01f);
+	ecsManager.GetComponent<Transform>(testAnim).localPosition = Vector3D(0.0f, -1.5f, -1.5f);
+	ecsManager.AddComponent<ModelRenderComponent>(testAnim,
+		ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/kachujin/Kachujin.fbx"),
+		MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
+		MetaFilesManager::GetGUID128FromAssetFile("Resources/Materials/backpack.mat") });
+	ecsManager.AddComponent<AnimationComponent>(testAnim, AnimationComponent{});
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -79,7 +93,17 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Sprite system initialized");
 	ecsManager.particleSystem->Initialise();
 	ENGINE_LOG_INFO("Particle system initialized");
+	ecsManager.animationSystem->Initialise();
+	ENGINE_LOG_INFO("Animation system initialized");
 	InitializePhysics();
+
+	//glEnable(GL_DEBUG_OUTPUT);
+	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	//glDebugMessageCallback(
+	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
+	//		fprintf(stderr, "GL: %s\n", msg);
+	//	},
+	//	nullptr);
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -111,6 +135,9 @@ void SceneInstance::Update(double dt) {
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime());
 	mainECS.physicsSystem->physicsSyncBack(mainECS);
 	mainECS.transformSystem->Update();
+
+	mainECS.animationSystem->Update();
+
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 
@@ -211,6 +238,10 @@ void SceneInstance::Draw() {
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
+
+	if(mainECS.animationSystem)
+		mainECS.animationSystem->Update(); // After rendering to reset any pose changes if necessary
+
 
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");

@@ -6,7 +6,6 @@
 #include "Platform/AndroidPlatform.h"
 #include "Graphics/stb_image.h"
 #endif
-#include "Graphics/TextureManager.h"
 #include <iostream>
 #include <unordered_map>
 #include "Asset Manager/AssetManager.hpp"
@@ -14,10 +13,64 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 #include "Logging.hpp"
+#include <Animation/Animator.hpp>
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+
+
+static void DebugPrintSkinningStats(
+    const std::vector<Vertex>& verts,
+    const std::map<std::string, BoneInfo>& boneMap,
+    const char* meshName)
+{
+    size_t hasAny = 0;
+    float minSum = 10.f, maxSum = -10.f;
+    int   maxBoneIdSeen = -1;
+
+    for (size_t i = 0; i < verts.size(); ++i) {
+        const auto& v = verts[i];
+
+        // Count non-empty influences and clamp-sum
+        int nonEmpty = 0;
+        float sum = 0.f;
+        for (int k = 0; k < MaxBoneInfluences; ++k) {
+            if (v.mBoneIDs[k] >= 0 && v.mWeights[k] > 0.f) {
+                ++nonEmpty;
+                sum += v.mWeights[k];
+                maxBoneIdSeen = std::max(maxBoneIdSeen, v.mBoneIDs[k]);
+            }
+        }
+
+        if (nonEmpty > 0) {
+            ++hasAny;
+            minSum = std::min(minSum, sum);
+            maxSum = std::max(maxSum, sum);
+
+            // Optional: print a few sample vertices
+            if (hasAny <= 5) {
+                std::cout << "[Skin] vtx " << i
+                    << " IDs=(" << v.mBoneIDs[0] << "," << v.mBoneIDs[1]
+                    << "," << v.mBoneIDs[2] << "," << v.mBoneIDs[3] << ")"
+                    << " W=(" << v.mWeights[0] << "," << v.mWeights[1]
+                    << "," << v.mWeights[2] << "," << v.mWeights[3] << ")"
+                    << " sum=" << sum << "\n";
+            }
+        }
+    }
+
+    std::cout << "[Skin] Mesh '" << (meshName ? meshName : "?")
+        << "': verts=" << verts.size()
+        << " boneMapSize=" << boneMap.size()
+        << " vertsWithInfluences=" << hasAny
+        << " weightSum(min..max)=" << minSum << ".." << maxSum
+        << " maxBoneIdSeen=" << maxBoneIdSeen
+        << "\n";
+}
+
+
+
 
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
@@ -153,6 +206,8 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     {
         Vertex vertex;
 
+        SetVertexBoneDataToDefault(vertex);
+
         // Position
         vertex.position.x = mesh->mVertices[i].x;
         vertex.position.y = mesh->mVertices[i].y;
@@ -269,6 +324,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         material = Material::CreateDefault();
     }
 
+	// Extract bone weights for vertices
+	ExtractBoneWeightForVertices(vertices, mesh, scene);
+
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
     material->SetName(modelName + "_" + material->GetName());
@@ -290,7 +348,7 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(texPathObj.generic_string());
 		texPathObj = texturePath;
         if (!std::filesystem::exists(texPathObj)) {
-            ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: ", texturePath, "\n");
+            ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: " + texturePath + "\n");
             continue;
 		}
         // Add a TextureInfo with no texture loaded to the material first.
@@ -323,6 +381,9 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
 		size_t meshCount = meshesToCompile.size();
 		meshFile.write(reinterpret_cast<const char*>(&meshCount), sizeof(meshCount));
 
+		// For BoneMap writing
+		int meshIndex = 0;
+
 		// For each mesh, write its data to the file.
         for (const Mesh& mesh : meshesToCompile) {
 		    size_t vertexCount = mesh.vertices.size();
@@ -340,6 +401,8 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
                 meshFile.write(reinterpret_cast<const char*>(&v.texUV), sizeof(v.texUV));
                 meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
                 // meshFile.write(reinterpret_cast<const char*>(&v.tangent), sizeof(v.tangent));
+				meshFile.write(reinterpret_cast<const char*>(v.mBoneIDs), sizeof(v.mBoneIDs));
+				meshFile.write(reinterpret_cast<const char*>(v.mWeights), sizeof(v.mWeights));
             }
 
 		    // Write index data to the file as binary data.
@@ -350,6 +413,8 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
 			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             std::string meshName = mesh.material->GetName();
             meshFile.write(meshName.data(), nameLength); // Writes actual characters
+
+
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
 		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
@@ -375,6 +440,33 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
    //             meshFile.write(it->second->filePath.data(), pathLength);
    //         }
         }
+
+        // Write BoneInfo map for the model
+        {
+            bool hasBones = !mBoneInfoMap.empty();
+            meshFile.write(reinterpret_cast<const char*>(&hasBones), sizeof(hasBones));
+
+            if (hasBones)
+            {
+                // Write the number of bones
+                meshFile.write(reinterpret_cast<const char*>(&mBoneCounter), sizeof(mBoneCounter));
+
+                // Write each bone's name and offset matrix
+                for (const auto& [name, info] : mBoneInfoMap)
+                {
+                    size_t nameLen = name.size();
+                    meshFile.write(reinterpret_cast<const char*>(&nameLen), sizeof(nameLen));   // Size of the name
+                    meshFile.write(name.data(), nameLen);   // Actual name string
+					meshFile.write(reinterpret_cast<const char*>(&info.id), sizeof(info.id));         // Bone ID
+                    meshFile.write(reinterpret_cast<const char*>(&info.offset), sizeof(info.offset)); // Offset matrix
+                }
+            }
+
+			// Clear bone info after writing
+			mBoneInfoMap.clear();
+			mBoneCounter = 0;
+        }
+
 
 		meshFile.close();
         return meshPath;
@@ -436,6 +528,11 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(v.texUV);
                 std::memcpy(&v.tangent, buffer.data() + offset, sizeof(v.tangent));
                 offset += sizeof(v.tangent);
+				std::memcpy(&v.mBoneIDs, buffer.data() + offset, sizeof(v.mBoneIDs));
+				offset += sizeof(v.mBoneIDs);
+				std::memcpy(&v.mWeights, buffer.data() + offset, sizeof(v.mWeights));
+				offset += sizeof(v.mWeights);
+
                 vertices[j] = std::move(v);
             }
 
@@ -559,8 +656,52 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             Mesh newMesh(vertices, indices, material);
             newMesh.CalculateBoundingBox();
             meshes.push_back(std::move(newMesh));
-
         }
+
+        // Read BoneInfo Map
+        {
+			// Check if model has bones
+            bool hasBones = false;
+			std::memcpy(&hasBones, buffer.data() + offset, sizeof(hasBones));
+            offset += sizeof(hasBones);
+
+			// Clear existing bone info
+			mBoneInfoMap.clear();
+			mBoneCounter = 0;
+
+            if (hasBones)
+            {
+                // Read the number of bones
+                std::memcpy(&mBoneCounter, buffer.data() + offset, sizeof(mBoneCounter));
+                offset += sizeof(mBoneCounter);
+
+                // Read each bone's name and offset matrix
+                for (unsigned int i = 0; i < mBoneCounter; ++i)
+                {
+					// Get bone name
+					size_t nameLen = 0;
+                    std::memcpy(&nameLen, buffer.data() + offset, sizeof(nameLen));
+                    offset += sizeof(nameLen);
+
+					// Get actual name string
+                    std::string name(nameLen, '\0');
+                    std::memcpy(&name[0], buffer.data() + offset, nameLen);
+                    offset += nameLen;
+
+                    // Get Bone Info
+                    BoneInfo boneInfo;
+					memcpy(&boneInfo.id, buffer.data() + offset, sizeof(boneInfo.id));
+					offset += sizeof(boneInfo.id);
+					memcpy(&boneInfo.offset, buffer.data() + offset, sizeof(boneInfo.offset));
+					offset += sizeof(boneInfo.offset);
+					mBoneInfoMap[name] = boneInfo;
+                }
+			}
+
+            for (auto& [name, info] : mBoneInfoMap)
+				std::cout << "[BoneInfo] Bone '" << name << "' ID=" << info.id << "\n";
+        }
+
         CalculateBoundingBox();
         return true;
     }
@@ -593,6 +734,7 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		}
 		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
 	}
+}
 
 	// Validate shader
 	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
@@ -622,7 +764,7 @@ void Model::Draw(Shader& shader, const Camera& camera)
 			continue;
 		}
 #endif
-
+        
 		meshes[i].Draw(shader, camera);
 
 #ifdef ANDROID
@@ -640,6 +782,11 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 //#endif
+
+
+    bool isAnim = false;
+
+	shader.setBool("isAnimated", isAnim);
 
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
@@ -663,9 +810,56 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 	}
 
+
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Model::Draw with entity material completed successfully");
 //#endif
+}
+
+void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator)
+{
+    bool isAnim = false;
+    const std::vector<glm::mat4>* finalBoneMatrices = nullptr;
+
+    if (animator)
+    {
+        const auto& mats = animator->GetFinalBoneMatrices();
+        if (!mats.empty()) 
+        {
+            isAnim = true;
+            finalBoneMatrices = &mats;
+        }
+    }
+
+	shader.setBool("isAnimated", isAnim);
+
+    if (isAnim) 
+    {
+        constexpr size_t MAX_BONES = 100;
+        const auto& t = *finalBoneMatrices;
+        const size_t n = std::min(t.size(), MAX_BONES);
+        // Upload as you already do (or via one glUniformMatrix4fv with [0])
+        for (size_t i = 0; i < n; ++i)
+            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+    }
+
+
+    for (size_t i = 0; i < meshes.size(); ++i)
+    {
+        // Use entity material if available, otherwise use mesh default
+        std::shared_ptr<Material> meshMaterial = entityMaterial ? entityMaterial : meshes[i].material;
+        if (meshMaterial && meshMaterial != meshes[i].material) {
+            // Temporarily override the mesh material for this draw call
+            std::shared_ptr<Material> originalMaterial = meshes[i].material;
+            meshes[i].material = meshMaterial;
+            meshes[i].Draw(shader, camera);
+            meshes[i].material = originalMaterial; // Restore original
+        }
+        else {
+            meshes[i].Draw(shader, camera);
+        }
+    }
+
 }
 
 #ifdef __ANDROID__
@@ -764,3 +958,81 @@ void AndroidIOSystem::Close(Assimp::IOStream* pFile) {
     delete pFile;
 }
 #endif
+
+
+
+// Helper functions for Bones
+void Model::SetVertexBoneDataToDefault(Vertex& vertex)
+{
+    for (int i = 0; i < MaxBoneInfluences; i++)
+    {
+        vertex.mBoneIDs[i] = -1;
+        vertex.mWeights[i] = 0.0f;
+    }
+}
+
+void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
+{
+    // try empty slot first
+    for (int i = 0; i < MaxBoneInfluences; ++i) {
+        if (vertex.mBoneIDs[i] < 0) { vertex.mBoneIDs[i] = boneID; vertex.mWeights[i] = weight; return; }
+    }
+    // otherwise keep the top-4 weights
+    int minI = 0;
+    for (int i = 1; i < MaxBoneInfluences; ++i)
+        if (vertex.mWeights[i] < vertex.mWeights[minI]) minI = i;
+
+    if (weight > vertex.mWeights[minI]) { vertex.mBoneIDs[minI] = boneID; vertex.mWeights[minI] = weight; }
+}
+
+
+inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
+{
+    glm::mat4 to;
+    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+    return to;
+}
+
+void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+{
+    // 1) assign influences
+    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    {
+        int boneID = -1;
+        std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+
+        if (mBoneInfoMap.find(boneName) == mBoneInfoMap.end()) {
+            BoneInfo info;
+            info.id = mBoneCounter;
+            info.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix);
+            mBoneInfoMap[boneName] = info;
+            boneID = mBoneCounter++;
+        }
+        else {
+            boneID = mBoneInfoMap[boneName].id;
+        }
+
+        auto* weights = mesh->mBones[boneIndex]->mWeights;
+        int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+        for (int wi = 0; wi < numWeights; ++wi) {
+            int   vtx = weights[wi].mVertexId;
+            float w = weights[wi].mWeight;
+            assert(vtx < static_cast<int>(vertices.size()));
+            SetVertexBoneData(vertices[vtx], boneID, w);
+        }
+    }
+
+    // 2) normalize each vertex's 4 weights
+    for (auto& v : vertices) {
+        float s = v.mWeights[0] + v.mWeights[1] + v.mWeights[2] + v.mWeights[3];
+        if (s > 0.0f) {
+            for (int i = 0; i < MaxBoneInfluences; ++i)
+                v.mWeights[i] /= s;
+        }
+    }
+}
+
+
