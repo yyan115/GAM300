@@ -73,9 +73,9 @@ void SceneInstance::Initialize() {
 	if (hdrEffect) 
 	{
 		hdrEffect->SetEnabled(true);
-		hdrEffect->SetExposure(1.0f);
+		hdrEffect->SetExposure(0.5f);
 		hdrEffect->SetGamma(2.2f);
-		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
+		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::EXPOSURE);
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
@@ -326,19 +326,11 @@ void SceneInstance::processInput(float deltaTime)
 		static bool firstMouse = true;
 		firstMouse = true;
 	}
-	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
-	if (hdrEffect) {
-		// Press 1/2 to decrease/increase exposure
-		if (InputManager::GetKeyDown(Input::Key::L)) {
-			float newExposure = hdrEffect->GetExposure() - 0.1f;
-			hdrEffect->SetExposure(std::max(0.1f, newExposure));
-			ENGINE_PRINT("[HDR] Exposure: ", hdrEffect->GetExposure(), "\n");
-		}
-		if (InputManager::GetKeyDown(Input::Key::M)) {
-			float newExposure = hdrEffect->GetExposure() + 0.1f;
-			hdrEffect->SetExposure(std::min(5.0f, newExposure));
-			ENGINE_PRINT("[HDR] Exposure: ", hdrEffect->GetExposure(), "\n");
-		}
+
+	if (InputManager::GetKeyDown(Input::Key::H)) {
+		auto* hdr = PostProcessingManager::GetInstance().GetHDREffect();
+		hdr->SetEnabled(!hdr->IsEnabled());
+		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
 	}
 	// Sync camera position back to transform
 	camComp.fov = camera->Zoom;
@@ -401,7 +393,7 @@ void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
 	// Use PointLightComponent instead of LightComponent
 	PointLightComponent lightComp;
 	lightComp.color = Vector3D(1.0f, 0.95f, 0.9f); // Warm white
-	lightComp.intensity = 5.0f; // VERY bright for HDR testing!
+	lightComp.intensity = 1.0f; // VERY bright for HDR testing!
 	lightComp.constant = 1.0f;
 	lightComp.linear = 0.09f;
 	lightComp.quadratic = 0.032f;
