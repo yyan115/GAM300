@@ -72,13 +72,32 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
 	Assimp::Importer importer;
 
 	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-    {
-        ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
-        return;
-	}
 
-	aiAnimation* aiAnim = scene->mAnimations[0]; // for now, just load the first animation
+
+
+    if (!scene) {
+        ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", path, "\n");
+        return;
+    }
+    // Warning and safe to ignore
+    //if (scene->mFlags) 
+    //{
+    //    if (AI_SCENE_FLAGS_INCOMPLETE)
+    //    {
+    //        ENGINE_PRINT("[Anim] Scene incomplete (flags=0x", std::hex, scene->mFlags, std::dec, ")\n");
+    //        return;
+    //    }
+    //}
+    if (!scene->mRootNode) {
+        ENGINE_PRINT("[Anim] No root node\n");
+        return;
+    }
+    if (scene->mNumAnimations == 0) {
+        ENGINE_PRINT("[Anim] File has NO animations: ", path, "\n");
+        return;
+    }
+
+    aiAnimation* aiAnim = scene->mAnimations[0]; // for now, just load the first animation
 
     auto anim = std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
 	clips.emplace_back(std::move(anim));

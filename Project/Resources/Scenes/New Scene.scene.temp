@@ -477,7 +477,7 @@
         },
         {
             "id": 2,
-            "guid": "001f8fe3bdbdd76a-00031657c0000003",
+            "guid": "007e3163ac107f33-0003178b3e000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
@@ -625,7 +625,7 @@
         },
         {
             "id": 3,
-            "guid": "001f8fe3e8895d1e-00031657c0000005",
+            "guid": "007e3163cc099516-0003178b3e000005",
             "components": {
                 "NameComponent": {
                     "name": "TestAnimationEntity"

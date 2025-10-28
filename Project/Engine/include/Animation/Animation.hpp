@@ -21,6 +21,7 @@ private:
     std::vector<Bone> mBones{};
     std::map<std::string, BoneInfo> mBoneInfoMap{};
     AssimpNodeData mRootNode{};
+    glm::mat4 mGlobalInverse{};
 
 public:
 	
@@ -35,10 +36,12 @@ public:
     inline float GetDuration() { return mDuration; }
     inline const AssimpNodeData& GetRootNode() { return mRootNode; }
 	inline const std::map<std::string, BoneInfo>& GetBoneIDMap() { return mBoneInfoMap; }
+	glm::mat4 GetGlobalInverse() { return mGlobalInverse; }
+
 
 private:
 	void ReadMissingBones(const aiAnimation* animation, std::map<std::string, BoneInfo> boneInfoMap, int boneCount);
 
-	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src);
+	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src, glm::mat4 accTrf = glm::mat4(1.0f));
 
 };

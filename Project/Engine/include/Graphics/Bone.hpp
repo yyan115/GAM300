@@ -50,7 +50,7 @@ public:
     int GetRotationIndex(float animationTime);
     int GetScaleIndex(float animationTime);
 
-    private:
+private:
     float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime);
     glm::mat4 InterpolatePosition(float animationTime);
     glm::mat4 InterpolateRotation(float animationTime);
