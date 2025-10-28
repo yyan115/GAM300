@@ -35,9 +35,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Animation\Animation.hpp" />
+    <ClInclude Include="include\Animation\AnimationComponent.hpp" />
+    <ClInclude Include="include\Animation\AnimationSystem.hpp" />
+    <ClInclude Include="include\Animation\Animator.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Graphics\Bone.hpp" />
     <ClInclude Include="include\ECS\TagComponent.hpp" />
     <ClInclude Include="include\ECS\LayerComponent.hpp" />
     <ClInclude Include="include\ECS\TagManager.hpp" />
@@ -171,6 +176,11 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Animation\Animation.cpp" />
+    <ClCompile Include="src\Animation\AnimationComponent.cpp" />
+    <ClCompile Include="src\Animation\AnimationSystem.cpp" />
+    <ClCompile Include="src\Animation\Animator.cpp" />
+    <ClCompile Include="src\Graphics\Bone.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\ECS\TagComponent.cpp" />

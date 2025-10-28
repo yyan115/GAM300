@@ -7,6 +7,7 @@
 #include <vector>
 #include "Math/Matrix4x4.hpp"
 #include "Utilities/GUID.hpp"
+#include <Animation/Animator.hpp>
 
 class Shader;
 class Camera;
@@ -27,6 +28,7 @@ public:
 	std::shared_ptr<Shader> shader;
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;
+
 
 	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID, GUID_128 mat_GUID)
 		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) { }
@@ -51,4 +53,10 @@ public:
 
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }
+
+
+	Animator* animator = nullptr;
+	bool HasAnimation() const { return animator != nullptr; }
+	void SetAnimator(Animator* anim) { animator = anim; }
+
 };

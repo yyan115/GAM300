@@ -16,6 +16,7 @@
 #include <Graphics/Particle/ParticleSystem.hpp>
 #include <Sound/AudioSystem.hpp>
 #include "Graphics/Camera/CameraSystem.hpp"
+#include <Animation/AnimationSystem.hpp>
 
 class PhysicsSystem;
 class ECSManager {
@@ -121,6 +122,7 @@ public:
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;
 	std::shared_ptr<AudioSystem> audioSystem;
+	std::shared_ptr<AnimationSystem> animationSystem;
 	std::shared_ptr<CameraSystem> cameraSystem;
 
 private:
