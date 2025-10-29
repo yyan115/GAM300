@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb268981e7c8-000310ab78000009",
+        "guid": "0033bcb258d00925-000317ebe2000009",
         "source": "../../Resources/Inter.ttf",
         "compiled": "../../Resources/Inter.font",
         "android_compiled": "Resources/Inter_android.font",
-        "last_compiled": "2025-10-28 07:01:58.8566625"
+        "last_compiled": "2025-10-29 11:20:27.3798734"
     }
 }

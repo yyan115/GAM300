@@ -1,9 +1,12 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00266d4996ca3255-00030de288000003",
-        "source": "../../Resources/Models/kachujin/Kachujin.fbx",
-        "compiled": "../../Resources/Models/kachujin/Kachujin.mesh",
-        "last_compiled": "2025-10-28 01:29:13.8079647"
+        "guid": "0033bcb251baf0d9-000317ec0e000035",
+        "source": "../../Resources/Models/Kachujin/Kachujin.fbx",
+        "compiled": "../../Resources/Models/Kachujin/Kachujin.mesh",
+        "last_compiled": "2025-10-29 03:29:01.5320525"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
     }
 }

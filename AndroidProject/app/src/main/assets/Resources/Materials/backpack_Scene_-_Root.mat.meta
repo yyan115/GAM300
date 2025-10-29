@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb26dcca9cb2-000310ab7a00000f",
+        "guid": "0033bcb269d6a4e5-000317ebe600000f",
         "source": "../../Resources/Materials/backpack_Scene_-_Root.mat",
         "compiled": "../../Resources/Materials/backpack_Scene_-_Root.mat",
         "android_compiled": "Resources/Materials/backpack_Scene_-_Root_android.mat",
-        "last_compiled": "2025-10-28 07:01:58.8454687"
+        "last_compiled": "2025-10-29 11:20:20.3898413"
     }
 }

@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb26cf1c5104-000310ab7a000011",
+        "guid": "0033bcb200698137-000317ebe6000011",
         "source": "../../Resources/Models/backpack/diffuse.jpg",
         "compiled": "../../Resources/Models/backpack/diffuse.dds",
         "android_compiled": "Resources/Models/backpack/diffuse_android.ktx",
-        "last_compiled": "2025-10-28 07:02:08.9793994"
+        "last_compiled": "2025-10-29 11:21:08.2066427"
     },
     "TextureMetaData": {
         "type": "diffuse",

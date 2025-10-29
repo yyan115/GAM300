@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb269b168449-000310ab86000019",
+        "guid": "0033bcb241555648-000317ebfc000019",
         "source": "../../Resources/Models/cube.obj",
         "compiled": "../../Resources/Models/cube.mesh",
-        "last_compiled": "2025-10-28 06:26:31.7483296"
+        "last_compiled": "2025-10-29 03:29:02.2894721"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

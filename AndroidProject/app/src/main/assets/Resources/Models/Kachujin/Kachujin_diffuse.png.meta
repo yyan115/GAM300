@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb26aa46fa32-000310ab8a00002f",
+        "guid": "0033bcb21e5f7050-000317ec06000031",
         "source": "../../Resources/Models/Kachujin/Kachujin_diffuse.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse.dds",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_diffuse_android.ktx",
-        "last_compiled": "2025-10-28 07:03:56.6537584"
+        "last_compiled": "2025-10-29 11:21:52.2820877"
     },
     "TextureMetaData": {
         "type": "diffuse",

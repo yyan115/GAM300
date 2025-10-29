@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb26896f9c77-000310ab8e00004f",
+        "guid": "0033bcb22bd81027-000317ec20000057",
         "source": "../../Resources/Textures/container2.png",
         "compiled": "../../Resources/Textures/container2.dds",
         "android_compiled": "Resources/Textures/container2_android.ktx",
-        "last_compiled": "2025-10-28 07:03:00.0091790"
+        "last_compiled": "2025-10-29 11:22:08.0789837"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -10,18 +10,10 @@ AssetManager& AssetManager::GetInstance() {
 }
 
 void AssetManager::AddToEventQueue(AssetManager::Event event, const std::filesystem::path& assetPath) {
+	if (androidCompilationStatus.isCompiling) {
+		return;
+	}
 	assetEventQueue.emplace_back(std::make_pair(event, assetPath));
-	//using namespace std::chrono;
-	//auto now = steady_clock::now();
-	//auto it = compilationEvents.find(assetPath.generic_string());
-	//if (it != compilationEvents.end()) {
-	//	// If the duration between the previous compilation event for the same asset is too soon, don't add to the queue.
-	//	if (duration_cast<milliseconds>(now - it->second).count() >= 300) {
-	//	}
-	//}
-	//else {
-	//	compilationQueue.push(assetPath);	
-	//}
 }
 
 void AssetManager::RunEventQueue() {
@@ -320,8 +312,10 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 }
 
 GUID_128 AssetManager::GetGUID128FromAssetMeta(const std::string& assetPath) {
+	std::string relativeAssetPath = assetPath.substr(assetPath.find("Resources"));
 	for (const auto& pair : assetMetaMap) {
-		if (pair.second->sourceFilePath == assetPath) {
+		std::string relativeSourcePath = pair.second->sourceFilePath.substr(pair.second->sourceFilePath.find("Resources"));
+		if (relativeSourcePath == relativeAssetPath) {
 			return pair.first;
 		}
 	}

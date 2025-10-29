@@ -110,7 +110,7 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 //#endif
 
-	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+	if (!scene || !scene->mRootNode)
 	{
         ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
 //#ifdef __ANDROID__
@@ -118,6 +118,17 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#endif
         return std::string{};
 	}
+    else if (scene->mNumMeshes == 0 && scene->mNumAnimations > 0) {
+        // This is an animation file, just return its own path (no compilation required).
+        if (!forAndroid) {
+            return assetPath;
+        }
+        else {
+            std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+            assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+            return assetPathAndroid;
+        }
+    }
 
 	directory = assetPath.substr(0, assetPath.find_last_of('/'));
     // Check metadata
@@ -372,6 +383,7 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
 }
 
 std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+#ifdef EDITOR
     // Optimize the meshes.
     if (metaData->optimizeMeshes) {
         for (auto& mesh : meshesToCompile) {
@@ -404,6 +416,7 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
             meshopt_optimizeVertexFetch(mesh.vertices.data(), mesh.indices.data(), mesh.indices.size(), mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex));
         }
     }
+#endif
 
     std::filesystem::path p(modelPathParam);
     std::string meshPath{};
@@ -811,7 +824,6 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		}
 		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
 	}
-}
 
 	// Validate shader
 	if (shader.ID == 0 || !glIsProgram(shader.ID)) {

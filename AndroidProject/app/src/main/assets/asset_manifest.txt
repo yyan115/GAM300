@@ -23,6 +23,10 @@ Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat
 Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat.meta
 Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat
 Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat.meta
+Resources/Materials/Kachujin_kachujin_MAT.mat
+Resources/Materials/Kachujin_kachujin_MAT.mat.meta
+Resources/Materials/Kachujin_kachujin_MAT_.mat
+Resources/Materials/Kachujin_kachujin_MAT_.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -50,9 +54,14 @@ Resources/Models/cube_backup.obj.meta
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
+Resources/Models/Kachujin/Animation/Slash.fbx
+Resources/Models/Kachujin/Animation/Slash.fbx.meta
 Resources/Models/Kachujin/Kachujin G Rosales.fbx
 Resources/Models/Kachujin/Kachujin G Rosales.fbx.meta
 Resources/Models/Kachujin/Kachujin G Rosales.mesh
+Resources/Models/Kachujin/Kachujin.fbx
+Resources/Models/Kachujin/Kachujin.fbx.meta
+Resources/Models/Kachujin/Kachujin.mesh
 Resources/Models/Kachujin/Kachujin_diffuse.dds
 Resources/Models/Kachujin/Kachujin_diffuse.png
 Resources/Models/Kachujin/Kachujin_diffuse.png.meta

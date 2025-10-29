@@ -4,8 +4,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-std::string NormalizeFbxName(std::string n);
-bool IsAssimpFbxTrsNode(const std::string& n);
+static std::string NormalizeFbxName(std::string n);
+static  bool IsAssimpFbxTrsNode(const std::string& n);
 glm::mat4 aiToGlm(const aiMatrix4x4& from);
 glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from);
 

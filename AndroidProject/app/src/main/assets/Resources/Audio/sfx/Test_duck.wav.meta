@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0066bb26eda9fdf3-000310ab78000003",
+        "guid": "0033bcb21e2121dd-000317ebe2000003",
         "source": "../../Resources/Audio/sfx/Test_duck.wav",
         "compiled": "../../Resources/Audio/sfx/Test_duck.wav",
         "android_compiled": "Resources/Audio/sfx/Test_duck.wav",
-        "last_compiled": "2025-10-28 07:01:58.8488344"
+        "last_compiled": "2025-10-29 11:20:20.3978170"
     }
 }
