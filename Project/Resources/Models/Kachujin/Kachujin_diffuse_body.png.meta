@@ -2,9 +2,9 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "001324b053e77f3e-00030dd500000027",
-        "source": "../../Resources/Models/kachujin/Kachujin_diffuse_body.png",
-        "compiled": "../../Resources/Models/kachujin/Kachujin_diffuse_body.dds",
-        "last_compiled": "2025-10-28 01:29:06.9055357"
+        "source": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.png",
+        "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.dds",
+        "last_compiled": "2025-10-29 07:18:10.9163366"
     },
     "TextureMetaData": {
         "type": "diffuse",

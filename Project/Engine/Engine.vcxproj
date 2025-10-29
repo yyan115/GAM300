@@ -187,6 +187,7 @@
     <ClCompile Include="src\ECS\LayerComponent.cpp" />
     <ClCompile Include="src\ECS\TagManager.cpp" />
     <ClCompile Include="src\ECS\LayerManager.cpp" />
+    <ClCompile Include="src\Graphics\Camera\CameraComponent.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />

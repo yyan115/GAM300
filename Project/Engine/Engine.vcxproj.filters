@@ -142,6 +142,10 @@
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
     <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
+    <ClInclude Include="include\ECS\TagComponent.hpp" />
+    <ClInclude Include="include\ECS\LayerComponent.hpp" />
+    <ClInclude Include="include\ECS\TagManager.hpp" />
+    <ClInclude Include="include\ECS\LayerManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -224,6 +228,11 @@
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
     <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
+    <ClCompile Include="src\ECS\TagComponent.cpp" />
+    <ClCompile Include="src\ECS\LayerComponent.cpp" />
+    <ClCompile Include="src\ECS\TagManager.cpp" />
+    <ClCompile Include="src\ECS\LayerManager.cpp" />
+    <ClCompile Include="src\Graphics\Camera\CameraComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

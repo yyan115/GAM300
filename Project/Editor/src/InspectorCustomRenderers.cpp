@@ -18,11 +18,13 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Physics/CollisionLayers.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include <glm/glm.hpp>
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/TagComponent.hpp"
@@ -46,6 +48,42 @@ extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
 
 void RegisterInspectorCustomRenderers() {
+    // ==================== CUSTOM TYPE RENDERERS ====================
+    // Register custom renderer for glm::vec3 (used by CameraComponent)
+
+    ReflectionRenderer::RegisterCustomRenderer("glm::vec3",
+        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
+            glm::vec3* vec = static_cast<glm::vec3*>(ptr);
+
+            // Convert field name from camelCase to "Proper Case"
+            std::string displayName = name;
+            if (!displayName.empty()) {
+                displayName[0] = static_cast<char>(std::toupper(displayName[0]));
+                for (size_t i = 1; i < displayName.size(); ++i) {
+                    if (std::isupper(displayName[i]) && i > 0 && std::islower(displayName[i-1])) {
+                        displayName.insert(i, " ");
+                        i++;
+                    }
+                }
+            }
+
+            ImGui::Text("%s", displayName.c_str());
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+
+            float values[3] = { vec->x, vec->y, vec->z };
+            std::string id = std::string("##") + name + "_" + std::to_string(reinterpret_cast<uintptr_t>(ptr));
+
+            if (ImGui::DragFloat3(id.c_str(), values, 0.1f)) {
+                vec->x = values[0];
+                vec->y = values[1];
+                vec->z = values[2];
+                return true;
+            }
+
+            return false;
+        });
+
     // ==================== NAME COMPONENT ====================
     // Name component is rendered without collapsing header at the top
 
@@ -334,12 +372,15 @@ void RegisterInspectorCustomRenderers() {
         [](const char*, void*, Entity, ECSManager&) { return false; });
 
     // ==================== CAMERA COMPONENT ====================
-    // Camera projection type dropdown
+    // Camera needs special handling for enum and glm::vec3 properties
 
-    ReflectionRenderer::RegisterFieldRenderer("CameraComponent", "projectionType",
-        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
-            auto& camera = ecs.GetComponent<CameraComponent>(entity);
+    ReflectionRenderer::RegisterComponentRenderer("CameraComponent",
+        [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            CameraComponent& camera = *static_cast<CameraComponent*>(componentPtr);
 
+            // Manually render the non-reflected properties first
+
+            // Projection Type dropdown
             ImGui::Text("Projection");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
@@ -347,14 +388,31 @@ void RegisterInspectorCustomRenderers() {
             int currentProj = static_cast<int>(camera.projectionType);
 
             EditorComponents::PushComboColors();
-            bool changed = ImGui::Combo("##Projection", &currentProj, projTypes, 2);
-            EditorComponents::PopComboColors();
-
-            if (changed) {
+            if (ImGui::Combo("##Projection", &currentProj, projTypes, 2)) {
                 camera.projectionType = static_cast<ProjectionType>(currentProj);
             }
+            EditorComponents::PopComboColors();
 
-            return changed;
+            // Target (glm::vec3)
+            ImGui::Text("Target");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+            float target[3] = { camera.target.x, camera.target.y, camera.target.z };
+            if (ImGui::DragFloat3("##Target", target, 0.1f)) {
+                camera.target = glm::vec3(target[0], target[1], target[2]);
+            }
+
+            // Up (glm::vec3)
+            ImGui::Text("Up");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+            float up[3] = { camera.up.x, camera.up.y, camera.up.z };
+            if (ImGui::DragFloat3("##Up", up, 0.1f)) {
+                camera.up = glm::vec3(up[0], up[1], up[2]);
+            }
+
+            // Return false to continue with reflected properties (all the floats/bools)
+            return false;
         });
 
     // ==================== GUID FIELDS WITH DRAG-DROP ====================
@@ -366,22 +424,61 @@ void RegisterInspectorCustomRenderers() {
 
             ImGui::Text("Model:");
             ImGui::SameLine();
-            ImGui::SetNextItemWidth(-1);
 
             // Display current model path or "None"
             std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = modelPath.empty() ? "None" : modelPath.substr(modelPath.find_last_of("/\\") + 1);
+            std::string displayText = modelPath.empty() ? "None (Model)" : modelPath.substr(modelPath.find_last_of("/\\") + 1);
 
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            // Use EditorComponents for better drag-drop visual feedback
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-            // Drag-drop target
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_MODEL")) {
-                    *guid = DraggedModelGuid;
-                    ImGui::EndDragDropTarget();
+            // Drag-drop target with proper payload type
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop .obj, .fbx, .dae, or .3ds model here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
+                    // Load and apply the model
+                    auto& modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
+
+                    std::cout << "[Inspector] Applying model - GUID: {" << DraggedModelGuid.high << ", " << DraggedModelGuid.low << "}, Path: " << DraggedModelPath << std::endl;
+
+                    try {
+                        // Load model using ResourceManager
+                        std::shared_ptr<Model> loadedModel = nullptr;
+                        if (DraggedModelGuid.high != 0 || DraggedModelGuid.low != 0) {
+                            loadedModel = ResourceManager::GetInstance().GetResourceFromGUID<Model>(DraggedModelGuid, DraggedModelPath);
+                        } else if (!DraggedModelPath.empty()) {
+                            loadedModel = ResourceManager::GetInstance().GetResource<Model>(DraggedModelPath);
+                        }
+
+                        if (loadedModel) {
+                            std::cout << "[Inspector] Model loaded successfully!" << std::endl;
+                            modelRenderer.model = loadedModel;
+                            modelRenderer.modelGUID = DraggedModelGuid;
+
+                            // Load default shader if not already set
+                            if (!modelRenderer.shader) {
+                                modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(
+                                    ResourceManager::GetPlatformShaderPath("default"));
+                                modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(
+                                    ResourceManager::GetPlatformShaderPath("default"));
+                            }
+                        } else {
+                            std::cerr << "[Inspector] Failed to load model!" << std::endl;
+                        }
+                    } catch (const std::exception& e) {
+                        std::cerr << "[Inspector] Exception loading model: " << e.what() << std::endl;
+                        std::cerr << "[Inspector] Model may have corrupted material references. Please check the .obj file." << std::endl;
+                    }
+
+                    // Clear the drag state
+                    DraggedModelGuid = {0, 0};
+                    DraggedModelPath.clear();
+
+                    EditorComponents::EndDragDropTarget();
                     return true;
                 }
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
             }
 
             return false;
