@@ -29,7 +29,6 @@ const uint32_t MAX_BODY_PAIRS = 65536;
 const uint32_t MAX_CONTACT_CONSTRAINTS = 10240;
 
 
-
 static void JoltTrace(const char* fmt, ...)
 {
     va_list a; va_start(a, fmt);
@@ -108,10 +107,20 @@ bool PhysicsSystem::InitialiseJolt() {
         JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
         std::max(1u, std::thread::hardware_concurrency() ? std::thread::hardware_concurrency() - 1 : 1u));
 
-    // IMPORTANT: pass your persistent members (not locals) to Init
     physics.Init(MAX_BODIES, NUM_BODY_MUTEXES, MAX_BODY_PAIRS, MAX_CONTACT_CONSTRAINTS,
         broadphase, objVsBP, objPair);
     physics.SetGravity(JPH::Vec3(0, -9.81f, 0));  // gravity set
+
+    // Configure physics settings for better collision resolution
+    JPH::PhysicsSettings settings;
+    settings.mNumVelocitySteps = 10;      // Increase from default (10) to 15-20
+    settings.mNumPositionSteps = 2;       // Increase from default (2) to 3-4
+    settings.mBaumgarte = 0.2f;           // Penetration correction factor
+    settings.mSpeculativeContactDistance = 0.02f;  // Predict contacts earlier
+    settings.mPenetrationSlop = 0.02f;    // Allow small penetrations
+    settings.mLinearCastThreshold = 0.75f; // CCD threshold
+    physics.SetPhysicsSettings(settings);
+
 
 #ifdef __ANDROID__
     JPH::Vec3 gravity = physics.GetGravity();
@@ -147,8 +156,9 @@ bool PhysicsSystem::InitialiseJolt() {
     //        break;
     //    }
     //}
-    static MyContactListener contactListener;
-    physics.SetContactListener(&contactListener);
+// Create contact listener with access to the same map
+    contactListener = std::make_unique<MyContactListener>(bodyToEntityMap);
+    physics.SetContactListener(contactListener.get());
     return true;
 }
 
@@ -164,115 +174,98 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        JPH::RVec3Arg pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+        JPH::RVec3Arg pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
-        JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
+        JPH_ASSERT(rot.IsNormalized());
 
-        // Create shape if it doesn't exist or if version changed
+        // --- Create shape if needed ---
         if (!col.shape || rb.collider_seen_version != col.version) {
             switch (col.shapeType) {
-                // When creating the shape:
             case ColliderShapeType::Box:
+                // Apply local scale
                 col.shape = new JPH::BoxShape(JPH::Vec3(
-                    col.boxHalfExtents.x * tr.localScale.x,  // Apply scale!
+                    col.boxHalfExtents.x * tr.localScale.x,
                     col.boxHalfExtents.y * tr.localScale.y,
                     col.boxHalfExtents.z * tr.localScale.z
                 ));
-                
+
                 break;
 
             case ColliderShapeType::Sphere:
-                col.shape = new JPH::SphereShape(col.sphereRadius);
+                col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ tr.localScale.x, tr.localScale.y, tr.localScale.z }));
                 break;
+
             case ColliderShapeType::Capsule:
-                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight, col.capsuleRadius);
+                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight * tr.localScale.y,
+                    col.capsuleRadius * std::max(tr.localScale.x, tr.localScale.z));
                 break;
+
             case ColliderShapeType::Cylinder:
-                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight, col.cylinderRadius);
+                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * tr.localScale.y,
+                    col.cylinderRadius * std::max(tr.localScale.x, tr.localScale.z));
                 break;
             }
         }
 
+        // --- Set proper collision layer ---
+        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+            col.layer = Layers::NON_MOVING;
+        else
+            col.layer = Layers::MOVING;
 
-        // FIX: Set proper collision layer based on motion type
-        // Static and Kinematic objects should be on NON_MOVING layer
-        // Dynamic objects should be on MOVING layer
-        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic) {
-            col.layer = Layers::NON_MOVING;  // Should be 0
-        }
-        else {
-            col.layer = Layers::MOVING;      // Should be 1
-        }
+        // --- Create or recreate body ---
+        if (rb.id.IsInvalid() || rb.motion_dirty || rb.collider_seen_version != col.version) {
+            if (!rb.id.IsInvalid()) {
+                bi.RemoveBody(rb.id);
+                bi.DestroyBody(rb.id);
+                rb.id = JPH::BodyID();
+            }
 
-
-        // 1) Create if not created yet
-        if (rb.id.IsInvalid()) {
             const auto motion =
                 rb.motion == Motion::Static ? JPH::EMotionType::Static :
                 rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
                 JPH::EMotionType::Dynamic;
-            JPH_ASSERT(col.shape != nullptr);                     //  catch missing shapes early
 
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
-            if (rb.ccd) bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
 
-            // Set default physics material properties
-            bcs.mRestitution = 0.2f;   // no bounce unless material is assigned     //Bounciness
-            bcs.mFriction = 0.5f;      // Moderate friction applied                 //Friction 
-            bcs.mLinearDamping = rb.linearDamping; //linear direction slowdown
-            bcs.mAngularDamping = rb.angularDamping;//rotational slowdown
+            // --- Always enable CCD for dynamic bodies ---
+            if (motion == JPH::EMotionType::Dynamic)
+                bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
 
-            bcs.mRotation = JPH::Quat::sIdentity();
+
+            bcs.mRestitution = 0.2f;
+            bcs.mFriction = 0.5f;
+            bcs.mLinearDamping = rb.linearDamping;
+            bcs.mAngularDamping = rb.angularDamping;
 
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
+            bodyToEntityMap[rb.id] = e; //map physics id to entity id
+
+
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
 
-            std::cout << "========================================" << std::endl;
-            std::cout << "[Physics] Created Body ID: " << rb.id.GetIndex() << std::endl;
-            std::cout << "  Entity: " << e << std::endl;
-            std::cout << "  Motion: " << (motion == JPH::EMotionType::Static ? "Static" :
-                motion == JPH::EMotionType::Kinematic ? "Kinematic" : "Dynamic") << std::endl;
-            std::cout << "  Shape: " << (col.shapeType == ColliderShapeType::Box ? "Box" :
-                col.shapeType == ColliderShapeType::Sphere ? "Sphere" :
-                col.shapeType == ColliderShapeType::Capsule ? "Capsule" : "Cylinder") << std::endl;
-            std::cout << "  Position: (" << pos.GetX() << ", " << pos.GetY() << ", " << pos.GetZ() << ")" << std::endl;
-            std::cout << "  Layer: " << col.layer << std::endl;
-            std::cout << "========================================" << std::endl;
+            bi.SetMaxAngularVelocity(rb.id, 2.0f); //stop any potential weird behavior
 
 
 #ifdef __ANDROID__
-            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Created body: id=%u, motion=%d, pos=(%f,%f,%f)",
+            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Created body id=%u, motion=%d, pos=(%f,%f,%f)",
                 rb.id.GetIndex(), (int)motion, pos.GetX(), pos.GetY(), pos.GetZ());
-            // Verify body is actually active
-            if (motion == JPH::EMotionType::Dynamic) {
-                bool isActive = bi.IsActive(rb.id);
-                __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Dynamic body active: %d", isActive);
-            }
 #endif
-            continue; // done for this entity
         }
 
-        // 2) Recreate if collider or motion changed (cheap guard)
-        if (rb.motion_dirty || rb.collider_seen_version != col.version) {
-            // remove, destroy, recreate (schemas usually don�t change frequently)
-            bi.RemoveBody(rb.id);
-            bi.DestroyBody(rb.id);
-            rb.id = JPH::BodyID(); // mark invalid; next loop creates fresh
-            continue;
-        }
-
-        // 3) Push transforms for kinematics / edited statics
-        if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
-            bi.MoveKinematic(rb.id, pos, rot, /*dt*/ 0.0f /* or pass dt if you have it here */);
+        // --- Update kinematics / static transforms ---
+        if ((rb.motion == Motion::Kinematic || rb.motion == Motion::Static) && rb.transform_dirty) {
+            if (rb.motion == Motion::Kinematic)
+                bi.MoveKinematic(rb.id, pos, rot, 0.0f);
+            else
+                bi.SetPositionAndRotation(rb.id, pos, rot, JPH::EActivation::DontActivate);
             rb.transform_dirty = false;
+        }
     }
-        else if (rb.motion == Motion::Static && rb.transform_dirty) {
-            bi.SetPositionAndRotation(rb.id, pos, rot, JPH::EActivation::DontActivate);
-            rb.transform_dirty = false;
-        }
+
 }
-}
+
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -299,7 +292,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     }
 
     // Run physics with fixed timestep (dt is already fixed from TimeManager)
-    physics.Update(fixedDt, /*collisionSteps=*/8, temp.get(), jobs.get());
+    physics.Update(fixedDt, /*collisionSteps=*/4, temp.get(), jobs.get());
     
     // Sync Jolt -> ECS (after physics step)
     PhysicsSyncBack(ecsManager);

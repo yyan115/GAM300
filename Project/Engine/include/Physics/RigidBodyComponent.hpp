@@ -33,7 +33,6 @@ struct RigidBodyComponent {
 
 
 
-
 	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static
 	bool motion_dirty = false;        // if you change Motion, flip this to trigger recreate

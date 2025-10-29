@@ -2130,7 +2130,6 @@ void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
 			ImGui::Text("Angular Damping");
 
 
-
 			//GRAVITY 
 			ImGui::DragFloat("##Gravity Factor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 			ImGui::SameLine();
