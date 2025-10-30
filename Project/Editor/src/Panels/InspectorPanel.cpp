@@ -1997,12 +1997,20 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 		}
 		EditorComponents::PopComboColors();
 
+
+		auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
+
 		// Shape Parameters based on type
 		bool shapeParamsChanged = false;
+
+		Vector3D halfExtent = rc.CalculateModelHalfExtent(*rc.model);
+		float radius = rc.CalculateModelRadius(*rc.model);
+
 		switch (collider.shapeType) {
 			case ColliderShapeType::Box: {
 				ImGui::Text("Half Extents");
 				ImGui::SameLine();
+				collider.boxHalfExtents = halfExtent;
 				float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
 				if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
@@ -2013,6 +2021,7 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 			case ColliderShapeType::Sphere: {
 				ImGui::Text("Radius");
 				ImGui::SameLine();
+				collider.sphereRadius = radius;
 				if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					shapeParamsChanged = true;
 				}
@@ -2021,11 +2030,13 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 			case ColliderShapeType::Capsule: {
 				ImGui::Text("Radius");
 				ImGui::SameLine();
+				collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
 				if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					shapeParamsChanged = true;
 				}
 				ImGui::Text("Half Height");
 				ImGui::SameLine();
+				collider.capsuleHalfHeight = halfExtent.y;
 				if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					shapeParamsChanged = true;
 				}
@@ -2034,11 +2045,13 @@ void InspectorPanel::DrawColliderComponent(Entity entity) {
 			case ColliderShapeType::Cylinder: {
 				ImGui::Text("Radius");
 				ImGui::SameLine();
+				collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
 				if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					shapeParamsChanged = true;
 				}
 				ImGui::Text("Half Height");
 				ImGui::SameLine();
+				collider.cylinderRadius = halfExtent.y;
 				if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
 					shapeParamsChanged = true;
 				}

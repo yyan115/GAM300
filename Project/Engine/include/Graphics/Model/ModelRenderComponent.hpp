@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../include/Graphics/IRenderComponent.hpp"
 #include "../include/Graphics/Material.hpp"
 #include "Model.h"
@@ -71,6 +71,47 @@ public:
 		halfExtent.z = (maxPt.z - minPt.z) * 0.5f;
 
 		return halfExtent;
+	}
+
+	float CalculateModelRadius(const Model& model)
+	{
+		Vector3D minPt(FLT_MAX, FLT_MAX, FLT_MAX);
+		Vector3D maxPt(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		// 1️⃣ Find the bounding box of the model
+		for (const auto& mesh : model.meshes)
+		{
+			for (const auto& vertex : mesh.vertices)
+			{
+				const auto& p = vertex.position;
+
+				if (p.x < minPt.x) minPt.x = p.x;
+				if (p.y < minPt.y) minPt.y = p.y;
+				if (p.z < minPt.z) minPt.z = p.z;
+
+				if (p.x > maxPt.x) maxPt.x = p.x;
+				if (p.y > maxPt.y) maxPt.y = p.y;
+				if (p.z > maxPt.z) maxPt.z = p.z;
+			}
+		}
+
+		// 2️⃣ Compute the center of the bounding box
+		Vector3D center = (maxPt + minPt) * 0.5f;
+
+		// 3️⃣ Compute the maximum distance from center to any vertex
+		float radius = 0.0f;
+		for (const auto& mesh : model.meshes)
+		{
+			for (const auto& vertex : mesh.vertices)
+			{
+				Vector3D diff = Vector3D::ConvertGLMToVector3D(vertex.position) - center;
+				float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+				if (distSq > radius * radius)
+					radius = std::sqrt(distSq);
+			}
+		}
+
+		return radius;
 	}
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }

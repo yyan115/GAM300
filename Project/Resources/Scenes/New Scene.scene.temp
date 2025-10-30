@@ -2475,19 +2475,19 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -4.67402e-8
+                                    "data": -4.04036e-8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0798197
+                                    "data": -0.0798197
                                 },
                                 {
                                     "type": "float",
-                                    "data": -4.30553e-8
+                                    "data": 3.60773e-8
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.996809
+                                    "data": 0.996809
                                 }
                             ]
                         },
@@ -2504,7 +2504,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -4.02047e-8
+                                    "data": 3.76782e-8
                                 },
                                 {
                                     "type": "float",
@@ -2516,7 +2516,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3.84452e-8
+                                    "data": -3.84452e-8
                                 },
                                 {
                                     "type": "float",
@@ -2524,7 +2524,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.41353e-8
+                                    "data": 1.74185e-9
                                 },
                                 {
                                     "type": "float",
@@ -4041,15 +4041,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -1.78613e-9
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 6.43273e-11
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.78144e-10
+                                    "data": 0
                                 }
                             ]
                         },
@@ -4058,15 +4058,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.76242e-10
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31323e-10
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -8.80841e-10
+                                    "data": 0
                                 }
                             ]
                         },
@@ -4361,15 +4361,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0000335787
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.40414e-9
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000299406
+                                    "data": 0
                                 }
                             ]
                         },
@@ -4378,15 +4378,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.0000142706
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.0000017256
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000160044
+                                    "data": 0
                                 }
                             ]
                         },
@@ -4396,7 +4396,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 107.5
+                            "data": 0
                         },
                         {
                             "type": "float",
@@ -4442,7 +4442,7 @@
         },
         {
             "id": 17,
-            "guid": "003e6ef7f4fbc6a4-00031ba27a000001",
+            "guid": "0009fac48febb63e-00031df5cc000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -4714,7 +4714,7 @@
         },
         {
             "id": 18,
-            "guid": "003e6ef7c2deac3a-00031ba27a000003",
+            "guid": "0009fac4eb8e45f2-00031df5cc000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
