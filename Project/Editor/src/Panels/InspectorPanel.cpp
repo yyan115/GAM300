@@ -106,7 +106,11 @@ void InspectorPanel::DrawComponentGeneric(void* componentPtr, const char* compon
 	// Render using reflection
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 	ImGui::PushID(componentPtr);
-	ReflectionRenderer::RenderComponent(componentPtr, typeDesc, entity, ecs);
+	try {
+		ReflectionRenderer::RenderComponent(componentPtr, typeDesc, entity, ecs);
+	} catch (const std::exception& e) {
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error rendering component: %s", e.what());
+	}
 	ImGui::PopID();
 }
 
@@ -1172,14 +1176,47 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	
 	ImGui::Spacing();
 
-	
-	ImGui::PushID(label);
-	bool componentEnabled = true; // TODO: Get actual enabled state from component
-	ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
-	ImGui::PopID();
+	// Core components cannot be disabled, so don't show checkbox
+	bool isCoreComponent = (componentType == "Transform" ||
+	                        componentType == "NameComponent" ||
+	                        componentType == "TagComponent" ||
+	                        componentType == "LayerComponent");
 
-	// Collapsing header on same line
-	ImGui::SameLine();
+	if (!isCoreComponent) {
+		// Component enable/disable checkbox (Unity-style)
+		// Use static map to persist checkbox state across frames
+		static std::unordered_map<std::string, bool> componentEnabledStates;
+		std::string componentKey = std::to_string(entity) + "_" + componentType;
+
+		// Initialize to true if not in map
+		if (componentEnabledStates.find(componentKey) == componentEnabledStates.end()) {
+			componentEnabledStates[componentKey] = true;
+		}
+
+		bool& componentEnabled = componentEnabledStates[componentKey];
+
+		// Style the checkbox to match entity checkbox (white checkmark, smaller size)
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+		ImGui::PushID(componentKey.c_str());
+		ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
+		ImGui::PopID();
+
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar();
+
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Enable/Disable Component (visual only, not yet functional)");
+		}
+
+		// Collapsing header on same line
+		ImGui::SameLine();
+	}
+
 	bool checkisOpen = ImGui::CollapsingHeader(label, flags);
 
 	// Check for right-click on the collapsing header

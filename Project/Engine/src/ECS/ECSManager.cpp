@@ -2,6 +2,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Math/Vector3D.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
@@ -39,6 +40,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
 	RegisterComponent<LightComponent>();
@@ -156,6 +158,7 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
+	ecsManager.AddComponent<ActiveComponent>(entity, ActiveComponent(true)); // Entity active by default
 
 	Transform defaultTransform;
 	defaultTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);

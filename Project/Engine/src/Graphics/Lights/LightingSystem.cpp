@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "Graphics/Lights/LightingSystem.hpp"
-#include "Graphics/Lights/LightComponent.hpp" 
+#include "Graphics/Lights/LightComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <Graphics/GraphicsManager.hpp>
 #include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ActiveComponent.hpp"
 
 bool LightingSystem::Initialise()
 {
@@ -103,6 +104,14 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
         // Collect directional light (first one only)
         if (ecsManager.HasComponent<DirectionalLightComponent>(entity))
         {

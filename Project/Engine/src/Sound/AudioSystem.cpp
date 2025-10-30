@@ -4,6 +4,7 @@
 #include "Sound/AudioManager.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
 void AudioSystem::Update(float deltaTime) {
@@ -18,10 +19,23 @@ void AudioSystem::Update(float deltaTime) {
     // Iterate through all entities managed by this system
     for (const auto& entity : entities) {
         if (!ecsManager.HasComponent<AudioComponent>(entity)) continue;
-        
+
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                // Stop audio for inactive entities
+                auto& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+                if (audioComp.IsPlaying) {
+                    audioComp.Stop();
+                }
+                continue;
+            }
+        }
+
         AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
         audioComp.UpdateComponent();
-        
+
         // Update spatial audio position from Transform if applicable
         if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
             const Transform& transform = ecsManager.GetComponent<Transform>(entity);

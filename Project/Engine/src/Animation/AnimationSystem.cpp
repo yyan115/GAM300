@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Animation/AnimationSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "TimeManager.hpp"
@@ -35,8 +36,16 @@ bool AnimationSystem::Initialise()
 void AnimationSystem::Update()
 {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	for (const auto& entity : entities) 
+	for (const auto& entity : entities)
 	{
+		// Skip inactive entities (Unity-like behavior)
+		if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+			auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+			if (!activeComp.isActive) {
+				continue; // Don't update animations for inactive entities
+			}
+		}
+
 		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
 		animComp.Update(TimeManager::GetDeltaTime());
 	}

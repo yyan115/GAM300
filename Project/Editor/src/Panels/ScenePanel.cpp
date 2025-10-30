@@ -1428,13 +1428,24 @@ void ScenePanel::DrawCameraGizmos() {
         CameraComponent& camera = ecsManager.GetComponent<CameraComponent>(selectedEntity);
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
 
-        // Get window and viewport info
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        float aspectRatio = windowSize.x / windowSize.y;
+        // Get game panel resolution for correct aspect ratio
+        float aspectRatio = 16.0f / 9.0f;  // Default
+        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(GUIManager::GetPanelManager().GetPanel("Game"));
+        if (gamePanel) {
+            int gameWidth, gameHeight;
+            gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+            if (gameHeight > 0) {
+                aspectRatio = static_cast<float>(gameWidth) / static_cast<float>(gameHeight);
+            }
+        }
 
-        // Build editor view-projection matrix
+        // Get window and viewport info for editor camera
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        float editorAspectRatio = windowSize.x / windowSize.y;
+
+        // Build editor view-projection matrix (use editor's aspect ratio for viewing)
         glm::mat4 view = editorCamera.GetViewMatrix();
-        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(editorAspectRatio);
         glm::mat4 vp = projection * view;
 
         // Get camera world position from transform

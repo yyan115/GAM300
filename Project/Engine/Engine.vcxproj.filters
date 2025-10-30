@@ -146,6 +146,7 @@
     <ClInclude Include="include\ECS\LayerComponent.hpp" />
     <ClInclude Include="include\ECS\TagManager.hpp" />
     <ClInclude Include="include\ECS\LayerManager.hpp" />
+    <ClInclude Include="include\ECS\ActiveComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -233,6 +234,7 @@
     <ClCompile Include="src\ECS\TagManager.cpp" />
     <ClCompile Include="src\ECS\LayerManager.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraComponent.cpp" />
+    <ClCompile Include="src\ECS\ActiveComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

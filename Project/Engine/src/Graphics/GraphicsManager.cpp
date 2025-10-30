@@ -81,7 +81,15 @@ void GraphicsManager::Clear(float r, float g, float b, float a)
 
 void GraphicsManager::SetCamera(Camera* camera)
 {
-	currentCamera = camera;
+	if (camera != nullptr)
+	{
+		currentCamera = camera;
+	}
+	else
+	{
+		// Keep the current camera if trying to set null (prevents crashes)
+		ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] Attempted to set null camera, keeping current camera\n");
+	}
 }
 
 void GraphicsManager::SetViewportSize(int width, int height)

@@ -7,6 +7,7 @@
 #include "Transform/TransformComponent.hpp"
 #include <Asset Manager/AssetManager.hpp>
 #include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ActiveComponent.hpp"
 
 bool TextRenderingSystem::Initialise()
 {
@@ -37,6 +38,14 @@ void TextRenderingSystem::Update()
     // Submit all visible text components to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
         auto& textComponent = ecsManager.GetComponent<TextRenderComponent>(entity);
 
         // Check if font size changed and reload if needed

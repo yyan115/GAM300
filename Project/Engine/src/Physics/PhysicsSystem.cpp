@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "ECS/System.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 //#include "Physics/JoltInclude.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
@@ -277,9 +278,27 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 #endif
 
     for (auto &e : entities) {
+        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+
+        // Handle inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(e)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(e);
+            if (!activeComp.isActive) {
+                // Deactivate physics body for inactive entities
+                if (!rb.id.IsInvalid()) {
+                    bi.DeactivateBody(rb.id);
+                }
+                continue;
+            } else {
+                // Reactivate physics body for active entities (if it was deactivated)
+                if (!rb.id.IsInvalid() && rb.motion == Motion::Dynamic && !bi.IsActive(rb.id)) {
+                    bi.ActivateBody(rb.id);
+                }
+            }
+        }
+
         auto& tr = ecsManager.GetComponent<Transform>(e);
         //auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         JPH::RVec3 pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();

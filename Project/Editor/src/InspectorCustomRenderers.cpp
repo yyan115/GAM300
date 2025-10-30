@@ -27,6 +27,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
@@ -90,6 +91,28 @@ void RegisterInspectorCustomRenderers() {
     ReflectionRenderer::RegisterComponentRenderer("NameComponent",
         [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             NameComponent& nameComp = *static_cast<NameComponent*>(componentPtr);
+
+            // Unity-style checkbox on the left (from ActiveComponent)
+            if (ecs.HasComponent<ActiveComponent>(entity)) {
+                auto& activeComp = ecs.GetComponent<ActiveComponent>(entity);
+
+                // Style the checkbox to be smaller with white checkmark
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2)); // Smaller padding
+                ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Even lighter when clicking
+
+                ImGui::Checkbox("##EntityActive", &activeComp.isActive);
+
+                ImGui::PopStyleColor(4); // Pop all 4 colors
+                ImGui::PopStyleVar(); // Pop padding
+
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Enable/Disable Entity");
+                }
+                ImGui::SameLine();
+            }
 
             // Simple text input for name (no collapsing header)
             char buf[128] = {};

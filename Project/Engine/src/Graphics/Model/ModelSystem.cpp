@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/Model/ModelSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -69,6 +70,14 @@ void ModelSystem::Update()
         // Game window should always show all models
         if (isRenderingForEditor && !is3DMode) {
             continue;
+        }
+
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
         }
 
 #ifdef ANDROID

@@ -164,11 +164,12 @@ void SceneInstance::Draw() {
 	//transform = glm::scale(transform, glm::vec3(0.1f, 0.1f, 0.1f));
 	//RenderSystem::getInstance().Submit(backpackModel, transform, shader);
 
-	// Update camera from component (syncs Transform position to Camera object even in edit mode)
-	Entity activeCameraEntity = mainECS.cameraSystem->GetActiveCameraEntity();
-	if (activeCameraEntity != 0) {
-		mainECS.cameraSystem->UpdateCameraFromComponent(activeCameraEntity);
-	}
+	// Update transforms before camera (camera needs up-to-date transform matrices)
+	mainECS.transformSystem->Update();
+
+	// Update camera system (detects camera changes, switches cameras, updates from components)
+	// This needs to run even in edit mode so the game panel shows the correct camera
+	mainECS.cameraSystem->Update();
 
 	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
 

@@ -41,6 +41,7 @@
     <ClInclude Include="include\Animation\Animator.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
+    <ClInclude Include="include\ECS\ActiveComponent.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
     <ClInclude Include="include\Graphics\Bone.hpp" />
     <ClInclude Include="include\ECS\TagComponent.hpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />
     <ClCompile Include="src\Animation\AnimationSystem.cpp" />
     <ClCompile Include="src\Animation\Animator.cpp" />
+    <ClCompile Include="src\ECS\ActiveComponent.cpp" />
     <ClCompile Include="src\Graphics\Bone.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />

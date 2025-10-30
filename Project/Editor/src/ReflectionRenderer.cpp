@@ -195,7 +195,23 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     if (typeName == "bool") {
         bool* value = static_cast<bool*>(fieldPtr);
         // Booleans get their own line with label (Unity-style)
-        return ImGui::Checkbox((displayName + id).c_str(), value);
+        // Use just the ID for the checkbox widget (label is in front)
+        ImGui::Text("%s", displayName.c_str());
+        ImGui::SameLine();
+
+        // Style the checkbox to match the entity checkbox (smaller with white checkmark)
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Even lighter when clicking
+
+        bool changed = ImGui::Checkbox(id.c_str(), value);
+
+        ImGui::PopStyleColor(4); // Pop all 4 colors
+        ImGui::PopStyleVar();
+
+        return changed;
     }
 
     // All other primitives: Label on left, widget on right (full width)
