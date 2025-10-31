@@ -475,7 +475,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -483,7 +483,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\debug\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\debug\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Jolt.lib;glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -498,7 +498,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -506,7 +506,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\debug\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64;$(SolutionDir)Libraries\Compressonator\lib\bin\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\debug\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64;$(SolutionDir)Libraries\Compressonator\lib\bin\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Jolt.lib;glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib;Compressonator_MDd.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 /VERBOSE:LIB %(AdditionalOptions)</AdditionalOptions>
       <ShowProgress>LinkVerbose</ShowProgress>
@@ -524,7 +524,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -532,7 +532,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Jolt.lib;glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -549,7 +549,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -557,7 +557,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64;$(SolutionDir)Libraries\Compressonator\lib\bin\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)vcpkg_installed\x64-windows\lib;$(SolutionDir)Libraries\FMOD\core\lib\x64;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\freetype\release_static\vs2015-2022\win64;$(SolutionDir)Libraries\Compressonator\lib\bin\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Jolt.lib;glfw3.lib;assimp-vc143-mt.lib;freetype.lib;opengl32.lib;fmod_vc.lib;Compressonator_MD.lib</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
