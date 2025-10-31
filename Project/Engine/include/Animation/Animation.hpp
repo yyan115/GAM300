@@ -37,11 +37,11 @@ public:
     inline const AssimpNodeData& GetRootNode() { return mRootNode; }
 	inline const std::map<std::string, BoneInfo>& GetBoneIDMap() { return mBoneInfoMap; }
 	glm::mat4 GetGlobalInverse() { return mGlobalInverse; }
-
+    void DebugCoreMatricesOnce() const;
 
 private:
 	void ReadMissingBones(const aiAnimation* animation, std::map<std::string, BoneInfo> boneInfoMap, int boneCount);
 
-	void ReadHeirarchyData(AssimpNodeData& dest, const aiNode* src, glm::mat4 accTrf = glm::mat4(1.0f));
+	void ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::mat4 accTrf = glm::mat4(1.0f));
 
 };

@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0033bcb252137eee-000317ebfc00001b",
+        "guid": "0037a8a22754d990-00031f528800001b",
         "source": "../../Resources/Materials/cube_initialShadingGroup.mat",
         "compiled": "../../Resources/Materials/cube_initialShadingGroup.mat",
-        "last_compiled": "2025-10-29 11:31:47.6870882"
+        "last_compiled": "2025-10-31 03:36:36.5309854"
     }
 }

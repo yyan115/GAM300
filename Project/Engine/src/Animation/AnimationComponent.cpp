@@ -82,6 +82,11 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
 
 	Assimp::Importer importer;
 
+    // Set FBX-specific import settings (THE FIX FOR ANDROID)
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+        aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+
 	const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), aiProcess_Triangulate | aiProcess_FlipUVs, "fbx");
 
     if (!scene) {

@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/FinalBaseMesh.obj",
         "compiled": "../../Resources/Models/FinalBaseMesh.mesh",
         "android_compiled": "Resources/Models/FinalBaseMesh_android.mesh",
-        "last_compiled": "2025-10-29 11:22:45.3318855"
+        "last_compiled": "2025-10-31 03:32:50.8176027"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

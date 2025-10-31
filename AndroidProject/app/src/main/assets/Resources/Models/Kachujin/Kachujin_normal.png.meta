@@ -5,10 +5,10 @@
         "source": "../../Resources/Models/Kachujin/Kachujin_normal.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_normal_android.ktx",
-        "last_compiled": "2025-10-29 11:21:30.6632059"
+        "last_compiled": "2025-10-31 03:32:19.0838509"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true
     }

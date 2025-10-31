@@ -511,6 +511,15 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
                 // Write each bone's name and offset matrix
                 for (const auto& [name, info] : mBoneInfoMap)
                 {
+                    //// LOG BEFORE WRITING
+                    //if (name == "mixamorig:Hips" || name == "mixamorig:Spine") {
+                    //    ENGINE_LOG_DEBUG("[WriteBone] '" + name + "' ID=" + std::to_string(info.id) + " Offset: [" +
+                    //        std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+                    //        std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+                    //        std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+                    //        std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+                    //}
+
                     size_t nameLen = name.size();
                     meshFile.write(reinterpret_cast<const char*>(&nameLen), sizeof(nameLen));   // Size of the name
                     meshFile.write(name.data(), nameLen);   // Actual name string
@@ -755,8 +764,15 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 }
 			}
 
-            for (auto& [name, info] : mBoneInfoMap)
-				std::cout << "[BoneInfo] Bone '" << name << "' ID=" << info.id << "\n";
+            //for (auto& [name, info] : mBoneInfoMap) {
+            //    if (name == "mixamorig:Hips" || name == "mixamorig:Spine") {
+            //        ENGINE_LOG_DEBUG("[LoadBone] '" + name + "' ID=" + std::to_string(info.id) + " Offset: [" +
+            //            std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+            //            std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+            //            std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+            //            std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+            //    }
+            //}
         }
 
         CalculateBoundingBox();
@@ -1097,6 +1113,16 @@ void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* 
             BoneInfo info;
             info.id = mBoneCounter;
             info.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix);
+
+            //// LOG WHEN BONE OFFSET IS FIRST EXTRACTED
+            //if (boneName == "mixamorig:Hips" || boneName == "mixamorig:Spine") {
+            //    ENGINE_LOG_DEBUG("[ExtractBone] '" + boneName + "' ID=" + std::to_string(info.id) + " Offset: [" +
+            //        std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+            //        std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+            //        std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+            //        std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+            //}
+
             mBoneInfoMap[boneName] = info;
             boneID = mBoneCounter++;
         }
