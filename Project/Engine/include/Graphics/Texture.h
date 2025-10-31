@@ -9,15 +9,15 @@ class Texture : public IAsset {
 public:
 
 	GLuint ID{};
-	//std::string type;
 	GLint unit;
 	GLenum target;
+	std::shared_ptr<TextureMeta> metaData;
 
 	// Asset browser preview thumbnail (for normal maps)
 	GLuint previewID{};
 
 	ENGINE_API Texture();
-	Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
+	//Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
 	Texture(std::shared_ptr<TextureMeta> textureMeta);
 
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
@@ -43,12 +43,9 @@ public:
 		const uint8_t* rgbaTexData, int texWidth, int texHeight);
 
 private:
-	//GLuint ID{};
-	std::string type;
-	bool flipUVs;
-	bool generateMipmaps;
-	//GLint unit;
-	//GLenum target;
+	//std::string type;
+	//bool flipUVs;
+	//bool generateMipmaps;
 };
 
 struct TextureInfo {

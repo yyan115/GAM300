@@ -3,6 +3,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "Animation/AnimationComponent.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 AnimationComponent::AnimationComponent()
 {
@@ -69,11 +71,23 @@ void AnimationComponent::Update(float dt)
 
 void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
+    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+    IPlatform* platform = WindowManager::GetPlatform();
+    if (!platform) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] ERROR: Platform not available for asset discovery!", "\n");
+        return;
+    }
+
+    std::vector<uint8_t> buffer = platform->ReadAsset(path);
+
 	Assimp::Importer importer;
 
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    // Set FBX-specific import settings (THE FIX FOR ANDROID)
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+        aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
 
-
+	const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), aiProcess_Triangulate | aiProcess_FlipUVs, "fbx");
 
     if (!scene) {
         ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", path, "\n");

@@ -79,7 +79,8 @@ void Mesh::setupMesh()
 
 	// Weights
 	vao.LinkAttrib(vbo, 6, 4, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, mWeights));
-
+	ENGINE_LOG_DEBUG("[MESH] sizeof(Vertex) = " + std::to_string(sizeof(Vertex)) + "\n");
+	ENGINE_LOG_DEBUG("[MESH] offsetof = " + std::to_string(offsetof(Vertex, mBoneIDs)) + "\n");
 
 //#ifdef __ANDROID__
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Vertex attributes linked successfully");

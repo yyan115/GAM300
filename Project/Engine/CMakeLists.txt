@@ -12,6 +12,22 @@ file(GLOB_RECURSE ENGINE_SOURCES
 list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/RenderSystem.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/TestScene.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/allocator.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/clusterizer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/indexanalyzer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/indexcodec.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/indexgenerator.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/overdrawoptimizer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/partition.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/quantization.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/rasterizer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/simplifier.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/spatialorder.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/stripifier.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vcacheoptimizer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vertexcodec.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vertexfilter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vfetchoptimizer.cpp"
 )
 
 file(GLOB_RECURSE ENGINE_HEADERS

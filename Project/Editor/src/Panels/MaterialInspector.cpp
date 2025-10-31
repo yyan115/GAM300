@@ -314,7 +314,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
         std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
-        material->CompileUpdatedAssetToResource(assetPath);
+        //material->CompileUpdatedAssetToResource(assetPath);
+		AssetManager::GetInstance().CompileUpdatedMaterial(assetPath, material, true);
         //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
         
         // Use the Material's CompileToResource method

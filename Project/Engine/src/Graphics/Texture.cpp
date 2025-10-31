@@ -29,19 +29,21 @@
 #include "Platform/IPlatform.h"
 
 #include "Logging.hpp"
-Texture::Texture() : ID(0), type(""), unit(-1), target(GL_TEXTURE_2D) {}
+Texture::Texture() : ID(0), unit(-1), target(GL_TEXTURE_2D) {
+	metaData = std::make_shared<TextureMeta>();
+}
 
-Texture::Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps) :
-	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D), flipUVs(flipUVs), generateMipmaps(generateMipmaps) {}
+//Texture::Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps) :
+//	ID(0), type(texType), unit(slot), target(GL_TEXTURE_2D), flipUVs(flipUVs), generateMipmaps(generateMipmaps) {}
 
 Texture::Texture(std::shared_ptr<TextureMeta> textureMeta) :
-	ID(0), type(textureMeta->type), unit(-1), target(GL_TEXTURE_2D), flipUVs(textureMeta->flipUVs), generateMipmaps(textureMeta->generateMipmaps) {}
+	ID(0), unit(-1), target(GL_TEXTURE_2D), metaData(textureMeta) {}
 
 std::string Texture::CompileToResource(const std::string& assetPath, bool forAndroid) {
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
-	stbi_set_flip_vertically_on_load(flipUVs);
+	stbi_set_flip_vertically_on_load(metaData->flipUVs);
 	// Reads the image from a file and stores it in bytes
 	unsigned char* bytes = nullptr;
 
@@ -122,7 +124,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	dstTexture.dwPitch = 0;
 	dstTexture.format = forAndroid
 		? (needsAlpha ? CMP_FORMAT_ETC2_RGBA : CMP_FORMAT_ETC2_RGB)
-		: (type != "normal" ? CMP_FORMAT_BC3 : CMP_FORMAT_BC5);
+		: (metaData->type != "normal" ? CMP_FORMAT_BC3 : CMP_FORMAT_BC5);
 
 	dstTexture.dwDataSize = CMP_CalculateBufferSize(&dstTexture);
 	dstTexture.pData = (CMP_BYTE*)malloc(dstTexture.dwDataSize);
@@ -142,7 +144,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	// Save the compresed texture to a DDS file.
 	gli::format fmt = gli::FORMAT_UNDEFINED;
 	if (!forAndroid) {
-		fmt = type != "normal" ? gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16
+		fmt = metaData->type != "normal" ? gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16
 			: gli::FORMAT_RG_ATI2N_UNORM_BLOCK16;
 	}
 	else {
@@ -225,44 +227,9 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 
 	std::filesystem::path resourcePathFS(resourcePath);
 
-	// Load the meta file to get texture parameters
-	std::string metaFilePath = assetPath + ".meta";
-	if (!platform->FileExists(metaFilePath)) {
-		ENGINE_LOG_DEBUG("[TEXTURE]: Meta file not found for texture: " + resourcePath);
-		return false;
-	}
-	ENGINE_LOG_DEBUG("[TEXTURE] Meta file exists");
-	std::vector<uint8_t> metaFileData = platform->ReadAsset(metaFilePath);
-	rapidjson::Document doc;
-	if (!metaFileData.empty()) {
-		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
-		doc.ParseStream(ms);
-	}
-	if (doc.HasParseError()) {
-		ENGINE_LOG_DEBUG("[TEXTURE]: Rapidjson parse error: " + metaFilePath);
-	}
-	//std::ifstream ifs(metaFilePath);
-	//std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-
-	//doc.Parse(jsonContent.c_str());
-
-	const auto& textureMetaData = doc["TextureMetaData"];
-
-	//if (textureMetaData.HasMember("id")) {
-	//	ID = static_cast<GLuint>(textureMetaData["id"].GetInt());
-	//}
-	
-	if (textureMetaData.HasMember("type")) {
-		type = textureMetaData["type"].GetString();
-	}
-
-	if (textureMetaData.HasMember("flipUVs")) {
-		flipUVs = static_cast<GLuint>(textureMetaData["flipUVs"].GetBool());
-	}
-
-	if (textureMetaData.HasMember("generateMipmaps")) {
-		generateMipmaps = static_cast<GLuint>(textureMetaData["generateMipmaps"].GetBool());
-	}
+	// Load meta data from Asset Manager to get texture settings.
+	GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(assetPath);
+	metaData = dynamic_pointer_cast<TextureMeta>(AssetManager::GetInstance().GetAssetMeta(guid));
 
 	// Load the DDS file using GLI
 	if (!platform->FileExists(resourcePath)) {
@@ -306,7 +273,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 
 #ifndef ANDROID
 	// Generates MipMaps
-	if (generateMipmaps) {
+	if (metaData->generateMipmaps) {
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -323,7 +290,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 
 #ifdef EDITOR
 	// Reconstruct the BC5 preview for the asset browser if it's a normal map
-	if (type == "normal") {
+	if (metaData->type == "normal") {
 		// Decompress BC5 to RGBA
 		CMP_Texture srcTexture = {};
 		srcTexture.dwSize = sizeof(CMP_Texture);
@@ -380,13 +347,12 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
-	std::shared_ptr<TextureMeta> currentTextureMeta = static_pointer_cast<TextureMeta>(currentMetaData);
 	// Add type
-	textureMetaData.AddMember("type", rapidjson::Value().SetString(type.c_str(), allocator), allocator);
+	textureMetaData.AddMember("type", rapidjson::Value().SetString(metaData->type.c_str(), allocator), allocator);
 	// Add flip UVs
-	textureMetaData.AddMember("flipUVs", rapidjson::Value().SetBool(flipUVs), allocator);
+	textureMetaData.AddMember("flipUVs", rapidjson::Value().SetBool(metaData->flipUVs), allocator);
 	// Add generate mipmaps
-	textureMetaData.AddMember("generateMipmaps", rapidjson::Value().SetBool(generateMipmaps), allocator);
+	textureMetaData.AddMember("generateMipmaps", rapidjson::Value().SetBool(metaData->generateMipmaps), allocator);
 
 	doc.AddMember("TextureMetaData", textureMetaData, allocator);
 
@@ -398,34 +364,10 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	metaFile << buffer.GetString();
 	metaFile.close();
 
-	//if (!forAndroid) {
-	//	// Save the meta file in the root project directory as well.
-	//	try {
-	//		std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / metaFilePath).generic_string(),
-	//			std::filesystem::copy_options::overwrite_existing);
-	//	}
-	//	catch (const std::filesystem::filesystem_error& e) {
-	//		std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-	//	}
-	//}
-	//else {
-	//	// Save the meta file to the build and root directory as well.
-	//	try {
-	//		std::string buildMetaPath = assetPath + ".meta";
-	//		std::filesystem::copy_file(metaFilePath, buildMetaPath,
-	//			std::filesystem::copy_options::overwrite_existing);
-	//		std::filesystem::copy_file(metaFilePath, (FileUtilities::GetSolutionRootDir() / buildMetaPath).generic_string(),
-	//			std::filesystem::copy_options::overwrite_existing);
-	//	}
-	//	catch (const std::filesystem::filesystem_error& e) {
-	//		std::cerr << "[Asset] Copy failed: " << e.what() << std::endl;
-	//	}
-	//}
-
-	std::shared_ptr<TextureMeta> metaData = std::make_shared<TextureMeta>();
-	metaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
-	metaData->PopulateTextureMeta(type, flipUVs, generateMipmaps);
-	return metaData;
+	std::shared_ptr<TextureMeta> newMetaData = std::make_shared<TextureMeta>();
+	newMetaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
+	newMetaData->PopulateTextureMeta(metaData->type, metaData->flipUVs, metaData->generateMipmaps);
+	return newMetaData;
 }
 
 GLenum Texture::GetFormatFromExtension(const std::string& filepath) {
@@ -479,7 +421,7 @@ void Texture::Delete()
 }
 
 std::string Texture::GetType() {
-	return type;
+	return metaData->type;
 }
 
 void Texture::ReconstructBC5Preview(const uint8_t* rgbaTexData, int texWidth, int texHeight) {

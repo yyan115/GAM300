@@ -1,44 +1,81 @@
 #include <pch.h>
 #include "Graphics/Bone.hpp"
+#include <Logging.hpp>
 
 Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
-	: mName(name), mID(ID), mLocalTransform(1.0f)
+    : mName(name),
+    mID(ID),
+    mLocalTransform(1.0f)
 {
-	mNumPositions = channel->mNumPositionKeys;
+    mNumPositions = channel->mNumPositionKeys;
+    mNumRotations = channel->mNumRotationKeys;
+    mNumScalings = channel->mNumScalingKeys;
 
-	for (int positionIndex = 0; positionIndex < mNumPositions; ++positionIndex)
-	{
-		aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
-		float timeStamp = static_cast<float>(channel->mPositionKeys[positionIndex].mTime);
-		KeyPosition data;
-		data.position = glm::vec3(aiPosition.x, aiPosition.y, aiPosition.z);
-		data.timeStamp = timeStamp;
-		mPositions.push_back(data);
-	}
+    //// Log keyframe counts and first keyframe for key bones
+    //if (name == "mixamorig:Hips" || name == "mixamorig:Spine") {
+    //    ENGINE_LOG_DEBUG("[Bone Constructor] '" + name + "' ID=" + std::to_string(ID) + "\n");
+    //    ENGINE_LOG_DEBUG("  NumPositionKeys=" + std::to_string(mNumPositions) + "\n");
+    //    ENGINE_LOG_DEBUG("  NumRotationKeys=" + std::to_string(mNumRotations) + "\n");
+    //    ENGINE_LOG_DEBUG("  NumScalingKeys=" + std::to_string(mNumScalings) + "\n");
 
-	mNumRotations = channel->mNumRotationKeys;
+    //    if (mNumPositions > 0) {
+    //        const aiVectorKey& firstPos = channel->mPositionKeys[0];
+    //        ENGINE_LOG_DEBUG("  First position key: [" +
+    //            std::to_string(firstPos.mValue.x) + ", " +
+    //            std::to_string(firstPos.mValue.y) + ", " +
+    //            std::to_string(firstPos.mValue.z) + "] at time " +
+    //            std::to_string(firstPos.mTime) + "\n");
 
-	for (int rotationIndex = 0; rotationIndex < mNumRotations; ++rotationIndex)
-	{
-		aiQuaternion aiOrientation = channel->mRotationKeys[rotationIndex].mValue;
-		float timeStamp = static_cast<float>(channel->mRotationKeys[rotationIndex].mTime);
-		KeyRotation data;
-		data.orientation = glm::quat(aiOrientation.w, aiOrientation.x, aiOrientation.y, aiOrientation.z);
-		data.timeStamp = timeStamp;
-		mRotations.push_back(data);
-	}
+    //        if (mNumPositions > 1) {
+    //            const aiVectorKey& secondPos = channel->mPositionKeys[1];
+    //            ENGINE_LOG_DEBUG("  Second position key: [" +
+    //                std::to_string(secondPos.mValue.x) + ", " +
+    //                std::to_string(secondPos.mValue.y) + ", " +
+    //                std::to_string(secondPos.mValue.z) + "] at time " +
+    //                std::to_string(secondPos.mTime) + "\n");
+    //        }
+    //    }
 
-	mNumScalings = channel->mNumScalingKeys;
+    //    if (mNumRotations > 0) {
+    //        const aiQuatKey& firstRot = channel->mRotationKeys[0];
+    //        ENGINE_LOG_DEBUG("  First rotation key: [" +
+    //            std::to_string(firstRot.mValue.w) + ", " +
+    //            std::to_string(firstRot.mValue.x) + ", " +
+    //            std::to_string(firstRot.mValue.y) + ", " +
+    //            std::to_string(firstRot.mValue.z) + "] at time " +
+    //            std::to_string(firstRot.mTime) + "\n");
+    //    }
+    //}
 
-	for (int scaleIndex = 0; scaleIndex < mNumScalings; ++scaleIndex)
-	{
-		aiVector3D scale = channel->mScalingKeys[scaleIndex].mValue;
-		float timeStamp = static_cast<float>(channel->mScalingKeys[scaleIndex].mTime);
-		KeyScale data;
-		data.scale = glm::vec3(scale.x, scale.y, scale.z);
-		data.timeStamp = timeStamp;
-		mScales.push_back(data);
-	}
+    for (int positionIndex = 0; positionIndex < mNumPositions; ++positionIndex)
+    {
+        aiVector3D aiPosition = channel->mPositionKeys[positionIndex].mValue;
+        float timeStamp = channel->mPositionKeys[positionIndex].mTime;
+        KeyPosition data;
+        data.position = glm::vec3(aiPosition.x, aiPosition.y, aiPosition.z);
+        data.timeStamp = timeStamp;
+        mPositions.push_back(data);
+    }
+
+    for (int rotationIndex = 0; rotationIndex < mNumRotations; ++rotationIndex)
+    {
+        aiQuaternion aiOrientation = channel->mRotationKeys[rotationIndex].mValue;
+        float timeStamp = channel->mRotationKeys[rotationIndex].mTime;
+        KeyRotation data;
+        data.orientation = glm::quat(aiOrientation.w, aiOrientation.x, aiOrientation.y, aiOrientation.z);
+        data.timeStamp = timeStamp;
+        mRotations.push_back(data);
+    }
+
+    for (int keyIndex = 0; keyIndex < mNumScalings; ++keyIndex)
+    {
+        aiVector3D scale = channel->mScalingKeys[keyIndex].mValue;
+        float timeStamp = channel->mScalingKeys[keyIndex].mTime;
+        KeyScale data;
+        data.scale = glm::vec3(scale.x, scale.y, scale.z);
+        data.timeStamp = timeStamp;
+        mScales.push_back(data);
+    }
 }
 
 /*interpolates  b/w positions,rotations & scaling keys based on the curren time of
@@ -46,10 +83,20 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
    tranformations*/
 void Bone::Update(float animationTime)
 {
-	glm::mat4 translation = InterpolatePosition(animationTime);
-	glm::mat4 rotation = InterpolateRotation(animationTime);
-	glm::mat4 scale = InterpolateScaling(animationTime);
-	mLocalTransform = translation * rotation * scale;
+    glm::mat4 translation = InterpolatePosition(animationTime);
+    glm::mat4 rotation = InterpolateRotation(animationTime);
+    glm::mat4 scale = InterpolateScaling(animationTime);
+    mLocalTransform = translation * rotation * scale;
+
+    //// Log for key bones at start of animation
+    //if ((mName == "mixamorig:Hips" || mName == "mixamorig:Spine") && animationTime < 0.5f) {
+    //    ENGINE_LOG_DEBUG("[Bone::Update] '" + mName + "' at time " + std::to_string(animationTime) +
+    //        " LocalTransform: [" +
+    //        std::to_string(mLocalTransform[0][0]) + " " + std::to_string(mLocalTransform[1][0]) + " " + std::to_string(mLocalTransform[2][0]) + " " + std::to_string(mLocalTransform[3][0]) + "] [" +
+    //        std::to_string(mLocalTransform[0][1]) + " " + std::to_string(mLocalTransform[1][1]) + " " + std::to_string(mLocalTransform[2][1]) + " " + std::to_string(mLocalTransform[3][1]) + "] [" +
+    //        std::to_string(mLocalTransform[0][2]) + " " + std::to_string(mLocalTransform[1][2]) + " " + std::to_string(mLocalTransform[2][2]) + " " + std::to_string(mLocalTransform[3][2]) + "] [" +
+    //        std::to_string(mLocalTransform[0][3]) + " " + std::to_string(mLocalTransform[1][3]) + " " + std::to_string(mLocalTransform[2][3]) + " " + std::to_string(mLocalTransform[3][3]) + "]\n");
+    //}
 }
 
 /* Gets the current index on mKeyPositions to interpolate to based on

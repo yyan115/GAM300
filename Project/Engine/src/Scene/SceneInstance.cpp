@@ -75,9 +75,9 @@ void SceneInstance::Initialize() {
 	ecsManager.GetComponent<Transform>(testAnim).localScale = Vector3D(0.01f, .01f, .01f);
 	ecsManager.GetComponent<Transform>(testAnim).localPosition = Vector3D(0.0f, -1.5f, -1.5f);
 	ecsManager.AddComponent<ModelRenderComponent>(testAnim,
-		ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Models/kachujin/Kachujin.fbx"),
+		ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/Kachujin/Kachujin.fbx"),
 		MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
-		MetaFilesManager::GetGUID128FromAssetFile("Resources/Materials/backpack.mat") });
+		MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Kachujin G Rosales_kachujin_MAT.mat") });
 	ecsManager.AddComponent<AnimationComponent>(testAnim, AnimationComponent{});
 
 	// Initialize systems.

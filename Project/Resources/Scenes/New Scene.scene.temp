@@ -395,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001324b065c4dcfe-00030dd4f200000d",
-                        "001324b0431e932c-00030dd508000037",
+                        "0033bcb2734b5e6c-000317ebe600000d",
+                        "0033bcb256e58dad-000317ec2000003f",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -477,7 +477,7 @@
         },
         {
             "id": 2,
-            "guid": "007e3163ac107f33-0003178b3e000003",
+            "guid": "0066e6c857b530ca-000317ecde000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
@@ -625,7 +625,7 @@
         },
         {
             "id": 3,
-            "guid": "007e3163cc099516-0003178b3e000005",
+            "guid": "0066e6c844838fdf-000317ecde000005",
             "components": {
                 "NameComponent": {
                     "name": "TestAnimationEntity"
@@ -696,7 +696,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "Matrix4x4",
@@ -772,8 +772,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00266d4996ca3255-00030de288000003",
-                        "001324b0431e932c-00030dd508000037",
+                        "0033bcb251baf0d9-000317ec0e000035",
+                        "0033bcb256e58dad-000317ec2000003f",
                         "0056c882f33d6683-0002dbd5d0000001",
                         {
                             "type": "Matrix4x4",

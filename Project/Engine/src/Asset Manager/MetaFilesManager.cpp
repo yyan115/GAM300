@@ -74,12 +74,12 @@ std::chrono::system_clock::time_point MetaFilesManager::GetLastCompileTimeFromMe
 	if (assetMetaData.HasMember("last_compiled")) {
 		std::string timestampStr = assetMetaData["last_compiled"].GetString();
 		std::istringstream iss(timestampStr);
-		std::chrono::sys_time<std::chrono::seconds> tp;
+		std::chrono::sys_time<std::chrono::milliseconds> tp;
 
 		// Parse using the same format string you used for formatting
 #ifdef ANDROID
 		// std::chrono::parse not available on Android NDK yet - use epoch time so assets always recompile
-		tp = std::chrono::sys_time<std::chrono::seconds>{};
+		tp = std::chrono::sys_time<std::chrono::milliseconds>{};
 #else
 		iss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", tp);
 #endif
@@ -351,7 +351,8 @@ bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath) {
 		//metaFilePathRoot = (FileUtilities::GetSolutionRootDir() / assetPath).generic_string() + ".meta";
 	}
 
-	if (lastModifiedTime > GetLastCompileTimeFromMetaFile(metaFilePath)) {
+	auto lastCompileTime = GetLastCompileTimeFromMetaFile(metaFilePath);
+	if (lastModifiedTime > lastCompileTime) {
 		return true;
 	}
 

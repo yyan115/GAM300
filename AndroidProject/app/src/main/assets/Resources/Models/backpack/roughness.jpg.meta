@@ -1,15 +1,15 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "003155569d64c3a5-0002d702f8000019",
+        "version": 7,
+        "guid": "0037a8a246bf4523-00031f5284000015",
         "source": "../../Resources/Models/backpack/roughness.jpg",
         "compiled": "../../Resources/Models/backpack/roughness.dds",
         "android_compiled": "Resources/Models/backpack/roughness_android.ktx",
-        "last_compiled": "2025-10-05 13:53:43.4731324"
+        "last_compiled": "2025-10-31 07:21:34.7753860"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

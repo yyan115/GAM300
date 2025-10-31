@@ -13,6 +13,12 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 #include "Logging.hpp"
+#include <rapidjson/document.h>
+#include <rapidjson/prettywriter.h>
+
+#ifdef EDITOR
+#include <meshoptimizer.h>
+#endif
 #include <Animation/Animator.hpp>
 
 #ifdef ANDROID
@@ -74,6 +80,11 @@ static void DebugPrintSkinningStats(
 
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
+    metaData = std::make_shared<ModelMeta>();
+}
+
+Model::Model(std::shared_ptr<AssetMeta> modelMeta) {
+	metaData = static_pointer_cast<ModelMeta>(modelMeta);
 }
 
 // Forward declaration for get_file_contents
@@ -99,7 +110,7 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 //#endif
 
-	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+	if (!scene || !scene->mRootNode)
 	{
         ENGINE_PRINT("ERROR:ASSIMP:: ", importer.GetErrorString(), "\n");
 //#ifdef __ANDROID__
@@ -107,6 +118,17 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#endif
         return std::string{};
 	}
+    else if (scene->mNumMeshes == 0 && scene->mNumAnimations > 0) {
+        // This is an animation file, just return its own path (no compilation required).
+        if (!forAndroid) {
+            return assetPath;
+        }
+        else {
+            std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+            assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+            return assetPathAndroid;
+        }
+    }
 
 	directory = assetPath.substr(0, assetPath.find_last_of('/'));
     // Check metadata
@@ -330,7 +352,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
     material->SetName(modelName + "_" + material->GetName());
-    AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+    if (!AssetManager::GetInstance().IsAssetCompiled(materialPath)) {
+        AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+    }
 
     Mesh newMesh(vertices, indices, material);
     newMesh.CalculateBoundingBox();
@@ -360,7 +384,42 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
 	(void)typeName;
 }
 
-std::string Model::CompileToMesh(const std::string& modelPathParam, const std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<Mesh>& meshesToCompile, bool forAndroid) {
+#ifdef EDITOR
+    // Optimize the meshes.
+    if (metaData->optimizeMeshes) {
+        for (auto& mesh : meshesToCompile) {
+            // Remove redundant vertices (e.g. the same position, normal, UV, etc.) and reindex the mesh.
+            std::vector<unsigned int> remap(mesh.indices.size());
+            size_t vertex_count = meshopt_generateVertexRemap(
+                remap.data(),
+                mesh.indices.data(), mesh.indices.size(),
+                mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex));
+
+            std::vector<Vertex> newVertices(vertex_count);
+            std::vector<unsigned int> newIndices(mesh.indices.size());
+
+            meshopt_remapVertexBuffer(newVertices.data(), mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex), remap.data());
+            meshopt_remapIndexBuffer(newIndices.data(), mesh.indices.data(), mesh.indices.size(), remap.data());
+
+            mesh.vertices.swap(newVertices);
+            mesh.indices.swap(newIndices);
+
+            // Run vertex cache optimization.
+            // Reduces the number of vertex shader invocations by reordering triangles.
+            meshopt_optimizeVertexCache(mesh.indices.data(), mesh.indices.data(), mesh.indices.size(), mesh.vertices.size());
+
+            // Run overdraw optimization.
+            // Reduces overdraw by reordering triangles.
+            meshopt_optimizeOverdraw(mesh.indices.data(), mesh.indices.data(), mesh.indices.size(), &mesh.vertices[0].position.x, mesh.vertices.size(), sizeof(Vertex), 1.05f);
+
+            // Run vertex fetch optimization.
+            // Optimizes the vertex buffer for GPU vertex fetch.
+            meshopt_optimizeVertexFetch(mesh.vertices.data(), mesh.indices.data(), mesh.indices.size(), mesh.vertices.data(), mesh.vertices.size(), sizeof(Vertex));
+        }
+    }
+#endif
+
     std::filesystem::path p(modelPathParam);
     std::string meshPath{};
     if (!forAndroid) {
@@ -454,6 +513,15 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, const std::v
                 // Write each bone's name and offset matrix
                 for (const auto& [name, info] : mBoneInfoMap)
                 {
+                    //// LOG BEFORE WRITING
+                    //if (name == "mixamorig:Hips" || name == "mixamorig:Spine") {
+                    //    ENGINE_LOG_DEBUG("[WriteBone] '" + name + "' ID=" + std::to_string(info.id) + " Offset: [" +
+                    //        std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+                    //        std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+                    //        std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+                    //        std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+                    //}
+
                     size_t nameLen = name.size();
                     meshFile.write(reinterpret_cast<const char*>(&nameLen), sizeof(nameLen));   // Size of the name
                     meshFile.write(name.data(), nameLen);   // Actual name string
@@ -698,8 +766,15 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 }
 			}
 
-            for (auto& [name, info] : mBoneInfoMap)
-				std::cout << "[BoneInfo] Bone '" << name << "' ID=" << info.id << "\n";
+            //for (auto& [name, info] : mBoneInfoMap) {
+            //    if (name == "mixamorig:Hips" || name == "mixamorig:Spine") {
+            //        ENGINE_LOG_DEBUG("[LoadBone] '" + name + "' ID=" + std::to_string(info.id) + " Offset: [" +
+            //            std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+            //            std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+            //            std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+            //            std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+            //    }
+            //}
         }
 
         CalculateBoundingBox();
@@ -716,8 +791,41 @@ bool Model::ReloadResource(const std::string& resourcePath, const std::string& a
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
-    assetPath, currentMetaData, forAndroid;
-    return std::shared_ptr<AssetMeta>();
+    std::string metaFilePath{};
+    if (!forAndroid) {
+        metaFilePath = assetPath + ".meta";
+    }
+    else {
+        std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+        metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".meta";
+    }
+    std::ifstream ifs(metaFilePath);
+    std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+
+    rapidjson::Document doc;
+    doc.Parse(jsonContent.c_str());
+    ifs.close();
+
+    auto& allocator = doc.GetAllocator();
+
+    rapidjson::Value modelMetaData(rapidjson::kObjectType);
+
+    modelMetaData.AddMember("optimizeMeshes", rapidjson::Value().SetBool(metaData->optimizeMeshes), allocator);
+
+    doc.AddMember("ModelMetaData", modelMetaData, allocator);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    std::ofstream metaFile(metaFilePath);
+    metaFile << buffer.GetString();
+    metaFile.close();
+
+    std::shared_ptr<ModelMeta> newMetaData = std::make_shared<ModelMeta>();
+    newMetaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
+    newMetaData->PopulateModelMeta(metaData->optimizeMeshes);
+    return newMetaData;
 }
 
 void Model::Draw(Shader& shader, const Camera& camera)
@@ -734,7 +842,6 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		}
 		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
 	}
-}
 
 	// Validate shader
 	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
@@ -1008,6 +1115,16 @@ void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* 
             BoneInfo info;
             info.id = mBoneCounter;
             info.offset = aiMatrix4x4ToGlm(mesh->mBones[boneIndex]->mOffsetMatrix);
+
+            //// LOG WHEN BONE OFFSET IS FIRST EXTRACTED
+            //if (boneName == "mixamorig:Hips" || boneName == "mixamorig:Spine") {
+            //    ENGINE_LOG_DEBUG("[ExtractBone] '" + boneName + "' ID=" + std::to_string(info.id) + " Offset: [" +
+            //        std::to_string(info.offset[0][0]) + " " + std::to_string(info.offset[1][0]) + " " + std::to_string(info.offset[2][0]) + " " + std::to_string(info.offset[3][0]) + "] [" +
+            //        std::to_string(info.offset[0][1]) + " " + std::to_string(info.offset[1][1]) + " " + std::to_string(info.offset[2][1]) + " " + std::to_string(info.offset[3][1]) + "] [" +
+            //        std::to_string(info.offset[0][2]) + " " + std::to_string(info.offset[1][2]) + " " + std::to_string(info.offset[2][2]) + " " + std::to_string(info.offset[3][2]) + "] [" +
+            //        std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
+            //}
+
             mBoneInfoMap[boneName] = info;
             boneID = mBoneCounter++;
         }

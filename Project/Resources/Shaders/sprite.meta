@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001324b06bd121cf-00030dd508000043",
+        "guid": "0037a8a234e5e459-00031f529a00004b",
         "source": "../../Resources/Shaders/sprite",
         "compiled": "../../Resources/Shaders/sprite.shader",
-        "last_compiled": "2025-10-24 12:24:36.4054742"
+        "last_compiled": "2025-10-31 06:36:17.0992460"
     }
 }

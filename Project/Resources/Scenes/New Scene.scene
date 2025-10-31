@@ -247,7 +247,7 @@
             }
         },
         {
-            "id": 2,
+            "id": 1,
             "guid": "002d9db20c2f2190-00030511c4000063",
             "components": {
                 "NameComponent": {
@@ -319,7 +319,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "Matrix4x4",
@@ -395,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001324b065c4dcfe-00030dd4f200000d",
-                        "001324b0431e932c-00030dd508000037",
+                        "0037a8a26dcc7d10-00031f527c00000d",
+                        "0037a8a2715c31a3-00031f529a00003f",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",

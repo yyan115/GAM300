@@ -29,6 +29,20 @@ void Animator::UpdateAnimation(float dt, bool isLoop)
 	}
 
 	CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+	//int n = std::min<int>(3, mFinalBoneMatrices.size());
+	//for (int i = 0; i < n; ++i)
+	//{
+	//	ENGINE_LOG_DEBUG("[FinalBoneMatrix] Index " + std::to_string(i) + ":\n");
+	//	const glm::mat4& m = mFinalBoneMatrices[i];
+	//	for (int row = 0; row < 4; ++row)
+	//	{
+	//		for (int col = 0; col < 4; ++col)
+	//		{
+	//			// glm is column-major: m[col][row]
+	//			ENGINE_LOG_DEBUG(std::to_string(m[col][row]) + " ");
+	//		}
+	//	}
+	//}
 }
 
 void Animator::PlayAnimation(Animation* pAnimation)
@@ -45,34 +59,77 @@ void Animator::PlayAnimation(Animation* pAnimation)
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
 {
-	std::string nodeName = node->name;
-	glm::mat4 nodeTransform = node->transformation;
+    std::string nodeName = node->name;
+    glm::mat4 nodeTransform = node->transformation;
 
-	Bone* Bone = mCurrentAnimation->FindBone(nodeName);
+    Bone* Bone = mCurrentAnimation->FindBone(nodeName);
 
-	if (Bone)
-	{
-		Bone->Update(mCurrentTime);
-		nodeTransform = Bone->GetLocalTransform();
-	}
-	glm::mat4 globalTransformation = parentTransform * nodeTransform;
-	auto boneInfoMap = mCurrentAnimation->GetBoneIDMap();
-	if (boneInfoMap.find(nodeName) != boneInfoMap.end())
-	{
-		int index = boneInfoMap[nodeName].id;
-		glm::mat4 offset = boneInfoMap[nodeName].offset;
-		glm::mat4 globalInverse = mCurrentAnimation->GetGlobalInverse();
-		mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
+    //bool isKeyBone = (nodeName == "mixamorig:Hips" || nodeName == "mixamorig:Spine");
 
-		//std::cout << "Bone: " << nodeName << " Index: " << index << std::endl;
-		//std::cout << mFinalBoneMatrices[index][0][0] << " " << mFinalBoneMatrices[index][0][1] << " " << mFinalBoneMatrices[index][0][2] << " " << mFinalBoneMatrices[index][0][3] << std::endl;
-		//std::cout << mFinalBoneMatrices[index][1][0] << " " << mFinalBoneMatrices[index][1][1] << " " << mFinalBoneMatrices[index][1][2] << " " << mFinalBoneMatrices[index][1][3] << std::endl;
-		//std::cout << mFinalBoneMatrices[index][2][0] << " " << mFinalBoneMatrices[index][2][1] << " " << mFinalBoneMatrices[index][2][2] << " " << mFinalBoneMatrices[index][2][3] << std::endl;
-		//std::cout << mFinalBoneMatrices[index][3][0] << " " << mFinalBoneMatrices[index][3][1] << " " << mFinalBoneMatrices[index][3][2] << " " << mFinalBoneMatrices[index][3][3] << std::endl;
+    if (Bone)
+    {
+        Bone->Update(mCurrentTime);
+        nodeTransform = Bone->GetLocalTransform();
 
-	}
-	for (int i = 0; i < node->childrenCount; i++)
-	{
-		CalculateBoneTransform(&node->children[i], globalTransformation);
-	}
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' ANIMATED at time " + std::to_string(mCurrentTime) + "\n");
+        //    ENGINE_LOG_DEBUG("  LocalTransform[3]: [" +
+        //        std::to_string(nodeTransform[3][0]) + ", " +
+        //        std::to_string(nodeTransform[3][1]) + ", " +
+        //        std::to_string(nodeTransform[3][2]) + "]\n");
+        //}
+    }
+    //else {
+    //    if (isKeyBone) {
+    //        ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' NOT ANIMATED (using hierarchy transform)\n");
+    //        ENGINE_LOG_DEBUG("  HierarchyTransform[3]: [" +
+    //            std::to_string(nodeTransform[3][0]) + ", " +
+    //            std::to_string(nodeTransform[3][1]) + ", " +
+    //            std::to_string(nodeTransform[3][2]) + "]\n");
+    //    }
+    //}
+
+    glm::mat4 globalTransformation = parentTransform * nodeTransform;
+    auto boneInfoMap = mCurrentAnimation->GetBoneIDMap();
+
+    if (boneInfoMap.find(nodeName) != boneInfoMap.end())
+    {
+        int index = boneInfoMap[nodeName].id;
+        glm::mat4 offset = boneInfoMap[nodeName].offset;
+        glm::mat4 globalInverse = mCurrentAnimation->GetGlobalInverse();
+
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' matrix calculation:\n");
+        //    ENGINE_LOG_DEBUG("  ParentTransform[3]: [" +
+        //        std::to_string(parentTransform[3][0]) + ", " +
+        //        std::to_string(parentTransform[3][1]) + ", " +
+        //        std::to_string(parentTransform[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  GlobalTransform[3]: [" +
+        //        std::to_string(globalTransformation[3][0]) + ", " +
+        //        std::to_string(globalTransformation[3][1]) + ", " +
+        //        std::to_string(globalTransformation[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  Offset[3]: [" +
+        //        std::to_string(offset[3][0]) + ", " +
+        //        std::to_string(offset[3][1]) + ", " +
+        //        std::to_string(offset[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  GlobalInverse[3]: [" +
+        //        std::to_string(globalInverse[3][0]) + ", " +
+        //        std::to_string(globalInverse[3][1]) + ", " +
+        //        std::to_string(globalInverse[3][2]) + "]\n");
+        //}
+
+        mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
+
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("  FinalMatrix[3]: [" +
+        //        std::to_string(mFinalBoneMatrices[index][3][0]) + ", " +
+        //        std::to_string(mFinalBoneMatrices[index][3][1]) + ", " +
+        //        std::to_string(mFinalBoneMatrices[index][3][2]) + "]\n");
+        //}
+    }
+
+    for (int i = 0; i < node->childrenCount; i++)
+    {
+        CalculateBoneTransform(&node->children[i], globalTransformation);
+    }
 }
