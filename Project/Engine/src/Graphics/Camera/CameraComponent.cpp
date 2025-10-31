@@ -3,6 +3,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(CameraComponent)
+	REFL_REGISTER_PROPERTY(enabled)
 	REFL_REGISTER_PROPERTY(isActive)
 	REFL_REGISTER_PROPERTY(priority)
 	// target, up, shakeOffset are glm::vec3 - handled by custom renderer

@@ -1184,37 +1184,69 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 	if (!isCoreComponent) {
 		// Component enable/disable checkbox (Unity-style)
-		// Use static map to persist checkbox state across frames
-		static std::unordered_map<std::string, bool> componentEnabledStates;
-		std::string componentKey = std::to_string(entity) + "_" + componentType;
+		// Get reference to actual component's enabled/isActive/isVisible field
+		ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+		bool* enabledFieldPtr = nullptr;
 
-		// Initialize to true if not in map
-		if (componentEnabledStates.find(componentKey) == componentEnabledStates.end()) {
-			componentEnabledStates[componentKey] = true;
+		// Get the appropriate enabled field for each component type
+		if (componentType == "CameraComponent") {
+			auto& comp = ecs.GetComponent<CameraComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "DirectionalLightComponent") {
+			auto& comp = ecs.GetComponent<DirectionalLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "PointLightComponent") {
+			auto& comp = ecs.GetComponent<PointLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "SpotLightComponent") {
+			auto& comp = ecs.GetComponent<SpotLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "ModelRenderComponent") {
+			auto& comp = ecs.GetComponent<ModelRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "SpriteRenderComponent") {
+			auto& comp = ecs.GetComponent<SpriteRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "TextRenderComponent") {
+			auto& comp = ecs.GetComponent<TextRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "ParticleComponent") {
+			auto& comp = ecs.GetComponent<ParticleComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "AudioComponent") {
+			auto& comp = ecs.GetComponent<AudioComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "ColliderComponent") {
+			auto& comp = ecs.GetComponent<ColliderComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "RigidBodyComponent") {
+			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
 		}
 
-		bool& componentEnabled = componentEnabledStates[componentKey];
+		if (enabledFieldPtr) {
+			// Style the checkbox to match entity checkbox (white checkmark, smaller size)
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+			ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 
-		// Style the checkbox to match entity checkbox (white checkmark, smaller size)
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+			std::string checkboxId = "##ComponentEnabled_" + componentType;
+			ImGui::PushID(entity);
+			ImGui::Checkbox(checkboxId.c_str(), enabledFieldPtr);
+			ImGui::PopID();
 
-		ImGui::PushID(componentKey.c_str());
-		ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
-		ImGui::PopID();
+			ImGui::PopStyleColor(4);
+			ImGui::PopStyleVar();
 
-		ImGui::PopStyleColor(4);
-		ImGui::PopStyleVar();
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Enable/Disable Component");
+			}
 
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Enable/Disable Component (visual only, not yet functional)");
+			// Collapsing header on same line
+			ImGui::SameLine();
 		}
-
-		// Collapsing header on same line
-		ImGui::SameLine();
 	}
 
 	bool checkisOpen = ImGui::CollapsingHeader(label, flags);

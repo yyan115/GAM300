@@ -61,6 +61,18 @@ void CameraSystem::Update()
 		}
 	}
 
+	// Check if current active camera component has become disabled (component-level enable/disable)
+	if (activeCameraEntity != 0 && ecsManager.HasComponent<CameraComponent>(activeCameraEntity))
+	{
+		auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
+		if (!camComp.enabled)
+		{
+			// Active camera component was disabled, need to find a new one
+			ENGINE_PRINT("[CameraSystem] Active camera component on entity ", activeCameraEntity, " was disabled, finding new camera\n");
+			activeCameraEntity = 0; // Force re-evaluation
+		}
+	}
+
 	Entity highestPriority = FindHighestPriorityCamera();
 
 	// Check if active camera changed (higher priority became active or current was deleted/disabled)
@@ -201,6 +213,11 @@ Entity CameraSystem::FindHighestPriorityCamera()
 
 		auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
 
+		// Skip disabled cameras (component-level enable/disable)
+		if (!camComp.enabled) {
+			continue;
+		}
+
 		if (camComp.isActive && camComp.priority > highestPriority)
 		{
 			highest = entity;
@@ -226,6 +243,11 @@ Entity CameraSystem::FindHighestPriorityCamera()
 			}
 
 			auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
+
+			// Skip disabled cameras (component-level enable/disable)
+			if (!camComp.enabled) {
+				continue;
+			}
 
 			if (camComp.priority > highestPriority)
 			{

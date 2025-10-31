@@ -164,6 +164,17 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
+        // Skip disabled colliders or rigidbodies (component-level enable/disable)
+        if (!col.enabled || !rb.enabled) {
+            // Deactivate/remove physics body if component is disabled
+            if (!rb.id.IsInvalid()) {
+                bi.RemoveBody(rb.id);
+                bi.DestroyBody(rb.id);
+                rb.id = JPH::BodyID();
+            }
+            continue;
+        }
+
 		JPH::RVec3Arg pos = JPH::RVec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());  // will catch accidents early
@@ -279,6 +290,7 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
 
     for (auto &e : entities) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
         // Handle inactive entities (Unity-like behavior)
         if (ecsManager.HasComponent<ActiveComponent>(e)) {
@@ -294,6 +306,20 @@ void PhysicsSystem::physicsSyncBack(ECSManager& ecsManager) {
                 if (!rb.id.IsInvalid() && rb.motion == Motion::Dynamic && !bi.IsActive(rb.id)) {
                     bi.ActivateBody(rb.id);
                 }
+            }
+        }
+
+        // Skip disabled colliders or rigidbodies (component-level enable/disable)
+        if (!col.enabled || !rb.enabled) {
+            // Deactivate physics body for disabled components
+            if (!rb.id.IsInvalid()) {
+                bi.DeactivateBody(rb.id);
+            }
+            continue;
+        } else {
+            // Reactivate physics body for enabled components (if it was deactivated)
+            if (!rb.id.IsInvalid() && rb.motion == Motion::Dynamic && !bi.IsActive(rb.id)) {
+                bi.ActivateBody(rb.id);
             }
         }
 

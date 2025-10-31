@@ -34,6 +34,16 @@ void AudioSystem::Update(float deltaTime) {
         }
 
         AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+
+        // Skip disabled components (component-level enable/disable)
+        if (!audioComp.enabled) {
+            // Stop audio for disabled components
+            if (audioComp.IsPlaying) {
+                audioComp.Stop();
+            }
+            continue;
+        }
+
         audioComp.UpdateComponent();
 
         // Update spatial audio position from Transform if applicable

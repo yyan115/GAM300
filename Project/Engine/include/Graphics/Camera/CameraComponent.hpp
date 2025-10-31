@@ -23,8 +23,8 @@ class CameraComponent {
 public:
     REFL_SERIALIZABLE
 
-
-    bool isActive = false;
+    bool enabled = true;      // Component enabled state (can be toggled in inspector)
+    bool isActive = false;    // Which camera is currently rendering (managed by CameraSystem)
     int priority = 0;
 
     glm::vec3 target = glm::vec3(0.0f, 0.0f, -1.0f);

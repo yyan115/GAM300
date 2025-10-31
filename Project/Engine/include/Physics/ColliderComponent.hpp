@@ -13,6 +13,7 @@ enum class ColliderShapeType : int {
 
 struct ColliderComponent {
 	REFL_SERIALIZABLE
+	bool enabled = true;          // Component enabled state (can be toggled in inspector)
 	int layerID = 0;
 	uint32_t version = 0;         // bump when you swap shape/layer
 	int shapeTypeID = 0;
