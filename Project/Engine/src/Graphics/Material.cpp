@@ -564,12 +564,19 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	return std::string{};
 }
 
-std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath) {
+std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath, bool forAndroid) {
 	std::filesystem::path p(assetPath);
 	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
 	SetName(p.stem().generic_string());
+
+	if (forAndroid) {
+		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+	}
+
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");

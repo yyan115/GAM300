@@ -96,7 +96,7 @@ public:
 
 	bool CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
 	ENGINE_API bool CompileTexture(const std::string& filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile = false, bool forAndroid = false);
-	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
+	ENGINE_API bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false, bool forAndroid = false);
 
 	bool IsAssetCompiled(GUID_128 guid);
 	bool IsAssetCompiled(const std::string& assetPath);
@@ -293,5 +293,5 @@ private:
 	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
 	bool CompileTextureToResource(GUID_128 guid, const char* filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile = false, bool forAndroid = false);
 	
-	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false);
+	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false, bool forAndroid = false);
 };

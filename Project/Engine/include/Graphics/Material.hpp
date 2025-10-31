@@ -76,7 +76,7 @@ public:
 	// IAsset interface
 	bool GetMaterialPropertiesFromAsset(const std::string& assetPath);
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
-	ENGINE_API std::string CompileUpdatedAssetToResource(const std::string& assetPath);
+	ENGINE_API std::string CompileUpdatedAssetToResource(const std::string& assetPath, bool forAndroid = false);
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;

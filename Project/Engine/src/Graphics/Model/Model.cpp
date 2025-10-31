@@ -352,7 +352,9 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     // Compile the material for the mesh if it hasn't been compiled before yet.
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
     material->SetName(modelName + "_" + material->GetName());
-    AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+    if (!AssetManager::GetInstance().IsAssetCompiled(materialPath)) {
+        AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+    }
 
     Mesh newMesh(vertices, indices, material);
     newMesh.CalculateBoundingBox();

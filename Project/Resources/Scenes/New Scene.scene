@@ -395,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "0033bcb2734b5e6c-000317ebe600000d",
-                        "0033bcb256e58dad-000317ec2000003f",
+                        "0037a8a26dcc7d10-00031f527c00000d",
+                        "0037a8a2715c31a3-00031f529a00003f",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",

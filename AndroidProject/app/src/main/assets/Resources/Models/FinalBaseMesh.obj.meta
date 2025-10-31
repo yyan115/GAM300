@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0033bcb20d5ecd91-000317ebfc000021",
+        "guid": "0037a8a264bc23e1-00031f5288000021",
         "source": "../../Resources/Models/FinalBaseMesh.obj",
         "compiled": "../../Resources/Models/FinalBaseMesh.mesh",
         "android_compiled": "Resources/Models/FinalBaseMesh_android.mesh",
-        "last_compiled": "2025-10-31 03:32:50.8176027"
+        "last_compiled": "2025-10-31 07:22:13.6502675"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

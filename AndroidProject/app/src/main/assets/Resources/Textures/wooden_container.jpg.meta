@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0033bcb26fce25b1-000317ec2000005b",
+        "guid": "0037a8a239c10a1e-00031f529a00005b",
         "source": "../../Resources/Textures/wooden_container.jpg",
         "compiled": "../../Resources/Textures/wooden_container.dds",
         "android_compiled": "Resources/Textures/wooden_container_android.ktx",
-        "last_compiled": "2025-10-31 03:31:40.3694473"
+        "last_compiled": "2025-10-31 07:20:42.4877595"
     },
     "TextureMetaData": {
         "type": "diffuse",
