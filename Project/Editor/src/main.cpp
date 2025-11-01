@@ -8,7 +8,7 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Logging.hpp"
 #include "Performance/PerformanceProfiler.hpp"
-
+#include "Scripting.h"
 
 int main() {
     ENGINE_PRINT("=== EDITOR BUILD ===");
@@ -32,6 +32,11 @@ int main() {
     GameManager::Initialize();
 	GUIManager::Initialize();
 
+    Scripting::Initialize("scripts/test.lua");
+
+    using clock = std::chrono::steady_clock;
+    auto last = clock::now();
+
     while (Engine::IsRunning()) {
         // Begin frame profiling
         PerformanceProfiler::GetInstance().BeginFrame();
@@ -49,9 +54,23 @@ int main() {
         // WindowManager handles buffer swapping for editor
         //WindowManager::SwapBuffers();
         
+
+            auto now = clock::now();
+            std::chrono::duration<float> delta = now - last;
+            last = now;
+            float dt = delta.count();
+
+            // Update engine/editor/game state...
+
+            Scripting::Tick(dt); // hot-reload check + call update(dt)
+
+            // break condition for demo
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+
         // End frame profiling
         PerformanceProfiler::GetInstance().EndFrame();
     }
+    Scripting::Shutdown();
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();

@@ -15,6 +15,37 @@ file(GLOB_RECURSE GAME_HEADERS
     "src/*.hpp"
 )
 
+# --- Ensure a Lua target exists (prefer package, otherwise use local copy) ---
+# Try config-mode package first (vcpkg or installed lua)
+find_package(lua CONFIG QUIET)
+
+if(NOT TARGET lua)
+    # fallback: if we have a local Libraries/lua CMakeLists, add it
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/lua/CMakeLists.txt")
+        message(STATUS "Using local Lua at ${CMAKE_SOURCE_DIR}/Libraries/lua")
+        add_subdirectory("${CMAKE_SOURCE_DIR}/Libraries/lua")
+    else()
+        # As a last resort, try old-style find
+        find_package(Lua REQUIRED)
+    endif()
+endif()
+
+# Expose an include dir if the imported target does not provide it
+# (this is defensive; if your lua target sets PUBLIC include dirs this is a no-op)
+if(TARGET lua)
+    # if the target has an include property, linking will propagate it;
+    # otherwise explicitly add the local include directory if it exists
+    if(NOT TARGET lua::lua AND EXISTS "${CMAKE_SOURCE_DIR}/Libraries/lua/src")
+        # This only sets a fallback include for targets that link lua below.
+        set(LUA_FALLBACK_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Libraries/lua/src")
+    endif()
+else()
+    # If find_package(Lua) used non-config-mode, expose fallback include path
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/lua/src")
+        set(LUA_FALLBACK_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Libraries/lua/src")
+    endif()
+endif()
+
 # Find main.cpp
 set(GAME_MAIN_SOURCE "")
 foreach(source ${GAME_SOURCES})
@@ -64,6 +95,19 @@ target_link_libraries(Game
     PRIVATE
         Engine
 )
+
+# Link to Lua (safe - works for either static library or executable Game)
+if(TARGET lua)
+    target_link_libraries(Game PRIVATE lua)
+elseif(TARGET lua::lua)
+    # vcpkg/config-mode usually provides lua::lua
+    target_link_libraries(Game PRIVATE lua::lua)
+endif()
+
+# Apply fallback include dir if necessary
+if(DEFINED LUA_FALLBACK_INCLUDE_DIR)
+    target_include_directories(Game PRIVATE ${LUA_FALLBACK_INCLUDE_DIR})
+endif()
 
 # Copy resources (only for executable builds)
 if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")

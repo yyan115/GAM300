@@ -56,6 +56,9 @@ else()
     endif()
 endif()
 
+# Add Lua
+add_subdirectory("${CMAKE_SOURCE_DIR}/Libraries/lua")
+
 # Always build Engine (always shared library)
 add_subdirectory(Engine)
 

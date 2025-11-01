@@ -15,6 +15,18 @@ file(GLOB_RECURSE EDITOR_HEADERS
     "src/*.hpp"
 )
 
+# Try to find vcpkg/system lua first; otherwise add local Libraries/lua
+find_package(lua CONFIG QUIET)
+
+if(NOT TARGET lua)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/lua/CMakeLists.txt")
+        message(STATUS "Using local Lua at ${CMAKE_SOURCE_DIR}/Libraries/lua")
+        add_subdirectory("${CMAKE_SOURCE_DIR}/Libraries/lua")
+    else()
+        find_package(Lua REQUIRED) # fallback to system find
+    endif()
+endif()
+
 # Add ImGui source files for Editor
 set(IMGUI_SOURCES
     ${CMAKE_SOURCE_DIR}/Libraries/ImGui/imgui.cpp
@@ -65,6 +77,23 @@ target_link_libraries(Editor
         Engine  # shared library
         Game    # static library
 )
+
+# --- Link Lua to Editor (works for local add_subdirectory or vcpkg config package) ---
+if(TARGET lua)
+    target_link_libraries(Editor PRIVATE lua)
+elseif(TARGET lua::lua)
+    target_link_libraries(Editor PRIVATE lua::lua)
+endif()
+
+# Add include directory fallback if not provided by the imported target
+if(DEFINED LUA_FALLBACK_INCLUDE_DIR)
+    target_include_directories(Editor PRIVATE ${LUA_FALLBACK_INCLUDE_DIR})
+else()
+    # If you keep a local copy of Lua source in Libraries/lua/src, add that include as a fallback
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Libraries/lua/src")
+        target_include_directories(Editor PRIVATE ${CMAKE_SOURCE_DIR}/Libraries/lua/src)
+    endif()
+endif()
 
 # Copy resources to editor output directory
 add_custom_command(TARGET Editor POST_BUILD
