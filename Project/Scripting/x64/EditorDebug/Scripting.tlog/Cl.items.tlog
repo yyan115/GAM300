@@ -32,4 +32,4 @@ C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\l
 C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lutf8lib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\EditorDebug\lutf8lib.obj
 C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lvm.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\EditorDebug\lvm.obj
 C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lzio.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\EditorDebug\lzio.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\src\hotload.cpp;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\EditorDebug\hotload.obj
+C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\src\hotload_deprecated.cpp;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\EditorDebug\hotload_deprecated.obj

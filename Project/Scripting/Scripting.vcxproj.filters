@@ -209,12 +209,12 @@
     <ClCompile Include="..\Libraries\lua\src\lzio.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\hotload.cpp">
+    <ClCompile Include="src\hotload_deprecated.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="scripts\test.lua">
+    <None Include="..\Resources\Scripts\test.lua">
       <Filter>Script Files</Filter>
     </None>
   </ItemGroup>
