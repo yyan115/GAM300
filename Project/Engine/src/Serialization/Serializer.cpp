@@ -1001,26 +1001,27 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
 }
 
 void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON) {
-    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    // typed form: tv.data = [ {type: "bool", data: true}, "GUID_string", {type: "std::string", data: "clip"}, ... ]
     if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
         const auto& d = audioJSON["data"];
-        GUID_string guidStr = d[0].GetString();
+        // d[0] is a bool object (enabled?), skip or handle if needed
+        GUID_string guidStr = d[1].GetString();  // d[1] is the GUID string
         audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-        audioComp.SetClip(d[1]["data"].GetString());
-        audioComp.SetVolume(d[2]["data"].GetFloat());
-        audioComp.SetPitch(d[3]["data"].GetFloat());
-        audioComp.SetLoop(d[4]["data"].GetBool());
-        audioComp.PlayOnAwake = d[5]["data"].GetBool();
-        audioComp.SetMute(d[6]["data"].GetBool());
-        audioComp.Priority = d[7]["data"].GetInt();
-        audioComp.SetSpatialize(d[8]["data"].GetBool());
-        audioComp.MinDistance = d[9]["data"].GetFloat();
-        audioComp.MaxDistance = d[10]["data"].GetFloat();
-        audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
-        audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
-        audioComp.IsPlaying = d[13]["data"].GetBool();
-        audioComp.IsPaused = d[14]["data"].GetBool();
-        readVec3Generic(d[15], audioComp.Position);
+        audioComp.SetClip(d[2]["data"].GetString());  // d[2] is the clip object
+        audioComp.SetVolume(d[3]["data"].GetFloat());  // d[3] is the volume object
+        audioComp.SetPitch(d[4]["data"].GetFloat());  // d[4] is the pitch object
+        audioComp.SetLoop(d[5]["data"].GetBool());  // d[5] is the loop object
+        audioComp.PlayOnAwake = d[6]["data"].GetBool();  // d[6] is PlayOnAwake
+        audioComp.SetMute(d[7]["data"].GetBool());  // d[7] is mute
+        audioComp.Priority = d[8]["data"].GetInt();  // d[8] is Priority
+        audioComp.SetSpatialize(d[9]["data"].GetBool());  // d[9] is spatialize
+        audioComp.MinDistance = d[10]["data"].GetFloat();  // d[10] is MinDistance
+        audioComp.MaxDistance = d[11]["data"].GetFloat();  // d[11] is MaxDistance
+        audioComp.SetSpatialBlend(d[12]["data"].GetFloat());  // d[12] is spatialBlend
+        audioComp.SetOutputAudioMixerGroup(d[13]["data"].GetString());  // d[13] is outputAudioMixerGroup
+        audioComp.IsPlaying = d[14]["data"].GetBool();  // d[14] is IsPlaying
+        audioComp.IsPaused = d[15]["data"].GetBool();  // d[15] is IsPaused
+        readVec3Generic(d[16], audioComp.Position);  // d[16] is Position
     }
 }
 

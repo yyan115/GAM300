@@ -634,7 +634,7 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
 
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_AUDIO")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
                     *guid = DraggedAudioGuid;
                     ImGui::EndDragDropTarget();
                     return true;

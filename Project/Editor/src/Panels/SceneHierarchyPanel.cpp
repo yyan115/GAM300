@@ -229,8 +229,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             renamingEntity = static_cast<Entity>(-1);
         }
 
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape) ||
-            (!ImGui::IsItemActive() && !ImGui::IsItemFocused()))
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape))
         {
             renamingEntity = static_cast<Entity>(-1);
         }
