@@ -40,15 +40,20 @@ void AnimationSystem::Update()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities)
 	{
-		// Skip inactive entities (Unity-like behavior)
+		// Skip inactive entities
 		if (ecsManager.HasComponent<ActiveComponent>(entity)) {
 			auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
 			if (!activeComp.isActive) {
-				continue; // Don't update animations for inactive entities
+				continue;
 			}
 		}
 
 		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
+
+		if (!animComp.enabled) {
+			continue;
+		}
+
 		animComp.Update(TimeManager::GetDeltaTime());
 	}
 }

@@ -1,4 +1,5 @@
 #include "EditorComponents.hpp"
+#include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 bool EditorComponents::DrawDragDropButton(const char* label, float width) {
     // Push Unity-style appearance
@@ -103,4 +104,52 @@ void EditorComponents::DrawHighlightBorder() {
         0,
         DRAG_HIGHLIGHT_BORDER_THICKNESS
     );
+}
+
+bool EditorComponents::DrawPlayButton(bool isPlaying, float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, isPlaying ?
+        ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
+
+    bool clicked = ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Play");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
+}
+
+bool EditorComponents::DrawPauseButton(bool isPaused, float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, isPaused ?
+        ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
+
+    bool clicked = ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Pause");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
+}
+
+bool EditorComponents::DrawStopButton(float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+    float width = buttonWidth > 0.0f ? buttonWidth : ImGui::GetContentRegionAvail().x;
+    bool clicked = ImGui::Button(ICON_FA_STOP " Stop", ImVec2(width, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Stop");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
 }

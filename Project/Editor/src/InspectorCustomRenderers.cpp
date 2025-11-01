@@ -32,6 +32,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
+#include "Animation/AnimationComponent.hpp"
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
@@ -654,55 +655,24 @@ void RegisterInspectorCustomRenderers() {
             // Play/Pause/Stop buttons for editor preview
             float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 
-            // Play button
-            ImGui::PushStyleColor(ImGuiCol_Button, particle.isPlayingInEditor && !particle.isPausedInEditor ?
-                ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
-
-            if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0))) {
+            if (EditorComponents::DrawPlayButton(particle.isPlayingInEditor && !particle.isPausedInEditor, buttonWidth)) {
                 particle.isPlayingInEditor = true;
                 particle.isPausedInEditor = false;
             }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Play particle preview in Scene panel");
-            }
 
-            ImGui::PopStyleColor(3);
             ImGui::SameLine();
 
-            // Pause button
-            ImGui::PushStyleColor(ImGuiCol_Button, particle.isPausedInEditor ?
-                ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
-
-            if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0))) {
+            if (EditorComponents::DrawPauseButton(particle.isPausedInEditor, buttonWidth)) {
                 if (particle.isPlayingInEditor) {
                     particle.isPausedInEditor = !particle.isPausedInEditor;
                 }
             }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Pause particle preview (keeps existing particles)");
-            }
 
-            ImGui::PopStyleColor(3);
-
-            // Stop button (full width)
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
-
-            if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+            if (EditorComponents::DrawStopButton()) {
                 particle.isPlayingInEditor = false;
                 particle.isPausedInEditor = false;
-                particle.particles.clear();  // Clear all particles on stop
+                particle.particles.clear();
             }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Stop and clear all particles");
-            }
-
-            ImGui::PopStyleColor(3);
 
             ImGui::Spacing();
             ImGui::Separator();
@@ -861,6 +831,133 @@ void RegisterInspectorCustomRenderers() {
             ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
             ImGui::ColorEdit3("Specular", &light.specular.x);
 
-            return true;  // Return true to skip default field rendering
+            return true;
+        });
+
+    ReflectionRenderer::RegisterComponentRenderer("AnimationComponent",
+        [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            AnimationComponent& animComp = *static_cast<AnimationComponent*>(componentPtr);
+
+            ImGui::Text("Animation Clips");
+
+            int prevClipCount = animComp.clipCount;
+            if (ImGui::InputInt("Size", &animComp.clipCount, 1, 1)) {
+                if (animComp.clipCount < 0) animComp.clipCount = 0;
+                if (animComp.clipCount != prevClipCount) {
+                    animComp.SetClipCount(animComp.clipCount);
+                }
+            }
+
+            for (int i = 0; i < animComp.clipCount; ++i) {
+                ImGui::PushID(i);
+
+                std::string slotLabel = "Element " + std::to_string(i);
+                ImGui::Text("%s", slotLabel.c_str());
+                ImGui::SameLine();
+
+                std::string clipName = animComp.clipPaths[i].empty() ? "None (Animation)" : animComp.clipPaths[i];
+
+                size_t lastSlash = clipName.find_last_of("/\\");
+                if (lastSlash != std::string::npos) {
+                    clipName = clipName.substr(lastSlash + 1);
+                }
+
+                float buttonWidth = ImGui::GetContentRegionAvail().x;
+                EditorComponents::DrawDragDropButton(clipName.c_str(), buttonWidth);
+
+                if (EditorComponents::BeginDragDropTarget()) {
+                    ImGui::SetTooltip("Drop .fbx animation file here");
+
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
+                        animComp.clipPaths[i] = DraggedModelPath;
+                        animComp.clipGUIDs[i] = DraggedModelGuid;
+
+                        if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+                            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                            if (modelComp.model) {
+                                animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                            }
+                        }
+                    }
+                    EditorComponents::EndDragDropTarget();
+                }
+
+                if (!animComp.clipPaths[i].empty()) {
+                    ImGui::SameLine();
+                    ImGui::PushID("clear");
+                    if (ImGui::SmallButton(ICON_FA_XMARK)) {
+                        animComp.clipPaths[i].clear();
+                        animComp.clipGUIDs[i] = {0, 0};
+
+                        if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+                            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                            if (modelComp.model) {
+                                animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                            }
+                        }
+                    }
+                    ImGui::PopID();
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("Clear Animation");
+                    }
+                }
+
+                ImGui::PopID();
+            }
+
+            const auto& clips = animComp.GetClips();
+            size_t activeClipIndex = animComp.GetActiveClipIndex();
+
+            if (!clips.empty()) {
+                ImGui::Separator();
+                ImGui::Text("Active Clip");
+
+                int currentClip = static_cast<int>(activeClipIndex);
+                if (ImGui::SliderInt("##ActiveClip", &currentClip, 0, static_cast<int>(clips.size()) - 1)) {
+                    animComp.SetClip(currentClip);
+                }
+
+                const Animation& clip = animComp.GetClip(activeClipIndex);
+                ImGui::Text("Duration: %.2f ticks", clip.GetDuration());
+                ImGui::Text("Ticks Per Second: %.2f", clip.GetTicksPerSecond());
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Playback Controls");
+
+            float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+            if (EditorComponents::DrawPlayButton(animComp.isPlay, buttonWidth)) {
+                animComp.Play();
+            }
+
+            ImGui::SameLine();
+
+            if (EditorComponents::DrawPauseButton(!animComp.isPlay, buttonWidth)) {
+                animComp.Pause();
+            }
+
+            if (EditorComponents::DrawStopButton()) {
+                animComp.Stop();
+            }
+
+            if (!clips.empty() && activeClipIndex < clips.size()) {
+                const Animator* animator = animComp.GetAnimatorPtr();
+                if (animator) {
+                    float currentTime = animator->GetCurrentTime();
+                    const Animation& clip = animComp.GetClip(activeClipIndex);
+                    float duration = clip.GetDuration();
+
+                    ImGui::Separator();
+                    ImGui::Text("Current Time: %.2f / %.2f", currentTime, duration);
+
+                    float progress = duration > 0.0f ? (currentTime / duration) : 0.0f;
+                    ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
+                }
+            }
+
+            ImGui::Separator();
+
+            return false;
         });
 }

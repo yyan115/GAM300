@@ -32,11 +32,11 @@ public:
 	~Animation() = default;
 
     Bone* FindBone(const std::string& name);
-    inline float GetTicksPerSecond() { return (float)mTicksPerSecond; }
-    inline float GetDuration() { return mDuration; }
-    inline const AssimpNodeData& GetRootNode() { return mRootNode; }
-	inline const std::map<std::string, BoneInfo>& GetBoneIDMap() { return mBoneInfoMap; }
-	glm::mat4 GetGlobalInverse() { return mGlobalInverse; }
+    inline float GetTicksPerSecond() const { return (float)mTicksPerSecond; }
+    inline float GetDuration() const { return mDuration; }
+    inline const AssimpNodeData& GetRootNode() const { return mRootNode; }
+	inline const std::map<std::string, BoneInfo>& GetBoneIDMap() const { return mBoneInfoMap; }
+	glm::mat4 GetGlobalInverse() const { return mGlobalInverse; }
     void DebugCoreMatricesOnce() const;
 
 private:

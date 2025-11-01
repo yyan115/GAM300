@@ -50,6 +50,7 @@ extern std::string DraggedFontPath;
 #include <vector>
 #include <algorithm>
 #include <Sound/AudioComponent.hpp>
+#include <Animation/AnimationComponent.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
@@ -61,16 +62,16 @@ struct has_override_flag<T, std::void_t<decltype(std::declval<T&>().overrideFrom
 template <typename T>
 static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const char* id_suffix = "")
 {
-    if constexpr (has_override_flag<T>::value) {
-        auto& c = ecs.GetComponent<T>(e);
-        bool b = c.overrideFromPrefab;
-        std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
-        if (ImGui::Checkbox(label.c_str(), &b)) {
-            c.overrideFromPrefab = b;
-        }
-        ImGui::SameLine();
-        ImGui::TextDisabled("(Instance)");
-    }
+	if constexpr (has_override_flag<T>::value) {
+		auto& c = ecs.GetComponent<T>(e);
+		bool b = c.overrideFromPrefab;
+		std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
+		if (ImGui::Checkbox(label.c_str(), &b)) {
+			c.overrideFromPrefab = b;
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("(Instance)");
+	}
 }
 
 static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
@@ -211,6 +212,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<CameraComponent>(entity) ?
 				(void*)&ecs.GetComponent<CameraComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<CameraComponent>(entity); }},
+
+		{"Animation Component", "AnimationComponent",
+			[&]() { return ecs.HasComponent<AnimationComponent>(entity) ?
+				(void*)&ecs.GetComponent<AnimationComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AnimationComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -222,8 +228,8 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 
 		// Special components (Name, Tag, Layer) don't use collapsing headers
 		bool isSpecialComponent = (std::string(info.typeName) == "NameComponent" ||
-		                           std::string(info.typeName) == "TagComponent" ||
-		                           std::string(info.typeName) == "LayerComponent");
+								   std::string(info.typeName) == "TagComponent" ||
+								   std::string(info.typeName) == "LayerComponent");
 
 		if (isSpecialComponent) {
 			// Render directly without collapsing header
@@ -309,7 +315,7 @@ void InspectorPanel::OnImGuiRender() {
 				ImGui::Text("No object selected");
 
 				// Lock button on the same line
-				ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+				ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 				if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 					inspectorLocked = !inspectorLocked;
 					if (inspectorLocked) {
@@ -343,7 +349,7 @@ void InspectorPanel::OnImGuiRender() {
 					ImGui::Text("Entity ID: %u", displayEntity);
 
 					// Lock button on the same line
-					ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+					ImGui::SameLine(ImGui::GetWindowWidth() - 42);
 					if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 						inspectorLocked = !inspectorLocked;
 						if (inspectorLocked) {
@@ -666,7 +672,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 
 				// Lock button on the same line
 				GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
-				ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+				ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 				if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 					inspectorLocked = !inspectorLocked;
 					if (inspectorLocked) {
@@ -722,22 +728,22 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				std::filesystem::path absolutePath = std::filesystem::absolute(sourceFilePath);
 				std::string absolutePathStr = absolutePath.string();
 
-                // Load material and cache it
-                std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
-                std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
-                cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
-                if (cachedMaterial) {
-                    cachedMaterialGuid = assetGuid;
-                    cachedMaterialPath = sourceFilePath;
-                    std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
-                } else {
-                    cachedMaterial.reset();
-                    cachedMaterialGuid = {0, 0};
-                    cachedMaterialPath.clear();
-                    ImGui::Text("Failed to load material");
-                    return;
-                }
-            }
+				// Load material and cache it
+				std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
+				std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
+				cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
+				if (cachedMaterial) {
+					cachedMaterialGuid = assetGuid;
+					cachedMaterialPath = sourceFilePath;
+					std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+				} else {
+					cachedMaterial.reset();
+					cachedMaterialGuid = {0, 0};
+					cachedMaterialPath.clear();
+					ImGui::Text("Failed to load material");
+					return;
+				}
+			}
 
 			MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath, true, &inspectorLocked, lockCallback);
 		} 
@@ -843,6 +849,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				if (!ecsManager.HasComponent<RigidBodyComponent>(entity)) {
 					if (ImGui::MenuItem("RigidBody")) {
 						AddComponent(entity, "RigidBodyComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			// Animation Components
+			if (ImGui::BeginMenu("Animation")) {
+				if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
+					if (ImGui::MenuItem("Animation Component")) {
+						AddComponent(entity, "AnimationComponent");
 					}
 				}
 				ImGui::EndMenu();
@@ -1158,6 +1174,18 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added CameraComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "AnimationComponent") {
+			AnimationComponent component;
+			ecsManager.AddComponent<AnimationComponent>(entity, component);
+
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Animator" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1178,9 +1206,9 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 	// Core components cannot be disabled, so don't show checkbox
 	bool isCoreComponent = (componentType == "Transform" ||
-	                        componentType == "NameComponent" ||
-	                        componentType == "TagComponent" ||
-	                        componentType == "LayerComponent");
+							componentType == "NameComponent" ||
+							componentType == "TagComponent" ||
+							componentType == "LayerComponent");
 
 	if (!isCoreComponent) {
 		// Component enable/disable checkbox (Unity-style)
@@ -1221,6 +1249,9 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "RigidBodyComponent") {
 			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "AnimationComponent") {
+			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
 
@@ -1343,6 +1374,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.RemoveComponent<CameraComponent>(request.entity);
 				std::cout << "[Inspector] Removed CameraComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AnimationComponent") {
+				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
+				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
