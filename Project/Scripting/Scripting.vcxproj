@@ -313,7 +313,23 @@
     <ClInclude Include="..\Libraries\lua\src\lundump.h" />
     <ClInclude Include="..\Libraries\lua\src\lvm.h" />
     <ClInclude Include="..\Libraries\lua\src\lzio.h" />
+    <ClInclude Include="include\CoroutineScheduler.h" />
+    <ClInclude Include="include\HotReloadManager.h" />
+    <ClInclude Include="include\ModuleLoader.h" />
+    <ClInclude Include="include\RemoteDebug.h" />
+    <ClInclude Include="include\ScriptComponent.h" />
+    <ClInclude Include="include\ScriptError.h" />
+    <ClInclude Include="include\ScriptFileSystem.h" />
     <ClInclude Include="include\Scripting.h" />
+    <ClInclude Include="include\ScriptingRuntime.h" />
+    <ClInclude Include="include\ScriptingTypes.h" />
+    <ClInclude Include="include\ScriptInspector.h" />
+    <ClInclude Include="include\ScriptLog.h" />
+    <ClInclude Include="include\ScriptProfiler.h" />
+    <ClInclude Include="include\ScriptRegistry.h" />
+    <ClInclude Include="include\ScriptSerializer.h" />
+    <ClInclude Include="include\ScriptUtils.h" />
+    <ClInclude Include="include\StatePreserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Libraries\lua\src\lapi.c">
@@ -656,7 +672,24 @@
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsC</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">CompileAsC</CompileAs>
     </ClCompile>
-    <ClCompile Include="src\hotload_deprecated.cpp" />
+    <ClCompile Include="src\CoroutineScheduler.cpp" />
+    <ClCompile Include="src\HotReloadManager.cpp" />
+    <ClCompile Include="src\ModuleLoader.cpp" />
+    <ClCompile Include="src\RemoteDebug.cpp" />
+    <ClCompile Include="src\ScriptComponent.cpp" />
+    <ClCompile Include="src\ScriptError.cpp" />
+    <ClCompile Include="src\ScriptFileSystem_android.cpp" />
+    <ClCompile Include="src\ScriptFileSystem_win.cpp" />
+    <ClCompile Include="src\ScriptingRuntime.cpp" />
+    <ClCompile Include="src\ScriptInspector.cpp" />
+    <ClCompile Include="src\ScriptLog.cpp" />
+    <ClCompile Include="src\ScriptLog_android.cpp" />
+    <ClCompile Include="src\ScriptLog_win.cpp" />
+    <ClCompile Include="src\ScriptProfiler.cpp" />
+    <ClCompile Include="src\ScriptRegistry.cpp" />
+    <ClCompile Include="src\ScriptSerializer.cpp" />
+    <ClCompile Include="src\ScriptUtils.cpp" />
+    <ClCompile Include="src\StatePreserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Resources\Scripts\test.lua" />
