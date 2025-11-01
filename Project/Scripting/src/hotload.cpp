@@ -234,7 +234,6 @@ namespace Scripting {
     }
 
     bool Initialize(const std::string& scriptPath) {
-        std::cout << "[Scripting] Initialize() called\n" << std::flush;
         g_scriptPath = GetAbsolutePathA(scriptPath);
         g_L = nullptr;
         if (!create_lua_state(g_L)) {
@@ -269,7 +268,6 @@ namespace Scripting {
     }
 
     void Tick(float dt) {
-        std::cout << "[Scripting] Tick called dt=" << dt << "\n" << std::flush;
         if (g_reloadRequested.exchange(false)) {
             do_reload();
         }

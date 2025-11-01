@@ -32,7 +32,7 @@ int main() {
     GameManager::Initialize();
 	GUIManager::Initialize();
 
-    Scripting::Initialize("scripts/test.lua");
+    Scripting::Initialize("Resources/Scripts/test.lua");
 
     using clock = std::chrono::steady_clock;
     auto last = clock::now();
