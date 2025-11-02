@@ -5,7 +5,7 @@
             "guid": "002d9db24b3560c8-000305117200005b",
             "components": {
                 "NameComponent": {
-                    "name": "Empty Entity"
+                    "name": "light"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -248,7 +248,7 @@
         },
         {
             "id": 1,
-            "guid": "002d9db20c2f2190-00030511c4000063",
+            "guid": "000cfb690339f189-0003248070000007",
             "components": {
                 "NameComponent": {
                     "name": "backpack"
@@ -267,15 +267,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0785637
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.312234
                                 },
                                 {
                                     "type": "float",
-                                    "data": -10.99
+                                    "data": -2.03712
                                 }
                             ]
                         },
@@ -284,15 +284,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1.04
+                                    "data": 0.277
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.04
+                                    "data": 0.277
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.04
+                                    "data": 0.277
                                 }
                             ]
                         },
@@ -326,7 +326,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1.04
+                                    "data": 0.277
                                 },
                                 {
                                     "type": "float",
@@ -338,6 +338,26 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.0785637
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.277
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.312234
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
                                 },
                                 {
@@ -346,31 +366,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.04
+                                    "data": 0.277
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1.04
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -10.99
+                                    "data": -2.03712
                                 },
                                 {
                                     "type": "float",
@@ -396,8 +396,8 @@
                     "type": "ModelRenderComponent",
                     "data": [
                         "0037a8a26dcc7d10-00031f527c00000d",
-                        "0037a8a2715c31a3-00031f529a00003f",
-                        "0000000000000000-0000000000000000",
+                        "001324b0431e932c-00030dd508000037",
+                        "001324b06f816242-00030dd4f200000f",
                         {
                             "type": "Matrix4x4",
                             "data": [

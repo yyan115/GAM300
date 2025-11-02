@@ -108,7 +108,7 @@ int Bone::GetPositionIndex(float animationTime)
 		if (animationTime < mPositions[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumPositions - 2;
 }
 
 /* Gets the current index on mKeyRotations to interpolate to based on the
@@ -120,7 +120,7 @@ int Bone::GetRotationIndex(float animationTime)
 		if (animationTime < mRotations[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumRotations - 2;
 }
 
 /* Gets the current index on mKeyScalings to interpolate to based on the
@@ -132,7 +132,7 @@ int Bone::GetScaleIndex(float animationTime)
 		if (animationTime < mScales[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumScalings - 2;
 }
 
 

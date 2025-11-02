@@ -110,6 +110,29 @@ public:
      */
     static void PopComboColors();
 
+    /**
+     * @brief Draws a Play button with green styling when active
+     * @param isPlaying Whether playback is currently active
+     * @param buttonWidth Width of the button
+     * @return True if button was clicked
+     */
+    static bool DrawPlayButton(bool isPlaying, float buttonWidth);
+
+    /**
+     * @brief Draws a Pause button with orange styling when paused
+     * @param isPaused Whether playback is currently paused
+     * @param buttonWidth Width of the button
+     * @return True if button was clicked
+     */
+    static bool DrawPauseButton(bool isPaused, float buttonWidth);
+
+    /**
+     * @brief Draws a Stop button with red styling
+     * @param buttonWidth Width of the button (0 = full width)
+     * @return True if button was clicked
+     */
+    static bool DrawStopButton(float buttonWidth = 0.0f);
+
 private:
     // Helper to draw the custom highlight border
     static void DrawHighlightBorder();
