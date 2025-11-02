@@ -567,7 +567,7 @@ std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName
 	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetDirectory, true);
 	for (std::string assetPath : assetFiles) {
 		std::filesystem::path p(assetPath);
-		std::string currentAssetName = (p.stem() / p.extension()).generic_string();
+		std::string currentAssetName = (p.stem().generic_string() + p.extension().generic_string());
 		if (currentAssetName == assetName) {
 			return assetPath;
 		}

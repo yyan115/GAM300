@@ -487,6 +487,12 @@ void RegisterInspectorCustomRenderers() {
                                 modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(
                                     ResourceManager::GetPlatformShaderPath("default"));
                             }
+
+                            if (loadedModel->meshes[0].material) {
+                                modelRenderer.material = loadedModel->meshes[0].material;
+                                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+                                modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
+                            }
                         } else {
                             std::cerr << "[Inspector] Failed to load model!" << std::endl;
                         }

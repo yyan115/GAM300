@@ -1431,6 +1431,12 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 				modelRenderer.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
 			}
 
+			if (loadedModel->meshes[0].material) {
+				modelRenderer.material = loadedModel->meshes[0].material;
+				std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+				modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
+			}
+
 			//// Load the shader if it's not already loaded
 			//if (!modelRenderer.shader) {
 			//	std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;

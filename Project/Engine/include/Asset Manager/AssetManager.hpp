@@ -143,7 +143,7 @@ public:
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);
 	std::string ENGINE_API GetRootAssetDirectory() const;
-	std::string GetAssetPathFromAssetName(const std::string& assetName);
+	std::string ENGINE_API GetAssetPathFromAssetName(const std::string& assetName);
 
 	enum class Event {
 		added,
