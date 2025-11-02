@@ -44,4 +44,8 @@ namespace Scripting
 	// Equality helpers
 	inline bool operator==(const ScriptFunctionRef& a, const ScriptFunctionRef& b) { return a.ref == b.ref; }
 	inline bool operator!=(const ScriptFunctionRef& a, const ScriptFunctionRef& b) { return !(a == b); }
+
+	// Coroutine id used by the scheduler
+	using CoroutineId = uint32_t;
+	static constexpr CoroutineId InvalidCoroutineId = 0u;
 } // namespace Scripting
