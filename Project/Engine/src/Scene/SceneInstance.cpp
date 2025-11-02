@@ -36,49 +36,20 @@ void SceneInstance::Initialize() {
 	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
-	// WOON LI TEST CODE
+	// Get the ECS manager for this scene
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	// Add FPS text (mainly for android to see FPS)
-	// fpsText = ecsManager.CreateEntity();
-	// ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
-	// ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-	// TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-	// TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
-	// TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
-	
-	// Test Camera Component
-	Entity testCamera = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(testCamera).name = "main camera";
-	ecsManager.transformSystem->SetLocalPosition(testCamera, {0, 0, 3});
-	// Add camera component
-	CameraComponent camComp;
-	camComp.nearPlane = 0.1f;
-	camComp.farPlane = 100.f;
-	camComp.isActive = true;
-	camComp.priority = 0;
-	camComp.useFreeRotation = true;
-	camComp.yaw = -90.0f;
-	camComp.pitch = 0.0f;
-	camComp.fov = 45.0f;
-	ecsManager.AddComponent<CameraComponent>(testCamera, camComp);
 	// Initialize camera system
 	ecsManager.cameraSystem->Initialise();
-	// Sets camera
-	gfxManager.SetCamera(ecsManager.cameraSystem->GetActiveCamera());
-	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
-	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
-
-	// Test Animation System
-	Entity testAnim = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(testAnim).name = "TestAnimationEntity";
-	ecsManager.GetComponent<Transform>(testAnim).localScale = Vector3D(0.01f, .01f, .01f);
-	ecsManager.GetComponent<Transform>(testAnim).localPosition = Vector3D(0.0f, -1.5f, -1.5f);
-	ecsManager.AddComponent<ModelRenderComponent>(testAnim,
-		ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/Kachujin/Kachujin.fbx"),
-		MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
-		MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Kachujin G Rosales_kachujin_MAT.mat") });
-	ecsManager.AddComponent<AnimationComponent>(testAnim, AnimationComponent{});
+	// Set camera if one exists in the scene
+	Entity activeCam = ecsManager.cameraSystem->GetActiveCameraEntity();
+	if (activeCam != UINT32_MAX && ecsManager.cameraSystem->GetActiveCamera()) {
+		gfxManager.SetCamera(ecsManager.cameraSystem->GetActiveCamera());
+		ENGINE_LOG_INFO("[SceneInstance] Camera set to GraphicsManager, active camera entity: " + std::to_string(activeCam));
+	}
+	else {
+		ENGINE_LOG_WARN("[SceneInstance] No active camera found! Game panel will not render. Please add a camera to your scene.");
+	}
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
@@ -240,8 +211,6 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
 
-	if(mainECS.animationSystem)
-		mainECS.animationSystem->Update(); // After rendering to reset any pose changes if necessary
 
 
 #ifdef ANDROID

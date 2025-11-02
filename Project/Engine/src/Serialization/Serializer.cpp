@@ -3,6 +3,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "ECS/ECSRegistry.hpp"
+#include "Utilities/GUID.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -297,6 +298,21 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ColliderComponent", v, alloc);
         }
+        if (ecs.HasComponent<CameraComponent>(entity)) {
+            auto& c = ecs.GetComponent<CameraComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("CameraComponent", v, alloc);
+        }
+        if (ecs.HasComponent<AnimationComponent>(entity)) {
+            auto& c = ecs.GetComponent<AnimationComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AnimationComponent", v, alloc);
+        }
+        if (ecs.HasComponent<ActiveComponent>(entity)) {
+            auto& c = ecs.GetComponent<ActiveComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ActiveComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -547,6 +563,29 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
             auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
             DeserializeColliderComponent(colliderComp, tv);
+        }
+
+        // CameraComponent
+        if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["CameraComponent"];
+            ecs.AddComponent<CameraComponent>(newEnt, CameraComponent{});
+            auto& cameraComp = ecs.GetComponent<CameraComponent>(newEnt);
+            DeserializeCameraComponent(cameraComp, tv);
+        }
+
+        if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AnimationComponent"];
+            ecs.AddComponent<AnimationComponent>(newEnt, AnimationComponent{});
+            auto& animComp = ecs.GetComponent<AnimationComponent>(newEnt);
+            DeserializeAnimationComponent(animComp, tv);
+        }
+
+        // ActiveComponent
+        if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ActiveComponent"];
+            ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+            auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
+            DeserializeActiveComponent(activeComp, tv);
         }
 
         // ParentComponent
@@ -1083,5 +1122,94 @@ void Serializer::DeserializeTagComponent(TagComponent& tagComp, const rapidjson:
 void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON) {
     if (layerJSON.HasMember("layerIndex") && layerJSON["layerIndex"].IsInt()) {
         layerComp.layerIndex = layerJSON["layerIndex"].GetInt();
+    }
+}
+
+void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
+    // typed form: tv.data = [ {type: "bool", data: true}, { type:"float", data: 1.0 }, ... ]
+    if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
+        const auto& d = cameraJSON["data"];
+        // Fields are in the order they were registered in reflection
+        int idx = 0;
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.priority = d[idx++]["data"].GetInt();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.yaw = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.pitch = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.useFreeRotation = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.fov = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.nearPlane = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.farPlane = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.orthoSize = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.movementSpeed = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.mouseSensitivity = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.minZoom = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.maxZoom = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.zoomSpeed = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
+    }
+}
+
+void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON) {
+    if (animJSON.HasMember("data") && animJSON["data"].IsArray()) {
+        const auto& d = animJSON["data"];
+        int idx = 0;
+
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
+            animComp.enabled = d[idx]["data"].GetBool();
+            idx++;
+        }
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
+            animComp.isPlay = d[idx]["data"].GetBool();
+            idx++;
+        }
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
+            animComp.isLoop = d[idx]["data"].GetBool();
+            idx++;
+        }
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsNumber()) {
+            animComp.speed = d[idx]["data"].GetFloat();
+            idx++;
+        }
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsInt()) {
+            animComp.clipCount = d[idx]["data"].GetInt();
+            idx++;
+        }
+
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsArray()) {
+            const auto& pathsArray = d[idx]["data"];
+            animComp.clipPaths.clear();
+            for (rapidjson::SizeType i = 0; i < pathsArray.Size(); ++i) {
+                if (pathsArray[i].HasMember("data") && pathsArray[i]["data"].IsString()) {
+                    animComp.clipPaths.push_back(pathsArray[i]["data"].GetString());
+                }
+            }
+            idx++;
+        }
+
+        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsArray()) {
+            const auto& guidsArray = d[idx]["data"];
+            animComp.clipGUIDs.clear();
+            for (rapidjson::SizeType i = 0; i < guidsArray.Size(); ++i) {
+                if (guidsArray[i].HasMember("data") && guidsArray[i]["data"].IsString()) {
+                    std::string guidStr = guidsArray[i]["data"].GetString();
+                    animComp.clipGUIDs.push_back(GUIDUtilities::ConvertStringToGUID128(guidStr));
+                }
+            }
+            idx++;
+        }
+
+        animComp.clipPaths.resize(animComp.clipCount);
+        animComp.clipGUIDs.resize(animComp.clipCount);
+    }
+}
+
+void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON) {
+    if (activeJSON.HasMember("data") && activeJSON["data"].IsArray()) {
+        const auto& d = activeJSON["data"];
+        int idx = 0;
+        if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
     }
 }

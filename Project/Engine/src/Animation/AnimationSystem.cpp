@@ -6,6 +6,7 @@
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "TimeManager.hpp"
+#include "Engine.h"
 
 bool AnimationSystem::Initialise()
 {
@@ -22,21 +23,27 @@ bool AnimationSystem::Initialise()
 			Animator* animator = animComp.EnsureAnimator();
 			modelComp.SetAnimator(animator);
 
-			if (modelComp.model) {
-				animComp.AddClipFromFile("Resources/Models/Kachujin/Animation/Slash.fbx", modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
-				animComp.Play();
+			if (modelComp.model && !animComp.clipPaths.empty()) {
+				animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+				if (!animComp.GetClips().empty()) {
+					animComp.Play();
+				}
 			}
 
-			std::cout << "[AnimationSystem] AnimationComponent initialized for entity " << entity << "\n";
+			ENGINE_PRINT("[AnimationSystem] AnimationComponent initialized for entity ", entity, "\n");
 		}
 	}
-	
+
 	ENGINE_PRINT("[AnimationSystem] Initialized\n");
 	return true;
 }
 
 void AnimationSystem::Update()
 {
+	if (Engine::IsEditMode()) {
+		return;
+	}
+
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities)
 	{

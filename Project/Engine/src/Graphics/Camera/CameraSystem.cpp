@@ -24,7 +24,7 @@ bool CameraSystem::Initialise()
 	activeCamera = std::make_unique<Camera>();
 
 	activeCameraEntity = FindHighestPriorityCamera();
-	if (activeCameraEntity != 0)
+	if (activeCameraEntity != UINT32_MAX)
 	{
 		UpdateCameraFromComponent(activeCameraEntity);
 		ENGINE_PRINT("[CameraSystem] Initialized with active camera entity: ", activeCameraEntity, "\n");
@@ -42,34 +42,34 @@ void CameraSystem::Update()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Validate that active camera entity still exists
-	if (activeCameraEntity != 0 && entities.find(activeCameraEntity) == entities.end())
+	if (activeCameraEntity != UINT32_MAX && entities.find(activeCameraEntity) == entities.end())
 	{
 		// Active camera was deleted, find a new one
 		ENGINE_PRINT("[CameraSystem] Active camera entity ", activeCameraEntity, " no longer exists, finding new camera\n");
-		activeCameraEntity = 0;
+		activeCameraEntity = UINT32_MAX;
 	}
 
 	// Check if current active camera entity has become inactive (Unity-like behavior)
-	if (activeCameraEntity != 0 && ecsManager.HasComponent<ActiveComponent>(activeCameraEntity))
+	if (activeCameraEntity != UINT32_MAX && ecsManager.HasComponent<ActiveComponent>(activeCameraEntity))
 	{
 		auto& activeComp = ecsManager.GetComponent<ActiveComponent>(activeCameraEntity);
 		if (!activeComp.isActive)
 		{
 			// Active camera entity was disabled, need to find a new one
 			ENGINE_PRINT("[CameraSystem] Active camera entity ", activeCameraEntity, " was disabled, finding new camera\n");
-			activeCameraEntity = 0; // Force re-evaluation
+			activeCameraEntity = UINT32_MAX; // Force re-evaluation
 		}
 	}
 
 	// Check if current active camera component has become disabled (component-level enable/disable)
-	if (activeCameraEntity != 0 && ecsManager.HasComponent<CameraComponent>(activeCameraEntity))
+	if (activeCameraEntity != UINT32_MAX && ecsManager.HasComponent<CameraComponent>(activeCameraEntity))
 	{
 		auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
 		if (!camComp.enabled)
 		{
 			// Active camera component was disabled, need to find a new one
 			ENGINE_PRINT("[CameraSystem] Active camera component on entity ", activeCameraEntity, " was disabled, finding new camera\n");
-			activeCameraEntity = 0; // Force re-evaluation
+			activeCameraEntity = UINT32_MAX; // Force re-evaluation
 		}
 	}
 
@@ -81,7 +81,7 @@ void CameraSystem::Update()
 		Entity oldCamera = activeCameraEntity;
 		activeCameraEntity = highestPriority;
 
-		if (activeCameraEntity != 0)
+		if (activeCameraEntity != UINT32_MAX)
 		{
 			ENGINE_PRINT("[CameraSystem] Switched camera from entity ", oldCamera, " to entity ", activeCameraEntity, "\n");
 			// Immediately update the camera to ensure view switches
@@ -109,7 +109,7 @@ void CameraSystem::Update()
 	}
 
 	// Update active camera if we have one
-	if (activeCameraEntity != 0 && entities.find(activeCameraEntity) != entities.end())
+	if (activeCameraEntity != UINT32_MAX && entities.find(activeCameraEntity) != entities.end())
 	{
 		UpdateCameraFromComponent(activeCameraEntity);
 	}
@@ -193,7 +193,7 @@ Entity CameraSystem::FindHighestPriorityCamera()
 {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-	Entity highest = 0;
+	Entity highest = UINT32_MAX;  // Use UINT32_MAX as "no entity" instead of 0
 	int highestPriority = -999999;
 
 	// First pass: find active camera with highest priority (skip inactive entities)
@@ -226,7 +226,7 @@ Entity CameraSystem::FindHighestPriorityCamera()
 	}
 
 	// If no active camera found, activate the highest priority camera that exists (and is on an active entity)
-	if (highest == 0 && !entities.empty())
+	if (highest == UINT32_MAX && !entities.empty())
 	{
 		highestPriority = -999999;
 		for (const auto& entity : entities)
@@ -257,11 +257,10 @@ Entity CameraSystem::FindHighestPriorityCamera()
 		}
 
 		// Activate this camera
-		if (highest != 0)
+		if (highest != UINT32_MAX)
 		{
 			auto& camComp = ecsManager.GetComponent<CameraComponent>(highest);
 			camComp.isActive = true;
-			ENGINE_PRINT("[CameraSystem] No active camera found, auto-activated camera entity: ", highest, "\n");
 		}
 	}
 

@@ -18,6 +18,9 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
+#include <Graphics/Camera/CameraComponent.hpp>
+#include <Animation/AnimationComponent.hpp>
+#include <ECS/ActiveComponent.hpp>
 
 class Serializer {
 public:
@@ -42,6 +45,9 @@ public:
 	static void DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON);
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
+	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
+	static void DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON);
+	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
 
 private:
 	Serializer() = delete;

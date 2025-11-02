@@ -549,10 +549,23 @@ bool Engine::InitializeGraphicsResources() {
     }
 #endif
 
-	// Load empty scene
-    //SceneManager::GetInstance().LoadTestScene();
-    SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/New Scene.scene");
-    ENGINE_LOG_INFO("Loaded test scene");
+	// Load last opened scene (editor) or default scene (game)
+#ifdef EDITOR
+	std::string lastScenePath = SceneManager::LoadLastOpenedScenePath();
+	if (lastScenePath.empty()) {
+		// No last scene, load default
+		lastScenePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/New Scene.scene";
+		ENGINE_LOG_INFO("No previous scene found, loading default scene");
+	}
+	else {
+		ENGINE_LOG_INFO("Loading last opened scene: " + lastScenePath);
+	}
+	SceneManager::GetInstance().LoadScene(lastScenePath);
+#else
+	// Game build always loads default scene
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/New Scene.scene");
+	ENGINE_LOG_INFO("Loaded default scene");
+#endif
 
 #ifdef ANDROID
     // Initialize virtual controls for Android

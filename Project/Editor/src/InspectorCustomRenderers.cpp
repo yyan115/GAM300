@@ -28,6 +28,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Sound/AudioComponent.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "EditorState.hpp"
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
@@ -838,6 +839,22 @@ void RegisterInspectorCustomRenderers() {
         [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             AnimationComponent& animComp = *static_cast<AnimationComponent*>(componentPtr);
 
+            enum class PreviewState { Stopped, Playing, Paused };
+            static std::unordered_map<Entity, PreviewState> previewState;
+
+            if (previewState.find(entity) == previewState.end()) {
+                previewState[entity] = PreviewState::Stopped;
+            }
+
+            if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE) {
+                if (previewState[entity] == PreviewState::Playing && animComp.enabled) {
+                    Animator* animator = animComp.GetAnimatorPtr();
+                    if (animator && !animComp.GetClips().empty()) {
+                        animator->UpdateAnimation(ImGui::GetIO().DeltaTime * animComp.speed, animComp.isLoop);
+                    }
+                }
+            }
+
             ImGui::Text("Animation Clips");
 
             int prevClipCount = animComp.clipCount;
@@ -923,23 +940,36 @@ void RegisterInspectorCustomRenderers() {
             }
 
             ImGui::Separator();
-            ImGui::Text("Playback Controls");
+            ImGui::Text("Playback Controls (Preview Only)");
+
+            bool isEditMode = (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE);
+            ImGui::BeginDisabled(!isEditMode);
 
             float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 
-            if (EditorComponents::DrawPlayButton(animComp.isPlay, buttonWidth)) {
-                animComp.Play();
+            bool isPlaying = (previewState[entity] == PreviewState::Playing);
+
+            if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth)) {
+                previewState[entity] = PreviewState::Playing;
+                if (animComp.GetAnimatorPtr() && !clips.empty()) {
+                    animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
+                }
             }
 
             ImGui::SameLine();
 
-            if (EditorComponents::DrawPauseButton(!animComp.isPlay, buttonWidth)) {
-                animComp.Pause();
+            if (EditorComponents::DrawPauseButton(!isPlaying, buttonWidth)) {
+                previewState[entity] = PreviewState::Paused;
             }
 
             if (EditorComponents::DrawStopButton()) {
-                animComp.Stop();
+                previewState[entity] = PreviewState::Stopped;
+                if (animComp.GetAnimatorPtr() && !clips.empty()) {
+                    animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
+                }
             }
+
+            ImGui::EndDisabled();
 
             if (!clips.empty() && activeClipIndex < clips.size()) {
                 const Animator* animator = animComp.GetAnimatorPtr();

@@ -217,7 +217,8 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         activeClip = 0;
     }
 
-    if (!clips.empty() && animator) {
+    if (!clips.empty()) {
+        EnsureAnimator();
         SyncAnimatorToActiveClip();
     }
 }

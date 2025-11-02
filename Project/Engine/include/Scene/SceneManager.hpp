@@ -35,6 +35,11 @@ public:
 	IScene* GetCurrentScene() { return currentScene.get(); }
 
 	ENGINE_API std::string GetSceneName() const;
+	ENGINE_API std::string GetCurrentScenePath() const { return currentScenePath; }
+
+	// Save/load last opened scene path for editor persistence
+	static void ENGINE_API SaveLastOpenedScenePath(const std::string& scenePath);
+	static std::string ENGINE_API LoadLastOpenedScenePath();
 
 private:
 	SceneManager() = default;
