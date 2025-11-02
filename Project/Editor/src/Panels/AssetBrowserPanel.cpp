@@ -1307,6 +1307,13 @@ void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& n
     std::error_code ec;
     std::filesystem::rename(oldPath, newPath, ec);
     if (!ec) {
+        // If this is a scene file and it's the currently loaded scene, update SceneManager
+        std::string extension = oldPath.extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+        if (extension == ".scene") {
+            SceneManager::GetInstance().UpdateScenePath(oldPath.string(), newPath.string());
+        }
+
         RefreshAssets();
     }
     else {

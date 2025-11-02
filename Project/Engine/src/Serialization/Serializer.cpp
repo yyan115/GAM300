@@ -575,9 +575,9 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
         if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AnimationComponent"];
-            ecs.AddComponent<AnimationComponent>(newEnt, AnimationComponent{});
-            auto& animComp = ecs.GetComponent<AnimationComponent>(newEnt);
-            DeserializeAnimationComponent(animComp, tv);
+            AnimationComponent animComp{};
+            TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+            ecs.AddComponent<AnimationComponent>(newEnt, animComp);
         }
 
         // ActiveComponent
@@ -1126,10 +1126,9 @@ void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapi
 }
 
 void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
-    // typed form: tv.data = [ {type: "bool", data: true}, { type:"float", data: 1.0 }, ... ]
     if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
         const auto& d = cameraJSON["data"];
-        // Fields are in the order they were registered in reflection
+        
         int idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
@@ -1149,60 +1148,6 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
-    }
-}
-
-void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON) {
-    if (animJSON.HasMember("data") && animJSON["data"].IsArray()) {
-        const auto& d = animJSON["data"];
-        int idx = 0;
-
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
-            animComp.enabled = d[idx]["data"].GetBool();
-            idx++;
-        }
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
-            animComp.isPlay = d[idx]["data"].GetBool();
-            idx++;
-        }
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsBool()) {
-            animComp.isLoop = d[idx]["data"].GetBool();
-            idx++;
-        }
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsNumber()) {
-            animComp.speed = d[idx]["data"].GetFloat();
-            idx++;
-        }
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsInt()) {
-            animComp.clipCount = d[idx]["data"].GetInt();
-            idx++;
-        }
-
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsArray()) {
-            const auto& pathsArray = d[idx]["data"];
-            animComp.clipPaths.clear();
-            for (rapidjson::SizeType i = 0; i < pathsArray.Size(); ++i) {
-                if (pathsArray[i].HasMember("data") && pathsArray[i]["data"].IsString()) {
-                    animComp.clipPaths.push_back(pathsArray[i]["data"].GetString());
-                }
-            }
-            idx++;
-        }
-
-        if (d.Size() > idx && d[idx].HasMember("data") && d[idx]["data"].IsArray()) {
-            const auto& guidsArray = d[idx]["data"];
-            animComp.clipGUIDs.clear();
-            for (rapidjson::SizeType i = 0; i < guidsArray.Size(); ++i) {
-                if (guidsArray[i].HasMember("data") && guidsArray[i]["data"].IsString()) {
-                    std::string guidStr = guidsArray[i]["data"].GetString();
-                    animComp.clipGUIDs.push_back(GUIDUtilities::ConvertStringToGUID128(guidStr));
-                }
-            }
-            idx++;
-        }
-
-        animComp.clipPaths.resize(animComp.clipCount);
-        animComp.clipGUIDs.resize(animComp.clipCount);
     }
 }
 

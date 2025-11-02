@@ -473,12 +473,31 @@
                             "data": true
                         },
                         {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
                             "type": "float",
                             "data": 1
                         },
                         {
                             "type": "int",
                             "data": 1
+                        },
+                        {
+                            "type": "std::vector<std::string>",
+                            "data": [
+                                {
+                                    "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Slash.fbx"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0037a8a2757e7f9c-00031f5288000025"
+                            ]
                         }
                     ]
                 },
