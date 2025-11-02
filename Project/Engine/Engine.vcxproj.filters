@@ -150,6 +150,7 @@
     <ClInclude Include="include\ECS\ActiveComponent.hpp" />
 =======
 >>>>>>> main
+    <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

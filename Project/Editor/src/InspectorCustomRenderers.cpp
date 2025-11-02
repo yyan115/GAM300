@@ -18,10 +18,12 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Physics/CollisionLayers.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Math/Vector3D.hpp"
 #include <glm/glm.hpp>
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
+#include "Physics/RigidBodyComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -295,6 +297,7 @@ void RegisterInspectorCustomRenderers() {
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "shapeTypeID",
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
             auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+            auto& rc = ecs.GetComponent<ModelRenderComponent>(entity);
 
             ImGui::Text("Shape Type");
             ImGui::SameLine();
@@ -314,51 +317,61 @@ void RegisterInspectorCustomRenderers() {
 
             // Shape Parameters based on type
             bool shapeParamsChanged = false;
+            Vector3D halfExtent = rc.CalculateModelHalfExtent(*rc.model);
+		    float radius = rc.CalculateModelRadius(*rc.model);
+
+
             switch (collider.shapeType) {
-                case ColliderShapeType::Box: {
-                    ImGui::Text("Half Extents");
-                    ImGui::SameLine();
-                    float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
-                    if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Sphere: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Capsule: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    ImGui::Text("Half Height");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Cylinder: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    ImGui::Text("Half Height");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
+            	case ColliderShapeType::Box: {
+            		ImGui::Text("Half Extents");
+            		ImGui::SameLine();
+            		collider.boxHalfExtents = halfExtent;
+            		float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
+            		if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Sphere: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.sphereRadius = radius;
+            		if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Capsule: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
+            		if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		ImGui::Text("Half Height");
+            		ImGui::SameLine();
+            		collider.capsuleHalfHeight = halfExtent.y;
+            		if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Cylinder: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
+            		if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		ImGui::Text("Half Height");
+            		ImGui::SameLine();
+            		collider.cylinderRadius = halfExtent.y;
+            		if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
             }
 
             if (shapeParamsChanged) {
@@ -394,6 +407,99 @@ void RegisterInspectorCustomRenderers() {
     // Skip non-reflected fields (these are handled with shapeTypeID)
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "boxHalfExtents",
         [](const char*, void*, Entity, ECSManager&) { return false; });
+
+
+    // ==================== RIGIDBODY COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
+        [](void* ptr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) {
+            auto& rigidBody = ecs.GetComponent<RigidBodyComponent>(entity);
+            auto& transform = ecs.GetComponent<Transform>(entity); // for info tab
+
+            ImGui::PushID("RigidBodyComponent");
+
+            // --- Motion Type dropdown ---
+            ImGui::Text("Motion");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+            const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
+            int currentMotion = rigidBody.motionID;
+            EditorComponents::PushComboColors();
+            if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
+                rigidBody.motion = static_cast<Motion>(currentMotion);
+                rigidBody.motionID = currentMotion;
+                rigidBody.motion_dirty = true; // mark for recreation
+            }
+            EditorComponents::PopComboColors();
+
+            // --- Is Trigger checkbox ---
+            ImGui::Checkbox("##IsTrigger", &rigidBody.isTrigger);
+            ImGui::SameLine();
+            ImGui::Text("Is Trigger");
+
+            if (rigidBody.motion == Motion::Dynamic) {
+                // --- CCD checkbox ---
+                if (ImGui::Checkbox("##CCD", &rigidBody.ccd))
+                    rigidBody.motion_dirty = true;
+                ImGui::SameLine();
+                ImGui::Text("CCD");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
+
+                // --- Linear & Angular Damping ---
+                ImGui::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Linear Damping");
+
+                ImGui::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Angular Damping");
+
+                // --- Gravity Factor ---
+                ImGui::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Gravity Factor");
+            }
+
+            // --- Info Section (Read-only) ---
+            if (ImGui::CollapsingHeader("Info", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginDisabled();
+
+                // Position
+                float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
+                ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
+                ImGui::SameLine();
+                ImGui::Text("Position");
+
+                // Rotation
+                float rotation[3] = { transform.localRotation.x, transform.localRotation.y, transform.localRotation.z };
+                ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.3f");
+                ImGui::SameLine();
+                ImGui::Text("Rotation");
+
+                // Linear Velocity
+                float linearVel[3] = { rigidBody.linearVel.x, rigidBody.linearVel.y, rigidBody.linearVel.z };
+                ImGui::DragFloat3("##LinearVelocity", linearVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Linear Velocity");
+
+                // Angular Velocity
+                float angularVel[3] = { rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z };
+                ImGui::DragFloat3("##AngularVelocity", angularVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Angular Velocity");
+
+                ImGui::EndDisabled();
+            }
+
+            ImGui::PopID();
+            return true; // skip default reflection
+        });
+
+
+
+
+
+
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties

@@ -1028,9 +1028,9 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
-        rbComp.motionID = d[0]["data"].GetInt();
+        rbComp.motionID = d[1]["data"].GetInt();
         rbComp.motion = static_cast<Motion>(rbComp.motionID);
-        rbComp.ccd = d[1]["data"].GetBool();
+        rbComp.ccd = d[2]["data"].GetBool();
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
@@ -1045,11 +1045,11 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
         colliderComp.version = d[1]["data"].GetUint();
         colliderComp.shapeTypeID = d[2]["data"].GetInt();
-        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[3], colliderComp.boxHalfExtents);
         switch (colliderComp.shapeType)
         {
-        case ColliderShapeType::Box:
+        case ColliderShapeType::Cylinder:
             colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
             break;
         default:

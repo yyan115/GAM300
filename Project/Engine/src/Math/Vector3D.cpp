@@ -152,6 +152,7 @@ Vector3D Vector3D::Lerp(const Vector3D& a, const Vector3D& b, float t)
 	return a + (b - a) * t;
 }
 
+
 // ---- Scalar left ----
 Vector3D operator*(float scalar, const Vector3D& v) { return v * scalar; }
 
