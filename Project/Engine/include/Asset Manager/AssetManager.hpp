@@ -38,10 +38,23 @@ public:
 	ENGINE_API static AssetManager& GetInstance();
 
 	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
+	bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
 	void AddAssetMetaToMap(const std::string& assetPath);
 
+	/**
+	 * \brief Compiles an asset of type T from the specified file path into a resource.
+	 *	Handles the initial generation or retrieval of the asset's GUID and checks if compilation is necessary.
+	 *	Note: This function is not to be used for compiling Texture assets. Use CompileTexture() instead.
+	 *
+	 * \tparam T The type of the asset to load.
+	 * \param filePathStr The file path of the asset to load.
+	 * \param forceCompile If true, forces recompilation of the asset even if it is already compiled.
+	 * \param forAndroid If true, compiles the asset for Android platform.
+	 * \param assetMeta Optional custom asset metadata to use during compilation.
+	 * \return True if the asset was successfully compiled or already exists; false otherwise.
+	 */
 	template <typename T>
-	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false) {
+	bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false, std::shared_ptr<AssetMeta> assetMeta = nullptr) {
 		static_assert(!std::is_same_v<T, Texture>,
 			"Calling AssetManager::GetInstance().GetAsset() to compile a texture is forbidden. Use CompileTexture() instead.");
 
@@ -67,16 +80,23 @@ public:
 				return true;
 			}
 			else {
-				return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid);
+				if (!assetMeta)
+					return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid);
+				else
+					return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid, assetMeta);
 			}
 		}
 		else {
-			return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid);
+			if (!assetMeta)
+				return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid);
+			else
+				return CompileAssetToResource<T>(guid, filePath, forceCompile, forAndroid, assetMeta);
 		}
 	}
 
-	bool CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
-	bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material);
+	bool CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
+	ENGINE_API bool CompileTexture(const std::string& filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile = false, bool forAndroid = false);
+	ENGINE_API bool CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false, bool forAndroid = false);
 
 	bool IsAssetCompiled(GUID_128 guid);
 	bool IsAssetCompiled(const std::string& assetPath);
@@ -123,6 +143,7 @@ public:
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);
 	std::string ENGINE_API GetRootAssetDirectory() const;
+	std::string GetAssetPathFromAssetName(const std::string& assetName);
 
 	enum class Event {
 		added,
@@ -189,11 +210,31 @@ private:
 		return ResourceManager::GetInstance().GetResource<T>(assetPath);
 	}
 
+	/**
+	 * \brief Calls the asset's CompileToResource function to compile it into a resource file.
+	 *	Then generates and stores the asset metadata in the assetMetaMap.
+	 *	Also handles hot-reloading of the resource if it is already loaded.
+	 *
+	 * \tparam T The type of the asset to load.
+	 * \param guid The generated GUID of the asset.
+	 * \param filePath The file path of the asset to load.
+	 * \param forceCompile If true, forces recompilation of the asset even if it is already compiled.
+	 * \param forAndroid If true, compiles the asset for Android platform.
+	 * \param assetMeta Optional custom asset metadata to use during compilation.
+	 * \return True if the asset was successfully compiled or already exists; false otherwise.
+	 */
 	template <typename T>
-	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath, bool forceCompile = false, bool forAndroid = false) {
+	bool CompileAssetToResource(GUID_128 guid, const std::string& filePath, bool forceCompile = false, bool forAndroid = false, std::shared_ptr<AssetMeta> assetMeta = nullptr) {
 		// If the asset is not already loaded, load and store it using the GUID.
 		if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-			std::shared_ptr<T> asset = std::make_shared<T>();
+			std::shared_ptr<T> asset;
+			if (!assetMeta) {
+				asset = std::make_shared<T>();
+			}
+			else {
+				asset = std::make_shared<T>(assetMeta);
+			}
+
 			std::string compiledPath{};
 			if (!forAndroid)
 				compiledPath = asset->CompileToResource(filePath, forAndroid);
@@ -213,6 +254,7 @@ private:
 				assetMeta = assetMetaMap.find(guid)->second;
 				assetMeta = asset->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
 			}
+			assetMeta = asset->ExtendMetaFile(filePath, assetMeta, forAndroid);
 			assetMetaMap[guid] = assetMeta;
 			ENGINE_PRINT("[AssetManager] Compiled asset: " , filePath , " to " , compiledPath, "\n\n");
 
@@ -240,10 +282,6 @@ private:
 						}
 					}
 				}
-
-				// Copy compiled asset to root project Resources folder also.
-				//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				//FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 			}
 
 			return true;
@@ -252,6 +290,8 @@ private:
 		return true;
 	}
 
-	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile = false, bool forAndroid = false);
-	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material);
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile = false, bool forAndroid = false);
+	bool CompileTextureToResource(GUID_128 guid, const char* filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile = false, bool forAndroid = false);
+	
+	bool CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile = false, bool forAndroid = false);
 };

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/Sprite/SpriteSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/VAO.h"
@@ -61,6 +62,14 @@ void SpriteSystem::Update()
     // Submit all visible sprites to the graphics manager
     for (const auto& entity : entities)
     {
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing sprite entity: %u", entity);
 #endif

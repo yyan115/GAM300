@@ -85,6 +85,9 @@
     <ClInclude Include="include\Hierarchy\EntityGUIDRegistry.hpp" />
     <ClInclude Include="include\Hierarchy\ParentComponent.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
+    <ClInclude Include="include\Graphics\Bone.hpp" />
+    <ClInclude Include="include\Animation\Animation.hpp" />
+    <ClInclude Include="include\Animation\Animator.hpp" />
     <ClInclude Include="include\PrefabIO.hpp" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
@@ -128,14 +131,25 @@
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Animation\AnimationComponent.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleComponent.hpp" />
     <ClInclude Include="include\Graphics\Particle\ParticleSystem.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\Input\VirtualControls.hpp" />
+    <ClInclude Include="include\Animation\AnimationSystem.hpp" />
     <ClInclude Include="include\PrefabLinkComponent.hpp" />
     <ClInclude Include="include\Performance\PerformanceProfiler.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraComponent.hpp" />
     <ClInclude Include="include\Graphics\Camera\CameraSystem.hpp" />
+    <ClInclude Include="include\Graphics\Frustum\Frustum.hpp" />
+    <ClInclude Include="include\ECS\TagComponent.hpp" />
+    <ClInclude Include="include\ECS\LayerComponent.hpp" />
+    <ClInclude Include="include\ECS\TagManager.hpp" />
+    <ClInclude Include="include\ECS\LayerManager.hpp" />
+<<<<<<< HEAD
+    <ClInclude Include="include\ECS\ActiveComponent.hpp" />
+=======
+>>>>>>> main
     <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +200,9 @@
     <ClCompile Include="src\Graphics\Lights\LightingSystem.cpp" />
     <ClCompile Include="src\Utilities\FileUtilities.cpp" />
     <ClCompile Include="src\Utilities\GUID.cpp" />
+    <ClCompile Include="src\Graphics\Bone.cpp" />
+    <ClCompile Include="src\Animation\Animation.cpp" />
+    <ClCompile Include="src\Animation\Animator.cpp" />
     <ClCompile Include="src\PrefabIO.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
@@ -202,10 +219,12 @@
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />
     <ClCompile Include="src\Reflection\Base64.cpp" />
+    <ClCompile Include="src\Animation\AnimationComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleSystem.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Input\VirtualControls.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
+    <ClCompile Include="src\Animation\AnimationSystem.cpp" />
     <ClCompile Include="src\Hierarchy\EntityGUIDRegistry.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteRenderComponent.cpp" />
     <ClCompile Include="src\Graphics\Particle\ParticleComponent.cpp" />
@@ -214,6 +233,31 @@
     <ClCompile Include="src\Physics\ColliderComponent.cpp" />
     <ClCompile Include="src\Performance\PerformanceProfiler.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
+    <ClCompile Include="src\ECS\TagComponent.cpp" />
+    <ClCompile Include="src\ECS\LayerComponent.cpp" />
+    <ClCompile Include="src\ECS\TagManager.cpp" />
+    <ClCompile Include="src\ECS\LayerManager.cpp" />
+<<<<<<< HEAD
+    <ClCompile Include="src\Graphics\Camera\CameraComponent.cpp" />
+    <ClCompile Include="src\ECS\ActiveComponent.cpp" />
+=======
+    <ClCompile Include="src\Graphics\Mesh Optimizer\allocator.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\clusterizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexanalyzer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexcodec.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\indexgenerator.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\overdrawoptimizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\partition.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\quantization.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\rasterizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\simplifier.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\spatialorder.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\stripifier.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vcacheoptimizer.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vertexcodec.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vertexfilter.cpp" />
+    <ClCompile Include="src\Graphics\Mesh Optimizer\vfetchoptimizer.cpp" />
+>>>>>>> main
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

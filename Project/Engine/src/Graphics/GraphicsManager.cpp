@@ -19,8 +19,18 @@ GraphicsManager& GraphicsManager::GetInstance()
 
 bool GraphicsManager::Initialize(int window_width, int window_height)
 {
-	return false;
 	(void)window_width, window_height;
+	// Enable depth testing
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// Enable face culling (backface culling)
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);      // Cull back-facing triangles
+	glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
+
+	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
+	return true;
 }
 
 void GraphicsManager::Shutdown()
@@ -71,7 +81,15 @@ void GraphicsManager::Clear(float r, float g, float b, float a)
 
 void GraphicsManager::SetCamera(Camera* camera)
 {
-	currentCamera = camera;
+	if (camera != nullptr)
+	{
+		currentCamera = camera;
+	}
+	else
+	{
+		// Keep the current camera if trying to set null (prevents crashes)
+		ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] Attempted to set null camera, keeping current camera\n");
+	}
 }
 
 void GraphicsManager::SetViewportSize(int width, int height)
@@ -94,17 +112,70 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	}
 }
 
+void GraphicsManager::UpdateFrustum()
+{
+	if (!currentCamera)
+	{
+		return;
+	}
+
+	if (frustumCullingEnabled)
+	{
+		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
+
+		if (renderWidth <= 0) renderWidth = 1;
+		if (renderHeight <= 0) renderHeight = 1;
+
+		float aspectRatio = (float)renderWidth / (float)renderHeight;
+		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
+		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
+
+		glm::mat4 view;
+		glm::mat4 projection;
+
+		if (IsRenderingForEditor() && Is2DMode())
+		{
+			view = glm::mat4(1.0f);
+			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
+			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
+			float halfWidth = viewWidth * 0.5f;
+			float halfHeight = viewHeight * 0.5f;
+			float left = currentCamera->Position.x - halfWidth;
+			float right = currentCamera->Position.x + halfWidth;
+			float bottom = currentCamera->Position.y - halfHeight;
+			float top = currentCamera->Position.y + halfHeight;
+			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
+		}
+		else
+		{
+			view = currentCamera->GetViewMatrix();
+			projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				aspectRatio,
+				0.1f, 100.0f
+			);
+		}
+
+		glm::mat4 viewProjection = projection * view;
+		viewFrustum.Update(viewProjection);
+	}
+}
+
 void GraphicsManager::Render()
 {
 	if (auto* platform = WindowManager::GetPlatform()) {
 		platform->MakeContextCurrent();
 	}
 
-	if (!currentCamera) 
+	if (!currentCamera)
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
 		return;
 	}
+
+	// Update frustum for culling
+	UpdateFrustum();
 
 	// Sort render queue by render order (lower numbers render first)
 	std::sort(renderQueue.begin(), renderQueue.end(),
@@ -171,7 +242,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	item.shader->Activate();
 
 	// Set up all matrices and uniforms
-	SetupMatrices(*item.shader,item.transform.ConvertToGLM());
+	SetupMatrices(*item.shader,item.transform.ConvertToGLM(), true);
 
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
@@ -181,14 +252,24 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	}
 
 	// Draw the model with entity material
-	item.model->Draw(*item.shader, *currentCamera, item.material);
+	if (item.HasAnimation())
+		item.model->Draw(*item.shader, *currentCamera, item.material, item.animator);
+	else
+		item.model->Draw(*item.shader, *currentCamera, item.material);
 
 	//std::cout << "rendered model\n";
 }
 
-void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix)
+void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix, bool includeNormalMatrix)
 {
 	shader.setMat4("model", modelMatrix);
+
+	// Only calculate and send normal matrix if needed (for lit objects)
+	if (includeNormalMatrix)
+	{
+		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+		shader.setMat3("normalMatrix", normalMatrix);
+	}
 
 	if (currentCamera)
 	{
@@ -392,6 +473,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
 #else
+	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glDisable(GL_DEPTH_TEST);
@@ -461,7 +543,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+	glEnable(GL_CULL_FACE);
 #endif
 }
 
@@ -470,7 +552,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	assert(eglGetCurrentContext() != EGL_NO_CONTEXT);
 #endif
 	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
-
+	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
 	glDepthMask(GL_FALSE);
@@ -537,6 +619,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
@@ -549,7 +632,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	// Enable blending for sprite transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+	glDisable(GL_CULL_FACE);
 	// Activate shader
 	item.shader->Activate();
 
@@ -653,6 +736,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 	// Disable blending
 	glDisable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)

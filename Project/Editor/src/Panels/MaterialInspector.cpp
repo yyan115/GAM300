@@ -91,7 +91,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.24f, 0.24f, 0.24f, 1.0f));        // Neutral grey for collapsing headers
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.30f, 0.30f, 0.30f, 1.0f)); // Hover
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));  // Active
-    bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen);
+    bool colorsOpen = ImGui::CollapsingHeader("Colors", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
     ImGui::PopStyleColor(3);
 
     // Add lock button on the same line as Colors header if requested
@@ -314,7 +314,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
         std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
-        material->CompileUpdatedAssetToResource(assetPath);
+        //material->CompileUpdatedAssetToResource(assetPath);
+		AssetManager::GetInstance().CompileUpdatedMaterial(assetPath, material, true);
         //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
         
         // Use the Material's CompileToResource method

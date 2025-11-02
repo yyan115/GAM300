@@ -6,6 +6,7 @@
 #include "EditorComponents.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
@@ -17,6 +18,7 @@
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
+#include <Graphics/Camera/CameraComponent.hpp>
 #include "EditorState.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
@@ -235,9 +237,28 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
     else
     {
-        
+        // Check if entity is inactive (grayed out like Unity)
+        bool isEntityActive = true;
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+            if (ecsManager.HasComponent<ActiveComponent>(entityId)) {
+                auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entityId);
+                isEntityActive = activeComp.isActive;
+            }
+        } catch (...) {}
+
+        // Apply gray color if inactive
+        if (!isEntityActive) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Gray text
+        }
+
         std::string displayName = std::string(ICON_FA_CUBE) + " " + entityName;
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+
+        // Pop color if we pushed it
+        if (!isEntityActive) {
+            ImGui::PopStyleColor();
+        }
         if (ImGui::IsItemClicked()) {
             GUIManager::SetSelectedEntity(entityId);
 
@@ -564,11 +585,42 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     if (cameraEntity == static_cast<Entity>(-1)) return cameraEntity;
 
     try {
-        //ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-        // TODO: Add CameraComponent when it exists
-        // For now just create empty entity with transform
-        std::cout << "[SceneHierarchy] Created camera entity with ID " << cameraEntity << " (Camera component not implemented yet)" << std::endl;
+        // Find the highest priority among existing cameras and deactivate all cameras (Unity-like)
+        int maxPriority = -1;
+        std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+        for (const auto& entity : allEntities) {
+            if (ecsManager.HasComponent<CameraComponent>(entity)) {
+                auto& existingCam = ecsManager.GetComponent<CameraComponent>(entity);
+                existingCam.isActive = false; // Deactivate existing cameras
+                if (existingCam.priority > maxPriority) {
+                    maxPriority = existingCam.priority;
+                }
+            }
+        }
+
+        std::cout << "[SceneHierarchy] Deactivated all existing cameras before creating new one" << std::endl;
+
+        // Add CameraComponent with default settings
+        CameraComponent cameraComp;
+        cameraComp.isActive = true; // Activate new camera by default (Unity-like behavior)
+        cameraComp.priority = maxPriority + 1; // Higher priority than existing cameras
+        cameraComp.target = glm::vec3(0.0f, 0.0f, -1.0f);
+        cameraComp.up = glm::vec3(0.0f, 1.0f, 0.0f);
+        cameraComp.yaw = -90.0f;
+        cameraComp.pitch = 0.0f;
+        cameraComp.useFreeRotation = true;
+        cameraComp.projectionType = ProjectionType::PERSPECTIVE;
+        cameraComp.fov = 45.0f;
+        cameraComp.nearPlane = 0.1f;
+        cameraComp.farPlane = 100.0f;
+        cameraComp.orthoSize = 5.0f;
+
+        ecsManager.AddComponent<CameraComponent>(cameraEntity, cameraComp);
+
+        std::cout << "[SceneHierarchy] Created camera entity with ID " << cameraEntity
+                  << " with CameraComponent (active=true, priority=" << cameraComp.priority << ")" << std::endl;
         return cameraEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create camera entity: " << e.what() << std::endl;

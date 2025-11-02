@@ -6,6 +6,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(AudioComponent)
+    REFL_REGISTER_PROPERTY(enabled)
     REFL_REGISTER_PROPERTY(audioGUID)
     REFL_REGISTER_PROPERTY(Clip)
     REFL_REGISTER_PROPERTY(Volume)

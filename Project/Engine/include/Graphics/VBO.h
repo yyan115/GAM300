@@ -2,8 +2,9 @@
 #include "OpenGL.h"
 #include <glm/glm.hpp>
 #include <vector>
-
 #include "Reflection/ReflectionBase.hpp"
+
+#define MaxBoneInfluences 4
 
 struct Vertex {
 	//REFL_SERIALIZABLE - I cannot serialize glm
@@ -11,6 +12,10 @@ struct Vertex {
 	glm::vec3 normal;
 	glm::vec3 color;
 	glm::vec2 texUV;
+
+	int mBoneIDs[MaxBoneInfluences];
+	float mWeights[MaxBoneInfluences];
+	glm::vec3 tangent;
 };
 
 // VBO stores multiple vertices on the GPU memory

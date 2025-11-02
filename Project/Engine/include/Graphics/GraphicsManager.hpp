@@ -14,6 +14,8 @@
 #include <Math/Matrix4x4.hpp>
 #include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
+#include "Animation/AnimationComponent.hpp"
+#include "Graphics/Frustum/Frustum.hpp"
 
 class GraphicsManager {
 public:
@@ -57,6 +59,12 @@ public:
     // Main rendering
     void Render();
 
+    // FRUSTUM CULLING FUNCTIONS:
+    void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
+    bool IsFrustumCullingEnabled() const { return frustumCullingEnabled; }
+    const Frustum& GetFrustum() const { return viewFrustum; }
+    void UpdateFrustum(); // Update frustum based on current camera and viewport
+
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -66,7 +74,7 @@ private:
 
     // Private model rendering methods
     void RenderModel(const ModelRenderComponent& item);
-    void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix);
+    void SetupMatrices(Shader& shader, const glm::mat4& modelMatrix, bool includeNormalMatrix = false);
     
     glm::mat4 CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale);
 
@@ -100,4 +108,8 @@ private:
     void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
         const glm::vec3& scale, float rotation);
     void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
+
+    // FRUSTUM MEMBERS:
+    Frustum viewFrustum;
+    bool frustumCullingEnabled = true;
 };

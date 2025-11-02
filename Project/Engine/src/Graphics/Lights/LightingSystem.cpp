@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "Graphics/Lights/LightingSystem.hpp"
-#include "Graphics/Lights/LightComponent.hpp" 
+#include "Graphics/Lights/LightComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <Graphics/GraphicsManager.hpp>
 #include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ActiveComponent.hpp"
 
 bool LightingSystem::Initialise()
 {
@@ -103,6 +104,14 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
         // Collect directional light (first one only)
         if (ecsManager.HasComponent<DirectionalLightComponent>(entity))
         {
@@ -110,7 +119,19 @@ void LightingSystem::CollectLightData()
             if (light.enabled && !directionalLightData.hasDirectionalLight)
             {
                 directionalLightData.hasDirectionalLight = true;
-                directionalLightData.direction = light.direction.ConvertToGLM();
+
+                // FIX 1: Transform direction to world space if entity has rotation
+                glm::vec3 direction = light.direction.ConvertToGLM();
+                if (ecsManager.HasComponent<Transform>(entity))
+                {
+                    auto& transform = ecsManager.GetComponent<Transform>(entity);
+                    glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+                    // Extract rotation part and apply to direction
+                    glm::mat3 rotationMatrix = glm::mat3(worldMat);
+                    direction = glm::normalize(rotationMatrix * direction);
+                }
+
+                directionalLightData.direction = direction;
                 directionalLightData.ambient = light.ambient.ConvertToGLM();
                 directionalLightData.diffuse = light.diffuse.ConvertToGLM();
                 directionalLightData.specular = light.specular.ConvertToGLM();
@@ -130,7 +151,9 @@ void LightingSystem::CollectLightData()
                     if (ecsManager.HasComponent<Transform>(entity))
                     {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
-                        position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+                        // FIX 2: Use world position from world matrix
+                        glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+                        position = glm::vec3(worldMat[3]); // Extract translation from 4th column
                     }
 
                     pointLightData.positions.push_back(position);
@@ -163,15 +186,24 @@ void LightingSystem::CollectLightData()
             {
                 if (spotLightData.positions.size() < MAX_SPOT_LIGHTS)
                 {
-                    glm::vec3 position(0.f);
+                    glm::vec3 position(0.0f);
+                    glm::vec3 direction = light.direction.ConvertToGLM();
+
                     if (ecsManager.HasComponent<Transform>(entity))
                     {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
-                        position = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+                        glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+
+                        // FIX 3: Use world position from world matrix
+                        position = glm::vec3(worldMat[3]); // Extract translation from 4th column
+
+                        // FIX 4: Transform direction to world space
+                        glm::mat3 rotationMatrix = glm::mat3(worldMat);
+                        direction = glm::normalize(rotationMatrix * direction);
                     }
 
                     spotLightData.positions.push_back(position);
-                    spotLightData.directions.push_back(light.direction.ConvertToGLM());
+                    spotLightData.directions.push_back(direction);
                     spotLightData.ambient.push_back(light.ambient.ConvertToGLM());
                     spotLightData.diffuse.push_back(light.diffuse.ConvertToGLM());
                     spotLightData.specular.push_back(light.specular.ConvertToGLM());

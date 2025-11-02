@@ -15,6 +15,7 @@ struct AudioComponent
 {
     REFL_SERIALIZABLE
     // Unity-like public properties (Inspector editable)
+    bool enabled{ true };        // Component enabled state (can be toggled in inspector)
         GUID_128 audioGUID{};          // Audio asset GUID
     std::string Clip{};          // Audio asset path (Unity: AudioClip reference)
     float Volume{ 1.0f };        // Volume multiplier (0.0 - 1.0)

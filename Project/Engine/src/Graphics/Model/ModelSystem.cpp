@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/Model/ModelSystem.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include "WindowManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -29,8 +30,9 @@ bool ModelSystem::Initialise()
         modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 #endif
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
-        if (!materialPath.empty())
+        if (!materialPath.empty()) {
             modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
+        }
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
@@ -51,6 +53,12 @@ void ModelSystem::Update()
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
     bool is3DMode = gfxManager.Is3DMode();
 
+    // Get frustum for culling
+    const Frustum& frustum = gfxManager.GetFrustum();
+    bool enableCulling = gfxManager.IsFrustumCullingEnabled() && !isRenderingForEditor;
+    // Reset stats each frame
+    cullingStats.Reset();
+
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
 #endif
@@ -64,6 +72,14 @@ void ModelSystem::Update()
             continue;
         }
 
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
 #ifdef ANDROID
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
 #endif
@@ -73,25 +89,47 @@ void ModelSystem::Update()
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, model=%p, shader=%p",
          //                 entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
 #endif
-        if (modelComponent.isVisible && modelComponent.model && modelComponent.shader)
+        if (!modelComponent.isVisible || !modelComponent.model || !modelComponent.shader)
         {
-#ifdef ANDROID
-           // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting model for entity: %u", entity);
-#endif
-            auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
-            modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+            continue;
+        }
 
-            gfxManager.Submit(std::move(modelRenderItem));
-        }
-#ifdef ANDROID
-        else {
-            //__android_log_print(ANDROID_LOG_WARN, "GAM300", "Entity %u: model not visible or missing components - isVisible=%d, model=%p, shader=%p",
-                       //       entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
-        }
+        // FRUSTUM CULLING - ADD THIS BLOCK:
+        if (enableCulling && modelComponent.model) 
+        {
+            // Get world transform
+            Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+
+            // Get model's bounding box and transform to world space
+            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(worldMatrix.ConvertToGLM());
+
+            if (!frustum.IsBoxVisible(worldBounds))
+            {
+                cullingStats.culledObjects++;  // Count as culled
+
+                // Log which entity was culled
+#ifdef _DEBUG
+                //std::cout << "Entity " << entity << " culled\n";
 #endif
+                continue;
+            }
+        }
+
+        // Passed culling test, create and submit render item
+        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent); 
+        modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix; 
+
+        gfxManager.Submit(std::move(modelRenderItem)); 
     }
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");
+#endif
+
+    // Optional: Print stats every frame (remove in production!)
+#ifdef _DEBUG
+ //std::cout << "Culling: " << cullingStats.culledObjects << "/" 
+ //          << cullingStats.totalObjects << " (" 
+ //          << cullingStats.GetCulledPercentage() << "%)\n";
 #endif
 }
 

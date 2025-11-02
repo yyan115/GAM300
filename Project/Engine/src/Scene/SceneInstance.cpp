@@ -26,6 +26,9 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Logging.hpp>
 
+#include <Animation/AnimationComponent.hpp>
+#include <Animation/AnimationSystem.hpp>
+
 Entity fpsText;
 
 void SceneInstance::Initialize() {
@@ -37,12 +40,12 @@ void SceneInstance::Initialize() {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	// Add FPS text (mainly for android to see FPS)
-	fpsText = ecsManager.CreateEntity();
-	ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
-	ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
-	TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
-	TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
-	TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
+	// fpsText = ecsManager.CreateEntity();
+	// ecsManager.GetComponent<NameComponent>(fpsText).name = "FPSText";
+	// ecsManager.AddComponent<TextRenderComponent>(fpsText, TextRenderComponent{ "FPS PLACEHOLDER", 30, MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Fonts/Kenney Mini.ttf"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text")) });
+	// TextRenderComponent& fpsTextComp = ecsManager.GetComponent<TextRenderComponent>(fpsText);
+	// TextUtils::SetPosition(fpsTextComp, Vector3D(400, 500, 0));
+	// TextUtils::SetAlignment(fpsTextComp, TextRenderComponent::Alignment::LEFT);
 	
 	// Test Camera Component
 	Entity testCamera = ecsManager.CreateEntity();
@@ -50,6 +53,8 @@ void SceneInstance::Initialize() {
 	ecsManager.transformSystem->SetLocalPosition(testCamera, {0, 0, 3});
 	// Add camera component
 	CameraComponent camComp;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 100.f;
 	camComp.isActive = true;
 	camComp.priority = 0;
 	camComp.useFreeRotation = true;
@@ -64,6 +69,17 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("[TEST] Camera entity created: ", testCamera, "\n");
 	ENGINE_PRINT("[TEST] Active camera entity: ", ecsManager.cameraSystem->GetActiveCameraEntity(), "\n");
 
+	// Test Animation System
+	Entity testAnim = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(testAnim).name = "TestAnimationEntity";
+	ecsManager.GetComponent<Transform>(testAnim).localScale = Vector3D(0.01f, .01f, .01f);
+	ecsManager.GetComponent<Transform>(testAnim).localPosition = Vector3D(0.0f, -1.5f, -1.5f);
+	ecsManager.AddComponent<ModelRenderComponent>(testAnim,
+		ModelRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/Kachujin/Kachujin.fbx"),
+		MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default")),
+		MetaFilesManager::GetGUID128FromAssetFile(AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/Kachujin G Rosales_kachujin_MAT.mat") });
+	ecsManager.AddComponent<AnimationComponent>(testAnim, AnimationComponent{});
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -77,7 +93,17 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Sprite system initialized");
 	ecsManager.particleSystem->Initialise();
 	ENGINE_LOG_INFO("Particle system initialized");
+	ecsManager.animationSystem->Initialise();
+	ENGINE_LOG_INFO("Animation system initialized");
 	InitializePhysics();
+
+	//glEnable(GL_DEBUG_OUTPUT);
+	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	//glDebugMessageCallback(
+	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
+	//		fprintf(stderr, "GL: %s\n", msg);
+	//	},
+	//	nullptr);
 
 	ENGINE_PRINT("Scene Initialized\n");
 }
@@ -99,9 +125,9 @@ void SceneInstance::Update(double dt) {
 	// Update logic for the test scene
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	fpsTextComponent.text = std::to_string(TimeManager::GetFps());
-	TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	//fpsTextComponent.text = std::to_string(TimeManager::GetFps());
+	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
@@ -109,6 +135,9 @@ void SceneInstance::Update(double dt) {
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	//mainECS.physicsSystem->physicsSyncBack(mainECS);
 	mainECS.transformSystem->Update();
+
+	mainECS.animationSystem->Update();
+
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 
@@ -135,7 +164,17 @@ void SceneInstance::Draw() {
 	//transform = glm::scale(transform, glm::vec3(0.1f, 0.1f, 0.1f));
 	//RenderSystem::getInstance().Submit(backpackModel, transform, shader);
 
+	// Update transforms before camera (camera needs up-to-date transform matrices)
+	mainECS.transformSystem->Update();
+
+	// Update camera system (detects camera changes, switches cameras, updates from components)
+	// This needs to run even in edit mode so the game panel shows the correct camera
+	mainECS.cameraSystem->Update();
+
 	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+
+	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
+	gfxManager.UpdateFrustum();
 
 	if (mainECS.modelSystem)
 	{
@@ -200,6 +239,10 @@ void SceneInstance::Draw() {
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
+
+	if(mainECS.animationSystem)
+		mainECS.animationSystem->Update(); // After rendering to reset any pose changes if necessary
+
 
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");

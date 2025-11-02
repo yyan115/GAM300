@@ -79,6 +79,7 @@ private:
     void RenderViewGizmo(float sceneWidth, float sceneHeight);
     void DrawGameViewportIndicator();
     void DrawColliderGizmos();
+    void DrawCameraGizmos();
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);

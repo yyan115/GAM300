@@ -1,14 +1,14 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "003155569abe29b2-0002d702fa00001b",
+        "version": 7,
+        "guid": "0037a8a246dd5679-00031f5286000017",
         "source": "../../Resources/Models/backpack/specular.jpg",
         "compiled": "../../Resources/Models/backpack/specular.dds",
-        "last_compiled": "2025-10-05 13:43:36.8792771"
+        "last_compiled": "2025-10-31 03:36:36.5238268"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

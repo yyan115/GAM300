@@ -114,6 +114,7 @@ AssetBrowserPanel::AssetBrowserPanel()
     
     // Always expand Resources folder by default (Unity behavior)
     expandedDirectories.insert(rootAssetDirectory);
+    RefreshAssets();
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
@@ -1189,23 +1190,9 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
 
     ImGui::Separator();
 
-
-    // Create submenu with delete option
-    if (ImGui::BeginMenu(ICON_FA_PLUS " Create")) {
-        if (ImGui::MenuItem(ICON_FA_PAINTBRUSH " Material")) {
-            CreateNewMaterial();
-        }
-
-        if (ImGui::MenuItem(ICON_FA_FOLDER_PLUS " Folder")) {
-            CreateNewFolder();
-        }
-
-        if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
+    if (ImGui::MenuItem(ICON_FA_XMARK " Delete")) {
             DeleteAsset(asset);
         }
-
-        ImGui::EndMenu();
-    }
 }
 
 void AssetBrowserPanel::ShowCreateAssetMenu() {
@@ -1632,10 +1619,15 @@ uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std
     // Get the texture from ResourceManager.
     texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(guid, assetPath);
 
-    if (texture && texture->ID != 0) {
+    if (texture && texture->ID != 0 && texture->GetType() != "normal") {
         // Cache the texture ID for future use
         thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->ID);
         return static_cast<uint32_t>(texture->ID);
+    }
+    // Special case for normal maps as thumbnails
+    else if (texture && texture->GetType() == "normal" && texture->previewID != 0) {
+        thumbnailCache[cacheKey] = static_cast<uint32_t>(texture->previewID);
+		return static_cast<uint32_t>(texture->previewID);
     }
 
     return 0; // Return 0 if failed to load

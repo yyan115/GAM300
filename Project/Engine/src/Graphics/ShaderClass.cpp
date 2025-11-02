@@ -286,6 +286,10 @@ bool Shader::SetupShader(const std::string& path) {
 	return true;
 }
 
+Shader::Shader(std::shared_ptr<AssetMeta> shaderMeta) {
+	shaderMeta;
+}
+
 std::string Shader::CompileToResource(const std::string& path, bool forAndroid) {
 	//// Check if glGetProgramBinary is supported first.
 	//GLint supported = 0;
@@ -501,7 +505,7 @@ bool Shader::ReloadResource(const std::string& resourcePath, const std::string& 
 std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
 	assetPath, currentMetaData, forAndroid;
-	return std::shared_ptr<AssetMeta>();
+	return currentMetaData;
 }
 
 void Shader::Activate()

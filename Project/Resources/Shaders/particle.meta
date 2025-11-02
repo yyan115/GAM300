@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556d98dcece-0002d702fa00002f",
+        "version": 7,
+        "guid": "0037a8a25a877b61-00031f529a000047",
         "source": "../../Resources/Shaders/particle",
         "compiled": "../../Resources/Shaders/particle.shader",
-        "last_compiled": "2025-10-28 01:50:13.8028996"
+        "last_compiled": "2025-10-31 06:36:16.8818309"
     }
 }

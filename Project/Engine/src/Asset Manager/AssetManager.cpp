@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Sound/Audio.hpp"
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -8,18 +10,10 @@ AssetManager& AssetManager::GetInstance() {
 }
 
 void AssetManager::AddToEventQueue(AssetManager::Event event, const std::filesystem::path& assetPath) {
+	if (androidCompilationStatus.isCompiling) {
+		return;
+	}
 	assetEventQueue.emplace_back(std::make_pair(event, assetPath));
-	//using namespace std::chrono;
-	//auto now = steady_clock::now();
-	//auto it = compilationEvents.find(assetPath.generic_string());
-	//if (it != compilationEvents.end()) {
-	//	// If the duration between the previous compilation event for the same asset is too soon, don't add to the queue.
-	//	if (duration_cast<milliseconds>(now - it->second).count() >= 300) {
-	//	}
-	//}
-	//else {
-	//	compilationQueue.push(assetPath);	
-	//}
 }
 
 void AssetManager::RunEventQueue() {
@@ -112,6 +106,10 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 		assetMeta = std::make_shared<TextureMeta>();
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
 	}
+	else if (modelExtensions.find(extension) != modelExtensions.end()) {
+		assetMeta = std::make_shared<ModelMeta>();
+		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
+	}
 	else {
 		assetMeta = std::make_shared<AssetMeta>();
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
@@ -132,7 +130,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	std::filesystem::path filePathObj(filePathStr);
 	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
-		return CompileTexture(filePathStr, "diffuse", -1, forceCompile, forAndroid);
+		return CompileTexture(filePathStr, "diffuse", -1, true, forceCompile, forAndroid);
 	}
 	else if (audioExtensions.find(extension) != audioExtensions.end()) {
 		return CompileAsset<Audio>(filePathStr, forceCompile, forAndroid);
@@ -155,7 +153,35 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	}
 }
 
-bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLint slot, bool forceCompile, bool forAndroid) {
+bool AssetManager::CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile, bool forAndroid) {
+	std::filesystem::path filePathObj(assetMeta->sourceFilePath);
+	std::string extension = filePathObj.extension().string();
+	if (textureExtensions.find(extension) != textureExtensions.end()) {
+		std::shared_ptr<TextureMeta> textureMeta = std::static_pointer_cast<TextureMeta>(assetMeta);
+		return CompileTexture(assetMeta->sourceFilePath, textureMeta, forceCompile, forAndroid);
+	}
+	else if (audioExtensions.find(extension) != audioExtensions.end()) {
+		return CompileAsset<Audio>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (fontExtensions.find(extension) != fontExtensions.end()) {
+		return CompileAsset<Font>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (modelExtensions.find(extension) != modelExtensions.end()) {
+		return CompileAsset<Model>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (shaderExtensions.find(extension) != shaderExtensions.end()) {
+		return CompileAsset<Shader>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (materialExtensions.find(extension) != materialExtensions.end()) {
+		return CompileAsset<Material>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else {
+		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
+		return false;
+	}
+}
+
+bool AssetManager::CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -171,15 +197,15 @@ bool AssetManager::CompileTexture(std::string filePath, std::string texType, GLi
 			return true;
 		}
 		else {
-			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile, forAndroid);
+			return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, flipUVs, forceCompile, forAndroid);
 		}
 	}
 	else {
-		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, forceCompile, forAndroid);
+		return CompileTextureToResource(guid, filePath.c_str(), texType.c_str(), slot, flipUVs, forceCompile, forAndroid);
 	}
 }
 
-bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material) {
+bool AssetManager::CompileTexture(const std::string& filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
 		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
@@ -189,12 +215,41 @@ bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shar
 		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
 	}
 
-	auto it = assetMetaMap.find(guid);
-	if (it != assetMetaMap.end()) {
-		return true;
+	if (!forceCompile) {
+		auto it = assetMetaMap.find(guid);
+		if (it != assetMetaMap.end()) {
+			return true;
+		}
+		else {
+			return CompileTextureToResource(guid, filePath.c_str(), textureMeta, forceCompile, forAndroid);
+		}
 	}
 	else {
-		return CompileUpdatedMaterialToResource(guid, filePath, material);
+		return CompileTextureToResource(guid, filePath.c_str(), textureMeta, forceCompile, forAndroid);
+	}
+}
+
+bool AssetManager::CompileUpdatedMaterial(const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile, bool forAndroid) {
+	GUID_128 guid{};
+	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {
+		GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
+		guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+	}
+	else {
+		guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
+	}
+
+	if (!forceCompile) {
+		auto it = assetMetaMap.find(guid);
+		if (it != assetMetaMap.end()) {
+			return true;
+		}
+		else {
+			return CompileUpdatedMaterialToResource(guid, filePath, material, forceCompile, forAndroid);
+		}
+	}
+	else {
+		return CompileUpdatedMaterialToResource(guid, filePath, material, forceCompile, forAndroid);
 	}
 }
 
@@ -257,8 +312,10 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 }
 
 GUID_128 AssetManager::GetGUID128FromAssetMeta(const std::string& assetPath) {
+	std::string relativeAssetPath = assetPath.substr(assetPath.find("Resources"));
 	for (const auto& pair : assetMetaMap) {
-		if (pair.second->sourceFilePath == assetPath) {
+		std::string relativeSourcePath = pair.second->sourceFilePath.substr(pair.second->sourceFilePath.find("Resources"));
+		if (relativeSourcePath == relativeAssetPath) {
 			return pair.first;
 		}
 	}
@@ -398,14 +455,18 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			continue;
 		}
 		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
-			// Sip compiling meshes because they must be compiled on the main OpenGL thread.
+			// Skip compiling meshes because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath;
 			remainingPaths.push_back(assetPath);
 			continue;
 		}
-		else {
+		else if (IsExtensionMaterial(p.extension().generic_string())) {
 			assetPath = pair.second->sourceFilePath;
-			CompileAsset(assetPath, true, true);
+			auto material = ResourceManager::GetInstance().GetResource<Material>(assetPath);
+			CompileUpdatedMaterial(assetPath, material, true, true);
+		}
+		else {
+			CompileAsset(pair.second, true, true);
 			++androidCompilationStatus.numCompiledAssets;
 		}
 	}
@@ -496,10 +557,31 @@ std::string AssetManager::GetRootAssetDirectory() const {
 	return rootAssetDirectory;
 }
 
-bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool forceCompile, bool forAndroid) {
+std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName) {
+	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MetaFilesManager] ERROR: Platform not available for asset discovery!", "\n");
+		return "";
+	}
+	std::vector<std::string> assetFiles = platform->ListAssets(rootAssetDirectory, true);
+	for (std::string assetPath : assetFiles) {
+		std::filesystem::path p(assetPath);
+		std::string currentAssetName = (p.stem() / p.extension()).generic_string();
+		if (currentAssetName == assetName) {
+			return assetPath;
+		}
+	}
+}
+
+bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
 	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
-		Texture texture{ texType, slot };
+		Texture texture{};
+		texture.metaData->type = texType;
+		texture.metaData->flipUVs = flipUVs;
+		texture.unit = slot;
+
 		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 		if (compiledPath.empty()) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
@@ -523,9 +605,6 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
 				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
 			}
-
-			// Copy compiled asset to root project Resources folder also.
-			//FileUtilities::CopyFile(compiledPath, (FileUtilities::GetSolutionRootDir() / compiledPath).generic_string());
 		}
 
 		return true;
@@ -534,17 +613,59 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 	return true;
 }
 
-bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material) {
+bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
-	if (assetMetaMap.find(guid) == assetMetaMap.end()) {
-		std::string compiledPath = material->CompileUpdatedAssetToResource(filePath);
+	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
+		Texture texture{ textureMeta };
+		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
+		if (compiledPath.empty()) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile asset: ", filePath, "\n");
+			return false;
+		}
+
+		std::shared_ptr<AssetMeta> assetMeta;
+		if (!forAndroid) {
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
+		}
+		else {
+			assetMeta = assetMetaMap.find(guid)->second;
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+		}
+		assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
+		assetMetaMap[guid] = assetMeta;
+		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+
+		if (!forAndroid) {
+			// If the resource is already loaded, hot-reload the resource.
+			if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
+				ResourceManager::GetInstance().GetResource<Texture>(filePath, true);
+			}
+		}
+
+		return true;
+	}
+
+	return true;
+}
+
+bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::string& filePath, std::shared_ptr<Material> material, bool forceCompile, bool forAndroid) {
+	// If the asset is not already loaded, load and store it using the GUID.
+	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
+		std::string compiledPath = material->CompileUpdatedAssetToResource(filePath, forAndroid);
 		if (compiledPath.empty()) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetManager] ERROR: Failed to compile updated material: ", filePath, "\n");
 			return false;
 		}
 
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		std::shared_ptr<AssetMeta> assetMeta;
-		assetMeta = material->GenerateBaseMetaFile(guid, filePath, compiledPath);
+		if (!forAndroid) {
+			assetMeta = material->GenerateBaseMetaFile(guid, filePath, compiledPath);
+		}
+		else {
+			assetMeta = assetMetaMap.find(guid)->second;
+			assetMeta = material->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+		}
 		assetMetaMap[guid] = assetMeta;
 		ENGINE_PRINT("[AssetManager] Compiled updated material: ", filePath, " to ", compiledPath, "\n\n");
 

@@ -2,6 +2,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Math/Vector3D.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
@@ -12,15 +13,20 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
+#include "Animation/AnimationComponent.hpp"
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include "ECS/TagComponent.hpp"
+#include "ECS/LayerComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
 
 #include "Graphics/Camera/CameraComponent.hpp"
+#include <ECS/TagComponent.hpp>
+#include <ECS/LayerComponent.hpp>
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -34,6 +40,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
 	RegisterComponent<LightComponent>();
@@ -45,8 +52,11 @@ void ECSManager::Initialize() {
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
+	RegisterComponent<AnimationComponent>();
 	RegisterComponent<PrefabLinkComponent>();
 	RegisterComponent<CameraComponent>();
+	RegisterComponent<TagComponent>();
+	RegisterComponent<LayerComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -117,6 +127,13 @@ void ECSManager::Initialize() {
 		SetSystemSignature<AudioSystem>(signature);
 	}
 
+	animationSystem = RegisterSystem<AnimationSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<AnimationComponent>());
+		SetSystemSignature<AnimationSystem>(signature);
+	}
+	
 	cameraSystem = RegisterSystem<CameraSystem>();
 	{
 		Signature signature;
@@ -141,6 +158,7 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
+	ecsManager.AddComponent<ActiveComponent>(entity, ActiveComponent(true)); // Entity active by default
 
 	Transform defaultTransform;
 	defaultTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
@@ -149,6 +167,10 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	defaultTransform.isDirty = true;
 
 	ecsManager.AddComponent<Transform>(entity, defaultTransform);
+
+	// Add default tag and layer components
+	ecsManager.AddComponent<TagComponent>(entity, TagComponent(0)); // Default to first tag
+	ecsManager.AddComponent<LayerComponent>(entity, LayerComponent(0)); // Default to first layer
 
 	return entity;
 }

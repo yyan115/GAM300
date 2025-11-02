@@ -18,9 +18,10 @@ struct PhysicsMaterial {
 
 struct RigidBodyComponent {
 	REFL_SERIALIZABLE
+	bool enabled = true;          // Component enabled state (can be toggled in inspector)
 	int motionID;
 
-	bool ccd		= true; // continuous collision detection
+	bool ccd		= false; // continuous collision detection
 	bool isTrigger	= false;
 
 	float gravityFactor = 1.0f;

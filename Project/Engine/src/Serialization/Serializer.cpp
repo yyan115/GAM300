@@ -205,6 +205,22 @@ void Serializer::SerializeScene(const std::string& scenePath) {
                 nameObj,
                 alloc);
         }
+        if (ecs.HasComponent<TagComponent>(entity)) {
+            auto& c = ecs.GetComponent<TagComponent>(entity);
+            rapidjson::Value tagObj(rapidjson::kObjectType);
+            rapidjson::Value indexVal;
+            indexVal.SetInt(c.tagIndex);
+            tagObj.AddMember(rapidjson::Value("tagIndex", alloc).Move(), indexVal, alloc);
+            compsObj.AddMember(rapidjson::Value("TagComponent", alloc).Move(), tagObj, alloc);
+        }
+        if (ecs.HasComponent<LayerComponent>(entity)) {
+            auto& c = ecs.GetComponent<LayerComponent>(entity);
+            rapidjson::Value layerObj(rapidjson::kObjectType);
+            rapidjson::Value indexVal;
+            indexVal.SetInt(c.layerIndex);
+            layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
+            compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
+        }
         if (ecs.HasComponent<Transform>(entity)) {
             auto& c = ecs.GetComponent<Transform>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -288,6 +304,32 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 
     doc.AddMember("entities", entitiesArr, alloc);
 
+    // Serialize tags
+    rapidjson::Value tagsArr(rapidjson::kArrayType);
+    const auto& allTags = TagManager::GetInstance().GetAllTags();
+    for (const auto& tag : allTags) {
+        rapidjson::Value tagVal;
+        tagVal.SetString(tag.c_str(), static_cast<rapidjson::SizeType>(tag.size()), alloc);
+        tagsArr.PushBack(tagVal, alloc);
+    }
+    doc.AddMember("tags", tagsArr, alloc);
+
+    // Serialize layers
+    rapidjson::Value layersArr(rapidjson::kArrayType);
+    const auto& allLayers = LayerManager::GetInstance().GetAllLayers();
+    for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+        if (!allLayers[i].empty()) {
+            rapidjson::Value layerObj(rapidjson::kObjectType);
+            rapidjson::Value indexVal(i);
+            rapidjson::Value nameVal;
+            nameVal.SetString(allLayers[i].c_str(), static_cast<rapidjson::SizeType>(allLayers[i].size()), alloc);
+            layerObj.AddMember("index", indexVal, alloc);
+            layerObj.AddMember("name", nameVal, alloc);
+            layersArr.PushBack(layerObj, alloc);
+        }
+    }
+    doc.AddMember("layers", layersArr, alloc);
+
     // Write to file (ensure parent directory exists; fallback to current directory if creation fails)
     {
         fs::path outPathP(scenePath);
@@ -357,6 +399,28 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         return;
     }
 
+    // Deserialize tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tagsArr = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
+            std::string tag = tagsArr[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Deserialize layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layersArr = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
+            const auto& layerObj = layersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
+                int index = layerObj["index"].GetInt();
+                std::string name = layerObj["name"].GetString();
+                LayerManager::GetInstance().SetLayerName(index, name);
+            }
+        }
+    }
+
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
         return;
@@ -380,6 +444,22 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
             auto& nameComp = ecs.GetComponent<NameComponent>(newEnt);
             DeserializeNameComponent(nameComp, nv);
+        }
+
+        // TagComponent
+        if (comps.HasMember("TagComponent")) {
+            const rapidjson::Value& tv = comps["TagComponent"];
+            ecs.AddComponent<TagComponent>(newEnt, TagComponent{});
+            auto& tagComp = ecs.GetComponent<TagComponent>(newEnt);
+            DeserializeTagComponent(tagComp, tv);
+        }
+
+        // LayerComponent
+        if (comps.HasMember("LayerComponent")) {
+            const rapidjson::Value& lv = comps["LayerComponent"];
+            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{});
+            auto& layerComp = ecs.GetComponent<LayerComponent>(newEnt);
+            DeserializeLayerComponent(layerComp, lv);
         }
 
         // Transform
@@ -485,7 +565,35 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
+        // Ensure all entities have TagComponent and LayerComponent
+        if (!ecs.HasComponent<TagComponent>(newEnt)) {
+            ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
+        }
+        if (!ecs.HasComponent<LayerComponent>(newEnt)) {
+            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
+        }
+
     } // end for entities
+
+    // Deserialize tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tags = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tags.Size(); ++i) {
+            std::string tag = tags[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Deserialize layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layers = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layers.Size(); ++i) {
+            const auto& layerObj = layers[i];
+            int index = layerObj["index"].GetInt();
+            std::string name = layerObj["name"].GetString();
+            LayerManager::GetInstance().SetLayerName(index, name);
+        }
+    }
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }
@@ -516,6 +624,28 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + tempScenePath);
     }
 
+    // Deserialize tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tagsArr = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
+            std::string tag = tagsArr[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Deserialize layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layersArr = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
+            const auto& layerObj = layersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
+                int index = layerObj["index"].GetInt();
+                std::string name = layerObj["name"].GetString();
+                LayerManager::GetInstance().SetLayerName(index, name);
+            }
+        }
+    }
+
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + tempScenePath);
         return;
@@ -538,6 +668,20 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& nv = comps["NameComponent"];
             auto& nameComp = ecs.GetComponent<NameComponent>(currEnt);
             DeserializeNameComponent(nameComp, nv);
+        }
+
+        // TagComponent
+        if (comps.HasMember("TagComponent")) {
+            const rapidjson::Value& tv = comps["TagComponent"];
+            auto& tagComp = ecs.GetComponent<TagComponent>(currEnt);
+            DeserializeTagComponent(tagComp, tv);
+        }
+
+        // LayerComponent
+        if (comps.HasMember("LayerComponent")) {
+            const rapidjson::Value& lv = comps["LayerComponent"];
+            auto& layerComp = ecs.GetComponent<LayerComponent>(currEnt);
+            DeserializeLayerComponent(layerComp, lv);
         }
 
         // Transform
@@ -630,7 +774,35 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
+        // Ensure all entities have TagComponent and LayerComponent
+        if (!ecs.HasComponent<TagComponent>(currEnt)) {
+            ecs.AddComponent<TagComponent>(currEnt, TagComponent{0});
+        }
+        if (!ecs.HasComponent<LayerComponent>(currEnt)) {
+            ecs.AddComponent<LayerComponent>(currEnt, LayerComponent{0});
+        }
+
     } // end for entities
+
+    // Deserialize tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tags = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tags.Size(); ++i) {
+            std::string tag = tags[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Deserialize layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layers = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layers.Size(); ++i) {
+            const auto& layerObj = layers[i];
+            int index = layerObj["index"].GetInt();
+            std::string name = layerObj["name"].GetString();
+            LayerManager::GetInstance().SetLayerName(index, name);
+        }
+    }
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
 }
@@ -856,9 +1028,9 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
-        rbComp.motionID = d[0]["data"].GetInt();
+        rbComp.motionID = d[1]["data"].GetInt();
         rbComp.motion = static_cast<Motion>(rbComp.motionID);
-        rbComp.ccd = d[1]["data"].GetBool();
+        rbComp.ccd = d[2]["data"].GetBool();
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
@@ -873,11 +1045,11 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
         colliderComp.version = d[1]["data"].GetUint();
         colliderComp.shapeTypeID = d[2]["data"].GetInt();
-        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[3], colliderComp.boxHalfExtents);
         switch (colliderComp.shapeType)
         {
-        case ColliderShapeType::Box:
+        case ColliderShapeType::Cylinder:
             colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
             break;
         default:
@@ -899,5 +1071,17 @@ void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, cons
             GUID_string childGUIDStr = childJSON.GetString();
             childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
         }
+    }
+}
+
+void Serializer::DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON) {
+    if (tagJSON.HasMember("tagIndex") && tagJSON["tagIndex"].IsInt()) {
+        tagComp.tagIndex = tagJSON["tagIndex"].GetInt();
+    }
+}
+
+void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON) {
+    if (layerJSON.HasMember("layerIndex") && layerJSON["layerIndex"].IsInt()) {
+        layerComp.layerIndex = layerJSON["layerIndex"].GetInt();
     }
 }

@@ -29,5 +29,5 @@ class GUIDUtilities {
 public:
 	ENGINE_API static GUID_string GenerateGUIDString();
 	ENGINE_API static GUID_128  ConvertStringToGUID128(const GUID_string& guidStr);
-	static GUID_string ConvertGUID128ToString(const GUID_128& guid_128_t);
+	ENGINE_API static GUID_string ConvertGUID128ToString(const GUID_128& guid_128_t);
 };

@@ -6,7 +6,7 @@
 #include "Texture.h"
 #include "Material.hpp"
 #include "Engine.h"
-
+#include "Frustum/Frustum.hpp"
 #include "Reflection/ReflectionBase.hpp"
 
 #ifdef ANDROID
@@ -36,7 +36,8 @@ public:
 		material(other.material),
 		vao(),
 		ebo(indices),
-		vaoSetup(other.vaoSetup) {
+		vaoSetup(other.vaoSetup),
+		boundingBox(other.boundingBox) {
 		setupMesh();
 	}
 
@@ -52,6 +53,7 @@ public:
 			textures = other.textures;
 			material = other.material;
 			vaoSetup = other.vaoSetup;
+			boundingBox = other.boundingBox;
 
 			// Reconstruct EBO with new indices
 			ebo = EBO(indices);
@@ -67,16 +69,40 @@ public:
 		material(std::move(other.material)),
 		vao(std::move(other.vao)),
 		ebo(std::move(other.ebo)),
-		vaoSetup(other.vaoSetup) {
+		vaoSetup(other.vaoSetup), 
+		boundingBox(other.boundingBox) {
 		other.vaoSetup = false;
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Move constructor - moved material pointer from %p to %p", other.material.get(), material.get());
 #endif
 	}
 
+	AABB GetBoundingBox() const { return boundingBox; }
+
+	// Call this after loading vertices (in ProcessMesh or setupMesh)
+	void CalculateBoundingBox() 
+	{
+		if (vertices.empty()) 
+		{
+			boundingBox = AABB(glm::vec3(0.0f), glm::vec3(0.0f));
+			return;
+		}
+
+		glm::vec3 min(FLT_MAX);
+		glm::vec3 max(-FLT_MAX);
+
+		for (const auto& vertex : vertices) 
+		{
+			min = glm::min(min, vertex.position);
+			max = glm::max(max, vertex.position);
+		}
+
+		boundingBox = AABB(min, max);
+	}
 private:
 	VAO vao;
 	EBO ebo;
 	bool vaoSetup;
 	void setupMesh();
+	AABB boundingBox;
 };

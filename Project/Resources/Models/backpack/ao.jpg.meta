@@ -1,14 +1,14 @@
 {
     "AssetMetaData": {
-        "version": 6,
-        "guid": "00315556c0cac7b5-0002d702f6000011",
+        "version": 7,
+        "guid": "0037a8a22b0b50a5-00031f527a00000b",
         "source": "../../Resources/Models/backpack/ao.jpg",
         "compiled": "../../Resources/Models/backpack/ao.dds",
-        "last_compiled": "2025-10-28 12:05:05.4308724"
+        "last_compiled": "2025-10-31 03:36:30.2964390"
     },
     "TextureMetaData": {
-        "id": 0,
         "type": "diffuse",
-        "unit": -1
+        "flipUVs": true,
+        "generateMipmaps": true
     }
 }

@@ -19,6 +19,10 @@ Material::Material() : m_name("DefaultMaterial") {
 Material::Material(const std::string& name) : m_name(name) {
 }
 
+Material::Material(std::shared_ptr<AssetMeta> metaData) {
+	metaData;
+}
+
 void Material::SetAmbient(const glm::vec3 ambient)
 {
 	m_ambient = ambient;
@@ -176,6 +180,7 @@ void Material::BindTextures(Shader& shader) const
 				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(textureInfo->filePath);
 #else
 				std::string androidAssetPath = textureInfo->filePath.substr(textureInfo->filePath.find("Resources"));
+				ENGINE_LOG_DEBUG("[Material] Getting texture from: " + androidAssetPath);
 				textureInfo->texture = ResourceManager::GetInstance().GetResource<Texture>(androidAssetPath);
 #endif
 			}
@@ -327,6 +332,11 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {
 		std::cerr << "[SHADER] ERROR: Platform not available for asset discovery!" << std::endl;
+		return false;
+	}
+
+	if (!platform->FileExists(assetPath)) {
+		ENGINE_LOG_WARN("[Material] Material " + assetPath + " not found!");
 		return false;
 	}
 
@@ -495,7 +505,7 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
-
+	SetName(p.stem().generic_string());
 	// Try to get the material info from the material asset first (if it exists).
 	GetMaterialPropertiesFromAsset(materialPath);
 
@@ -554,11 +564,19 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	return std::string{};
 }
 
-std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath) {
+std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath, bool forAndroid) {
 	std::filesystem::path p(assetPath);
 	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
+	SetName(p.stem().generic_string());
+
+	if (forAndroid) {
+		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
+		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
+		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+	}
+
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");
@@ -633,7 +651,13 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 	ENGINE_PRINT("[Material] LOAD - Working directory: ", std::filesystem::current_path(), "\n");
 
 
-	return GetMaterialPropertiesFromAsset(finalResourcePath);
+	if (!GetMaterialPropertiesFromAsset(finalResourcePath)) {
+		ENGINE_LOG_INFO("[Material] Compiling material: " + assetPath);
+		AssetManager::GetInstance().CompileAsset<Material>(assetPath);
+		LoadResource(resourcePath, assetPath);
+	}
+
+	return true;
 }
 
 bool Material::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {

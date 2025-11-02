@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "ECS/System.hpp"
 #include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 //#include "Physics/JoltInclude.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
@@ -174,6 +175,10 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
+        //apply motiontype
+        rb.motion = static_cast<Motion>(rb.motionID);
+
+
         JPH::RVec3Arg pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());
@@ -215,57 +220,68 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
         // --- Create or recreate body ---
         if (rb.id.IsInvalid() || rb.motion_dirty || rb.collider_seen_version != col.version) {
+            // Remove existing body if it exists
             if (!rb.id.IsInvalid()) {
                 bi.RemoveBody(rb.id);
                 bi.DestroyBody(rb.id);
                 rb.id = JPH::BodyID();
             }
 
-            const auto motion =
+            // Map our Motion enum to JPH::EMotionType
+            const auto motionType =
                 rb.motion == Motion::Static ? JPH::EMotionType::Static :
                 rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
                 JPH::EMotionType::Dynamic;
 
-            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motion, col.layer);
+            // Create body creation settings
+            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
 
-            // --- Always enable CCD for dynamic bodies ---
-            if (motion == JPH::EMotionType::Dynamic)
-                bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+            // --- Apply CCD according to component ---
+            if (motionType == JPH::EMotionType::Dynamic)
+                bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
-
+            // --- Apply damping and restitution ---
             bcs.mRestitution = 0.2f;
             bcs.mFriction = 0.5f;
             bcs.mLinearDamping = rb.linearDamping;
             bcs.mAngularDamping = rb.angularDamping;
 
+            // --- Apply gravity factor ---
+            bcs.mGravityFactor = rb.gravityFactor;
+
+
+
+            // Create and add the body to the physics system
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
-            bodyToEntityMap[rb.id] = e; //map physics id to entity id
+            bodyToEntityMap[rb.id] = e; // Map Jolt body ID to ECS entity
 
-
+            // Update bookkeeping
             rb.collider_seen_version = col.version;
             rb.transform_dirty = rb.motion_dirty = false;
 
-            bi.SetMaxAngularVelocity(rb.id, 2.0f); //stop any potential weird behavior
-
+            // Limit angular velocity to avoid instability
+            bi.SetMaxAngularVelocity(rb.id, 2.0f);
 
 #ifdef __ANDROID__
-            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Created body id=%u, motion=%d, pos=(%f,%f,%f)",
-                rb.id.GetIndex(), (int)motion, pos.GetX(), pos.GetY(), pos.GetZ());
+            __android_log_print(ANDROID_LOG_INFO, "GAM300",
+                "[Physics] Created body id=%u, motion=%d, CCD=%d, pos=(%f,%f,%f)",
+                rb.id.GetIndex(), static_cast<int>(motionType), rb.ccd,
+                pos.GetX(), pos.GetY(), pos.GetZ());
 #endif
         }
 
-        // --- Update kinematics / static transforms ---
+        // --- Update kinematic / static transforms ---
         if ((rb.motion == Motion::Kinematic || rb.motion == Motion::Static) && rb.transform_dirty) {
             if (rb.motion == Motion::Kinematic)
                 bi.MoveKinematic(rb.id, pos, rot, 0.0f);
             else
                 bi.SetPositionAndRotation(rb.id, pos, rot, JPH::EActivation::DontActivate);
+
             rb.transform_dirty = false;
         }
+
     }
-
 }
-
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -276,6 +292,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 #endif
     if (entities.empty()) return;
 
+
     // Sync ECS -> Jolt (before physics step)
     JPH::BodyInterface& bi = physics.GetBodyInterface();
     for (auto& e : entities) {
@@ -285,6 +302,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         bi.SetGravityFactor(rb.id, rb.gravityFactor);
         bi.SetIsSensor(rb.id, rb.isTrigger);
+        rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
         // Read back velocities from physics engine
         rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(rb.id));
