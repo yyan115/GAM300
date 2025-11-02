@@ -635,7 +635,7 @@ void RegisterInspectorCustomRenderers() {
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
-                    audio.audioGUID = DraggedAudioGuid;
+                    audio.SetClip(DraggedAudioGuid);
                     ImGui::EndDragDropTarget();
                     return true;
                 }

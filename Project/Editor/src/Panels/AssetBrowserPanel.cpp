@@ -46,6 +46,7 @@ static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 #ifdef _WIN32
 #include <windows.h>
 #include <shellapi.h>
+#include <commdlg.h>
 #endif
 
 // Thumbnail/grid
@@ -442,7 +443,7 @@ void AssetBrowserPanel::RenderToolbar() {
 
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FILE_IMPORT " Import")) {
-        // TODO: Implement import dialog
+		OpenImportDialog();
     }
 
     
@@ -1684,4 +1685,66 @@ void AssetBrowserPanel::SyncTreeWithCurrentDirectory() {
     // This ensures the current directory's parents are expanded
     EnsureDirectoryExpanded(currentDirectory);
     needsTreeSync = false;
+}
+
+void AssetBrowserPanel::OpenImportDialog() {
+    // Store current working directory to restore it later (prevents dialog from changing it)
+    std::filesystem::path originalWorkingDir = std::filesystem::current_path();
+
+    OPENFILENAMEA ofn;
+    char filename[260] = { 0 };
+    ZeroMemory(&filename, sizeof(filename));
+    ZeroMemory(&ofn, sizeof(ofn));
+
+    // Initialize the OPENFILENAME structure
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = nullptr;  // Set to a valid window handle if available (e.g., from GLFW or Win32)
+    ofn.lpstrFile = filename;
+    ofn.nMaxFile = sizeof(filename);
+    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrInitialDir = currentDirectory.c_str();  // Start in the current directory
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_NOCHANGEDIR;  // Added OFN_NOCHANGEDIR
+
+    if (GetOpenFileNameA(&ofn)) {
+        // Parse the selected files (handles single and multiple selections)
+        std::vector<std::string> selectedFiles;
+        char* p = filename;
+        std::string directory = p;  // First part is the directory
+        p += directory.size() + 1;
+
+        if (*p == '\0') {
+            // Single file selected
+            selectedFiles.push_back(directory);
+        }
+        else {
+            // Multiple files selected
+            while (*p) {
+                std::string filename = p;
+                selectedFiles.push_back(directory + "\\" + filename);
+                p += filename.size() + 1;
+            }
+        }
+
+        // Copy each selected file to the current directory
+        for (const auto& srcPathStr : selectedFiles) {
+            std::filesystem::path srcPath(srcPathStr);
+            std::filesystem::path dstPath = std::filesystem::path(currentDirectory) / srcPath.filename();
+            dstPath = MakeUniquePath(dstPath);  // Ensure unique name
+
+            try {
+                std::filesystem::copy_file(srcPath, dstPath);
+                ENGINE_PRINT("[AssetBrowserPanel] Imported: ", srcPathStr, " to ", dstPath.generic_string(), "\n");
+            }
+            catch (const std::exception& e) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to import ", srcPathStr, ": ", e.what(), "\n");
+            }
+        }
+
+        // Refresh the asset browser to show new files
+        QueueRefresh();
+    }
+
+    // Restore the original working directory (prevents side effects from the dialog)
+    std::filesystem::current_path(originalWorkingDir);
 }
