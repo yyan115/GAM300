@@ -61,6 +61,11 @@ namespace Scripting {
     // isolated instances (e.g. one script per entity). IDs are valid until DestroyEnvironment is called.
     //
     // These functions must be called on the main thread (they touch the VM).
+    //
+    // NOTE: Environments (and their registry references) are **invalidated** when the runtime reloads
+    // (e.g. via RequestReload() + Tick()). The runtime frees the old lua_State and associated registry
+    // references during reload. If you require environments to persist across reloads you must re-create
+    // them and re-establish any registry references after reload (this is not handled automatically).
     EnvironmentId CreateEnvironment(const std::string& name);
     void DestroyEnvironment(EnvironmentId env);
 

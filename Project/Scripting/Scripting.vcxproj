@@ -679,6 +679,7 @@
     <ClCompile Include="src\ScriptComponent.cpp" />
     <ClCompile Include="src\ScriptError.cpp" />
     <ClCompile Include="src\ScriptFileSystem_android.cpp" />
+    <ClCompile Include="src\ScriptFileSystem_default.cpp" />
     <ClCompile Include="src\ScriptFileSystem_win.cpp" />
     <ClCompile Include="src\ScriptingRuntime.cpp" />
     <ClCompile Include="src\ScriptInspector.cpp" />

@@ -14,6 +14,7 @@
 
 #include "ScriptFileSystem.h"
 #include "ScriptingRuntime.h" // for IScriptFileSystem
+#include "ScriptUtils.h"
 #include "Logging.hpp"
 
 #ifdef _WIN32
@@ -30,38 +31,6 @@
 
 namespace Scripting {
     namespace {
-
-        // Helper: convert UTF-8 std::string -> wide (UTF-16) std::wstring
-        static std::wstring Utf8ToWide(const std::string& utf8) {
-#ifdef _WIN32
-            if (utf8.empty()) return std::wstring();
-            int needed = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), nullptr, 0);
-            if (needed <= 0) return std::wstring();
-            std::wstring out;
-            out.resize(needed);
-            MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), (int)utf8.size(), &out[0], needed);
-            return out;
-#else
-            // Non-windows: assume input is already UTF-8 and platform APIs accept UTF-8 strings.
-            return std::wstring(utf8.begin(), utf8.end());
-#endif
-        }
-
-        // Helper: convert wide -> UTF-8
-        static std::string WideToUtf8(const std::wstring& w) {
-#ifdef _WIN32
-            if (w.empty()) return std::string();
-            int needed = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), nullptr, 0, nullptr, nullptr);
-            if (needed <= 0) return std::string();
-            std::string out;
-            out.resize(needed);
-            WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), &out[0], needed, nullptr, nullptr);
-            return out;
-#else
-            return std::string(w.begin(), w.end());
-#endif
-        }
-
         // Normalize path to absolute. Returns empty string on failure.
         static std::string NormalizePathUtf8(const std::string& pathUtf8) {
 #ifdef _WIN32

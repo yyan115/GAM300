@@ -16,6 +16,7 @@
 // file I/O and logging should be provided via the injected interfaces below.
 
 #include "Scripting.h"
+#include "ScriptFileSystem.h"
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -40,17 +41,6 @@ namespace Scripting
         virtual void Info(const std::string& msg) = 0;
         virtual void Warn(const std::string& msg) = 0;
         virtual void Error(const std::string& msg) = 0;
-    };
-
-    // Minimal file system abstraction to make testing and platform ports easier.
-    // Implementations should be thread-safe for reads.
-    struct IScriptFileSystem {
-        virtual ~IScriptFileSystem() = default;
-        // Read text from disk. Returns true and fills 'out' on success.
-        virtual bool ReadAllText(const std::string& path, std::string& out) = 0;
-        virtual bool Exists(const std::string& path) = 0;
-        // Last write time as an opaque integer (monotonic file timestamp), 0 if not available.
-        virtual uint64_t LastWriteTimeUtc(const std::string& path) = 0;
     };
 
     // Internal runtime class.
@@ -108,7 +98,9 @@ namespace Scripting
         std::atomic<int> m_activeUsers{ 0 };  // counts threads/callbacks currently using the lua_State*
         lua_State* m_L = nullptr;
         ScriptingConfig m_config;
-        IScriptFileSystem* m_fs = nullptr; // not owned
+        // Filesystem ownership: if we create a default FS we hold it here.
+        std::unique_ptr<IScriptFileSystem> m_ownedFs;
+        IScriptFileSystem * m_fs = nullptr; // not owned (may point into m_ownedFs)
         ILogger* m_logger = nullptr;       // not owned
         std::vector<BindingCallback> m_bindings;
 

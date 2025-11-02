@@ -13,6 +13,7 @@
 #include "HotReloadManager.h"
 #include "ScriptFileSystem.h"
 #include "ScriptingRuntime.h"   // for IScriptFileSystem definition
+#include "ScriptUtils.h"
 #include "Logging.hpp"
 
 #include <thread>
@@ -119,10 +120,11 @@ namespace Scripting {
                 }
             }
 
-            // clear queue
+            // clear queue (swap with empty is clearer and exception-safe)
             {
                 std::lock_guard<std::mutex> qlk(queueMutex);
-                while (!eventQueue.empty()) eventQueue.pop();
+                std::queue<HotReloadEvent> empty;
+                std::swap(eventQueue, empty);
             }
         }
 
@@ -151,7 +153,7 @@ namespace Scripting {
                 }
             }
 
-            // Call callback on caller thread while holding a lock to protect callback pointer.
+            // Callbacks are copied under lock and invoked without holding the lock (avoid deadlocks).
             ChangeCallback cbCopy;
             {
                 std::lock_guard<std::mutex> lk(mutex);
@@ -323,27 +325,6 @@ namespace Scripting {
 
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "HotReloadManager: watcher thread exiting");
         }
-
-#ifdef _WIN32
-        static std::wstring Utf8ToWide(const std::string& s) {
-            if (s.empty()) return std::wstring();
-            int needed = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
-            if (needed <= 0) return std::wstring();
-            std::wstring out;
-            out.resize(needed);
-            MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), &out[0], needed);
-            return out;
-        }
-        static std::string WideToUtf8(const std::wstring& w) {
-            if (w.empty()) return std::string();
-            int needed = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), nullptr, 0, nullptr, nullptr);
-            if (needed <= 0) return std::string();
-            std::string out;
-            out.resize(needed);
-            WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), &out[0], needed, nullptr, nullptr);
-            return out;
-        }
-#endif
 
         HotReloadConfig config;
         std::unique_ptr<IScriptFileSystem> ownedFs; // if we created one

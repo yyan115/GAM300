@@ -8,6 +8,8 @@
 
 #include "ScriptingRuntime.h"
 #include "ScriptError.h"
+
+#include "ScriptFileSystem.h"
 #include "Logging.hpp"
 #include <cassert>
 #include <chrono>
@@ -24,7 +26,6 @@ extern "C" {
 
 namespace Scripting {
     namespace {
-        static std::mutex s_initMutex; // protect s_singletonRuntime creation
         static ScriptingRuntime* g_runtime_for_cfuncs = nullptr; // only used internally for C callbacks
 
         // Adapter logger that forwards calls to the ScriptLog API.
@@ -45,31 +46,9 @@ namespace Scripting {
             }
         };
 
-        // Simple minimal FS implementation that reads from disk. Useful for tests / desktop.
-        struct DefaultFileSystem : public IScriptFileSystem {
-            bool ReadAllText(const std::string& path, std::string& out) override {
-                std::ifstream ifs(path, std::ios::binary);
-                if (!ifs) return false;
-                std::string content((std::istreambuf_iterator<char>(ifs)),
-                    std::istreambuf_iterator<char>());
-                out.swap(content);
-                return true;
-            }
-            bool Exists(const std::string& path) override {
-                std::ifstream ifs(path);
-                return static_cast<bool>(ifs);
-            }
-            uint64_t LastWriteTimeUtc(const std::string& path) override {
-                struct stat st;
-                if (stat(path.c_str(), &st) != 0) return 0;
-                return static_cast<uint64_t>(st.st_mtime);
-            }
-        };
-
         ////////////////////////////////////////////////////////////////////////////////
         // Lua C functions (registered into Lua)
         //
-
         static int l_cpp_log(lua_State* L) {
             const char* msg = luaL_optstring(L, 1, "");
             // Use ScriptLog API to print from Lua
@@ -120,9 +99,24 @@ namespace Scripting {
                     return false;
                 }
                 m_config = cfg;
-                m_fs = fs ? fs : new DefaultFileSystem();
+                if (fs) {
+                    // use provided FS (do not take ownership)
+                    m_ownedFs.reset();
+                    m_fs = fs;
+                }
+                else {
+                    // create and own a default filesystem via the platform factory
+                    m_ownedFs = CreateDefaultFileSystem();
+                    if (!m_ownedFs) {
+                        // CreateDefaultFileSystem failed (platform not implemented)
+                        if (logger) logger->Error("ScriptingRuntime::Initialize: CreateDefaultFileSystem failed");
+                        return false;
+                    }
+                    m_fs = m_ownedFs.get();
+                }
 
-                if (logger) {
+                if (logger) 
+                {
                     m_logger = logger;
                 }
                 else {
@@ -176,6 +170,10 @@ namespace Scripting {
         if (m_L) {
             close_lua_state(m_L);
             m_L = nullptr;
+
+            // release owned filesystem (if any)
+            m_ownedFs.reset();
+            m_fs = nullptr;
         }
 
         // Note: we intentionally do not delete m_fs or m_logger here for default instances.
@@ -221,13 +219,25 @@ namespace Scripting {
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     }
 
-                    // Swap states under lock and close the old one.
+                    // Swap states and cleanup old state's registry refs
                     lua_State* old = nullptr;
                     {
                         std::lock_guard<std::mutex> lock(m_mutex);
                         old = m_L;
                         m_L = newL;
                         m_lastGcTime = std::chrono::steady_clock::now();
+
+                        // If there were environment registry refs bound to the old state, unref them now
+                        // in the old state's registry so they don't leak when we close it. Then clear
+                        // our bookkeeping map so future destroys won't attempt to unref invalid refs.
+                        if (old && !m_envRegistryRefs.empty()) {
+                            for (const auto& kv : m_envRegistryRefs) {
+                                // kv.second is the registry ref that belongs to 'old'
+                                luaL_unref(old, LUA_REGISTRYINDEX, kv.second);
+                            }
+                        }
+                        m_envRegistryRefs.clear();
+                        m_nextEnvId = 1;
                     }
                     if (old) close_lua_state(old);
 
