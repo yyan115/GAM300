@@ -10,7 +10,8 @@
 #include <memory>
 
 extern "C" {
-#include "lua.h"    // ensures LUA_NOREF etc are available to translation units including this header
+#include <lua.h>    // ensures LUA_NOREF etc are available to translation units including this header
+#include <lauxlib.h>
 }
 
 namespace Scripting {
