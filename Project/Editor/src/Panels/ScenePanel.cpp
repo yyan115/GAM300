@@ -1138,6 +1138,11 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
             modelRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(previewModelPath);
             modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
             modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
+            if (modelRenderer.model->meshes[0].material) {
+                modelRenderer.material = modelRenderer.model->meshes[0].material;
+                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+                modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
+            }
 
             if (modelRenderer.model && modelRenderer.shader) {
                 ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);

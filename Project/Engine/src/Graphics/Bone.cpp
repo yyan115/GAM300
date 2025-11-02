@@ -174,7 +174,7 @@ glm::mat4 Bone::InterpolateRotation(float animationTime)
 
 	int r0Index = GetRotationIndex(animationTime);
 	int r1Index = r0Index + 1;
-	float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
+    float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
 	glm::quat finalRotation = glm::slerp(mRotations[r0Index].orientation, mRotations[r1Index].orientation, scaleFactor);
 
 	finalRotation = glm::normalize(finalRotation);

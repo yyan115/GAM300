@@ -18,10 +18,12 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Physics/CollisionLayers.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Math/Vector3D.hpp"
 #include <glm/glm.hpp>
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
+#include "Physics/RigidBodyComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -296,6 +298,7 @@ void RegisterInspectorCustomRenderers() {
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "shapeTypeID",
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
             auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+            auto& rc = ecs.GetComponent<ModelRenderComponent>(entity);
 
             ImGui::Text("Shape Type");
             ImGui::SameLine();
@@ -315,51 +318,61 @@ void RegisterInspectorCustomRenderers() {
 
             // Shape Parameters based on type
             bool shapeParamsChanged = false;
+            Vector3D halfExtent = rc.CalculateModelHalfExtent(*rc.model);
+		    float radius = rc.CalculateModelRadius(*rc.model);
+
+
             switch (collider.shapeType) {
-                case ColliderShapeType::Box: {
-                    ImGui::Text("Half Extents");
-                    ImGui::SameLine();
-                    float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
-                    if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Sphere: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Capsule: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    ImGui::Text("Half Height");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
-                case ColliderShapeType::Cylinder: {
-                    ImGui::Text("Radius");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    ImGui::Text("Half Height");
-                    ImGui::SameLine();
-                    if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-                        shapeParamsChanged = true;
-                    }
-                    break;
-                }
+            	case ColliderShapeType::Box: {
+            		ImGui::Text("Half Extents");
+            		ImGui::SameLine();
+            		collider.boxHalfExtents = halfExtent;
+            		float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
+            		if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Sphere: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.sphereRadius = radius;
+            		if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Capsule: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
+            		if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		ImGui::Text("Half Height");
+            		ImGui::SameLine();
+            		collider.capsuleHalfHeight = halfExtent.y;
+            		if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
+            	case ColliderShapeType::Cylinder: {
+            		ImGui::Text("Radius");
+            		ImGui::SameLine();
+            		collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
+            		if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		ImGui::Text("Half Height");
+            		ImGui::SameLine();
+            		collider.cylinderRadius = halfExtent.y;
+            		if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            			shapeParamsChanged = true;
+            		}
+            		break;
+            	}
             }
 
             if (shapeParamsChanged) {
@@ -395,6 +408,99 @@ void RegisterInspectorCustomRenderers() {
     // Skip non-reflected fields (these are handled with shapeTypeID)
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "boxHalfExtents",
         [](const char*, void*, Entity, ECSManager&) { return false; });
+
+
+    // ==================== RIGIDBODY COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
+        [](void* ptr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) {
+            auto& rigidBody = ecs.GetComponent<RigidBodyComponent>(entity);
+            auto& transform = ecs.GetComponent<Transform>(entity); // for info tab
+
+            ImGui::PushID("RigidBodyComponent");
+
+            // --- Motion Type dropdown ---
+            ImGui::Text("Motion");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+            const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
+            int currentMotion = rigidBody.motionID;
+            EditorComponents::PushComboColors();
+            if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
+                rigidBody.motion = static_cast<Motion>(currentMotion);
+                rigidBody.motionID = currentMotion;
+                rigidBody.motion_dirty = true; // mark for recreation
+            }
+            EditorComponents::PopComboColors();
+
+            // --- Is Trigger checkbox ---
+            ImGui::Checkbox("##IsTrigger", &rigidBody.isTrigger);
+            ImGui::SameLine();
+            ImGui::Text("Is Trigger");
+
+            if (rigidBody.motion == Motion::Dynamic) {
+                // --- CCD checkbox ---
+                if (ImGui::Checkbox("##CCD", &rigidBody.ccd))
+                    rigidBody.motion_dirty = true;
+                ImGui::SameLine();
+                ImGui::Text("CCD");
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
+
+                // --- Linear & Angular Damping ---
+                ImGui::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Linear Damping");
+
+                ImGui::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Angular Damping");
+
+                // --- Gravity Factor ---
+                ImGui::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Gravity Factor");
+            }
+
+            // --- Info Section (Read-only) ---
+            if (ImGui::CollapsingHeader("Info", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginDisabled();
+
+                // Position
+                float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
+                ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
+                ImGui::SameLine();
+                ImGui::Text("Position");
+
+                // Rotation
+                float rotation[3] = { transform.localRotation.x, transform.localRotation.y, transform.localRotation.z };
+                ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.3f");
+                ImGui::SameLine();
+                ImGui::Text("Rotation");
+
+                // Linear Velocity
+                float linearVel[3] = { rigidBody.linearVel.x, rigidBody.linearVel.y, rigidBody.linearVel.z };
+                ImGui::DragFloat3("##LinearVelocity", linearVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Linear Velocity");
+
+                // Angular Velocity
+                float angularVel[3] = { rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z };
+                ImGui::DragFloat3("##AngularVelocity", angularVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                ImGui::SameLine();
+                ImGui::Text("Angular Velocity");
+
+                ImGui::EndDisabled();
+            }
+
+            ImGui::PopID();
+            return true; // skip default reflection
+        });
+
+
+
+
+
+
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
@@ -487,6 +593,12 @@ void RegisterInspectorCustomRenderers() {
                                     ResourceManager::GetPlatformShaderPath("default"));
                                 modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(
                                     ResourceManager::GetPlatformShaderPath("default"));
+                            }
+
+                            if (loadedModel->meshes[0].material) {
+                                modelRenderer.material = loadedModel->meshes[0].material;
+                                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+                                modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
                             }
                         } else {
                             std::cerr << "[Inspector] Failed to load model!" << std::endl;
@@ -621,29 +733,130 @@ void RegisterInspectorCustomRenderers() {
         });
 
     // Audio GUID
-    ReflectionRenderer::RegisterFieldRenderer("AudioComponent", "audioGUID",
-        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
-            GUID_128* guid = static_cast<GUID_128*>(ptr);
+    ReflectionRenderer::RegisterComponentRenderer("AudioComponent",
+        [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            AudioComponent& audio = *static_cast<AudioComponent*>(componentPtr);
+            const float labelWidth = EditorComponents::GetLabelWidth();
 
+            // Audio Resource field
             ImGui::Text("Audio File:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(-1);
-
-            std::string audioPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = audioPath.empty() ? "None" : audioPath.substr(audioPath.find_last_of("/\\") + 1);
-
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            ImGui::SameLine(labelWidth);
+            std::string audioPath = AssetManager::GetInstance().GetAssetPathFromGUID(audio.audioGUID);
+            std::string displayText = audioPath.empty() ? "None (Audio File)" : audioPath.substr(audioPath.find_last_of("/\\") + 1);
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_AUDIO")) {
-                    *guid = DraggedAudioGuid;
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
+                    audio.SetClip(DraggedAudioGuid);
                     ImGui::EndDragDropTarget();
                     return true;
                 }
                 ImGui::EndDragDropTarget();
             }
 
-            return false;
+            ImGui::Separator();
+
+            // Output section
+            ImGui::Text("Output");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            char outputBuf[128];
+            std::snprintf(outputBuf, sizeof(outputBuf), "%s", audio.OutputAudioMixerGroup.empty() ? "None (Audio Mixer Group)" : audio.OutputAudioMixerGroup.c_str());
+            if (ImGui::InputText("##Output", outputBuf, sizeof(outputBuf))) {
+                audio.OutputAudioMixerGroup = outputBuf;
+            }
+
+            // Checkboxes (aligned with labels)
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Mute");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##Mute", &audio.Mute);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Bypass Listener Effects");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##BypassListenerEffects", &audio.bypassListenerEffects);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Play On Awake");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##PlayOnAwake", &audio.PlayOnAwake);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Loop");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##Loop", &audio.Loop);
+
+            ImGui::Separator();
+
+            // Priority (editable drag)
+            EditorComponents::DrawSliderWithInput("Priority", &audio.Priority, 0, 256, true, labelWidth);
+            // Volume (editable drag)
+            EditorComponents::DrawSliderWithInput("Volume", &audio.Volume, 0.0f, 1.0f, false, labelWidth);
+            // Pitch (editable drag)
+            EditorComponents::DrawSliderWithInput("Pitch", &audio.Pitch, 0.1f, 3.0f, false, labelWidth);
+            // Stereo Pan (editable drag)
+            EditorComponents::DrawSliderWithInput("Stereo Pan", &audio.StereoPan, -1.0f, 1.0f, false, labelWidth);	
+            // Reverb Zone Mix (editable drag)
+            EditorComponents::DrawSliderWithInput("Reverb Zone Mix", &audio.reverbZoneMix, 0.0f, 1.0f, false, labelWidth);
+
+            // 3D Sound Settings (collapsible)
+            if (ImGui::CollapsingHeader("3D Sound Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+
+                ImGui::Text("Spatialize");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::Checkbox("##Spatialize", &audio.Spatialize);
+
+                // Spatial Blend (editable drag)
+                ImGui::Text("Spatial Blend");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f")) {
+                    audio.SetSpatialBlend(audio.SpatialBlend);
+                }
+
+                if (audio.Spatialize) {
+                    // Doppler Level (editable drag)
+                    EditorComponents::DrawSliderWithInput("Doppler Level", &audio.DopplerLevel, 0.0f, 5.0f, false, labelWidth);
+
+                    //// Spread (placeholder, editable drag)
+                    //static float spread = 0.0f;
+                    //ImGui::Text("Spread");
+                    //ImGui::SameLine(labelWidth);
+                    //ImGui::SetNextItemWidth(-1);
+                    //ImGui::DragInt("##Spread", reinterpret_cast<int*>(&spread), 1.0f, 0, 360);
+
+                    //// Volume Rolloff dropdown
+                    //ImGui::Text("Volume Rolloff");
+                    //ImGui::SameLine(labelWidth);
+                    //ImGui::SetNextItemWidth(-1);
+                    //const char* rolloffModes[] = { "Logarithmic Rolloff", "Linear Rolloff", "Custom Rolloff" };
+                    //static int currentRolloff = 0;
+                    //EditorComponents::PushComboColors();
+                    //ImGui::Combo("##VolumeRolloff", &currentRolloff, rolloffModes, 3);
+                    //EditorComponents::PopComboColors();
+
+                    // Min Distance (editable drag)
+                    ImGui::Text("Min Distance");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    ImGui::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f");
+
+                    // Max Distance (editable drag)
+                    ImGui::Text("Max Distance");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    ImGui::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
+                }
+                
+
+                ImGui::Unindent();
+            }
+
+            return true; // Skip default rendering
         });
 
     // ==================== PARTICLE COMPONENT ====================

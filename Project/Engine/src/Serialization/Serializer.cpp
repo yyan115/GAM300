@@ -1040,26 +1040,26 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
 }
 
 void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON) {
-    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    // typed form: tv.data = [ {type: "bool", data: true}, "GUID_string", {type: "std::string", data: "clip"}, ... ]
     if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
         const auto& d = audioJSON["data"];
-        GUID_string guidStr = d[0].GetString();
+        audioComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
+        GUID_string guidStr = d[1].GetString();  // d[1] is the GUID string
         audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-        audioComp.SetClip(d[1]["data"].GetString());
-        audioComp.SetVolume(d[2]["data"].GetFloat());
-        audioComp.SetPitch(d[3]["data"].GetFloat());
-        audioComp.SetLoop(d[4]["data"].GetBool());
-        audioComp.PlayOnAwake = d[5]["data"].GetBool();
-        audioComp.SetMute(d[6]["data"].GetBool());
-        audioComp.Priority = d[7]["data"].GetInt();
-        audioComp.SetSpatialize(d[8]["data"].GetBool());
-        audioComp.MinDistance = d[9]["data"].GetFloat();
-        audioComp.MaxDistance = d[10]["data"].GetFloat();
-        audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
-        audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
-        audioComp.IsPlaying = d[13]["data"].GetBool();
-        audioComp.IsPaused = d[14]["data"].GetBool();
-        readVec3Generic(d[15], audioComp.Position);
+		audioComp.Mute = d[2]["data"].GetBool();
+		audioComp.bypassListenerEffects = d[3]["data"].GetBool();
+		audioComp.PlayOnAwake = d[4]["data"].GetBool();
+		audioComp.Loop = d[5]["data"].GetBool();
+		audioComp.Priority = d[6]["data"].GetInt();
+		audioComp.Volume = d[7]["data"].GetFloat();
+		audioComp.Pitch = d[8]["data"].GetFloat();
+		audioComp.StereoPan = d[9]["data"].GetFloat();
+		audioComp.reverbZoneMix = d[10]["data"].GetFloat();
+		audioComp.Spatialize = d[11]["data"].GetBool();
+		audioComp.SpatialBlend = d[12]["data"].GetFloat();
+		audioComp.DopplerLevel = d[13]["data"].GetFloat();
+		audioComp.MinDistance = d[14]["data"].GetFloat();
+		audioComp.MaxDistance = d[15]["data"].GetFloat();
     }
 }
 
@@ -1067,9 +1067,9 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
-        rbComp.motionID = d[0]["data"].GetInt();
+        rbComp.motionID = d[1]["data"].GetInt();
         rbComp.motion = static_cast<Motion>(rbComp.motionID);
-        rbComp.ccd = d[1]["data"].GetBool();
+        rbComp.ccd = d[2]["data"].GetBool();
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
@@ -1084,11 +1084,11 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
         colliderComp.version = d[1]["data"].GetUint();
         colliderComp.shapeTypeID = d[2]["data"].GetInt();
-        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[3], colliderComp.boxHalfExtents);
         switch (colliderComp.shapeType)
         {
-        case ColliderShapeType::Box:
+        case ColliderShapeType::Cylinder:
             colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
             break;
         default:

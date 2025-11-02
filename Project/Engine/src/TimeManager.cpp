@@ -5,34 +5,46 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 
+// Static member initialization for fixed timestep
+static double fixedDeltaTime = 1.0 / 60.0; // Default 60 FPS physics
+static double accumulator = 0.0;
+static int frameCount = 0;
+static double fpsUpdateTimer = 0.0;
+static double currentFps = 0.0;
+
 void TimeManager::UpdateDeltaTime() {
-    //const double targetDeltaTime = 1.0 / 60.0; // cap at 60fps
 
     double currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
-    //double currentTime = glfwGetTime();
-    //double frameTime = currentTime - RunTimeVar::lastFrameTime;
-
-    //double remainingTime = targetDeltaTime - frameTime;
-
-    //Limit to 60 FPS?
-    //// Sleep only if we have at least 5 ms remaining
-    //if (remainingTime > 0.005) {
-    //    std::this_thread::sleep_for(std::chrono::milliseconds((int)((remainingTime - 0.001) * 1000)));
-    //}
-    //// Busy-wait the last few milliseconds - now handled by platform
-    //while ((platform->GetTime() - lastFrameTime) < targetDeltaTime) {}
 
     // Update deltaTime
-    currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
-    //currentTime = glfwGetTime();
     RunTimeVar::deltaTime = currentTime - RunTimeVar::lastFrameTime;
     RunTimeVar::lastFrameTime = currentTime;
-    // Swap interval handled by platform internally
+
+    // Cap delta time to (4 FPS minimum)
+    if (RunTimeVar::deltaTime > 0.25) {
+        RunTimeVar::deltaTime = 0.25;
+    }
+
+    // Accumulate time for fixed updates
+    accumulator += RunTimeVar::deltaTime;
+
+    // Update FPS counter
+    frameCount++;
+    fpsUpdateTimer += RunTimeVar::deltaTime;
+    if (fpsUpdateTimer >= 1.0) {
+        currentFps = frameCount / fpsUpdateTimer;
+        frameCount = 0;
+        fpsUpdateTimer = 0.0;
+    }
 }
 
 double TimeManager::GetDeltaTime() {
     return RunTimeVar::deltaTime;
 }
 double TimeManager::GetFps() {
-    return RunTimeVar::deltaTime > 0.0 ? 1.0 / RunTimeVar::deltaTime : 0.0;
+    return currentFps;
+}
+
+double TimeManager::GetFixedDeltaTime() {
+    return fixedDeltaTime;
 }
