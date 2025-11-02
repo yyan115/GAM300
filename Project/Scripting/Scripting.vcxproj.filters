@@ -135,9 +135,6 @@
     <ClInclude Include="include\ScriptInspector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ScriptLog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\ScriptProfiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -287,12 +284,6 @@
     <ClCompile Include="src\ScriptInspector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ScriptLog_android.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ScriptLog_win.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ScriptProfiler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -306,9 +297,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\StatePreserver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ScriptLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

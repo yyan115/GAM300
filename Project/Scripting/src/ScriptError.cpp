@@ -10,7 +10,7 @@
 // Caveat: callers must ensure it's safe to mutate the provided lua_State's stack.
 
 #include "ScriptError.h"
-#include "ScriptLog.h"
+#include "Logging.hpp"
 
 extern "C" {
 #include "lua.h"
@@ -161,7 +161,7 @@ namespace Scripting {
 
             std::string finalStr = mapped.str();
             // Also log it at error level via scripting log (if available)
-            Scripting::Log::Logf(Scripting::Log::Level::Error, "%s", finalStr.c_str());
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "%s", finalStr.c_str());
             return finalStr;
         }
 

@@ -26,7 +26,6 @@ TODO REMOVE SCRIPTING LOGGING SYSTEM IF CAN REPLACE WITH ENGINE LOADING SYSTEM
 #include "Scripting.h"
 #include "HotReloadManager.h"
 #include "ScriptFileSystem.h"
-#include "ScriptLog.h"
 
 static bool WriteFile(const std::string& path, const std::string& content) {
     std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
@@ -90,19 +89,11 @@ int main() {
         "  cpp_log('[lua] on_reload invoked — script reloaded')\n"
         "end\n";
 
-    if (!WriteFile(scriptPath, initialScript)) {
+    if (!WriteFile(scriptPath, initialScript)) 
+    {
         std::cerr << "Failed to write initial script file: " << scriptPath << "\n";
         return 1;
     }
-
-    // 2) Ensure platform logger is installed early so logs have a sink.
-#if defined(_WIN32)
-    Scripting::Log::EnsureWindowsBackend(true);
-#elif defined(__ANDROID__)
-    Scripting::Log::EnsureAndroidBackend("scripting_example");
-#else
-    // default backend (stderr) will be used if no platform helper is available
-#endif
 
     // 3) Initialize scripting runtime (main script path will be loaded at init)
     Scripting::ScriptingConfig cfg;

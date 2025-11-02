@@ -13,7 +13,7 @@
 #include "HotReloadManager.h"
 #include "ScriptFileSystem.h"
 #include "ScriptingRuntime.h"   // for IScriptFileSystem definition
-#include "ScriptLog.h"
+#include "Logging.hpp"
 
 #include <thread>
 #include <mutex>
@@ -40,7 +40,7 @@ namespace Scripting {
         bool StartInternal(const HotReloadConfig& cfg, IScriptFileSystem* fsPtr) {
             std::lock_guard<std::mutex> lk(mutex);
             if (running.load()) {
-                Log::Logf(Log::Level::Warn, "HotReloadManager::Start called while already running");
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager::Start called while already running");
                 return false;
             }
             config = cfg;
@@ -53,7 +53,7 @@ namespace Scripting {
             else {
                 ownedFs = CreateDefaultFileSystem();
                 if (!ownedFs) {
-                    Log::Logf(Log::Level::Warn, "HotReloadManager: CreateDefaultFileSystem failed");
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager: CreateDefaultFileSystem failed");
                     fs = nullptr;
                     return false;
                 }
@@ -89,7 +89,7 @@ namespace Scripting {
                 BOOL canceled = CancelSynchronousIo(workerThread.native_handle());
                 if (!canceled) {
                     // Not fatal — just log; worker thread may still wake on events or timeouts.
-                    Log::Logf(Log::Level::Warn, "HotReloadManager: CancelSynchronousIo failed (err=%u).", GetLastError());
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager: CancelSynchronousIo failed (err=", GetLastError(),"%u).");
                 }
             }
 #endif
@@ -106,12 +106,12 @@ namespace Scripting {
                 }
                 catch (...) {
                     // On platforms where join can throw (rare), log and try a fallback.
-                    Log::Logf(Log::Level::Warn, "HotReloadManager: exception while joining worker thread; attempting fallback.");
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager: exception while joining worker thread; attempting fallback.");
                     for (int i = 0; i < 100 && workerThread.joinable(); ++i) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     }
                     if (workerThread.joinable()) {
-                        Log::Logf(Log::Level::Error, "HotReloadManager: worker thread did not exit after stop request.");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "HotReloadManager: worker thread did not exit after stop request.");
                     }
                     else {
                         // if it exited during our fallback wait, nothing left to do
@@ -164,7 +164,7 @@ namespace Scripting {
                         cbCopy(ev);
                     }
                     catch (...) {
-                        Log::Logf(Log::Level::Warn, "HotReloadManager callback threw an exception");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager callback threw an exception");
                     }
                 }
             }
@@ -185,7 +185,7 @@ namespace Scripting {
         }
 
         void ThreadMain() {
-            Log::Logf(Log::Level::Info, "HotReloadManager: watcher thread started");
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "HotReloadManager: watcher thread started");
 
 #ifdef _WIN32
             // Build list of directories to watch
@@ -233,7 +233,7 @@ namespace Scripting {
                         nullptr
                     );
                     if (!ok) {
-                        Log::Logf(Log::Level::Warn, "ReadDirectoryChangesW failed for %s", dw.pathUtf8.c_str());
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "ReadDirectoryChangesW failed for ", dw.pathUtf8.c_str());
                         CloseHandle(dw.hDir);
                         dw.hDir = INVALID_HANDLE_VALUE;
                         continue;
@@ -321,7 +321,7 @@ namespace Scripting {
             }
 #endif
 
-            Log::Logf(Log::Level::Info, "HotReloadManager: watcher thread exiting");
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "HotReloadManager: watcher thread exiting");
         }
 
 #ifdef _WIN32

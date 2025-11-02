@@ -228,7 +228,8 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Scripting\include\;$(SolutionDir)\Libraries\lua\src\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Scripting\include;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Engine\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -324,7 +325,6 @@
     <ClInclude Include="include\ScriptingRuntime.h" />
     <ClInclude Include="include\ScriptingTypes.h" />
     <ClInclude Include="include\ScriptInspector.h" />
-    <ClInclude Include="include\ScriptLog.h" />
     <ClInclude Include="include\ScriptProfiler.h" />
     <ClInclude Include="include\ScriptRegistry.h" />
     <ClInclude Include="include\ScriptSerializer.h" />
@@ -682,9 +682,6 @@
     <ClCompile Include="src\ScriptFileSystem_win.cpp" />
     <ClCompile Include="src\ScriptingRuntime.cpp" />
     <ClCompile Include="src\ScriptInspector.cpp" />
-    <ClCompile Include="src\ScriptLog.cpp" />
-    <ClCompile Include="src\ScriptLog_android.cpp" />
-    <ClCompile Include="src\ScriptLog_win.cpp" />
     <ClCompile Include="src\ScriptProfiler.cpp" />
     <ClCompile Include="src\ScriptRegistry.cpp" />
     <ClCompile Include="src\ScriptSerializer.cpp" />

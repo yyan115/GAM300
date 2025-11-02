@@ -7,9 +7,8 @@
 //    calling SetBackend() before runtime initialization.
 
 #include "ScriptingRuntime.h"
-#include "ScriptLog.h"     // <<--- new include to route runtime logs through ScriptLog
 #include "ScriptError.h"
-
+#include "Logging.hpp"
 #include <cassert>
 #include <chrono>
 #include <cstring>
@@ -32,14 +31,17 @@ namespace Scripting {
         // We keep this small and stateless; the runtime will either use an injected ILogger
         // or this adapter as its "default" logger.
         struct ScriptLogAdapter : public ILogger {
-            void Info(const std::string& msg) override {
-                Scripting::Log::Logf(Scripting::Log::Level::Info, "%s", msg.c_str());
+            void Info(const std::string& msg) override 
+            {
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", msg.c_str());
             }
-            void Warn(const std::string& msg) override {
-                Scripting::Log::Logf(Scripting::Log::Level::Warn, "%s", msg.c_str());
+            void Warn(const std::string& msg) override 
+            {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "%s", msg.c_str());
             }
-            void Error(const std::string& msg) override {
-                Scripting::Log::Logf(Scripting::Log::Level::Error, "%s", msg.c_str());
+            void Error(const std::string& msg) override 
+            {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "%s", msg.c_str());
             }
         };
 
@@ -71,7 +73,7 @@ namespace Scripting {
         static int l_cpp_log(lua_State* L) {
             const char* msg = luaL_optstring(L, 1, "");
             // Use ScriptLog API to print from Lua
-            Scripting::Log::Logf(Scripting::Log::Level::Info, "%s", msg ? msg : "");
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", msg ? msg : "");
             return 0;
         }
 
@@ -128,13 +130,6 @@ namespace Scripting {
                     m_logger = &s_adapter;
                 }
             } // release lock here
-
-            // Install platform-specific logging backend early.
-#if defined(_WIN32)
-            Scripting::Log::EnsureWindowsBackend(true);
-#elif defined(__ANDROID__)
-            Scripting::Log::EnsureAndroidBackend("scripting");
-#endif
 
             // Create lua state and run scripts / bindings WITHOUT holding m_mutex.
             lua_State* newL = nullptr;

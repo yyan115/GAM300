@@ -14,7 +14,7 @@
 
 #include "ScriptFileSystem.h"
 #include "ScriptingRuntime.h" // for IScriptFileSystem
-#include "ScriptLog.h"
+#include "Logging.hpp"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -112,7 +112,7 @@ namespace Scripting {
                 HANDLE h = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                     nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
                 if (h == INVALID_HANDLE_VALUE) {
-                    Log::Logf(Log::Level::Warn, "ReadAllText: CreateFileW failed for '%s' (err=%u)", path.c_str(), GetLastError());
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "ReadAllText: CreateFileW failed for '%s' (err=%u)", path.c_str(), GetLastError());
                     return false;
                 }
 
