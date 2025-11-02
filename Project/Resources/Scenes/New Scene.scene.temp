@@ -395,8 +395,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "0033bcb2734b5e6c-000317ebe600000d",
-                        "0033bcb256e58dad-000317ec2000003f",
+                        "0037a8a26dcc7d10-00031f527c00000d",
+                        "0037a8a2715c31a3-00031f529a00003f",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -477,7 +477,7 @@
         },
         {
             "id": 2,
-            "guid": "0066e6c857b530ca-000317ecde000003",
+            "guid": "006e4dc10762df95-0003201922000001",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
@@ -625,7 +625,7 @@
         },
         {
             "id": 3,
-            "guid": "0066e6c844838fdf-000317ecde000005",
+            "guid": "006e4dc107c1d6d9-0003201922000003",
             "components": {
                 "NameComponent": {
                     "name": "TestAnimationEntity"
@@ -644,7 +644,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.100336
                                 },
                                 {
                                     "type": "float",
@@ -715,7 +715,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.100336
                                 },
                                 {
                                     "type": "float",
@@ -772,9 +772,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "0033bcb251baf0d9-000317ec0e000035",
-                        "0033bcb256e58dad-000317ec2000003f",
-                        "0056c882f33d6683-0002dbd5d0000001",
+                        "0037a8a216c4a364-00031f5292000035",
+                        "0037a8a2715c31a3-00031f529a00003f",
+                        "0037a8a214f5616b-00031f528c00002f",
                         {
                             "type": "Matrix4x4",
                             "data": [

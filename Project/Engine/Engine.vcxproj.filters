@@ -146,6 +146,14 @@
     <ClInclude Include="include\ECS\LayerComponent.hpp" />
     <ClInclude Include="include\ECS\TagManager.hpp" />
     <ClInclude Include="include\ECS\LayerManager.hpp" />
+    <ClInclude Include="include\Game AI\Brain.hpp" />
+    <ClInclude Include="include\Game AI\BrainFactory.hpp" />
+    <ClInclude Include="include\Game AI\HfsmBrain.hpp" />
+    <ClInclude Include="include\Game AI\BossBrain.hpp" />
+    <ClInclude Include="include\Game AI\GruntBrain.hpp" />
+    <ClInclude Include="include\Game AI\BrainSystems.hpp" />
+    <ClInclude Include="include\Game AI\Events.hpp" />
+    <ClInclude Include="include\Game AI\HfsmCommon.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -248,6 +256,8 @@
     <ClCompile Include="src\Graphics\Mesh Optimizer\vertexcodec.cpp" />
     <ClCompile Include="src\Graphics\Mesh Optimizer\vertexfilter.cpp" />
     <ClCompile Include="src\Graphics\Mesh Optimizer\vfetchoptimizer.cpp" />
+    <ClCompile Include="src\Game AI\BrainFactory.cpp" />
+    <ClCompile Include="src\Game AI\BrainSystems.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

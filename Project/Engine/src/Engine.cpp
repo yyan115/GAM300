@@ -16,6 +16,7 @@
 #include <Input/InputManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include "Game AI/BrainSystems.hpp"
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
@@ -578,6 +579,16 @@ bool Engine::InitializeAssets() {
 
 void Engine::Update() {
     TimeManager::UpdateDeltaTime();
+
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    static bool s_init = false;
+    if (!s_init) {
+        RunBrainInitSystem(ecs);
+        s_init = true;
+    }
+
+    RunBrainUpdateSystem(ecs, TimeManager::GetDeltaTime());
     
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
