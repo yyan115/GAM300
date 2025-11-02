@@ -178,13 +178,26 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         //apply motiontype
         rb.motion = static_cast<Motion>(rb.motionID);
 
-
         JPH::RVec3Arg pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
         JPH::QuatArg rot = JPH::Quat::sIdentity();
         JPH_ASSERT(rot.IsNormalized());
 
-        // --- Create shape if needed ---
-        if (!col.shape || rb.collider_seen_version != col.version) {
+        // --- Set proper collision layer ---
+        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+            col.layer = Layers::NON_MOVING;
+        else
+            col.layer = Layers::MOVING;
+
+        // --- Create or recreate body ---
+        if (rb.id.IsInvalid() || rb.motion_dirty || rb.collider_seen_version != col.version) {
+            // Remove existing body if it exists
+            if (!rb.id.IsInvalid()) {
+                bi.RemoveBody(rb.id);
+                bi.DestroyBody(rb.id);
+                rb.id = JPH::BodyID();
+            }
+
+            // ALWAYS create shape when creating/recreating body
             switch (col.shapeType) {
             case ColliderShapeType::Box:
                 // Apply local scale
@@ -193,7 +206,6 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                     col.boxHalfExtents.y * tr.localScale.y,
                     col.boxHalfExtents.z * tr.localScale.z
                 ));
-
                 break;
 
             case ColliderShapeType::Sphere:
@@ -209,22 +221,6 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * tr.localScale.y,
                     col.cylinderRadius * std::max(tr.localScale.x, tr.localScale.z));
                 break;
-            }
-        }
-
-        // --- Set proper collision layer ---
-        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
-            col.layer = Layers::NON_MOVING;
-        else
-            col.layer = Layers::MOVING;
-
-        // --- Create or recreate body ---
-        if (rb.id.IsInvalid() || rb.motion_dirty || rb.collider_seen_version != col.version) {
-            // Remove existing body if it exists
-            if (!rb.id.IsInvalid()) {
-                bi.RemoveBody(rb.id);
-                bi.DestroyBody(rb.id);
-                rb.id = JPH::BodyID();
             }
 
             // Map our Motion enum to JPH::EMotionType
@@ -248,8 +244,6 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
             // --- Apply gravity factor ---
             bcs.mGravityFactor = rb.gravityFactor;
-
-
 
             // Create and add the body to the physics system
             rb.id = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
@@ -279,9 +273,10 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
             rb.transform_dirty = false;
         }
-
     }
 }
+
+
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
