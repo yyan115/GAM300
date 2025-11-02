@@ -133,6 +133,25 @@ public:
      */
     static bool DrawStopButton(float buttonWidth = 0.0f);
 
+    /**
+     * @brief Get the standard label width for aligned rendering (based on font metrics)
+     * @return Calculated label width in pixels
+     */
+    static float GetLabelWidth();
+
+    /**
+     * @brief Render a slider + input field pair with dynamic alignment
+     * @param label Field label
+     * @param valuePtr Pointer to the value (int* or float*)
+     * @param min Minimum value
+     * @param max Maximum value
+     * @param isInt True for int, false for float
+     * @param labelWidth Width for the label alignment
+     * @return True if the value was modified
+     */
+    static bool DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth);
+
+
 private:
     // Helper to draw the custom highlight border
     static void DrawHighlightBorder();

@@ -620,29 +620,130 @@ void RegisterInspectorCustomRenderers() {
         });
 
     // Audio GUID
-    ReflectionRenderer::RegisterFieldRenderer("AudioComponent", "audioGUID",
-        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
-            GUID_128* guid = static_cast<GUID_128*>(ptr);
+    ReflectionRenderer::RegisterComponentRenderer("AudioComponent",
+        [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            AudioComponent& audio = *static_cast<AudioComponent*>(componentPtr);
+            const float labelWidth = EditorComponents::GetLabelWidth();
 
+            // Audio Resource field
             ImGui::Text("Audio File:");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(-1);
-
-            std::string audioPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = audioPath.empty() ? "None" : audioPath.substr(audioPath.find_last_of("/\\") + 1);
-
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            ImGui::SameLine(labelWidth);
+            std::string audioPath = AssetManager::GetInstance().GetAssetPathFromGUID(audio.audioGUID);
+            std::string displayText = audioPath.empty() ? "None (Audio File)" : audioPath.substr(audioPath.find_last_of("/\\") + 1);
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
-                    *guid = DraggedAudioGuid;
+                    audio.audioGUID = DraggedAudioGuid;
                     ImGui::EndDragDropTarget();
                     return true;
                 }
                 ImGui::EndDragDropTarget();
             }
 
-            return false;
+            ImGui::Separator();
+
+            // Output section
+            ImGui::Text("Output");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            char outputBuf[128];
+            std::snprintf(outputBuf, sizeof(outputBuf), "%s", audio.OutputAudioMixerGroup.empty() ? "None (Audio Mixer Group)" : audio.OutputAudioMixerGroup.c_str());
+            if (ImGui::InputText("##Output", outputBuf, sizeof(outputBuf))) {
+                audio.OutputAudioMixerGroup = outputBuf;
+            }
+
+            // Checkboxes (aligned with labels)
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Mute");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##Mute", &audio.Mute);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Bypass Listener Effects");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##BypassListenerEffects", &audio.bypassListenerEffects);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Play On Awake");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##PlayOnAwake", &audio.PlayOnAwake);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Loop");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##Loop", &audio.Loop);
+
+            ImGui::Separator();
+
+            // Priority (editable drag)
+            EditorComponents::DrawSliderWithInput("Priority", &audio.Priority, 0, 256, true, labelWidth);
+            // Volume (editable drag)
+            EditorComponents::DrawSliderWithInput("Volume", &audio.Volume, 0.0f, 1.0f, false, labelWidth);
+            // Pitch (editable drag)
+            EditorComponents::DrawSliderWithInput("Pitch", &audio.Pitch, 0.1f, 3.0f, false, labelWidth);
+            // Stereo Pan (editable drag)
+            EditorComponents::DrawSliderWithInput("Stereo Pan", &audio.StereoPan, -1.0f, 1.0f, false, labelWidth);	
+            // Reverb Zone Mix (editable drag)
+            EditorComponents::DrawSliderWithInput("Reverb Zone Mix", &audio.reverbZoneMix, 0.0f, 1.0f, false, labelWidth);
+
+            // 3D Sound Settings (collapsible)
+            if (ImGui::CollapsingHeader("3D Sound Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Indent();
+
+                ImGui::Text("Spatialize");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::Checkbox("##Spatialize", &audio.Spatialize);
+
+                // Spatial Blend (editable drag)
+                ImGui::Text("Spatial Blend");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f")) {
+                    audio.SetSpatialBlend(audio.SpatialBlend);
+                }
+
+                if (audio.Spatialize) {
+                    // Doppler Level (editable drag)
+                    EditorComponents::DrawSliderWithInput("Doppler Level", &audio.DopplerLevel, 0.0f, 5.0f, false, labelWidth);
+
+                    //// Spread (placeholder, editable drag)
+                    //static float spread = 0.0f;
+                    //ImGui::Text("Spread");
+                    //ImGui::SameLine(labelWidth);
+                    //ImGui::SetNextItemWidth(-1);
+                    //ImGui::DragInt("##Spread", reinterpret_cast<int*>(&spread), 1.0f, 0, 360);
+
+                    //// Volume Rolloff dropdown
+                    //ImGui::Text("Volume Rolloff");
+                    //ImGui::SameLine(labelWidth);
+                    //ImGui::SetNextItemWidth(-1);
+                    //const char* rolloffModes[] = { "Logarithmic Rolloff", "Linear Rolloff", "Custom Rolloff" };
+                    //static int currentRolloff = 0;
+                    //EditorComponents::PushComboColors();
+                    //ImGui::Combo("##VolumeRolloff", &currentRolloff, rolloffModes, 3);
+                    //EditorComponents::PopComboColors();
+
+                    // Min Distance (editable drag)
+                    ImGui::Text("Min Distance");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    ImGui::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f");
+
+                    // Max Distance (editable drag)
+                    ImGui::Text("Max Distance");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    ImGui::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
+                }
+                
+
+                ImGui::Unindent();
+            }
+
+            return true; // Skip default rendering
         });
 
     // ==================== PARTICLE COMPONENT ====================

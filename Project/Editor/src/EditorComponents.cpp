@@ -153,3 +153,35 @@ bool EditorComponents::DrawStopButton(float buttonWidth) {
     ImGui::PopStyleColor(3);
     return clicked;
 }
+
+float EditorComponents::GetLabelWidth() {
+    const float charWidth = ImGui::CalcTextSize("A").x;
+    return charWidth * 18.0f;  // Approximate width for 18 characters (adjust as needed)
+}
+
+bool EditorComponents::DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth) {
+    ImGui::Text(label);
+    ImGui::SameLine(labelWidth);
+    float remainingWidth = ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x;
+    float sliderWidth = remainingWidth * 0.7f;  // 70% for slider
+    float inputWidth = remainingWidth * 0.3f;   // 30% for input
+    ImGui::SetNextItemWidth(sliderWidth);
+    std::string sliderId = "##" + std::string(label) + "Slider";
+    std::string inputId = "##" + std::string(label) + "Input";
+    bool modified = false;
+    if (isInt) {
+        int* value = static_cast<int*>(valuePtr);
+        modified = ImGui::SliderInt(sliderId.c_str(), value, static_cast<int>(min), static_cast<int>(max), "");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(inputWidth);
+        modified |= ImGui::InputInt(inputId.c_str(), value, 0, 0);
+    }
+    else {
+        float* value = static_cast<float*>(valuePtr);
+        modified = ImGui::SliderFloat(sliderId.c_str(), value, min, max, "");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(inputWidth);
+        modified |= ImGui::InputFloat(inputId.c_str(), value, 0.0f, 0.0f, "%.2f");
+    }
+    return modified;
+}
