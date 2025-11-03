@@ -5,6 +5,8 @@
 #include "Engine.h"
 #include "RunTimeVar.hpp"
 #include "EditorComponents.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -112,6 +114,26 @@ void GamePanel::OnImGuiRender() {
             SceneRenderer::EndGameRender();
         }
 
+        // Check if there are any active cameras in the scene
+        bool hasActiveCamera = false;
+        try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+            Entity activeCameraEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+
+            if (activeCameraEntity != UINT32_MAX) {
+                // Also check if the camera's entity is active (not just the camera component)
+                if (ecsManager.HasComponent<ActiveComponent>(activeCameraEntity)) {
+                    auto& activeComp = ecsManager.GetComponent<ActiveComponent>(activeCameraEntity);
+                    hasActiveCamera = activeComp.isActive;
+                } else {
+                    // No ActiveComponent means entity is active by default
+                    hasActiveCamera = true;
+                }
+            }
+        } catch (...) {
+            hasActiveCamera = false;
+        }
+
         // Get the texture from Game framebuffer (not Scene framebuffer)
         unsigned int sceneTexture = SceneRenderer::GetGameTexture();
         if (sceneTexture != 0) {
@@ -161,6 +183,27 @@ void GamePanel::OnImGuiRender() {
             ImVec2 pos = ImGui::GetItemRectMin();
             ImVec2 pos_max = ImGui::GetItemRectMax();
             draw_list->AddRect(pos, pos_max, IM_COL32(40, 40, 40, 255));
+
+            // Overlay "No cameras" message if no active camera
+            if (!hasActiveCamera) {
+                ImVec2 center = ImVec2((pos.x + pos_max.x) * 0.5f, (pos.y + pos_max.y) * 0.5f);
+
+                // Draw pure black overlay (fully opaque)
+                draw_list->AddRectFilled(pos, pos_max, IM_COL32(0, 0, 0, 255));
+
+                // Draw warning message
+                const char* msg1 = "No cameras rendering";
+                const char* msg2 = "Add a Camera component to an entity";
+
+                ImVec2 textSize1 = ImGui::CalcTextSize(msg1);
+                ImVec2 textSize2 = ImGui::CalcTextSize(msg2);
+
+                ImVec2 textPos1 = ImVec2(center.x - textSize1.x * 0.5f, center.y - 20.0f);
+                ImVec2 textPos2 = ImVec2(center.x - textSize2.x * 0.5f, center.y + 5.0f);
+
+                draw_list->AddText(textPos1, IM_COL32(255, 255, 255, 255), msg1);
+                draw_list->AddText(textPos2, IM_COL32(180, 180, 180, 255), msg2);
+            }
         }
         else {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "Game View - Framebuffer not ready");

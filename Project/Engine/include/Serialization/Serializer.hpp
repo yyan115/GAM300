@@ -15,9 +15,13 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 #include <Sound/AudioComponent.hpp>
+#include <Sound/AudioListenerComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
+#include <Graphics/Camera/CameraComponent.hpp>
+#include <Animation/AnimationComponent.hpp>
+#include <ECS/ActiveComponent.hpp>
 
 class Serializer {
 public:
@@ -36,12 +40,15 @@ public:
 	static void DeserializeSpotLightComponent(SpotLightComponent& spotLightComp, const rapidjson::Value& spotLightJSON);
 	static void DeserializePointLightComponent(PointLightComponent& pointLightComp, const rapidjson::Value& pointLightJSON);
 	static void DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON);
+	static void DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON);
 	static void DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON);
 	static void DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON);
 	static void DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON);
 	static void DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON);
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
+	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
+	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
 
 private:
 	Serializer() = delete;

@@ -40,6 +40,7 @@
     <ClCompile Include="src\EditorState.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />
     <ClCompile Include="src\EditorInputManager.cpp" />
+    <ClCompile Include="src\InspectorCustomRenderers.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
     <ClCompile Include="src\Panels\AssetInspector.cpp" />
     <ClCompile Include="src\Panels\MaterialInspector.cpp" />
@@ -56,6 +57,7 @@
     <ClCompile Include="src\Panels\PlayControlPanel.cpp" />
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
     <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
+    <ClCompile Include="src\ReflectionRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\EditorComponents.hpp" />
@@ -77,6 +79,7 @@
     <ClInclude Include="include\Panels\SceneHierarchyPanel.hpp" />
     <ClInclude Include="include\Panels\PlayControlPanel.hpp" />
     <ClInclude Include="include\Panels\TagsLayersPanel.hpp" />
+    <ClInclude Include="include\ReflectionRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">
@@ -270,7 +273,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -286,7 +289,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;EDITOR;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions);HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -309,7 +312,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -327,13 +330,13 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Build\$(Configuration);$(SolutionDir)Engine\vcpkg_installed\x64-windows\lib;$(SolutionDir)Libraries\GLFW\lib-vc2022;$(SolutionDir)Libraries\assimp\lib\x64;$(SolutionDir)Libraries\ImGui</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);Engine.lib;Game.lib;glfw3.lib;assimp-vc143-mt.lib;opengl32.lib;imgui.lib;Jolt.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

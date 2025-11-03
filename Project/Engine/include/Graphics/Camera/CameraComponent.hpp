@@ -12,6 +12,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include <glm/glm.hpp>
+#include "Reflection/ReflectionBase.hpp"
 
 enum class ProjectionType {
     PERSPECTIVE,
@@ -20,7 +21,10 @@ enum class ProjectionType {
 
 class CameraComponent {
 public:
-    bool isActive = false;
+    REFL_SERIALIZABLE
+
+    bool enabled = true;      // Component enabled state (can be toggled in inspector)
+    bool isActive = false;    // Which camera is currently rendering (managed by CameraSystem)
     int priority = 0;
 
     glm::vec3 target = glm::vec3(0.0f, 0.0f, -1.0f);

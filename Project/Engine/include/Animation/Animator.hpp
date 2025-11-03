@@ -2,7 +2,7 @@
 #include <pch.h>
 #include <Animation/Animation.hpp>
 
-class Animator
+class ENGINE_API Animator
 {
 public:
 	Animator(Animation* animation);

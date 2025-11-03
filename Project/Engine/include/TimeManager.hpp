@@ -7,4 +7,5 @@ public:
 	static void UpdateDeltaTime();
 	static double GetDeltaTime();
 	static double GetFps();
+	static double GetFixedDeltaTime();
 };

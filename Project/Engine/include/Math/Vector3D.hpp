@@ -14,6 +14,7 @@
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
 #include "glm/vec3.hpp"
+#include "Physics/JoltInclude.hpp"
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -111,3 +112,14 @@ Vector3D operator*(float scalar, Vector3D& v);
 
 // Display Vector
 std::ostream& operator<<(std::ostream& os, const Vector3D& v);
+
+inline JPH::Vec3 ToJoltVec3(const Vector3D& v)
+{
+	return JPH::Vec3(v.x, v.y, v.z);
+}
+
+// Converts Jolt Vec3 to your Vector3D
+inline Vector3D FromJoltVec3(const JPH::Vec3& v)
+{
+	return Vector3D(v.GetX(), v.GetY(), v.GetZ());
+}

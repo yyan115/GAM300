@@ -1,6 +1,7 @@
 #pragma once
 #include "Physics/JoltInclude.hpp"
 #include "Reflection/ReflectionBase.hpp"
+#include "Math/Vector3D.hpp"
 
 enum class Motion : int { 
 	Static = 0, 
@@ -8,10 +9,30 @@ enum class Motion : int {
 	Dynamic 
 };
 
+struct PhysicsMaterial {
+	std::string name = "Default";
+	float friction = 0.6f;
+};
+
+
+
 struct RigidBodyComponent {
 	REFL_SERIALIZABLE
+	bool enabled = true;          // Component enabled state (can be toggled in inspector)
 	int motionID;
-	bool ccd = false; // continuous collision detection
+
+	bool ccd		= false; // continuous collision detection
+	bool isTrigger	= false;
+
+	float gravityFactor = 1.0f;
+
+	Vector3D angularVel = { 0.0f,0.0f,0.0f };
+	Vector3D linearVel = { 0.0f, 0.0f,0.0f };
+
+	float linearDamping = 0.0f;
+	float angularDamping = 0.95f;
+
+
 
 	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static

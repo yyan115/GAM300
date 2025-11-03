@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a237573dff-00031f5288000029",
+        "guid": "001324b053e77f3e-00030dd500000027",
         "source": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.dds",
-        "last_compiled": "2025-10-31 10:40:13.8930570"
+        "last_compiled": "2025-11-03 08:03:20.0271136"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -2,6 +2,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include <Transform/TransformComponent.hpp>
 #include <Math/Vector3D.hpp>
 #include <Graphics/Model/ModelSystem.hpp>
@@ -12,6 +13,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
+#include "Sound/AudioListenerComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
@@ -40,6 +42,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<TextRenderComponent>();
 	RegisterComponent<DebugDrawComponent>();
 	RegisterComponent<NameComponent>();
+	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
 	RegisterComponent<LightComponent>();
@@ -49,6 +52,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ParentComponent>();
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
+	RegisterComponent<AudioListenerComponent>();
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<AnimationComponent>();
@@ -124,6 +128,7 @@ void ECSManager::Initialize() {
 	{
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
+		signature.set(GetComponentID<AudioListenerComponent>());
 		SetSystemSignature<AudioSystem>(signature);
 	}
 
@@ -158,6 +163,7 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.AddComponent<NameComponent>(entity, NameComponent("Entity_" + std::to_string(entity)));
+	ecsManager.AddComponent<ActiveComponent>(entity, ActiveComponent(true)); // Entity active by default
 
 	Transform defaultTransform;
 	defaultTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);

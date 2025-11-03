@@ -41,6 +41,7 @@
     <ClInclude Include="include\Animation\Animator.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
+    <ClInclude Include="include\ECS\ActiveComponent.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
     <ClInclude Include="include\Game AI\BossBrain.hpp" />
     <ClInclude Include="include\Game AI\Brain.hpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="include\Physics\CollisionFilters.hpp" />
     <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
     <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
@@ -128,6 +130,7 @@
     <ClInclude Include="include\Serialization\Serializer.hpp" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
@@ -190,6 +193,7 @@
     <ClCompile Include="src\Animation\Animator.cpp" />
     <ClCompile Include="src\Game AI\BrainFactory.cpp" />
     <ClCompile Include="src\Game AI\BrainSystems.cpp" />
+    <ClCompile Include="src\ECS\ActiveComponent.cpp" />
     <ClCompile Include="src\Graphics\Bone.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
     <ClCompile Include="src\ECS\NameComponent.cpp" />
@@ -197,6 +201,7 @@
     <ClCompile Include="src\ECS\LayerComponent.cpp" />
     <ClCompile Include="src\ECS\TagManager.cpp" />
     <ClCompile Include="src\ECS\LayerManager.cpp" />
+    <ClCompile Include="src\Graphics\Camera\CameraComponent.cpp" />
     <ClCompile Include="src\Graphics\Camera\CameraSystem.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawComponent.cpp" />
     <ClCompile Include="src\Graphics\DebugDraw\DebugDrawSystem.cpp" />
@@ -282,6 +287,7 @@
     </ClCompile>
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />

@@ -110,6 +110,48 @@ public:
      */
     static void PopComboColors();
 
+    /**
+     * @brief Draws a Play button with green styling when active
+     * @param isPlaying Whether playback is currently active
+     * @param buttonWidth Width of the button
+     * @return True if button was clicked
+     */
+    static bool DrawPlayButton(bool isPlaying, float buttonWidth);
+
+    /**
+     * @brief Draws a Pause button with orange styling when paused
+     * @param isPaused Whether playback is currently paused
+     * @param buttonWidth Width of the button
+     * @return True if button was clicked
+     */
+    static bool DrawPauseButton(bool isPaused, float buttonWidth);
+
+    /**
+     * @brief Draws a Stop button with red styling
+     * @param buttonWidth Width of the button (0 = full width)
+     * @return True if button was clicked
+     */
+    static bool DrawStopButton(float buttonWidth = 0.0f);
+
+    /**
+     * @brief Get the standard label width for aligned rendering (based on font metrics)
+     * @return Calculated label width in pixels
+     */
+    static float GetLabelWidth();
+
+    /**
+     * @brief Render a slider + input field pair with dynamic alignment
+     * @param label Field label
+     * @param valuePtr Pointer to the value (int* or float*)
+     * @param min Minimum value
+     * @param max Maximum value
+     * @param isInt True for int, false for float
+     * @param labelWidth Width for the label alignment
+     * @return True if the value was modified
+     */
+    static bool DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth);
+
+
 private:
     // Helper to draw the custom highlight border
     static void DrawHighlightBorder();

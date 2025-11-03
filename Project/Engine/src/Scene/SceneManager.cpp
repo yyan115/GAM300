@@ -3,6 +3,7 @@
 #include <Scene/SceneManager.hpp>
 #include <Scene/SceneInstance.hpp>
 #include <filesystem>
+#include <fstream>
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <ECS/NameComponent.hpp>
@@ -65,9 +66,14 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
-    
+
 	// Initialize the new scene.
 	currentScene->Initialize();
+
+	// Save this as the last opened scene (for editor persistence)
+#ifdef EDITOR
+	SaveLastOpenedScenePath(scenePath);
+#endif
 #else
 #pragma region NEW
     // OPENS FILE DIALOG TO OPEN A SPECIFIC SCENE, TO BE IMPLEMENTED M2.
@@ -147,7 +153,7 @@ void SceneManager::LoadScene(const std::string& scenePath) {
         if (coInitialized) CoUninitialize();
     }
 #else
-    // Mobile / other: safe fallback — do not attempt desktop dialogs
+    // Mobile / other: safe fallback ï¿½ do not attempt desktop dialogs
     chosenPath = "scene.json";
     ENGINE_LOG_INFO(std::string("[LoadScene] Non-Windows platform; using fallback filename: ") + chosenPath);
 #endif
@@ -296,7 +302,7 @@ void SceneManager::SaveScene()
 //                // If user cancelled, HRESULT == HRESULT_FROM_WIN32(ERROR_CANCELLED)
 //                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
 //                {
-//                    // User cancelled the save dialog — do nothing.
+//                    // User cancelled the save dialog ï¿½ do nothing.
 //                    pFileSave->Release();
 //                    if (coInitialized) CoUninitialize();
 //                    return;
@@ -348,7 +354,7 @@ void SceneManager::SaveScene()
 //#else
 //    // Non-Windows (mobile / other): DO NOT call any OS desktop dialogs.
 //    // Fallback to a safe default filename. Serializer has its own fallback behavior
-//    // for directory creation — it will try to write to cwd if needed.
+//    // for directory creation ï¿½ it will try to write to cwd if needed.
 //    targetPath = "scene.json";
 //    ENGINE_LOG_INFO("[SaveScene] Non-Windows platform; using fallback filename: " + targetPath);
 //#endif
@@ -405,4 +411,57 @@ void SceneManager::ReloadTempScene() {
 
 std::string SceneManager::GetSceneName() const {
 	return currentSceneName;
+}
+
+void SceneManager::UpdateScenePath(const std::string& oldPath, const std::string& newPath) {
+	if (currentScenePath == oldPath) {
+		currentScenePath = newPath;
+		std::filesystem::path p(newPath);
+		currentSceneName = p.stem().generic_string();
+
+		SaveLastOpenedScenePath(newPath);
+
+		ENGINE_LOG_INFO("[SceneManager] Updated scene path from " + oldPath + " to " + newPath);
+	}
+}
+
+void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
+	try {
+		std::ofstream file("last_scene.txt");
+		if (file.is_open()) {
+			file << scenePath;
+			file.close();
+			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path: " + scenePath);
+		}
+		else {
+			ENGINE_LOG_WARN("[SceneManager] Failed to save last opened scene path");
+		}
+	}
+	catch (const std::exception& ex) {
+		ENGINE_LOG_WARN(std::string("[SceneManager] Exception saving last scene path: ") + ex.what());
+	}
+}
+
+std::string SceneManager::LoadLastOpenedScenePath() {
+	try {
+		std::ifstream file("last_scene.txt");
+		if (file.is_open()) {
+			std::string scenePath;
+			std::getline(file, scenePath);
+			file.close();
+			if (!scenePath.empty() && std::filesystem::exists(scenePath)) {
+				ENGINE_LOG_INFO("[SceneManager] Loaded last opened scene path: " + scenePath);
+				return scenePath;
+			}
+			else if (!scenePath.empty()) {
+				ENGINE_LOG_WARN("[SceneManager] Last opened scene no longer exists: " + scenePath);
+			}
+		}
+	}
+	catch (const std::exception& ex) {
+		ENGINE_LOG_WARN(std::string("[SceneManager] Exception loading last scene path: ") + ex.what());
+	}
+
+	// Return default scene if no saved path or file doesn't exist
+	return "";
 }

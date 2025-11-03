@@ -88,8 +88,21 @@ private:
 
 	static void CreateEditorTheme();
 
+	/**
+	 * @brief Opens a file dialog to select a scene file.
+	 * @return The selected file path, or empty string if cancelled.
+	 */
+	static std::string OpenSceneFileDialog();
+
+	static void HandleKeyboardShortcuts();
+	static void ShowNotification(const std::string& message, float duration = 2.0f);
+	static void RenderNotification();
+
 	static std::unique_ptr<PanelManager> panelManager;
 	static bool dockspaceInitialized;
 	static Entity selectedEntity;
 	static GUID_128 selectedAsset;
+
+	static std::string notificationMessage;
+	static float notificationTimer;
 };

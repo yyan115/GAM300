@@ -8,9 +8,11 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
+#include <Graphics/Camera/CameraComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
+#include <Physics/PhysicsSystem.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
 #include <Graphics/GraphicsManager.hpp>
@@ -48,9 +50,12 @@ extern std::string DraggedFontPath;
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
-#include <Sound/AudioComponent.hpp>
+#include "Sound/AudioComponent.hpp"
+#include "Sound/AudioListenerComponent.hpp"
+#include <Animation/AnimationComponent.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
+#include "ReflectionRenderer.hpp"
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
 template <typename T>
@@ -59,16 +64,16 @@ struct has_override_flag<T, std::void_t<decltype(std::declval<T&>().overrideFrom
 template <typename T>
 static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const char* id_suffix = "")
 {
-    if constexpr (has_override_flag<T>::value) {
-        auto& c = ecs.GetComponent<T>(e);
-        bool b = c.overrideFromPrefab;
-        std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
-        if (ImGui::Checkbox(label.c_str(), &b)) {
-            c.overrideFromPrefab = b;
-        }
-        ImGui::SameLine();
-        ImGui::TextDisabled("(Instance)");
-    }
+	if constexpr (has_override_flag<T>::value) {
+		auto& c = ecs.GetComponent<T>(e);
+		bool b = c.overrideFromPrefab;
+		std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
+		if (ImGui::Checkbox(label.c_str(), &b)) {
+			c.overrideFromPrefab = b;
+		}
+		ImGui::SameLine();
+		ImGui::TextDisabled("(Instance)");
+	}
 }
 
 static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
@@ -78,9 +83,174 @@ static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
 
 InspectorPanel::InspectorPanel()
 	: EditorPanel("Inspector", true) {
+	// Register custom field renderers for special cases
+	static bool renderersRegistered = false;
+	if (!renderersRegistered) {
+		RegisterInspectorCustomRenderers();
+		renderersRegistered = true;
+	}
 }
 
-void InspectorPanel::OnImGuiRender() {
+void InspectorPanel::DrawComponentGeneric(void* componentPtr, const char* componentTypeName, Entity entity) {
+	// Get type descriptor from reflection system
+	auto& lookup = TypeDescriptor::type_descriptor_lookup();
+	auto it = lookup.find(componentTypeName);
+	if (it == lookup.end()) {
+		ImGui::TextDisabled("Component not reflected: %s", componentTypeName);
+		return;
+	}
+
+	TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+	if (!typeDesc) {
+		ImGui::TextDisabled("Not a struct type: %s", componentTypeName);
+		return;
+	}
+
+	// Render using reflection
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+	ImGui::PushID(componentPtr);
+	try {
+		ReflectionRenderer::RenderComponent(componentPtr, typeDesc, entity, ecs);
+	} catch (const std::exception& e) {
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error rendering component: %s", e.what());
+	}
+	ImGui::PopID();
+}
+
+void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	// Component info structure for generic rendering
+	struct ComponentInfo {
+		const char* displayName;
+		const char* typeName;
+		std::function<void*()> getComponent;
+		std::function<bool()> hasComponent;
+	};
+
+	// Define all components that can be rendered via reflection
+	std::vector<ComponentInfo> components = {
+		// Name component (rendered at top, before other components)
+		{"Name", "NameComponent",
+			[&]() { return ecs.HasComponent<NameComponent>(entity) ?
+				(void*)&ecs.GetComponent<NameComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<NameComponent>(entity); }},
+
+		// Tag component (rendered with Name on same line)
+		{"Tag", "TagComponent",
+			[&]() { return ecs.HasComponent<TagComponent>(entity) ?
+				(void*)&ecs.GetComponent<TagComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<TagComponent>(entity); }},
+
+		// Layer component (rendered with Tag on same line)
+		{"Layer", "LayerComponent",
+			[&]() { return ecs.HasComponent<LayerComponent>(entity) ?
+				(void*)&ecs.GetComponent<LayerComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<LayerComponent>(entity); }},
+
+		// Transform (special handling via custom renderer for TransformSystem)
+		{"Transform", "Transform",
+			[&]() { return ecs.HasComponent<Transform>(entity) ?
+				(void*)&ecs.GetComponent<Transform>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<Transform>(entity); }},
+
+		// Model Renderer (special handling for drag-drop in custom renderer)
+		{"Model Renderer", "ModelRenderComponent",
+			[&]() { return ecs.HasComponent<ModelRenderComponent>(entity) ?
+				(void*)&ecs.GetComponent<ModelRenderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ModelRenderComponent>(entity); }},
+
+		// Render components
+		{"Sprite Renderer", "SpriteRenderComponent",
+			[&]() { return ecs.HasComponent<SpriteRenderComponent>(entity) ?
+				(void*)&ecs.GetComponent<SpriteRenderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<SpriteRenderComponent>(entity); }},
+
+		{"Text Renderer", "TextRenderComponent",
+			[&]() { return ecs.HasComponent<TextRenderComponent>(entity) ?
+				(void*)&ecs.GetComponent<TextRenderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<TextRenderComponent>(entity); }},
+
+		{"Particle System", "ParticleComponent",
+			[&]() { return ecs.HasComponent<ParticleComponent>(entity) ?
+				(void*)&ecs.GetComponent<ParticleComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ParticleComponent>(entity); }},
+
+		// Audio component
+		{"Audio Source", "AudioComponent",
+			[&]() { return ecs.HasComponent<AudioComponent>(entity) ?
+				(void*)&ecs.GetComponent<AudioComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AudioComponent>(entity); }},
+
+		{"Audio Listener", "AudioListenerComponent",
+			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity) ?
+				(void*)&ecs.GetComponent<AudioListenerComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity); }},
+
+		// Light components
+		{"Directional Light", "DirectionalLightComponent",
+			[&]() { return ecs.HasComponent<DirectionalLightComponent>(entity) ?
+				(void*)&ecs.GetComponent<DirectionalLightComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<DirectionalLightComponent>(entity); }},
+
+		{"Point Light", "PointLightComponent",
+			[&]() { return ecs.HasComponent<PointLightComponent>(entity) ?
+				(void*)&ecs.GetComponent<PointLightComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<PointLightComponent>(entity); }},
+
+		{"Spot Light", "SpotLightComponent",
+			[&]() { return ecs.HasComponent<SpotLightComponent>(entity) ?
+				(void*)&ecs.GetComponent<SpotLightComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<SpotLightComponent>(entity); }},
+
+		// Physics components
+		{"Collider", "ColliderComponent",
+			[&]() { return ecs.HasComponent<ColliderComponent>(entity) ?
+				(void*)&ecs.GetComponent<ColliderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ColliderComponent>(entity); }},
+
+		{"Rigid Body", "RigidBodyComponent",
+			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity) ?
+				(void*)&ecs.GetComponent<RigidBodyComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity); }},
+
+		// Camera component
+		{"Camera", "CameraComponent",
+			[&]() { return ecs.HasComponent<CameraComponent>(entity) ?
+				(void*)&ecs.GetComponent<CameraComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<CameraComponent>(entity); }},
+
+		{"Animation Component", "AnimationComponent",
+			[&]() { return ecs.HasComponent<AnimationComponent>(entity) ?
+				(void*)&ecs.GetComponent<AnimationComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AnimationComponent>(entity); }},
+	};
+
+	// Render each component that exists
+	for (const auto& info : components) {
+		if (!info.hasComponent()) continue;
+
+		void* componentPtr = info.getComponent();
+		if (!componentPtr) continue;
+
+		// Special components (Name, Tag, Layer) don't use collapsing headers
+		bool isSpecialComponent = (std::string(info.typeName) == "NameComponent" ||
+								   std::string(info.typeName) == "TagComponent" ||
+								   std::string(info.typeName) == "LayerComponent");
+
+		if (isSpecialComponent) {
+			// Render directly without collapsing header
+			DrawComponentGeneric(componentPtr, info.typeName, entity);
+		} else {
+			// Normal components get collapsing header
+			if (DrawComponentHeaderWithRemoval(info.displayName, entity, info.typeName)) {
+				DrawComponentGeneric(componentPtr, info.typeName, entity);
+			}
+		}
+	}
+}
+
+  void InspectorPanel::OnImGuiRender() {
 	
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_INSPECTOR);
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_INSPECTOR);
@@ -152,7 +322,7 @@ void InspectorPanel::OnImGuiRender() {
 				ImGui::Text("No object selected");
 
 				// Lock button on the same line
-				ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+				ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 				if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 					inspectorLocked = !inspectorLocked;
 					if (inspectorLocked) {
@@ -186,7 +356,7 @@ void InspectorPanel::OnImGuiRender() {
 					ImGui::Text("Entity ID: %u", displayEntity);
 
 					// Lock button on the same line
-					ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+					ImGui::SameLine(ImGui::GetWindowWidth() - 42);
 					if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 						inspectorLocked = !inspectorLocked;
 						if (inspectorLocked) {
@@ -209,177 +379,17 @@ void InspectorPanel::OnImGuiRender() {
 					}
 					ImGui::Separator();
 
-					// --- Name component ---
-					if (ecsManager.HasComponent<NameComponent>(displayEntity)) {
-						auto& nc = ecsManager.GetComponent<NameComponent>(displayEntity);
-						const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
+					// All components (Name, Tag, Layer, Transform, etc.) are now rendered via reflection
+					// See DrawComponentsViaReflection() which uses custom renderers for special UI
 
-						// Only instances get the toggle
-						if (isInstance) {
-							// your helper already checks has_override_flag
-							DrawOverrideToggleIfPresent<NameComponent>(ecsManager, displayEntity, "Override From Prefab (Instance)");
-						}
-
-						bool followPrefab = false;
-						if (isInstance) {
-							if constexpr (has_override_flag<NameComponent>::value)
-								followPrefab = !nc.overrideFromPrefab;
-						}
-
-						ImGui::BeginDisabled(followPrefab);
-						{
-							char buf[128] = {};
-							std::snprintf(buf, sizeof(buf), "%s", nc.name.c_str());
-							if (ImGui::InputText("Name", buf, sizeof(buf))) nc.name = buf;
-						}
-						ImGui::EndDisabled();
-
-						// Tag and Layer on the same line
-						if (ecsManager.HasComponent<TagComponent>(displayEntity) && ecsManager.HasComponent<LayerComponent>(displayEntity)) {
-							auto& tc = ecsManager.GetComponent<TagComponent>(displayEntity);
-							auto& lc = ecsManager.GetComponent<LayerComponent>(displayEntity);
-							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
-
-							bool followPrefabTag = false;
-							bool followPrefabLayer = false;
-							if (isInstance) {
-								if constexpr (has_override_flag<TagComponent>::value)
-									followPrefabTag = !tc.overrideFromPrefab;
-								if constexpr (has_override_flag<LayerComponent>::value)
-									followPrefabLayer = !lc.overrideFromPrefab;
-							}
-
-							// Tag dropdown
-							ImGui::BeginDisabled(followPrefabTag);
-							{
-								ImGui::Text("Tag");
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(120.0f);
-								DrawTagComponent(displayEntity);
-							}
-							ImGui::EndDisabled();
-
-							ImGui::SameLine();
-
-							// Layer dropdown
-							ImGui::BeginDisabled(followPrefabLayer);
-							{
-								ImGui::Text("Layer");
-								ImGui::SameLine();
-								ImGui::SetNextItemWidth(120.0f);
-								DrawLayerComponent(displayEntity);
-							}
-							ImGui::EndDisabled();
-						}
-
-						ImGui::Separator();
-					}
-
-					// --- Transform component ---
-					if (ecsManager.HasComponent<Transform>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Transform", displayEntity, "TransformComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-							auto& t = ecsManager.GetComponent<Transform>(displayEntity);
-							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
-
-							// Only instances get the toggle
-							if (isInstance) {
-								DrawOverrideToggleIfPresent<Transform>(ecsManager, displayEntity, "Override From Prefab (Instance)");
-							}
-
-							bool followPrefab = false;
-							if (isInstance) {
-								if constexpr (has_override_flag<Transform>::value)
-									followPrefab = !t.overrideFromPrefab;
-							}
-
-							ImGui::BeginDisabled(followPrefab);
-							ImGui::DragFloat3("Position", &t.localPosition.x, 0.01f);
-							ImGui::DragFloat3("Rotation", &t.localRotation.x, 0.5f);
-							ImGui::DragFloat3("Scale", &t.localScale.x, 0.01f);
-							t.isDirty = true;
-							ImGui::EndDisabled();
-
-							//ImGui::TreePop();
-							ImGui::Separator();
-						}
-					}
-
-					// --- Model Renderer ---
-					if (ecsManager.HasComponent<ModelRenderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Model Renderer", displayEntity, "ModelRenderComponent",
-							ImGuiTreeNodeFlags_DefaultOpen))
-						{
-							auto& m = ecsManager.GetComponent<ModelRenderComponent>(displayEntity);
-							const bool isInstance = IsPrefabInstance(ecsManager, displayEntity);
-
-							// Only prefab *instances* get the override toggle
-							if (isInstance) {
-								DrawOverrideToggleIfPresent<ModelRenderComponent>(
-									ecsManager, displayEntity, "Override From Prefab (Instance)");
-							}
-
-							bool followPrefab = false;
-							if (isInstance) {
-								if constexpr (has_override_flag<ModelRenderComponent>::value) {
-									followPrefab = !m.overrideFromPrefab;   // disabled when following prefab
-								}
-							}
-
-							ImGui::BeginDisabled(followPrefab);
-							{
-								DrawModelRenderComponent(displayEntity);
-							}
-							ImGui::EndDisabled();
-
-							//ImGui::TreePop();
-							ImGui::Separator();
-						}
-					}
-
-					// Draw SpriteRenderComponent if it exists
-					if (ecsManager.HasComponent<SpriteRenderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Sprite Renderer", displayEntity, "SpriteRenderComponent")) {
-							DrawSpriteRenderComponent(displayEntity);
-						}
-					}
-
-					// Draw TextRenderComponent if it exists
-					if (ecsManager.HasComponent<TextRenderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Text Renderer", displayEntity, "TextRenderComponent")) {
-							DrawTextRenderComponent(displayEntity);
-						}
-					}
-
-					// Draw ParticleComponent if it exists
-					if (ecsManager.HasComponent<ParticleComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Particle System", displayEntity, "ParticleComponent")) {
-							DrawParticleComponent(displayEntity);
-						}
-					}
-
-					// Draw AudioComponent if present
-					if (ecsManager.HasComponent<AudioComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Audio", displayEntity, "AudioComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
-							DrawAudioComponent(displayEntity);
-						}
-					}
-
-					// Draw Light Components if present
-					DrawLightComponents(displayEntity);
-
-					// Draw Collider Component if present
-					if (ecsManager.HasComponent<ColliderComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("Collider", displayEntity, "ColliderComponent")) {
-							DrawColliderComponent(displayEntity);
-						}
-					}
-
-					// Draw RigidBody Component if present
-					if (ecsManager.HasComponent<RigidBodyComponent>(displayEntity)) {
-						if (DrawComponentHeaderWithRemoval("RigidBody", displayEntity, "RigidBodyComponent")) {
-							DrawRigidBodyComponent(displayEntity);
-						}
-					}
+					// ===================================================================
+					// COMPONENT RENDERING VIA REFLECTION
+					// ===================================================================
+					// All components are now rendered using the reflection system.
+					// Special cases (Transform, Collider, Camera, etc.) have custom
+					// renderers registered in InspectorCustomRenderers.cpp.
+					// ===================================================================
+					DrawComponentsViaReflection(displayEntity);
 
 					// Add Component button
 					ImGui::Separator();
@@ -398,43 +408,6 @@ void InspectorPanel::OnImGuiRender() {
 	ImGui::End();
 
 	ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
-}
-
-void InspectorPanel::DrawNameComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		NameComponent& nameComponent = ecsManager.GetComponent<NameComponent>(entity);
-
-		ImGui::PushID("NameComponent");
-
-		// Use a static map to maintain state per entity
-		static std::unordered_map<Entity, std::vector<char>> nameBuffers;
-
-		// Get or create buffer for this entity
-		auto& nameBuffer = nameBuffers[entity];
-
-		// Initialize buffer if empty or different from component
-		std::string currentName = nameComponent.name;
-		if (nameBuffer.empty() || std::string(nameBuffer.data()) != currentName) {
-			nameBuffer.clear();
-			nameBuffer.resize(256, '\0'); // Create 256-char buffer filled with null terminators
-			if (!currentName.empty() && currentName.length() < 255) {
-				std::copy(currentName.begin(), currentName.end(), nameBuffer.begin());
-			}
-		}
-
-		// Use InputText with char buffer
-		ImGui::Text("Name");
-		ImGui::SameLine();
-		if (ImGui::InputText("##Name", nameBuffer.data(), nameBuffer.size())) {
-			// Update the actual component
-			nameComponent.name = std::string(nameBuffer.data());
-		}
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing NameComponent: %s", e.what());
-	}
 }
 
 void InspectorPanel::DrawTagComponent(Entity entity) {
@@ -590,44 +563,6 @@ void InspectorPanel::DrawLayerComponent(Entity entity) {
 	}
 }
 
-void InspectorPanel::DrawTransformComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		Transform& transform = ecsManager.GetComponent<Transform>(entity);
-
-		ImGui::PushID("Transform");
-
-		// Position
-		float position[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
-		ImGui::Text("Position");
-		ImGui::SameLine();
-		if (ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f")) {
-			ecsManager.transformSystem->SetLocalPosition(entity, { position[0], position[1], position[2] });
-		}
-
-		// Rotation
-		Vector3D rotationEuler = transform.localRotation.ToEulerDegrees();
-		float rotation[3] = { rotationEuler.x, rotationEuler.y, rotationEuler.z };
-		ImGui::Text("Rotation");
-		ImGui::SameLine();
-		if (ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.1f")) {
-			ecsManager.transformSystem->SetLocalRotation(entity, { rotation[0], rotation[1], rotation[2] });
-		}
-
-		// Scale
-		float scale[3] = { transform.localScale.x, transform.localScale.y, transform.localScale.z };
-		ImGui::Text("Scale");
-		ImGui::SameLine();
-		if (ImGui::DragFloat3("##Scale", scale, 0.1f, 0.001f, FLT_MAX, "%.3f")) {
-			ecsManager.transformSystem->SetLocalScale(entity, { scale[0], scale[1], scale[2] });
-		}
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing Transform: %s", e.what());
-	}
-}
-
 void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -728,665 +663,6 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	}
 }
 
-void InspectorPanel::DrawSpriteRenderComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		SpriteRenderComponent& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
-
-		ImGui::PushID("SpriteRenderComponent");
-
-		// Texture drag-drop slot
-		ImGui::Text("Texture:");
-		ImGui::SameLine();
-
-		// Create texture slot button showing current texture
-		std::string textureButtonText;
-		if (sprite.texture) {
-			// Extract filename from texture path if available
-			if (!sprite.texturePath.empty()) {
-				std::filesystem::path texPath(sprite.texturePath);
-				textureButtonText = texPath.filename().string();
-			} else {
-				textureButtonText = "Loaded Texture";
-			}
-		} else {
-			textureButtonText = "None (Texture)";
-		}
-
-		
-		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
-
-		// Texture drag-drop target with visual feedback
-		if (EditorComponents::BeginDragDropTarget()) {
-			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
-				// Payload contains the file path
-				const char* texturePath = (const char*)payload->Data;
-
-				// Load texture using ResourceManager
-				sprite.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
-				sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(sprite.textureGUID, texturePath);
-
-				if (sprite.texture) {
-					sprite.texturePath = texturePath; // Store the path for display
-					std::cout << "[Inspector] Loaded texture: " << texturePath << std::endl;
-				} else {
-					std::cerr << "[Inspector] Failed to load texture: " << texturePath << std::endl;
-				}
-			}
-			EditorComponents::EndDragDropTarget();
-		}
-
-		// Right-click to clear texture
-		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && sprite.texture) {
-			ImGui::OpenPopup("ClearTexture");
-		}
-
-		if (ImGui::BeginPopup("ClearTexture")) {
-			if (ImGui::MenuItem("Clear Texture")) {
-				sprite.texture = nullptr;
-				sprite.texturePath.clear();
-			}
-			ImGui::EndPopup();
-		}
-
-		ImGui::Separator();
-
-		// Sprite type toggle (inverted - checkbox shows "Is 2D")
-		bool is2D = !sprite.is3D;
-		if (ImGui::Checkbox("Is 2D", &is2D)) {
-			// Mode changed
-			if (is2D && sprite.is3D) {
-				// Switching from 3D to 2D
-				// Sync sprite.position with Transform before saving (in case user moved via Transform)
-				if (ecsManager.HasComponent<Transform>(entity)) {
-					Transform& transform = ecsManager.GetComponent<Transform>(entity);
-					sprite.position = Vector3D(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
-				}
-				// Save current 3D position
-				sprite.saved3DPosition = sprite.position;
-
-				// Set sprite to center of viewport (using screen coordinates)
-				// For 2D mode, position is in pixels from top-left
-				sprite.position = Vector3D(RunTimeVar::window.width / 2.0f, RunTimeVar::window.height / 2.0f, 0.0f);
-				sprite.is3D = false;
-			}
-			else if (!is2D && !sprite.is3D) {
-				// Switching from 2D to 3D
-				// Restore saved 3D position to both Transform and sprite.position
-				if (ecsManager.HasComponent<Transform>(entity)) {
-					ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(sprite.saved3DPosition.x, sprite.saved3DPosition.y, sprite.saved3DPosition.z));
-				}
-				sprite.position = sprite.saved3DPosition;
-				sprite.is3D = true;
-				sprite.enableBillboard = true;
-			}
-		}
-
-		// Follow Camera toggle (billboard effect - only for 3D sprites)
-		if (sprite.is3D) {
-			ImGui::Checkbox("Follow Camera", &sprite.enableBillboard);
-			if (ImGui::IsItemHovered()) {
-				ImGui::SetTooltip("Makes the sprite always face the camera (billboard effect)");
-			}
-		}
-
-		ImGui::Checkbox("Visible", &sprite.isVisible);
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing SpriteRenderComponent: %s", e.what());
-	}
-}
-
-void InspectorPanel::DrawTextRenderComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		TextRenderComponent& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
-
-		ImGui::PushID("TextRenderComponent");
-
-		// Text input
-		char textBuffer[256] = {};
-		size_t copyLen = (std::min)(textComp.text.size(), sizeof(textBuffer) - 1);
-		std::memcpy(textBuffer, textComp.text.c_str(), copyLen);
-		textBuffer[copyLen] = '\0';
-
-		ImGui::Text("Text");
-		if (ImGui::InputText("##Text", textBuffer, sizeof(textBuffer))) {
-			textComp.text = std::string(textBuffer);
-		}
-
-		ImGui::Separator();
-
-		// Font drag-drop slot
-		ImGui::Text("Font:");
-		ImGui::SameLine();
-
-		std::string fontButtonText = "None (Font)";
-		if (textComp.font) {
-			// Try to get font name from asset manager
-			std::shared_ptr<AssetMeta> fontMeta = AssetManager::GetInstance().GetAssetMeta(textComp.fontGUID);
-			if (fontMeta) {
-				std::filesystem::path fontPath(fontMeta->sourceFilePath);
-				fontButtonText = fontPath.filename().string();
-			} else {
-				fontButtonText = "Loaded Font";
-			}
-		}
-
-		float buttonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(fontButtonText.c_str(), buttonWidth);
-
-		// Font drag-drop target
-		if (EditorComponents::BeginDragDropTarget()) {
-			ImGui::SetTooltip("Drop .ttf or .otf font here");
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD")) {
-				const char* fontPath = (const char*)payload->Data;
-				// Load font using ResourceManager
-				textComp.font = ResourceManager::GetInstance().GetFontResource(fontPath);
-				if (textComp.font) {
-					textComp.fontGUID = MetaFilesManager::GetGUID128FromAssetFile(fontPath);
-					std::cout << "[Inspector] Loaded font: " << fontPath << std::endl;
-				} else {
-					std::cerr << "[Inspector] Failed to load font: " << fontPath << std::endl;
-				}
-			}
-			EditorComponents::EndDragDropTarget();
-		}
-
-		ImGui::Separator();
-
-		// Font size
-		int fontSize = static_cast<int>(textComp.fontSize);
-		ImGui::Text("Font Size");
-		ImGui::SameLine();
-		if (ImGui::DragInt("##FontSize", &fontSize, 1.0f, 1, 500)) {
-			textComp.fontSize = static_cast<unsigned int>(fontSize);
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Font size affects glyph quality. Use Transform Scale to resize text.");
-		}
-
-		// Color picker
-		float colorArray[3] = { textComp.color.x, textComp.color.y, textComp.color.z };
-		ImGui::Text("Color");
-		ImGui::SameLine();
-		if (ImGui::ColorEdit3("##TextColor", colorArray)) {
-			textComp.color = Vector3D(colorArray[0], colorArray[1], colorArray[2]);
-		}
-
-		ImGui::Separator();
-
-		// Position (uses Transform component)
-		if (!textComp.is3D && ecsManager.HasComponent<Transform>(entity)) {
-			Transform& transform = ecsManager.GetComponent<Transform>(entity);
-			float pos[3] = { transform.localPosition.x, transform.localPosition.y, transform.localPosition.z };
-			ImGui::Text("Position (Screen)");
-			if (ImGui::DragFloat3("##TextPosition", pos, 1.0f)) {
-				ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(pos[0], pos[1], pos[2]));
-			}
-		}
-
-		// Alignment (swapped to match actual rendering behavior)
-		const char* alignmentItems[] = { "Right", "Center", "Left" };
-		int currentAlignment = static_cast<int>(textComp.alignment);
-		ImGui::Text("Alignment");
-		ImGui::SameLine();
-		if (ImGui::Combo("##TextAlignment", &currentAlignment, alignmentItems, 3)) {
-			textComp.alignment = static_cast<TextRenderComponent::Alignment>(currentAlignment);
-			textComp.alignmentInt = currentAlignment;
-		}
-
-		// Is 3D toggle with position handling
-		bool is3D = textComp.is3D;
-		if (ImGui::Checkbox("Is 3D", &is3D)) {
-			if (is3D && !textComp.is3D) {
-				// Switching from 2D to 3D
-				// Reset 2D position to origin and switch to Transform component positioning
-				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
-				textComp.is3D = true;
-				// Position entity in front of camera by default
-				if (ecsManager.HasComponent<Transform>(entity)) {
-					ecsManager.transformSystem->SetLocalPosition(entity, Vector3D(0.0f, 0.0f, -5.0f));
-					ecsManager.transformSystem->SetLocalScale(entity, Vector3D(1.0f, 1.0f, 1.0f));
-				}
-			}
-			else if (!is3D && textComp.is3D) {
-				// Switching from 3D to 2D
-				// Set 2D screen space position to origin
-				textComp.position = Vector3D(0.0f, 0.0f, 0.0f);
-				textComp.is3D = false;
-			}
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("3D mode uses Transform component scale/position, 2D mode uses screen space position");
-		}
-
-		ImGui::Checkbox("Visible", &textComp.isVisible);
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing TextRenderComponent: %s", e.what());
-	}
-}
-
-void InspectorPanel::DrawParticleComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		ParticleComponent& particle = ecsManager.GetComponent<ParticleComponent>(entity);
-
-		ImGui::PushID("ParticleComponent");
-
-		// Play/Pause/Stop buttons for editor preview (shows in Scene panel)
-		float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
-
-		// Play button
-		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPlayingInEditor && !particle.isPausedInEditor ? ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
-
-		if (ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0))) {
-			particle.isPlayingInEditor = true;
-			particle.isPausedInEditor = false;
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Play particle preview in Scene panel");
-		}
-
-		ImGui::PopStyleColor(3);
-		ImGui::SameLine();
-
-		// Pause button
-		ImGui::PushStyleColor(ImGuiCol_Button, particle.isPausedInEditor ? ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
-
-		if (ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0))) {
-			if (particle.isPlayingInEditor) {
-				particle.isPausedInEditor = !particle.isPausedInEditor;
-			}
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Pause particle preview (keeps existing particles)");
-		}
-
-		ImGui::PopStyleColor(3);
-
-		// Stop button (full width)
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
-
-		if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
-			particle.isPlayingInEditor = false;
-			particle.isPausedInEditor = false;
-			particle.particles.clear();  // Clear all particles on stop
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Stop and clear all particles");
-		}
-
-		ImGui::PopStyleColor(3);
-
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
-
-		// Texture drag-drop slot
-		ImGui::Text("Texture:");
-		ImGui::SameLine();
-
-		// Create texture slot button showing current texture
-		std::string textureButtonText;
-		if (particle.particleTexture) {
-			// Extract filename from texture path if available
-			if (!particle.texturePath.empty()) {
-				std::filesystem::path texPath(particle.texturePath);
-				textureButtonText = texPath.filename().string();
-			} else {
-				textureButtonText = "Loaded Texture";
-			}
-		} else {
-			textureButtonText = "None (Texture)";
-		}
-
-		
-		float textureButtonWidth = ImGui::GetContentRegionAvail().x;
-		EditorComponents::DrawDragDropButton(textureButtonText.c_str(), textureButtonWidth);
-
-		// Texture drag-drop target with visual feedback
-		if (EditorComponents::BeginDragDropTarget()) {
-			ImGui::SetTooltip("Drop .png, .jpg, .jpeg, .bmp, or .tga texture here");
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
-				// Payload contains the file path
-				const char* texturePath = (const char*)payload->Data;
-
-				// Load texture using ResourceManager
-				particle.particleTexture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-
-				if (particle.particleTexture) {
-					particle.texturePath = texturePath;  // Store the path for display
-					particle.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(texturePath);
-					std::cout << "[Inspector] Loaded particle texture: " << texturePath << std::endl;
-				} else {
-					std::cerr << "[Inspector] Failed to load particle texture: " << texturePath << std::endl;
-				}
-			}
-			EditorComponents::EndDragDropTarget();
-		}
-
-		// Right-click to clear texture
-		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && particle.particleTexture) {
-			ImGui::OpenPopup("ClearParticleTexture");
-		}
-
-		if (ImGui::BeginPopup("ClearParticleTexture")) {
-			if (ImGui::MenuItem("Clear Texture")) {
-				particle.particleTexture = nullptr;
-				particle.texturePath.clear();
-			}
-			ImGui::EndPopup();
-		}
-
-		ImGui::Separator();
-
-		// Emitter Properties Section
-		ImGui::Text("Emitter Properties");
-		ImGui::Separator();
-
-		// Emission Rate
-		ImGui::Text("Emission Rate");
-		ImGui::DragFloat("##EmissionRate", &particle.emissionRate, 0.1f, 0.0f, 1000.0f, "%.1f particles/sec");
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Number of particles emitted per second");
-		}
-
-		// Max Particles
-		ImGui::Text("Max Particles");
-		ImGui::DragInt("##MaxParticles", &particle.maxParticles, 1, 1, 100000);
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Maximum number of particles that can exist at once");
-		}
-
-		// Is Emitting
-		ImGui::Checkbox("Is Emitting", &particle.isEmitting);
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
-		}
-
-		// Active Particle Count (Read-only)
-		ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
-
-		ImGui::Spacing();
-		ImGui::Text("Particle Properties");
-		ImGui::Separator();
-
-		// Particle Lifetime
-		ImGui::Text("Lifetime");
-		ImGui::DragFloat("##Lifetime", &particle.particleLifetime, 0.01f, 0.01f, 100.0f, "%.2f seconds");
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("How long each particle lives before fading out");
-		}
-
-		// Start Size
-		ImGui::Text("Start Size");
-		ImGui::DragFloat("##StartSize", &particle.startSize, 0.01f, 0.0f, 100.0f, "%.2f");
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Initial size of particles when spawned");
-		}
-
-		// End Size
-		ImGui::Text("End Size");
-		ImGui::DragFloat("##EndSize", &particle.endSize, 0.01f, 0.0f, 100.0f, "%.2f");
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Final size of particles before they die (interpolated over lifetime)");
-		}
-
-		// Start Color
-		ImGui::Text("Start Color");
-		glm::vec4 startColor{ particle.startColor.x, particle.startColor.y, particle.startColor.z, particle.startColorAlpha };
-		ImGui::ColorEdit4("##StartColor", &startColor.r);
-		particle.startColor.x = startColor.x; particle.startColor.y = startColor.y; particle.startColor.z = startColor.z; particle.startColorAlpha = startColor.a;
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Initial color and alpha of particles when spawned");
-		}
-
-		// End Color
-		ImGui::Text("End Color");
-		glm::vec4 endColor{ particle.endColor.x, particle.endColor.y, particle.endColor.z, particle.endColorAlpha };
-		ImGui::ColorEdit4("##EndColor", &endColor.r);
-		particle.endColor.x = endColor.x; particle.endColor.y = endColor.y; particle.endColor.z = endColor.z; particle.endColorAlpha = endColor.a;
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Final color and alpha of particles before they die (interpolated over lifetime)");
-		}
-
-		ImGui::Spacing();
-		ImGui::Text("Physics");
-		ImGui::Separator();
-
-		// Gravity
-		ImGui::Text("Gravity");
-		float gravity[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
-		if (ImGui::DragFloat3("##Gravity", gravity, 0.1f, -50.0f, 50.0f, "%.2f")) {
-			particle.gravity = Vector3D(gravity[0], gravity[1], gravity[2]);
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Gravity force applied to particles (typically negative Y for downward)");
-		}
-
-		// Initial Velocity
-		ImGui::Text("Initial Velocity");
-		float velocity[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
-		if (ImGui::DragFloat3("##InitialVelocity", velocity, 0.1f, -100.0f, 100.0f, "%.2f")) {
-			particle.initialVelocity = Vector3D(velocity[0], velocity[1], velocity[2]);
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Base velocity direction for newly spawned particles");
-		}
-
-		// Velocity Randomness
-		ImGui::Text("Velocity Randomness");
-		ImGui::DragFloat("##VelocityRandomness", &particle.velocityRandomness, 0.01f, 0.0f, 100.0f, "%.2f");
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Amount of random variation applied to particle velocities");
-		}
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing ParticleComponent: %s", e.what());
-	}
-}
-
-void InspectorPanel::DrawAudioComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		AudioComponent& audio = ecsManager.GetComponent<AudioComponent>(entity);
-
-		ImGui::PushID("AudioComponent");
-
-		// Audio Clip drag-drop slot
-		ImGui::Text("Clip:");
-		ImGui::SameLine();
-
-		// Create audio slot button showing current clip
-		std::string audioButtonText;
-		if (!audio.Clip.empty()) {
-			std::filesystem::path clipPath(audio.Clip);
-			audioButtonText = clipPath.filename().string();
-		} else {
-			audioButtonText = "None (Audio Clip)";
-		}
-
-		// Create the audio slot button
-		float buttonWidth = ImGui::GetContentRegionAvail().x;
-		ImGui::Button(audioButtonText.c_str(), ImVec2(buttonWidth, 30.0f));
-
-		// Audio clip drag-drop target
-		if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
-				// Use global drag data set by AssetBrowserPanel
-				audio.SetClip(DraggedAudioPath);
-				audio.audioGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(DraggedAudioPath);
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		// Right-click to clear
-		if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !audio.Clip.empty()) {
-			ImGui::OpenPopup("ClearAudioClip");
-		}
-
-		if (ImGui::BeginPopup("ClearAudioClip")) {
-			if (ImGui::MenuItem("Clear Clip")) {
-				audio.SetClip("");
-			}
-			ImGui::EndPopup();
-		}
-
-		// Volume slider
-		float vol = audio.Volume;
-		if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f)) {
-			audio.Volume = vol;
-			//if (audio.Channel) {
-			//    FMOD_Channel_SetVolume(reinterpret_cast<FMOD_CHANNEL*>(0), audio.Volume); // placeholder if needed
-			//}
-		}
-
-		// Loop checkbox
-		if (ImGui::Checkbox("Loop", &audio.Loop)) {
-			// no immediate action; applied at play time
-		}
-
-		// Play on Awake (Unity naming)
-		ImGui::Checkbox("Play On Awake", &audio.PlayOnAwake);
-
-		// Spatialize
-		if (ImGui::Checkbox("Spatialize", &audio.Spatialize)) {
-			// toggled
-		}
-
-		// Spatial Blend (Unity naming)
-		float blend = audio.SpatialBlend;
-		if (ImGui::SliderFloat("Spatial Blend", &blend, 0.0f, 1.0f)) {
-			audio.SetSpatialBlend(blend);
-		}
-
-		// Position (if spatialized)
-		if (audio.Spatialize) {
-			float pos[3] = { audio.Position.x, audio.Position.y, audio.Position.z };
-			if (ImGui::DragFloat3("Position", pos, 0.1f)) {
-				/*audio.UpdatePosition(Vector3D(pos[0], pos[1], pos[2]));*/
-				// Also update Transform if present
-				if (ecsManager.HasComponent<Transform>(entity)) {
-					ecsManager.transformSystem->SetLocalPosition(entity, { pos[0], pos[1], pos[2] });
-				}
-			}
-		}
-
-		// Play/Stop buttons
-		if (ImGui::Button("Play")) {
-			audio.Play();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Stop")) {
-			audio.Stop();
-		}
-
-		ImGui::PopID();
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing AudioComponent: %s", e.what());
-	}
-}
-
-void InspectorPanel::ApplyMaterialToModel(Entity entity, const GUID_128& materialGuid) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
-		if (!ecsManager.HasComponent<ModelRenderComponent>(entity)) {
-			std::cerr << "[InspectorPanel] Entity does not have ModelRenderComponent" << std::endl;
-			return;
-		}
-
-		ModelRenderComponent& modelRenderer = ecsManager.GetComponent<ModelRenderComponent>(entity);
-
-		if (!modelRenderer.model) {
-			std::cerr << "[InspectorPanel] Model is not loaded" << std::endl;
-			return;
-		}
-
-		// Get the material asset metadata
-		std::shared_ptr<AssetMeta> materialMeta = AssetManager::GetInstance().GetAssetMeta(materialGuid);
-		if (!materialMeta) {
-			std::cerr << "[InspectorPanel] Material asset not found" << std::endl;
-			return;
-		}
-
-		// Load the material
-		std::shared_ptr<Material> material = ResourceManager::GetInstance().GetResource<Material>(materialMeta->sourceFilePath);
-		if (!material) {
-			std::cerr << "[InspectorPanel] Failed to load material: " << materialMeta->sourceFilePath << std::endl;
-			return;
-		}
-
-		// If material doesn't have a name, set it from the filename
-		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
-			std::filesystem::path path(materialMeta->sourceFilePath);
-			std::string matName = path.stem().string(); // Get filename without extension
-			material->SetName(matName);
-			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
-		}
-
-		// Apply the material to the entire entity (like Unity)
-		modelRenderer.SetMaterial(material);
-		std::cout << "[InspectorPanel] Applied material '" << material->GetName() << "' to entity" << std::endl;
-
-	} catch (const std::exception& e) {
-		std::cerr << "[InspectorPanel] Error applying material to model: " << e.what() << std::endl;
-	}
-}
-
-void InspectorPanel::ApplyMaterialToModelByPath(Entity entity, const std::string& materialPath) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
-		if (!ecsManager.HasComponent<ModelRenderComponent>(entity)) {
-			std::cerr << "[InspectorPanel] Entity does not have ModelRenderComponent" << std::endl;
-			return;
-		}
-
-		ModelRenderComponent& modelRenderer = ecsManager.GetComponent<ModelRenderComponent>(entity);
-
-		if (!modelRenderer.model) {
-			std::cerr << "[InspectorPanel] Model is not loaded" << std::endl;
-			return;
-		}
-
-		// Load the material directly by path
-		std::shared_ptr<Material> material = ResourceManager::GetInstance().GetResource<Material>(materialPath);
-		if (!material) {
-			std::cerr << "[InspectorPanel] Failed to load material: " << materialPath << std::endl;
-			return;
-		}
-
-		// If material doesn't have a name, set it from the filename
-		if (material->GetName().empty() || material->GetName() == "DefaultMaterial") {
-			std::filesystem::path path(materialPath);
-			std::string matName = path.stem().string(); // Get filename without extension
-			material->SetName(matName);
-			std::cout << "[InspectorPanel] Set material name to: " << matName << std::endl;
-		}
-
-		// Apply the material to the entire entity (like Unity)
-		modelRenderer.SetMaterial(material);
-		std::cout << "[InspectorPanel] Applied material '" << material->GetName() << "' to entity (by path)" << std::endl;
-
-	} catch (const std::exception& e) {
-		std::cerr << "[InspectorPanel] Error applying material to model by path: " << e.what() << std::endl;
-	}
-}
-
 void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 	try {
 		// Get asset metadata from AssetManager
@@ -1403,7 +679,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 
 				// Lock button on the same line
 				GUID_128 selectedAsset = GUIManager::GetSelectedAsset();
-				ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+				ImGui::SameLine(ImGui::GetWindowWidth() - 40);
 				if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
 					inspectorLocked = !inspectorLocked;
 					if (inspectorLocked) {
@@ -1459,22 +735,22 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				std::filesystem::path absolutePath = std::filesystem::absolute(sourceFilePath);
 				std::string absolutePathStr = absolutePath.string();
 
-                // Load material and cache it
-                std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
-                std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
-                cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
-                if (cachedMaterial) {
-                    cachedMaterialGuid = assetGuid;
-                    cachedMaterialPath = sourceFilePath;
-                    std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
-                } else {
-                    cachedMaterial.reset();
-                    cachedMaterialGuid = {0, 0};
-                    cachedMaterialPath.clear();
-                    ImGui::Text("Failed to load material");
-                    return;
-                }
-            }
+				// Load material and cache it
+				std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
+				std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
+				cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
+				if (cachedMaterial) {
+					cachedMaterialGuid = assetGuid;
+					cachedMaterialPath = sourceFilePath;
+					std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+				} else {
+					cachedMaterial.reset();
+					cachedMaterialGuid = {0, 0};
+					cachedMaterialPath.clear();
+					ImGui::Text("Failed to load material");
+					return;
+				}
+			}
 
 			MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath, true, &inspectorLocked, lockCallback);
 		} 
@@ -1488,150 +764,6 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 
 	} catch (const std::exception& e) {
 		ImGui::Text("Error accessing asset: %s", e.what());
-	}
-}
-
-void InspectorPanel::DrawLightComponents(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
-		// Draw DirectionalLightComponent if present
-		if (ecsManager.HasComponent<DirectionalLightComponent>(entity)) {
-			if (DrawComponentHeaderWithRemoval("Directional Light", entity, "DirectionalLightComponent")) {
-				ImGui::PushID("DirectionalLight");
-				DirectionalLightComponent& light = ecsManager.GetComponent<DirectionalLightComponent>(entity);
-
-				ImGui::Checkbox("Enabled", &light.enabled);
-				ImGui::ColorEdit3("Color", &light.color.x);
-				ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
-
-				// Direction controls with visual helper
-				ImGui::Text("Direction");
-				ImGui::DragFloat3("##Direction", &light.direction.x, 0.01f, -1.0f, 1.0f);
-
-				// Direction visualization
-				ImGui::SameLine();
-				if (ImGui::Button("Normalize")) {
-					light.direction = light.direction.Normalized();
-				}
-
-				// Show direction as normalized vector and common presets
-				Vector3D normalizedDir = light.direction.Normalized();
-				ImGui::Text("Normalized: (%.2f, %.2f, %.2f)", normalizedDir.x, normalizedDir.y, normalizedDir.z);
-
-				// Common direction presets
-				ImGui::Text("Presets:");
-				if (ImGui::Button("Down")) light.direction = Vector3D(0.0f, -1.0f, 0.0f);
-				ImGui::SameLine();
-				if (ImGui::Button("Forward-Down")) light.direction = Vector3D(-0.2f, -1.0f, -0.3f);
-				ImGui::SameLine();
-				if (ImGui::Button("Side-Down")) light.direction = Vector3D(-1.0f, -1.0f, 0.0f);
-
-				// Visual direction indicator
-				ImGui::Text("Direction Visualization:");
-				ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-				ImVec2 canvas_size = ImVec2(100, 100);
-				ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-				// Draw a circle representing the "world"
-				ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
-				draw_list->AddCircle(center, 40.0f, IM_COL32(100, 100, 100, 255), 0, 2.0f);
-
-				// Draw direction arrow (project 3D direction to 2D)
-				Vector3D dir = light.direction.Normalized();
-				ImVec2 arrow_end = ImVec2(center.x + dir.x * 35.0f, center.y + dir.y * 35.0f);
-				draw_list->AddLine(center, arrow_end, IM_COL32(255, 255, 0, 255), 3.0f);
-
-				// Arrow head
-				ImVec2 arrowDir = ImVec2(arrow_end.x - center.x, arrow_end.y - center.y);
-				float arrowLength = sqrt(arrowDir.x * arrowDir.x + arrowDir.y * arrowDir.y);
-				if (arrowLength > 0) {
-					arrowDir.x /= arrowLength;
-					arrowDir.y /= arrowLength;
-					ImVec2 perpendicular = ImVec2(-arrowDir.y, arrowDir.x);
-					ImVec2 arrowHead1 = ImVec2(arrow_end.x - arrowDir.x * 8 + perpendicular.x * 4, arrow_end.y - arrowDir.y * 8 + perpendicular.y * 4);
-					ImVec2 arrowHead2 = ImVec2(arrow_end.x - arrowDir.x * 8 - perpendicular.x * 4, arrow_end.y - arrowDir.y * 8 - perpendicular.y * 4);
-					draw_list->AddLine(arrow_end, arrowHead1, IM_COL32(255, 255, 0, 255), 2.0f);
-					draw_list->AddLine(arrow_end, arrowHead2, IM_COL32(255, 255, 0, 255), 2.0f);
-				}
-
-				ImGui::Dummy(canvas_size);
-
-				ImGui::Separator();
-				ImGui::Text("Lighting Properties");
-				ImGui::ColorEdit3("Ambient", &light.ambient.x);
-				ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-				ImGui::ColorEdit3("Specular", &light.specular.x);
-
-				ImGui::PopID();
-			}
-		}
-
-		// Draw PointLightComponent if present
-		if (ecsManager.HasComponent<PointLightComponent>(entity)) {
-			if (DrawComponentHeaderWithRemoval("Point Light", entity, "PointLightComponent")) {
-				ImGui::PushID("PointLight");
-				PointLightComponent& light = ecsManager.GetComponent<PointLightComponent>(entity);
-
-				ImGui::Checkbox("Enabled", &light.enabled);
-				ImGui::ColorEdit3("Color", &light.color.x);
-				ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
-
-				ImGui::Separator();
-				ImGui::Text("Attenuation");
-				ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-				ImGui::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-				ImGui::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
-
-				ImGui::Separator();
-				ImGui::Text("Lighting Properties");
-				ImGui::ColorEdit3("Ambient", &light.ambient.x);
-				ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-				ImGui::ColorEdit3("Specular", &light.specular.x);
-
-				ImGui::PopID();
-			}
-		}
-
-		// Draw SpotLightComponent if present
-		if (ecsManager.HasComponent<SpotLightComponent>(entity)) {
-			if (DrawComponentHeaderWithRemoval("Spot Light", entity, "SpotLightComponent")) {
-				ImGui::PushID("SpotLight");
-				SpotLightComponent& light = ecsManager.GetComponent<SpotLightComponent>(entity);
-
-				ImGui::Checkbox("Enabled", &light.enabled);
-				ImGui::ColorEdit3("Color", &light.color.x);
-				ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
-				ImGui::DragFloat3("Direction", &light.direction.x, 0.1f, -1.0f, 1.0f);
-
-				ImGui::Separator();
-				ImGui::Text("Cone Settings");
-				float cutOffDegrees = glm::degrees(glm::acos(light.cutOff));
-				float outerCutOffDegrees = glm::degrees(glm::acos(light.outerCutOff));
-				if (ImGui::DragFloat("Inner Cutoff", &cutOffDegrees, 1.0f, 0.0f, 90.0f)) {
-					light.cutOff = glm::cos(glm::radians(cutOffDegrees));
-				}
-				if (ImGui::DragFloat("Outer Cutoff", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f)) {
-					light.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
-				}
-
-				ImGui::Separator();
-				ImGui::Text("Attenuation");
-				ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-				ImGui::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-				ImGui::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
-
-				ImGui::Separator();
-				ImGui::Text("Lighting Properties");
-				ImGui::ColorEdit3("Ambient", &light.ambient.x);
-				ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-				ImGui::ColorEdit3("Specular", &light.specular.x);
-
-				ImGui::PopID();
-			}
-		}
-	} catch (const std::exception& e) {
-		ImGui::Text("Error accessing light components: %s", e.what());
 	}
 }
 
@@ -1681,6 +813,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "AudioComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<AudioListenerComponent>(entity)) {
+					if (ImGui::MenuItem("Audio Listener")) {
+						AddComponent(entity, "AudioListenerComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -1704,6 +841,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				ImGui::EndMenu();
 			}
 
+			// Camera Components
+			if (ImGui::BeginMenu("Camera")) {
+				if (!ecsManager.HasComponent<CameraComponent>(entity)) {
+					if (ImGui::MenuItem("Camera")) {
+						AddComponent(entity, "CameraComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 			// Physics Components
 			if (ImGui::BeginMenu("Physics")) {
 				if (!ecsManager.HasComponent<ColliderComponent>(entity)) {
@@ -1714,6 +861,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				if (!ecsManager.HasComponent<RigidBodyComponent>(entity)) {
 					if (ImGui::MenuItem("RigidBody")) {
 						AddComponent(entity, "RigidBodyComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			// Animation Components
+			if (ImGui::BeginMenu("Animation")) {
+				if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
+					if (ImGui::MenuItem("Animation Component")) {
+						AddComponent(entity, "AnimationComponent");
 					}
 				}
 				ImGui::EndMenu();
@@ -1769,6 +926,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			AudioComponent component;
 			ecsManager.AddComponent<AudioComponent>(entity, component);
 			std::cout << "[Inspector] Added AudioComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "AudioListenerComponent") {
+			AudioListenerComponent component;
+			ecsManager.AddComponent<AudioListenerComponent>(entity, component);
+			std::cout << "[Inspector] Added AudioListenerComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "SpriteRenderComponent") {
 			// Set default shader GUID for sprite
@@ -1953,17 +1115,6 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cout << "[Inspector] Added TextRenderComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "ColliderComponent") {
-			ColliderComponent component;
-			// Set default box shape - shape will be created by physics system
-			component.shapeType = ColliderShapeType::Box;
-			component.shapeTypeID = static_cast<int>(component.shapeType);
-			component.boxHalfExtents = Vector3D(0.5f, 0.5f, 0.5f);
-			component.layer = Layers::MOVING;
-			component.layerID = static_cast<int>(component.layer);
-			component.shape = nullptr; // Physics system will create the shape
-			component.version = 1; // Mark as needing creation
-
-			ecsManager.AddComponent<ColliderComponent>(entity, component);
 
 			// Ensure entity has Transform component
 			if (!ecsManager.HasComponent<Transform>(entity)) {
@@ -1972,14 +1123,32 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				std::cout << "[Inspector] Added Transform component for Collider" << std::endl;
 			}
 
+			ColliderComponent component;
+			// Set default box shape - shape will be created by physics system
+			component.shapeType = ColliderShapeType::Box;
+			component.shapeTypeID = static_cast<int>(component.shapeType);
+			if (ecsManager.HasComponent<ModelRenderComponent>(entity))
+			{
+				auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
+				auto& transform = ecsManager.GetComponent<Transform>(entity);
+				if (rc.model)
+					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
+			}
+			component.layer = Layers::MOVING;
+			component.layerID = static_cast<int>(component.layer);
+			component.shape = nullptr; // Physics system will create the shape
+			component.version = 1; // Mark as needing creation
+
+			ecsManager.AddComponent<ColliderComponent>(entity, component);
+
+
 			std::cout << "[Inspector] Added ColliderComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "RigidBodyComponent") {
 			RigidBodyComponent component;
-			component.motion = Motion::Dynamic;
+			component.motion = Motion::Static;
 			component.motionID = static_cast<int>(component.motion);
-			component.ccd = false;
-
+	
 			ecsManager.AddComponent<RigidBodyComponent>(entity, component);
 
 			// Ensure entity has Transform component
@@ -2001,6 +1170,46 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<LayerComponent>(entity, component);
 			std::cout << "[Inspector] Added LayerComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "CameraComponent") {
+			CameraComponent component;
+			// Set reasonable defaults
+			component.isActive = false;  // Don't activate immediately
+			component.priority = 0;
+			component.fov = 45.0f;
+			component.nearPlane = 0.1f;
+			component.farPlane = 100.0f;
+			component.projectionType = ProjectionType::PERSPECTIVE;
+			component.useFreeRotation = true;
+			component.yaw = -90.0f;
+			component.pitch = 0.0f;
+			component.movementSpeed = 2.5f;
+			component.mouseSensitivity = 0.1f;
+			component.minZoom = 1.0f;
+			component.maxZoom = 90.0f;
+
+			ecsManager.AddComponent<CameraComponent>(entity, component);
+
+			// Ensure entity has Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Camera positioning" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added CameraComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "AnimationComponent") {
+			AnimationComponent component;
+			ecsManager.AddComponent<AnimationComponent>(entity, component);
+
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Animator" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -2019,14 +1228,85 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	
 	ImGui::Spacing();
 
-	
-	ImGui::PushID(label);
-	bool componentEnabled = true; // TODO: Get actual enabled state from component
-	ImGui::Checkbox("##ComponentEnabled", &componentEnabled);
-	ImGui::PopID();
+	// Core components cannot be disabled, so don't show checkbox
+	bool isCoreComponent = (componentType == "Transform" ||
+							componentType == "NameComponent" ||
+							componentType == "TagComponent" ||
+							componentType == "LayerComponent");
 
-	// Collapsing header on same line
-	ImGui::SameLine();
+	if (!isCoreComponent) {
+		// Component enable/disable checkbox (Unity-style)
+		// Get reference to actual component's enabled/isActive/isVisible field
+		ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+		bool* enabledFieldPtr = nullptr;
+
+		// Get the appropriate enabled field for each component type
+		if (componentType == "CameraComponent") {
+			auto& comp = ecs.GetComponent<CameraComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "DirectionalLightComponent") {
+			auto& comp = ecs.GetComponent<DirectionalLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "PointLightComponent") {
+			auto& comp = ecs.GetComponent<PointLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "SpotLightComponent") {
+			auto& comp = ecs.GetComponent<SpotLightComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "ModelRenderComponent") {
+			auto& comp = ecs.GetComponent<ModelRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "SpriteRenderComponent") {
+			auto& comp = ecs.GetComponent<SpriteRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "TextRenderComponent") {
+			auto& comp = ecs.GetComponent<TextRenderComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "ParticleComponent") {
+			auto& comp = ecs.GetComponent<ParticleComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		} else if (componentType == "AudioComponent") {
+			auto& comp = ecs.GetComponent<AudioComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "AudioListenerComponent") {
+			auto& comp = ecs.GetComponent<AudioListenerComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "ColliderComponent") {
+			auto& comp = ecs.GetComponent<ColliderComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "RigidBodyComponent") {
+			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "AnimationComponent") {
+			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		}
+
+		if (enabledFieldPtr) {
+			// Style the checkbox to match entity checkbox (white checkmark, smaller size)
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+			ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+			std::string checkboxId = "##ComponentEnabled_" + componentType;
+			ImGui::PushID(entity);
+			ImGui::Checkbox(checkboxId.c_str(), enabledFieldPtr);
+			ImGui::PopID();
+
+			ImGui::PopStyleColor(4);
+			ImGui::PopStyleVar();
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Enable/Disable Component");
+			}
+
+			// Collapsing header on same line
+			ImGui::SameLine();
+		}
+	}
+
 	bool checkisOpen = ImGui::CollapsingHeader(label, flags);
 
 	// Check for right-click on the collapsing header
@@ -2110,6 +1390,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);
 				std::cout << "[Inspector] Removed AudioComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "AudioListenerComponent") {
+				ecsManager.RemoveComponent<AudioListenerComponent>(request.entity);
+				std::cout << "[Inspector] Removed AudioListenerComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "ColliderComponent") {
 				ecsManager.RemoveComponent<ColliderComponent>(request.entity);
 				std::cout << "[Inspector] Removed ColliderComponent from entity " << request.entity << std::endl;
@@ -2117,6 +1401,14 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
 				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CameraComponent") {
+				ecsManager.RemoveComponent<CameraComponent>(request.entity);
+				std::cout << "[Inspector] Removed CameraComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AnimationComponent") {
+				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
+				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -2170,6 +1462,12 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 				modelRenderer.shaderGUID = {0x007ebbc8de41468e, 0x0002c7078200001b}; // Default shader GUID
 			}
 
+			if (loadedModel->meshes[0].material) {
+				modelRenderer.material = loadedModel->meshes[0].material;
+				std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+				modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
+			}
+
 			//// Load the shader if it's not already loaded
 			//if (!modelRenderer.shader) {
 			//	std::cout << "[Inspector] Loading shader for entity " << entity << std::endl;
@@ -2191,138 +1489,5 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 
 	} catch (const std::exception& e) {
 		std::cerr << "[Inspector] Error applying model to entity " << entity << ": " << e.what() << std::endl;
-	}
-}
-
-void InspectorPanel::DrawColliderComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(entity);
-
-		ImGui::PushID("ColliderComponent");
-
-		// Shape Type dropdown
-		ImGui::Text("Shape Type");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(-1);
-		const char* shapeTypes[] = { "Box", "Sphere", "Capsule", "Cylinder" };
-		int currentShapeType = static_cast<int>(collider.shapeType);
-		EditorComponents::PushComboColors();
-		if (ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, IM_ARRAYSIZE(shapeTypes))) {
-			collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
-			collider.shapeTypeID = currentShapeType;
-			collider.version++; // Mark for recreation
-		}
-		EditorComponents::PopComboColors();
-
-		// Shape Parameters based on type
-		bool shapeParamsChanged = false;
-		switch (collider.shapeType) {
-			case ColliderShapeType::Box: {
-				ImGui::Text("Half Extents");
-				ImGui::SameLine();
-				float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
-				if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
-					shapeParamsChanged = true;
-				}
-				break;
-			}
-			case ColliderShapeType::Sphere: {
-				ImGui::Text("Radius");
-				ImGui::SameLine();
-				if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					shapeParamsChanged = true;
-				}
-				break;
-			}
-			case ColliderShapeType::Capsule: {
-				ImGui::Text("Radius");
-				ImGui::SameLine();
-				if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					shapeParamsChanged = true;
-				}
-				ImGui::Text("Half Height");
-				ImGui::SameLine();
-				if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					shapeParamsChanged = true;
-				}
-				break;
-			}
-			case ColliderShapeType::Cylinder: {
-				ImGui::Text("Radius");
-				ImGui::SameLine();
-				if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					shapeParamsChanged = true;
-				}
-				ImGui::Text("Half Height");
-				ImGui::SameLine();
-				if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
-					shapeParamsChanged = true;
-				}
-				break;
-			}
-		}
-
-		if (shapeParamsChanged) {
-			collider.version++; // Mark for recreation - physics system will recreate the shape
-		}
-
-		// Physics Layer dropdown
-		ImGui::Text("Layer");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(-1);
-		const char* layers[] = { "Non-Moving", "Moving", "Sensor", "Debris" };
-		int currentLayer = static_cast<int>(collider.layer);
-		EditorComponents::PushComboColors();
-		if (ImGui::Combo("##PhysicsLayer", &currentLayer, layers, IM_ARRAYSIZE(layers))) {
-			collider.layer = static_cast<JPH::ObjectLayer>(currentLayer);
-			collider.layerID = static_cast<int>(collider.layer);
-			collider.version++; // Mark for recreation
-		}
-		EditorComponents::PopComboColors();
-
-		ImGui::PopID();
-	}
-	catch (const std::exception& e) {
-		ImGui::Text("Error rendering ColliderComponent: %s", e.what());
-	}
-}
-
-void InspectorPanel::DrawRigidBodyComponent(Entity entity) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-		RigidBodyComponent& rigidBody = ecsManager.GetComponent<RigidBodyComponent>(entity);
-
-		ImGui::PushID("RigidBodyComponent");
-
-		// Motion Type dropdown
-		ImGui::Text("Motion");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(-1);
-		const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
-		int currentMotion = static_cast<int>(rigidBody.motion);
-		EditorComponents::PushComboColors();
-		if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
-			rigidBody.motion = static_cast<Motion>(currentMotion);
-			rigidBody.motionID = currentMotion;
-			rigidBody.motion_dirty = true; // Mark for recreation
-		}
-		EditorComponents::PopComboColors();
-
-		// CCD checkbox
-		ImGui::Text("CCD");
-		ImGui::SameLine();
-		if (ImGui::Checkbox("##CCD", &rigidBody.ccd)) {
-			rigidBody.motion_dirty = true; // Mark for recreation
-		}
-		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
-		}
-
-		ImGui::PopID();
-	}
-	catch (const std::exception& e) {
-		ImGui::Text("Error rendering RigidBodyComponent: %s", e.what());
 	}
 }

@@ -26,6 +26,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Engine.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ActiveComponent.hpp"
 
 /******************************************************************************/
 /*!
@@ -241,6 +242,14 @@ void ParticleSystem::Update()
 
     for (const auto& entity : entities)
     {
+        // Skip inactive entities (Unity-like behavior)
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
+        }
+
         auto& particleComp = ecsManager.GetComponent<ParticleComponent>(entity);
 
         // Initialize if not already done

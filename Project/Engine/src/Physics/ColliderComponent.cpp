@@ -3,6 +3,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(ColliderComponent)
+	REFL_REGISTER_PROPERTY(enabled)
 	REFL_REGISTER_PROPERTY(layerID)
 	REFL_REGISTER_PROPERTY(version)
 	REFL_REGISTER_PROPERTY(shapeTypeID)

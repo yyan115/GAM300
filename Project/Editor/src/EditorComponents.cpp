@@ -1,4 +1,5 @@
 #include "EditorComponents.hpp"
+#include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 bool EditorComponents::DrawDragDropButton(const char* label, float width) {
     // Push Unity-style appearance
@@ -103,4 +104,84 @@ void EditorComponents::DrawHighlightBorder() {
         0,
         DRAG_HIGHLIGHT_BORDER_THICKNESS
     );
+}
+
+bool EditorComponents::DrawPlayButton(bool isPlaying, float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, isPlaying ?
+        ImVec4(0.2f, 0.6f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
+
+    bool clicked = ImGui::Button(ICON_FA_PLAY " Play", ImVec2(buttonWidth, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Play");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
+}
+
+bool EditorComponents::DrawPauseButton(bool isPaused, float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, isPaused ?
+        ImVec4(0.6f, 0.5f, 0.2f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.6f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.4f, 0.1f, 1.0f));
+
+    bool clicked = ImGui::Button(ICON_FA_PAUSE " Pause", ImVec2(buttonWidth, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Pause");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
+}
+
+bool EditorComponents::DrawStopButton(float buttonWidth) {
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+    float width = buttonWidth > 0.0f ? buttonWidth : ImGui::GetContentRegionAvail().x;
+    bool clicked = ImGui::Button(ICON_FA_STOP " Stop", ImVec2(width, 0));
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Stop");
+    }
+
+    ImGui::PopStyleColor(3);
+    return clicked;
+}
+
+float EditorComponents::GetLabelWidth() {
+    const float charWidth = ImGui::CalcTextSize("A").x;
+    return charWidth * 18.0f;  // Approximate width for 18 characters (adjust as needed)
+}
+
+bool EditorComponents::DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth) {
+    ImGui::Text(label);
+    ImGui::SameLine(labelWidth);
+    float remainingWidth = ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x;
+    float sliderWidth = remainingWidth * 0.7f;  // 70% for slider
+    float inputWidth = remainingWidth * 0.3f;   // 30% for input
+    ImGui::SetNextItemWidth(sliderWidth);
+    std::string sliderId = "##" + std::string(label) + "Slider";
+    std::string inputId = "##" + std::string(label) + "Input";
+    bool modified = false;
+    if (isInt) {
+        int* value = static_cast<int*>(valuePtr);
+        modified = ImGui::SliderInt(sliderId.c_str(), value, static_cast<int>(min), static_cast<int>(max), "");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(inputWidth);
+        modified |= ImGui::InputInt(inputId.c_str(), value, 0, 0);
+    }
+    else {
+        float* value = static_cast<float*>(valuePtr);
+        modified = ImGui::SliderFloat(sliderId.c_str(), value, min, max, "");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(inputWidth);
+        modified |= ImGui::InputFloat(inputId.c_str(), value, 0.0f, 0.0f, "%.2f");
+    }
+    return modified;
 }
