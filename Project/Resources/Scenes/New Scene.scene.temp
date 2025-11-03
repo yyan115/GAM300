@@ -1997,7 +1997,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "Matrix4x4",
@@ -2096,7 +2096,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "Vector3D",
@@ -2120,15 +2120,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.05
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.05
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.05
                                 }
                             ]
                         },
@@ -2137,15 +2137,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.4
                                 }
                             ]
                         },
@@ -2154,15 +2154,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.5
                                 }
                             ]
                         }
@@ -2968,7 +2968,7 @@
         },
         {
             "id": 12,
-            "guid": "00519ef506210d37-0003278f56000001",
+            "guid": "0038475e2f34f269-0003279ce2000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -3240,7 +3240,7 @@
         },
         {
             "id": 13,
-            "guid": "00519ef55626069e-0003278f56000003",
+            "guid": "0038475e76c638a7-0003279ce2000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
@@ -3382,7 +3382,7 @@
         },
         {
             "id": 14,
-            "guid": "00519ef546a45d51-0003278f56000005",
+            "guid": "0038475e0d6180a5-0003279ce2000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -3605,7 +3605,7 @@
         },
         {
             "id": 15,
-            "guid": "00519ef53752b6a3-0003278f56000007",
+            "guid": "0038475e2305f733-0003279ce2000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -3828,7 +3828,7 @@
         },
         {
             "id": 16,
-            "guid": "00519ef50187d195-0003278f56000009",
+            "guid": "0038475e0e2fe774-0003279ce2000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -4051,7 +4051,7 @@
         },
         {
             "id": 17,
-            "guid": "00519ef53bdf8dae-0003278f5600000b",
+            "guid": "0038475e109d5068-0003279ce200000b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -4274,7 +4274,7 @@
         },
         {
             "id": 18,
-            "guid": "00519ef548c68b2b-0003278f5600000d",
+            "guid": "0038475e0c8efd8d-0003279ce200000d",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -4497,7 +4497,7 @@
         },
         {
             "id": 19,
-            "guid": "00519ef543976fb6-0003278f5600000f",
+            "guid": "0038475e7fe53fc7-0003279ce200000f",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

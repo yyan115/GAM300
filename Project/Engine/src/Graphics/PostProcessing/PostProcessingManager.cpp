@@ -84,16 +84,12 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
-    static int frameCount = 0;
-    if (frameCount++ % 60 == 0) {
-        if (hdrEffect && hdrEffect->IsEnabled()) {
-            ENGINE_PRINT("[Process] Applying HDR - Exposure: ", hdrEffect->GetExposure(),
-                " Gamma: ", hdrEffect->GetGamma(),
-                " Mode: ", (int)hdrEffect->GetToneMappingMode(), "\n");
-        }
-        else {
-            ENGINE_PRINT("[Process] HDR is DISABLED or NULL!\n");
-        }
+    static int count = 0;
+    if (count++ % 60 == 0) 
+    {
+        ENGINE_PRINT("[Process] Input texture: ", inputTexture,
+            " Output FBO: ", outputFBO,
+            " HDR texture: ", hdrColorTexture, "\n");
     }
 
     // Current pipeline: HDR tone mapping only
@@ -209,6 +205,8 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     glViewport(0, 0, width, height);
 
     // Clear HDR buffer
+    // Clear HDR buffer with BLACK (very important!)
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

@@ -73,13 +73,13 @@ void SceneInstance::Initialize() {
 	if (hdrEffect) 
 	{
 		hdrEffect->SetEnabled(true);
-		hdrEffect->SetExposure(0.5f);
+		hdrEffect->SetExposure(1.f);
 		hdrEffect->SetGamma(2.2f);
 		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	//CreateHDRTestScene(ecsManager);
+	CreateHDRTestScene(ecsManager);
 	
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
@@ -146,7 +146,7 @@ void SceneInstance::Draw() {
 
 	//RenderSystem::getInstance().BeginFrame();
 	gfxManager.BeginFrame();
-	gfxManager.Clear();
+	gfxManager.Clear(0.0f, 0.0f, 0.0f, 1.0f);
 
 	//glm::mat4 transform = glm::mat4(1.0f);
 	//transform = glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.0f));

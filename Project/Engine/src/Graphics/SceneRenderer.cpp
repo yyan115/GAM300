@@ -119,8 +119,8 @@ void SceneRenderer::BeginSceneRender(int width, int height)
     WindowManager::SetViewportDimensions(width, height);
 
     // Bind framebuffer and set viewport
-    /*glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
-    glViewport(0, 0, width, height);*/
+    //glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
+    //glViewport(0, 0, width, height);
     PostProcessingManager::GetInstance().BeginHDRRender(width, height);
 
     // Enable depth testing for 3D rendering
@@ -178,7 +178,7 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
         // Begin frame and clear (without input processing)
         gfxManager.BeginFrame();
-        gfxManager.Clear();
+        gfxManager.Clear(0.0f, 0.0f, 0.0f, 1.0f);
 
         // Update model system for rendering (without input-based updates)
         if (mainECS.modelSystem) 

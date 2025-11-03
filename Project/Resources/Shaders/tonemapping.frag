@@ -1,27 +1,23 @@
 #version 330 core
 
 out vec4 FragColor;
-
 in vec2 TexCoords;
 
 uniform sampler2D hdrBuffer;
 uniform float exposure;
 uniform float gamma;
-uniform int toneMappingMode; // 0=Reinhard, 1=Exposure, 2=ACES
+uniform int toneMappingMode;
 
-// Reinhard tone mapping
 vec3 ReinhardToneMapping(vec3 color)
 {
     return color / (color + vec3(1.0));
 }
 
-// Exposure tone mapping
 vec3 ExposureToneMapping(vec3 color, float exposureVal)
 {
     return vec3(1.0) - exp(-color * exposureVal);
 }
 
-// ACES Filmic tone mapping (cinematic)
 vec3 ACESFilm(vec3 x)
 {
     float a = 2.51;
@@ -36,9 +32,23 @@ void main()
 {
     vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
     
-    // Try different multipliers
-    vec3 mapped = hdrColor * 0.3;  // Try: 0.3, 0.4, 0.5, 0.6
-    mapped = pow(mapped, vec3(1.0 / 2.2));
+    // Apply exposure adjustment
+    vec3 mapped = hdrColor * exposure;
+    
+    // Only apply tone mapping if any channel is > 1.0 (actually HDR content)
+    float maxComponent = max(max(mapped.r, mapped.g), mapped.b);
+    
+    if (maxComponent > 1.0) {
+        // Apply tone mapping only to bright areas
+        if (toneMappingMode == 0) {
+            mapped = ReinhardToneMapping(mapped);
+        } else if (toneMappingMode == 1) {
+            mapped = ExposureToneMapping(mapped, 1.0);
+        } else if (toneMappingMode == 2) {
+            mapped = ACESFilm(mapped);
+        }
+    }
+    // else: values <= 1.0 pass through unchanged
     
     FragColor = vec4(mapped, 1.0);
 }
