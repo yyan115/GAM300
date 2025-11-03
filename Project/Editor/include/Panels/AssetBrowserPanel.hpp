@@ -153,4 +153,6 @@ private:
     // Directory tree helpers
     void EnsureDirectoryExpanded(const std::string& directoryPath);
     void SyncTreeWithCurrentDirectory();
+
+    void OpenImportDialog();
 };

@@ -4,6 +4,9 @@
         "guid": "001324b020528bac-00030dd500000025",
         "source": "../../Resources/Models/Kachujin/Kachujin G Rosales.fbx",
         "compiled": "../../Resources/Models/Kachujin/Kachujin G Rosales.mesh",
-        "last_compiled": "2025-10-29 07:18:09.9703638"
+        "last_compiled": "2025-11-03 13:08:02.2371001"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
     }
 }

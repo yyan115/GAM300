@@ -77,6 +77,7 @@
     <ClInclude Include="include\Physics\CollisionFilters.hpp" />
     <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
     <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
     <ClInclude Include="include\PrefabComponent.hpp" />
@@ -121,6 +122,7 @@
     <ClInclude Include="include\Serialization\Serializer.hpp" />
     <ClInclude Include="include\Sound\AudioComponent.hpp" />
     <ClInclude Include="include\Sound\Audio.hpp" />
+    <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
@@ -275,6 +277,7 @@
     </ClCompile>
     <ClCompile Include="src\Serialization\Serializer.cpp" />
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
+    <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />

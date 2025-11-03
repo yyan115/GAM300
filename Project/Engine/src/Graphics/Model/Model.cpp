@@ -367,7 +367,7 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         aiString str;
         mat->GetTexture(type, i, &str);
 		std::filesystem::path texPathObj(str.C_Str());
-		texPathObj = texPathObj.stem() / texPathObj.extension(); // Sanitize path
+		texPathObj = texPathObj.stem().generic_string() + texPathObj.extension().generic_string(); // Sanitize path
 
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(texPathObj.generic_string());
 		texPathObj = texturePath;

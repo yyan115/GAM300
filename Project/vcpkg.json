@@ -7,42 +7,10 @@
   "license": "MIT",
   "dependencies": [
     {
-      "name": "assimp",
-      "$comment": "3D model loading and asset importing - using latest stable version"
-    },
-    {
-      "name": "glfw3", 
-      "$comment": "Cross-platform window management and input handling"
-    },
-    {
-      "name": "freetype",
-      "$comment": "Font rendering and text display"
-    },
-    {
-      "name": "glad",
-      "$comment": "OpenGL function loader - required for OpenGL 3.3+ context"
-    },
-    {
-      "name": "glm",
-      "$comment": "Header-only math library for graphics (vectors, matrices, etc.)"
-    },
-    {
-      "name": "spdlog",
-      "$comment": "Fast C++ logging library for engine diagnostics"
-    },
-    {
-      "name": "rapidjson",
-      "$comment": "JSON parsing for serialization and asset loading"
-    },
-    {
-      "name": "gli",
-      "$comment": "OpenGL Image library for DDS, KTX, and KMG texture formats"
-    },
-    {
       "name": "joltphysics",
       "default-features": false,
       "features": ["rtti", "debugrenderer", "profiler"],
-      "$comment": "Physics engine - locked to 5.4.0 to match Android version exactly"
+      "$comment": "Physics engine - locked to 5.4.0 to match Android version exactly. Other dependencies use precompiled libraries from Project/Libraries/"
     }
   ],
   "overrides": [

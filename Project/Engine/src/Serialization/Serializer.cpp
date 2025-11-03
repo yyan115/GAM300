@@ -3,6 +3,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "ECS/ECSRegistry.hpp"
+#include "Utilities/GUID.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -267,6 +268,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioComponent", v, alloc);
         }
+        if (ecs.HasComponent<AudioListenerComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioListenerComponent", v, alloc);
+		}
         if (ecs.HasComponent<LightComponent>(entity)) {
             auto& c = ecs.GetComponent<LightComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -296,6 +302,21 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ColliderComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ColliderComponent", v, alloc);
+        }
+        if (ecs.HasComponent<CameraComponent>(entity)) {
+            auto& c = ecs.GetComponent<CameraComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("CameraComponent", v, alloc);
+        }
+        if (ecs.HasComponent<AnimationComponent>(entity)) {
+            auto& c = ecs.GetComponent<AnimationComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AnimationComponent", v, alloc);
+        }
+        if (ecs.HasComponent<ActiveComponent>(entity)) {
+            auto& c = ecs.GetComponent<ActiveComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ActiveComponent", v, alloc);
         }
 
         entObj.AddMember("components", compsObj, alloc);
@@ -533,6 +554,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioComponent(audioComp, tv);
         }
 
+		// AudioListenerComponent
+        if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioListenerComponent"];
+            ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
+            auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(newEnt);
+            DeserializeAudioListenerComponent(audioListenerComp, tv);
+        }
+
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
@@ -547,6 +576,29 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
             auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
             DeserializeColliderComponent(colliderComp, tv);
+        }
+
+        // CameraComponent
+        if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["CameraComponent"];
+            ecs.AddComponent<CameraComponent>(newEnt, CameraComponent{});
+            auto& cameraComp = ecs.GetComponent<CameraComponent>(newEnt);
+            DeserializeCameraComponent(cameraComp, tv);
+        }
+
+        if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AnimationComponent"];
+            AnimationComponent animComp{};
+            TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+            ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        }
+
+        // ActiveComponent
+        if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ActiveComponent"];
+            ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+            auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
+            DeserializeActiveComponent(activeComp, tv);
         }
 
         // ParentComponent
@@ -744,6 +796,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& tv = comps["AudioComponent"];
             auto& audioComp = ecs.GetComponent<AudioComponent>(currEnt);
             DeserializeAudioComponent(audioComp, tv);
+        }
+
+		// AudioListenerComponent
+        if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioListenerComponent"];
+            auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(currEnt);
+			DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
         // RigidBodyComponent
@@ -1001,26 +1060,34 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
 }
 
 void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON) {
-    // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
+    // typed form: tv.data = [ {type: "bool", data: true}, "GUID_string", {type: "std::string", data: "clip"}, ... ]
     if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
         const auto& d = audioJSON["data"];
-        GUID_string guidStr = d[0].GetString();
+        audioComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
+        GUID_string guidStr = d[1].GetString();  // d[1] is the GUID string
         audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-        audioComp.SetClip(d[1]["data"].GetString());
-        audioComp.SetVolume(d[2]["data"].GetFloat());
-        audioComp.SetPitch(d[3]["data"].GetFloat());
-        audioComp.SetLoop(d[4]["data"].GetBool());
-        audioComp.PlayOnAwake = d[5]["data"].GetBool();
-        audioComp.SetMute(d[6]["data"].GetBool());
-        audioComp.Priority = d[7]["data"].GetInt();
-        audioComp.SetSpatialize(d[8]["data"].GetBool());
-        audioComp.MinDistance = d[9]["data"].GetFloat();
-        audioComp.MaxDistance = d[10]["data"].GetFloat();
-        audioComp.SetSpatialBlend(d[11]["data"].GetFloat());
-        audioComp.SetOutputAudioMixerGroup(d[12]["data"].GetString());
-        audioComp.IsPlaying = d[13]["data"].GetBool();
-        audioComp.IsPaused = d[14]["data"].GetBool();
-        readVec3Generic(d[15], audioComp.Position);
+		audioComp.Mute = d[2]["data"].GetBool();
+		audioComp.bypassListenerEffects = d[3]["data"].GetBool();
+		audioComp.PlayOnAwake = d[4]["data"].GetBool();
+		audioComp.Loop = d[5]["data"].GetBool();
+		audioComp.Priority = d[6]["data"].GetInt();
+		audioComp.Volume = d[7]["data"].GetFloat();
+		audioComp.Pitch = d[8]["data"].GetFloat();
+		audioComp.StereoPan = d[9]["data"].GetFloat();
+		audioComp.reverbZoneMix = d[10]["data"].GetFloat();
+		audioComp.Spatialize = d[11]["data"].GetBool();
+		audioComp.SpatialBlend = d[12]["data"].GetFloat();
+		audioComp.DopplerLevel = d[13]["data"].GetFloat();
+		audioComp.MinDistance = d[14]["data"].GetFloat();
+		audioComp.MaxDistance = d[15]["data"].GetFloat();
+    }
+}
+
+void Serializer::DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON) {
+    // typed form: tv.data = [ {type: "bool", data: true} ]
+    if (audioListenerJSON.HasMember("data") && audioListenerJSON["data"].IsArray()) {
+        const auto& d = audioListenerJSON["data"];
+        audioListenerComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
     }
 }
 
@@ -1028,9 +1095,9 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
-        rbComp.motionID = d[0]["data"].GetInt();
+        rbComp.motionID = d[1]["data"].GetInt();
         rbComp.motion = static_cast<Motion>(rbComp.motionID);
-        rbComp.ccd = d[1]["data"].GetBool();
+        rbComp.ccd = d[2]["data"].GetBool();
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
@@ -1041,15 +1108,16 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (colliderJSON.HasMember("data") && colliderJSON["data"].IsArray()) {
         const auto& d = colliderJSON["data"];
-        colliderComp.layerID = d[0]["data"].GetInt();
+        colliderComp.enabled = d[0]["data"].GetBool();
+        colliderComp.layerID = d[1]["data"].GetInt();
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
-        colliderComp.version = d[1]["data"].GetUint();
-        colliderComp.shapeTypeID = d[2]["data"].GetInt();
-        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
-        readVec3Generic(d[3], colliderComp.boxHalfExtents);
+        colliderComp.version = d[2]["data"].GetUint();
+        colliderComp.shapeTypeID = d[3]["data"].GetInt();
+        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        readVec3Generic(d[4], colliderComp.boxHalfExtents);
         switch (colliderComp.shapeType)
         {
-        case ColliderShapeType::Box:
+        case ColliderShapeType::Cylinder:
             colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
             break;
         default:
@@ -1083,5 +1151,39 @@ void Serializer::DeserializeTagComponent(TagComponent& tagComp, const rapidjson:
 void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON) {
     if (layerJSON.HasMember("layerIndex") && layerJSON["layerIndex"].IsInt()) {
         layerComp.layerIndex = layerJSON["layerIndex"].GetInt();
+    }
+}
+
+void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
+    if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
+        const auto& d = cameraJSON["data"];
+        
+        int idx = 0;
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.priority = d[idx++]["data"].GetInt();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.yaw = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.pitch = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.useFreeRotation = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.fov = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.nearPlane = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.farPlane = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.orthoSize = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.movementSpeed = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.mouseSensitivity = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.minZoom = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.maxZoom = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.zoomSpeed = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
+    }
+}
+
+void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON) {
+    if (activeJSON.HasMember("data") && activeJSON["data"].IsArray()) {
+        const auto& d = activeJSON["data"];
+        int idx = 0;
+        if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
     }
 }

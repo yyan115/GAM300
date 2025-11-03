@@ -10,12 +10,20 @@
 
 // External libraries
 #include <imgui.h>
-#include <imgui_internal.h> 
+#include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <ImGuizmo.h>
 #include <IconsFontAwesome6.h>
 #include <filesystem>
+
+// Windows file dialog
+#ifdef _WIN32
+	#include <windows.h>
+	#include <shobjidl.h>
+	#pragma comment(lib, "ole32.lib")
+	#pragma comment(lib, "shell32.lib")
+#endif
 
 // Include panel headers
 #include "Panels/ScenePanel.hpp"
@@ -34,6 +42,8 @@ std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
 bool GUIManager::dockspaceInitialized = false;
 Entity GUIManager::selectedEntity = static_cast<Entity>(-1);
 GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
+std::string GUIManager::notificationMessage = "";
+float GUIManager::notificationTimer = 0.0f;
 
 void GUIManager::Initialize() {
 	GLFWwindow* window = WindowManager::getWindow();
@@ -96,10 +106,16 @@ void GUIManager::Render() {
 	// Render menu bar
 	RenderMenuBar();
 
+	// Handle keyboard shortcuts
+	HandleKeyboardShortcuts();
+
 	// Render all open panels
 	if (panelManager) {
 		panelManager->RenderOpenPanels();
 	}
+
+	// Render notification overlay
+	RenderNotification();
 
 	// Handle multi-viewport rendering
 	ImGuiIO& io = ImGui::GetIO();
@@ -271,18 +287,16 @@ void GUIManager::RenderMenuBar() {
 			// if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
 			//     // TODO: New scene functionality
 			// }
-			// if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Scene", "Ctrl+O")) {
-			//     std::string filepath = "Resources/Scenes/scene.json";
-			//     // TEMP
-			//     if (!std::filesystem::exists(filepath)) {
-			//         std::cerr << "No saved scene yet! Save scene first!" << std::endl;
-			//     }
-			//     else {
-			//         SceneManager::GetInstance().LoadScene(filepath);
-			//     }
-			// }
+			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+O")) {
+				std::string filepath = OpenSceneFileDialog();
+				if (!filepath.empty()) {
+					SceneManager::GetInstance().LoadScene(filepath);
+					ShowNotification("Scene Loaded!", 2.0f);
+				}
+			}
 			if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) {
 				SceneManager::GetInstance().SaveScene();
+				ShowNotification("Scene Saved!", 2.0f);
 			}
 			ImGui::Separator();
 			ImGui::BeginDisabled(AssetManager::GetInstance().androidCompilationStatus.isCompiling);
@@ -448,4 +462,116 @@ void GUIManager::CreateEditorTheme() {
 	style.WindowRounding = 4.0f;
 	style.FrameRounding = 4.0f;
 	style.GrabRounding = 4.0f;
+}
+
+std::string GUIManager::OpenSceneFileDialog() {
+	std::string chosenPath;
+
+#if defined(_WIN32)
+	bool gotPath = false;
+	HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	bool coInitialized = SUCCEEDED(hrCo);
+
+	if (!coInitialized) {
+		ENGINE_LOG_WARN(std::string("[OpenSceneFileDialog] CoInitializeEx failed: ") + std::to_string(static_cast<long long>(hrCo)));
+	}
+
+	if (coInitialized) {
+		IFileOpenDialog* pFileOpen = nullptr;
+		HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOpen));
+		if (SUCCEEDED(hr) && pFileOpen) {
+			const COMDLG_FILTERSPEC fileTypes[] = {
+				{ L"Scene Files (*.scene)", L"*.scene" },
+				{ L"All Files (*.*)", L"*.*" }
+			};
+
+			pFileOpen->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
+			pFileOpen->SetDefaultExtension(L"scene");
+
+			// Require file/path to exist
+			DWORD options = 0;
+			if (SUCCEEDED(pFileOpen->GetOptions(&options))) {
+				pFileOpen->SetOptions(options | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST);
+			}
+
+			hr = pFileOpen->Show(nullptr);
+			if (SUCCEEDED(hr)) {
+				IShellItem* pItem = nullptr;
+				if (SUCCEEDED(pFileOpen->GetResult(&pItem)) && pItem) {
+					PWSTR pszFilePath = nullptr;
+					if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath) {
+						std::filesystem::path p(pszFilePath);
+						chosenPath = p.string();
+						CoTaskMemFree(pszFilePath);
+						gotPath = true;
+					}
+					pItem->Release();
+				}
+			}
+			else if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+				// User cancelled - just return empty string
+			}
+			else {
+				ENGINE_LOG_WARN(std::string("[OpenSceneFileDialog] IFileOpenDialog::Show failed (hr): ") + std::to_string(static_cast<long long>(hr)));
+			}
+			pFileOpen->Release();
+		}
+		else {
+			ENGINE_LOG_WARN(std::string("[OpenSceneFileDialog] CoCreateInstance(CLSID_FileOpenDialog) failed (hr): ") + std::to_string(static_cast<long long>(hr)));
+		}
+
+		if (coInitialized) CoUninitialize();
+	}
+#else
+	// Non-Windows platforms: fallback to a default path
+	ENGINE_LOG_INFO("[OpenSceneFileDialog] Non-Windows platform; file dialog not supported");
+#endif
+
+	return chosenPath;
+}
+
+void GUIManager::HandleKeyboardShortcuts() {
+	ImGuiIO& io = ImGui::GetIO();
+
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+		SceneManager::GetInstance().SaveScene();
+		ShowNotification("Scene Saved!", 2.0f);
+	}
+
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
+		std::string filepath = OpenSceneFileDialog();
+		if (!filepath.empty()) {
+			SceneManager::GetInstance().LoadScene(filepath);
+			ShowNotification("Scene Loaded!", 2.0f);
+		}
+	}
+}
+
+void GUIManager::ShowNotification(const std::string& message, float duration) {
+	notificationMessage = message;
+	notificationTimer = duration;
+}
+
+void GUIManager::RenderNotification() {
+	if (notificationTimer > 0.0f) {
+		notificationTimer -= ImGui::GetIO().DeltaTime;
+
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImVec2 workPos = viewport->WorkPos;
+		ImVec2 workSize = viewport->WorkSize;
+
+		ImGui::SetNextWindowPos(ImVec2(workPos.x + workSize.x - 10.0f, workPos.y + workSize.y - 60.0f), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+
+		ImGui::SetNextWindowBgAlpha(0.85f);
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+		                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+		                         ImGuiWindowFlags_AlwaysAutoResize;
+
+		if (ImGui::Begin("##Notification", nullptr, flags)) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+			ImGui::Text("%s", notificationMessage.c_str());
+			ImGui::PopStyleColor();
+		}
+		ImGui::End();
+	}
 }

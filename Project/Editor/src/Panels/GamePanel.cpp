@@ -118,9 +118,9 @@ void GamePanel::OnImGuiRender() {
         bool hasActiveCamera = false;
         try {
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-            Entity activeCameraEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : 0;
+            Entity activeCameraEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
 
-            if (activeCameraEntity != 0) {
+            if (activeCameraEntity != UINT32_MAX) {
                 // Also check if the camera's entity is active (not just the camera component)
                 if (ecsManager.HasComponent<ActiveComponent>(activeCameraEntity)) {
                     auto& activeComp = ecsManager.GetComponent<ActiveComponent>(activeCameraEntity);

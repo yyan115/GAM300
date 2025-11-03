@@ -108,7 +108,7 @@ int Bone::GetPositionIndex(float animationTime)
 		if (animationTime < mPositions[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumPositions - 2;
 }
 
 /* Gets the current index on mKeyRotations to interpolate to based on the
@@ -120,7 +120,7 @@ int Bone::GetRotationIndex(float animationTime)
 		if (animationTime < mRotations[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumRotations - 2;
 }
 
 /* Gets the current index on mKeyScalings to interpolate to based on the
@@ -132,7 +132,7 @@ int Bone::GetScaleIndex(float animationTime)
 		if (animationTime < mScales[index + 1].timeStamp)
 			return index;
 	}
-	assert(0);
+	return mNumScalings - 2;
 }
 
 
@@ -174,7 +174,7 @@ glm::mat4 Bone::InterpolateRotation(float animationTime)
 
 	int r0Index = GetRotationIndex(animationTime);
 	int r1Index = r0Index + 1;
-	float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
+    float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
 	glm::quat finalRotation = glm::slerp(mRotations[r0Index].orientation, mRotations[r1Index].orientation, scaleFactor);
 
 	finalRotation = glm::normalize(finalRotation);

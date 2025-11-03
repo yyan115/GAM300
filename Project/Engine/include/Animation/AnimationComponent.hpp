@@ -2,10 +2,14 @@
 #include "pch.h"
 #include "Animation/Animator.hpp"
 #include "Animation/AnimationSystem.hpp"
+#include "Reflection/ReflectionBase.hpp"
+#include "Utilities/GUID.hpp"
 
 class ENGINE_API AnimationComponent
 {
 public:
+	REFL_SERIALIZABLE
+
 	AnimationComponent();
 
     ~AnimationComponent() = default;
@@ -46,19 +50,23 @@ public:
     const std::vector<std::unique_ptr<Animation>>& GetClips() const;
     size_t GetActiveClipIndex() const;
 
-    // UI state (can be private with getters if you prefer)
+    void LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+    void SetClipCount(size_t count);
+
+    bool  enabled = true;
     bool  isPlay = false;
     bool  isLoop = true;
     float speed = 1.0f;
+    int clipCount = 0;
+    std::vector<std::string> clipPaths;
+    std::vector<GUID_128> clipGUIDs;
 
 private:
-    // Data
-    std::vector<std::unique_ptr<Animation>> clips; // idle/walk/run…
+    std::vector<std::unique_ptr<Animation>> clips;
     size_t activeClip = 0;
 
-    // Player
     std::unique_ptr<Animator> animator;
 
-    // Helpers
-    void SyncAnimatorToActiveClip(); // call when clip changes
+    void SyncAnimatorToActiveClip();
+    std::unique_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
 };

@@ -10,26 +10,28 @@
 class Audio;
 
 // AudioComponent: AudioSource component for ECS entities
-// Mirrors Unity's AudioSource API and behavior patterns
 struct AudioComponent 
 {
     REFL_SERIALIZABLE
     // Unity-like public properties (Inspector editable)
     bool enabled{ true };        // Component enabled state (can be toggled in inspector)
-        GUID_128 audioGUID{};          // Audio asset GUID
-    std::string Clip{};          // Audio asset path (Unity: AudioClip reference)
+    GUID_128 audioGUID{};          // Audio asset GUID
+    bool Mute{ false };          // Mute the audio source
+	bool bypassListenerEffects{ false }; // Bypass listener effects 
+    bool PlayOnAwake{ false };   // Auto-play when entity is enabled 
+    bool Loop{ false };          // Loop the audio
+    int Priority{ 128 };         // Channel priority (0-256)
     float Volume{ 1.0f };        // Volume multiplier (0.0 - 1.0)
     float Pitch{ 1.0f };         // Pitch multiplier (0.1 - 3.0)
-    bool Loop{ false };          // Loop the audio
-    bool PlayOnAwake{ false };   // Auto-play when entity is enabled (Unity naming)
-    bool Mute{ false };          // Mute the audio source
-    int Priority{ 128 };         // Channel priority (0-256, Unity standard)
+	float StereoPan{ 0.0f };     // -1.0 (left) to 1.0 (right) panning
+	float reverbZoneMix{ 1.0f }; // Reverb zone mix level   
     
     // 3D Audio Properties
     bool Spatialize{ false };    // Enable 3D spatial audio
+    float SpatialBlend{ 0.0f };  // 2D (0.0) to 3D (1.0) blend
+	float DopplerLevel{ 1.0f };   // Doppler effect level
     float MinDistance{ 1.0f };   // Distance for full volume
-    float MaxDistance{ 100.0f }; // Distance for minimum volume
-    float SpatialBlend{ 1.0f };  // 2D (0.0) to 3D (1.0) blend
+    float MaxDistance{ 100.0f }; // Distance for minimum volume    
     
     // Output routing
     std::string OutputAudioMixerGroup;  // Bus/Mixer group (Unity naming)
@@ -70,7 +72,6 @@ public:
     void SetPitch(float newPitch);
     void SetLoop(bool shouldLoop);
     void SetMute(bool shouldMute);
-    void SetSpatialize(bool enable);
     void ENGINE_API SetSpatialBlend(float blend);
     void SetOutputAudioMixerGroup(const std::string& groupName);
     
@@ -79,7 +80,7 @@ public:
     void OnTransformChanged(const Vector3D& newPosition);
 
     // Asset management
-    void ENGINE_API SetClip(const std::string& clipPath);
+    void ENGINE_API SetClip(const GUID_128& guid);
     void SetClip(std::shared_ptr<Audio> clip);
     bool HasValidClip() const;
     
