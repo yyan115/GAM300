@@ -706,6 +706,47 @@ void RegisterInspectorCustomRenderers() {
             return false;
         });
 
+    // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "scale",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "rotation",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "saved3DPosition",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+
+    // Custom color picker for SpriteRenderComponent
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "color",
+        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
+            Vector3D* color = static_cast<Vector3D*>(ptr);
+            auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+
+            // Convert to 0-255 range for display, combine with alpha
+            float colorRGBA[4] = {
+                color->x,
+                color->y,
+                color->z,
+                sprite.alpha
+            };
+
+            ImGui::Text("Color:");
+            ImGui::SameLine();
+
+            if (ImGui::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8)) {
+                color->x = colorRGBA[0];
+                color->y = colorRGBA[1];
+                color->z = colorRGBA[2];
+                sprite.alpha = colorRGBA[3];
+            }
+
+            return true; // Skip default rendering
+        });
+
+    // Hide alpha from SpriteRenderComponent (it's in the color picker now)
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "alpha",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+
     // Particle texture GUID
     ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "textureGUID",
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
