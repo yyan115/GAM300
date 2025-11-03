@@ -30,6 +30,14 @@ list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vfetchoptimizer.cpp"
 )
 
+# Android uses OpenGL ES, not desktop OpenGL - exclude GLAD (desktop OpenGL loader)
+if(ANDROID)
+    list(REMOVE_ITEM ENGINE_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/glad.c"
+    )
+    message(STATUS "Excluded glad.c for Android (uses OpenGL ES, not desktop OpenGL)")
+endif()
+
 file(GLOB_RECURSE ENGINE_HEADERS
     "include/*.h"
     "include/*.hpp"
@@ -138,8 +146,9 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        # Keep manual libraries: ImGui (docking), FMOD (commercial)
+        # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
+        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -169,6 +178,8 @@ if(ANDROID)
         PRIVATE
             # FetchContent Jolt Physics - PRIVATE so Game doesn't see it
             Jolt
+            # Lua scripting library
+            lua
             # Prebuilt libraries
             ${SPDLOG_LIBRARY}
             ${FREETYPE_LIBRARY}
@@ -187,6 +198,7 @@ else()
             # All dependencies are PRIVATE - Game only sees Engine.h
             glm::glm
             Jolt
+            lua
             assimp::assimp
             glfw
             Freetype::Freetype
