@@ -679,14 +679,74 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SetNextItemWidth(-1);
 
             std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = texPath.empty() ? "None" : texPath.substr(texPath.find_last_of("/\\") + 1);
+            std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-            // TODO: Add texture drag-drop support when available
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop texture file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textureGUID;
+
+                    // Load texture immediately
+                    auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
+                    std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    spriteComp.texturePath = newTexturePath;
+                    spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                }
+                EditorComponents::EndDragDropTarget();
+            }
 
             return false;
         });
+
+    // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "scale",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "rotation",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "saved3DPosition",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+
+    // Custom color picker for SpriteRenderComponent
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "color",
+        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
+            Vector3D* color = static_cast<Vector3D*>(ptr);
+            auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+
+            // Convert to 0-255 range for display, combine with alpha
+            float colorRGBA[4] = {
+                color->x,
+                color->y,
+                color->z,
+                sprite.alpha
+            };
+
+            ImGui::Text("Color:");
+            ImGui::SameLine();
+
+            if (ImGui::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8)) {
+                color->x = colorRGBA[0];
+                color->y = colorRGBA[1];
+                color->z = colorRGBA[2];
+                sprite.alpha = colorRGBA[3];
+            }
+
+            return true; // Skip default rendering
+        });
+
+    // Hide alpha from SpriteRenderComponent (it's in the color picker now)
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "alpha",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
 
     // Particle texture GUID
     ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "textureGUID",
@@ -698,11 +758,29 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SetNextItemWidth(-1);
 
             std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = texPath.empty() ? "None" : texPath.substr(texPath.find_last_of("/\\") + 1);
+            std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-            // TODO: Add texture drag-drop support when available
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop texture file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textureGUID;
+
+                    // Load texture immediately
+                    auto& particleComp = ecs.GetComponent<ParticleComponent>(entity);
+                    std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                }
+                EditorComponents::EndDragDropTarget();
+            }
 
             return false;
         });
