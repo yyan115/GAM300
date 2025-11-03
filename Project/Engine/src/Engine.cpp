@@ -563,7 +563,7 @@ bool Engine::InitializeGraphicsResources() {
 	SceneManager::GetInstance().LoadScene(lastScenePath);
 #else
 	// Game build always loads default scene
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/New Scene.scene");
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/test.scene");
 	ENGINE_LOG_INFO("Loaded default scene");
 #endif
 

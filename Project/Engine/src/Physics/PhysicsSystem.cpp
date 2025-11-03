@@ -282,7 +282,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 #ifdef __ANDROID__
     static int updateCount = 0;
     if (updateCount++ % 60 == 0) { // Log every 60 frames
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, dt=%f, entities=%zu", dt, entities.size());
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, fixedDt=%f, entities=%zu", fixedDt, entities.size());
     }
 #endif
     if (entities.empty()) return;

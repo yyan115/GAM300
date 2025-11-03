@@ -4,11 +4,11 @@
         "guid": "001324b038eb03be-00030dd500000029",
         "source": "../../Resources/Models/Kachujin/Kachujin_specular.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds",
-        "last_compiled": "2025-11-02 17:03:28.6672314"
+        "last_compiled": "2025-11-03 03:02:58.0267241"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "specular",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

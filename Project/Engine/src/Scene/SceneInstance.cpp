@@ -245,7 +245,7 @@ void SceneInstance::processInput(float deltaTime)
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 	Entity activeCam = mainECS.cameraSystem->GetActiveCameraEntity();
 
-	if (activeCam == 0) return;
+	if (activeCam == UINT32_MAX) return;
 
 	auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
 

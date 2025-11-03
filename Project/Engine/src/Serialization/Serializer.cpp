@@ -1080,12 +1080,13 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (colliderJSON.HasMember("data") && colliderJSON["data"].IsArray()) {
         const auto& d = colliderJSON["data"];
-        colliderComp.layerID = d[0]["data"].GetInt();
+        colliderComp.enabled = d[0]["data"].GetBool();
+        colliderComp.layerID = d[1]["data"].GetInt();
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
-        colliderComp.version = d[1]["data"].GetUint();
-        colliderComp.shapeTypeID = d[2]["data"].GetInt();
+        colliderComp.version = d[2]["data"].GetUint();
+        colliderComp.shapeTypeID = d[3]["data"].GetInt();
         //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
-        readVec3Generic(d[3], colliderComp.boxHalfExtents);
+        readVec3Generic(d[4], colliderComp.boxHalfExtents);
         switch (colliderComp.shapeType)
         {
         case ColliderShapeType::Cylinder:
