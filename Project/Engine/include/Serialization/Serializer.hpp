@@ -15,6 +15,7 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 #include <Sound/AudioComponent.hpp>
+#include <Sound/AudioListenerComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
@@ -39,6 +40,7 @@ public:
 	static void DeserializeSpotLightComponent(SpotLightComponent& spotLightComp, const rapidjson::Value& spotLightJSON);
 	static void DeserializePointLightComponent(PointLightComponent& pointLightComp, const rapidjson::Value& pointLightJSON);
 	static void DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON);
+	static void DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON);
 	static void DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON);
 	static void DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON);
 	static void DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON);
