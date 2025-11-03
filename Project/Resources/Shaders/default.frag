@@ -44,6 +44,7 @@ struct DirectionLight{
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+    float intensity;
 };
 uniform DirectionLight dirLight;
 
@@ -55,6 +56,7 @@ struct PointLight{
     float constant;
     float linear;
     float quadratic;   
+    float intensity;
 };
 #define NR_POINT_LIGHTS 32
 uniform PointLight pointLights[NR_POINT_LIGHTS];
@@ -71,6 +73,7 @@ struct Spotlight{
     float constant;
     float linear;
     float quadratic;
+    float intensity;
 };
 #define NR_SPOT_LIGHTS 16
 uniform Spotlight spotLights[NR_SPOT_LIGHTS];
@@ -138,7 +141,7 @@ vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 view_direct
     vec3 diffuse  = light.diffuse  * diff * getMaterialDiffuse();
     vec3 specular = light.specular * spec * getMaterialSpecular();
     
-    return (ambient + diffuse + specular);
+    return (ambient + diffuse + specular) * light.intensity;
 }
 
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 view_direction)
@@ -165,7 +168,7 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 view_
     diffuse  *= attenuation;
     specular *= attenuation;
     
-    return (ambient + diffuse + specular);
+    return (ambient + diffuse + specular) * light.intensity;
 }
 
 vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 view_direction)
@@ -196,7 +199,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 view_di
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
     
-    return (ambient + diffuse + specular);
+    return (ambient + diffuse + specular) * light.intensity;
 }
 
 void main()

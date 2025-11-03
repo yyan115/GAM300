@@ -75,11 +75,11 @@ void SceneInstance::Initialize() {
 		hdrEffect->SetEnabled(true);
 		hdrEffect->SetExposure(0.5f);
 		hdrEffect->SetGamma(2.2f);
-		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::EXPOSURE);
+		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	CreateHDRTestScene(ecsManager);
+	//CreateHDRTestScene(ecsManager);
 	
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();

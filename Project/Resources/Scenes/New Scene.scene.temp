@@ -1002,7 +1002,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "Matrix4x4",
@@ -1997,7 +1997,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "Matrix4x4",
@@ -2096,7 +2096,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "Vector3D",
@@ -2120,15 +2120,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0
                                 }
                             ]
                         },
@@ -2137,15 +2137,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.4
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.4
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.4
+                                    "data": 0
                                 }
                             ]
                         },
@@ -2154,15 +2154,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.5
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.5
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.5
+                                    "data": 0
                                 }
                             ]
                         }
@@ -2968,7 +2968,7 @@
         },
         {
             "id": 12,
-            "guid": "0020138090faf6d2-0003181440000001",
+            "guid": "00519ef506210d37-0003278f56000001",
             "components": {
                 "NameComponent": {
                     "name": "FPSText"
@@ -3240,7 +3240,7 @@
         },
         {
             "id": 13,
-            "guid": "00201380c5bfd7f0-0003181440000003",
+            "guid": "00519ef55626069e-0003278f56000003",
             "components": {
                 "NameComponent": {
                     "name": "main camera"
@@ -3382,7 +3382,7 @@
         },
         {
             "id": 14,
-            "guid": "002013808878774a-0003181440000005",
+            "guid": "00519ef546a45d51-0003278f56000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -3605,7 +3605,7 @@
         },
         {
             "id": 15,
-            "guid": "00201380b8cf7a7c-0003181440000007",
+            "guid": "00519ef53752b6a3-0003278f56000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -3828,7 +3828,7 @@
         },
         {
             "id": 16,
-            "guid": "00201380fb03d281-0003181440000009",
+            "guid": "00519ef50187d195-0003278f56000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -4051,7 +4051,7 @@
         },
         {
             "id": 17,
-            "guid": "002013808e938522-000318144000000b",
+            "guid": "00519ef53bdf8dae-0003278f5600000b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -4274,7 +4274,7 @@
         },
         {
             "id": 18,
-            "guid": "00201380e1434e5f-000318144000000d",
+            "guid": "00519ef548c68b2b-0003278f5600000d",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -4497,7 +4497,7 @@
         },
         {
             "id": 19,
-            "guid": "00201380811b78f0-000318144000000f",
+            "guid": "00519ef543976fb6-0003278f5600000f",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

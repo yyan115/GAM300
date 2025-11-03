@@ -32,6 +32,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setVec3("dirLight.ambient", directionalLightData.ambient);
         shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
         shader.setVec3("dirLight.specular", directionalLightData.specular);
+        shader.setFloat("dirLight.intensity", 1.0f);
     }
     else
     {
@@ -39,6 +40,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setVec3("dirLight.ambient", glm::vec3(0.0f));
         shader.setVec3("dirLight.diffuse", glm::vec3(0.0f));
         shader.setVec3("dirLight.specular", glm::vec3(0.0f));
+        shader.setFloat("dirLight.intensity", 0.0f);
     }
 
     // Send counts to shader so it only processes active lights
@@ -56,6 +58,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".constant", pointLightData.constant[i]);
         shader.setFloat(base + ".linear", pointLightData.linear[i]);
         shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
+        shader.setFloat(base + ".intensity", 1.0f);
     }
 
     // Only loop through and set active spot lights
@@ -72,6 +75,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
         shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
         shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
+        shader.setFloat(base + ".intensity", 1.0f);
     }
 }
 

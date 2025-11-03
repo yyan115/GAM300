@@ -34,26 +34,11 @@ vec3 ACESFilm(vec3 x)
 
 void main()
 {
-    // Sample HDR color
     vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
     
-    // Apply exposure adjustment
-    vec3 mapped = hdrColor * exposure;
-    
-    // Apply tone mapping based on mode
-    if (toneMappingMode == 0) {
-        // Reinhard
-        mapped = ReinhardToneMapping(mapped);
-    } else if (toneMappingMode == 1) {
-        // Exposure-based
-        mapped = ExposureToneMapping(mapped, 1.0);
-    } else if (toneMappingMode == 2) {
-        // ACES Filmic
-        mapped = ACESFilm(mapped);
-    }
-    
-    // Gamma correction
-    mapped = pow(mapped, vec3(1.0 / gamma));
+    // Try different multipliers
+    vec3 mapped = hdrColor * 0.3;  // Try: 0.3, 0.4, 0.5, 0.6
+    mapped = pow(mapped, vec3(1.0 / 2.2));
     
     FragColor = vec4(mapped, 1.0);
 }
