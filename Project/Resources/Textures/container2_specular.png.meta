@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a2215ab4ad-00031f529a000059",
+        "guid": "001877b91704f573-0003286cf8000077",
         "source": "../../Resources/Textures/container2_specular.png",
         "compiled": "../../Resources/Textures/container2_specular.dds",
-        "last_compiled": "2025-11-02 14:53:56.4349852"
+        "last_compiled": "2025-11-03 14:28:12.7386168"
     },
     "TextureMetaData": {
         "type": "diffuse",
