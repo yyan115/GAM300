@@ -681,6 +681,7 @@
     <ClCompile Include="src\ScriptFileSystem_android.cpp" />
     <ClCompile Include="src\ScriptFileSystem_default.cpp" />
     <ClCompile Include="src\ScriptFileSystem_win.cpp" />
+    <ClCompile Include="src\Scripting.cpp" />
     <ClCompile Include="src\ScriptingRuntime.cpp" />
     <ClCompile Include="src\ScriptInspector.cpp" />
     <ClCompile Include="src\ScriptProfiler.cpp" />
@@ -690,6 +691,7 @@
     <ClCompile Include="src\StatePreserver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Resources\Scripts\sample_mono_behavior.lua" />
     <None Include="..\Resources\Scripts\test.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

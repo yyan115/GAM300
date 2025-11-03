@@ -1,77 +1,84 @@
+// include/Scripting.h
 #pragma once
-// Scripting.h
-// Public API for the scripting subsystem.
+// Public integration surface for the scripting subsystem.
 //
-// Thread-safety notes:
-//  - Most Scripting API calls must be made from the main thread (the thread that owns the VM).
-//  - Some calls are safe to call from other threads (RequestReload()) but may only *request* an action
-//    that is performed on the main thread during Tick().
-// Lifetime notes:
-//  - Initialize() must be called before any other Scripting functions.
-//  - Shutdown() must be called during application shutdown to release resources.
+// - Keeps the engine/editor decoupled from Lua internals:
+//     * CreateInstanceFromFile returns an opaque int instance id (registry ref),
+//       but editors should test validity with IsValidInstance() rather than
+//       comparing to LUA_NOREF.
+//     * Host log handler takes a single formatted string (std::string).
+// - All APIs are main-thread only unless noted otherwise.
+//
+// Minimal usage:
+//   Scripting::Init();
+//   Scripting::SetHostLogHandler([](const std::string& s){ ENGINE_PRINT(s.c_str()); });
+//   int inst = Scripting::CreateInstanceFromFile("path.lua");
+//   if (Scripting::IsValidInstance(inst)) { Scripting::CallInstanceFunction(inst, "Awake"); }
+//   Scripting::DestroyInstance(inst);
+//   Scripting::Shutdown();
 
-#include <cstdint>
-#include <functional>
 #include <string>
+#include <vector>
+#include <functional>
 
-extern "C" {
-    // Forward-declare Lua state here to avoid exposing lua headers to every translation unit
-    struct lua_State;
-}
+extern "C" { struct lua_State; }
 
 namespace Scripting {
 
-    using EnvironmentId = uint32_t; // opaque opaque handle for per-script environments (threads/contexts)
+    using HostLogFn = std::function<void(const std::string&)>; // scripts pass one formatted string
+    using ReadAllTextFn = std::function<bool(const std::string& path, std::string& out)>;
 
-    // Lightweight configuration for runtime initialization.
-    // - mainScriptPath: optional path to a script to run immediately after Initialize.
-    // - gcIntervalMs: target interval between incremental GC steps (0 = default behavior).
-    // - logCallback: optional callback for low-level runtime logging (info/warn/error messages).
-    struct ScriptingConfig {
-        std::string mainScriptPath;
-        unsigned int gcIntervalMs = 100; // ms between incremental GC steps
-        // Optional callback used for runtime-level messages. Signature: (level, message)
-        // level: "info", "warn", "error"
-        std::function<void(const std::string& level, const std::string& msg)> logCallback;
+    using EnvironmentId = uint32_t;
+    static constexpr EnvironmentId InvalidEnvironmentId = 0u;
+
+    struct InitOptions {
+        bool createNewVM = true;
+        bool openLibs = true; // luaL_openlibs
     };
 
-    // Initialize the scripting subsystem and (optionally) run the configured main script.
-    // Must be called on the main thread before other Scripting calls.
-    // Returns true on success.
-    bool Initialize(const ScriptingConfig& cfg);
-
-    // Shutdown the scripting subsystem, freeing all resources.
-    // Must be called on the main thread.
+    // Initialize/shutdown
+    bool Init(const InitOptions& opts = InitOptions{});
     void Shutdown();
 
-    // Called once per-frame on the main thread; runs scheduled script work (update() callbacks,
-    // coroutine scheduling, incremental GC, and performs reloads requested via RequestReload()).
+    // If the engine wants to provide its own lua_State, call SetLuaState() before other calls.
+    // If Init was called with createNewVM == true, the library will own the VM and Shutdown() will close it.
+    void SetLuaState(lua_State* L);
+    lua_State* GetLuaState(); // may return nullptr if uninitialized
+
+    // Per-frame tick. Main-thread only. Must be called frequently to advance coroutines.
     void Tick(float dtSeconds);
 
-    // Request that the runtime reload the main script on the next Tick().
-    // Thread-safe (only posts a request).
-    void RequestReload();
+    // Create/destroy instances (returns a registry-ref-like int). Use IsValidInstance() to check.
+    int CreateInstanceFromFile(const std::string& scriptPath);
+    void DestroyInstance(int instanceRef);
+    bool IsValidInstance(int instanceRef);
 
-    // Run a single script file immediately on the main thread. Returns true on success.
-    bool RunScriptFile(const std::string& path);
+    // Call named function on instance (no variadic args support in this helper).
+    // Returns true on success (function executed with no errors).
+    bool CallInstanceFunction(int instanceRef, const std::string& funcName);
 
-    // Create/destroy per-script environments.
-    // A created environment returns a non-zero EnvironmentId. Environments are backed by
-    // a lua thread (lua_State * created with lua_newthread) and are safe to use for
-    // isolated instances (e.g. one script per entity). IDs are valid until DestroyEnvironment is called.
-    //
-    // These functions must be called on the main thread (they touch the VM).
-    //
-    // NOTE: Environments (and their registry references) are **invalidated** when the runtime reloads
-    // (e.g. via RequestReload() + Tick()). The runtime frees the old lua_State and associated registry
-    // references during reload. If you require environments to persist across reloads you must re-create
-    // them and re-establish any registry references after reload (this is not handled automatically).
-    EnvironmentId CreateEnvironment(const std::string& name);
-    void DestroyEnvironment(EnvironmentId env);
+    // Host logger injection (single string parameter). The binding `cpp_log(s)` will call this handler.
+    // If not set, messages go to ENGINE_PRINT with LogLevel::Info.
+    void SetHostLogHandler(HostLogFn fn);
 
-    // Return the current raw lua_State* for read-only / inspection use. This pointer is
-    // owned by the runtime and must not be closed by the caller. Accessing the raw lua_State
-    // must be done on the main thread or otherwise synchronized by the caller.
-    lua_State* GetLuaState();
+    // Allow engine to override script file reading (editor may read from virtual FS).
+    void SetFileSystemReadAllText(ReadAllTextFn fn);
+
+    // Serializer/inspector wrappers (thin)
+    std::string SerializeInstanceToJson(int instanceRef);
+    bool DeserializeJsonToInstance(int instanceRef, const std::string& json);
+
+    // StatePreserver wrappers
+    void RegisterInstancePreserveKeys(int instanceRef, const std::vector<std::string>& keys);
+    std::string ExtractInstancePreserveState(int instanceRef);
+    bool ReinjectInstancePreserveState(int instanceRef, const std::string& json);
+
+    // Hot-reload helpers
+    void EnableHotReload(bool enable);
+    void RequestReloadNow();
+
+    // Coroutine scheduler control (optional)
+    void InitializeCoroutineScheduler();
+    void ShutdownCoroutineScheduler();
 
 } // namespace Scripting

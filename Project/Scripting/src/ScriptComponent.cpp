@@ -60,9 +60,6 @@ namespace Scripting {
     ScriptComponent::~ScriptComponent() {
         lua_State* L = GetMainState();
         if (L) {
-            // IMPORTANT: destructor must run on main thread (owner of lua_State).
-            // If not guaranteed by caller, callers MUST call DetachScript() before destroying the component.
-            assert(/* engine-provided check that we're on main thread or remove assert and log*/ true && "ScriptComponent destructor must run on main thread. Call DetachScript() earlier.");
             ClearRefs(L);
         }
         else {

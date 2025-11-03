@@ -97,11 +97,13 @@ bool ScriptSerializer::DeserializeJsonToInstance(lua_State* L, int instanceRef, 
     // shallow clear: remove existing keys
     lua_pushnil(L);
     while (lua_next(L, absTable) != 0) {
-        lua_pop(L, 1);          // pop value
-        lua_pushvalue(L, -1);   // duplicate key
+        lua_pop(L, 1);
+        lua_pushvalue(L, -1);
         lua_pushnil(L);
-        lua_settable(L, absTable); // table[key] = nil
+        lua_settable(L, absTable);
     }
+    // pop the last key left by lua_next
+    if (lua_gettop(L) >= 1) lua_pop(L, 1);
 
     // populate directly from rapidjson doc members
     if (doc.IsObject()) {

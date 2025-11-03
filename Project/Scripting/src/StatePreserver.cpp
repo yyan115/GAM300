@@ -11,15 +11,20 @@ extern "C" {
 
 #include <cassert>
 #include <sstream>
+#include <cstdarg>
+#include <cstdio>
 
 using namespace Scripting;
 
-static inline void SP_LOG(EngineLogging::LogLevel lvl, const char* fmt, ...) 
+// Safe formatting wrapper for engine logging (avoids passing va_list to ENGINE_PRINT)
+static inline void SP_LOG(EngineLogging::LogLevel lvl, const char* fmt, ...)
 {
-    va_list ap; 
+    char buf[1024];
+    va_list ap;
     va_start(ap, fmt);
-    ENGINE_PRINT(lvl, fmt, ap);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    ENGINE_PRINT(lvl, "%s", buf);
 }
 
 StatePreserver::StatePreserver() = default;
@@ -58,11 +63,14 @@ std::string StatePreserver::ExtractState(lua_State* L, int instanceRef) const
         keys = it->second;
     }
 
-    // push instance table
+    // push instance table and validate
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
         SP_LOG(EngineLogging::LogLevel::Warn, "StatePreserver::ExtractState - instanceRef not a table");
+        // If instanceRef is invalid (e.g. VM reloaded), unregister it to avoid future attempts.
+        std::lock_guard<std::mutex> lk(m_mutex);
+        m_registry.erase(instanceRef);
         return {};
     }
     int instanceIdx = lua_gettop(L);
@@ -107,19 +115,24 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
     }
 
     // Now copy members of temp table into target instance (without clearing target).
-    // Push temp and target on stack for iteration.
-    lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push temp
+    // Validate target instance is still a table.
     lua_rawgeti(L, LUA_REGISTRYINDEX, targetInstanceRef); // push target
-    int tempIndex = lua_gettop(L) - 1;
-    int targetIndex = lua_gettop(L);
-    int absTemp = lua_absindex(L, tempIndex);
-    int absTarget = lua_absindex(L, targetIndex);
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        SP_LOG(EngineLogging::LogLevel::Warn, "StatePreserver::ReinjectState - targetInstanceRef is not a table");
+        luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+        return false;
+    }
+    lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push temp
+    // stack: ..., target, temp — re-order so temp then target to match original loop expectations
+    // We'll compute absolute indices carefully.
+    int absTemp = lua_absindex(L, lua_gettop(L)); // temp
+    int absTarget = lua_absindex(L, lua_gettop(L) - 1); // target
 
     // iterate temp table
     lua_pushnil(L);
     while (lua_next(L, absTemp) != 0) {
-        // stack: ..., temp, key, value, target
-        // key at -2, value at -1
+        // stack: ..., target, temp, key, value
         if (lua_type(L, -2) == LUA_TSTRING) {
             size_t len = 0; const char* k = lua_tolstring(L, -2, &len);
             std::string key(k, len);
@@ -129,7 +142,7 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
                 // give reconciler chance to handle this key.
                 // temp value is at -1; provide its absolute index
                 int valAbs = lua_absindex(L, lua_gettop(L));
-                try 
+                try
                 {
                     handled = userdataReconciler(L, targetInstanceRef, key, valAbs);
                 }
@@ -149,7 +162,8 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
         lua_pop(L, 1);
     }
 
-    // cleanup: pop temp and target
+    // cleanup: pop temp and target (they were pushed earlier)
+    // After the loop the stack contains: ..., target, temp
     lua_pop(L, 2);
     luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
     return true;

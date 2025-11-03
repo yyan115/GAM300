@@ -7,6 +7,17 @@
 // - Notes on what can/cannot be persisted safely (simple values, tables of primitives,
 //   asset handles) and how to map old userdata to new userdata.
 // - Use cases: used by HotReloadManager when preserving critical game state across a reload.
+//
+// IMPORTANT NOTE ABOUT LIFETIME:
+//   The API currently uses Lua registry refs (int) as instance identity keys. Registry refs
+//   are valid only for the lifetime of a given lua_State. They are NOT stable across VM
+//   destruction / reloads. If you need true cross-reload persistence, you should (a) store
+//   a persistent ID in the instance table (e.g. instance.__preserve_id = "<unique>") and
+//   register by that id, or (b) register by scriptPath + stable user-provided id. The
+//   current implementation is conservative: it checks instance validity at Extract/Reinject
+//   time and will fail gracefully if the registry ref is no longer a table.
+//
+// Threading: all operations are main-thread only (operate on lua_State passed in).
 
 #include <string>
 #include <vector>
@@ -39,6 +50,7 @@ namespace Scripting {
 
         // Register a set of keys to preserve for a particular instance (registry ref).
         // The preserver will only extract these keys (others are ignored).
+        // NOTE: registry refs are only valid for the life of the lua_State they were created with.
         void RegisterInstanceKeys(int instanceRef, const std::vector<std::string>& keys);
 
         // Unregister an instance (stop preserving it).
@@ -60,7 +72,7 @@ namespace Scripting {
     private:
         mutable std::mutex m_mutex;
         // map from instanceRef -> vector<keys>
-        std::unordered_map<int, std::vector<std::string>> m_registry;
+        mutable std::unordered_map<int, std::vector<std::string>> m_registry;
     };
 
 } // namespace Scripting

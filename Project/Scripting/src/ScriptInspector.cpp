@@ -12,13 +12,17 @@ extern "C" {
 #include <cassert>
 #include <chrono>
 #include <sstream>
+#include <cstdarg>
+#include <cstdio>
 
 using namespace Scripting;
 
 static inline void SI_LOG(EngineLogging::LogLevel lvl, const char* fmt, ...) {
+    char buf[1024];
     va_list ap; va_start(ap, fmt);
-    ENGINE_PRINT(lvl, fmt, ap);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    ENGINE_PRINT(lvl, "%s", buf);
 }
 
 // ctor/dtor
@@ -45,6 +49,11 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
 
     // Need to inspect current instance
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=%s)", scriptPath.c_str());
+        return {};
+    }
     int tableIndex = lua_gettop(L);
     int absIndex = lua_absindex(L, tableIndex);
 
@@ -228,7 +237,7 @@ bool ScriptInspector::PushStringAsLuaValue(lua_State* L, const std::string& valu
     default:
         // For complex types we expect a JSON representation: use ScriptSerializer via temporary table approach.
         if (targetType == FieldType::Table || targetType == FieldType::ReflectedUserdata) {
-            // Create temp table ref and feed Parse via ScriptSerializer: here we reuse DeserializeJsonToInstance by creating a new temp table
+            // Create temp table ref and feed Parse via ScriptSerializer
             lua_newtable(L);
             int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX);
             ScriptSerializer ss;
@@ -237,7 +246,7 @@ bool ScriptInspector::PushStringAsLuaValue(lua_State* L, const std::string& valu
                 luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
                 return false;
             }
-            // push the resulting table onto stack for caller (we must get it from registry)
+            // push the resulting table onto stack for caller
             lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef);
             luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
             return true;
@@ -276,6 +285,10 @@ bool ScriptInspector::SetFieldFromString(lua_State* L, int instanceRef, const Fi
     if (!L || instanceRef == LUA_NOREF) return false;
     // get table absolute index
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        return false;
+    }
     int tableIdx = lua_gettop(L);
     int absTable = lua_absindex(L, tableIdx);
 

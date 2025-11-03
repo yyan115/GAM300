@@ -6,6 +6,7 @@
 // - Uses ScriptSerializer for JSON serialization/deserialization of instance state.
 // - Minimal global pollution: everything inside namespace Scripting.
 
+#include "Scripting.h"
 #include <string>
 #include <memory>
 
@@ -17,9 +18,6 @@ extern "C" {
 namespace Scripting {
 
     class ScriptSerializer; // forward
-
-    // Host-side accessor the engine must implement somewhere in Scripting namespace.
-    lua_State* GetLuaState();
 
     class ScriptComponent {
     public:

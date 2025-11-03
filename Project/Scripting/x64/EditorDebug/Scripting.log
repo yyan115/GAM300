@@ -45,6 +45,7 @@
   ScriptFileSystem_android.cpp
   ScriptFileSystem_default.cpp
   ScriptFileSystem_win.cpp
+  Scripting.cpp
   ScriptingRuntime.cpp
   ScriptInspector.cpp
   ScriptProfiler.cpp
