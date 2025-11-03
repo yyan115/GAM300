@@ -37,6 +37,20 @@ bool AudioManager::Initialise() {
         return false;
     }
 
+    #ifdef ANDROID
+    result = FMOD_System_SetOutput(System, FMOD_OUTPUTTYPE_AAUDIO);
+    if (result != FMOD_OK) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "FMOD_System_SetOutput failed: %s", FMOD_ErrorString(result));
+        // result = FMOD_System_SetOutput(System, FMOD_OUTPUTTYPE_AAUDIO);
+    }
+
+    // Set DSP buffer size to reduce crackling (1024 samples, 4 buffers - adjust based on device)
+    result = FMOD_System_SetDSPBufferSize(System, 1024, 4);
+    if (result != FMOD_OK) {
+        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "FMOD_System_SetDSPBufferSize failed: %s", FMOD_ErrorString(result));
+    }
+    #endif
+
     result = FMOD_System_Init(System, 512, FMOD_INIT_NORMAL, nullptr);
     if (result != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Init failed: ", FMOD_ErrorString(result), "\n");

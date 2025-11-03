@@ -1013,7 +1013,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0037a8a2654261f2-00031f527a000003",
+                        "003c9380ad26f11b-000327b62a000003",
                         {
                             "type": "bool",
                             "data": false
@@ -1036,7 +1036,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0.295455
                         },
                         {
                             "type": "float",
@@ -1334,15 +1334,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0000405765
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1.68997e-11
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0000405547
                                 }
                             ]
                         },
@@ -1351,15 +1351,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.0000193303
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -3.38997e-10
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0000193407
                                 }
                             ]
                         },

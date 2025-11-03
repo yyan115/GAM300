@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a2395bc888-00031f5288000027",
+        "guid": "001324b020528bac-00030dd500000025",
         "source": "../../Resources/Models/Kachujin/Kachujin G Rosales.fbx",
         "compiled": "../../Resources/Models/Kachujin/Kachujin G Rosales.mesh",
         "android_compiled": "Resources/Models/Kachujin/Kachujin G Rosales_android.mesh",
-        "last_compiled": "2025-10-31 07:22:19.4124270"
+        "last_compiled": "2025-11-03 08:03:18.5837937"
     },
     "ModelMetaData": {
         "optimizeMeshes": true
