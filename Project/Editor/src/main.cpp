@@ -53,10 +53,6 @@ int main()
     
         // 1) initialize scripting
         Scripting::Init();
-        Scripting::SetHostLogHandler([](const std::string& s) {
-            // engine logging wrapper
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", s.c_str());
-            });
 
         // 3) optional: set custom filesystem read callback (editor can load scripts from different folders)
         Scripting::SetFileSystemReadAllText([](const std::string& path, std::string& out) -> bool {
@@ -72,15 +68,13 @@ int main()
         float dt = 1.0f / 60.0f;
 
         // 5) create a script instance from file (path on disk)
-        int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior.lua");
+        int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua");
         if (Scripting::IsValidInstance(inst)) {
             Scripting::CallInstanceFunction(inst, "Awake");
             Scripting::CallInstanceFunction(inst, "Start");
             // serialize (editor UI)
             std::string json = Scripting::SerializeInstanceToJson(inst);
             std::cout << json << std::endl;
-            // destroy when done
-            Scripting::DestroyInstance(inst);
         }
 #endif
 
@@ -102,7 +96,8 @@ int main()
             GameManager::Update();
             // --- scripting + hot reload work (main-thread only) ---
 #if LUA_TEST
-        // 6a) Call the scripting runtime tick so Lua's `update(dt)` executes.
+           // 6a) Call the scripting runtime tick so Lua's `update(dt)` executes.
+
             Scripting::Tick(dt);
 
             //// 6b) Poll hot-reload manager for file-change events (non-blocking).
@@ -180,6 +175,10 @@ int main()
     //    Scripting::DestroyEnvironment(envId);
     //    std::cout << "Destroyed environment id = " << envId << "\n";
     //}
+    if (Scripting::IsValidInstance(inst)) {
+        Scripting::CallInstanceFunction(inst, "Destroy"); // lets Lua cleanup
+        Scripting::DestroyInstance(inst);
+    }
 
     // Stop watcher and shutdown scripting runtime
     //hrm.Stop(); //Got warning from vs TODO take note

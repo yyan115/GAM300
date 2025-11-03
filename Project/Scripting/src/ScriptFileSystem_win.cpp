@@ -81,7 +81,7 @@ namespace Scripting {
                 HANDLE h = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                     nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
                 if (h == INVALID_HANDLE_VALUE) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "ReadAllText: CreateFileW failed for '%s' (err=%u)", path.c_str(), GetLastError());
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "ReadAllText: CreateFileW failed for '", path.c_str(),"' (err=", GetLastError(),")");
                     return false;
                 }
 

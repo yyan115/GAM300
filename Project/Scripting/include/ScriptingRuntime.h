@@ -18,6 +18,7 @@
 #include "Scripting.h"
 #include "ScriptFileSystem.h"
 #include "CoroutineScheduler.h"
+#include "ModuleLoader.h"
 
 #include <atomic>
 #include <chrono>
@@ -58,7 +59,7 @@ namespace Scripting {
         ~ScriptingRuntime();
 
         bool Initialize(const ScriptingConfig& cfg,
-            IScriptFileSystem* fs = nullptr,
+            std::shared_ptr<IScriptFileSystem> fs = nullptr,
             ILogger* logger = nullptr);
 
         void Shutdown();
@@ -89,8 +90,11 @@ namespace Scripting {
         lua_State* m_L = nullptr;
         ScriptingConfig m_config;
 
-        std::unique_ptr<IScriptFileSystem> m_ownedFs;
+        // The runtime holds a shared_ptr to the filesystem. If caller gave a raw/unique FS
+        // they should pass a shared_ptr to ensure lifetime, otherwise runtime will create its own.
+        std::shared_ptr<IScriptFileSystem> m_fsShared;
         IScriptFileSystem* m_fs = nullptr;
+
         ILogger* m_logger = nullptr;
 
         std::vector<BindingCallback> m_bindings;
@@ -103,6 +107,8 @@ namespace Scripting {
         std::chrono::steady_clock::time_point m_lastGcTime;
 
         std::unique_ptr<CoroutineScheduler> m_coroutineScheduler;
+
+        std::unique_ptr<ModuleLoader> m_moduleLoader;
 
         std::function<void(const std::string&)> m_hostLogHandler;
     };

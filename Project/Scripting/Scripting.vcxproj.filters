@@ -306,12 +306,4 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Resources\Scripts\test.lua">
-      <Filter>Script Files</Filter>
-    </None>
-    <None Include="..\Resources\Scripts\sample_mono_behavior.lua">
-      <Filter>Script Files</Filter>
-    </None>
-  </ItemGroup>
 </Project>

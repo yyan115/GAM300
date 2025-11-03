@@ -1,11 +1,6 @@
 #pragma once
 // ModuleLoader.h
 // Lightweight module/require loader for Lua modules backed by IScriptFileSystem.
-//
-// Responsibilities:
-//  - Resolve module names to script asset paths using simple search-path patterns.
-//  - Provide a Lua searcher (loader) to insert into package.searchers.
-//  - Cache resolved paths and allow flushing package.loaded and cache entries for hot-reload.
 
 #include <string>
 #include <vector>
@@ -15,9 +10,10 @@
 
 extern "C" { struct lua_State; }
 
-struct IScriptFileSystem; // forward (your existing interface)
-
 namespace Scripting {
+
+    // Forward-declare IScriptFileSystem in the Scripting namespace (important).
+    struct IScriptFileSystem;
 
     class ModuleLoader {
     public:
@@ -25,7 +21,7 @@ namespace Scripting {
         ~ModuleLoader();
 
         // Initialize with a filesystem (not owned). Call before using.
-        void Initialize(IScriptFileSystem* fs);
+        void Initialize(std::shared_ptr<IScriptFileSystem> fs);
 
         // Add search path pattern. Use '?' as the module-name placeholder.
         // e.g. "Resources/Scripts/?.lua", "Resources/Scripts/?/init.lua"
@@ -57,7 +53,8 @@ namespace Scripting {
         // Helper to try patterns and use fs->ReadAllText
         bool TryLoadPath(lua_State* L, const std::string& path, const std::string& modulename);
 
-        IScriptFileSystem* m_fs = nullptr; // not owned
+        std::shared_ptr<IScriptFileSystem> m_ownedFs; // Owned/shared filesystem to guarantee lifetime.
+        IScriptFileSystem* m_fs = nullptr; // still the pointer used for calls (may point into m_ownedFs.get())
 
         std::vector<std::string> m_searchPaths;
         std::mutex m_mutex;

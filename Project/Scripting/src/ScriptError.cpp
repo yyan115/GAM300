@@ -161,7 +161,7 @@ namespace Scripting {
 
             std::string finalStr = mapped.str();
             // Also log it at error level via scripting log (if available)
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "%s", finalStr.c_str());
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, finalStr.c_str());
             return finalStr;
         }
 

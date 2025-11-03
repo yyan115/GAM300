@@ -309,7 +309,7 @@ bool ScriptSerializer::SerializeReflectedUserdata(lua_State* L, int idx,
     lua_pop(L, 2); // pop __reflect_type and metatable
 
     if (!userdata_ptr) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: reflected userdata without pointer for type %s", typeName);
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: reflected userdata without pointer for type ", typeName);
         return false;
     }
 
@@ -321,7 +321,7 @@ bool ScriptSerializer::SerializeReflectedUserdata(lua_State* L, int idx,
         if (it != map.end()) desc = it->second;
     }
     if (!desc) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: no TypeDescriptor registered for %s", typeName);
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: no TypeDescriptor registered for ", typeName);
         return false;
     }
 
@@ -330,7 +330,7 @@ bool ScriptSerializer::SerializeReflectedUserdata(lua_State* L, int idx,
         desc->SerializeJson(userdata_ptr, subdoc);
     }
     catch (const std::exception& e) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: TypeDescriptor::SerializeJson failed for %s : %s", typeName, e.what());
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: TypeDescriptor::SerializeJson failed for ", typeName, " :",e.what());
         return false;
     }
 
@@ -352,13 +352,13 @@ bool ScriptSerializer::DeserializeReflectedUserdata(lua_State* L, const void* va
         if (it != map.end()) desc = it->second;
     }
     if (!desc) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: no TypeDescriptor for %s", typeName);
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: no TypeDescriptor for ", typeName);
         return false;
     }
 
     size_t sz = desc->GetSize();
     if (sz == 0) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: TypeDescriptor %s reports size 0", typeName);
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: TypeDescriptor ", typeName," reports size 0");
         return false;
     }
 
@@ -370,7 +370,7 @@ bool ScriptSerializer::DeserializeReflectedUserdata(lua_State* L, const void* va
         desc->Deserialize(buffer, *v);
     }
     catch (const std::exception& e) {
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: Deserialize failed for %s : %s", typeName, e.what());
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: Deserialize failed for ", typeName," : ", e.what());
         delete[] buffer;
         return false;
     }

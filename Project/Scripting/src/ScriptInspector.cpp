@@ -22,7 +22,7 @@ static inline void SI_LOG(EngineLogging::LogLevel lvl, const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    ENGINE_PRINT(lvl, "%s", buf);
+    ENGINE_PRINT(lvl, buf);
 }
 
 // ctor/dtor
@@ -51,7 +51,7 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
-        SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=%s)", scriptPath.c_str());
+        SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=", scriptPath.c_str(),")");
         return {};
     }
     int tableIndex = lua_gettop(L);

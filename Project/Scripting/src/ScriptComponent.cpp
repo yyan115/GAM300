@@ -138,7 +138,7 @@ namespace Scripting {
         int loadStatus = luaL_loadfile(L, scriptPath.c_str());
         if (loadStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: %s", msg ? msg : "(no msg)");
+            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: ", msg ? msg : "(no msg)");
             lua_pop(L, 1);
             return false;
         }
@@ -149,7 +149,7 @@ namespace Scripting {
         int pcallStatus = lua_pcall(L, 0, 1, msgh);
         if (pcallStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - runtime error: %s (script=%s)", msg ? msg : "(no msg)", scriptPath.c_str());
+            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - runtime error: ", msg ? msg : "(no msg)"," (script=", scriptPath.c_str(),")");
             lua_pop(L, 1); // pop error
             // guard destructor will remove msgh
             return false;
@@ -161,7 +161,7 @@ namespace Scripting {
 
         // ensure returned value is a table; if not, wrap into { _returned = <value> }
         if (!lua_istable(L, -1)) {
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript - script did not return a table. Wrapping into table. (script=%s)", scriptPath.c_str());
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript - script did not return a table. Wrapping into table. (script=", scriptPath.c_str(),")");
             // create a temporary registry ref for the returned value to avoid stack-index fragility
             lua_pushvalue(L, -1); // copy returned value
             int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops copy, original still on stack
@@ -192,7 +192,7 @@ namespace Scripting {
         m_fnOnDisableRef = CaptureFunctionRef(L, tableIndex, "OnDisable");
         lua_pop(L, 1); // pop table
 
-        SC_LOG(EngineLogging::LogLevel::Info, "ScriptComponent attached script '%s'", m_scriptPath.c_str());
+        SC_LOG(EngineLogging::LogLevel::Info, "ScriptComponent attached script '", m_scriptPath.c_str(),"'");
         return true;
     }
 
@@ -234,7 +234,7 @@ namespace Scripting {
             // assume callable object with __call
             if (!lua_getmetatable(L, -1)) {
                 lua_pop(L, 1);
-                SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Awake: callable object missing metatable (script=%s)", m_scriptPath.c_str());
+                SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Awake: callable object missing metatable (script=", m_scriptPath.c_str(),")");
                 return;
             }
             lua_getfield(L, -1, "__call"); // push __call
@@ -246,7 +246,7 @@ namespace Scripting {
 
         if (lua_pcall(L, nargs, 0, msgh) != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Awake error for script %s: %s", m_scriptPath.c_str(), msg ? msg : "(no msg)");
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Awake error for script ", m_scriptPath.c_str(), ": ", msg ? msg : "(no msg)");
             lua_pop(L, 1);
             return; // guard removes msgh
         }
@@ -283,7 +283,7 @@ namespace Scripting {
 
         if (lua_pcall(L, nargs, 0, msgh) != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Start error: %s (script=%s)", msg ? msg : "(no msg)", m_scriptPath.c_str());
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Start error: ", msg ? msg : "(no msg)"," (script=", m_scriptPath.c_str(),")");
             lua_pop(L, 1);
         }
 
@@ -311,7 +311,7 @@ namespace Scripting {
         else {
             if (!lua_getmetatable(L, -1)) {
                 lua_pop(L, 1);
-                SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Update: callable object missing metatable (script=%s)", m_scriptPath.c_str());
+                SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Update: callable object missing metatable (script=", m_scriptPath.c_str(),")");
                 return;
             }
             lua_getfield(L, -1, "__call");
@@ -324,7 +324,7 @@ namespace Scripting {
 
         if (lua_pcall(L, nargs, 0, msgh) != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Update error: %s (script=%s)", msg ? msg : "(no msg)", m_scriptPath.c_str());
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Update error: ", msg ? msg : "(no msg)", " (script=", m_scriptPath.c_str(),")");
             lua_pop(L, 1);
         }
         // guard removes message handler on scope exit
@@ -356,7 +356,7 @@ namespace Scripting {
 
         if (lua_pcall(L, nargs, 0, msgh) != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::OnDisable error: %s (script=%s)", msg ? msg : "(no msg)", m_scriptPath.c_str());
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::OnDisable error: ", msg ? msg : "(no msg)"," (script=", m_scriptPath.c_str(),")");
             lua_pop(L, 1);
         }
         // guard removes message handler on scope exit

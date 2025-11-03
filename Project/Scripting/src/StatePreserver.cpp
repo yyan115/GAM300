@@ -24,7 +24,7 @@ static inline void SP_LOG(EngineLogging::LogLevel lvl, const char* fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    ENGINE_PRINT(lvl, "%s", buf);
+    ENGINE_PRINT(lvl, buf);
 }
 
 StatePreserver::StatePreserver() = default;
@@ -147,7 +147,7 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
                     handled = userdataReconciler(L, targetInstanceRef, key, valAbs);
                 }
                 catch (...) {
-                    SP_LOG(EngineLogging::LogLevel::Warn, "StatePreserver::ReinjectState - userdataReconciler threw for key %s", key.c_str());
+                    SP_LOG(EngineLogging::LogLevel::Warn, "StatePreserver::ReinjectState - userdataReconciler threw for key ", key.c_str());
                     handled = false;
                 }
             }

@@ -222,7 +222,7 @@ namespace Scripting {
                 }
                 // erase entry
                 m_coroutines.erase(m_coroutines.begin() + i);
-                ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler: stopped coroutine %u", id);
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler: stopped coroutine ", id);
                 return true;
             }
         }
@@ -332,13 +332,13 @@ namespace Scripting {
 
             // store entry
             m_coroutines.push_back(entry);
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "StartCoroutine: scheduled coroutine id %u", entry.id);
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "StartCoroutine: scheduled coroutine id ", entry.id);
             return entry.id;
         }
         else {
             // error
             const char* msg = lua_tostring(co, -1);
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "StartCoroutine: coroutine error: %s", msg ? msg : "(no msg)");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "StartCoroutine: coroutine error: ", msg ? msg : "(no msg)");
             lua_pop(co, 1);
             // free thread ref
             if (entry.threadRef != LUA_NOREF) {
@@ -375,7 +375,7 @@ namespace Scripting {
                     // call it with 0 args, expect 1 result
                     if (lua_pcall(m_mainL, 0, 1, 0) != LUA_OK) {
                         const char* msg = lua_tostring(m_mainL, -1);
-                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CoroutineScheduler: wait_until predicate error: %s", msg ? msg : "(no msg)");
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CoroutineScheduler: wait_until predicate error: ", msg ? msg : "(no msg)");
                         lua_pop(m_mainL, 1);
                         // treat error as false and continue waiting
                         shouldResume = false;
@@ -416,7 +416,7 @@ namespace Scripting {
             lua_pop(m_mainL, 1); // pop thread object copy
 
             if (!co) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CoroutineScheduler: invalid thread for coroutine %u", e.id);
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CoroutineScheduler: invalid thread for coroutine ", e.id);
                 cleanupEntry(i);
                 continue;
             }
@@ -433,7 +433,7 @@ namespace Scripting {
                     luaL_unref(m_mainL, LUA_REGISTRYINDEX, e.untilFuncRef);
                     e.untilFuncRef = LUA_NOREF;
                 }
-                ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler: coroutine %u finished", e.id);
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler: coroutine ", e.id," finished");
                 // erase this entry
                 m_coroutines.erase(m_coroutines.begin() + i);
                 continue; // do not increment i (element removed)
@@ -483,7 +483,7 @@ namespace Scripting {
             else {
                 // error
                 const char* msg = lua_tostring(co, -1);
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "CoroutineScheduler: coroutine %u error: %s", e.id, msg ? msg : "(no msg)");
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "CoroutineScheduler: coroutine %u error: ", e.id, msg ? msg : "(no msg)");
                 lua_pop(co, 1);
                 // cleanup refs
                 if (e.threadRef != LUA_NOREF) {

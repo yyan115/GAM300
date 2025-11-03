@@ -4,6 +4,8 @@
 #include "ScriptFileSystem.h"
 #include "Logging.hpp"
 
+#include "ModuleLoader.h"
+
 #include <cassert>
 #include <chrono>
 #include <cstring>
@@ -24,9 +26,9 @@ namespace Scripting {
 
         // default adapter logger
         struct DefaultLogger : public ILogger {
-            void Info(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", msg.c_str()); }
-            void Warn(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Warn, "%s", msg.c_str()); }
-            void Error(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Error, "%s", msg.c_str()); }
+            void Info(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Info, msg.c_str()); }
+            void Warn(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Warn, msg.c_str()); }
+            void Error(const std::string& msg) override { ENGINE_PRINT(EngineLogging::LogLevel::Error, msg.c_str()); }
         };
 
         // global fallback host log handler used by the C binding
@@ -41,11 +43,11 @@ namespace Scripting {
                     s_globalHostLogHandler(s);
                 }
                 catch (...) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", s.c_str());
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, s.c_str());
                 }
             }
             else {
-                ENGINE_PRINT(EngineLogging::LogLevel::Info, "%s", s.c_str());
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, s.c_str());
             }
             return 0;
         }
@@ -75,7 +77,7 @@ namespace Scripting {
     }
 
     bool ScriptingRuntime::Initialize(const ScriptingConfig& cfg,
-        IScriptFileSystem* fs,
+        std::shared_ptr<IScriptFileSystem> fs,
         ILogger* logger)
     {
         {
@@ -87,16 +89,17 @@ namespace Scripting {
             m_config = cfg;
 
             if (fs) {
-                m_ownedFs.reset();
-                m_fs = fs;
+                m_fsShared = std::move(fs); // take ownership (shared)
+                m_fs = m_fsShared.get();
             }
             else {
-                m_ownedFs = CreateDefaultFileSystem();
-                if (!m_ownedFs) {
+                // create default FS and store as shared_ptr
+                m_fsShared = CreateDefaultFileSystem();
+                if (!m_fsShared) {
                     if (logger) logger->Error("ScriptingRuntime::Initialize: CreateDefaultFileSystem failed");
                     return false;
                 }
-                m_fs = m_ownedFs.get();
+                m_fs = m_fsShared.get();
             }
 
             if (logger) m_logger = logger;
@@ -108,6 +111,10 @@ namespace Scripting {
             if (s_globalHostLogHandler) {
                 m_hostLogHandler = s_globalHostLogHandler;
             }
+
+            // create and initialize module loader (use the same fs)
+            m_moduleLoader = std::make_unique<ModuleLoader>();
+            m_moduleLoader->Initialize(m_fsShared); // pass shared ptr
         }
 
         // create new state (no lock)
@@ -116,6 +123,23 @@ namespace Scripting {
             if (m_logger) m_logger->Error("ScriptingRuntime: create_lua_state failed");
             return false;
         }
+
+        // Install our module loader searcher into the new state so `require` works.
+        if (m_moduleLoader) {
+            m_moduleLoader->InstallLuaSearcher(newL, -1); // append to searchers
+
+            // after InstallLuaSearcher(newL, -1)
+            lua_getglobal(newL, "package");
+            lua_getfield(newL, -1, "searchers"); // or "loaders" if old Lua
+            int len = (int)lua_rawlen(newL, -1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "package.searchers length = ", len);
+            // optional: inspect last entry (our added one should be at len or somewhere near)
+            lua_rawgeti(newL, -1, len);
+            bool isFunc = lua_isfunction(newL, -1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "last searcher is function? ", (int)isFunc);
+            lua_pop(newL, 3);
+        }
+
 
         // record runtime pointer for C callbacks
         g_runtime_for_cfuncs = this;
@@ -164,12 +188,18 @@ namespace Scripting {
             m_envRegistryRefs.clear();
             m_nextEnvId = 1;
 
+            // flush module cache for this Lua state
+            if (m_L && m_moduleLoader) {
+                m_moduleLoader->FlushAll(m_L);
+            }
+
             close_lua_state(m_L);
             m_L = nullptr;
         }
 
-        m_ownedFs.reset();
+        m_fsShared.reset();
         m_fs = nullptr;
+        m_moduleLoader.reset();
         if (m_logger) m_logger->Info("ScriptingRuntime: shutdown complete");
     }
 
@@ -180,11 +210,20 @@ namespace Scripting {
             if (!create_lua_state(newL)) {
                 if (m_logger) m_logger->Error("Reload: failed to create new lua state");
             }
-            else {
+            else 
+            {
+                // Install module loader early so main script and bindings can require modules.
+                if (m_moduleLoader) 
+                {
+                    m_moduleLoader->InstallLuaSearcher(newL, -1);
+                }
+
                 g_runtime_for_cfuncs = this;
                 bool success = true;
-                if (!m_config.mainScriptPath.empty()) {
-                    if (!load_and_run_main_script(newL)) {
+                if (!m_config.mainScriptPath.empty()) 
+                {
+                    if (!load_and_run_main_script(newL)) 
+                    {
                         if (m_logger) m_logger->Error("Reload: main script failed in new state");
                         success = false;
                     }
@@ -222,6 +261,13 @@ namespace Scripting {
                                 luaL_unref(old, LUA_REGISTRYINDEX, kv.second);
                             }
                         }
+
+                        // Flush modules loaded by our ModuleLoader from the old state.
+                        if (old && m_moduleLoader) 
+                        {
+                            m_moduleLoader->FlushAll(old);
+                        }
+
                         m_envRegistryRefs.clear();
                         m_nextEnvId = 1;
 
