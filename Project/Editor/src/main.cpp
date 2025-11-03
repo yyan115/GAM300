@@ -68,9 +68,8 @@ int main()
         float dt = 1.0f / 60.0f;
 
         // 5) create a script instance from file (path on disk)
-        int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua");
+        int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua"); //Awake is called
         if (Scripting::IsValidInstance(inst)) {
-            Scripting::CallInstanceFunction(inst, "Awake");
             Scripting::CallInstanceFunction(inst, "Start");
             // serialize (editor UI)
             std::string json = Scripting::SerializeInstanceToJson(inst);

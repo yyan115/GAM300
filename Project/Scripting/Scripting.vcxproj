@@ -690,6 +690,9 @@
     <ClCompile Include="src\ScriptUtils.cpp" />
     <ClCompile Include="src\StatePreserver.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Resources\Scripts\sample_mono_behavior_NEW.lua" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -314,38 +314,121 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
     if (!L) return false;
     if (instanceRef == LUA_NOREF) return false;
 
-    // push table
-    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
-    if (!lua_istable(L, -1)) { lua_pop(L, 1); return false; }
-    int tableIdx = lua_gettop(L);
+    int base = lua_gettop(L); // remember stack top for clean restore
 
-    // get field
-    lua_getfield(L, tableIdx, funcName.c_str());
-    if (lua_isnil(L, -1)) { lua_pop(L, 2); return false; }
+    // push registry value
+    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); // +1 -> instance-or-wrapper
+    if (lua_gettop(L) == base) { // nothing pushed?
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: registry ref push failed");
+        return false;
+    }
+
+    // allow both tables and userdata wrappers (some Component wrappers return userdata)
+    int instIndex = lua_gettop(L);
+    const char* instType = luaL_typename(L, instIndex);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: instanceRef=", instanceRef, " pushed type=", instType);
+
+    // Attempt normal field lookup first (this uses __index metamethods)
+    lua_getfield(L, instIndex, funcName.c_str()); // +1 -> field or nil
+    if (lua_isnil(L, -1)) {
+        // maybe this is a wrapper table that put the real object under "_returned"
+        lua_pop(L, 1); // pop nil
+        if (lua_istable(L, instIndex)) {
+            lua_getfield(L, instIndex, "_returned"); // +1
+            if (!lua_isnil(L, -1)) {
+                // try to get the method from _returned
+                int retIdx = lua_gettop(L);
+                const char* retType = luaL_typename(L, retIdx);
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: wrapper has _returned type=", retType);
+                lua_getfield(L, retIdx, funcName.c_str()); // +1
+                // If still nil, fall through to error handling below.
+            }
+            else {
+                // no _returned; leave stack as is (we'll clean up)
+                lua_pop(L, 1); // pop _returned nil
+            }
+        }
+    }
+
+    // now -1 should be the candidate callable (function or callable-object) or nil
+    if (lua_isnil(L, -1)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: method '", funcName.c_str(), "' not found on instanceRef=", instanceRef);
+        lua_settop(L, base);
+        return false;
+    }
 
     int nargs = 0;
+    // If it's a plain function, push self (the appropriate self value)
     if (lua_isfunction(L, -1)) {
-        lua_pushvalue(L, tableIdx);
-        nargs = 1;
+        // determine which 'self' we should pass:
+        // - if we looked up the method directly on the original instance, pass that
+        // - if we looked up on _returned, pass _returned
+        // Find the proper "self" on stack: search from top down for a non-function value we pushed earlier
+        // Stack shapes we can have:
+        // 1) base..., instance, function
+        // 2) base..., instance, _returned, function
+        // We'll push the nearest non-function value below the function as self.
+        int funcPos = lua_gettop(L);
+        int candidateSelfPos = funcPos - 1;
+        if (candidateSelfPos >= base + 1) {
+            lua_pushvalue(L, candidateSelfPos); // push self
+            nargs = 1;
+        }
+        else {
+            // as a fallback push the original instance
+            lua_pushvalue(L, instIndex);
+            nargs = 1;
+        }
     }
     else {
-        if (!lua_getmetatable(L, -1)) { lua_pop(L, 2); return false; }
-        lua_getfield(L, -1, "__call");
-        lua_remove(L, -2); // remove metatable
-        if (!lua_isfunction(L, -1)) { lua_pop(L, 2); return false; }
-        lua_insert(L, -2);
-        lua_pushvalue(L, tableIdx);
+        // not a function object; try to find a __call metamethod on the candidate object
+        if (!lua_getmetatable(L, -1)) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: method candidate not callable and has no metatable");
+            lua_settop(L, base);
+            return false;
+        }
+        // metatable now on top, get __call
+        lua_getfield(L, -1, "__call"); // +1
+        if (!lua_isfunction(L, -1)) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: field has metatable but no __call");
+            lua_settop(L, base);
+            return false;
+        }
+        // stack now: ..., instance, [maybe _returned], candidate, metatable, __call
+        // rearrange to: ..., __call, candidate, self
+        lua_remove(L, -2);               // remove metatable -> ..., candidate, __call
+        lua_insert(L, -2);               // move __call below candidate -> ..., __call, candidate
+        // choose self (prefer candidate's parent if present). We want to pass (candidate, self)
+        // push self (original instance or _returned if present)
+        // find the first non-function below top (candidate is at -2 now)
+        int top = lua_gettop(L);
+        int candidatePos = top - 1;
+        int selfPos = candidatePos - 1;
+        if (selfPos >= base + 1) {
+            lua_pushvalue(L, selfPos);
+        }
+        else {
+            lua_pushvalue(L, instIndex);
+        }
         nargs = 2;
     }
 
+    // push message handler below function (we pass nargs computed above)
     int msgh = PushMessageHandlerBelowFunction(L, nargs);
     int status = lua_pcall(L, nargs, 0, msgh);
-    int top = lua_gettop(L);
-    if (msgh >= 1 && msgh <= top) lua_remove(L, msgh);
-    if (top >= 1) lua_pop(L, 1); // pop table if present
 
+    if (status != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "CallInstanceFunction: lua_pcall error: ", err ? err : "(null)");
+        // pop error
+        lua_pop(L, 1);
+    }
+
+    // restore stack cleanly
+    lua_settop(L, base);
     return status == LUA_OK;
 }
+
 
 void Scripting::SetHostLogHandler(HostLogFn fn) {
     auto sp = std::make_shared<HostLogFn>(std::move(fn));
