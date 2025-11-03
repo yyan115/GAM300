@@ -29,7 +29,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 7
                                 }
                             ]
                         },
@@ -124,7 +124,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 7
                                 },
                                 {
                                     "type": "float",
