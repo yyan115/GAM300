@@ -170,31 +170,55 @@ namespace Scripting {
         g_runtime_for_cfuncs = nullptr;
 
         // wait for in-flight users
-        std::unique_lock<std::mutex> lk(m_mutex);
-        m_cv.wait(lk, [this]() { return m_activeUsers.load(std::memory_order_acquire) == 0; });
+        std::unique_ptr<CoroutineScheduler> schedulerToShutdown;
+        {
+            std::unique_lock<std::mutex> lk(m_mutex);
+            m_cv.wait(lk, [this]() { return m_activeUsers.load(std::memory_order_acquire) == 0; });
 
-        if (m_L) {
+            // move scheduler out while still holding the runtime lock to avoid races with other threads
             if (m_coroutineScheduler) {
-                m_coroutineScheduler->Shutdown();
-                m_coroutineScheduler.reset();
+                schedulerToShutdown = std::move(m_coroutineScheduler);
+                // m_coroutineScheduler is now null while we call Shutdown() later (outside the lock)
             }
 
-            for (const auto& kv : m_envRegistryRefs) {
-                int ref = kv.second;
-                if (ref != LUA_NOREF) {
-                    luaL_unref(m_L, LUA_REGISTRYINDEX, ref);
+            // keep other cleanup items that require the runtime lock here (e.g. env refs)
+            // but do not call into scheduler while holding this lock.
+        } // unlock runtime mutex here
+
+        // Safely shutdown scheduler outside runtime lock
+        if (schedulerToShutdown) {
+            try {
+                schedulerToShutdown->Shutdown();
+            }
+            catch (const std::exception& ex) {
+                if (m_logger) m_logger->Warn(std::string("CoroutineScheduler shutdown threw: ") + ex.what());
+            }
+            catch (...) {
+                if (m_logger) m_logger->Warn("CoroutineScheduler shutdown threw unknown exception");
+            }
+            // schedulerToShutdown will be destroyed here (unique_ptr goes out of scope)
+        }
+
+        // Now acquire runtime lock again only for Lua-state specific cleanup
+        {
+            std::unique_lock<std::mutex> lk(m_mutex);
+            if (m_L) {
+                for (const auto& kv : m_envRegistryRefs) {
+                    int ref = kv.second;
+                    if (ref != LUA_NOREF) {
+                        luaL_unref(m_L, LUA_REGISTRYINDEX, ref);
+                    }
                 }
-            }
-            m_envRegistryRefs.clear();
-            m_nextEnvId = 1;
+                m_envRegistryRefs.clear();
+                m_nextEnvId = 1;
 
-            // flush module cache for this Lua state
-            if (m_L && m_moduleLoader) {
-                m_moduleLoader->FlushAll(m_L);
-            }
+                if (m_moduleLoader) {
+                    m_moduleLoader->FlushAll(m_L);
+                }
 
-            close_lua_state(m_L);
-            m_L = nullptr;
+                close_lua_state(m_L);
+                m_L = nullptr;
+            }
         }
 
         m_fsShared.reset();
@@ -202,6 +226,7 @@ namespace Scripting {
         m_moduleLoader.reset();
         if (m_logger) m_logger->Info("ScriptingRuntime: shutdown complete");
     }
+
 
     void ScriptingRuntime::Tick(float dtSeconds) {
         // handle reload request

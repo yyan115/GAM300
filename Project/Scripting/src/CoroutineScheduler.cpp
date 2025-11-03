@@ -156,16 +156,20 @@ namespace Scripting {
     }
 
     void CoroutineScheduler::Shutdown() {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        if (!m_running) return;
+        // mark not running quickly under lock
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            if (!m_running) return;
+            m_running = false;
+        }
 
-        // remove registry pointer
+        // remove registry pointer (needs m_mainL)
         if (m_mainL) {
             lua_pushnil(m_mainL);
             lua_setfield(m_mainL, LUA_REGISTRYINDEX, kSchedulerRegistryKey);
         }
 
-        // Stop all coroutines and free refs
+        // Stop and cleanup coroutines (implemented to be safe without holding mutex)
         StopAll();
 
         // remove StartCoroutine global (optional)
@@ -175,9 +179,9 @@ namespace Scripting {
         }
 
         m_mainL = nullptr;
-        m_running = false;
         ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler shutdown");
     }
+
 
     bool CoroutineScheduler::IsRunning() const {
         std::lock_guard<std::mutex> lk(m_mutex);
@@ -185,26 +189,45 @@ namespace Scripting {
     }
 
     void CoroutineScheduler::StopAll() {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        if (!m_mainL) {
-            m_coroutines.clear();
-            return;
+        // copy out the coroutine list while holding the mutex, then do the actual unrefs outside the lock.
+        std::vector<CoroutineScheduler::Entry> copy;
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            if (!m_running) return;
+            // swap() to quickly clear internal vector
+            copy.swap(m_coroutines);
+            m_running = false;
+        } // release mutex here
+
+        // Remove registry pointer from Lua if present (do not hold m_mutex while doing Lua ops)
+        if (m_mainL) {
+            lua_pushnil(m_mainL);
+            lua_setfield(m_mainL, LUA_REGISTRYINDEX, kSchedulerRegistryKey);
         }
 
-        // Unref everything in main registry
-        for (auto& e : m_coroutines) {
-            if (e.threadRef != LUA_NOREF) {
-                luaL_unref(m_mainL, LUA_REGISTRYINDEX, e.threadRef);
-                e.threadRef = LUA_NOREF;
-            }
-            if (e.untilFuncRef != LUA_NOREF) {
-                luaL_unref(m_mainL, LUA_REGISTRYINDEX, e.untilFuncRef);
-                e.untilFuncRef = LUA_NOREF;
-                e.waitingUntil = false;
+        // Unref the lua references for each coroutine / until-func (safe to do without holding the scheduler mutex)
+        if (m_mainL) {
+            for (auto& e : copy) {
+                if (e.threadRef != LUA_NOREF) {
+                    luaL_unref(m_mainL, LUA_REGISTRYINDEX, e.threadRef);
+                    e.threadRef = LUA_NOREF;
+                }
+                if (e.untilFuncRef != LUA_NOREF) {
+                    luaL_unref(m_mainL, LUA_REGISTRYINDEX, e.untilFuncRef);
+                    e.untilFuncRef = LUA_NOREF;
+                }
+                // other cleanup per-entry if needed
             }
         }
-        m_coroutines.clear();
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "CoroutineScheduler: stopped all coroutines");
+        else {
+            // If m_mainL is null, just clear the refs so we don't try to use them later.
+            for (auto& e : copy) {
+                e.threadRef = LUA_NOREF;
+                e.untilFuncRef = LUA_NOREF;
+            }
+        }
+
+        // copy goes out of scope and entries are destroyed
     }
 
     bool CoroutineScheduler::StopCoroutine(CoroutineId id) {

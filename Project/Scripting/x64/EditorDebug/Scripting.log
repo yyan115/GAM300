@@ -1,2 +1,6 @@
 ﻿  The vcpkg manifest was disabled, but we found a manifest file in C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
+  CoroutineScheduler.cpp
+  ScriptingRuntime.cpp
+  Generating Code...
+lua.obj : warning LNK4006: main already defined in luac.obj; second definition ignored
   Scripting.vcxproj -> C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Build\EditorDebug\Scripting.lib

@@ -50,7 +50,6 @@ int main()
 	GUIManager::Initialize();
 
 #if LUA_TEST
-    
         // 1) initialize scripting
         Scripting::Init();
 
@@ -84,19 +83,13 @@ int main()
         
         //Update deltaTime at start of Frame
         //TimeManager::UpdateDeltaTime();
-//#if LUA_TEST
-//        auto now = std::chrono::steady_clock::now();
-//        float dt = 1.0f / 60.0f;
-//        dt = std::chrono::duration<float>(now - lastFrameTime).count();
-//        lastFrameTime = now;
-//#endif
 
             Engine::Update();
             GameManager::Update();
-            // --- scripting + hot reload work (main-thread only) ---
-#if LUA_TEST
-           // 6a) Call the scripting runtime tick so Lua's `update(dt)` executes.
 
+#if LUA_TEST
+            // --- scripting + hot reload work (main-thread only) ---
+            //Will Call script update function automatically
             Scripting::Tick(dt);
 
             //// 6b) Poll hot-reload manager for file-change events (non-blocking).
@@ -155,32 +148,13 @@ int main()
     }
 
 #if LUA_TEST
-    // After the main loop wind-down: inspect Lua global `counter` via GetLuaState (main-thread only)
-    //lua_State* L = Scripting::GetLuaState();
-    //if (L) {
-    //    lua_getglobal(L, "counter");
-    //    if (lua_isnumber(L, -1)) {
-    //        int counter = static_cast<int>(lua_tointeger(L, -1));
-    //        std::cout << "[main] Lua 'counter' final value = " << counter << "\n";
-    //    }
-    //    else {
-    //        std::cout << "[main] Lua 'counter' not present or not a number\n";
-    //    }
-    //    lua_pop(L, 1);
-    //}
-
-    // Destroy the created environment
-    //if (envId != 0) {
-    //    Scripting::DestroyEnvironment(envId);
-    //    std::cout << "Destroyed environment id = " << envId << "\n";
-    //}
-    if (Scripting::IsValidInstance(inst)) {
-        Scripting::CallInstanceFunction(inst, "Destroy"); // lets Lua cleanup
+    if (Scripting::IsValidInstance(inst)) 
+    {
+        Scripting::CallInstanceFunction(inst, "Destroy"); // lets Lua cleanup - TODO AUTO RUN THROUGH WHEN DESTROYINGINSTANCE
         Scripting::DestroyInstance(inst);
     }
 
     // Stop watcher and shutdown scripting runtime
-    //hrm.Stop(); //Got warning from vs TODO take note
     Scripting::Shutdown();
 #endif
 
