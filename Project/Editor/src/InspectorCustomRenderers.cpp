@@ -678,11 +678,30 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SetNextItemWidth(-1);
 
             std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = texPath.empty() ? "None" : texPath.substr(texPath.find_last_of("/\\") + 1);
+            std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-            // TODO: Add texture drag-drop support when available
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop texture file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textureGUID;
+
+                    // Load texture immediately
+                    auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
+                    std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    spriteComp.texturePath = newTexturePath;
+                    spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                }
+                EditorComponents::EndDragDropTarget();
+            }
 
             return false;
         });
@@ -697,11 +716,29 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SetNextItemWidth(-1);
 
             std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-            std::string displayText = texPath.empty() ? "None" : texPath.substr(texPath.find_last_of("/\\") + 1);
+            std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-            ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-            // TODO: Add texture drag-drop support when available
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop texture file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textureGUID;
+
+                    // Load texture immediately
+                    auto& particleComp = ecs.GetComponent<ParticleComponent>(entity);
+                    std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                }
+                EditorComponents::EndDragDropTarget();
+            }
 
             return false;
         });

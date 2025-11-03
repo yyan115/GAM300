@@ -427,15 +427,7 @@ void SceneManager::UpdateScenePath(const std::string& oldPath, const std::string
 
 void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
 	try {
-		std::filesystem::path lastScenePath = "../../Resources/last_scene.txt";
-
-		// Ensure Resources directory exists
-		std::filesystem::path resourcesDir = lastScenePath.parent_path();
-		if (!std::filesystem::exists(resourcesDir)) {
-			std::filesystem::create_directories(resourcesDir);
-		}
-
-		std::ofstream file(lastScenePath);
+		std::ofstream file("last_scene.txt");
 		if (file.is_open()) {
 			file << scenePath;
 			file.close();
@@ -452,8 +444,7 @@ void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
 
 std::string SceneManager::LoadLastOpenedScenePath() {
 	try {
-		std::filesystem::path lastScenePath = "../../Resources/last_scene.txt";
-		std::ifstream file(lastScenePath);
+		std::ifstream file("last_scene.txt");
 		if (file.is_open()) {
 			std::string scenePath;
 			std::getline(file, scenePath);
