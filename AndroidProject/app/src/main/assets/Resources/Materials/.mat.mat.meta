@@ -4,6 +4,7 @@
         "guid": "00038a3728b24726-000329e13a000001",
         "source": "../../Resources/Materials/.mat.mat",
         "compiled": "../../Resources/Materials/.mat.mat",
-        "last_compiled": "2025-11-04 06:14:29.1070167"
+        "android_compiled": "Resources/Materials/.mat_android.mat",
+        "last_compiled": "2025-11-04 06:17:22.8702694"
     }
 }
