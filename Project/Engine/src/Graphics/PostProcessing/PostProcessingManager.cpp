@@ -215,18 +215,6 @@ void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int 
     // Unbind HDR framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Debug: Check if tone mapping will run
-    static int frameCount = 0;
-    if (frameCount++ % 60 == 0) {
-        ENGINE_PRINT("[EndHDRRender] Processing HDR texture: ", hdrColorTexture,
-            " to output FBO: ", outputFBO, "\n");
-        if (hdrEffect) {
-            ENGINE_PRINT("[EndHDRRender] HDR Effect - Enabled: ", hdrEffect->IsEnabled(),
-                " Exposure: ", hdrEffect->GetExposure(),
-                " Gamma: ", hdrEffect->GetGamma(), "\n");
-        }
-    }
-
     // Apply post-processing effects (HDR tone mapping, etc.)
     Process(hdrColorTexture, outputFBO, width, height);
 }
