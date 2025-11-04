@@ -40,6 +40,11 @@ void SceneInstance::Initialize() {
 	// Get the ECS manager for this scene
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
+	if (!PostProcessingManager::GetInstance().Initialize())
+	{
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize Post-Processing!\n");
+	}
+	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
 	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();

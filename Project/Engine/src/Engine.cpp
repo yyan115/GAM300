@@ -49,11 +49,6 @@ bool Engine::Initialize() {
 	WindowManager::Initialize(SCR_WIDTH, SCR_HEIGHT, TEMP::windowTitle.c_str());
 
     ENGINE_PRINT("Engine initializing...");
-    if (!PostProcessingManager::GetInstance().Initialize())
-    {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize Post-Processing!\n");
-    }
-    ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// WOON LI TEST CODE
 	InputManager::Initialize();

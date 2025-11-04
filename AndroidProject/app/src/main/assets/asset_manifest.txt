@@ -41,6 +41,8 @@ Resources/Fonts/Kenney Mini.ttf.meta
 Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
+Resources/Materials/.mat.mat
+Resources/Materials/.mat.mat.meta
 Resources/Materials/backpack_Scene_-_Root.mat
 Resources/Materials/backpack_Scene_-_Root.mat.meta
 Resources/Materials/cube_backup_initialShadingGroup.mat
@@ -151,6 +153,11 @@ Resources/Shaders/textandroid.frag
 Resources/Shaders/textandroid.meta
 Resources/Shaders/textandroid.shader
 Resources/Shaders/textandroid.vert
+Resources/Shaders/tonemapping.frag
+Resources/Shaders/tonemapping.meta
+Resources/Shaders/tonemapping.shader
+Resources/Shaders/tonemapping.vert
+Resources/Shaders/tonemappingandroid.shader
 Resources/Shaders/virtualcontrolsandroid.frag
 Resources/Shaders/virtualcontrolsandroid.meta
 Resources/Shaders/virtualcontrolsandroid.shader
