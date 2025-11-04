@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Logging.hpp"
-#include <glad/glad.h>
 #include <WindowManager.hpp>
 
 // Add to PostProcessingManager.cpp
