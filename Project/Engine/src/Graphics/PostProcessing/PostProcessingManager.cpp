@@ -106,8 +106,8 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     //     currentInput = bloomIntermediateBuffer;
     // }
 
-    // Apply HDR tone mapping (final step for now)
-    if (hdrEffect && hdrEffect->IsEnabled()) 
+    // Apply HDR effect (shader will bypass tonemapping if disabled)
+    if (hdrEffect)
     {
         // Bind output framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);
@@ -119,7 +119,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         // Clear output
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Apply the effect (this will call RenderScreenQuad internally)
+        // Apply the effect (shader checks enableTonemapping uniform)
         hdrEffect->Apply(currentInput, currentOutput, width, height);
 
         // Re-enable depth testing

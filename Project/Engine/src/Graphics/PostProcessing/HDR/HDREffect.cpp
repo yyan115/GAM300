@@ -45,8 +45,8 @@ void HDREffect::Shutdown()
 
 void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int width, int height)
 {
-    if (!enabled || !shader) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[HDREffect] Apply called but shader not ready! enabled=", enabled, " shader=", (shader != nullptr), "\n");
+    if (!shader) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[HDREffect] Apply called but shader not ready! shader=", (shader != nullptr), "\n");
         return;
     }
 
@@ -73,6 +73,7 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     shader->setFloat("gamma", gamma);
     shader->setInt("hdrBuffer", 0);
     shader->setInt("toneMappingMode", static_cast<int>(toneMappingMode));
+    shader->setBool("enableTonemapping", enabled);  // Pass enabled state to shader
 
     // Bind input HDR texture
     glActiveTexture(GL_TEXTURE0);

@@ -7,6 +7,7 @@ uniform sampler2D hdrBuffer;
 uniform float exposure;
 uniform float gamma;
 uniform int toneMappingMode;
+uniform bool enableTonemapping;  // If false, bypass tonemapping
 
 vec3 ReinhardToneMapping(vec3 color)
 {
@@ -35,20 +36,26 @@ void main()
     // Apply exposure adjustment
     vec3 mapped = hdrColor * exposure;
     
-    // Only apply tone mapping if any channel is > 1.0 (actually HDR content)
+    // Only apply tone mapping if enabled AND we have HDR content
     float maxComponent = max(max(mapped.r, mapped.g), mapped.b);
-    
-    if (maxComponent > 1.0) {
+
+    if (enableTonemapping && maxComponent > 1.0)
+    {
         // Apply tone mapping only to bright areas
-        if (toneMappingMode == 0) {
+        if (toneMappingMode == 0)
+        {
             mapped = ReinhardToneMapping(mapped);
-        } else if (toneMappingMode == 1) {
+        }
+        else if (toneMappingMode == 1)
+        {
             mapped = ExposureToneMapping(mapped, 1.0);
-        } else if (toneMappingMode == 2) {
+        }
+        else if (toneMappingMode == 2)
+        {
             mapped = ACESFilm(mapped);
         }
     }
-    // else: values <= 1.0 pass through unchanged
-    
+    // else: values pass through unchanged (will clip at 1.0 in output framebuffer)
+
     FragColor = vec4(mapped, 1.0);
 }
