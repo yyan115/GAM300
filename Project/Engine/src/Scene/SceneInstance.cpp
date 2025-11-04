@@ -52,7 +52,7 @@ void SceneInstance::Initialize() {
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	CreateHDRTestScene(ecsManager);
+	//CreateHDRTestScene(ecsManager);
 	
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
