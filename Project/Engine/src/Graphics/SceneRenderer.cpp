@@ -118,6 +118,9 @@ void SceneRenderer::BeginSceneRender(int width, int height)
     // Update WindowManager viewport dimensions to match scene rendering area
     WindowManager::SetViewportDimensions(width, height);
 
+    // Update GraphicsManager viewport for correct frustum culling
+    GraphicsManager::GetInstance().SetViewportSize(width, height);
+
     // Bind framebuffer and set viewport
     //glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
     //glViewport(0, 0, width, height);
@@ -262,6 +265,9 @@ void SceneRenderer::BeginGameRender(int width, int height)
 
     // Update WindowManager viewport dimensions to match game rendering area
     WindowManager::SetViewportDimensions(width, height);
+
+    // Update GraphicsManager viewport for correct frustum culling
+    GraphicsManager::GetInstance().SetViewportSize(width, height);
 
     // Bind game framebuffer and set viewport
     /*glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);

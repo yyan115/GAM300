@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Logging.hpp"
-#include <glad/glad.h>
 #include <WindowManager.hpp>
 
 // Add to PostProcessingManager.cpp
@@ -84,14 +83,6 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
-    static int count = 0;
-    if (count++ % 60 == 0) 
-    {
-        ENGINE_PRINT("[Process] Input texture: ", inputTexture,
-            " Output FBO: ", outputFBO,
-            " HDR texture: ", hdrColorTexture, "\n");
-    }
-
     // Current pipeline: HDR tone mapping only
     // Future pipeline: Bloom -> HDR -> Color Grading -> Output
 
@@ -167,9 +158,6 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    ENGINE_PRINT("[PostProcessingManager] HDR framebuffer created (", width, "x", height, ")\n");
-    ENGINE_PRINT("[PostProcessingManager] HDR FBO ID: ", hdrFramebuffer, ", HDR Texture ID: ", hdrColorTexture, "\n");
     return hdrFramebuffer;
 }
 

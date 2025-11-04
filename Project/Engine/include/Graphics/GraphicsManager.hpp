@@ -17,6 +17,27 @@
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
 
+struct ViewportDimensions {
+    int width = 0;
+    int height = 0;
+    float aspectRatio = 1.0f;
+};
+
+struct CullingStats {
+    int totalObjects = 0;
+    int culledObjects = 0;
+
+    float GetCulledPercentage() const {
+        if (totalObjects == 0) return 0.0f;
+        return (culledObjects * 100.0f) / totalObjects;
+    }
+
+    void Reset() {
+        totalObjects = 0;
+        culledObjects = 0;
+    }
+};
+
 class GraphicsManager {
 public:
 	enum class ViewMode {

@@ -138,15 +138,9 @@ void GraphicsManager::UpdateFrustum()
 
 	if (frustumCullingEnabled)
 	{
-		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
-		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
-
-		if (renderWidth <= 0) renderWidth = 1;
-		if (renderHeight <= 0) renderHeight = 1;
-
-		float aspectRatio = (float)renderWidth / (float)renderHeight;
-		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
-		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
+		int renderWidth = currentFrameViewport.width;
+		int renderHeight = currentFrameViewport.height;
+		float aspectRatio = currentFrameViewport.aspectRatio;
 
 		glm::mat4 view;
 		glm::mat4 projection;
@@ -191,6 +185,13 @@ void GraphicsManager::Render()
 		return;
 	}
 
+	if (frustumCullingEnabled) 
+	{
+		cullingStats.Reset();
+	}
+
+
+	currentFrameViewport = GetCurrentViewport();
 	// Update frustum for culling
 	UpdateFrustum();
 
@@ -258,18 +259,25 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		return;
 	}
 
-	// DEBUG: Check if entity material exists
-	static int debugCount = 0;
-	if (debugCount++ % 300 == 0) {
-		if (item.material) {
-			auto emissive = item.material->GetEmissive();
-			ENGINE_PRINT("[RenderModel] Entity has material: ", item.material->GetName(),
-				" - Emissive: (", emissive.r, ", ", emissive.g, ", ", emissive.b, ")\n");
-		}
-		else {
-			ENGINE_PRINT("[RenderModel] Entity has NO material override\n");
+	// Count total objects when culling is enabled
+	if (frustumCullingEnabled && currentCamera)
+	{
+		//cullingStats.totalObjects++;
+
+		AABB modelBBox = item.model->GetBoundingBox();
+		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
+		AABB worldBBox = modelBBox.Transform(modelMatrix);
+
+		// Use tolerance to prevent edge-case culling
+		bool isVisible = viewFrustum.IsBoxVisible(worldBBox, 0.5f);
+
+		if (!isVisible)
+		{
+			//cullingStats.culledObjects++;  // Count as culled
+			return;  // Don't render
 		}
 	}
+
 	// Activate the shader
 	item.shader->Activate();
 
@@ -305,19 +313,9 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 
 	if (currentCamera)
 	{
-		// Use viewport dimensions if set (for editor/scene panel), otherwise fallback to window dimensions
-		int renderWidth = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
-		int renderHeight = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
-
-		// Prevent division by zero and ensure minimum dimensions
-		if (renderWidth <= 0) renderWidth = 1;
-		if (renderHeight <= 0) renderHeight = 1;
-
-		float aspectRatio = (float)renderWidth / (float)renderHeight;
-
-		// Clamp aspect ratio to reasonable bounds to prevent assertion errors
-		if (aspectRatio < 0.001f) aspectRatio = 0.001f;
-		if (aspectRatio > 1000.0f) aspectRatio = 1000.0f;
+		int renderWidth = currentFrameViewport.width;
+		int renderHeight = currentFrameViewport.height;
+		float aspectRatio = currentFrameViewport.aspectRatio;
 
 		glm::mat4 view;
 		glm::mat4 projection;
@@ -805,6 +803,24 @@ void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& pos
 void GraphicsManager::Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix)
 {
 	SetupMatrices(shader, modelMatrix);
+}
+
+ViewportDimensions GraphicsManager::GetCurrentViewport() const
+{
+	ViewportDimensions vp;
+	vp.width = (viewportWidth > 0) ? viewportWidth : RunTimeVar::window.width;
+	vp.height = (viewportHeight > 0) ? viewportHeight : RunTimeVar::window.height;
+
+	// Ensure minimum dimensions
+	if (vp.width <= 0) vp.width = 1;
+	if (vp.height <= 0) vp.height = 1;
+
+	// Calculate and clamp aspect ratio
+	vp.aspectRatio = (float)vp.width / (float)vp.height;
+	if (vp.aspectRatio < 0.001f) vp.aspectRatio = 0.001f;
+	if (vp.aspectRatio > 1000.0f) vp.aspectRatio = 1000.0f;
+
+	return vp;
 }
 
 glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)

@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/backpack/backpack.obj",
         "compiled": "../../Resources/Models/backpack/backpack.mesh",
         "android_compiled": "Resources/Models/backpack/backpack_android.mesh",
-        "last_compiled": "2025-11-04 02:37:17.1564945"
+        "last_compiled": "2025-11-04 07:32:53.9798426"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

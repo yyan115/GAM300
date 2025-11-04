@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Kachujin/Kachujin_specular.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_specular_android.ktx",
-        "last_compiled": "2025-11-04 02:37:16.8361413"
+        "last_compiled": "2025-11-04 07:32:53.4313244"
     },
     "TextureMetaData": {
         "type": "specular",
