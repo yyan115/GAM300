@@ -298,14 +298,14 @@ void SceneInstance::processInput(float deltaTime)
 		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
 	// MADE IT so that you must drag to look around
-	// 
+	//
 	// Only process mouse look when left mouse button is held down
+	static float lastX = 0.0f;
+	static float lastY = 0.0f;
+	static bool firstMouse = true;
+
 	if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
 	{
-		static float lastX = 0.0f;
-		static float lastY = 0.0f;
-		static bool firstMouse = true;
-
 		float xpos = (float)InputManager::GetMouseX();
 		float ypos = (float)InputManager::GetMouseY();
 
@@ -339,7 +339,6 @@ void SceneInstance::processInput(float deltaTime)
 	else
 	{
 		// When mouse button is released, reset for next touch
-		static bool firstMouse = true;
 		firstMouse = true;
 	}
 
@@ -348,8 +347,10 @@ void SceneInstance::processInput(float deltaTime)
 		hdr->SetEnabled(!hdr->IsEnabled());
 		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
 	}
-	// Sync camera position back to transform
+	// Sync camera state back to component and transform
 	camComp.fov = camera->Zoom;
+	camComp.yaw = camera->Yaw;
+	camComp.pitch = camera->Pitch;
 	Vector3D newPos(camera->Position.x, camera->Position.y, camera->Position.z);
 	mainECS.transformSystem->SetLocalPosition(activeCam, newPos);
 }

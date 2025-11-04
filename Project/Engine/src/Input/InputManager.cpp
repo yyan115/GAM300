@@ -4,6 +4,8 @@
 #include "Platform/IPlatform.h"
 #include "WindowManager.hpp"
 
+#include "Logging.hpp"
+
 // Static member definitions using our new engine key constants
 IPlatform* InputManager::platform = nullptr;
 std::unordered_map<Input::Key, bool> InputManager::keyStates;

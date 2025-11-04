@@ -116,7 +116,7 @@ void VirtualControls::InitializeButtons() {
 
 void VirtualControls::InitializeRenderResources() {
     // Load shader using the engine's resource manager
-    std::string shaderPath = ResourceManager::GetPlatformShaderPath("virtualcontrolsandroid");
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("virtualcontrols");
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "Attempting to load shader at path: %s", shaderPath.c_str());
     
     s_shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
@@ -276,27 +276,36 @@ void VirtualControls::RenderButton(const VirtualButton& button, int screenWidth,
     // Set uniforms using engine's shader methods
     s_shader->setMat4("uTransform", transform);
     
-    // Button color based on key type and state
+    // Grey circles - lighter when pressed
     float color[4];
-    switch (button.key) {
-        case Input::Key::W: color[0] = 0.2f; color[1] = 0.8f; color[2] = 0.2f; color[3] = 1.0f; break; // Green
-        case Input::Key::A: color[0] = 0.8f; color[1] = 0.2f; color[2] = 0.2f; color[3] = 1.0f; break; // Red  
-        case Input::Key::S: color[0] = 0.2f; color[1] = 0.2f; color[2] = 0.8f; color[3] = 1.0f; break; // Blue
-        case Input::Key::D: color[0] = 0.8f; color[1] = 0.8f; color[2] = 0.2f; color[3] = 1.0f; break; // Yellow
-        default: color[0] = 0.5f; color[1] = 0.5f; color[2] = 0.5f; color[3] = 1.0f; break;
-    }
-    
-    // Brighten color if pressed
     if (button.isPressed) {
-        color[0] *= 1.5f;
-        color[1] *= 1.5f; 
-        color[2] *= 1.5f;
-        color[3] = 1.0f; // Keep alpha
+        // Lighter grey when pressed
+        color[0] = 0.7f;
+        color[1] = 0.7f;
+        color[2] = 0.7f;
+        color[3] = 1.0f;
+    } else {
+        // Dark grey when not pressed
+        color[0] = 0.4f;
+        color[1] = 0.4f;
+        color[2] = 0.4f;
+        color[3] = 1.0f;
     }
     
     s_shader->setVec4("uColor", color[0], color[1], color[2], color[3]);
     s_shader->setFloat("uAlpha", button.alpha);
-    
+
+    // Set direction for triangle: W=0(up), A=1(left), S=2(down), D=3(right)
+    int direction = 0;
+    switch (button.key) {
+        case Input::Key::W: direction = 0; break; // Up
+        case Input::Key::A: direction = 1; break; // Left
+        case Input::Key::S: direction = 2; break; // Down
+        case Input::Key::D: direction = 3; break; // Right
+        default: direction = 0; break;
+    }
+    s_shader->setInt("uDirection", direction);
+
     // Render quad (6 vertices for 2 triangles)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
