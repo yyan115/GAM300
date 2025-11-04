@@ -717,6 +717,44 @@ void RegisterInspectorCustomRenderers() {
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "saved3DPosition",
         [](const char*, void*, Entity, ECSManager&) { return true; });
 
+    // Camera skybox texture GUID
+    ReflectionRenderer::RegisterFieldRenderer("CameraComponent", "skyboxTextureGUID",
+        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
+            GUID_128* guid = static_cast<GUID_128*>(ptr);
+
+            ImGui::Text("Skybox Texture:");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(-1);
+
+            std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+            std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
+
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget()) {
+                ImGui::SetTooltip("Drop texture file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textureGUID;
+
+                    // Load texture immediately
+                    auto& cameraComp = ecs.GetComponent<CameraComponent>(entity);
+                    std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    cameraComp.skyboxTexturePath = newTexturePath;
+                    cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                }
+                EditorComponents::EndDragDropTarget();
+            }
+
+            return false;
+        });
+
     // Custom color picker for SpriteRenderComponent
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "color",
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {

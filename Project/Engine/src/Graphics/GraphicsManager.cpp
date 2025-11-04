@@ -10,6 +10,9 @@
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Logging.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/Camera/CameraSystem.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -29,6 +32,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	glCullFace(GL_BACK);      // Cull back-facing triangles
 	glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
 
+	// Initialize skybox
+	InitializeSkybox();
+
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
 }
@@ -42,6 +48,17 @@ void GraphicsManager::Shutdown()
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
 	mainECS.cameraSystem->Shutdown();
+
+	if (skyboxVAO != 0) {
+		glDeleteVertexArrays(1, &skyboxVAO);
+		skyboxVAO = 0;
+	}
+	if (skyboxVBO != 0) {
+		glDeleteBuffers(1, &skyboxVBO);
+		skyboxVBO = 0;
+	}
+	skyboxShader = nullptr;
+
 	ENGINE_PRINT("[GraphicsManager] Shutdown\n");
 }
 
@@ -176,6 +193,9 @@ void GraphicsManager::Render()
 
 	// Update frustum for culling
 	UpdateFrustum();
+
+	// Render skybox first (before other objects)
+	RenderSkybox();
 
 	// Sort render queue by render order (lower numbers render first)
 	std::sort(renderQueue.begin(), renderQueue.end(),
@@ -795,5 +815,148 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 
 	Matrix4x4 modelMatrix = TransformSystem::CalculateModelMatrix(position, scaleVec, rotation);
 	return modelMatrix.ConvertToGLM();
+}
+
+void GraphicsManager::InitializeSkybox()
+{
+	float skyboxVertices[] = {
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};
+
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glBindVertexArray(0);
+
+#ifndef ANDROID
+	std::string skyboxShaderPath = "Resources/Shaders/skybox";
+	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
+	if (!skyboxShader) {
+		std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
+	} else {
+		std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
+	}
+#endif
+
+	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
+}
+
+void GraphicsManager::RenderSkybox()
+{
+	static bool checkedOnce = false;
+
+	if (!currentCamera || !skyboxShader || skyboxVAO == 0) {
+		if (!checkedOnce) {
+			std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
+				<< ", shader: " << (skyboxShader != nullptr) << ", VAO: " << skyboxVAO << std::endl;
+			checkedOnce = true;
+		}
+		return;
+	}
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (!ecsManager.cameraSystem) {
+		if (!checkedOnce) {
+			std::cout << "[GraphicsManager] Skybox render skipped - no camera system" << std::endl;
+			checkedOnce = true;
+		}
+		return;
+	}
+
+	Entity activeCameraEntity = ecsManager.cameraSystem->GetActiveCameraEntity();
+	if (activeCameraEntity == UINT32_MAX || !ecsManager.HasComponent<CameraComponent>(activeCameraEntity)) {
+		if (!checkedOnce) {
+			std::cout << "[GraphicsManager] Skybox render skipped - no active camera entity" << std::endl;
+			checkedOnce = true;
+		}
+		return;
+	}
+
+	auto& cameraComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
+	if (!cameraComp.skyboxTexture) {
+		if (!checkedOnce) {
+			std::cout << "[GraphicsManager] Skybox render skipped - no skybox texture assigned" << std::endl;
+			checkedOnce = true;
+		}
+		return;
+	}
+
+	static bool logged = false;
+	if (!logged) {
+		std::cout << "[GraphicsManager] Rendering skybox - Texture ID: " << cameraComp.skyboxTexture->ID
+			<< ", Viewport: " << viewportWidth << "x" << viewportHeight << std::endl;
+		logged = true;
+	}
+
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
+
+	skyboxShader->Activate();
+
+	glm::mat4 view = glm::mat4(glm::mat3(currentCamera->GetViewMatrix()));
+
+	float aspectRatio = (float)viewportWidth / (float)viewportHeight;
+	glm::mat4 projection = glm::perspective(
+		glm::radians(currentCamera->Zoom),
+		aspectRatio,
+		0.1f, 100.0f
+	);
+
+	skyboxShader->setMat4("view", view);
+	skyboxShader->setMat4("projection", projection);
+
+	glBindVertexArray(skyboxVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, cameraComp.skyboxTexture->ID);
+	skyboxShader->setInt("skyboxTexture", 0);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	glEnable(GL_CULL_FACE);
+	glDepthFunc(GL_LESS);
 }
 

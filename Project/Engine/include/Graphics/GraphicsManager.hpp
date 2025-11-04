@@ -58,6 +58,7 @@ public:
 
     // Main rendering
     void Render();
+    void RenderSkybox();
 
     // FRUSTUM CULLING FUNCTIONS:
     void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
@@ -112,4 +113,13 @@ private:
     // FRUSTUM MEMBERS:
     Frustum viewFrustum;
     bool frustumCullingEnabled = true;
+    ViewportDimensions currentFrameViewport;
+    ViewportDimensions GetCurrentViewport() const;
+    CullingStats cullingStats;
+
+    // Skybox rendering
+    unsigned int skyboxVAO = 0;
+    unsigned int skyboxVBO = 0;
+    std::shared_ptr<Shader> skyboxShader = nullptr;
+    void InitializeSkybox();
 };
