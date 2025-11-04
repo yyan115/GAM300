@@ -28,6 +28,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/AudioComponent.hpp"
+#include "Sound/AudioListenerComponent.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "EditorState.hpp"
@@ -936,6 +937,14 @@ void RegisterInspectorCustomRenderers() {
 
             return true; // Skip default rendering
         });
+
+    ReflectionRenderer::RegisterFieldRenderer("AudioListenerComponent", "isMainListener",
+        [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("If enabled, this Audio Listener will be the primary listener for 3D audio rendering.");
+            }
+            return false;
+		});
 
     // ==================== PARTICLE COMPONENT ====================
     // Add Play/Pause/Stop buttons at the beginning of ParticleComponent rendering

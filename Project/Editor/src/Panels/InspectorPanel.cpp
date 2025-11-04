@@ -50,7 +50,8 @@ extern std::string DraggedFontPath;
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
-#include <Sound/AudioComponent.hpp>
+#include "Sound/AudioComponent.hpp"
+#include "Sound/AudioListenerComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
@@ -180,6 +181,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<AudioComponent>(entity) ?
 				(void*)&ecs.GetComponent<AudioComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AudioComponent>(entity); }},
+
+		{"Audio Listener", "AudioListenerComponent",
+			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity) ?
+				(void*)&ecs.GetComponent<AudioListenerComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity); }},
 
 		// Light components
 		{"Directional Light", "DirectionalLightComponent",
@@ -807,6 +813,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "AudioComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<AudioListenerComponent>(entity)) {
+					if (ImGui::MenuItem("Audio Listener")) {
+						AddComponent(entity, "AudioListenerComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -915,6 +926,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			AudioComponent component;
 			ecsManager.AddComponent<AudioComponent>(entity, component);
 			std::cout << "[Inspector] Added AudioComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "AudioListenerComponent") {
+			AudioListenerComponent component;
+			ecsManager.AddComponent<AudioListenerComponent>(entity, component);
+			std::cout << "[Inspector] Added AudioListenerComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "SpriteRenderComponent") {
 			// Set default shader GUID for sprite
@@ -1252,6 +1268,9 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 		} else if (componentType == "AudioComponent") {
 			auto& comp = ecs.GetComponent<AudioComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "AudioListenerComponent") {
+			auto& comp = ecs.GetComponent<AudioListenerComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "ColliderComponent") {
 			auto& comp = ecs.GetComponent<ColliderComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
@@ -1370,6 +1389,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);
 				std::cout << "[Inspector] Removed AudioComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioListenerComponent") {
+				ecsManager.RemoveComponent<AudioListenerComponent>(request.entity);
+				std::cout << "[Inspector] Removed AudioListenerComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "ColliderComponent") {
 				ecsManager.RemoveComponent<ColliderComponent>(request.entity);

@@ -1,7 +1,37 @@
-Resources/Audio/sfx/start menu bgm.ogg
-Resources/Audio/sfx/start menu bgm.ogg.meta
-Resources/Audio/sfx/Test_duck.wav
-Resources/Audio/sfx/Test_duck.wav.meta
+Resources/Audio/BGM/BossfightEND.wav
+Resources/Audio/BGM/BossfightEND.wav.meta
+Resources/Audio/BGM/BossFight_BGM_Loop.wav
+Resources/Audio/BGM/BossFight_BGM_Loop.wav.meta
+Resources/Audio/BGM/Fire_Cave_Loop.wav
+Resources/Audio/BGM/Fire_Cave_Loop.wav.meta
+Resources/Audio/BGM/Snow_Day_Loop.wav
+Resources/Audio/BGM/Snow_Day_Loop.wav.meta
+Resources/Audio/BGM/WalkAbout_BGM.wav
+Resources/Audio/BGM/WalkAbout_BGM.wav.meta
+Resources/Audio/sfx/Danger Low Hit_SFX.wav
+Resources/Audio/sfx/Danger Low Hit_SFX.wav.meta
+Resources/Audio/sfx/Footsteps Cave Jump-Land_1.wav
+Resources/Audio/sfx/Footsteps Cave Jump-Land_1.wav.meta
+Resources/Audio/sfx/Footsteps Cave Jump-Land_2.wav
+Resources/Audio/sfx/Footsteps Cave Jump-Land_2.wav.meta
+Resources/Audio/sfx/Footsteps Cave Jump-Land_3.wav
+Resources/Audio/sfx/Footsteps Cave Jump-Land_3.wav.meta
+Resources/Audio/sfx/Footsteps Cave Jump-Land_4.wav
+Resources/Audio/sfx/Footsteps Cave Jump-Land_4.wav.meta
+Resources/Audio/sfx/Footsteps Cave Jump-Land_5.wav
+Resources/Audio/sfx/Footsteps Cave Jump-Land_5.wav.meta
+Resources/Audio/sfx/Footsteps Cave_1.wav
+Resources/Audio/sfx/Footsteps Cave_1.wav.meta
+Resources/Audio/sfx/Footsteps Cave_2.wav
+Resources/Audio/sfx/Footsteps Cave_2.wav.meta
+Resources/Audio/sfx/Footsteps Cave_3.wav
+Resources/Audio/sfx/Footsteps Cave_3.wav.meta
+Resources/Audio/sfx/Footsteps Cave_4.wav
+Resources/Audio/sfx/Footsteps Cave_4.wav.meta
+Resources/Audio/sfx/Footsteps Cave_5.wav
+Resources/Audio/sfx/Footsteps Cave_5.wav.meta
+Resources/Audio/sfx/Footsteps Cave_6.wav
+Resources/Audio/sfx/Footsteps Cave_6.wav.meta
 Resources/Fonts/fa-solid-900.font
 Resources/Fonts/fa-solid-900.ttf
 Resources/Fonts/fa-solid-900.ttf.meta
@@ -76,7 +106,6 @@ Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
-Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
 Resources/Shaders/debugandroid.frag
 Resources/Shaders/debugandroid.meta

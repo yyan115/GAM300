@@ -268,6 +268,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioComponent", v, alloc);
         }
+        if (ecs.HasComponent<AudioListenerComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioListenerComponent", v, alloc);
+		}
         if (ecs.HasComponent<LightComponent>(entity)) {
             auto& c = ecs.GetComponent<LightComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -549,6 +554,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioComponent(audioComp, tv);
         }
 
+		// AudioListenerComponent
+        if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioListenerComponent"];
+            ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
+            auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(newEnt);
+            DeserializeAudioListenerComponent(audioListenerComp, tv);
+        }
+
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
@@ -783,6 +796,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& tv = comps["AudioComponent"];
             auto& audioComp = ecs.GetComponent<AudioComponent>(currEnt);
             DeserializeAudioComponent(audioComp, tv);
+        }
+
+		// AudioListenerComponent
+        if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioListenerComponent"];
+            auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(currEnt);
+			DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
         // RigidBodyComponent
@@ -1060,6 +1080,14 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
 		audioComp.DopplerLevel = d[13]["data"].GetFloat();
 		audioComp.MinDistance = d[14]["data"].GetFloat();
 		audioComp.MaxDistance = d[15]["data"].GetFloat();
+    }
+}
+
+void Serializer::DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON) {
+    // typed form: tv.data = [ {type: "bool", data: true} ]
+    if (audioListenerJSON.HasMember("data") && audioListenerJSON["data"].IsArray()) {
+        const auto& d = audioListenerJSON["data"];
+        audioListenerComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
     }
 }
 

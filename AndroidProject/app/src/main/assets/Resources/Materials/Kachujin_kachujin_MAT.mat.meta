@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a21b8c07ee-00031f5296000037",
+        "guid": "00266d49b5f77e07-00030de28e000005",
         "source": "../../Resources/Materials/Kachujin_kachujin_MAT.mat",
         "compiled": "../../Resources/Materials/Kachujin_kachujin_MAT.mat",
         "android_compiled": "Resources/Materials/Kachujin_kachujin_MAT_android.mat",
-        "last_compiled": "2025-10-31 07:20:43.9519162"
+        "last_compiled": "2025-11-04 02:37:00.4910424"
     }
 }
