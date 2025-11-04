@@ -26,6 +26,7 @@
 #include "Input/VirtualControls.hpp"
 #endif
 #include <Asset Manager/AssetManager.hpp>
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -48,6 +49,11 @@ bool Engine::Initialize() {
 	WindowManager::Initialize(SCR_WIDTH, SCR_HEIGHT, TEMP::windowTitle.c_str());
 
     ENGINE_PRINT("Engine initializing...");
+    if (!PostProcessingManager::GetInstance().Initialize())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize Post-Processing!\n");
+    }
+    ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// WOON LI TEST CODE
 	InputManager::Initialize();
@@ -58,6 +64,7 @@ bool Engine::Initialize() {
 	} else {
 		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
+
 
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
@@ -698,6 +705,7 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }

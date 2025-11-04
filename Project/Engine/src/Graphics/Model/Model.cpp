@@ -901,16 +901,18 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu with entity material", i+1, meshes.size());
 //#endif
 		// Use entity material if available, otherwise use mesh default
-		std::shared_ptr<Material> meshMaterial = entityMaterial ? entityMaterial : meshes[i].material;
-		if (meshMaterial && meshMaterial != meshes[i].material) {
-			// Temporarily override the mesh material for this draw call
-			std::shared_ptr<Material> originalMaterial = meshes[i].material;
-			meshes[i].material = meshMaterial;
-			meshes[i].Draw(shader, camera);
-			meshes[i].material = originalMaterial; // Restore original
-		} else {
-			meshes[i].Draw(shader, camera);
-		}
+        if (entityMaterial) 
+        {
+            std::shared_ptr<Material> originalMaterial = meshes[i].material;
+            meshes[i].material = entityMaterial;  // Set entity material
+            meshes[i].Draw(shader, camera);       // Draw with entity material
+            meshes[i].material = originalMaterial; // Restore original
+        }
+        else 
+        {
+            // No override, use mesh's default material
+            meshes[i].Draw(shader, camera);
+        }
 
 //#ifdef ANDROID
 //		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Successfully drew mesh %zu/%zu with entity material", i+1, meshes.size());
