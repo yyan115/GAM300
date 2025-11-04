@@ -570,3 +570,20 @@ void AudioManager::UpdateChannelState(ChannelHandle channel) {
         it->second.State = AudioSourceState::Playing;
     }
 }
+
+void AudioManager::SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up) {
+    if (ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
+
+    FMOD_VECTOR fmodPos = { position.x, position.y, position.z };
+    FMOD_VECTOR fmodVel = { velocity.x, velocity.y, velocity.z };
+    FMOD_VECTOR fmodForward = { forward.x, forward.y, forward.z };
+    FMOD_VECTOR fmodUp = { up.x, up.y, up.z };
+
+    FMOD_RESULT res = FMOD_System_Set3DListenerAttributes(System, listener, &fmodPos, &fmodVel, &fmodForward, &fmodUp);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to set listener attributes: ", FMOD_ErrorString(res), "\n");
+    }
+}

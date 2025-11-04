@@ -79,7 +79,7 @@ public:
 
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
-
+    void SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up);
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown
