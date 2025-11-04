@@ -39,6 +39,10 @@ void SceneInstance::Initialize() {
 	// Get the ECS manager for this scene
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
+
+	// Initialize systems.
+	ecsManager.transformSystem->Initialise();
+	ENGINE_LOG_INFO("Transform system initialized");
 	// Initialize camera system
 	ecsManager.cameraSystem->Initialise();
 	// Set camera if one exists in the scene
@@ -50,10 +54,6 @@ void SceneInstance::Initialize() {
 	else {
 		ENGINE_LOG_WARN("[SceneInstance] No active camera found! Game panel will not render. Please add a camera to your scene.");
 	}
-
-	// Initialize systems.
-	ecsManager.transformSystem->Initialise();
-	ENGINE_LOG_INFO("Transform system initialized");
 	ecsManager.modelSystem->Initialise();
 	ENGINE_LOG_INFO("Model system initialized");
 	ecsManager.debugDrawSystem->Initialise();

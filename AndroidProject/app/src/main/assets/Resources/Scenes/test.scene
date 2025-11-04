@@ -29,7 +29,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 3.854
                                 }
                             ]
                         },
@@ -124,7 +124,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 3.854
                                 },
                                 {
                                     "type": "float",
@@ -179,7 +179,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.1
+                            "data": 0.02
                         },
                         {
                             "type": "float",
@@ -1334,15 +1334,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0000405765
+                                    "data": -0.000110666
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.68997e-11
+                                    "data": 0.0001444
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000405547
+                                    "data": -0.0000610247
                                 }
                             ]
                         },
@@ -1351,15 +1351,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.0000193303
+                                    "data": -0.000252764
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.38997e-10
+                                    "data": -0.0228853
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000193407
+                                    "data": 0.00116665
                                 }
                             ]
                         },
@@ -1790,7 +1790,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.265009
                                 },
                                 {
                                     "type": "float",
@@ -1798,7 +1798,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -3.00819
                                 }
                             ]
                         },
@@ -1861,7 +1861,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.265009
                                 },
                                 {
                                     "type": "float",
@@ -1893,7 +1893,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -3.00819
                                 },
                                 {
                                     "type": "float",
