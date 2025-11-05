@@ -6,14 +6,12 @@
 
 namespace game_ai {
 
-    std::unique_ptr<IBrain> CreateFor(ECSManager& ecs, Entity e) {
-        // TODO: replace with your real predicate
-        const bool isBoss = /* ecs.HasComponent<BossTag>(e) */ false;
-
-        if (isBoss)
-            return std::make_unique<HfsmBrain<BossFSM>>();
-        else
-            return std::make_unique<HfsmBrain<GruntFSM>>();
+    std::unique_ptr<IBrain> CreateFor(ECSManager& ecs, Entity e, BrainKind kind) {
+        switch (kind) {
+        case BrainKind::Grunt: return std::make_unique<HfsmBrain<GruntFSM>>();
+        case BrainKind::Boss:  return std::make_unique<HfsmBrain<BossFSM>>();
+        default:               return {};
+        }
     }
 
 } // namespace game_ai

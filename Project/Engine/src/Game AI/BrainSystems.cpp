@@ -13,7 +13,7 @@ void RunBrainInitSystem(ECSManager& ecs) {
         Brain& brain = brainOpt->get();
 
         if (!brain.impl)
-            brain.impl = game_ai::CreateFor(ecs, e);
+            brain.impl = game_ai::CreateFor(ecs, e, brain.kind);
 
         if (brain.impl && !brain.started) {
             brain.impl->onEnter(ecs, e);
@@ -33,5 +33,6 @@ void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
 
         if (!brain.impl || !brain.started) continue;
         brain.impl->onUpdate(ecs, e, dt);
+		brain.activeState = brain.impl->activeStateName();
     }
 }
