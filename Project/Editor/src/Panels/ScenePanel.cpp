@@ -15,6 +15,7 @@
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
+#include "Sound/AudioComponent.hpp"
 #include "Graphics/Material.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -530,6 +531,7 @@ void ScenePanel::OnImGuiRender()
             // Draw collider gizmos for selected entity
             DrawColliderGizmos();
             DrawCameraGizmos();
+            DrawAudioGizmos();
 
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
@@ -1618,5 +1620,184 @@ void ScenePanel::DrawCameraGizmos() {
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing camera gizmos: ", e.what(), "\n");
+    }
+}
+
+void ScenePanel::DrawAudioGizmos() {
+    Entity selectedEntity = GUIManager::GetSelectedEntity();
+    if (selectedEntity == static_cast<Entity>(-1)) return;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Only draw if entity has an audio component with spatialization enabled
+        if (!ecsManager.HasComponent<AudioComponent>(selectedEntity)) return;
+        if (!ecsManager.HasComponent<Transform>(selectedEntity)) return;
+
+        AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(selectedEntity);
+        Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+
+        // Only draw gizmos if spatialization is enabled
+        if (!audioComp.Spatialize || audioComp.SpatialBlend <= 0.0f) return;
+
+        // Get audio source position from transform
+        glm::vec3 audioPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+
+        // Get window and viewport info for editor camera
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        float editorAspectRatio = windowSize.x / windowSize.y;
+
+        // Build editor view-projection matrix
+        glm::mat4 view = editorCamera.GetViewMatrix();
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(editorAspectRatio);
+        glm::mat4 vp = projection * view;
+
+        // Get ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+
+        // Project 3D point to screen space
+        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
+            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
+            if (clipSpace.w <= 0.0001f) {
+                isVisible = false;
+                return ImVec2(-10000, -10000);
+            }
+            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
+            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
+            isVisible = true;
+            return ImVec2(screenX, screenY);
+        };
+
+        // Colors: Min distance = green, Max distance = red
+        ImU32 minDistanceColor = IM_COL32(0, 255, 0, 180);    // Green
+        ImU32 maxDistanceColor = IM_COL32(255, 0, 0, 180);    // Red
+
+        // Draw sphere wireframes
+        auto drawWireSphere = [&](const glm::vec3& center, float radius, ImU32 color, int segments = 32) {
+            // Draw three perpendicular circles to create a sphere wireframe
+            
+            // Circle in XY plane
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * glm::pi<float>();
+                float angle2 = (float)((i + 1) % segments) / segments * 2.0f * glm::pi<float>();
+                
+                glm::vec3 p1 = center + glm::vec3(
+                    radius * cos(angle1),
+                    radius * sin(angle1),
+                    0.0f
+                );
+                glm::vec3 p2 = center + glm::vec3(
+                    radius * cos(angle2),
+                    radius * sin(angle2),
+                    0.0f
+                );
+                
+                bool vis1, vis2;
+                ImVec2 screen1 = projectToScreen(p1, vis1);
+                ImVec2 screen2 = projectToScreen(p2, vis2);
+                
+                if (vis1 && vis2) {
+                    drawList->AddLine(screen1, screen2, color, 2.0f);
+                }
+            }
+            
+            // Circle in XZ plane
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * glm::pi<float>();
+                float angle2 = (float)((i + 1) % segments) / segments * 2.0f * glm::pi<float>();
+                
+                glm::vec3 p1 = center + glm::vec3(
+                    radius * cos(angle1),
+                    0.0f,
+                    radius * sin(angle1)
+                );
+                glm::vec3 p2 = center + glm::vec3(
+                    radius * cos(angle2),
+                    0.0f,
+                    radius * sin(angle2)
+                );
+                
+                bool vis1, vis2;
+                ImVec2 screen1 = projectToScreen(p1, vis1);
+                ImVec2 screen2 = projectToScreen(p2, vis2);
+                
+                if (vis1 && vis2) {
+                    drawList->AddLine(screen1, screen2, color, 2.0f);
+                }
+            }
+            
+            // Circle in YZ plane
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * glm::pi<float>();
+                float angle2 = (float)((i + 1) % segments) / segments * 2.0f * glm::pi<float>();
+                
+                glm::vec3 p1 = center + glm::vec3(
+                    0.0f,
+                    radius * cos(angle1),
+                    radius * sin(angle1)
+                );
+                glm::vec3 p2 = center + glm::vec3(
+                    0.0f,
+                    radius * cos(angle2),
+                    radius * sin(angle2)
+                );
+                
+                bool vis1, vis2;
+                ImVec2 screen1 = projectToScreen(p1, vis1);
+                ImVec2 screen2 = projectToScreen(p2, vis2);
+                
+                if (vis1 && vis2) {
+                    drawList->AddLine(screen1, screen2, color, 2.0f);
+                }
+            }
+        };
+
+        // Draw min distance sphere (green)
+        drawWireSphere(audioPos, audioComp.MinDistance, minDistanceColor);
+
+        // Draw max distance sphere (red)
+        drawWireSphere(audioPos, audioComp.MaxDistance, maxDistanceColor);
+
+        // Draw audio source icon at center
+        bool iconVis;
+        ImVec2 iconPos = projectToScreen(audioPos, iconVis);
+        if (iconVis) {
+            // Draw speaker icon (simplified)
+            // Left rectangle (speaker body)
+            drawList->AddRectFilled(
+                ImVec2(iconPos.x - 6, iconPos.y - 5),
+                ImVec2(iconPos.x, iconPos.y + 5),
+                IM_COL32(180, 180, 180, 220)
+            );
+            drawList->AddRect(
+                ImVec2(iconPos.x - 6, iconPos.y - 5),
+                ImVec2(iconPos.x, iconPos.y + 5),
+                IM_COL32(255, 255, 255, 255),
+                0.0f, 0, 1.5f
+            );
+
+            // Right triangle (speaker cone)
+            ImVec2 tri1(iconPos.x, iconPos.y - 5);
+            ImVec2 tri2(iconPos.x, iconPos.y + 5);
+            ImVec2 tri3(iconPos.x + 6, iconPos.y);
+            drawList->AddTriangleFilled(tri1, tri2, tri3, IM_COL32(180, 180, 180, 220));
+            drawList->AddTriangle(tri1, tri2, tri3, IM_COL32(255, 255, 255, 255), 1.5f);
+
+            // Sound waves
+            for (int i = 1; i <= 2; i++) {
+                float offsetX = iconPos.x + 8 + (i * 4);
+                drawList->AddLine(
+                    ImVec2(offsetX, iconPos.y - 3 - i),
+                    ImVec2(offsetX, iconPos.y + 3 + i),
+                    IM_COL32(255, 255, 255, 200),
+                    1.5f
+                );
+            }
+        }
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error drawing audio gizmos: ", e.what(), "\n");
     }
 }
