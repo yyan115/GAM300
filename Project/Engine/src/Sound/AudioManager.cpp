@@ -176,7 +176,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     return chId;
 }
 
-ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation) {
+ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
     std::lock_guard<std::mutex> lock(Mutex);
@@ -193,7 +193,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
 
     // Per-channel looping
     FMOD_MODE channelMode = FMOD_3D;
-    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF) | FMOD_3D_LINEARROLLOFF;
     FMOD_Channel_SetMode(channel, channelMode);
     FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
 
@@ -201,6 +201,12 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     FMOD_VECTOR pos = { position.x, position.y, position.z };
     FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
     FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
+
+    // Set 3D min/max distance for distance attenuation
+    res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
+    }
 
     float finalVolume = volume * attenuation * MasterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
@@ -391,6 +397,19 @@ void AudioManager::UpdateChannelPosition(ChannelHandle channel, const Vector3D& 
     FMOD_VECTOR pos = { position.x, position.y, position.z };
     FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
     FMOD_Channel_Set3DAttributes(it->second.Channel, &pos, &vel);
+}
+
+void AudioManager::SetChannel3DMinMaxDistance(ChannelHandle channel, float minDistance, float maxDistance) {
+    if (ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
+
+    FMOD_RESULT res = FMOD_Channel_Set3DMinMaxDistance(it->second.Channel, minDistance, maxDistance);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
+    }
 }
 
 FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {

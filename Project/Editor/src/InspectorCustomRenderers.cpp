@@ -927,15 +927,12 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::SetNextItemWidth(-1);
                 ImGui::Checkbox("##Spatialize", &audio.Spatialize);
 
-                // Spatial Blend (editable drag)
-                ImGui::Text("Spatial Blend");
-                ImGui::SameLine(labelWidth);
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f")) {
-                    audio.SetSpatialBlend(audio.SpatialBlend);
-                }
-
                 if (audio.Spatialize) {
+                    // Spatial Blend (editable drag)
+                    if (EditorComponents::DrawSliderWithInput("Spatial Blend", &audio.SpatialBlend, 0.0f, 1.0f, false, labelWidth)) {
+                        audio.SetSpatialBlend(audio.SpatialBlend);
+                    }
+
                     // Doppler Level (editable drag)
                     EditorComponents::DrawSliderWithInput("Doppler Level", &audio.DopplerLevel, 0.0f, 5.0f, false, labelWidth);
 
@@ -967,12 +964,9 @@ void RegisterInspectorCustomRenderers() {
                     ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
                     ImGui::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
-                }
-                
-
+                }               
                 ImGui::Unindent();
             }
-
             return true; // Skip default rendering
         });
 

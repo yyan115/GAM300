@@ -63,8 +63,8 @@ void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
     AudioManager& audioMgr = AudioManager::GetInstance();
     ChannelHandle oneShotChannel;
     
-    if (SpatialBlend > 0.0f) {
-        oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend);
+    if (Spatialize && SpatialBlend > 0.0f) {
+        oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
     } else if (!OutputAudioMixerGroup.empty()) {
         oneShotChannel = audioMgr.PlayAudioOnBus(clipToPlay, OutputAudioMixerGroup, false, Volume);
     } else {
@@ -159,6 +159,20 @@ void AudioComponent::SetSpatialBlend(float blend) {
     }
 }
 
+void AudioComponent::SetMinDistance(float distance) {
+    MinDistance = std::max(distance, 0.0f);
+    if (CurrentChannel != 0 && Spatialize && SpatialBlend > 0.0f) {
+        AudioManager::GetInstance().SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
+    }
+}
+
+void AudioComponent::SetMaxDistance(float distance) {
+    MaxDistance = std::max(distance, MinDistance);
+    if (CurrentChannel != 0 && SpatialBlend > 0.0f) {
+        AudioManager::GetInstance().SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
+    }
+}
+
 void AudioComponent::SetOutputAudioMixerGroup(const std::string& groupName) {
     if (OutputAudioMixerGroup != groupName) {
         bool wasPlaying = GetIsPlaying();
@@ -175,7 +189,7 @@ void AudioComponent::SetPosition(const Vector3D& pos) {
 
 void AudioComponent::OnTransformChanged(const Vector3D& newPosition) {
     Position = newPosition;
-    if (CurrentChannel != 0 && SpatialBlend > 0.0f) {
+    if (CurrentChannel != 0 && Spatialize && SpatialBlend > 0.0f) {
         AudioManager::GetInstance().UpdateChannelPosition(CurrentChannel, Position);
     }
 }
@@ -249,8 +263,9 @@ void AudioComponent::UpdateChannelProperties() {
     audioMgr.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     audioMgr.SetChannelPitch(CurrentChannel, Pitch);
     audioMgr.SetChannelLoop(CurrentChannel, Loop);
-    if (SpatialBlend > 0.0f) {
+    if (Spatialize && SpatialBlend > 0.0f) {
         audioMgr.UpdateChannelPosition(CurrentChannel, Position);
+        audioMgr.SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
     }
 }
 
@@ -281,8 +296,8 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     AudioManager& audioMgr = AudioManager::GetInstance();
     ChannelHandle channel = 0;
     
-    if (SpatialBlend > 0.0f) {
-        channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend);
+    if (Spatialize && SpatialBlend > 0.0f) {
+        channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);
     } else if (!OutputAudioMixerGroup.empty()) {
         channel = audioMgr.PlayAudioOnBus(CachedAudioAsset, OutputAudioMixerGroup, Loop && !oneShot, Volume);
     } else {
