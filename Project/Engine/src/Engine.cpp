@@ -496,9 +496,9 @@ bool Engine::Initialize() {
     }
 #endif
 #if LUA_TEST
-    // 1) initialize scripting
     Scripting::Init();
 
+    
     // 3) optional: set custom filesystem read callback (editor can load scripts from different folders)
     Scripting::SetFileSystemReadAllText([](const std::string& path, std::string& out) -> bool {
         std::ifstream ifs(path, std::ios::binary);

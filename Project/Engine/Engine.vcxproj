@@ -172,6 +172,7 @@
     <ClInclude Include="src\Model\Model.h" />
     <ClInclude Include="src\Model\ModelRenderComponent.hpp" />
     <ClInclude Include="src\Model\ModelSystem.hpp" />
+    <ClInclude Include="include\Script\Script.hpp" />
     <ClInclude Include="src\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\Font.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
@@ -245,6 +246,7 @@
     <ClCompile Include="src\Reflection\ReflectionBase.cpp" />
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
+    <ClCompile Include="src\Script\Script.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
     <ClCompile Include="src\ECS\ECSManager.cpp" />
