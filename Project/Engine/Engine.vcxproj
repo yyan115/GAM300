@@ -88,6 +88,8 @@
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
+    <ClInclude Include="include\Script\ScriptComponentData.hpp" />
+    <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
     <ClInclude Include="include\Asset Manager\Asset.hpp" />
@@ -180,6 +182,7 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Script\ScriptSystem.cpp" />
     <ClCompile Include="src\Animation\Animation.cpp" />
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />
     <ClCompile Include="src\Animation\AnimationSystem.cpp" />

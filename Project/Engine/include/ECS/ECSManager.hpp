@@ -18,6 +18,7 @@
 #include "Graphics/Camera/CameraSystem.hpp"
 #include <Animation/AnimationSystem.hpp>
 
+#include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
 class ECSManager {
 public:
@@ -124,7 +125,7 @@ public:
 	std::shared_ptr<AudioSystem> audioSystem;
 	std::shared_ptr<AnimationSystem> animationSystem;
 	std::shared_ptr<CameraSystem> cameraSystem;
-
+	std::shared_ptr<ScriptSystem> scriptSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

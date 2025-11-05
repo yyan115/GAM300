@@ -105,6 +105,7 @@
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
     <ClCompile Include="src\Script\Script.cpp" />
+    <ClCompile Include="src\Script\ScriptSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -250,6 +251,8 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
     <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
     <ClInclude Include="include\Script\Script.hpp" />
+    <ClInclude Include="include\Script\ScriptSystem.hpp" />
+    <ClInclude Include="include\Script\ScriptComponentData.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
