@@ -37,6 +37,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
 #include "Animation/AnimationComponent.hpp"
+#include "Game AI/Brain.hpp"
+#include "Game AI/BrainFactory.hpp"
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
@@ -1289,5 +1291,47 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Separator();
 
             return false;
+        });
+
+        ReflectionRenderer::RegisterComponentRenderer("Brain",
+            [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            Brain& brain = *static_cast<Brain*>(componentPtr);
+
+            // Choose Brain kind (None / Grunt / Boss)
+            const char* kinds[] = { "None", "Grunt", "Boss" };
+            int k = static_cast<int>(brain.kind);
+            if (ImGui::Combo("Kind", &k, kinds, IM_ARRAYSIZE(kinds))) {
+                brain.kind = static_cast<BrainKind>(k);
+            }
+
+            // Active state (read-only)
+            ImGui::Text("Active State: %s", brain.activeState.empty() ? "None" : brain.activeState.c_str());
+
+            // Build / Rebuild
+            if (ImGui::Button(brain.impl ? "Rebuild" : "Build")) {
+                if (brain.impl) brain.impl->onExit(ecs, entity);
+                brain.impl = game_ai::CreateFor(ecs, entity, brain.kind);
+                if (brain.impl) {
+                    brain.impl->onEnter(ecs, entity);
+                    brain.started = true;
+                }
+                else {
+                    brain.started = false;
+                    brain.activeState = "None";
+                }
+            }
+            ImGui::SameLine();
+
+            // Stop
+            ImGui::BeginDisabled(!brain.impl);
+            if (ImGui::Button("Stop")) {
+                if (brain.impl) brain.impl->onExit(ecs, entity);
+                brain.impl.reset();
+                brain.started = false;
+                brain.activeState = "None";
+            }
+            ImGui::EndDisabled();
+
+            return true;
         });
 }

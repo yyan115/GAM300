@@ -6,6 +6,6 @@
 namespace game_ai {
 
 	// Factory that returns an IBrain for entity `e`
-	std::unique_ptr<IBrain> CreateFor(ECSManager& ecs, Entity e, BrainKind kind);
+	ENGINE_API std::unique_ptr<IBrain> CreateFor(ECSManager& ecs, Entity e, BrainKind kind);
 
 } // namespace game_ai

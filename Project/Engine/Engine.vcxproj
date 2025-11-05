@@ -192,6 +192,7 @@
     <ClCompile Include="src\Animation\AnimationSystem.cpp" />
     <ClCompile Include="src\Animation\Animator.cpp" />
     <ClCompile Include="src\Game AI\BrainFactory.cpp" />
+    <ClCompile Include="src\Game AI\BrainReflection.cpp" />
     <ClCompile Include="src\Game AI\BrainSystems.cpp" />
     <ClCompile Include="src\ECS\ActiveComponent.cpp" />
     <ClCompile Include="src\Graphics\Bone.cpp" />

@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <string>
 #include "ECS/ECSManager.hpp"
 #include "ECS/Entity.hpp"
 #include "Events.hpp"
@@ -15,9 +16,9 @@ struct IBrain {
 };
 
 struct Brain {
-    //REFL_SERIALIZABLE
+    REFL_SERIALIZABLE
     BrainKind kind{ BrainKind::None };
     std::shared_ptr<IBrain> impl;
     bool started{ false };
-    const char* activeState = "";
+    std::string activeState;
 };

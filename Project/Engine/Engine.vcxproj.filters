@@ -104,6 +104,7 @@
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
+    <ClCompile Include="src\Game AI\BrainReflection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />

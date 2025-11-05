@@ -48,10 +48,12 @@ struct GruntIdle : GruntFSM::State {
 
     template <typename TControl>
     void enter(TControl& ctrl) noexcept { 
-        ENGINE_PRINT("[Grunt] enter Idle\n"); 
-        timer = 3.f;
-
         auto& ctx = ctrl.context();
+		Brain& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+		brain.activeState = "Idle";
+        ENGINE_PRINT("[Grunt] enter Idle\n");
+
+        timer = 3.f;
         if (auto* a = animFrom(ctrl.context()))    // ensure nothing is playing
             stopAll(*a);
     }
@@ -70,6 +72,9 @@ struct GruntIdle : GruntFSM::State {
 struct GruntAttack : GruntFSM::State {
     template <typename TControl>
     void enter(TControl& ctrl) noexcept { 
+        auto& ctx = ctrl.context();
+        Brain& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+		brain.activeState = "Attack";
         ENGINE_PRINT("[Grunt] enter Attack\n"); 
         if (auto* a = animFrom(ctrl.context()))
             playOnce(*a, kAttackClipIndex);

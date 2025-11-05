@@ -670,6 +670,30 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	}
 }
 
+//void InspectorPanel::DrawBrainComponent(Entity entity) {
+//	try {
+//		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+//		Brain& brain = ecsManager.GetComponent<Brain>(entity);
+//
+//		ImGui::Separator();
+//		ImGui::Text("Active State: %s", brain.impl ? brain.impl->activeStateName() : "-");
+//
+//		if (ImGui::Button(brain.started ? "Rebuild" : "Build")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl = game_ai::CreateFor(ecsManager, entity, brain.kind);  // use your overload
+//			if (brain.impl) { brain.impl->onEnter(ecsManager, entity); brain.started = true; }
+//		}
+//		ImGui::SameLine();
+//		if (ImGui::Button("Stop")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl.reset();
+//			brain.started = false;
+//		}
+//	} catch (const std::exception& e) {
+//		ImGui::Text("Error accessing Brain component: %s", e.what());
+//	}
+//}
+
 void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 	try {
 		// Get asset metadata from AssetManager
