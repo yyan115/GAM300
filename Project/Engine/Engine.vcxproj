@@ -127,6 +127,7 @@
     <ClInclude Include="include\Sound\Audio.hpp" />
     <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
     <ClInclude Include="include\Sound\AudioManager.hpp" />
+    <ClInclude Include="include\Sound\AudioReverbZoneComponent.hpp" />
     <ClInclude Include="include\Sound\AudioSystem.hpp" />
     <ClInclude Include="include\TimeManager.hpp" />
     <ClInclude Include="include\Transform\Quaternion.hpp" />
@@ -284,6 +285,7 @@
     <ClCompile Include="src\Scene\SceneInstance.cpp" />
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
     <ClCompile Include="src\Sound\AudioManager.cpp" />
+    <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
     <ClCompile Include="src\Sound\AudioSystem.cpp" />
     <ClCompile Include="src\Transform\Quaternion.cpp" />
     <ClCompile Include="src\Transform\TransformComponent.cpp" />

@@ -16,6 +16,7 @@
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Sound/AudioComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include "Graphics/Material.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -1630,18 +1631,19 @@ void ScenePanel::DrawAudioGizmos() {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-        // Only draw if entity has an audio component with spatialization enabled
-        if (!ecsManager.HasComponent<AudioComponent>(selectedEntity)) return;
+        // Check if entity has transform
         if (!ecsManager.HasComponent<Transform>(selectedEntity)) return;
-
-        AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(selectedEntity);
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
-
-        // Only draw gizmos if spatialization is enabled
-        if (!audioComp.Spatialize || audioComp.SpatialBlend <= 0.0f) return;
 
         // Get audio source position from transform
         glm::vec3 audioPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+
+        // Check which audio component types this entity has
+        bool hasAudioComponent = ecsManager.HasComponent<AudioComponent>(selectedEntity);
+        bool hasReverbZone = ecsManager.HasComponent<AudioReverbZoneComponent>(selectedEntity);
+
+        // Early exit if no audio components
+        if (!hasAudioComponent && !hasReverbZone) return;
 
         // Get window and viewport info for editor camera
         ImVec2 windowSize = ImGui::GetWindowSize();
@@ -1670,11 +1672,7 @@ void ScenePanel::DrawAudioGizmos() {
             return ImVec2(screenX, screenY);
         };
 
-        // Colors: Min distance = green, Max distance = red
-        ImU32 minDistanceColor = IM_COL32(0, 255, 0, 180);    // Green
-        ImU32 maxDistanceColor = IM_COL32(255, 0, 0, 180);    // Red
-
-        // Draw sphere wireframes
+        // Lambda to draw sphere wireframes
         auto drawWireSphere = [&](const glm::vec3& center, float radius, ImU32 color, int segments = 32) {
             // Draw three perpendicular circles to create a sphere wireframe
             
@@ -1754,46 +1752,88 @@ void ScenePanel::DrawAudioGizmos() {
             }
         };
 
-        // Draw min distance sphere (green)
-        drawWireSphere(audioPos, audioComp.MinDistance, minDistanceColor);
+        // Draw AudioComponent gizmos if present and spatialized
+        if (hasAudioComponent) {
+            AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(selectedEntity);
+            
+            if (audioComp.Spatialize && audioComp.SpatialBlend > 0.0f) {
+                // Colors: Min distance = green, Max distance = red
+                ImU32 minDistanceColor = IM_COL32(0, 255, 0, 180);    // Green
+                ImU32 maxDistanceColor = IM_COL32(255, 0, 0, 180);    // Red
 
-        // Draw max distance sphere (red)
-        drawWireSphere(audioPos, audioComp.MaxDistance, maxDistanceColor);
+                // Draw min distance sphere (green)
+                drawWireSphere(audioPos, audioComp.MinDistance, minDistanceColor);
 
-        // Draw audio source icon at center
-        bool iconVis;
-        ImVec2 iconPos = projectToScreen(audioPos, iconVis);
-        if (iconVis) {
-            // Draw speaker icon (simplified)
-            // Left rectangle (speaker body)
-            drawList->AddRectFilled(
-                ImVec2(iconPos.x - 6, iconPos.y - 5),
-                ImVec2(iconPos.x, iconPos.y + 5),
-                IM_COL32(180, 180, 180, 220)
-            );
-            drawList->AddRect(
-                ImVec2(iconPos.x - 6, iconPos.y - 5),
-                ImVec2(iconPos.x, iconPos.y + 5),
-                IM_COL32(255, 255, 255, 255),
-                0.0f, 0, 1.5f
-            );
+                // Draw max distance sphere (red)
+                drawWireSphere(audioPos, audioComp.MaxDistance, maxDistanceColor);
 
-            // Right triangle (speaker cone)
-            ImVec2 tri1(iconPos.x, iconPos.y - 5);
-            ImVec2 tri2(iconPos.x, iconPos.y + 5);
-            ImVec2 tri3(iconPos.x + 6, iconPos.y);
-            drawList->AddTriangleFilled(tri1, tri2, tri3, IM_COL32(180, 180, 180, 220));
-            drawList->AddTriangle(tri1, tri2, tri3, IM_COL32(255, 255, 255, 255), 1.5f);
+                // Draw audio source icon at center
+                bool iconVis;
+                ImVec2 iconPos = projectToScreen(audioPos, iconVis);
+                if (iconVis) {
+                    // Draw speaker icon (simplified)
+                    // Left rectangle (speaker body)
+                    drawList->AddRectFilled(
+                        ImVec2(iconPos.x - 6, iconPos.y - 5),
+                        ImVec2(iconPos.x, iconPos.y + 5),
+                        IM_COL32(180, 180, 180, 220)
+                    );
+                    drawList->AddRect(
+                        ImVec2(iconPos.x - 6, iconPos.y - 5),
+                        ImVec2(iconPos.x, iconPos.y + 5),
+                        IM_COL32(255, 255, 255, 255),
+                        0.0f, 0, 1.5f
+                    );
 
-            // Sound waves
-            for (int i = 1; i <= 2; i++) {
-                float offsetX = iconPos.x + 8 + (i * 4);
-                drawList->AddLine(
-                    ImVec2(offsetX, iconPos.y - 3 - i),
-                    ImVec2(offsetX, iconPos.y + 3 + i),
-                    IM_COL32(255, 255, 255, 200),
-                    1.5f
-                );
+                    // Right triangle (speaker cone)
+                    ImVec2 tri1(iconPos.x, iconPos.y - 5);
+                    ImVec2 tri2(iconPos.x, iconPos.y + 5);
+                    ImVec2 tri3(iconPos.x + 6, iconPos.y);
+                    drawList->AddTriangleFilled(tri1, tri2, tri3, IM_COL32(180, 180, 180, 220));
+                    drawList->AddTriangle(tri1, tri2, tri3, IM_COL32(255, 255, 255, 255), 1.5f);
+
+                    // Sound waves
+                    for (int i = 1; i <= 2; i++) {
+                        float offsetX = iconPos.x + 8 + (i * 4);
+                        drawList->AddLine(
+                            ImVec2(offsetX, iconPos.y - 3 - i),
+                            ImVec2(offsetX, iconPos.y + 3 + i),
+                            IM_COL32(255, 255, 255, 200),
+                            1.5f
+                        );
+                    }
+                }
+            }
+        }
+
+        // Draw AudioReverbZoneComponent gizmos if present
+        if (hasReverbZone) {
+            AudioReverbZoneComponent& reverbZone = ecsManager.GetComponent<AudioReverbZoneComponent>(selectedEntity);
+            
+            if (reverbZone.enabled) {
+                // Colors: Min distance = cyan, Max distance = blue for reverb zones
+                ImU32 minDistanceColor = IM_COL32(0, 255, 255, 150);  // Cyan
+                ImU32 maxDistanceColor = IM_COL32(0, 100, 255, 150);  // Blue
+
+                // Draw min distance sphere (cyan)
+                drawWireSphere(audioPos, reverbZone.MinDistance, minDistanceColor);
+
+                // Draw max distance sphere (blue)
+                drawWireSphere(audioPos, reverbZone.MaxDistance, maxDistanceColor);
+
+                // Draw reverb icon at center
+                bool iconVis;
+                ImVec2 iconPos = projectToScreen(audioPos, iconVis);
+                if (iconVis) {
+                    // Draw reverb icon (circle with waves)
+                    drawList->AddCircleFilled(iconPos, 7.0f, IM_COL32(100, 150, 255, 200));
+                    drawList->AddCircle(iconPos, 7.0f, IM_COL32(0, 200, 255, 255), 0, 2.0f);
+                    
+                    // Reverb waves (concentric circles)
+                    for (int i = 1; i <= 3; i++) {
+                        drawList->AddCircle(iconPos, 7.0f + (i * 5.0f), IM_COL32(0, 200, 255, 150 - (i * 40)), 0, 1.5f);
+                    }
+                }
             }
         }
 

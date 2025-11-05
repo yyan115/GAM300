@@ -106,6 +106,7 @@
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\PostProcessingManager.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
+    <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -252,6 +253,8 @@
     <ClInclude Include="src\TextRendering\TextRenderComponent.hpp" />
     <ClInclude Include="src\TextRendering\TextRenderingSystem.hpp" />
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
+    <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
+    <ClInclude Include="include\Sound\AudioReverbZoneComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

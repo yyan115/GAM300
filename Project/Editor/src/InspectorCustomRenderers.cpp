@@ -29,6 +29,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "EditorState.hpp"
@@ -977,6 +978,140 @@ void RegisterInspectorCustomRenderers() {
             }
             return false;
 		});
+
+    // ==================== AUDIO REVERB ZONE COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("AudioReverbZoneComponent",
+        [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
+            AudioReverbZoneComponent& reverbZone = *static_cast<AudioReverbZoneComponent*>(componentPtr);
+            const float labelWidth = EditorComponents::GetLabelWidth();
+
+            // Enabled checkbox
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Enabled");
+            ImGui::SameLine(labelWidth);
+            ImGui::Checkbox("##Enabled", &reverbZone.enabled);
+
+            ImGui::Separator();
+
+            // Zone Distance Settings
+            ImGui::Text("Zone Distance");
+            ImGui::Spacing();
+
+            // Min Distance (editable drag)
+            ImGui::Text("Min Distance");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##MinDistance", &reverbZone.MinDistance, 0.1f, 0.0f, reverbZone.MaxDistance, "%.2f")) {
+                reverbZone.MinDistance = std::max(0.0f, reverbZone.MinDistance);
+            }
+
+            // Max Distance (editable drag)
+            ImGui::Text("Max Distance");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::DragFloat("##MaxDistance", &reverbZone.MaxDistance, 0.1f, reverbZone.MinDistance, 10000.0f, "%.2f")) {
+                reverbZone.MaxDistance = std::max(reverbZone.MinDistance, reverbZone.MaxDistance);
+            }
+
+            ImGui::Separator();
+
+            // Reverb Preset Dropdown
+            ImGui::Text("Reverb Preset");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            const char* presetNames[] = {
+                "Off", "Generic", "Padded Cell", "Room", "Bathroom", "Living Room",
+                "Stone Room", "Auditorium", "Concert Hall", "Cave", "Arena", "Hangar",
+                "Carpetted Hallway", "Hallway", "Stone Corridor", "Alley", "Forest",
+                "City", "Mountains", "Quarry", "Plain", "Parking Lot", "Sewer Pipe",
+                "Underwater", "Drugged", "Dizzy", "Psychotic", "Custom"
+            };
+
+            int currentPresetIndex = reverbZone.reverbPresetIndex;
+            EditorComponents::PushComboColors();
+            if (ImGui::Combo("##ReverbPreset", &currentPresetIndex, presetNames, IM_ARRAYSIZE(presetNames))) {
+                reverbZone.SetReverbPresetByIndex(currentPresetIndex);
+            }
+            EditorComponents::PopComboColors();
+
+            ImGui::Separator();
+
+            // Advanced Reverb Parameters (collapsible)
+            if (ImGui::CollapsingHeader("Advanced Reverb Parameters", ImGuiTreeNodeFlags_None)) {
+                ImGui::Indent();
+
+                ImGui::Text("Decay Time (s)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##DecayTime", &reverbZone.decayTime, 0.01f, 0.1f, 20.0f, "%.2f");
+
+                ImGui::Text("Early Delay (s)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##EarlyDelay", &reverbZone.earlyDelay, 0.001f, 0.0f, 0.3f, "%.3f");
+
+                ImGui::Text("Late Delay (s)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##LateDelay", &reverbZone.lateDelay, 0.001f, 0.0f, 0.1f, "%.3f");
+
+                ImGui::Text("HF Reference (Hz)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##HFReference", &reverbZone.hfReference, 10.0f, 20.0f, 20000.0f, "%.0f");
+
+                ImGui::Text("HF Decay Ratio");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##HFDecayRatio", &reverbZone.hfDecayRatio, 0.01f, 0.1f, 2.0f, "%.2f");
+
+                ImGui::Text("Diffusion (%)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Diffusion", &reverbZone.diffusion, 1.0f, 0.0f, 100.0f, "%.0f");
+
+                ImGui::Text("Density (%)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Density", &reverbZone.density, 1.0f, 0.0f, 100.0f, "%.0f");
+
+                ImGui::Text("Low Shelf Freq (Hz)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##LowShelfFreq", &reverbZone.lowShelfFrequency, 10.0f, 20.0f, 1000.0f, "%.0f");
+
+                ImGui::Text("Low Shelf Gain (dB)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##LowShelfGain", &reverbZone.lowShelfGain, 0.1f, -36.0f, 12.0f, "%.1f");
+
+                ImGui::Text("High Cut (Hz)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##HighCut", &reverbZone.highCut, 10.0f, 20.0f, 20000.0f, "%.0f");
+
+                ImGui::Text("Early/Late Mix (%)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##EarlyLateMix", &reverbZone.earlyLateMix, 1.0f, 0.0f, 100.0f, "%.0f");
+
+                ImGui::Text("Wet Level (dB)");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##WetLevel", &reverbZone.wetLevel, 0.1f, -80.0f, 20.0f, "%.1f");
+
+                ImGui::Unindent();
+            }
+
+            // Note about preset changes
+            if (reverbZone.reverbPresetIndex != static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom)) {
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Note: Changing advanced parameters will set preset to 'Custom'");
+            }
+
+            return true; // Skip default rendering
+        });
 
     // ==================== PARTICLE COMPONENT ====================
     // Add Play/Pause/Stop buttons at the beginning of ParticleComponent rendering
