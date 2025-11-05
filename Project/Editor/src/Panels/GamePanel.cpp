@@ -1,6 +1,7 @@
 #include "Panels/GamePanel.hpp"
 #include "imgui.h"
 #include "Graphics/SceneRenderer.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include "EditorState.hpp"
 #include "Engine.h"
 #include "RunTimeVar.hpp"
@@ -99,8 +100,8 @@ void GamePanel::OnImGuiRender() {
 
         // Only render if we should (optimization for unfocused panels)
         if (shouldRender) {
-            // Always render the scene at base resolution (no stretching)
-            // Use GAME-specific framebuffer to avoid conflicts with Scene panel
+            GraphicsManager::GetInstance().SetViewportSize(baseRenderWidth, baseRenderHeight);
+
             SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
 
             if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {

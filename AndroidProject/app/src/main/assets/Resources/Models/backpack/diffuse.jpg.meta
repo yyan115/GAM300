@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/backpack/diffuse.jpg",
         "compiled": "../../Resources/Models/backpack/diffuse.dds",
         "android_compiled": "Resources/Models/backpack/diffuse_android.ktx",
-        "last_compiled": "2025-11-03 08:02:00.5889818"
+        "last_compiled": "2025-11-04 07:32:45.1384893"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -368,12 +368,12 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
     float normalizedY = y / static_cast<float>(windowHeight);
     
     // First check if touch hits virtual controls
-    bool isPressed = (action == 0); // Only ACTION_DOWN counts as pressed
+    bool isPressed = (action == 0 || action == 2); // ACTION_DOWN or ACTION_MOVE counts as pressed
     bool handledByVirtualControls = false;
-    
+
     if (action == 0 || action == 2) {
         // ACTION_DOWN or ACTION_MOVE - check if touch hits virtual controls
-        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, isPressed);
+        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, true);
     } else if (action == 1) {
         // ACTION_UP - release any pressed virtual controls
         handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, false);

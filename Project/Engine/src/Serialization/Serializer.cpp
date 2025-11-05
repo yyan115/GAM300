@@ -1177,6 +1177,10 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].IsString()) {
+            GUID_string skyboxGUIDStr = d[idx++].GetString();
+            cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
+        }
     }
 }
 
