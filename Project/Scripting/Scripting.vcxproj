@@ -228,7 +228,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Scripting\include;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Engine\include;$(SolutionDir)Libraries\rapidjson</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Engine\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
