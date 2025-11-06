@@ -72,6 +72,10 @@ std::string ScriptSerializer::SerializeInstanceToJson(lua_State* L, int instance
 bool ScriptSerializer::DeserializeJsonToInstance(lua_State* L, int instanceRef, const std::string& json) const
 {
     if (!L) return false;
+    if (instanceRef == LUA_NOREF || instanceRef == LUA_REFNIL) {
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer::DeserializeJsonToInstance - invalid instanceRef");
+        return false;
+    }
 
     rapidjson::Document doc;
     if (doc.Parse(json.c_str()).HasParseError()) {
@@ -84,48 +88,48 @@ bool ScriptSerializer::DeserializeJsonToInstance(lua_State* L, int instanceRef, 
         return false;
     }
 
-    // push instance table
-    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    // Replace registry slot with a fresh empty table (clears previous state safely)
+    lua_newtable(L);                               // push new table
+    lua_rawseti(L, LUA_REGISTRYINDEX, instanceRef); // registry[instanceRef] = new table  (pops table)
+
+    // Push the new instance table back so we can populate it
+    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); // push registry[instanceRef]
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer::DeserializeJsonToInstance - instanceRef not a table");
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer::DeserializeJsonToInstance - registry slot is not a table after replacement");
         return false;
     }
+
     int tableIndex = lua_gettop(L);
     int absTable = lua_absindex(L, tableIndex);
-
-    // shallow clear: remove existing keys
-    lua_pushnil(L);
-    while (lua_next(L, absTable) != 0) {
-        lua_pop(L, 1);
-        lua_pushvalue(L, -1);
-        lua_pushnil(L);
-        lua_settable(L, absTable);
-    }
-    // pop the last key left by lua_next
-    if (lua_gettop(L) >= 1) lua_pop(L, 1);
 
     // populate directly from rapidjson doc members
     if (doc.IsObject()) {
         for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it) {
             const std::string key = it->name.GetString();
-            // Convert member value into Lua (passes pointer to rapidjson::Value)
-            if (!JsonToLuaValue(L, /*valuePlaceholder*/ const_cast<rapidjson::Value*>(&(it->value)))) {
+
+            // JsonToLuaValue must push exactly one value onto the Lua stack on success.
+            // We pass the rapidjson::Value pointer (your helper expects Value*).
+            if (!JsonToLuaValue(L, const_cast<rapidjson::Value*>(&(it->value)))) {
+                // Push nil on failure so lua_setfield writes nil.
                 lua_pushnil(L);
             }
-            lua_setfield(L, absTable, key.c_str()); // pops pushed value
+            // setfield pops the value we just pushed.
+            lua_setfield(L, absTable, key.c_str());
         }
     }
     else if (doc.IsArray()) {
         for (rapidjson::SizeType i = 0; i < doc.Size(); ++i) {
-            if (!JsonToLuaValue(L, /*valuePlaceholder*/ const_cast<rapidjson::Value*>(&(doc[i])))) {
+            if (!JsonToLuaValue(L, const_cast<rapidjson::Value*>(&(doc[i])))) {
                 lua_pushnil(L);
             }
-            lua_rawseti(L, absTable, static_cast<lua_Integer>(i + 1)); // set array element (1-based)
+            // rawseti pops the value as well
+            lua_rawseti(L, absTable, static_cast<lua_Integer>(i + 1)); // Lua arrays are 1-based
         }
     }
 
-    lua_pop(L, 1); // pop instance table
+    // Pop instance table from stack (we pushed it above)
+    lua_pop(L, 1);
     return true;
 }
 

@@ -18,4 +18,10 @@ struct ScriptComponentData {
     // Entry options
     std::string entryFunction = "OnInit"; // engine will call this after instance creation
     bool autoInvokeEntry = true;
+
+    // If scene load happened when scripting runtime was not available, the serialized
+    // instance state (JSON) is kept here until ScriptSystem creates the runtime and
+    // can restore it. This prevents losing instance data when loading in environments
+    // where Lua isn't initialized yet (editor startup ordering, background loading, etc).
+    std::string pendingInstanceState;
 };

@@ -510,7 +510,7 @@ bool Engine::Initialize() {
         });
 
     // 4) Per-frame: Tick scripting
-    float dt = 1.0f / 60.0f;
+    //float dt = 1.0f / 60.0f;
 
     // 5) create a script instance from file (path on disk)
     int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua"); //Awake is called
@@ -520,6 +520,7 @@ bool Engine::Initialize() {
         std::string json = Scripting::SerializeInstanceToJson(inst);
         std::cout << json << std::endl;
     }
+
 #endif
 
 	// Note: Scene loading and lighting setup moved to InitializeGraphicsResources()

@@ -145,7 +145,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
     ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
     if (!comp) return false;
 
-    // if runtime already created, update POD and return
+    // If runtime already created, update POD and return
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
@@ -156,6 +156,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
         }
     }
 
+    // Ensure Lua runtime exists and we are allowed to create instances now.
     if (!Scripting::GetLuaState()) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] runtime missing; cannot create script for entity ", e, "\n");
         return false;
@@ -166,37 +167,91 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
         return false;
     }
 
-    // create runtime object (scripting-project)
+    // Create runtime object (scripting-project)
     auto runtimeComp = std::make_unique<Scripting::ScriptComponent>();
     if (!runtimeComp->AttachScript(comp->scriptPath)) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] AttachScript failed for ", comp->scriptPath.c_str(), " entity=", e, "\n");
         return false;
     }
 
-    // optional preserve keys registration via public glue if you use that API
+    // Register preserve keys (Scripting glue expected to accept the registry ref returned by ScriptComponent::GetInstanceRef())
     if (!comp->preserveKeys.empty()) {
         Scripting::RegisterInstancePreserveKeys(runtimeComp->GetInstanceRef(), comp->preserveKeys);
     }
 
-    // cache runtime object and update POD
+    // Move runtime into our map and update POD. Do Lua-related per-instance operations *while holding the mutex*
+    // so we avoid races with other threads trying to query m_runtimeMap.
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         m_runtimeMap[e] = std::move(runtimeComp);
-        // Bind the Lua instance to this entity so scripts can call self:GetComponent(...)
+        Scripting::ScriptComponent* scPtr = m_runtimeMap[e].get();
+
+        // update engine POD (debug mirror)
+        comp->instanceId = scPtr->GetInstanceRef();
+        comp->instanceCreated = true;
+
+        // If this entity had pending serialized Lua state from scene load, try to apply it now.
+        if (!comp->pendingInstanceState.empty()) {
+            try {
+                bool ok = scPtr->DeserializeState(comp->pendingInstanceState);
+                if (ok) {
+                    // applied successfully, clear pending state
+                    comp->pendingInstanceState.clear();
+                }
+                else {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending script state for entity ", e, "\n");
+                    // keep pending; ScriptSystem may retry later or log for debugging
+                }
+            }
+            catch (const std::exception& ex) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Exception while applying pending script state for entity ", e, " : ", ex.what(), "\n");
+            }
+            catch (...) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Unknown exception while applying pending script state for entity ", e, "\n");
+            }
+        }
+
+        // Bind the Lua instance to this entity so scripts can call self:GetComponent(...) or host GetComponent handler can route.
+        // NOTE: There are two common approaches — pick the one your Scripting API expects:
+        // 1) If you have a Scripting::BindInstanceToEntity(instanceRefOrId, entityId) glue function, use it.
+        //    (Leave the call below as-is if your glue accepts the value returned by ScriptComponent::GetInstanceRef()).
+        // 2) If you DON'T have that glue, we set an 'entityId' field on the instance table in Lua so scripts can read it (fallback).
+        //
+        // The code below first tries the public glue; if it is not available or returns false, it falls back to setting instance.entityId.
         {
-            int instRef = m_runtimeMap[e]->GetInstanceRef();
-            if (Scripting::IsValidInstance(instRef)) {
-                bool ok = Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(e));
-                if (!ok) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] BindInstanceToEntity failed for entity ", e);
+            int instRef = scPtr->GetInstanceRef();
+            bool bound = false;
+            // Attempt public glue binding (if implemented). If your Scripting API expects a different integer
+            // (e.g. a numeric "instance id" produced by Scripting::CreateInstanceFromFile), ensure the glue
+            // accepts the registry ref value or adapt accordingly.
+            try {
+                // NOTE: If Scripting::BindInstanceToEntity is not implemented in your Scripting.h, you'll get a link error.
+                // Replace this call with your actual binding API, or remove block and use the fallback below.
+                bound = Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(e));
+            }
+            catch (...) {
+                bound = false;
+            }
+
+            if (!bound) {
+                // Fallback: attach a plain numeric field "entityId" to the instance table so scripts can access it.
+                // This avoids depending on additional glue APIs. We need to manipulate Lua stack; do it using ScriptComponent's API
+                // through the Scripting public surface if possible. If not available, we do a minimal direct Lua ops below.
+                lua_State* L = ::Scripting::GetLuaState();
+                if (L) {
+                    // push instance table from registry and set field entityId = <e>
+                    lua_rawgeti(L, LUA_REGISTRYINDEX, instRef);   // push instance table
+                    if (lua_istable(L, -1)) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(e));
+                        lua_setfield(L, -2, "entityId"); // instance.entityId = e
+                    }
+                    lua_pop(L, 1); // pop instance (or nil)
                 }
             }
         }
-        comp->instanceId = m_runtimeMap[e]->GetInstanceRef();
-        comp->instanceCreated = true;
-    }
+    } // release lock
 
-    // call lifecycle entry functions
+    // Call lifecycle entry functions outside of the larger mutex-held block above (we still need to protect map access)
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);

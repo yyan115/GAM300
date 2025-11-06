@@ -87,34 +87,48 @@ namespace Scripting {
 
     int ScriptComponent::CaptureFunctionRef(lua_State* L, int tableIndex, const char* fieldName) const {
         if (!L) return LUA_NOREF;
+
+        // Normalize and validate the provided index
         int absIndex = lua_absindex(L, tableIndex);
+        int t = lua_type(L, absIndex);
+        if (t != LUA_TTABLE && t != LUA_TUSERDATA) {
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::CaptureFunctionRef: expected table/userdata at index ", absIndex, " but got type=", lua_typename(L, t));
+            return LUA_NOREF;
+        }
+
+        // push the field value (value or nil)
         lua_getfield(L, absIndex, fieldName); // pushes value or nil
+        int valType = lua_type(L, -1);
 
         // direct function?
-        if (lua_isfunction(L, -1)) {
+        if (valType == LUA_TFUNCTION) {
             int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops function
             return ref;
         }
 
         // callable object? check metatable.__call
-        if (lua_istable(L, -1) || lua_isuserdata(L, -1)) {
-            if (lua_getmetatable(L, -1)) {           // pushes metatable
-                lua_getfield(L, -1, "__call");      // pushes metatable.__call or nil
+        if (valType == LUA_TTABLE || valType == LUA_TUSERDATA) {
+            // getmetatable pushes the metatable (if present)
+            if (lua_getmetatable(L, -1)) {
+                // metatable now on top, get __call field from it
+                lua_getfield(L, -1, "__call"); // pushes metatable.__call or nil
                 if (lua_isfunction(L, -1)) {
-                    // We want to call the object as method: push a small closure that does `return meta.__call(obj, ...)`.
-                    // Simpler approach: keep a reference to the object itself (callable), and when calling,
-                    // we'll push the object first and then the function retrieved each call — but that costs extra lookups.
-                    // For now, store the object reference itself (so on call we'll push object and then lookup __call)
+                    // We will keep a reference to the original object (callable),
+                    // so pop __call and metatable and then ref the object.
                     lua_pop(L, 2); // pop __call and metatable
                     int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops the object
                     return ref;
                 }
+                // __call not a function, pop it and the metatable
                 lua_pop(L, 1); // pop __call
                 lua_pop(L, 1); // pop metatable
             }
+            else {
+                // no metatable: just pop the value below and return NOREF
+            }
         }
 
-        // not a function nor callable — pop and return NOREF
+        // not a function nor callable — pop the value and return NOREF
         lua_pop(L, 1);
         return LUA_NOREF;
     }
@@ -149,15 +163,16 @@ namespace Scripting {
         int pcallStatus = lua_pcall(L, 0, 1, msgh);
         if (pcallStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - runtime error: ", msg ? msg : "(no msg)"," (script=", scriptPath.c_str(),")");
+            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - runtime error: ", msg ? msg : "(no msg)", " (script=", scriptPath.c_str(), ")");
             lua_pop(L, 1); // pop error
-            // guard destructor will remove msgh
+            // guard destructor will remove msgh safely
             return false;
         }
-        // On success, we still want to remove the msgh before leaving this scope; either dismiss then remove manually
-        // Dismiss and manually remove to keep same order (we still want returned value on stack)
-        guard.dismiss();
-        lua_remove(L, msgh);
+        // DO NOT manually dismiss and remove the message handler here.
+        // Let the MessageHandlerGuard destructor run at end of scope to remove msgh.
+        // The returned value is on the stack and will survive the guard destructor
+        // (lua_remove removes msgh which is below the returned value; the returned
+        // value will shift down but remain on top).
 
         // ensure returned value is a table; if not, wrap into { _returned = <value> }
         if (!lua_istable(L, -1)) {

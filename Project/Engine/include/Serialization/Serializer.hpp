@@ -22,6 +22,8 @@
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
+#include <Scripting.h>
 
 class Serializer {
 public:
@@ -48,8 +50,8 @@ public:
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
+	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
-
 private:
 	Serializer() = delete;
 	~Serializer() = delete;
