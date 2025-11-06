@@ -33,6 +33,8 @@ namespace Scripting {
 
         // global fallback host log handler used by the C binding
         static std::function<void(const std::string&)> s_globalHostLogHandler;
+        // host-provided component resolver callback.
+        static std::function<bool(lua_State*, uint32_t, const std::string&)> s_globalGetComponentHandler;
 
         // Lua C binding for cpp_log - forwards to s_globalHostLogHandler if present, otherwise to ENGINE_PRINT
         static int l_cpp_log(lua_State* L) {
@@ -50,6 +52,36 @@ namespace Scripting {
                 ENGINE_PRINT(EngineLogging::LogLevel::Info, s.c_str());
             }
             return 0;
+        }
+
+        // Lua C binding for GetComponent(entityId, componentName)
+        // Expects: integer entityId, string componentName
+        // The callback (set by host) will be invoked with the current lua_State and should push a single value.
+        static int l_get_component(lua_State* L) {
+            // Arg 1: entity id (number)
+            // Arg 2: component name (string)
+            uint32_t entityId = (uint32_t)luaL_checkinteger(L, 1);
+            const char* name = luaL_checkstring(L, 2);
+
+            if (s_globalGetComponentHandler) {
+                try {
+                    bool ok = s_globalGetComponentHandler(L, entityId, std::string(name));
+                    if (ok) {
+                        // callback must have pushed a value; return 1
+                        return 1;
+                    }
+                    else {
+                        lua_pushnil(L);
+                        return 1;
+                    }
+                }
+                catch (...) {
+                    lua_pushnil(L); return 1;
+                }
+            }
+            // No host handler registered -> return nil
+            lua_pushnil(L);
+            return 1;
         }
 
         static bool ReadFileToString(const std::string& path, std::string& out) {
@@ -497,6 +529,13 @@ namespace Scripting {
         }
     }
 
+    void ScriptingRuntime::SetHostGetComponentHandler(std::function<bool(lua_State*, uint32_t, const std::string&)> handler) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        s_globalGetComponentHandler = std::move(handler);
+        // The GetComponent C function is already installed in any live lua state by register_core_bindings
+        // so nothing more to do here.
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -515,9 +554,28 @@ namespace Scripting {
     }
 
     void ScriptingRuntime::register_core_bindings(lua_State* L) {
+        // existing log binding
         lua_pushcfunction(L, l_cpp_log);
         lua_setglobal(L, "cpp_log");
+
+        // register GetComponent(entityId, name)
+        lua_pushcfunction(L, l_get_component);
+        lua_setglobal(L, "GetComponent");
+
+        // install a tiny helper that binds instance:GetComponent for a particular instance.
+        // This helper is used by Scripting::BindInstanceToEntity to avoid repeated C closures.
+        const char* helper_code =
+            "function __engine_bind_instance_helpers(inst)\n"
+            "  function inst:GetComponent(name)\n"
+            "    return GetComponent(inst.entityId, name)\n"
+            "  end\n"
+            "end\n";
+        if (luaL_dostring(L, helper_code) != LUA_OK) {
+            // ignore errors — fallback will be used by BindInstanceToEntity
+            lua_pop(L, 1);
+        }
     }
+
 
     void ScriptingRuntime::run_bindings_for_state(lua_State* L) {
         std::vector<BindingCallback> cbs;

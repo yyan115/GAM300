@@ -366,14 +366,62 @@ namespace Scripting {
         lua_State* L = GetMainState();
         if (!L || m_instanceRef == LUA_NOREF) return "{}";
         if (!m_serializer) m_serializer = std::make_unique<ScriptSerializer>();
-        return m_serializer->SerializeInstanceToJson(L, m_instanceRef);
+
+        int baseTop = lua_gettop(L);
+        // push instance
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_instanceRef); // +1
+        if (!lua_istable(L, -1)) { lua_pop(L, 1); return "{}"; }
+
+        // get instance.fields
+        lua_getfield(L, -1, "fields"); // +1 -> fields or nil
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 2); // pop nil and instance
+            return "{}";
+        }
+        // make a temp ref for fields
+        int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops fields
+        lua_pop(L, 1); // pop instance
+
+        std::string out = m_serializer->SerializeInstanceToJson(L, tmpRef);
+
+        luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+        // restore stack to base
+        lua_settop(L, baseTop);
+        return out;
     }
 
     bool ScriptComponent::DeserializeState(const std::string& json) const {
         lua_State* L = GetMainState();
         if (!L || m_instanceRef == LUA_NOREF) return false;
         if (!m_serializer) m_serializer = std::make_unique<ScriptSerializer>();
-        return m_serializer->DeserializeJsonToInstance(L, m_instanceRef, json);
+        int baseTop = lua_gettop(L);
+
+        // push instance
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_instanceRef); // +1
+        if (!lua_istable(L, -1)) { lua_pop(L, 1); return false; }
+
+        // create or replace fields table for instance
+        // push a new table and set it as instance.fields, then call DeserializeJsonToInstance into that table
+        lua_newtable(L);                          // +1 new fields table
+        int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops table and returns ref
+
+        // use serializer to populate table
+        bool ok = m_serializer->DeserializeJsonToInstance(L, tmpRef, json);
+
+        if (ok) {
+            // set instance.fields = registry[tmpRef]
+            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push populated table
+            lua_setfield(L, -2, "fields"); // set on instance; pops table
+        }
+        else {
+            // leave instance.fields as-is (we created a temp table; no assignment)
+        }
+
+        luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+        lua_pop(L, 1); // pop instance
+        lua_settop(L, baseTop);
+        return ok;
     }
+
 
 } // namespace Scripting

@@ -64,6 +64,21 @@ namespace Scripting {
     // Allow engine to override script file reading (editor may read from virtual FS).
     void SetFileSystemReadAllText(ReadAllTextFn fn);
 
+    // Host -> Scripting: callback to resolve a component for a given entity.
+    // Semantic: callback receives the lua_State* and must push exactly one Lua value
+    // (the component representation) on the Lua stack and return true on success.
+    // If the callback returns false or pushes nothing, the scripting runtime will return nil.
+    using HostGetComponentFn = std::function<bool(lua_State* L, uint32_t entityId, const std::string& compName)>;
+
+    // Set handler (engine should call this early in initialization).
+    void SetHostGetComponentHandler(HostGetComponentFn fn);
+
+    // Bind a scripting instance registry-ref to an entity id. This will:
+    //  - set instance.entityId = <entityId>
+    //  - set instance:GetComponent(name) helper that forwards to GetComponent(entityId, name)
+    // Call from engine after creating/attaching a ScriptComponent and after the instance exists.
+    bool BindInstanceToEntity(int instanceRef, uint32_t entityId);
+
     // Serializer/inspector wrappers (thin)
     std::string SerializeInstanceToJson(int instanceRef);
     bool DeserializeJsonToInstance(int instanceRef, const std::string& json);

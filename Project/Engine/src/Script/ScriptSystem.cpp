@@ -6,10 +6,6 @@
 #include "Script/ScriptComponentData.hpp"
 #include "Logging.hpp"
 
-// *Now* include scripting-project headers (must be visible to the engine project)
-#include "ScriptComponent.h"    // the runtime type definition
-#error "Included Scripting ScriptComponent.h — OK"
-#include "ScriptSerializer.h"   // if you call ScriptSerializer methods directly
 #include "Scripting.h"          // for public glue functions used
 
 #include <fstream>
@@ -20,6 +16,53 @@
 ScriptSystem::~ScriptSystem() = default; 
 void ScriptSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
+
+    //Pushing pre-existing c++ components to expose to scripts (TODO For all pre-existing components)
+    {
+        //Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
+        //    // This lambda runs on main thread inside the Lua call; it MUST push exactly one value
+        //    // onto the Lua stack (the requested component representation) or push nil.
+        //    // Example: handle "Transform" component by pushing a Lua table { position = {x=..., y=...}, rotation = ... }
+        //    // Replace the example with your ECSManager API / component layout.
+
+        //    // Query ECS manager for the entity's component:
+        //    if (!m_ecs) { lua_pushnil(L); return true; }
+
+        //    try {
+        //        // IMPORTANT: replace the checks below with how your ECSManager exposes components.
+        //        if (compName == "Transform") {
+        //            if (!m_ecs->HasComponent<TransformComponent>(entityId)) {
+        //                lua_pushnil(L);
+        //                return true;
+        //            }
+        //            TransformComponent& tc = m_ecs->GetComponent<TransformComponent>(entityId);
+        //            // push a Lua table describing the transform (simplest)
+        //            lua_newtable(L);
+        //            lua_newtable(L); // position table
+        //            lua_pushnumber(L, tc.position.x);
+        //            lua_setfield(L, -2, "x");
+        //            lua_pushnumber(L, tc.position.y);
+        //            lua_setfield(L, -2, "y");
+        //            lua_setfield(L, -2, "position"); // instance.position = position table
+
+        //            // other fields as needed:
+        //            lua_pushnumber(L, tc.rotation);
+        //            lua_setfield(L, -2, "rotation");
+
+        //            // If you prefer userdata with metamethods instead, construct and set metatable here.
+        //            return true;
+        //        }
+
+        //        // If not recognized, return nil
+        //        lua_pushnil(L);
+        //        return true;
+        //    }
+        //    catch (...) {
+        //        lua_pushnil(L);
+        //        return true;
+        //    }
+        //    });
+    }
 
     // Only set a disk fallback reader if nobody registered a FS callback earlier.
     static bool s_fsRegistered = false;
@@ -139,6 +182,16 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         m_runtimeMap[e] = std::move(runtimeComp);
+        // Bind the Lua instance to this entity so scripts can call self:GetComponent(...)
+        {
+            int instRef = m_runtimeMap[e]->GetInstanceRef();
+            if (Scripting::IsValidInstance(instRef)) {
+                bool ok = Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(e));
+                if (!ok) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] BindInstanceToEntity failed for entity ", e);
+                }
+            }
+        }
         comp->instanceId = m_runtimeMap[e]->GetInstanceRef();
         comp->instanceCreated = true;
     }

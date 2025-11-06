@@ -2,6 +2,8 @@
 #pragma once
 #include "ECS/System.hpp"
 #include "Script/ScriptComponentData.hpp" // engine POD
+#include "ScriptComponent.h"    // the runtime type definition
+#include "ScriptSerializer.h"   // if you call ScriptSerializer methods directly
 #include <unordered_map>
 #include <memory>
 #include <mutex>
@@ -10,10 +12,6 @@
 class ECSManager;
 using Entity = unsigned int;
 
-namespace Scripting {
-    class ScriptComponent;        // forward only
-    class ScriptSerializer;       // forward only, if needed
-}
 
 class ScriptSystem : public System {
 public:

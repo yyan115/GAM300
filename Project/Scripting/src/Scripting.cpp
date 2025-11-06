@@ -117,7 +117,7 @@ namespace {
     // atomics to store engine-provided callbacks (same pattern as previous glue)
     static std::atomic<std::shared_ptr<HostLogFn>> g_hostLoggerPtr{ nullptr };
     static std::atomic<std::shared_ptr<ReadAllTextFn>> g_fileReaderPtr{ nullptr };
-
+    static std::atomic<std::shared_ptr<HostGetComponentFn>> g_hostGetComponentPtr{ nullptr };
 
     // Keep the same lightweight message handler and helper functions that the old glue used.
     // push a message handler *below* the function that will be called.
@@ -463,6 +463,81 @@ void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
     // The runtime already took g_fsAdapter at Initialize. If you change FS at runtime,
     // you may want to re-init ModuleLoader and/or re-install searcher. ModuleLoader::Initialize
     // above sets the m_fs pointer so new lookups will use the new reader.
+}
+
+void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {
+    auto sp = std::make_shared<HostGetComponentFn>(std::move(fn));
+    g_hostGetComponentPtr.store(sp, std::memory_order_release);
+    if (g_runtime) {
+        // forward to runtime (runtime exposes setter implemented below)
+        g_runtime->SetHostGetComponentHandler([sp](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
+            try { if (sp && *sp) return (*sp)(L, entityId, compName); }
+            catch (...) {}
+            return false;
+            });
+    }
+}
+
+// Bind instance table (registry ref) to an entity id by setting 'entityId' and attaching GetComponent method.
+// Returns false on error.
+bool Scripting::BindInstanceToEntity(int instanceRef, uint32_t entityId) {
+    if (!g_runtime) return false;
+    lua_State* L = g_runtime->GetLuaState();
+    if (!L) return false;
+    if (instanceRef == LUA_NOREF) return false;
+
+    // push instance table
+    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); // +1
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        return false;
+    }
+
+    // set instance.entityId = entityId
+    lua_pushinteger(L, static_cast<lua_Integer>(entityId));
+    lua_setfield(L, -2, "entityId");
+
+    // call the runtime-provided helper __engine_bind_instance_helpers(instance)
+    // The helper is installed at runtime init in register_core_bindings (see ScriptingRuntime).
+    lua_getglobal(L, "__engine_bind_instance_helpers"); // pushes function or nil
+    if (lua_isfunction(L, -1)) {
+        lua_pushvalue(L, -2); // push instance as arg
+        if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+            const char* err = lua_tostring(L, -1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "BindInstanceToEntity: __engine_bind_instance_helpers failed: ", err ? err : "(no msg)");
+            lua_pop(L, 1); // pop error
+            lua_pop(L, 1); // pop instance
+            return false;
+        }
+    }
+    else {
+        lua_pop(L, 1); // pop non-function
+        // fallback: create method in-place
+        const char* helper =
+            "local function __tmp_bind(inst)\n"
+            "  function inst:GetComponent(name)\n"
+            "    return GetComponent(inst.entityId, name)\n"
+            "  end\n"
+            "end\n"
+            "__tmp_bind";
+        if (luaL_loadstring(L, helper) != LUA_OK) {
+            lua_pop(L, 1); // pop instance
+            return false;
+        }
+        // stack: instance, function
+        lua_pushvalue(L, -1); // duplicate function to call
+        lua_pushvalue(L, -3); // instance (duplicate of original instance pushed earlier)
+        if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+            const char* err = lua_tostring(L, -1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "BindInstanceToEntity fallback helper failed: ", err ? err : "(no msg)");
+            lua_pop(L, 1);
+            lua_pop(L, 1);
+            return false;
+        }
+    }
+
+    lua_pop(L, 1); // pop instance
+    return true;
 }
 
 std::string Scripting::SerializeInstanceToJson(int instanceRef) {

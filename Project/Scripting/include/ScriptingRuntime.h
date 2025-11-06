@@ -73,7 +73,8 @@ namespace Scripting {
         void CollectGarbageStep();
         void FullCollectGarbage();
         void SetHostLogHandler(std::function<void(const std::string&)> handler);
-
+        // Called by Scripting::SetHostGetComponentHandler — runtime will store the handler and register C function.
+        void SetHostGetComponentHandler(std::function<bool(lua_State*, uint32_t, const std::string&)> handler);
     private:
         bool create_lua_state(lua_State*& out);
         void close_lua_state(lua_State* L);
@@ -82,7 +83,6 @@ namespace Scripting {
         bool load_and_run_main_script(lua_State* L);
         bool safe_pcall(lua_State* L, int nargs, int nresults);
 
-    private:
         mutable std::mutex m_mutex;
         std::condition_variable m_cv;
         std::atomic<int> m_activeUsers{ 0 };
