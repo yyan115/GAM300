@@ -334,9 +334,12 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         }
 
         // Load textures and assign to material
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+        if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
+        if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
+        if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
 
     }
 
