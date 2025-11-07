@@ -14,6 +14,7 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
@@ -53,6 +54,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<AudioListenerComponent>();
+	RegisterComponent<AudioReverbZoneComponent>();
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<AnimationComponent>();

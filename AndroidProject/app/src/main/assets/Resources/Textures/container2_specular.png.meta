@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/container2_specular.png",
         "compiled": "../../Resources/Textures/container2_specular.dds",
         "android_compiled": "Resources/Textures/container2_specular_android.ktx",
-        "last_compiled": "2025-11-03 08:03:00.6102480"
+        "last_compiled": "2025-11-05 12:29:58.8049638"
     },
     "TextureMetaData": {
         "type": "diffuse",

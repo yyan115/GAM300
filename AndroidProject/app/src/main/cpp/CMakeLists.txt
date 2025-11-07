@@ -164,6 +164,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/freetype2
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/fmod
     ${ENGINE_PROJECT_DIR}/Libraries/android/headers/GLI
+    ${ENGINE_BUILD_DIR}/_deps/joltphysics-src
 )
 
 # Import the prebuilt Engine library (built by main CMake)

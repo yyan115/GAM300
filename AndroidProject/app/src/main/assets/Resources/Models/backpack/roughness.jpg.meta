@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/backpack/roughness.jpg",
         "compiled": "../../Resources/Models/backpack/roughness.dds",
         "android_compiled": "Resources/Models/backpack/roughness_android.ktx",
-        "last_compiled": "2025-11-03 08:00:32.4318646"
+        "last_compiled": "2025-11-05 12:27:52.4986347"
     },
     "TextureMetaData": {
         "type": "diffuse",

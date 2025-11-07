@@ -150,13 +150,13 @@ public:
     }
 
     // Test AABB against frustum (returns true if visible)
-    bool IsBoxVisible(const AABB& box) const {
-        for (int i = 0; i < PLANE_COUNT; ++i) {
-            // Get the point furthest in the direction of the plane normal
+    bool IsBoxVisible(const AABB& box, float tolerance = 0.5f) const 
+    {
+        for (int i = 0; i < PLANE_COUNT; ++i) 
+        {
             glm::vec3 positiveVertex = box.GetPositiveVertex(planes[i].normal);
-
-            // If this point is outside (negative side of plane), box is completely outside
-            if (planes[i].GetSignedDistanceToPoint(positiveVertex) < 0) {
+            if (planes[i].GetSignedDistanceToPoint(positiveVertex) < -tolerance)
+            {
                 return false;
             }
         }

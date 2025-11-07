@@ -54,6 +54,7 @@ extern std::string DraggedFontPath;
 #include <algorithm>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
@@ -188,6 +189,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity) ?
 				(void*)&ecs.GetComponent<AudioListenerComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity); }},
+
+		{"Audio Reverb Zone", "AudioReverbZoneComponent",
+			[&]() { return ecs.HasComponent<AudioReverbZoneComponent>(entity) ?
+				(void*)&ecs.GetComponent<AudioReverbZoneComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AudioReverbZoneComponent>(entity); }},
 
 		// Light components
 		{"Directional Light", "DirectionalLightComponent",
@@ -849,6 +855,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "AudioListenerComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) {
+					if (ImGui::MenuItem("Audio Reverb Zone")) {
+						AddComponent(entity, "AudioReverbZoneComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -972,6 +983,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			AudioListenerComponent component;
 			ecsManager.AddComponent<AudioListenerComponent>(entity, component);
 			std::cout << "[Inspector] Added AudioListenerComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "AudioReverbZoneComponent") {
+			AudioReverbZoneComponent component;
+			ecsManager.AddComponent<AudioReverbZoneComponent>(entity, component);
+			std::cout << "[Inspector] Added AudioReverbZoneComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "SpriteRenderComponent") {
 			// Set default shader GUID for sprite

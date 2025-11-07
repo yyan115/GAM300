@@ -18,10 +18,23 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/ActiveComponent.hpp"
 #include "Logging.hpp"
 #include "TimeManager.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 
 bool CameraSystem::Initialise()
 {
 	activeCamera = std::make_unique<Camera>();
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	for (const auto& entity : entities) {
+		auto& cameraComp = ecsManager.GetComponent<CameraComponent>(entity);
+
+		if (cameraComp.skyboxTextureGUID.high != 0 || cameraComp.skyboxTextureGUID.low != 0) {
+			std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(cameraComp.skyboxTextureGUID);
+			cameraComp.skyboxTexturePath = texturePath;
+			cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(cameraComp.skyboxTextureGUID, texturePath);
+		}
+	}
 
 	activeCameraEntity = FindHighestPriorityCamera();
 	if (activeCameraEntity != UINT32_MAX)

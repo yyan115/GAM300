@@ -74,6 +74,8 @@ public:
     void SetMute(bool shouldMute);
     void ENGINE_API SetSpatialBlend(float blend);
     void SetOutputAudioMixerGroup(const std::string& groupName);
+    void SetMinDistance(float distance);
+    void SetMaxDistance(float distance);
     
     // Position updates (for spatial audio)
     void SetPosition(const Vector3D& pos);

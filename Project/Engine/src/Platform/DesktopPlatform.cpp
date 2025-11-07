@@ -24,6 +24,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <fstream>
 #include <sstream>
 #include "Logging.hpp"
+#include "RunTimeVar.hpp"
 
 // Static instance pointer for callbacks
 static DesktopPlatform* s_instance = nullptr;
@@ -291,6 +292,11 @@ void DesktopPlatform::ErrorCallback(int error, const char* description) {
 
 void DesktopPlatform::FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+
+	// Update RunTimeVar so the game knows about the new window size
+	RunTimeVar::window.width = width;
+	RunTimeVar::window.height = height;
+
 	(void)window;
 }
 

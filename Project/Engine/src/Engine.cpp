@@ -27,6 +27,7 @@
 #include "Input/VirtualControls.hpp"
 #endif
 #include <Asset Manager/AssetManager.hpp>
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -59,6 +60,7 @@ bool Engine::Initialize() {
 	} else {
 		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
+
 
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
@@ -709,6 +711,7 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }

@@ -12,7 +12,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include <glm/glm.hpp>
+#include <memory>
+#include <string>
 #include "Reflection/ReflectionBase.hpp"
+
+class Texture;
 
 enum class ProjectionType {
     PERSPECTIVE,
@@ -55,6 +59,11 @@ public:
     float shakeTimer = 0.0f;
     float shakeFrequency = 25.0f;  // How fast the shake oscillates
     glm::vec3 shakeOffset = glm::vec3(0.0f);  // Current shake offset
+
+    // Skybox settings
+    GUID_128 skyboxTextureGUID{};
+    std::shared_ptr<Texture> skyboxTexture;
+    std::string skyboxTexturePath;
 
     CameraComponent() = default;
     ~CameraComponent() = default;

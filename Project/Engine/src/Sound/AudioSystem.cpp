@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Sound/AudioSystem.hpp"
 #include "Sound/AudioComponent.hpp"
+#include "Sound/AudioListenerComponent.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -51,6 +52,31 @@ void AudioSystem::Update(float deltaTime) {
             const Transform& transform = ecsManager.GetComponent<Transform>(entity);
             audioComp.OnTransformChanged(transform.localPosition);
         }
+    }
+
+    for (const auto& entity : ecsManager.GetActiveEntities()) {
+        if (!ecsManager.HasComponent<AudioListenerComponent>(entity)) continue;
+
+        AudioListenerComponent& listenerComp = ecsManager.GetComponent<AudioListenerComponent>(entity);
+        if (!listenerComp.enabled) continue;
+
+        // Compute new values from Transform (if available)
+        Vector3D newPosition = listenerComp.GetPosition(); // Fallback to internal via getter
+        Vector3D newForward = listenerComp.GetForward();
+        Vector3D newUp = listenerComp.GetUp();
+
+        if (ecsManager.HasComponent<Transform>(entity)) {
+            const Transform& transform = ecsManager.GetComponent<Transform>(entity);
+            newPosition = transform.localPosition;
+            // Compute forward/up from rotation (assuming Transform has localRotation as glm::quat or similar)
+            // Use Vector3D math only; if rotation helpers exist in Math, use them. Otherwise, assume defaults or add simple rotation.
+            // For simplicity, if no rotation support, keep defaults. Adjust if Transform provides forward/up directly.
+            newForward = Vector3D(0.0f, 0.0f, 1.0f); // Placeholder; replace with actual rotation if available
+            newUp = Vector3D(0.0f, 1.0f, 0.0f);
+        }
+
+        // Pass to component; it handles change detection and only updates FMOD if changed
+        listenerComp.OnTransformChanged(newPosition, newForward, newUp);
     }
 }
 

@@ -273,6 +273,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioListenerComponent", v, alloc);
 		}
+        if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
+		}
         if (ecs.HasComponent<LightComponent>(entity)) {
             auto& c = ecs.GetComponent<LightComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -562,6 +567,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
+		// AudioReverbZoneComponent
+        if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+            ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
+            auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(newEnt);
+            DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+        }
+
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
@@ -803,6 +816,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& tv = comps["AudioListenerComponent"];
             auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(currEnt);
 			DeserializeAudioListenerComponent(audioListenerComp, tv);
+        }
+
+		// AudioReverbZoneComponent
+        if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+            auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(currEnt);
+			DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
         }
 
         // RigidBodyComponent
@@ -1091,6 +1111,29 @@ void Serializer::DeserializeAudioListenerComponent(AudioListenerComponent& audio
     }
 }
 
+void Serializer::DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& audioReverbZoneComp, const rapidjson::Value& audioReverbZoneJSON) {
+    // typed form: tv.data = [ {type: "bool", data: true}, {type: "float", data: 10.0}, ... ]
+    if (audioReverbZoneJSON.HasMember("data") && audioReverbZoneJSON["data"].IsArray()) {
+        const auto& d = audioReverbZoneJSON["data"];
+        audioReverbZoneComp.enabled = d[0]["data"].GetBool();
+        audioReverbZoneComp.MinDistance = d[1]["data"].GetFloat();
+        audioReverbZoneComp.MaxDistance = d[2]["data"].GetFloat();
+        audioReverbZoneComp.reverbPresetIndex = d[3]["data"].GetInt();
+        audioReverbZoneComp.decayTime = d[4]["data"].GetFloat();
+        audioReverbZoneComp.earlyDelay = d[5]["data"].GetFloat();
+        audioReverbZoneComp.lateDelay = d[6]["data"].GetFloat();
+        audioReverbZoneComp.hfReference = d[7]["data"].GetFloat();
+        audioReverbZoneComp.hfDecayRatio = d[8]["data"].GetFloat();
+        audioReverbZoneComp.diffusion = d[9]["data"].GetFloat();
+        audioReverbZoneComp.density = d[10]["data"].GetFloat();
+        audioReverbZoneComp.lowShelfFrequency = d[11]["data"].GetFloat();
+        audioReverbZoneComp.lowShelfGain = d[12]["data"].GetFloat();
+        audioReverbZoneComp.highCut = d[13]["data"].GetFloat();
+        audioReverbZoneComp.earlyLateMix = d[14]["data"].GetFloat();
+        audioReverbZoneComp.wetLevel = d[15]["data"].GetFloat();
+    }
+}
+
 void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON) {
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
@@ -1177,6 +1220,10 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].IsString()) {
+            GUID_string skyboxGUIDStr = d[idx++].GetString();
+            cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
+        }
     }
 }
 
