@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a27c4efb8e-00031f529a000057",
+        "guid": "00374a211feaaa76-000331fc82000075",
         "source": "../../Resources/Textures/container2.png",
         "compiled": "../../Resources/Textures/container2.dds",
-        "last_compiled": "2025-11-02 14:53:56.2496488"
+        "last_compiled": "2025-11-07 05:29:37.3928499"
     },
     "TextureMetaData": {
         "type": "diffuse",
