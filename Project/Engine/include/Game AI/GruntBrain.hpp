@@ -7,7 +7,7 @@ struct GruntIdle;
 struct GruntAttack;
 
 // Root machine type for grunts
-using GruntFSM = AIMachine::PeerRoot<GruntIdle, GruntAttack>;
+using GruntFSM = AIMachine::Root<GruntIdle, GruntAttack>;
 using GruntUpdateCtrl = typename GruntFSM::FullControl;
 
 inline constexpr int kAttackClipIndex = 0;
@@ -24,44 +24,53 @@ namespace {
         a.Stop();
     }
 
-    inline void playOnce(AnimationComponent& a, int clipIdx) {
-        a.PlayOnce(static_cast<std::size_t>(clipIdx));
+    inline void playOnce(AnimationComponent& a, std::size_t clipIdx) {
+        a.EnsureAnimator();        // make sure animator exists
+        a.SetLooping(false);
+        a.SetClip(clipIdx);
+        a.Play();                  // your PlayOnce wraps this; using explicit path is fine
     }
 
     // robust “is finished” check:
     inline bool finished(const AnimationComponent& a) {
-        // if your player stops itself at the end (common), this works:
-        if (!a.isPlay) return true;
-
-        // optional: derive from duration if you expose it
-        // (uncomment/adapt if you have these fields)
-        // const auto& clip = a.clips[a.activeClip];
-        // const float lenS = clip.durationTicks / std::max(1.0f, a.ticksPerSecond);
-        // return a.time >= lenS;
-
-        return false;
+        // Robust in both PLAY (AnimationSystem ticks) and EDIT (Inspector ticks).
+        const Animator* anim = a.GetAnimatorPtr();
+        if (!anim) return true;                       // no animator -> treat as finished
+        const size_t idx = a.GetActiveClipIndex();
+        const Animation& clip = a.GetClip(idx);
+        const float t = anim->GetCurrentTime();
+        const float len = clip.GetDuration();
+        return !a.isLoop && (t >= len - 1e-4f);
     }
 }
 
 struct GruntIdle : GruntFSM::State {
     float timer = 0.f;
+	bool armed = false;
 
     template <typename TControl>
     void enter(TControl& ctrl) noexcept { 
         auto& ctx = ctrl.context();
-		Brain& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
-		brain.activeState = "Idle";
+        auto& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+        brain.activeState = "Idle";
         ENGINE_PRINT("[Grunt] enter Idle\n");
 
         timer = 3.f;
-        if (auto* a = animFrom(ctx))    // ensure nothing is playing
-            stopAll(*a);
+        armed = false;
+        if (auto* a = animFrom(ctx)) a->Stop();
     }
 
     template <typename TControl>
     void update(TControl& ctrl) noexcept {
         auto& ctx = ctrl.context();
-        timer -= ctx.dt;
+
+        if (!armed) {                                 // swallow the very first update
+            armed = true;
+            return;
+        }
+
+        const float d = std::clamp(ctx.dt, 0.0f, 0.2f);
+        timer -= d;
         if (timer <= 0.f)
             ctrl.changeTo<GruntAttack>();
     }
@@ -69,21 +78,29 @@ struct GruntIdle : GruntFSM::State {
 
 struct GruntAttack : GruntFSM::State {
     template <typename TControl>
-    void enter(TControl& ctrl) noexcept { 
+    void enter(TControl& ctrl) noexcept {
         auto& ctx = ctrl.context();
-        Brain& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
-		brain.activeState = "Attack";
-        ENGINE_PRINT("[Grunt] enter Attack\n"); 
-        if (auto* a = animFrom(ctx))
-            playOnce(*a, kAttackClipIndex);
+        auto& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+        brain.activeState = "Attack";
+        ENGINE_PRINT("[Grunt] enter Attack\n");
+
+        if (auto* a = animFrom(ctx)) {
+            a->EnsureAnimator();
+            if (0 <= kAttackClipIndex && kAttackClipIndex < a->clipCount) {
+                a->SetLooping(false);
+                a->SetClip(static_cast<size_t>(kAttackClipIndex));
+                a->SetSpeed(1.0f);
+                a->Play();                             // let component manage isPlay/time
+            }
+            else {
+                ENGINE_PRINT("[Grunt] invalid attack clip index");
+            }
+        }
     }
 
     template <typename TControl>
     void exit(TControl& ctrl) noexcept {
-        // Make sure we leave in a clean state
-        auto& ctx = ctrl.context();
-        if (auto* a = animFrom(ctrl.context()))
-            a->isPlay = false; // leave cleanly
+        if (auto* a = animFrom(ctrl.context())) a->Stop();
     }
 
     template <typename TControl>

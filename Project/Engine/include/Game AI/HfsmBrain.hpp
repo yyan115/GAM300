@@ -8,8 +8,6 @@ public:
     using FSM = RootFSM;
     using Instance = typename FSM::Instance;
 
-    //HfsmBrain() : _ctx{}, _fsm{ _ctx } {}
-
     void onEnter(ECSManager& ecs, unsigned e) override {
         _ctx.ecs = &ecs;
         _ctx.e = e;
@@ -17,9 +15,9 @@ public:
         _ctx.ev.reset();
 
         if (!_fsm)
-            _fsm = std::make_unique<Instance>(_ctx);  // pass the persistent context
+            _fsm = std::make_unique<Instance>(_ctx);   // HFSM constructs at initial state
 
-        //_fsm->enter();
+        _skipNextUpdate = true;                        // swallow the very first update after add
     }
 
     void onUpdate(ECSManager& ecs, unsigned e, float dt) override {
@@ -28,13 +26,16 @@ public:
         _ctx.e = e;
         _ctx.dt = dt;
 
+        if (_skipNextUpdate) {                         // guarantees Idle runs at least one frame
+            _skipNextUpdate = false;
+            return;
+        }
         _fsm->update();
     }
 
     void onExit(ECSManager& ecs, unsigned e) override {
         _ctx.ecs = &ecs;
         _ctx.e = e;
-        
         _fsm.reset();
         _ctx.ev.reset();
         _ctx.dt = 0.f;
@@ -43,4 +44,5 @@ public:
 private:
     HfsmContext _ctx{};
 	std::unique_ptr<Instance> _fsm;
+    bool _skipNextUpdate{ false };
 };
