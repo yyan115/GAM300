@@ -8,29 +8,39 @@ public:
     using FSM = RootFSM;
     using Instance = typename FSM::Instance;
 
+    //HfsmBrain() : _ctx{}, _fsm{ _ctx } {}
+
     void onEnter(ECSManager& ecs, unsigned e) override {
         _ctx.ecs = &ecs;
         _ctx.e = e;
         _ctx.dt = 0.f;
         _ctx.ev.reset();
-        // instance already holds reference to _ctx via ctor
+
+        if (!_fsm)
+            _fsm = std::make_unique<Instance>(_ctx);  // pass the persistent context
+
+        //_fsm->enter();
     }
 
     void onUpdate(ECSManager& ecs, unsigned e, float dt) override {
+        if (!_fsm) return;
         _ctx.ecs = &ecs;
         _ctx.e = e;
         _ctx.dt = dt;
-        _fsm.update();
+
+        _fsm->update();
     }
 
     void onExit(ECSManager& ecs, unsigned e) override {
         _ctx.ecs = &ecs;
         _ctx.e = e;
+        
+        _fsm.reset();
         _ctx.ev.reset();
-        // nothing else required; states can react if you post an event
+        _ctx.dt = 0.f;
     }
 
 private:
     HfsmContext _ctx{};
-    Instance    _fsm{ _ctx };   // hfsm2 Instance constructed with context
+	std::unique_ptr<Instance> _fsm;
 };

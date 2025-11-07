@@ -21,4 +21,6 @@ struct Brain {
     std::shared_ptr<IBrain> impl;
     bool started{ false };
     std::string activeState;
+
+    bool enabled{ true };
 };

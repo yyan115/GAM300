@@ -6,15 +6,25 @@
 void RunBrainInitSystem(ECSManager& ecs) {
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
-        if (!ecs.HasComponent<Brain>(e)) continue;
+        if (!ecs.HasComponent<Brain>(e))
+            continue;
 
-        auto brainOpt = ecs.TryGetComponent<Brain>(e);   // your API: optional<reference_wrapper<T>>
-        if (!brainOpt) continue;
+        auto brainOpt = ecs.TryGetComponent<Brain>(e);
+        if (!brainOpt)
+            continue;
+
         Brain& brain = brainOpt->get();
 
-        if (!brain.impl)
-            brain.impl = game_ai::CreateFor(ecs, e, brain.kind);
+        if (!brain.enabled)            // <-- gate
+            continue;
 
+        // Create impl if it's missing (first time or after Stop/Rebuild)
+        if (!brain.impl) {
+            brain.impl = game_ai::CreateFor(ecs, e, brain.kind);
+            // do NOT set started here; let the next block decide
+        }
+
+        // Call onEnter exactly once per (re)build
         if (brain.impl && !brain.started) {
             brain.impl->onEnter(ecs, e);
             brain.started = true;
@@ -25,14 +35,19 @@ void RunBrainInitSystem(ECSManager& ecs) {
 void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
-        if (!ecs.HasComponent<Brain>(e)) continue;
+        if (!ecs.HasComponent<Brain>(e))
+            continue;
 
         auto brainOpt = ecs.TryGetComponent<Brain>(e);
-        if (!brainOpt) continue;
+        if (!brainOpt)
+            continue;
+
         Brain& brain = brainOpt->get();
 
-        if (!brain.impl || !brain.started) continue;
+        // Only tick brains that have entered
+        if (!brain.impl || !brain.started || !brain.enabled)
+            continue;
+
         brain.impl->onUpdate(ecs, e, dt);
-		brain.activeState = brain.impl->activeStateName();
     }
 }

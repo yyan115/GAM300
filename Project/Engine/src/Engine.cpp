@@ -597,11 +597,7 @@ void Engine::Update() {
 
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    static bool s_init = false;
-    if (!s_init) {
-        RunBrainInitSystem(ecs);
-        s_init = true;
-    }
+    RunBrainInitSystem(ecs);
 
     RunBrainUpdateSystem(ecs, TimeManager::GetDeltaTime());
     

@@ -1464,40 +1464,40 @@ void RegisterInspectorCustomRenderers() {
             [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             Brain& brain = *static_cast<Brain*>(componentPtr);
 
-            // Choose Brain kind (None / Grunt / Boss)
-            const char* kinds[] = { "None", "Grunt", "Boss" };
-            int k = static_cast<int>(brain.kind);
-            if (ImGui::Combo("Kind", &k, kinds, IM_ARRAYSIZE(kinds))) {
-                brain.kind = static_cast<BrainKind>(k);
+            // Combo for Kind
+            static const char* kKinds[] = { "None", "Grunt", "Boss" };
+            int kindIdx = static_cast<int>(brain.kind);
+            if (ImGui::Combo("Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds))) {
+                brain.kind = static_cast<BrainKind>(kindIdx);
+                // Mark as needing rebuild (optional UX)
             }
 
-            // Active state (read-only)
+            // Read-only current state
             ImGui::Text("Active State: %s", brain.activeState.empty() ? "None" : brain.activeState.c_str());
 
             // Build / Rebuild
-            if (ImGui::Button(brain.impl ? "Rebuild" : "Build")) {
-                if (brain.impl) brain.impl->onExit(ecs, entity);
-                brain.impl = game_ai::CreateFor(ecs, entity, brain.kind);
-                if (brain.impl) {
-                    brain.impl->onEnter(ecs, entity);
-                    brain.started = true;
-                }
-                else {
-                    brain.started = false;
-                    brain.activeState = "None";
-                }
-            }
-            ImGui::SameLine();
+            if (ImGui::Button(brain.impl && brain.started ? "Rebuild" : "Build")) {
+                if (brain.impl && brain.started)
+                    brain.impl->onExit(ecs, entity);
 
-            // Stop
-            ImGui::BeginDisabled(!brain.impl);
-            if (ImGui::Button("Stop")) {
-                if (brain.impl) brain.impl->onExit(ecs, entity);
+                brain.enabled = true;      // ensure init system will start it
                 brain.impl.reset();
                 brain.started = false;
-                brain.activeState = "None";
+
+                brain.impl = game_ai::CreateFor(ecs, entity, brain.kind); // optional pre-create
             }
-            ImGui::EndDisabled();
+
+            // Stop
+            ImGui::SameLine();
+            if (ImGui::Button("Stop")) {
+                if (brain.impl && brain.started)
+                    brain.impl->onExit(ecs, entity);
+
+                brain.enabled = false;     // <-- prevents re-entry
+                brain.impl.reset();
+                brain.started = false;
+                brain.activeState.clear(); // shows "None"
+            }
 
             return true;
         });

@@ -54,14 +54,12 @@ struct GruntIdle : GruntFSM::State {
         ENGINE_PRINT("[Grunt] enter Idle\n");
 
         timer = 3.f;
-        if (auto* a = animFrom(ctrl.context()))    // ensure nothing is playing
+        if (auto* a = animFrom(ctx))    // ensure nothing is playing
             stopAll(*a);
     }
 
     template <typename TControl>
-    void exit(TControl& /*ctrl*/) noexcept {}
-
-    void update(GruntUpdateCtrl& ctrl) noexcept {
+    void update(TControl& ctrl) noexcept {
         auto& ctx = ctrl.context();
         timer -= ctx.dt;
         if (timer <= 0.f)
@@ -76,7 +74,7 @@ struct GruntAttack : GruntFSM::State {
         Brain& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
 		brain.activeState = "Attack";
         ENGINE_PRINT("[Grunt] enter Attack\n"); 
-        if (auto* a = animFrom(ctrl.context()))
+        if (auto* a = animFrom(ctx))
             playOnce(*a, kAttackClipIndex);
     }
 
@@ -88,7 +86,8 @@ struct GruntAttack : GruntFSM::State {
             a->isPlay = false; // leave cleanly
     }
 
-    void update(GruntUpdateCtrl& ctrl) noexcept {
+    template <typename TControl>
+    void update(TControl& ctrl) noexcept {
         if (auto* a = animFrom(ctrl.context())) {
             if (finished(*a))
                 ctrl.changeTo<GruntIdle>();
