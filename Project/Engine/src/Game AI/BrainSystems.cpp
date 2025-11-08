@@ -55,3 +55,23 @@ void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
         brain.impl->onUpdate(ecs, e, dt);
     }
 }
+
+void RunBrainExitSystem(ECSManager& ecs) {
+    const auto& all = ecs.GetAllEntities();
+    for (Entity e : all) {
+        if (!ecs.HasComponent<BrainComponent>(e))
+            continue;
+
+        auto brainOpt = ecs.TryGetComponent<BrainComponent>(e);
+        if (!brainOpt)
+            continue;
+
+        BrainComponent& brain = brainOpt->get();
+
+        // Only tick brains that have entered
+        if (!brain.impl || !brain.started || !brain.enabled)
+            continue;
+
+        brain.impl->onExit(ecs, e);
+    }
+}
