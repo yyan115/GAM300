@@ -33,6 +33,10 @@ void RunBrainInitSystem(ECSManager& ecs) {
 }
 
 void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
+    if (Engine::IsEditMode()) {
+        return;
+    }
+
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
         if (!ecs.HasComponent<Brain>(e))

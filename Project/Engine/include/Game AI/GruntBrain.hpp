@@ -7,7 +7,8 @@ struct GruntIdle;
 struct GruntAttack;
 
 // Root machine type for grunts
-using GruntFSM = AIMachine::Root<GruntIdle, GruntAttack>;
+using Config = hfsm2::Config::ContextT<HfsmContext&>;
+using GruntFSM = hfsm2::MachineT<Config>::PeerRoot<GruntIdle, GruntAttack>;
 using GruntUpdateCtrl = typename GruntFSM::FullControl;
 
 inline constexpr int kAttackClipIndex = 0;
