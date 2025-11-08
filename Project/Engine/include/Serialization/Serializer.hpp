@@ -22,12 +22,13 @@
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include "Engine.h"
 
 class Serializer {
 public:
-	static void SerializeScene(const std::string& scenePath);
-	static void DeserializeScene(const std::string& scenePath);
-	static void ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
+	static void ENGINE_API SerializeScene(const std::string& scenePath);
+	static void ENGINE_API DeserializeScene(const std::string& scenePath);
+	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 
 	static Entity CreateEntityViaGUID(const rapidjson::Value& entityJSON);
 	static void DeserializeNameComponent(NameComponent& nameComp, const rapidjson::Value& nameJSON);

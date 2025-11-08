@@ -36,6 +36,32 @@ auto getStringFromValue = [](const rapidjson::Value& v, std::string& out) -> boo
     return false;
     };
 
+// Helper function to extract GUID string from various JSON formats
+auto extractGUIDString = [](const rapidjson::Value& v) -> std::string {
+    // Direct string format
+    if (v.IsString()) {
+        return v.GetString();
+    }
+
+    // Object with "data" field
+    if (v.IsObject() && v.HasMember("data")) {
+        const auto& dataField = v["data"];
+
+        // data is a direct string
+        if (dataField.IsString()) {
+            return dataField.GetString();
+        }
+
+        // data is another object with "data" field (double-wrapped)
+        if (dataField.IsObject() && dataField.HasMember("data") && dataField["data"].IsString()) {
+            return dataField["data"].GetString();
+        }
+    }
+
+    // Default empty GUID - must be 33 characters (16 hex + hyphen + 16 hex)
+    return "0000000000000000-0000000000000000";  // 33 characters total
+};
+
 // read a Vector3D stored as either [x,y,z] or typed {"type":"Vector3D","data":[{...},{...},{...}]}
 auto readVec3Generic = [](const rapidjson::Value& val, Vector3D& out)->bool {
     if (val.IsArray()) return readVec3FromArray(val, out);
@@ -306,6 +332,26 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         if (ecs.HasComponent<CameraComponent>(entity)) {
             auto& c = ecs.GetComponent<CameraComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
+
+            // Add custom serialization for target and up (glm::vec3)
+            rapidjson::Value targetVal(rapidjson::kObjectType);
+            targetVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value targetData(rapidjson::kArrayType);
+            targetData.PushBack(c.target.x, alloc);
+            targetData.PushBack(c.target.y, alloc);
+            targetData.PushBack(c.target.z, alloc);
+            targetVal.AddMember("data", targetData, alloc);
+            v.AddMember("target", targetVal, alloc);
+
+            rapidjson::Value upVal(rapidjson::kObjectType);
+            upVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value upData(rapidjson::kArrayType);
+            upData.PushBack(c.up.x, alloc);
+            upData.PushBack(c.up.y, alloc);
+            upData.PushBack(c.up.z, alloc);
+            upVal.AddMember("data", upData, alloc);
+            v.AddMember("up", upVal, alloc);
+
             compsObj.AddMember("CameraComponent", v, alloc);
         }
         if (ecs.HasComponent<AnimationComponent>(entity)) {
@@ -819,6 +865,27 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeColliderComponent(colliderComp, tv);
         }
 
+        // CameraComponent
+        if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["CameraComponent"];
+            auto& cameraComp = ecs.GetComponent<CameraComponent>(currEnt);
+            DeserializeCameraComponent(cameraComp, tv);
+        }
+
+        // AnimationComponent
+        if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AnimationComponent"];
+            auto& animComp = ecs.GetComponent<AnimationComponent>(currEnt);
+            TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+        }
+
+        // ActiveComponent
+        if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["ActiveComponent"];
+            auto& activeComp = ecs.GetComponent<ActiveComponent>(currEnt);
+            DeserializeActiveComponent(activeComp, tv);
+        }
+
         // ParentComponent
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
@@ -938,9 +1005,55 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
 void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON) {
     if (modelJSON.IsObject()) {
         if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
-            GUID_string modelGUIDStr = modelJSON["data"][0].GetString();
-            GUID_string shaderGUIDStr = modelJSON["data"][1].GetString();
-            GUID_string materialGUIDStr = modelJSON["data"][2].GetString();
+            const auto& d = modelJSON["data"];
+
+            int startIdx = 0;
+            // Check if we have base class fields or not
+            if (d[0].IsObject() && d[0].HasMember("type")) {
+                if (d[0]["type"].GetString() == std::string("bool")) {
+                    // Check if we have complete base class fields
+                    modelComp.isVisible = d[0]["data"].GetBool();
+
+                    // Check second element for renderOrder
+                    if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
+                        if (d[1]["type"].GetString() == std::string("int")) {
+                            modelComp.renderOrder = d[1]["data"].GetInt();
+                            startIdx = 2;
+                        } else {
+                            // d[1] is not renderOrder, so only isVisible present
+                            modelComp.renderOrder = 100;  // default
+                            startIdx = 1;
+                        }
+                    } else if (d.Size() > 1 && d[1].IsString()) {
+                        // d[1] is a string (probably GUID), so only isVisible present
+                        modelComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    } else {
+                        // Only one element or d[1] is something else
+                        modelComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    }
+                } else {
+                    // No base class fields - old format from snapshot
+                    modelComp.isVisible = true;  // default
+                    modelComp.renderOrder = 100;  // default
+                    startIdx = 0;
+                }
+            } else if (d[0].IsString()) {
+                // Old format - starts with GUID string
+                modelComp.isVisible = true;  // default
+                modelComp.renderOrder = 100;  // default
+                startIdx = 0;
+            } else {
+                modelComp.isVisible = true;  // default
+                modelComp.renderOrder = 100;  // default
+                startIdx = 0;
+            }
+
+            // Component-specific fields
+            GUID_string modelGUIDStr = extractGUIDString(d[startIdx]);
+            GUID_string shaderGUIDStr = extractGUIDString(d[startIdx + 1]);
+            GUID_string materialGUIDStr = extractGUIDString(d[startIdx + 2]);
             modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
             modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
             modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
@@ -951,24 +1064,67 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
 void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON) {
     if (spriteJSON.IsObject()) {
         if (spriteJSON.HasMember("data") && spriteJSON["data"].IsArray() && spriteJSON["data"].Size() > 0) {
-            GUID_string textureGUIDStr = spriteJSON["data"][0].GetString();
-            GUID_string shaderGUIDStr = spriteJSON["data"][1].GetString();
+            const auto& d = spriteJSON["data"];
+
+            int startIdx = 0;
+            // Check if we have base class fields or not
+            if (d[0].IsObject() && d[0].HasMember("type")) {
+                if (d[0]["type"].GetString() == std::string("bool")) {
+                    // Has isVisible field
+                    spriteComp.isVisible = d[0]["data"].GetBool();
+
+                    // Check second element for renderOrder
+                    if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
+                        if (d[1]["type"].GetString() == std::string("int")) {
+                            spriteComp.renderOrder = d[1]["data"].GetInt();
+                            startIdx = 2;
+                        } else {
+                            spriteComp.renderOrder = 100;  // default
+                            startIdx = 1;
+                        }
+                    } else if (d.Size() > 1 && d[1].IsString()) {
+                        spriteComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    } else {
+                        spriteComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    }
+                } else {
+                    // No base class fields
+                    spriteComp.isVisible = true;  // default
+                    spriteComp.renderOrder = 100;  // default
+                    startIdx = 0;
+                }
+            } else if (d[0].IsString()) {
+                // Old format - starts with GUID string
+                spriteComp.isVisible = true;  // default
+                spriteComp.renderOrder = 100;  // default
+                startIdx = 0;
+            } else {
+                spriteComp.isVisible = true;  // default
+                spriteComp.renderOrder = 100;  // default
+                startIdx = 0;
+            }
+
+            // Component-specific fields
+            GUID_string textureGUIDStr = extractGUIDString(d[startIdx]);
+            GUID_string shaderGUIDStr = extractGUIDString(d[startIdx + 1]);
             spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
             spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
 
-            // Sprite position
-            readVec3Generic(spriteJSON["data"][2], spriteComp.position);
+            // Sprite position and other fields
+            readVec3Generic(d[startIdx + 2], spriteComp.position);
             // Sprite scale
-            readVec3Generic(spriteJSON["data"][3], spriteComp.scale);
+            readVec3Generic(d[startIdx + 3], spriteComp.scale);
             // Sprite rotation
-            spriteComp.rotation = spriteJSON["data"][4]["data"].GetFloat();
+            spriteComp.rotation = d[startIdx + 4]["data"].GetFloat();
             // Sprite color
-            readVec3Generic(spriteJSON["data"][5], spriteComp.color);
-            spriteComp.alpha = spriteJSON["data"][6]["data"].GetFloat();
-            spriteComp.is3D = spriteJSON["data"][7]["data"].GetBool();
-            spriteComp.enableBillboard = spriteJSON["data"][8]["data"].GetBool();
-            spriteComp.layer = spriteJSON["data"][9]["data"].GetInt();
-            readVec3Generic(spriteJSON["data"][10], spriteComp.saved3DPosition);
+            readVec3Generic(d[startIdx + 5], spriteComp.color);
+            spriteComp.alpha = d[startIdx + 6]["data"].GetFloat();
+            spriteComp.is3D = d[startIdx + 7]["data"].GetBool();
+            spriteComp.enableBillboard = d[startIdx + 8]["data"].GetBool();
+            spriteComp.layer = d[startIdx + 9]["data"].GetInt();
+            readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
         }
     }
 }
@@ -977,15 +1133,58 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (textJSON.HasMember("data") && textJSON["data"].IsArray()) {
         const auto& d = textJSON["data"];
-        textComp.text = d[0]["data"].GetString();
-        textComp.fontSize = d[1]["data"].GetUint();
-        textComp.fontGUID = GUIDUtilities::ConvertStringToGUID128(d[2].GetString());
-        textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(d[3].GetString());
-        readVec3Generic(d[4], textComp.position);
-        readVec3Generic(d[5], textComp.color);
-        textComp.scale = d[6]["data"].GetFloat();
-        textComp.is3D = d[7]["data"].GetBool();
-        textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[9]["data"].GetInt());
+
+        int startIdx = 0;
+        // Check if we have base class fields or not
+        if (d[0].IsObject() && d[0].HasMember("type")) {
+            if (d[0]["type"].GetString() == std::string("bool")) {
+                // Has isVisible field
+                textComp.isVisible = d[0]["data"].GetBool();
+
+                // Check second element for renderOrder
+                if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
+                    if (d[1]["type"].GetString() == std::string("int")) {
+                        textComp.renderOrder = d[1]["data"].GetInt();
+                        startIdx = 2;
+                    } else {
+                        textComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    }
+                } else if (d.Size() > 1 && d[1].IsString()) {
+                    textComp.renderOrder = 100;  // default
+                    startIdx = 1;
+                } else {
+                    textComp.renderOrder = 100;  // default
+                    startIdx = 1;
+                }
+            } else {
+                // No base class fields - old format from snapshot
+                textComp.isVisible = true;  // default
+                textComp.renderOrder = 100;  // default
+                startIdx = 0;
+            }
+        } else {
+            // Unknown format - set defaults
+            textComp.isVisible = true;  // default
+            textComp.renderOrder = 100;  // default
+            startIdx = 0;
+        }
+
+        // Component-specific fields
+        textComp.text = d[startIdx]["data"].GetString();
+        textComp.fontSize = d[startIdx + 1]["data"].GetUint();
+
+        // Use helper function to extract GUIDs
+        GUID_string fontGUIDStr = extractGUIDString(d[startIdx + 2]);
+        textComp.fontGUID = GUIDUtilities::ConvertStringToGUID128(fontGUIDStr);
+
+        GUID_string shaderGUIDStr = extractGUIDString(d[startIdx + 3]);
+        textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+        readVec3Generic(d[startIdx + 4], textComp.position);
+        readVec3Generic(d[startIdx + 5], textComp.color);
+        textComp.scale = d[startIdx + 6]["data"].GetFloat();
+        textComp.is3D = d[startIdx + 7]["data"].GetBool();
+        textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[startIdx + 9]["data"].GetInt());
     }
 }
 
@@ -993,21 +1192,68 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (particleJSON.HasMember("data") && particleJSON["data"].IsArray()) {
         const auto& d = particleJSON["data"];
-        GUID_string guidStr = d[0].GetString();
+
+        int startIdx = 0;
+        // Check if we have base class fields or not
+        if (d[0].IsObject() && d[0].HasMember("type")) {
+            if (d[0]["type"].GetString() == std::string("bool")) {
+                // Check if we have complete base class fields
+                particleComp.isVisible = d[0]["data"].GetBool();
+
+                // Check second element for renderOrder
+                if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
+                    if (d[1]["type"].GetString() == std::string("int")) {
+                        particleComp.renderOrder = d[1]["data"].GetInt();
+                        startIdx = 2;
+                    } else {
+                        // d[1] is not renderOrder, so only isVisible present
+                        particleComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    }
+                } else if (d.Size() > 1 && d[1].IsString()) {
+                    // d[1] is a string (probably GUID), so only isVisible present
+                    particleComp.renderOrder = 100;  // default
+                    startIdx = 1;
+                } else {
+                    // Only one element or d[1] is something else
+                    particleComp.renderOrder = 100;  // default
+                    startIdx = 1;
+                }
+            } else {
+                // No base class fields - old format from snapshot
+                particleComp.isVisible = true;  // default
+                particleComp.renderOrder = 100;  // default
+                startIdx = 0;
+            }
+        } else if (d[0].IsString()) {
+            // Old format - starts with GUID string
+            particleComp.isVisible = true;  // default
+            particleComp.renderOrder = 100;  // default
+            startIdx = 0;
+        } else {
+            particleComp.isVisible = true;  // default
+            particleComp.renderOrder = 100;  // default
+            startIdx = 0;
+        }
+
+        // Component-specific fields
+        GUID_string guidStr = extractGUIDString(d[startIdx]);
         particleComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-        readVec3Generic(d[1], particleComp.emitterPosition);
-        particleComp.emissionRate = d[2]["data"].GetFloat();
-        particleComp.maxParticles = d[3]["data"].GetInt();
-        particleComp.particleLifetime = d[4]["data"].GetFloat();
-        particleComp.startSize = d[5]["data"].GetFloat();
-        particleComp.endSize = d[6]["data"].GetFloat();
-        readVec3Generic(d[7], particleComp.startColor);
-        particleComp.startColorAlpha = d[8]["data"].GetFloat();
-        readVec3Generic(d[9], particleComp.endColor);
-        particleComp.endColorAlpha = d[10]["data"].GetFloat();
-        readVec3Generic(d[11], particleComp.gravity);
-        particleComp.velocityRandomness = d[12]["data"].GetFloat();
-        readVec3Generic(d[13], particleComp.initialVelocity);
+
+        // Rest of ParticleComponent fields
+        readVec3Generic(d[startIdx + 1], particleComp.emitterPosition);
+        particleComp.emissionRate = d[startIdx + 2]["data"].GetFloat();
+        particleComp.maxParticles = d[startIdx + 3]["data"].GetInt();
+        particleComp.particleLifetime = d[startIdx + 4]["data"].GetFloat();
+        particleComp.startSize = d[startIdx + 5]["data"].GetFloat();
+        particleComp.endSize = d[startIdx + 6]["data"].GetFloat();
+        readVec3Generic(d[startIdx + 7], particleComp.startColor);
+        particleComp.startColorAlpha = d[startIdx + 8]["data"].GetFloat();
+        readVec3Generic(d[startIdx + 9], particleComp.endColor);
+        particleComp.endColorAlpha = d[startIdx + 10]["data"].GetFloat();
+        readVec3Generic(d[startIdx + 11], particleComp.gravity);
+        particleComp.velocityRandomness = d[startIdx + 12]["data"].GetFloat();
+        readVec3Generic(d[startIdx + 13], particleComp.initialVelocity);
     }
 }
 
@@ -1064,7 +1310,9 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
     if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
         const auto& d = audioJSON["data"];
         audioComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
-        GUID_string guidStr = d[1].GetString();  // d[1] is the GUID string
+
+        // Use helper function to extract audio GUID
+        GUID_string guidStr = extractGUIDString(d[1]);
         audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
 		audioComp.Mute = d[2]["data"].GetBool();
 		audioComp.bypassListenerEffects = d[3]["data"].GetBool();
@@ -1127,7 +1375,10 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
 }
 
 void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON) {
-    GUID_string parentGUIDStr = parentJSON["data"][0].GetString();
+    const auto& d = parentJSON["data"];
+
+    // Use helper function to extract parent GUID
+    GUID_string parentGUIDStr = extractGUIDString(d[0]);
     parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
 }
 
@@ -1136,7 +1387,8 @@ void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, cons
         childComp.children.clear();
         const auto& childrenVectorJSON = childJSON["data"][0]["data"].GetArray();
         for (const auto& childJSON : childrenVectorJSON) {
-            GUID_string childGUIDStr = childJSON.GetString();
+            // Use helper function to extract child GUIDs
+            GUID_string childGUIDStr = extractGUIDString(childJSON);
             childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
         }
     }
@@ -1157,11 +1409,15 @@ void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapi
 void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
     if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
         const auto& d = cameraJSON["data"];
-        
+
         int idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.priority = d[idx++]["data"].GetInt();
+
+        // Skip target and up in the old format (they're not in the reflection data array)
+        // These are handled separately by custom serialization
+
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.yaw = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.pitch = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.useFreeRotation = d[idx++]["data"].GetBool();
@@ -1177,9 +1433,36 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].IsString()) {
-            GUID_string skyboxGUIDStr = d[idx++].GetString();
+        if (d.Size() > idx) {
+            // Use helper function to extract skybox texture GUID
+            GUID_string skyboxGUIDStr = extractGUIDString(d[idx]);
+            idx++;
             cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
+        }
+    }
+
+    // Check if we have custom serialized target and up vectors
+    if (cameraJSON.HasMember("target") && cameraJSON["target"].IsObject()) {
+        const auto& targetObj = cameraJSON["target"];
+        if (targetObj.HasMember("type") && targetObj["type"].GetString() == std::string("glm::vec3")) {
+            if (targetObj.HasMember("data") && targetObj["data"].IsArray() && targetObj["data"].Size() >= 3) {
+                const auto& vec = targetObj["data"];
+                cameraComp.target.x = vec[0].GetFloat();
+                cameraComp.target.y = vec[1].GetFloat();
+                cameraComp.target.z = vec[2].GetFloat();
+            }
+        }
+    }
+
+    if (cameraJSON.HasMember("up") && cameraJSON["up"].IsObject()) {
+        const auto& upObj = cameraJSON["up"];
+        if (upObj.HasMember("type") && upObj["type"].GetString() == std::string("glm::vec3")) {
+            if (upObj.HasMember("data") && upObj["data"].IsArray() && upObj["data"].Size() >= 3) {
+                const auto& vec = upObj["data"];
+                cameraComp.up.x = vec[0].GetFloat();
+                cameraComp.up.y = vec[1].GetFloat();
+                cameraComp.up.z = vec[2].GetFloat();
+            }
         }
     }
 }

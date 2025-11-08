@@ -28,6 +28,7 @@
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include "SnapshotManager.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
@@ -706,13 +707,36 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
         }
 
-        bool isUsing = ImGuizmo::Manipulate(
+        ImGuizmo::Manipulate(
             viewMatrix, projMatrix,
             gizmoOperation, gizmoMode,
             selectedObjectMatrix,
             nullptr, nullptr
         );
 
+        // Use ImGuizmo::IsUsing() for reliable state detection (doesn't flicker during drag)
+        bool isUsing = ImGuizmo::IsUsing();
+
+        // Track gizmo manipulation for undo/redo
+        static bool wasUsing = false;
+        static bool snapshotTaken = false;
+        static Entity lastManipulatedEntity = static_cast<Entity>(-1);
+
+        // When user STARTS dragging: take ONE snapshot and disable auto-snapshots from Inspector
+        if (isUsing && !wasUsing && !snapshotTaken) {
+            SnapshotManager::GetInstance().TakeSnapshot("Transform Entity");
+            SnapshotManager::GetInstance().SetSnapshotEnabled(false);  // Disable Inspector snapshots
+            snapshotTaken = true;
+            lastManipulatedEntity = selectedEntity;
+        }
+
+        // When user STOPS dragging: re-enable auto-snapshots and reset flag
+        if (!isUsing && wasUsing) {
+            SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
+            snapshotTaken = false;  // Reset for next drag operation
+        }
+
+        wasUsing = isUsing;
 
         // Apply transform changes to the actual entity
         if (isUsing) {

@@ -3,6 +3,8 @@
 #include "EditorComponents.hpp"
 #include "imgui.h"
 #include "GUIManager.hpp"
+#include "SnapshotManager.hpp"
+#include "UndoableWidgets.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
@@ -68,7 +70,7 @@ static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const 
 		auto& c = ecs.GetComponent<T>(e);
 		bool b = c.overrideFromPrefab;
 		std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
-		if (ImGui::Checkbox(label.c_str(), &b)) {
+		if (UndoableWidgets::Checkbox(label.c_str(), &b)) {
 			c.overrideFromPrefab = b;
 		}
 		ImGui::SameLine();
@@ -446,7 +448,7 @@ void InspectorPanel::DrawTagComponent(Entity entity) {
 		// Combo box for tag selection
 		int currentTag = tagComponent.tagIndex;
 		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
+		if (UndoableWidgets::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
 			if (currentTag >= 0 && currentTag < static_cast<int>(availableTags.size())) {
 				tagComponent.tagIndex = currentTag;
 			} else if (currentTag == static_cast<int>(availableTags.size())) {
@@ -534,7 +536,7 @@ void InspectorPanel::DrawLayerComponent(Entity entity) {
 
 		// Combo box for layer selection
 		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
+		if (UndoableWidgets::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
 			if (currentSelection >= 0 && currentSelection < static_cast<int>(tempIndices.size())) {
 				int selectedIndex = tempIndices[currentSelection];
 				if (selectedIndex == -1) {
@@ -1214,6 +1216,9 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
 
+		// Take snapshot after adding component (for undo)
+		SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
+
 	} catch (const std::exception& e) {
 		std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
 	}
@@ -1292,7 +1297,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 			std::string checkboxId = "##ComponentEnabled_" + componentType;
 			ImGui::PushID(entity);
-			ImGui::Checkbox(checkboxId.c_str(), enabledFieldPtr);
+			UndoableWidgets::Checkbox(checkboxId.c_str(), enabledFieldPtr);
 			ImGui::PopID();
 
 			ImGui::PopStyleColor(4);

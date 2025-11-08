@@ -26,6 +26,8 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include "Panels/ScenePanel.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "SnapshotManager.hpp"
+#include "UndoableWidgets.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -59,6 +61,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
                     std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
 
                     std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
+
+                    // Take snapshot before deleting (for undo)
+                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
 
                     // Clear selection before deleting
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
@@ -215,7 +220,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetKeyboardFocusHere();
         }
 
-        if (ImGui::InputText(("##rename" + std::to_string(entityId)).c_str(),
+        if (UndoableWidgets::InputText(("##rename" + std::to_string(entityId)).c_str(),
                              renameBuffer.data(), renameBuffer.size(),
                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
         {
@@ -521,6 +526,9 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
         }
 
         std::cout << "[SceneHierarchy] Created empty entity '" << Pathname << "' with ID " << newEntity << std::endl;
+
+        // Take snapshot after creating entity (for undo)
+        SnapshotManager::GetInstance().TakeSnapshot("Create Entity: " + Pathname);
 
         return newEntity;
     } catch (const std::exception& e) {

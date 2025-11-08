@@ -2,10 +2,10 @@
 #include <optional>
 #include <cstdint>
 #include "Engine.h"
+#include <ECS/Entity.hpp>
 
-// Forward declare Entity type
-using Entity = uint32_t;
-const Entity INVALID_ENTITY = 0xFFFFFFFF;
+// Define invalid entity constant for editor use
+constexpr Entity INVALID_ENTITY = 0xFFFFFFFF;
 
 /**
  * @brief Manages the overall state of the editor (play/pause/stop) and selected entities.

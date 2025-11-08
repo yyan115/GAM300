@@ -1,7 +1,7 @@
 /* Start Header ************************************************************************/
 /*!
 \file       InspectorCustomRenderers.cpp
-\author     Claude Code Assistant
+\author     Lucas Yee
 \date       2025
 \brief      Custom field renderers for Inspector components that need special handling.
 
@@ -28,6 +28,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Sound/AudioComponent.hpp"
+#include "SnapshotManager.hpp"
 #include "Sound/AudioListenerComponent.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
@@ -40,6 +41,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
+#include "UndoableWidgets.hpp"
 #include <glm/glm.hpp>
 #include <cfloat>
 
@@ -55,7 +57,7 @@ extern std::string DraggedFontPath;
 
 void RegisterInspectorCustomRenderers() {
     // ==================== CUSTOM TYPE RENDERERS ====================
-    // Register custom renderer for glm::vec3 (used by CameraComponent)
+    // Register custom renderer for glm::vec3 (used by CameraComponent and others)
 
     ReflectionRenderer::RegisterCustomRenderer("glm::vec3",
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
@@ -80,7 +82,10 @@ void RegisterInspectorCustomRenderers() {
             float values[3] = { vec->x, vec->y, vec->z };
             std::string id = std::string("##") + name + "_" + std::to_string(reinterpret_cast<uintptr_t>(ptr));
 
-            if (ImGui::DragFloat3(id.c_str(), values, 0.1f)) {
+            // Use UndoableWidgets wrapper - handles undo/redo automatically!
+            bool modified = UndoableWidgets::DragFloat3(id.c_str(), values, 0.1f);
+
+            if (modified) {
                 vec->x = values[0];
                 vec->y = values[1];
                 vec->z = values[2];
@@ -108,7 +113,8 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
                 ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Even lighter when clicking
 
-                ImGui::Checkbox("##EntityActive", &activeComp.isActive);
+                // Use UndoableWidgets wrapper for automatic undo/redo
+                UndoableWidgets::Checkbox("##EntityActive", &activeComp.isActive);
 
                 ImGui::PopStyleColor(4); // Pop all 4 colors
                 ImGui::PopStyleVar(); // Pop padding
@@ -122,7 +128,7 @@ void RegisterInspectorCustomRenderers() {
             // Simple text input for name (no collapsing header)
             char buf[128] = {};
             std::snprintf(buf, sizeof(buf), "%s", nameComp.name.c_str());
-            if (ImGui::InputText("Name", buf, sizeof(buf))) {
+            if (UndoableWidgets::InputText("Name", buf, sizeof(buf))) {
                 nameComp.name = buf;
             }
 
@@ -159,12 +165,12 @@ void RegisterInspectorCustomRenderers() {
                 tagComp.tagIndex = 0; // Default to first tag
             }
 
-            // Inline rendering (no label, just combo)
+            // Inline rendering (no label, just combo) - using UndoableWidgets
             ImGui::Text("Tag");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(120.0f);
             int currentTag = tagComp.tagIndex;
-            if (ImGui::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
+            if (UndoableWidgets::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
                 if (currentTag >= 0 && currentTag < static_cast<int>(availableTags.size())) {
                     tagComp.tagIndex = currentTag;
                 } else if (currentTag == static_cast<int>(availableTags.size())) {
@@ -232,11 +238,11 @@ void RegisterInspectorCustomRenderers() {
                 layerComp.layerIndex = layerIndices[0];
             }
 
-            // Inline rendering (continues from Tag on same line)
+            // Inline rendering (continues from Tag on same line) - using UndoableWidgets
             ImGui::Text("Layer");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(120.0f);
-            if (ImGui::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
+            if (UndoableWidgets::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
                 if (currentSelection >= 0 && currentSelection < static_cast<int>(tempIndices.size())) {
                     int selectedIndex = tempIndices[currentSelection];
                     if (selectedIndex != -1) {
@@ -257,9 +263,14 @@ void RegisterInspectorCustomRenderers() {
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
             Vector3D* pos = static_cast<Vector3D*>(ptr);
             float arr[3] = { pos->x, pos->y, pos->z };
+
             ImGui::Text("Position");
             ImGui::SameLine();
-            if (ImGui::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f")) {
+
+            // Use UndoableWidgets wrapper for automatic undo/redo
+            bool changed = UndoableWidgets::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
+
+            if (changed) {
                 ecs.transformSystem->SetLocalPosition(entity, { arr[0], arr[1], arr[2] });
                 return true;
             }
@@ -271,9 +282,14 @@ void RegisterInspectorCustomRenderers() {
             Quaternion* quat = static_cast<Quaternion*>(ptr);
             Vector3D euler = quat->ToEulerDegrees();
             float arr[3] = { euler.x, euler.y, euler.z };
+
             ImGui::Text("Rotation");
             ImGui::SameLine();
-            if (ImGui::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f")) {
+
+            // Use UndoableWidgets wrapper for automatic undo/redo
+            bool changed = UndoableWidgets::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
+
+            if (changed) {
                 ecs.transformSystem->SetLocalRotation(entity, { arr[0], arr[1], arr[2] });
                 return true;
             }
@@ -284,9 +300,14 @@ void RegisterInspectorCustomRenderers() {
         [](const char* name, void* ptr, Entity entity, ECSManager& ecs) {
             Vector3D* scale = static_cast<Vector3D*>(ptr);
             float arr[3] = { scale->x, scale->y, scale->z };
+
             ImGui::Text("Scale");
             ImGui::SameLine();
-            if (ImGui::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f")) {
+
+            // Use UndoableWidgets wrapper for automatic undo/redo
+            bool changed = UndoableWidgets::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f");
+
+            if (changed) {
                 ecs.transformSystem->SetLocalScale(entity, { arr[0], arr[1], arr[2] });
                 return true;
             }
@@ -308,7 +329,7 @@ void RegisterInspectorCustomRenderers() {
             int currentShapeType = static_cast<int>(collider.shapeType);
 
             EditorComponents::PushComboColors();
-            bool changed = ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, 4);
+            bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 4);
             EditorComponents::PopComboColors();
 
             if (changed) {
@@ -329,7 +350,7 @@ void RegisterInspectorCustomRenderers() {
             		ImGui::SameLine();
             		collider.boxHalfExtents = halfExtent;
             		float halfExtents[3] = { collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z };
-            		if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
             			shapeParamsChanged = true;
             		}
@@ -339,7 +360,7 @@ void RegisterInspectorCustomRenderers() {
             		ImGui::Text("Radius");
             		ImGui::SameLine();
             		collider.sphereRadius = radius;
-            		if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			shapeParamsChanged = true;
             		}
             		break;
@@ -348,13 +369,13 @@ void RegisterInspectorCustomRenderers() {
             		ImGui::Text("Radius");
             		ImGui::SameLine();
             		collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
-            		if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			shapeParamsChanged = true;
             		}
             		ImGui::Text("Half Height");
             		ImGui::SameLine();
             		collider.capsuleHalfHeight = halfExtent.y;
-            		if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			shapeParamsChanged = true;
             		}
             		break;
@@ -363,13 +384,13 @@ void RegisterInspectorCustomRenderers() {
             		ImGui::Text("Radius");
             		ImGui::SameLine();
             		collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
-            		if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			shapeParamsChanged = true;
             		}
             		ImGui::Text("Half Height");
             		ImGui::SameLine();
             		collider.cylinderRadius = halfExtent.y;
-            		if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+            		if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
             			shapeParamsChanged = true;
             		}
             		break;
@@ -394,7 +415,7 @@ void RegisterInspectorCustomRenderers() {
             int currentLayer = static_cast<int>(collider.layer);
 
             EditorComponents::PushComboColors();
-            bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 4);
+            bool changed = UndoableWidgets::Combo("##Layer", &currentLayer, layers, 4);
             EditorComponents::PopComboColors();
 
             if (changed) {
@@ -423,10 +444,11 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Text("Motion");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
+
             const char* motionTypes[] = { "Static", "Kinematic", "Dynamic" };
             int currentMotion = rigidBody.motionID;
             EditorComponents::PushComboColors();
-            if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
+            if (UndoableWidgets::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes))) {
                 rigidBody.motion = static_cast<Motion>(currentMotion);
                 rigidBody.motionID = currentMotion;
                 rigidBody.motion_dirty = true; // mark for recreation
@@ -434,30 +456,31 @@ void RegisterInspectorCustomRenderers() {
             EditorComponents::PopComboColors();
 
             // --- Is Trigger checkbox ---
-            ImGui::Checkbox("##IsTrigger", &rigidBody.isTrigger);
+            UndoableWidgets::Checkbox("##IsTrigger", &rigidBody.isTrigger);
             ImGui::SameLine();
             ImGui::Text("Is Trigger");
 
             if (rigidBody.motion == Motion::Dynamic) {
                 // --- CCD checkbox ---
-                if (ImGui::Checkbox("##CCD", &rigidBody.ccd))
+                if (UndoableWidgets::Checkbox("##CCD", &rigidBody.ccd)) {
                     rigidBody.motion_dirty = true;
+                }
                 ImGui::SameLine();
                 ImGui::Text("CCD");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
 
                 // --- Linear & Angular Damping ---
-                ImGui::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
                 ImGui::SameLine();
                 ImGui::Text("Linear Damping");
 
-                ImGui::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
                 ImGui::SameLine();
                 ImGui::Text("Angular Damping");
 
                 // --- Gravity Factor ---
-                ImGui::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
                 ImGui::SameLine();
                 ImGui::Text("Gravity Factor");
             }
@@ -512,7 +535,7 @@ void RegisterInspectorCustomRenderers() {
 
             // Manually render the non-reflected properties first
 
-            // Projection Type dropdown
+            // Projection Type dropdown - using UndoableWidgets
             ImGui::Text("Projection");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
@@ -520,7 +543,7 @@ void RegisterInspectorCustomRenderers() {
             int currentProj = static_cast<int>(camera.projectionType);
 
             EditorComponents::PushComboColors();
-            if (ImGui::Combo("##Projection", &currentProj, projTypes, 2)) {
+            if (UndoableWidgets::Combo("##Projection", &currentProj, projTypes, 2)) {
                 camera.projectionType = static_cast<ProjectionType>(currentProj);
             }
             EditorComponents::PopComboColors();
@@ -530,7 +553,7 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
             float target[3] = { camera.target.x, camera.target.y, camera.target.z };
-            if (ImGui::DragFloat3("##Target", target, 0.1f)) {
+            if (UndoableWidgets::DragFloat3("##Target", target, 0.1f)) {
                 camera.target = glm::vec3(target[0], target[1], target[2]);
             }
 
@@ -539,11 +562,13 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SameLine();
             ImGui::SetNextItemWidth(-1);
             float up[3] = { camera.up.x, camera.up.y, camera.up.z };
-            if (ImGui::DragFloat3("##Up", up, 0.1f)) {
+            if (UndoableWidgets::DragFloat3("##Up", up, 0.1f)) {
                 camera.up = glm::vec3(up[0], up[1], up[2]);
             }
 
             // Return false to continue with reflected properties (all the floats/bools)
+            // This ensures fields like enabled, isActive, priority, yaw, pitch, fov, nearPlane, etc.
+            // are rendered by the reflection system using UndoableWidgets
             return false;
         });
 
@@ -569,6 +594,9 @@ void RegisterInspectorCustomRenderers() {
             if (EditorComponents::BeginDragDropTarget()) {
                 ImGui::SetTooltip("Drop .obj, .fbx, .dae, or .3ds model here");
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
+                    // Take snapshot before changing model
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Model");
+
                     // Load and apply the model
                     auto& modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
 
@@ -659,6 +687,8 @@ void RegisterInspectorCustomRenderers() {
             if (EditorComponents::BeginDragDropTarget()) {
                 ImGui::SetTooltip("Drop material here to apply to model");
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MATERIAL_DRAG")) {
+                    // Take snapshot before changing material
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Material");
                     *guid = DraggedMaterialGuid;
                     EditorComponents::EndDragDropTarget();
                     return true;
@@ -688,6 +718,9 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::SetTooltip("Drop texture file here");
 
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    // Take snapshot before changing texture
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+
                     const char* texturePath = (const char*)payload->Data;
                     std::string pathStr(texturePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
@@ -700,6 +733,9 @@ void RegisterInspectorCustomRenderers() {
                     std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
                     spriteComp.texturePath = newTexturePath;
                     spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+
+                    EditorComponents::EndDragDropTarget();
+                    return true;  // Field was modified
                 }
                 EditorComponents::EndDragDropTarget();
             }
@@ -736,6 +772,9 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::SetTooltip("Drop texture file here");
 
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    // Take snapshot before changing texture
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+
                     const char* texturePath = (const char*)payload->Data;
                     std::string pathStr(texturePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
@@ -748,6 +787,9 @@ void RegisterInspectorCustomRenderers() {
                     std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
                     cameraComp.skyboxTexturePath = newTexturePath;
                     cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+
+                    EditorComponents::EndDragDropTarget();
+                    return true;  // Field was modified
                 }
                 EditorComponents::EndDragDropTarget();
             }
@@ -772,7 +814,7 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Text("Color:");
             ImGui::SameLine();
 
-            if (ImGui::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8)) {
+            if (UndoableWidgets::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8)) {
                 color->x = colorRGBA[0];
                 color->y = colorRGBA[1];
                 color->z = colorRGBA[2];
@@ -805,6 +847,9 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::SetTooltip("Drop texture file here");
 
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                    // Take snapshot before changing texture
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+
                     const char* texturePath = (const char*)payload->Data;
                     std::string pathStr(texturePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
@@ -816,6 +861,9 @@ void RegisterInspectorCustomRenderers() {
                     auto& particleComp = ecs.GetComponent<ParticleComponent>(entity);
                     std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
                     particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+
+                    EditorComponents::EndDragDropTarget();
+                    return true;  // Field was modified
                 }
                 EditorComponents::EndDragDropTarget();
             }
@@ -839,6 +887,8 @@ void RegisterInspectorCustomRenderers() {
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_FONT")) {
+                    // Take snapshot before changing font
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Font");
                     *guid = DraggedFontGuid;
                     ImGui::EndDragDropTarget();
                     return true;
@@ -865,6 +915,8 @@ void RegisterInspectorCustomRenderers() {
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
+                    // Take snapshot before changing audio clip
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Audio Clip");
                     audio.SetClip(DraggedAudioGuid);
                     ImGui::EndDragDropTarget();
                     return true;
@@ -880,30 +932,30 @@ void RegisterInspectorCustomRenderers() {
             ImGui::SetNextItemWidth(-1);
             char outputBuf[128];
             std::snprintf(outputBuf, sizeof(outputBuf), "%s", audio.OutputAudioMixerGroup.empty() ? "None (Audio Mixer Group)" : audio.OutputAudioMixerGroup.c_str());
-            if (ImGui::InputText("##Output", outputBuf, sizeof(outputBuf))) {
+            if (UndoableWidgets::InputText("##Output", outputBuf, sizeof(outputBuf))) {
                 audio.OutputAudioMixerGroup = outputBuf;
             }
 
-            // Checkboxes (aligned with labels)
+            // Checkboxes (aligned with labels) - using UndoableWidgets
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Mute");
             ImGui::SameLine(labelWidth);
-            ImGui::Checkbox("##Mute", &audio.Mute);
+            UndoableWidgets::Checkbox("##Mute", &audio.Mute);
 
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Bypass Listener Effects");
             ImGui::SameLine(labelWidth);
-            ImGui::Checkbox("##BypassListenerEffects", &audio.bypassListenerEffects);
+            UndoableWidgets::Checkbox("##BypassListenerEffects", &audio.bypassListenerEffects);
 
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Play On Awake");
             ImGui::SameLine(labelWidth);
-            ImGui::Checkbox("##PlayOnAwake", &audio.PlayOnAwake);
+            UndoableWidgets::Checkbox("##PlayOnAwake", &audio.PlayOnAwake);
 
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Loop");
             ImGui::SameLine(labelWidth);
-            ImGui::Checkbox("##Loop", &audio.Loop);
+            UndoableWidgets::Checkbox("##Loop", &audio.Loop);
 
             ImGui::Separator();
 
@@ -925,13 +977,13 @@ void RegisterInspectorCustomRenderers() {
                 ImGui::Text("Spatialize");
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
-                ImGui::Checkbox("##Spatialize", &audio.Spatialize);
+                UndoableWidgets::Checkbox("##Spatialize", &audio.Spatialize);
 
                 // Spatial Blend (editable drag)
                 ImGui::Text("Spatial Blend");
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
-                if (ImGui::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f")) {
+                if (UndoableWidgets::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f")) {
                     audio.SetSpatialBlend(audio.SpatialBlend);
                 }
 
@@ -960,13 +1012,13 @@ void RegisterInspectorCustomRenderers() {
                     ImGui::Text("Min Distance");
                     ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
-                    ImGui::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f");
+                    UndoableWidgets::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f");
 
                     // Max Distance (editable drag)
                     ImGui::Text("Max Distance");
                     ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
-                    ImGui::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
+                    UndoableWidgets::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
                 }
                 
 
@@ -995,6 +1047,7 @@ void RegisterInspectorCustomRenderers() {
             float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 
             if (EditorComponents::DrawPlayButton(particle.isPlayingInEditor && !particle.isPausedInEditor, buttonWidth)) {
+                SnapshotManager::GetInstance().TakeSnapshot("Play Particles");
                 particle.isPlayingInEditor = true;
                 particle.isPausedInEditor = false;
             }
@@ -1003,11 +1056,13 @@ void RegisterInspectorCustomRenderers() {
 
             if (EditorComponents::DrawPauseButton(particle.isPausedInEditor, buttonWidth)) {
                 if (particle.isPlayingInEditor) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Pause Particles");
                     particle.isPausedInEditor = !particle.isPausedInEditor;
                 }
             }
 
             if (EditorComponents::DrawStopButton()) {
+                SnapshotManager::GetInstance().TakeSnapshot("Stop Particles");
                 particle.isPlayingInEditor = false;
                 particle.isPausedInEditor = false;
                 particle.particles.clear();
@@ -1021,7 +1076,7 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
 
             // Is Emitting checkbox (not in reflection, so we render it manually)
-            ImGui::Checkbox("Is Emitting", &particle.isEmitting);
+            UndoableWidgets::Checkbox("Is Emitting", &particle.isEmitting);
             if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
             }
@@ -1038,16 +1093,18 @@ void RegisterInspectorCustomRenderers() {
         [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             DirectionalLightComponent& light = *static_cast<DirectionalLightComponent*>(componentPtr);
 
-            // Basic properties
-            ImGui::Checkbox("Enabled", &light.enabled);
-            ImGui::ColorEdit3("Color", &light.color.x);
-            ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+            // Basic properties with automatic undo/redo
+            UndoableWidgets::Checkbox("Enabled", &light.enabled);
+
+            // Color and Intensity with automatic undo/redo
+            UndoableWidgets::ColorEdit3("Color", &light.color.x);
+            UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
             ImGui::Separator();
             ImGui::Text("Direction");
 
             // Direction controls with visual helper
-            ImGui::DragFloat3("##Direction", &light.direction.x, 0.01f, -1.0f, 1.0f);
+            UndoableWidgets::DragFloat3("##Direction", &light.direction.x, 0.01f, -1.0f, 1.0f);
 
             // Direction visualization
             ImGui::SameLine();
@@ -1101,9 +1158,9 @@ void RegisterInspectorCustomRenderers() {
 
             ImGui::Separator();
             ImGui::Text("Lighting Properties");
-            ImGui::ColorEdit3("Ambient", &light.ambient.x);
-            ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-            ImGui::ColorEdit3("Specular", &light.specular.x);
+            UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
+            UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
+            UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
 
             return true;  // Return true to skip default field rendering
         });
@@ -1114,21 +1171,23 @@ void RegisterInspectorCustomRenderers() {
         [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             PointLightComponent& light = *static_cast<PointLightComponent*>(componentPtr);
 
-            ImGui::Checkbox("Enabled", &light.enabled);
-            ImGui::ColorEdit3("Color", &light.color.x);
-            ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+            UndoableWidgets::Checkbox("Enabled", &light.enabled);
+
+            // Color and Intensity with automatic undo/redo
+            UndoableWidgets::ColorEdit3("Color", &light.color.x);
+            UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
             ImGui::Separator();
             ImGui::Text("Attenuation");
-            ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-            ImGui::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-            ImGui::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+            UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+            UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+            UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
             ImGui::Separator();
             ImGui::Text("Lighting Properties");
-            ImGui::ColorEdit3("Ambient", &light.ambient.x);
-            ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-            ImGui::ColorEdit3("Specular", &light.specular.x);
+            UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
+            UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
+            UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
 
             return true;  // Return true to skip default field rendering
         });
@@ -1139,10 +1198,14 @@ void RegisterInspectorCustomRenderers() {
         [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
             SpotLightComponent& light = *static_cast<SpotLightComponent*>(componentPtr);
 
-            ImGui::Checkbox("Enabled", &light.enabled);
-            ImGui::ColorEdit3("Color", &light.color.x);
-            ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
-            ImGui::DragFloat3("Direction", &light.direction.x, 0.1f, -1.0f, 1.0f);
+            UndoableWidgets::Checkbox("Enabled", &light.enabled);
+
+            // Color and Intensity with automatic undo/redo
+            UndoableWidgets::ColorEdit3("Color", &light.color.x);
+            UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+
+            // Direction with automatic undo/redo
+            UndoableWidgets::DragFloat3("Direction", &light.direction.x, 0.1f, -1.0f, 1.0f);
 
             ImGui::Separator();
             ImGui::Text("Cone Settings");
@@ -1151,24 +1214,24 @@ void RegisterInspectorCustomRenderers() {
             float cutOffDegrees = glm::degrees(glm::acos(light.cutOff));
             float outerCutOffDegrees = glm::degrees(glm::acos(light.outerCutOff));
 
-            if (ImGui::DragFloat("Inner Cutoff (degrees)", &cutOffDegrees, 1.0f, 0.0f, 90.0f)) {
+            if (UndoableWidgets::DragFloat("Inner Cutoff (degrees)", &cutOffDegrees, 1.0f, 0.0f, 90.0f)) {
                 light.cutOff = glm::cos(glm::radians(cutOffDegrees));
             }
-            if (ImGui::DragFloat("Outer Cutoff (degrees)", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f)) {
+            if (UndoableWidgets::DragFloat("Outer Cutoff (degrees)", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f)) {
                 light.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
             }
 
             ImGui::Separator();
             ImGui::Text("Attenuation");
-            ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-            ImGui::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-            ImGui::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+            UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+            UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+            UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
             ImGui::Separator();
             ImGui::Text("Lighting Properties");
-            ImGui::ColorEdit3("Ambient", &light.ambient.x);
-            ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-            ImGui::ColorEdit3("Specular", &light.specular.x);
+            UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
+            UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
+            UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
 
             return true;
         });
@@ -1196,7 +1259,7 @@ void RegisterInspectorCustomRenderers() {
             ImGui::Text("Animation Clips");
 
             int prevClipCount = animComp.clipCount;
-            if (ImGui::InputInt("Size", &animComp.clipCount, 1, 1)) {
+            if (UndoableWidgets::InputInt("Size", &animComp.clipCount, 1, 1)) {
                 if (animComp.clipCount < 0) animComp.clipCount = 0;
                 if (animComp.clipCount != prevClipCount) {
                     animComp.SetClipCount(animComp.clipCount);
@@ -1224,6 +1287,8 @@ void RegisterInspectorCustomRenderers() {
                     ImGui::SetTooltip("Drop .fbx animation file here");
 
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_DRAG")) {
+                        // Take snapshot before changing animation clip
+                        SnapshotManager::GetInstance().TakeSnapshot("Assign Animation Clip");
                         animComp.clipPaths[i] = DraggedModelPath;
                         animComp.clipGUIDs[i] = DraggedModelGuid;
 

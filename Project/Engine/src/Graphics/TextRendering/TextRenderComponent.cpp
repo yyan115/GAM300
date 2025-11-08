@@ -3,6 +3,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(TextRenderComponent)
+	REFL_REGISTER_PROPERTY(isVisible)
 	REFL_REGISTER_PROPERTY(text)
 	REFL_REGISTER_PROPERTY(fontSize)
 	REFL_REGISTER_PROPERTY(fontGUID)

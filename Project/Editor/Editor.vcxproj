@@ -58,11 +58,15 @@
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
     <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
     <ClCompile Include="src\ReflectionRenderer.cpp" />
+    <ClCompile Include="src\SnapshotManager.cpp" />
+    <ClCompile Include="src\UndoableWidgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\EditorComponents.hpp" />
     <ClInclude Include="include\GUIManager.hpp" />
     <ClInclude Include="include\EditorState.hpp" />
+    <ClInclude Include="include\SnapshotManager.hpp" />
+    <ClInclude Include="include\UndoableWidgets.hpp" />
     <ClInclude Include="include\EditorCamera.hpp" />
     <ClInclude Include="include\EditorInputManager.hpp" />
     <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
