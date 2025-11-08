@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003c9380a26e3509-000327b62a000009",
+        "guid": "00374a21023cfa58-000331fc3a000009",
         "source": "../../Resources/Audio/BGM/WalkAbout_BGM.wav",
         "compiled": "../../Resources/Audio/BGM/WalkAbout_BGM.wav",
         "android_compiled": "Resources/Audio/BGM/WalkAbout_BGM.wav",
-        "last_compiled": "2025-11-05 12:27:33.2600190"
+        "last_compiled": "2025-11-08 06:39:20.0692093"
     }
 }

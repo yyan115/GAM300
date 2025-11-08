@@ -1,6 +1,6 @@
 #pragma once
 #include "HfsmCommon.hpp"
-#include "Brain.hpp"
+#include "BrainComponent.hpp"
 
 template <class RootFSM>
 class HfsmBrain final : public IBrain {

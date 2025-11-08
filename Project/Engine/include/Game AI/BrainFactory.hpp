@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include "HfsmCommon.hpp"
-#include "Brain.hpp"
+#include "BrainComponent.hpp"
 
 namespace game_ai {
 

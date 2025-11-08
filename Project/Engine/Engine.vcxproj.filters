@@ -104,10 +104,10 @@
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
-    <ClCompile Include="src\Game AI\BrainReflection.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\PostProcessingManager.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
+    <ClCompile Include="src\Game AI\BrainComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -269,7 +269,7 @@
     <ClInclude Include="include\ECS\LayerComponent.hpp" />
     <ClInclude Include="include\ECS\TagManager.hpp" />
     <ClInclude Include="include\ECS\LayerManager.hpp" />
-    <ClInclude Include="include\Game AI\Brain.hpp" />
+    <ClInclude Include="include\Game AI\BrainComponent.hpp" />
     <ClInclude Include="include\Game AI\BrainFactory.hpp" />
     <ClInclude Include="include\Game AI\HfsmBrain.hpp" />
     <ClInclude Include="include\Game AI\BossBrain.hpp" />

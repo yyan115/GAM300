@@ -38,7 +38,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
 #include "Animation/AnimationComponent.hpp"
-#include "Game AI/Brain.hpp"
+#include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include "imgui.h"
 #include "EditorComponents.hpp"
@@ -1460,15 +1460,16 @@ void RegisterInspectorCustomRenderers() {
             return false;
         });
 
-        ReflectionRenderer::RegisterComponentRenderer("Brain",
+        ReflectionRenderer::RegisterComponentRenderer("BrainComponent",
             [](void* componentPtr, TypeDescriptor_Struct* typeDesc, Entity entity, ECSManager& ecs) {
-            Brain& brain = *static_cast<Brain*>(componentPtr);
+                BrainComponent& brain = *static_cast<BrainComponent*>(componentPtr);
 
             // Combo for Kind
             static const char* kKinds[] = { "None", "Grunt", "Boss" };
             int kindIdx = static_cast<int>(brain.kind);
             if (ImGui::Combo("Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds))) {
                 brain.kind = static_cast<BrainKind>(kindIdx);
+				brain.kindInt = kindIdx;
                 // Mark as needing rebuild (optional UX)
             }
 

@@ -16,7 +16,7 @@ inline constexpr int kAttackClipIndex = 0;
 // ---------- small helpers ----------
 namespace {
     inline AnimationComponent* animFrom(auto& ctx) {
-        if (auto opt = ctx.ecs->TryGetComponent<AnimationComponent>(ctx.e))
+        if (auto opt = ctx.ecs->template TryGetComponent<AnimationComponent>(ctx.e))
             return &opt->get();
         return nullptr;
     }
@@ -52,7 +52,7 @@ struct GruntIdle : GruntFSM::State {
     template <typename TControl>
     void enter(TControl& ctrl) noexcept { 
         auto& ctx = ctrl.context();
-        auto& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+        auto& brain = ctx.ecs->template GetComponent<BrainComponent>(ctx.e);
         brain.activeState = "Idle";
         ENGINE_PRINT("[Grunt] enter Idle\n");
 
@@ -73,7 +73,7 @@ struct GruntIdle : GruntFSM::State {
         const float d = std::clamp(ctx.dt, 0.0f, 0.2f);
         timer -= d;
         if (timer <= 0.f)
-            ctrl.changeTo<GruntAttack>();
+            ctrl.template changeTo<GruntAttack>();
     }
 };
 
@@ -81,7 +81,7 @@ struct GruntAttack : GruntFSM::State {
     template <typename TControl>
     void enter(TControl& ctrl) noexcept {
         auto& ctx = ctrl.context();
-        auto& brain = ctx.ecs->GetComponent<Brain>(ctx.e);
+        auto& brain = ctx.ecs->template GetComponent<BrainComponent>(ctx.e);
         brain.activeState = "Attack";
         ENGINE_PRINT("[Grunt] enter Attack\n");
 
@@ -108,11 +108,11 @@ struct GruntAttack : GruntFSM::State {
     void update(TControl& ctrl) noexcept {
         if (auto* a = animFrom(ctrl.context())) {
             if (finished(*a))
-                ctrl.changeTo<GruntIdle>();
+                ctrl.template changeTo<GruntIdle>();
         }
         else {
             // no animation component -> immediately go back
-            ctrl.changeTo<GruntIdle>();
+            ctrl.template changeTo<GruntIdle>();
         }
     }
 };

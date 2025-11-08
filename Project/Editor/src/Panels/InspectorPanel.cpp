@@ -25,7 +25,7 @@
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
 #include <ECS/LayerManager.hpp>
-#include "Game AI/Brain.hpp"
+#include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include <cstring>
 #include <filesystem>
@@ -233,10 +233,10 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<AnimationComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AnimationComponent>(entity); }},
 
-		{"Brain", "Brain",
-			[&]() { return ecs.HasComponent<Brain>(entity) ?
-				(void*)&ecs.GetComponent<Brain>(entity) : nullptr; },
-			[&]() { return ecs.HasComponent<Brain>(entity); }},
+		{"Brain Component", "BrainComponent",
+			[&]() { return ecs.HasComponent<BrainComponent>(entity) ?
+				(void*)&ecs.GetComponent<BrainComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<BrainComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -920,7 +920,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 			// AI Components
 			if (ImGui::BeginMenu("AI")) {
-				if (!ecsManager.HasComponent<Brain>(entity)) {
+				if (!ecsManager.HasComponent<BrainComponent>(entity)) {
 					if (ImGui::MenuItem("Brain")) {
 						AddComponent(entity, "Brain");
 					}
@@ -1268,8 +1268,8 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "Brain") {
-			Brain component;
-			ecsManager.AddComponent<Brain>(entity, component);
+			BrainComponent component;
+			ecsManager.AddComponent<BrainComponent>(entity, component);
 			std::cout << "[Inspector] Added Brain to entity " << entity << std::endl;
 			}
 		else {
@@ -1473,7 +1473,7 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Brain") {
-				ecsManager.RemoveComponent<Brain>(request.entity);
+				ecsManager.RemoveComponent<BrainComponent>(request.entity);
 				std::cout << "[Inspector] Removed Brain from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {

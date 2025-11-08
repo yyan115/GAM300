@@ -1,19 +1,19 @@
 #include "pch.h"
 #include "Game AI/BrainSystems.hpp"
-#include "Game AI/Brain.hpp"
+#include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 
 void RunBrainInitSystem(ECSManager& ecs) {
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
-        if (!ecs.HasComponent<Brain>(e))
+        if (!ecs.HasComponent<BrainComponent>(e))
             continue;
 
-        auto brainOpt = ecs.TryGetComponent<Brain>(e);
+        auto brainOpt = ecs.TryGetComponent<BrainComponent>(e);
         if (!brainOpt)
             continue;
 
-        Brain& brain = brainOpt->get();
+        BrainComponent& brain = brainOpt->get();
 
         if (!brain.enabled)            // <-- gate
             continue;
@@ -39,14 +39,14 @@ void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
 
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
-        if (!ecs.HasComponent<Brain>(e))
+        if (!ecs.HasComponent<BrainComponent>(e))
             continue;
 
-        auto brainOpt = ecs.TryGetComponent<Brain>(e);
+        auto brainOpt = ecs.TryGetComponent<BrainComponent>(e);
         if (!brainOpt)
             continue;
 
-        Brain& brain = brainOpt->get();
+        BrainComponent& brain = brainOpt->get();
 
         // Only tick brains that have entered
         if (!brain.impl || !brain.started || !brain.enabled)

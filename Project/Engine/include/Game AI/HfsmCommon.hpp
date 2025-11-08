@@ -8,7 +8,11 @@
 #include <optional>
 #include <variant>
 #include <type_traits>
+#ifdef ANDROID
+#include <hfsm2/machine.hpp>
+#else
 #include <machine.hpp>
+#endif
 
 // ---------------- Context ----------------
 struct HfsmContext {

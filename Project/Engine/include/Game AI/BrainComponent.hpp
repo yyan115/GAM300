@@ -15,9 +15,10 @@ struct IBrain {
     virtual const char* activeStateName() const { return ""; } // default
 };
 
-struct Brain {
+struct BrainComponent {
     REFL_SERIALIZABLE
     BrainKind kind{ BrainKind::None };
+    int kindInt = 0;
     std::shared_ptr<IBrain> impl;
     bool started{ false };
     std::string activeState;

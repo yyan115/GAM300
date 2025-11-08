@@ -23,6 +23,7 @@
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include <Game AI/BrainComponent.hpp>
 
 class Serializer {
 public:
@@ -51,6 +52,7 @@ public:
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
+	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 
 private:
 	Serializer() = delete;

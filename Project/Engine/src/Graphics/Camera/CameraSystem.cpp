@@ -34,6 +34,7 @@ bool CameraSystem::Initialise()
 			if (!texturePath.empty()) {
 				cameraComp.skyboxTexturePath = texturePath;
 				cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(cameraComp.skyboxTextureGUID, texturePath);
+				ENGINE_LOG_DEBUG("[CameraSystem] Loaded skybox texture for camera.");
 			}
 		}
 	}

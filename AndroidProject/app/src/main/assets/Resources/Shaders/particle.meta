@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a25a877b61-00031f529a000047",
+        "guid": "00374a21280536cd-000331fc80000065",
         "source": "../../Resources/Shaders/particle",
         "compiled": "../../Resources/Shaders/particle.shader",
         "android_compiled": "Resources/Shaders/particle.shader",
-        "last_compiled": "2025-11-05 12:30:25.8592918"
+        "last_compiled": "2025-11-08 06:39:40.2117824"
     }
 }

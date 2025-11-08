@@ -323,6 +323,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ActiveComponent", v, alloc);
         }
+        if (ecs.HasComponent<BrainComponent>(entity)) {
+            auto& c = ecs.GetComponent<BrainComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("BrainComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -630,6 +635,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
+        // BrainComponent
+        if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+            const auto&brainCompJSON = comps["BrainComponent"];
+            ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
+            auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
+            DeserializeBrainComponent(brainComp, brainCompJSON);
+        }
+
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(newEnt)) {
             ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
@@ -851,6 +864,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const auto& childrenCompJSON = comps["ChildrenComponent"];
             auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
             DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
+        // BrainComponent
+        if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+            const auto& brainCompJSON = comps["BrainComponent"];
+            auto& brainComp = ecs.GetComponent<BrainComponent>(currEnt);
+            DeserializeBrainComponent(brainComp, brainCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -1232,5 +1252,16 @@ void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const r
         const auto& d = activeJSON["data"];
         int idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
+    }
+}
+
+void Serializer::DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON) {
+    if (brainJSON.HasMember("data") && brainJSON["data"].IsArray()) {
+        const auto& d = brainJSON["data"];
+        brainComp.kindInt = d[0]["data"].GetInt();
+        brainComp.kind = static_cast<BrainKind>(brainComp.kindInt);
+        brainComp.started = false;
+        brainComp.activeState = d[1]["data"].GetString();
+        brainComp.enabled = d[2]["data"].GetBool();
     }
 }
