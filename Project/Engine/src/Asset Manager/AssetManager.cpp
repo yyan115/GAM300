@@ -572,6 +572,8 @@ std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName
 			return assetPath;
 		}
 	}
+
+	return "";
 }
 
 bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {

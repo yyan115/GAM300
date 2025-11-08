@@ -299,6 +299,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioListenerComponent", v, alloc);
 		}
+        if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
+            auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
+		}
         if (ecs.HasComponent<LightComponent>(entity)) {
             auto& c = ecs.GetComponent<LightComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -363,6 +368,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<ActiveComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ActiveComponent", v, alloc);
+        }
+        if (ecs.HasComponent<BrainComponent>(entity)) {
+            auto& c = ecs.GetComponent<BrainComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("BrainComponent", v, alloc);
         }
 
         entObj.AddMember("components", compsObj, alloc);
@@ -608,6 +618,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
+		// AudioReverbZoneComponent
+        if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+            ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
+            auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(newEnt);
+            DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+        }
+
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
@@ -661,6 +679,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
             auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
             DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
+        // BrainComponent
+        if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+            const auto&brainCompJSON = comps["BrainComponent"];
+            ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
+            auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
+            DeserializeBrainComponent(brainComp, brainCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -851,6 +877,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
 			DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
+		// AudioReverbZoneComponent
+        if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+            auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(currEnt);
+			DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+        }
+
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
@@ -898,6 +931,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const auto& childrenCompJSON = comps["ChildrenComponent"];
             auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
             DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
+        // BrainComponent
+        if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+            const auto& brainCompJSON = comps["BrainComponent"];
+            auto& brainComp = ecs.GetComponent<BrainComponent>(currEnt);
+            DeserializeBrainComponent(brainComp, brainCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -1339,6 +1379,29 @@ void Serializer::DeserializeAudioListenerComponent(AudioListenerComponent& audio
     }
 }
 
+void Serializer::DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& audioReverbZoneComp, const rapidjson::Value& audioReverbZoneJSON) {
+    // typed form: tv.data = [ {type: "bool", data: true}, {type: "float", data: 10.0}, ... ]
+    if (audioReverbZoneJSON.HasMember("data") && audioReverbZoneJSON["data"].IsArray()) {
+        const auto& d = audioReverbZoneJSON["data"];
+        audioReverbZoneComp.enabled = d[0]["data"].GetBool();
+        audioReverbZoneComp.MinDistance = d[1]["data"].GetFloat();
+        audioReverbZoneComp.MaxDistance = d[2]["data"].GetFloat();
+        audioReverbZoneComp.reverbPresetIndex = d[3]["data"].GetInt();
+        audioReverbZoneComp.decayTime = d[4]["data"].GetFloat();
+        audioReverbZoneComp.earlyDelay = d[5]["data"].GetFloat();
+        audioReverbZoneComp.lateDelay = d[6]["data"].GetFloat();
+        audioReverbZoneComp.hfReference = d[7]["data"].GetFloat();
+        audioReverbZoneComp.hfDecayRatio = d[8]["data"].GetFloat();
+        audioReverbZoneComp.diffusion = d[9]["data"].GetFloat();
+        audioReverbZoneComp.density = d[10]["data"].GetFloat();
+        audioReverbZoneComp.lowShelfFrequency = d[11]["data"].GetFloat();
+        audioReverbZoneComp.lowShelfGain = d[12]["data"].GetFloat();
+        audioReverbZoneComp.highCut = d[13]["data"].GetFloat();
+        audioReverbZoneComp.earlyLateMix = d[14]["data"].GetFloat();
+        audioReverbZoneComp.wetLevel = d[15]["data"].GetFloat();
+    }
+}
+
 void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON) {
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
@@ -1472,5 +1535,16 @@ void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const r
         const auto& d = activeJSON["data"];
         int idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
+    }
+}
+
+void Serializer::DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON) {
+    if (brainJSON.HasMember("data") && brainJSON["data"].IsArray()) {
+        const auto& d = brainJSON["data"];
+        brainComp.kindInt = d[0]["data"].GetInt();
+        brainComp.kind = static_cast<BrainKind>(brainComp.kindInt);
+        brainComp.started = false;
+        brainComp.activeState = d[1]["data"].GetString();
+        brainComp.enabled = d[2]["data"].GetBool();
     }
 }

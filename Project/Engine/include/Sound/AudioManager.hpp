@@ -44,7 +44,7 @@ public:
 
     // Unity-like Play/Stop/Pause API
     ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
-    ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f);
+    ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
     ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
     
     void Stop(ChannelHandle channel);
@@ -62,6 +62,7 @@ public:
     void SetChannelPitch(ChannelHandle channel, float pitch);
     void SetChannelLoop(ChannelHandle channel, bool loop);
     void UpdateChannelPosition(ChannelHandle channel, const Vector3D& position);
+    void SetChannel3DMinMaxDistance(ChannelHandle channel, float minDistance, float maxDistance);
 
     // Bus (channel group) management
     FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
@@ -79,7 +80,7 @@ public:
 
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
-
+    void SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up);
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown

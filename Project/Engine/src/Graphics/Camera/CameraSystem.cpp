@@ -31,8 +31,11 @@ bool CameraSystem::Initialise()
 
 		if (cameraComp.skyboxTextureGUID.high != 0 || cameraComp.skyboxTextureGUID.low != 0) {
 			std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(cameraComp.skyboxTextureGUID);
-			cameraComp.skyboxTexturePath = texturePath;
-			cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(cameraComp.skyboxTextureGUID, texturePath);
+			if (!texturePath.empty()) {
+				cameraComp.skyboxTexturePath = texturePath;
+				cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(cameraComp.skyboxTextureGUID, texturePath);
+				ENGINE_LOG_DEBUG("[CameraSystem] Loaded skybox texture for camera.");
+			}
 		}
 	}
 

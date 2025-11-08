@@ -70,7 +70,8 @@ bool ParticleSystem::InitialiseParticles()
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(particleComp.textureGUID);
         ENGINE_LOG_INFO("[ParticleSystem] Texture Path: " + texturePath);
         particleComp.texturePath = texturePath;
-        particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
+		if (!particleComp.texturePath.empty())
+            particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
         std::string shaderPath = ResourceManager::GetPlatformShaderPath("particle");
         ENGINE_LOG_INFO("[ParticleSystem] Shader Path: " + shaderPath);
         particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);

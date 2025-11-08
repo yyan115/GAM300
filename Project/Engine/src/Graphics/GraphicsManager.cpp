@@ -888,15 +888,13 @@ void GraphicsManager::InitializeSkybox()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glBindVertexArray(0);
 
-#ifndef ANDROID
-	std::string skyboxShaderPath = "Resources/Shaders/skybox";
+	std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
 	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
 	if (!skyboxShader) {
 		std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
 	} else {
 		std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
 	}
-#endif
 
 	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
 }

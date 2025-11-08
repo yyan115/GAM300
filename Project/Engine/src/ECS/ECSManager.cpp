@@ -14,10 +14,12 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "Game AI/BrainComponent.hpp"
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
@@ -52,6 +54,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ChildrenComponent>();
 	RegisterComponent<AudioComponent>();
 	RegisterComponent<AudioListenerComponent>();
+	RegisterComponent<AudioReverbZoneComponent>();
 	RegisterComponent<SpriteRenderComponent>();
 	RegisterComponent<ParticleComponent>();
 	RegisterComponent<AnimationComponent>();
@@ -59,6 +62,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
 	RegisterComponent<LayerComponent>();
+	RegisterComponent<BrainComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,

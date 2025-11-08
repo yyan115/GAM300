@@ -27,6 +27,8 @@
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
 #include <ECS/LayerManager.hpp>
+#include "Game AI/BrainComponent.hpp"
+#include "Game AI/BrainFactory.hpp"
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -54,6 +56,7 @@ extern std::string DraggedFontPath;
 #include <algorithm>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
@@ -189,6 +192,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<AudioListenerComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AudioListenerComponent>(entity); }},
 
+		{"Audio Reverb Zone", "AudioReverbZoneComponent",
+			[&]() { return ecs.HasComponent<AudioReverbZoneComponent>(entity) ?
+				(void*)&ecs.GetComponent<AudioReverbZoneComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<AudioReverbZoneComponent>(entity); }},
+
 		// Light components
 		{"Directional Light", "DirectionalLightComponent",
 			[&]() { return ecs.HasComponent<DirectionalLightComponent>(entity) ?
@@ -226,6 +234,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<AnimationComponent>(entity) ?
 				(void*)&ecs.GetComponent<AnimationComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AnimationComponent>(entity); }},
+
+		{"Brain Component", "BrainComponent",
+			[&]() { return ecs.HasComponent<BrainComponent>(entity) ?
+				(void*)&ecs.GetComponent<BrainComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<BrainComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -665,6 +678,30 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	}
 }
 
+//void InspectorPanel::DrawBrainComponent(Entity entity) {
+//	try {
+//		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+//		Brain& brain = ecsManager.GetComponent<Brain>(entity);
+//
+//		ImGui::Separator();
+//		ImGui::Text("Active State: %s", brain.impl ? brain.impl->activeStateName() : "-");
+//
+//		if (ImGui::Button(brain.started ? "Rebuild" : "Build")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl = game_ai::CreateFor(ecsManager, entity, brain.kind);  // use your overload
+//			if (brain.impl) { brain.impl->onEnter(ecsManager, entity); brain.started = true; }
+//		}
+//		ImGui::SameLine();
+//		if (ImGui::Button("Stop")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl.reset();
+//			brain.started = false;
+//		}
+//	} catch (const std::exception& e) {
+//		ImGui::Text("Error accessing Brain component: %s", e.what());
+//	}
+//}
+
 void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 	try {
 		// Get asset metadata from AssetManager
@@ -820,6 +857,11 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						AddComponent(entity, "AudioListenerComponent");
 					}
 				}
+				if (!ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) {
+					if (ImGui::MenuItem("Audio Reverb Zone")) {
+						AddComponent(entity, "AudioReverbZoneComponent");
+					}
+				}
 				ImGui::EndMenu();
 			}
 
@@ -873,6 +915,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
 					if (ImGui::MenuItem("Animation Component")) {
 						AddComponent(entity, "AnimationComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			// AI Components
+			if (ImGui::BeginMenu("AI")) {
+				if (!ecsManager.HasComponent<BrainComponent>(entity)) {
+					if (ImGui::MenuItem("Brain")) {
+						AddComponent(entity, "Brain");
 					}
 				}
 				ImGui::EndMenu();
@@ -933,6 +985,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			AudioListenerComponent component;
 			ecsManager.AddComponent<AudioListenerComponent>(entity, component);
 			std::cout << "[Inspector] Added AudioListenerComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "AudioReverbZoneComponent") {
+			AudioReverbZoneComponent component;
+			ecsManager.AddComponent<AudioReverbZoneComponent>(entity, component);
+			std::cout << "[Inspector] Added AudioReverbZoneComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "SpriteRenderComponent") {
 			// Set default shader GUID for sprite
@@ -1212,6 +1269,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "Brain") {
+			BrainComponent component;
+			ecsManager.AddComponent<BrainComponent>(entity, component);
+			std::cout << "[Inspector] Added Brain to entity " << entity << std::endl;
+			}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1414,6 +1476,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "Brain") {
+				ecsManager.RemoveComponent<BrainComponent>(request.entity);
+				std::cout << "[Inspector] Removed Brain from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
