@@ -263,6 +263,10 @@ void AudioComponent::UpdateChannelProperties() {
     audioMgr.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     audioMgr.SetChannelPitch(CurrentChannel, Pitch);
     audioMgr.SetChannelLoop(CurrentChannel, Loop);
+    
+    // Apply reverb zone mix
+    audioMgr.SetChannelReverbMix(CurrentChannel, reverbZoneMix);
+    
     if (Spatialize && SpatialBlend > 0.0f) {
         audioMgr.UpdateChannelPosition(CurrentChannel, Position);
         audioMgr.SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
@@ -306,6 +310,7 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     
     if (channel != 0) {
         audioMgr.SetChannelPitch(channel, Pitch);
+        audioMgr.SetChannelReverbMix(channel, reverbZoneMix);
         if (Mute) {
             audioMgr.SetChannelVolume(channel, 0.0f);
         }

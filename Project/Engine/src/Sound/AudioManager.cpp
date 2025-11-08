@@ -191,9 +191,9 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
         return 0;
     }
 
-    // Per-channel looping
-    FMOD_MODE channelMode = FMOD_3D;
-    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF) | FMOD_3D_LINEARROLLOFF;
+    // Per-channel looping and 3D mode
+    FMOD_MODE channelMode = FMOD_3D | FMOD_3D_LINEARROLLOFF;
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
     FMOD_Channel_SetMode(channel, channelMode);
     FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
 
@@ -208,7 +208,13 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
     }
 
-    float finalVolume = volume * attenuation * MasterVolume.load();
+    // Set 3D level (attenuation controls 2D/3D blend: 0.0 = 2D, 1.0 = full 3D)
+    res = FMOD_Channel_Set3DLevel(channel, attenuation);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D level: ", FMOD_ErrorString(res), "\n");
+    }
+
+    float finalVolume = volume * MasterVolume.load();
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
@@ -223,6 +229,10 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, 
+        "[AudioManager] Playing 3D audio at (", position.x, ",", position.y, ",", position.z, 
+        ") with spatial blend:", attenuation, "\n");
 
     return chId;
 }
@@ -525,12 +535,16 @@ FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int l
     exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     exinfo.length = length;
 
-    FMOD_RESULT res = FMOD_System_CreateSound(System, static_cast<const char*>(data), FMOD_OPENMEMORY | FMOD_LOOP_OFF, &exinfo, &sound);
+    // Create sound with 3D mode to support spatial audio and reverb zones
+    FMOD_MODE mode = FMOD_OPENMEMORY | FMOD_LOOP_OFF | FMOD_3D | FMOD_3D_LINEARROLLOFF;
+    
+    FMOD_RESULT res = FMOD_System_CreateSound(System, static_cast<const char*>(data), mode, &exinfo, &sound);
     if (res != FMOD_OK || !sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory failed for ", assetPath, ": ", FMOD_ErrorString(res), "\n");
         return nullptr;
     }
 
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Created 3D sound from memory: ", assetPath, "\n");
     return sound;
 }
 
@@ -604,5 +618,81 @@ void AudioManager::SetListenerAttributes(int listener, const Vector3D& position,
     FMOD_RESULT res = FMOD_System_Set3DListenerAttributes(System, listener, &fmodPos, &fmodVel, &fmodForward, &fmodUp);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to set listener attributes: ", FMOD_ErrorString(res), "\n");
+    }
+}
+
+// ==================== REVERB ZONE MANAGEMENT ====================
+
+FMOD_REVERB3D* AudioManager::CreateReverbZone() {
+    if (ShuttingDown.load()) return nullptr;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return nullptr;
+
+    FMOD_REVERB3D* reverb = nullptr;
+    FMOD_RESULT res = FMOD_System_CreateReverb3D(System, &reverb);
+    
+    if (res != FMOD_OK || !reverb) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create reverb zone: ", FMOD_ErrorString(res), "\n");
+        return nullptr;
+    }
+
+    ENGINE_PRINT("[AudioManager] Reverb zone created successfully.\n");
+    return reverb;
+}
+
+void AudioManager::ReleaseReverbZone(FMOD_REVERB3D* reverb) {
+    if (!reverb || ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    
+    FMOD_RESULT res = FMOD_Reverb3D_Release(reverb);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to release reverb zone: ", FMOD_ErrorString(res), "\n");
+    } else {
+        ENGINE_PRINT("[AudioManager] Reverb zone released.\n");
+    }
+}
+
+void AudioManager::SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D& position, float minDistance, float maxDistance) {
+    if (!reverb || ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
+
+    FMOD_VECTOR fmodPos = { position.x, position.y, position.z };
+    
+    FMOD_RESULT res = FMOD_Reverb3D_Set3DAttributes(reverb, &fmodPos, minDistance, maxDistance);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to set reverb zone attributes: ", FMOD_ErrorString(res), "\n");
+    }
+}
+
+void AudioManager::SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REVERB_PROPERTIES* properties) {
+    if (!reverb || !properties || ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System) return;
+
+    FMOD_RESULT res = FMOD_Reverb3D_SetProperties(reverb, properties);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to set reverb zone properties: ", FMOD_ErrorString(res), "\n");
+    }
+}
+
+void AudioManager::SetChannelReverbMix(ChannelHandle channel, float reverbMix) {
+    if (ShuttingDown.load()) return;
+
+    std::lock_guard<std::mutex> lock(Mutex);
+    if (!System || !IsChannelValid(channel)) return;
+
+    auto& chData = ChannelMap[channel];
+    
+    // Apply reverb mix to channel (instance 0 is the default reverb slot)
+    FMOD_RESULT res = FMOD_Channel_SetReverbProperties(chData.Channel, 0, reverbMix);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] WARN: Failed to set channel reverb mix: ", FMOD_ErrorString(res), "\n");
+    } else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Set channel reverb mix to ", reverbMix, "\n");
     }
 }

@@ -3,6 +3,9 @@
 #include <string>
 #include "Math/Vector3D.hpp"
 
+// Forward declarations for FMOD types
+typedef struct FMOD_REVERB3D FMOD_REVERB3D;
+
 // AudioReverbZoneComponent: Defines a spherical reverb zone for spatial audio
 // Similar to Unity's Audio Reverb Zone component
 struct AudioReverbZoneComponent 
@@ -69,6 +72,10 @@ struct AudioReverbZoneComponent
     // Runtime state (read-only)
     Vector3D Position{ 0.0f, 0.0f, 0.0f };
     
+    // FMOD reverb handle (not serialized)
+    FMOD_REVERB3D* reverbHandle{ nullptr };
+    int reverbInstanceIndex{ -1 };  // FMOD reverb instance index for tracking
+    
     ENGINE_API AudioReverbZoneComponent();
     ENGINE_API ~AudioReverbZoneComponent();
     
@@ -84,10 +91,16 @@ struct AudioReverbZoneComponent
     void SetReverbPreset(ReverbPreset preset);
     void ENGINE_API SetReverbPresetByIndex(int index);
     
+    // FMOD Integration
+    void ENGINE_API CreateReverbZone();
+    void ENGINE_API ReleaseReverbZone();
+    void ENGINE_API UpdateReverbZone();
+    
     // For ECS AudioSystem integration
     void ENGINE_API UpdateComponent();
     
 private:
     // Internal state tracking
     bool presetApplied{ false };
+    bool needsUpdate{ true };
 };

@@ -1410,6 +1410,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<AudioListenerComponent>(request.entity);
 				std::cout << "[Inspector] Removed AudioListenerComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "AudioReverbZoneComponent") {
+				ecsManager.RemoveComponent<AudioReverbZoneComponent>(request.entity);
+				std::cout << "[Inspector] Removed AudioReverbZoneComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "ColliderComponent") {
 				ecsManager.RemoveComponent<ColliderComponent>(request.entity);
 				std::cout << "[Inspector] Removed ColliderComponent from entity " << request.entity << std::endl;

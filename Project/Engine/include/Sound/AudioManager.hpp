@@ -14,6 +14,8 @@ typedef struct FMOD_SYSTEM FMOD_SYSTEM;
 typedef struct FMOD_SOUND FMOD_SOUND;
 typedef struct FMOD_CHANNEL FMOD_CHANNEL;
 typedef struct FMOD_CHANNELGROUP FMOD_CHANNELGROUP;
+typedef struct FMOD_REVERB3D FMOD_REVERB3D;
+typedef struct FMOD_REVERB_PROPERTIES FMOD_REVERB_PROPERTIES;
 
 // Simple handles used by the engine to refer to audio and playback channels.
 using AudioHandle = uint64_t;
@@ -81,6 +83,16 @@ public:
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
     void SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up);
+
+    // Reverb Zone Management (Unity-like)
+    FMOD_REVERB3D* CreateReverbZone();
+    void ReleaseReverbZone(FMOD_REVERB3D* reverb);
+    void SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D& position, float minDistance, float maxDistance);
+    void SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REVERB_PROPERTIES* properties);
+    void SetChannelReverbMix(ChannelHandle channel, float reverbMix);
+    
+    // Get FMOD system for advanced use
+    FMOD_SYSTEM* GetFMODSystem() const { return System; }
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown
