@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Kachujin/Kachujin.fbx",
         "compiled": "../../Resources/Models/Kachujin/Kachujin.mesh",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_android.mesh",
-        "last_compiled": "2025-11-08 06:49:28.8866798"
+        "last_compiled": "2025-11-08 06:58:01.3398318"
     },
     "ModelMetaData": {
         "optimizeMeshes": true
