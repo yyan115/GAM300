@@ -103,7 +103,7 @@ public:
         bool forAndroid = false) override;
 
     // engine-facing API
-    ENGINE_API bool LoadFromFile(const std::filesystem::path& filePath, const Options& opts = {});
+    ENGINE_API bool LoadFromFile(const std::filesystem::path& filePath, const Options& opts);
     ENGINE_API bool CreateInstance();             // call CreateInstanceFromFile if loaded
     ENGINE_API void DestroyInstance();            // calls Scripting::DestroyInstance
     ENGINE_API bool IsInstanceValid() const;      // uses Scripting::IsValidInstance
