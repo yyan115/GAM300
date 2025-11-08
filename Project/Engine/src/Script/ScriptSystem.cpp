@@ -4,6 +4,7 @@
 #include "Script/ScriptSystem.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
+
 #include "Logging.hpp"
 
 #include "Scripting.h"          // for public glue functions used
@@ -12,57 +13,57 @@
 #include <sstream>
 #include <algorithm>
 
+
 // Define destructor where Scripting::ScriptComponent is a complete type
 ScriptSystem::~ScriptSystem() = default; 
 void ScriptSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
 
-    //Pushing pre-existing c++ components to expose to scripts (TODO For all pre-existing components)
-    {
-        //Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
-        //    // This lambda runs on main thread inside the Lua call; it MUST push exactly one value
-        //    // onto the Lua stack (the requested component representation) or push nil.
-        //    // Example: handle "Transform" component by pushing a Lua table { position = {x=..., y=...}, rotation = ... }
-        //    // Replace the example with your ECSManager API / component layout.
+    // --- Build / register Transform TypeDescriptor inline (raw) ---
+    // We keep the created descriptors alive for program lifetime by storing them
+    // in a static vector (intended leak so reflection stays valid).
+    static bool s_transformDescRegistered = false;
+    static std::vector<TypeDescriptor*> s_leakedDescriptors;
+    if (!s_transformDescRegistered) {
+        // Try to get an existing descriptor first.
+        TypeDescriptor* transformTd = nullptr;
+        try { transformTd = TypeResolver<Transform>::Get(); }
+        catch (...) { transformTd = nullptr; }
 
-        //    // Query ECS manager for the entity's component:
-        //    if (!m_ecs) { lua_pushnil(L); return true; }
+        // Register the component with an explicit TypeDescriptor (raw getter + td)
+        ComponentRegistry::Instance().RegisterRaw(
+            "Transform",
+            [](ECSManager* ecs, Entity e) -> void* {
+                if (!ecs->HasComponent<Transform>(e)) return nullptr;
+                return &ecs->GetComponent<Transform>(e);
+            },
+            transformTd
+        );
 
-        //    try {
-        //        // IMPORTANT: replace the checks below with how your ECSManager exposes components.
-        //        if (compName == "Transform") {
-        //            if (!m_ecs->HasComponent<TransformComponent>(entityId)) {
-        //                lua_pushnil(L);
-        //                return true;
-        //            }
-        //            TransformComponent& tc = m_ecs->GetComponent<TransformComponent>(entityId);
-        //            // push a Lua table describing the transform (simplest)
-        //            lua_newtable(L);
-        //            lua_newtable(L); // position table
-        //            lua_pushnumber(L, tc.position.x);
-        //            lua_setfield(L, -2, "x");
-        //            lua_pushnumber(L, tc.position.y);
-        //            lua_setfield(L, -2, "y");
-        //            lua_setfield(L, -2, "position"); // instance.position = position table
-
-        //            // other fields as needed:
-        //            lua_pushnumber(L, tc.rotation);
-        //            lua_setfield(L, -2, "rotation");
-
-        //            // If you prefer userdata with metamethods instead, construct and set metatable here.
-        //            return true;
-        //        }
-
-        //        // If not recognized, return nil
-        //        lua_pushnil(L);
-        //        return true;
-        //    }
-        //    catch (...) {
-        //        lua_pushnil(L);
-        //        return true;
-        //    }
-        //    });
+        s_transformDescRegistered = true;
     }
+
+    // ensure metatable registered
+    RegisterComponentProxyMeta(Scripting::GetLuaState());
+
+    // install host get-component handler that uses ComponentRegistry
+    Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
+        ENGINE_PRINT("[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
+
+        if (!ComponentRegistry::Instance().Has(compName)) {
+            lua_pushnil(L);
+            return true;
+        }
+
+        auto getter = ComponentRegistry::Instance().GetGetter(compName);
+        if (!getter) { lua_pushnil(L); return true; }
+        void* compPtr = getter(m_ecs, static_cast<Entity>(entityId));
+        if (!compPtr) { lua_pushnil(L); return true; }
+
+        // push proxy userdata that will look up the component on access
+        PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), compName);
+        return true;
+        });
 
     // Only set a disk fallback reader if nobody registered a FS callback earlier.
     static bool s_fsRegistered = false;

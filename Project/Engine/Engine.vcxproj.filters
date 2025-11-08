@@ -253,6 +253,7 @@
     <ClInclude Include="include\Script\Script.hpp" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

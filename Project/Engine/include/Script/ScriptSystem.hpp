@@ -4,6 +4,8 @@
 #include "Script/ScriptComponentData.hpp" // engine POD
 #include "ScriptComponent.h"    // the runtime type definition
 #include "ScriptSerializer.h"   // if you call ScriptSerializer methods directly
+
+#include "Script/ComponentProxy.h" // Exposing c++ functions to lua
 #include <unordered_map>
 #include <memory>
 #include <mutex>

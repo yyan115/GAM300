@@ -42,6 +42,7 @@
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\ActiveComponent.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
     <ClInclude Include="include\Graphics\Bone.hpp" />
     <ClInclude Include="include\ECS\TagComponent.hpp" />
@@ -88,6 +89,7 @@
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
+    <ClInclude Include="include\Script\ComponentProxy.h" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
@@ -182,6 +184,7 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />
     <ClCompile Include="src\Animation\Animation.cpp" />
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />
