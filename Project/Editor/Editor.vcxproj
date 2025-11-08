@@ -58,11 +58,15 @@
     <ClCompile Include="src\Panels\PerformancePanel.cpp" />
     <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
     <ClCompile Include="src\ReflectionRenderer.cpp" />
+    <ClCompile Include="src\SnapshotManager.cpp" />
+    <ClCompile Include="src\UndoableWidgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\EditorComponents.hpp" />
     <ClInclude Include="include\GUIManager.hpp" />
     <ClInclude Include="include\EditorState.hpp" />
+    <ClInclude Include="include\SnapshotManager.hpp" />
+    <ClInclude Include="include\UndoableWidgets.hpp" />
     <ClInclude Include="include\EditorCamera.hpp" />
     <ClInclude Include="include\EditorInputManager.hpp" />
     <ClInclude Include="include\Panels\AssetBrowserPanel.hpp" />
@@ -286,10 +290,10 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;EDITOR;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;EDITOR;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions);HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Scripting\include;$(SolutionDir)Scripting\include;$(SolutionDir)\Libraries\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include;$(ProjectDir)include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)Scripting\include;$(SolutionDir)\Libraries\lua\src;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -330,7 +334,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\x64-windows\include;$(SolutionDir)Scripting\include;$(SolutionDir)\Libraries\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Game\include;$(SolutionDir)Libraries\ImGui;$(SolutionDir)Libraries\ImGui\backends;$(SolutionDir)Libraries\GLFW\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\filewatch;$(SolutionDir)Libraries\IconFontCppHeaders;$(SolutionDir)Libraries\FMOD\inc;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)Scripting\include;$(SolutionDir)\Libraries\lua\src</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

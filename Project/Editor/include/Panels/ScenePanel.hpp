@@ -80,6 +80,7 @@ private:
     void DrawGameViewportIndicator();
     void DrawColliderGizmos();
     void DrawCameraGizmos();
+    void DrawAudioGizmos();
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);

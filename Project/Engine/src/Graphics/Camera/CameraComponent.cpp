@@ -23,5 +23,6 @@ REFL_REGISTER_START(CameraComponent)
 	REFL_REGISTER_PROPERTY(shakeIntensity)
 	REFL_REGISTER_PROPERTY(shakeDuration)
 	REFL_REGISTER_PROPERTY(shakeFrequency)
+	REFL_REGISTER_PROPERTY(skyboxTextureGUID)
 REFL_REGISTER_END
 #pragma endregion

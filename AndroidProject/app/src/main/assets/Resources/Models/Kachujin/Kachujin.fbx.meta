@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00266d4996ca3255-00030de288000003",
+        "guid": "00374a21741d7a43-000331fc6c000053",
         "source": "../../Resources/Models/Kachujin/Kachujin.fbx",
         "compiled": "../../Resources/Models/Kachujin/Kachujin.mesh",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_android.mesh",
-        "last_compiled": "2025-11-03 08:03:28.4915849"
+        "last_compiled": "2025-11-08 06:58:01.3398318"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

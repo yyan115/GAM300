@@ -16,6 +16,7 @@
 #include <Input/InputManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include "Game AI/BrainSystems.hpp"
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
@@ -28,6 +29,7 @@
 #include "Input/VirtualControls.hpp"
 #endif
 #include <Asset Manager/AssetManager.hpp>
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 namespace TEMP {
 	std::string windowTitle = "GAM300";
@@ -60,6 +62,7 @@ bool Engine::Initialize() {
 	} else {
 		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
+
 
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
@@ -620,6 +623,12 @@ bool Engine::InitializeAssets() {
 
 void Engine::Update() {
     TimeManager::UpdateDeltaTime();
+
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    RunBrainInitSystem(ecs);
+
+    RunBrainUpdateSystem(ecs, TimeManager::GetDeltaTime());
     
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic()) 
@@ -784,9 +793,11 @@ void Engine::Shutdown() {
 #endif
 
 	ENGINE_LOG_INFO("Engine shutdown started");
+	RunBrainExitSystem(ECSRegistry::GetInstance().GetActiveECSManager());
 	AudioManager::GetInstance().Shutdown();
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
+    PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
     ENGINE_PRINT("[Engine] Shutdown complete\n"); 
 }

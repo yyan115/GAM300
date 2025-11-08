@@ -29,7 +29,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 3.854
                                 }
                             ]
                         },
@@ -124,7 +124,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3
+                                    "data": 3.854
                                 },
                                 {
                                     "type": "float",
@@ -146,6 +146,15 @@
                         }
                     ]
                 },
+                "AudioListenerComponent": {
+                    "type": "AudioListenerComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
                 "CameraComponent": {
                     "type": "CameraComponent",
                     "data": [
@@ -163,11 +172,11 @@
                         },
                         {
                             "type": "float",
-                            "data": -90
+                            "data": -89.7001
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 2
                         },
                         {
                             "type": "bool",
@@ -179,7 +188,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.1
+                            "data": 0.02
                         },
                         {
                             "type": "float",
@@ -220,7 +229,8 @@
                         {
                             "type": "float",
                             "data": 25
-                        }
+                        },
+                        "00374a214bc0f2cc-000331fc82000073"
                     ]
                 },
                 "ActiveComponent": {
@@ -383,9 +393,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00266d4996ca3255-00030de288000003",
-                        "001324b0431e932c-00030dd508000037",
-                        "001324b04713fd15-00030dd50400002d",
+                        "00374a21741d7a43-000331fc6c000053",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2157ceea91-000331fc76000055",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -470,11 +480,11 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "float",
@@ -504,6 +514,23 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "BrainComponent": {
+                    "type": "BrainComponent",
+                    "data": [
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "Idle"
+                        },
                         {
                             "type": "bool",
                             "data": true
@@ -1013,7 +1040,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "003c9380ad26f11b-000327b62a000003",
+                        "00374a2127679c95-000331fc3a000003",
                         {
                             "type": "bool",
                             "data": false
@@ -1052,11 +1079,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
+                            "data": true
                         },
                         {
                             "type": "float",
@@ -1068,7 +1091,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 100
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 10
                         }
                     ]
                 },
@@ -1232,9 +1259,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
-                        "0000000000000000-0000000000000000",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2141cec294-000331fc58000039",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -1575,9 +1602,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
-                        "001324b054a7c981-00030dd4fe00001b",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2141cec294-000331fc58000039",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -1790,7 +1817,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.265009
                                 },
                                 {
                                     "type": "float",
@@ -1798,7 +1825,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -1.42079
                                 }
                             ]
                         },
@@ -1861,7 +1888,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.265009
                                 },
                                 {
                                     "type": "float",
@@ -1893,7 +1920,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -1.42079
                                 },
                                 {
                                     "type": "float",
@@ -1918,7 +1945,7 @@
                 "ParticleComponent": {
                     "type": "ParticleComponent",
                     "data": [
-                        "0037a8a22fdb386d-00031f529a000055",
+                        "00374a214bc0f2cc-000331fc82000073",
                         {
                             "type": "Vector3D",
                             "data": [
@@ -2051,10 +2078,10 @@
         },
         {
             "id": 7,
-            "guid": "0001e943979bcb18-000325eacb000001",
+            "guid": "00225af414e120a2-000334c89c000001",
             "components": {
                 "NameComponent": {
-                    "name": "AgentWithScript"
+                    "name": "HDR Test Cube 0"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -2070,7 +2097,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1.21353
+                                    "data": -12
                                 },
                                 {
                                     "type": "float",
@@ -2078,7 +2105,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -4.27515
+                                    "data": -5
                                 }
                             ]
                         },
@@ -2087,15 +2114,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.09045
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.18045
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.18
+                                    "data": 0.5
                                 }
                             ]
                         },
@@ -2129,7 +2156,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.09045
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
@@ -2141,7 +2168,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.21353
+                                    "data": -12
                                 },
                                 {
                                     "type": "float",
@@ -2149,15 +2176,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.18045
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
+                                    "data": 0.5
                                 },
                                 {
                                     "type": "float",
@@ -2169,11 +2188,19 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.18
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -4.27515
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
                                 },
                                 {
                                     "type": "float",
@@ -2198,9 +2225,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "001877b9158b8f0d-0003286cbc000037",
-                        "001877b97d3bb04d-0003286cf600005d",
-                        "001877b9214f8f50-0003286cbc000039",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -2284,56 +2311,15 @@
                             "data": true
                         }
                     ]
-                },
-                "ScriptComponent": {
-                    "scriptPath": "Resources/Scripts/sample_mono_behavior_NEW.lua",
-                    "enabled": true,
-                    "preserveKeys": [
-                        "position",
-                        "health"
-                    ],
-                    "entryFunction": "OnInit",
-                    "autoInvokeEntry": true,
-                    "instanceState": {
-                        "fields": {
-                            "maxHealth": 100.0,
-                            "health": 60.0,
-                            "position": {
-                                "y": 0.0,
-                                "x": 0.0
-                            },
-                            "patrolPoints": [
-                                {
-                                    "y": 0.0,
-                                    "x": 0.0
-                                },
-                                {
-                                    "y": 0.0,
-                                    "x": 10.0
-                                },
-                                {
-                                    "y": 6.0,
-                                    "x": 10.0
-                                },
-                                {
-                                    "y": 6.0,
-                                    "x": 0.0
-                                }
-                            ],
-                            "inputJumpAction": "jump",
-                            "name": "DemoAgent",
-                            "patrolSpeed": 3.5
-                        }
-                    }
                 }
             }
         },
         {
             "id": 8,
-            "guid": "002f0d53d262464f-000331263c000003",
+            "guid": "00225af42d9ff83a-000334c89c000003",
             "components": {
                 "NameComponent": {
-                    "name": "Camera"
+                    "name": "HDR Test Cube 1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -2349,15 +2335,967 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.121037
+                                    "data": -6
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.931325
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 13.9037
+                                    "data": -5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -6
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 9,
+            "guid": "00225af47ef8e1e2-000334c89c000005",
+            "components": {
+                "NameComponent": {
+                    "name": "HDR Test Cube 2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 10,
+            "guid": "00225af458c4b802-000334c89c000007",
+            "components": {
+                "NameComponent": {
+                    "name": "HDR Test Cube 3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 6
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 6
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 11,
+            "guid": "00225af46a6d0adc-000334c89c000009",
+            "components": {
+                "NameComponent": {
+                    "name": "HDR Test Cube 4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 12,
+            "guid": "00225af401a09599-000334c89c00000b",
+            "components": {
+                "NameComponent": {
+                    "name": "HDR Test Light"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 3
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -3
                                 }
                             ]
                         },
@@ -2420,26 +3358,6 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.121037
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.931325
-                                },
-                                {
-                                    "type": "float",
                                     "data": 0
                                 },
                                 {
@@ -2452,7 +3370,27 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 13.9037
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 3
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -3
                                 },
                                 {
                                     "type": "float",
@@ -2474,56 +3412,33 @@
                         }
                     ]
                 },
-                "CameraComponent": {
-                    "type": "CameraComponent",
+                "PointLightComponent": {
+                    "type": "PointLightComponent",
                     "data": [
                         {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.95
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.9
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": -90
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 45
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 2.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.1
                         },
                         {
                             "type": "float",
@@ -2531,23 +3446,62 @@
                         },
                         {
                             "type": "float",
-                            "data": 90
+                            "data": 0.09
                         },
                         {
                             "type": "float",
-                            "data": 5
+                            "data": 0.032
                         },
                         {
-                            "type": "float",
-                            "data": 0
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.1
+                                }
+                            ]
                         },
                         {
-                            "type": "float",
-                            "data": 0
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.95
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.9
+                                }
+                            ]
                         },
                         {
-                            "type": "float",
-                            "data": 25
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
                         }
                     ]
                 },

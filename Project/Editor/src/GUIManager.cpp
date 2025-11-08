@@ -7,6 +7,7 @@
 #include "Logging.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
+#include "SnapshotManager.hpp"
 
 // External libraries
 #include <imgui.h>
@@ -314,12 +315,21 @@ void GUIManager::RenderMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Edit")) {
+			SnapshotManager& snapshotMgr = SnapshotManager::GetInstance();
+
+			// Disable undo/redo menu items if not available
+			ImGui::BeginDisabled(!snapshotMgr.CanUndo());
 			if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Undo", "Ctrl+Z")) {
-				// TODO: Undo functionality
+				snapshotMgr.Undo();
 			}
+			ImGui::EndDisabled();
+
+			ImGui::BeginDisabled(!snapshotMgr.CanRedo());
 			if (ImGui::MenuItem(ICON_FA_ROTATE_RIGHT " Redo", "Ctrl+Y")) {
-				// TODO: Redo functionality
+				snapshotMgr.Redo();
 			}
+			ImGui::EndDisabled();
+
 			ImGui::EndMenu();
 		}
 
@@ -533,16 +543,43 @@ std::string GUIManager::OpenSceneFileDialog() {
 void GUIManager::HandleKeyboardShortcuts() {
 	ImGuiIO& io = ImGui::GetIO();
 
+	// Only process shortcuts when not typing in a text field
+	if (io.WantTextInput) {
+		return;
+	}
+
+	SnapshotManager& snapshotMgr = SnapshotManager::GetInstance();
+
+	// Undo: Ctrl+Z
+	if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+		if (snapshotMgr.CanUndo()) {
+			snapshotMgr.Undo();
+			ShowNotification("Undo", 1.5f);
+		}
+	}
+
+	// Redo: Ctrl+Y
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+		if (snapshotMgr.CanRedo()) {
+			snapshotMgr.Redo();
+			ShowNotification("Redo", 1.5f);
+		}
+	}
+
+	// Save: Ctrl+S
 	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
 		SceneManager::GetInstance().SaveScene();
 		ShowNotification("Scene Saved!", 2.0f);
 	}
 
+	// Load: Ctrl+O
 	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
 		std::string filepath = OpenSceneFileDialog();
 		if (!filepath.empty()) {
 			SceneManager::GetInstance().LoadScene(filepath);
 			ShowNotification("Scene Loaded!", 2.0f);
+			// Clear snapshot history when loading a new scene
+			snapshotMgr.Clear();
 		}
 	}
 }

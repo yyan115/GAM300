@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001877b9209030cd-0003286cf600005f",
+        "guid": "00374a2129b037a5-000331fc8000005f",
         "source": "../../Resources/Shaders/defaultandroid",
         "compiled": "../../Resources/Shaders/defaultandroid.shader",
-        "last_compiled": "2025-11-03 14:28:11.5076694"
+        "last_compiled": "2025-11-08 06:57:18.7259303"
     }
 }

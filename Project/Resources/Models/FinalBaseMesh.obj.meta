@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001877b9331a97f1-0003286cbe00003f",
+        "guid": "00374a2104f32fa1-000331fc5800003f",
         "source": "../../Resources/Models/FinalBaseMesh.obj",
         "compiled": "../../Resources/Models/FinalBaseMesh.mesh",
-        "last_compiled": "2025-11-03 14:27:44.0980508"
+        "last_compiled": "2025-11-08 06:57:15.7091531"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

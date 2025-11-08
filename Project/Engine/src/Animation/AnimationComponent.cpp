@@ -105,6 +105,7 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
     const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), aiProcess_Triangulate | aiProcess_FlipUVs, "fbx");
 
     if (!scene) {
+        ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
         ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", path, "\n");
         return nullptr;
     }
@@ -210,7 +211,13 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         if (path.empty()) {
             continue;
         }
-        auto anim = LoadClipFromPath(path, boneInfoMap, boneCount);
+        std::string pathToLoad{};
+#ifndef EDITOR
+        pathToLoad = path.substr(path.find("Resources"));
+#else
+        pathToLoad = path;
+#endif
+        auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {
             clips.emplace_back(std::move(anim));
         }
@@ -224,4 +231,18 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         EnsureAnimator();
         SyncAnimatorToActiveClip();
     }
+}
+
+void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
+	activeClip = clipIndex;
+	isLoop = loop;
+	isPlay = true;
+}
+
+void AnimationComponent::PlayOnce(std::size_t clipIndex) {
+	PlayClip(clipIndex, false);
+}
+
+bool AnimationComponent::IsPlaying() const {
+	return isPlay;
 }

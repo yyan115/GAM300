@@ -159,8 +159,11 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 		//ENGINE_LOG_INFO("extension: " + extension);
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-			//ENGINE_LOG_INFO("yes");
-#ifndef ANDROID
+#ifdef EDITOR
+		ENGINE_PRINT("[MetaFilesManager] Editor recompiling ", assetPath, "...", "\n");
+		AssetManager::GetInstance().CompileAsset(assetPath);
+#endif
+#if !defined(EDITOR) && !defined(ANDROID) 
 			if (!MetaFileExists(assetPath)) {
 				ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
 				AssetManager::GetInstance().CompileAsset(assetPath);
