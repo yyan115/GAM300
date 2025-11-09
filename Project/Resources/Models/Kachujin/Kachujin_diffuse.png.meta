@@ -1,18 +1,14 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00374a217f69b1ff-000331fc6200004f",
+        "guid": "0060f444b7298f39-000337e64800000b",
         "source": "../../Resources/Models/Kachujin/Kachujin_diffuse.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse.dds",
-<<<<<<< HEAD
-        "last_compiled": "2025-11-08 12:27:06.3178660"
-=======
-        "last_compiled": "2025-11-09 03:46:27.6490683"
->>>>>>> origin/main
+        "last_compiled": "2025-11-09 11:29:22.1449310"
     },
     "TextureMetaData": {
         "type": "diffuse",
-        "flipUVs": true,
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

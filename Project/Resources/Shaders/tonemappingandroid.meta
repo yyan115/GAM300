@@ -1,13 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00754cc49b782ca1-00032a4d0e000001",
+        "guid": "0060f444f8640614-000337e664000017",
         "source": "../../Resources/Shaders/tonemappingandroid",
         "compiled": "../../Resources/Shaders/tonemappingandroid.shader",
-<<<<<<< HEAD
-        "last_compiled": "2025-11-07 07:33:45.5164132"
-=======
-        "last_compiled": "2025-11-09 03:46:28.4718068"
->>>>>>> origin/main
+        "last_compiled": "2025-11-09 11:29:23.9690198"
     }
 }

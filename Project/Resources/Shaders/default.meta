@@ -1,13 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00374a215955132e-000331fc8000005d",
+        "guid": "0060f444e1e8808c-000337e664000011",
         "source": "../../Resources/Shaders/default",
         "compiled": "../../Resources/Shaders/default.shader",
-<<<<<<< HEAD
-        "last_compiled": "2025-11-07 07:33:45.3221594"
-=======
-        "last_compiled": "2025-11-09 03:46:28.3396524"
->>>>>>> origin/main
+        "last_compiled": "2025-11-09 11:29:23.8290124"
     }
 }
