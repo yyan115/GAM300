@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.gam300.game"
-        minSdk 34
+        minSdk 33
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -51,7 +51,6 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.22.1'
         }
     }
     buildFeatures {

@@ -22,6 +22,8 @@
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "Scripting.h"
+#define LUA_TEST 1
 
 #ifdef ANDROID
 #include "Input/VirtualControls.hpp"
@@ -65,7 +67,7 @@ bool Engine::Initialize() {
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
 	//TEST ON ANDROID FOR REFLECTION - IF NOT WORKING, INFORM IMMEDIATELY
-#if 1
+#if 0
     {
         bool reflection_ok = true;
         bool serialization_ok = true;
@@ -496,6 +498,33 @@ bool Engine::Initialize() {
         }
     }
 #endif
+#if LUA_TEST
+    Scripting::Init();
+
+    
+    // 3) optional: set custom filesystem read callback (editor can load scripts from different folders)
+    Scripting::SetFileSystemReadAllText([](const std::string& path, std::string& out) -> bool {
+        std::ifstream ifs(path, std::ios::binary);
+        if (!ifs) return false;
+        std::ostringstream ss;
+        ss << ifs.rdbuf();
+        out = ss.str();
+        return true;
+        });
+
+    // 4) Per-frame: Tick scripting
+    //float dt = 1.0f / 60.0f;
+
+    // 5) create a script instance from file (path on disk)
+    int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua"); //Awake is called
+    if (Scripting::IsValidInstance(inst)) {
+        Scripting::CallInstanceFunction(inst, "Start");
+        // serialize (editor UI)
+        std::string json = Scripting::SerializeInstanceToJson(inst);
+        std::cout << json << std::endl;
+    }
+
+#endif
 
 	// Note: Scene loading and lighting setup moved to InitializeGraphicsResources()
 	// This will be called after the graphics context is ready
@@ -602,7 +631,56 @@ void Engine::Update() {
     RunBrainUpdateSystem(ecs, TimeManager::GetDeltaTime());
     
 	// Only update the scene if the game should be running (not paused)
-	if (ShouldRunGameLogic()) {
+	if (ShouldRunGameLogic()) 
+    {
+#if LUA_TEST
+        // --- scripting + hot reload work (main-thread only) ---
+        //Will Call script update function automatically
+        Scripting::Tick(1.0f/60.0f); //REMOVE DT TODO
+
+        //// 6b) Poll hot-reload manager for file-change events (non-blocking).
+        //// Poll() will also invoke the change callback (SetChangeCallback) on the caller thread.
+        //auto events = hrm.Poll();
+        //for (const auto& ev : events) {
+        //    std::cout << "[main] Poll got event: path=" << ev.path << " ts=" << ev.timestamp << "\n";
+        //    // If you want to trigger reload immediately (instead of using RequestReload in the callback)
+        //    // you could call Scripting::RequestReload() here as well.
+        //}
+
+        //// 6c) Simulate an edit to the script file after `simulateEditAfterSeconds` seconds.
+        //// This overwrites the file on disk; the watcher will detect it and trigger a reload.
+        //double elapsed = std::chrono::duration<double>(now - startTime).count();
+        //if (!didWriteUpdatedScript && elapsed >= simulateEditAfterSeconds) {
+        //    std::cout << "[main] Simulating script edit (writing updated script)\n";
+        //    const std::string updatedScript =
+        //        "counter = 0\n"
+        //        "function update(dt)\n"
+        //        "  -- changed behavior: increment by 10 to show reload took effect\n"
+        //        "  counter = counter + 10\n"
+        //        "  cpp_log(string.format('[lua] UPDATED tick: counter=%d dt=%.3f', counter, dt))\n"
+        //        "end\n"
+        //        "function on_reload()\n"
+        //        "  cpp_log('[lua] UPDATED on_reload invoked — new script active')\n"
+        //        "end\n";
+        //    if (WriteFile(scriptPath, updatedScript)) {
+        //        // best-effort: notify the HotReloadManager and the runtime
+        //        hrm.RequestReload("file_modified_programmatically");
+        //        Scripting::RequestReload();
+        //        didWriteUpdatedScript = true;
+        //    }
+        //    else {
+        //        std::cerr << "[main] Failed to write updated script\n";
+        //    }
+        //}
+
+        //// 6d) Demonstrate a manual reload request after a bit more time.
+        //if (!didManualReload && elapsed >= manualReloadAfterSeconds) {
+        //    std::cout << "[main] Manual RequestReload()\n";
+        //    Scripting::RequestReload();
+        //    didManualReload = true;
+        //}
+#endif
+
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 	}
 }
@@ -703,6 +781,17 @@ void Engine::EndDraw() {
 }
 
 void Engine::Shutdown() {
+#if LUA_TEST
+    //if (Scripting::IsValidInstance(inst))
+    //{
+    //    Scripting::CallInstanceFunction(inst, "Destroy"); // lets Lua cleanup - TODO AUTO RUN THROUGH WHEN DESTROYINGINSTANCE
+    //    Scripting::DestroyInstance(inst);
+    //}
+
+    // Stop watcher and shutdown scripting runtime
+    Scripting::Shutdown();
+#endif
+
 	ENGINE_LOG_INFO("Engine shutdown started");
 	RunBrainExitSystem(ECSRegistry::GetInstance().GetActiveECSManager());
 	AudioManager::GetInstance().Shutdown();

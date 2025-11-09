@@ -27,6 +27,7 @@
 #include "ECS/LayerComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
 
+#include "Script/ScriptComponentData.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
@@ -62,6 +63,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
 	RegisterComponent<LayerComponent>();
+	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
@@ -146,6 +148,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<CameraComponent>()); 
 		SetSystemSignature<CameraSystem>(signature); 
+	}
+
+	scriptSystem = RegisterSystem<ScriptSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<ScriptComponentData>());
+		SetSystemSignature<ScriptSystem>(signature);
 	}
 }
 

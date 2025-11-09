@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007fa85b963b3728-00032d3fc8000011",
+        "source": "../../Resources/Scripts/template/ai_patrol.lua",
+        "compiled": "../../Resources/Scripts/template/ai_patrol.lua",
+        "android_compiled": "Resources/Scripts/template/ai_patrol.lua",
+        "last_compiled": "2025-11-09 11:34:25.7606934"
+    }
+}

@@ -85,7 +85,9 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Particle system initialized");
 	ecsManager.animationSystem->Initialise();
 	ENGINE_LOG_INFO("Animation system initialized");
-	InitializePhysics();
+	InitializePhysics(); //can we all do like this?
+	ecsManager.scriptSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Script system initialized");
 
 	//glEnable(GL_DEBUG_OUTPUT);
 	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -130,6 +132,7 @@ void SceneInstance::Update(double dt) {
 
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
+	mainECS.scriptSystem->Update(0.1f,mainECS); //i will need change this to remove dt
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem) {

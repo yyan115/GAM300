@@ -23,6 +23,8 @@
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
+#include <Scripting.h>
 #include "Engine.h"
 #include <Game AI/BrainComponent.hpp>
 
@@ -52,6 +54,7 @@ public:
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
+	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
 	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 

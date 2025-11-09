@@ -20,6 +20,7 @@ bool ModelSystem::Initialise()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+        ENGINE_LOG_DEBUG("Loading model");
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
         if (!modelPath.empty())
             modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
@@ -28,10 +29,12 @@ bool ModelSystem::Initialise()
         if (!shaderPath.empty())
             modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
 #else
+        ENGINE_LOG_DEBUG("Loading shader");
         std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
         if (!shaderPath.empty())
             modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 #endif
+        ENGINE_LOG_DEBUG("Loading material");
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
         if (!materialPath.empty()) {
             modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);

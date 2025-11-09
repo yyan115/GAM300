@@ -104,6 +104,8 @@
     <ClCompile Include="src\Platform\DesktopPlatform.cpp" />
     <ClCompile Include="src\Platform\AndroidPlatform.cpp" />
     <ClCompile Include="src\Sound\AudioListenerComponent.cpp" />
+    <ClCompile Include="src\Script\Script.cpp" />
+    <ClCompile Include="src\Script\ScriptSystem.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\PostProcessingManager.cpp" />
     <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
@@ -382,6 +384,10 @@
     <ClCompile Include="src\Game AI\BrainFactory.cpp" />
     <ClCompile Include="src\Game AI\BrainSystems.cpp" />
     <ClInclude Include="include\Sound\AudioListenerComponent.hpp" />
+    <ClInclude Include="include\Script\Script.hpp" />
+    <ClInclude Include="include\Script\ScriptSystem.hpp" />
+    <ClInclude Include="include\Script\ScriptComponentData.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.h" />
     <ClInclude Include="include\Sound\AudioReverbZoneComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
