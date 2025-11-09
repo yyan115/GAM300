@@ -1,4 +1,18 @@
-﻿#pragma once
+﻿/*********************************************************************************
+* @File			PhysicsContactListener.hpp
+* @Author		Ang Jia Jun Austin, a.jiajunaustin@digipen.edu
+* @Co-Author	-
+* @Date			9/11/2025
+* @Brief		Contact listener implementation for Jolt Physics collision callbacks.
+*				Handles collision validation and removal events, mapping physics
+*				bodies to game entities for event processing.
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
+
+#pragma once
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/Body/Body.h>
@@ -16,12 +30,13 @@ public:
     virtual JPH::ValidateResult OnContactValidate(
         const JPH::Body& inBody1,
         const JPH::Body& inBody2,
-        JPH::RVec3Arg inBaseOffset,
-        const JPH::CollideShapeResult& inCollisionResult) override
+        JPH::RVec3Arg /*inBaseOffset*/,
+        const JPH::CollideShapeResult& /*inCollisionResult*/) override
     {
         std::cout << "[Collision] Validating contact between entities "
             << GetEntityID(inBody1) << " and "
             << GetEntityID(inBody2) << std::endl;
+
         return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
     }
 

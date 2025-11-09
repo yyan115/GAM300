@@ -1,10 +1,10 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003c93808615f1c6-000327b62a000005",
+        "guid": "00374a210002a793-000331fc3a000005",
         "source": "../../Resources/Audio/BGM/Fire_Cave_Loop.wav",
         "compiled": "../../Resources/Audio/BGM/Fire_Cave_Loop.wav",
         "android_compiled": "Resources/Audio/BGM/Fire_Cave_Loop.wav",
-        "last_compiled": "2025-11-05 12:27:33.2171387"
+        "last_compiled": "2025-11-08 06:57:40.4790091"
     }
 }

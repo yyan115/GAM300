@@ -1,10 +1,14 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a2757e7f9c-00031f5288000025",
+        "guid": "00374a21522ff3b8-000331fc5a000043",
         "source": "../../Resources/Models/Kachujin/Animation/Slash.fbx",
         "compiled": "../../Resources/Models/Kachujin/Animation/Slash.fbx",
+<<<<<<< HEAD
         "last_compiled": "2025-11-09 02:58:25.9287887"
+=======
+        "last_compiled": "2025-11-09 03:46:24.7095178"
+>>>>>>> origin/main
     },
     "ModelMetaData": {
         "optimizeMeshes": true

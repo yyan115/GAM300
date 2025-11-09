@@ -104,6 +104,7 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
+Resources/Models/SideWall2.mesh
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
@@ -140,6 +141,10 @@ Resources/Shaders/skybox.frag
 Resources/Shaders/skybox.meta
 Resources/Shaders/skybox.shader
 Resources/Shaders/skybox.vert
+Resources/Shaders/skyboxandroid.frag
+Resources/Shaders/skyboxandroid.meta
+Resources/Shaders/skyboxandroid.shader
+Resources/Shaders/skyboxandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
 Resources/Shaders/sprite.shader

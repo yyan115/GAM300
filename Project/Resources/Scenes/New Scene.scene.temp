@@ -2,7 +2,11 @@
     "entities": [
         {
             "id": 0,
+<<<<<<< HEAD
             "guid": "0041a8a44198f20e-000333d1ae000001",
+=======
+            "guid": "0018441068c5e273-0003370580000001",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -149,8 +153,13 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
+<<<<<<< HEAD
                         "00371b6da8ca90af-00031a82b6000001",
                         "001324b0431e932c-00030dd508000037",
+=======
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+>>>>>>> origin/main
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -232,7 +241,11 @@
                     "data": [
                         {
                             "type": "bool",
+<<<<<<< HEAD
                             "data": false
+=======
+                            "data": true
+>>>>>>> origin/main
                         }
                     ]
                 }
@@ -240,7 +253,11 @@
         },
         {
             "id": 1,
+<<<<<<< HEAD
             "guid": "0041a8a42ec73d97-000333d1ae000003",
+=======
+            "guid": "001844105b68dbcf-0003370580000003",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -387,8 +404,13 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
+<<<<<<< HEAD
                         "00371b6da8ca90af-00031a82b6000001",
                         "001324b0431e932c-00030dd508000037",
+=======
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+>>>>>>> origin/main
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -470,7 +492,11 @@
                     "data": [
                         {
                             "type": "bool",
+<<<<<<< HEAD
                             "data": false
+=======
+                            "data": true
+>>>>>>> origin/main
                         }
                     ]
                 }
@@ -478,7 +504,11 @@
         },
         {
             "id": 2,
+<<<<<<< HEAD
             "guid": "0041a8a467f1d971-000333d1ae000005",
+=======
+            "guid": "0018441059c8cc2a-0003370580000005",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -625,8 +655,13 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
+<<<<<<< HEAD
                         "00371b6da8ca90af-00031a82b6000001",
                         "001324b0431e932c-00030dd508000037",
+=======
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+>>>>>>> origin/main
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -708,7 +743,11 @@
                     "data": [
                         {
                             "type": "bool",
+<<<<<<< HEAD
                             "data": false
+=======
+                            "data": true
+>>>>>>> origin/main
                         }
                     ]
                 }
@@ -716,7 +755,11 @@
         },
         {
             "id": 3,
+<<<<<<< HEAD
             "guid": "0041a8a468bb8e87-000333d1ae000007",
+=======
+            "guid": "0018441023dd8b3d-0003370580000007",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -739,7 +782,11 @@
                                 },
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 10.7117
+=======
+                                    "data": 0
+>>>>>>> origin/main
                                 },
                                 {
                                     "type": "float",
@@ -822,7 +869,11 @@
                                 },
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 10.7117
+=======
+                                    "data": 0
+>>>>>>> origin/main
                                 },
                                 {
                                     "type": "float",
@@ -863,8 +914,13 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
+<<<<<<< HEAD
                         "00371b6da8ca90af-00031a82b6000001",
                         "001324b0431e932c-00030dd508000037",
+=======
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+>>>>>>> origin/main
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -946,7 +1002,11 @@
                     "data": [
                         {
                             "type": "bool",
+<<<<<<< HEAD
                             "data": false
+=======
+                            "data": true
+>>>>>>> origin/main
                         }
                     ]
                 }
@@ -954,7 +1014,11 @@
         },
         {
             "id": 4,
+<<<<<<< HEAD
             "guid": "0041a8a4230924f9-000333d1ae000009",
+=======
+            "guid": "00184410644ee46f-0003370580000009",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -990,6 +1054,7 @@
                             "data": [
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 1
                                 },
                                 {
@@ -999,6 +1064,17 @@
                                 {
                                     "type": "float",
                                     "data": 1
+=======
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+>>>>>>> origin/main
                                 }
                             ]
                         },
@@ -1032,7 +1108,11 @@
                             "data": [
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 1
+=======
+                                    "data": 0.5
+>>>>>>> origin/main
                                 },
                                 {
                                     "type": "float",
@@ -1052,7 +1132,11 @@
                                 },
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 1
+=======
+                                    "data": 0.5
+>>>>>>> origin/main
                                 },
                                 {
                                     "type": "float",
@@ -1072,7 +1156,11 @@
                                 },
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 1
+=======
+                                    "data": 0.5
+>>>>>>> origin/main
                                 },
                                 {
                                     "type": "float",
@@ -1101,8 +1189,13 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
+<<<<<<< HEAD
                         "00371b6da8ca90af-00031a82b6000001",
                         "001324b0431e932c-00030dd508000037",
+=======
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+>>>>>>> origin/main
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -1184,7 +1277,11 @@
                     "data": [
                         {
                             "type": "bool",
+<<<<<<< HEAD
                             "data": false
+=======
+                            "data": true
+>>>>>>> origin/main
                         }
                     ]
                 }
@@ -1192,6 +1289,7 @@
         },
         {
             "id": 5,
+<<<<<<< HEAD
             "guid": "0041a8a44eeb4225-000333d1ae00000b",
             "components": {
                 "NameComponent": {
@@ -31977,6 +32075,9 @@
         {
             "id": 173,
             "guid": "0027131a80e581d7-000337c30a00000b",
+=======
+            "guid": "0018441039f786ac-000337058000000b",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

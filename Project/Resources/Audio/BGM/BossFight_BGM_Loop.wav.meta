@@ -1,9 +1,13 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003c9380ad26f11b-000327b62a000003",
+        "guid": "00374a2127679c95-000331fc3a000003",
         "source": "../../Resources/Audio/BGM/BossFight_BGM_Loop.wav",
         "compiled": "../../Resources/Audio/BGM/BossFight_BGM_Loop.wav",
+<<<<<<< HEAD
         "last_compiled": "2025-11-09 02:11:57.9312033"
+=======
+        "last_compiled": "2025-11-09 03:46:21.5722384"
+>>>>>>> origin/main
     }
 }

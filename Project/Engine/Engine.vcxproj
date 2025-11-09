@@ -43,6 +43,14 @@
     <ClInclude Include="include\Asset Manager\ResourceManager.hpp" />
     <ClInclude Include="include\ECS\ActiveComponent.hpp" />
     <ClInclude Include="include\ECS\NameComponent.hpp" />
+    <ClInclude Include="include\Game AI\BossBrain.hpp" />
+    <ClInclude Include="include\Game AI\BrainComponent.hpp" />
+    <ClInclude Include="include\Game AI\BrainFactory.hpp" />
+    <ClInclude Include="include\Game AI\BrainSystems.hpp" />
+    <ClInclude Include="include\Game AI\Events.hpp" />
+    <ClInclude Include="include\Game AI\GruntBrain.hpp" />
+    <ClInclude Include="include\Game AI\HfsmBrain.hpp" />
+    <ClInclude Include="include\Game AI\HfsmCommon.hpp" />
     <ClInclude Include="include\Graphics\Bone.hpp" />
     <ClInclude Include="include\ECS\TagComponent.hpp" />
     <ClInclude Include="include\ECS\LayerComponent.hpp" />
@@ -187,6 +195,9 @@
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />
     <ClCompile Include="src\Animation\AnimationSystem.cpp" />
     <ClCompile Include="src\Animation\Animator.cpp" />
+    <ClCompile Include="src\Game AI\BrainComponent.cpp" />
+    <ClCompile Include="src\Game AI\BrainFactory.cpp" />
+    <ClCompile Include="src\Game AI\BrainSystems.cpp" />
     <ClCompile Include="src\ECS\ActiveComponent.cpp" />
     <ClCompile Include="src\Graphics\Bone.cpp" />
     <ClCompile Include="src\Asset Manager\ResourceManager.cpp" />
@@ -485,10 +496,10 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -508,10 +519,10 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -534,10 +545,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -559,10 +570,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

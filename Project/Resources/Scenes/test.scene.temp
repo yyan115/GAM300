@@ -172,11 +172,11 @@
                         },
                         {
                             "type": "float",
-                            "data": -90
+                            "data": -89.7001
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 2
                         },
                         {
                             "type": "bool",
@@ -230,8 +230,24 @@
                             "type": "float",
                             "data": 25
                         },
-                        "0037a8a22fdb386d-00031f529a000055"
-                    ]
+                        "00374a214bc0f2cc-000331fc82000073"
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            -1.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    }
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -393,9 +409,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00266d4996ca3255-00030de288000003",
-                        "001324b0431e932c-00030dd508000037",
-                        "001324b04713fd15-00030dd50400002d",
+                        "00374a21741d7a43-000331fc6c000053",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2157ceea91-000331fc76000055",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -480,11 +496,11 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "float",
@@ -514,6 +530,23 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "BrainComponent": {
+                    "type": "BrainComponent",
+                    "data": [
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "Idle"
+                        },
                         {
                             "type": "bool",
                             "data": true
@@ -1023,7 +1056,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "003c9380ad26f11b-000327b62a000003",
+                        "00374a2127679c95-000331fc3a000003",
                         {
                             "type": "bool",
                             "data": false
@@ -1242,9 +1275,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
-                        "0000000000000000-0000000000000000",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2141cec294-000331fc58000039",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -1585,9 +1618,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
-                        "001324b054a7c981-00030dd4fe00001b",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
+                        "00374a2141cec294-000331fc58000039",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -1808,7 +1841,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.00819
+                                    "data": -1.42079
                                 }
                             ]
                         },
@@ -1903,7 +1936,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.00819
+                                    "data": -1.42079
                                 },
                                 {
                                     "type": "float",
@@ -1928,7 +1961,11 @@
                 "ParticleComponent": {
                     "type": "ParticleComponent",
                     "data": [
-                        "0037a8a22fdb386d-00031f529a000055",
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "00374a214bc0f2cc-000331fc82000073",
                         {
                             "type": "Vector3D",
                             "data": [
@@ -2061,7 +2098,7 @@
         },
         {
             "id": 7,
-            "guid": "002107853fbf0f11-00032a89ec000001",
+            "guid": "003627eafa9113e6-0003371228000001",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -2208,8 +2245,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -2299,7 +2336,7 @@
         },
         {
             "id": 8,
-            "guid": "0021078558b3c1db-00032a89ec000003",
+            "guid": "003627eada322939-0003371228000003",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -2446,8 +2483,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -2537,7 +2574,7 @@
         },
         {
             "id": 9,
-            "guid": "00210785358680d2-00032a89ec000005",
+            "guid": "003627eac38e1f23-0003371228000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -2684,8 +2721,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -2775,7 +2812,7 @@
         },
         {
             "id": 10,
-            "guid": "0021078520de1cfe-00032a89ec000007",
+            "guid": "003627eafd758a25-0003371228000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -2922,8 +2959,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -3013,7 +3050,7 @@
         },
         {
             "id": 11,
-            "guid": "002107851779bf78-00032a89ec000009",
+            "guid": "003627eae53e51d7-0003371228000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -3160,8 +3197,8 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00371b6da8ca90af-00031a82b6000001",
-                        "001324b0431e932c-00030dd508000037",
+                        "00374a2100cab2d8-000331fc58000037",
+                        "00374a215955132e-000331fc8000005d",
                         "0000000000000000-0000000000000000",
                         {
                             "type": "Matrix4x4",
@@ -3251,6 +3288,7 @@
         },
         {
             "id": 12,
+<<<<<<< HEAD
             "guid": "0021078575a4840d-00032a89ec00000b",
             "components": {
                 "NameComponent": {
@@ -9012,6 +9050,9 @@
         {
             "id": 36,
             "guid": "0009550cc8e79e80-0003360b9a00008d",
+=======
+            "guid": "003627ea95328976-000337122800000b",
+>>>>>>> origin/main
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

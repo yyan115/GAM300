@@ -19,6 +19,7 @@
 #include "PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "Game AI/BrainComponent.hpp"
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
@@ -61,6 +62,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
 	RegisterComponent<LayerComponent>();
+	RegisterComponent<BrainComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,

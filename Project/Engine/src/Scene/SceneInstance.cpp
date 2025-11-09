@@ -290,22 +290,22 @@ void SceneInstance::processInput(float deltaTime)
 	Transform playerPos = mainECS.GetComponent<Transform>(player);
 
 
-	if (InputManager::GetKey(Input::Key::UP)) {
+	if (InputManager::GetKey(Input::Key::W)) {
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z - 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 180, 0));
 		camera->ProcessKeyboard(FORWARD, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::DOWN)) {
+	if (InputManager::GetKey(Input::Key::S)) {
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z + 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 0, 0));
 		camera->ProcessKeyboard(BACKWARD, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::LEFT)) {
+	if (InputManager::GetKey(Input::Key::A)) {
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x - 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, -90, 0));
 		camera->ProcessKeyboard(LEFT, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::RIGHT)) {
+	if (InputManager::GetKey(Input::Key::D)) {
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
 		camera->ProcessKeyboard(RIGHT, 0.004f);

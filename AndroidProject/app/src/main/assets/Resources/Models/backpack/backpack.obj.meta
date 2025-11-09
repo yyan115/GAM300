@@ -1,11 +1,11 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0037a8a26dcc7d10-00031f527c00000d",
+        "guid": "00374a2137542150-000331fc3e00002b",
         "source": "../../Resources/Models/backpack/backpack.obj",
         "compiled": "../../Resources/Models/backpack/backpack.mesh",
         "android_compiled": "Resources/Models/backpack/backpack_android.mesh",
-        "last_compiled": "2025-11-05 12:30:07.9226874"
+        "last_compiled": "2025-11-08 06:57:57.2425198"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

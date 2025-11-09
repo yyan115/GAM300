@@ -67,6 +67,11 @@ private:
     bool previewValidPlacement = true;
     Entity previewEntity = static_cast<Entity>(-1);
 
+    // Marquee selection state
+    bool isMarqueeSelecting = false;
+    ImVec2 marqueeStart;
+    ImVec2 marqueeEnd;
+    
     void InitializeMatrices();
     void HandleKeyboardInput();
     void HandleCameraInput();

@@ -53,6 +53,10 @@ public:
     void LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
     void SetClipCount(size_t count);
 
+    void PlayClip(std::size_t clipIndex, bool loop);
+	void PlayOnce(std::size_t clipIndex);
+    bool IsPlaying() const;
+
     bool  enabled = true;
     bool  isPlay = false;
     bool  isLoop = true;

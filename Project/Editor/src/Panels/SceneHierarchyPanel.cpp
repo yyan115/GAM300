@@ -26,6 +26,8 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include "Panels/ScenePanel.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "SnapshotManager.hpp"
+#include "UndoableWidgets.hpp"
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -59,6 +61,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
                     std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
 
                     std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
+
+                    // Take snapshot before deleting (for undo)
+                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
 
                     // Clear selection before deleting
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
@@ -199,7 +204,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (GUIManager::GetSelectedEntity() == entityId) flags |= ImGuiTreeNodeFlags_Selected;
+    if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
 
     bool opened = false;
 
@@ -215,7 +220,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetKeyboardFocusHere();
         }
 
-        if (ImGui::InputText(("##rename" + std::to_string(entityId)).c_str(),
+        if (UndoableWidgets::InputText(("##rename" + std::to_string(entityId)).c_str(),
                              renameBuffer.data(), renameBuffer.size(),
                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
         {
@@ -259,7 +264,18 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::PopStyleColor();
         }
         if (ImGui::IsItemClicked()) {
-            GUIManager::SetSelectedEntity(entityId);
+            ImGuiIO& io = ImGui::GetIO();
+            if (io.KeyCtrl) {
+                // Multi-select: toggle
+                if (GUIManager::IsEntitySelected(entityId)) {
+                    GUIManager::RemoveSelectedEntity(entityId);
+                } else {
+                    GUIManager::AddSelectedEntity(entityId);
+                }
+            } else {
+                // Single select
+                GUIManager::SetSelectedEntity(entityId);
+            }
 
             // Double-click to focus the entity in the scene view
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -521,6 +537,9 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
         }
 
         std::cout << "[SceneHierarchy] Created empty entity '" << Pathname << "' with ID " << newEntity << std::endl;
+
+        // Take snapshot after creating entity (for undo)
+        SnapshotManager::GetInstance().TakeSnapshot("Create Entity: " + Pathname);
 
         return newEntity;
     } catch (const std::exception& e) {

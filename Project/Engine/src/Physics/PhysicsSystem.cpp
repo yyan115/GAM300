@@ -1,3 +1,18 @@
+/*********************************************************************************
+* @File			PhysicsSystem.cpp
+* @Author		Ang Jia Jun Austin, a,jiajunaustin@digipen.edu
+* @Co-Author	-
+* @Date			23/10/2025
+* @Brief		Physics simulation system using Jolt Physics Engine. Manages
+*				physics initialization, simulation updates, collision detection,
+*				and synchronization between physics state and ECS components.
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
+
+
 #pragma once
 #include "pch.h"
 #include "ECS/System.hpp"
@@ -291,8 +306,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     // Sync ECS -> Jolt (before physics step)
     JPH::BodyInterface& bi = physics.GetBodyInterface();
     for (auto& e : entities) {
-        auto& tr = ecsManager.GetComponent<Transform>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
         bi.SetGravityFactor(rb.id, rb.gravityFactor);

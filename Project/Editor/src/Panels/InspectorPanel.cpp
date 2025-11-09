@@ -3,6 +3,8 @@
 #include "EditorComponents.hpp"
 #include "imgui.h"
 #include "GUIManager.hpp"
+#include "SnapshotManager.hpp"
+#include "UndoableWidgets.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
@@ -25,6 +27,8 @@
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
 #include <ECS/LayerManager.hpp>
+#include "Game AI/BrainComponent.hpp"
+#include "Game AI/BrainFactory.hpp"
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -69,7 +73,7 @@ static inline void DrawOverrideToggleIfPresent(ECSManager& ecs, Entity e, const 
 		auto& c = ecs.GetComponent<T>(e);
 		bool b = c.overrideFromPrefab;
 		std::string label = std::string("Override From Prefab##") + typeid(T).name() + id_suffix;
-		if (ImGui::Checkbox(label.c_str(), &b)) {
+		if (UndoableWidgets::Checkbox(label.c_str(), &b)) {
 			c.overrideFromPrefab = b;
 		}
 		ImGui::SameLine();
@@ -230,6 +234,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<AnimationComponent>(entity) ?
 				(void*)&ecs.GetComponent<AnimationComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<AnimationComponent>(entity); }},
+
+		{"Brain Component", "BrainComponent",
+			[&]() { return ecs.HasComponent<BrainComponent>(entity) ?
+				(void*)&ecs.GetComponent<BrainComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<BrainComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -452,7 +461,7 @@ void InspectorPanel::DrawTagComponent(Entity entity) {
 		// Combo box for tag selection
 		int currentTag = tagComponent.tagIndex;
 		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
+		if (UndoableWidgets::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size()))) {
 			if (currentTag >= 0 && currentTag < static_cast<int>(availableTags.size())) {
 				tagComponent.tagIndex = currentTag;
 			} else if (currentTag == static_cast<int>(availableTags.size())) {
@@ -540,7 +549,7 @@ void InspectorPanel::DrawLayerComponent(Entity entity) {
 
 		// Combo box for layer selection
 		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
+		if (UndoableWidgets::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size()))) {
 			if (currentSelection >= 0 && currentSelection < static_cast<int>(tempIndices.size())) {
 				int selectedIndex = tempIndices[currentSelection];
 				if (selectedIndex == -1) {
@@ -668,6 +677,30 @@ void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 		ImGui::Text("Error accessing ModelRenderComponent: %s", e.what());
 	}
 }
+
+//void InspectorPanel::DrawBrainComponent(Entity entity) {
+//	try {
+//		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+//		Brain& brain = ecsManager.GetComponent<Brain>(entity);
+//
+//		ImGui::Separator();
+//		ImGui::Text("Active State: %s", brain.impl ? brain.impl->activeStateName() : "-");
+//
+//		if (ImGui::Button(brain.started ? "Rebuild" : "Build")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl = game_ai::CreateFor(ecsManager, entity, brain.kind);  // use your overload
+//			if (brain.impl) { brain.impl->onEnter(ecsManager, entity); brain.started = true; }
+//		}
+//		ImGui::SameLine();
+//		if (ImGui::Button("Stop")) {
+//			if (brain.impl) brain.impl->onExit(ecsManager, entity);
+//			brain.impl.reset();
+//			brain.started = false;
+//		}
+//	} catch (const std::exception& e) {
+//		ImGui::Text("Error accessing Brain component: %s", e.what());
+//	}
+//}
 
 void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 	try {
@@ -882,6 +915,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
 					if (ImGui::MenuItem("Animation Component")) {
 						AddComponent(entity, "AnimationComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			// AI Components
+			if (ImGui::BeginMenu("AI")) {
+				if (!ecsManager.HasComponent<BrainComponent>(entity)) {
+					if (ImGui::MenuItem("Brain")) {
+						AddComponent(entity, "Brain");
 					}
 				}
 				ImGui::EndMenu();
@@ -1226,9 +1269,17 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "Brain") {
+			BrainComponent component;
+			ecsManager.AddComponent<BrainComponent>(entity, component);
+			std::cout << "[Inspector] Added Brain to entity " << entity << std::endl;
+			}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
+
+		// Take snapshot after adding component (for undo)
+		SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
 
 	} catch (const std::exception& e) {
 		std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
@@ -1308,7 +1359,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 
 			std::string checkboxId = "##ComponentEnabled_" + componentType;
 			ImGui::PushID(entity);
-			ImGui::Checkbox(checkboxId.c_str(), enabledFieldPtr);
+			UndoableWidgets::Checkbox(checkboxId.c_str(), enabledFieldPtr);
 			ImGui::PopID();
 
 			ImGui::PopStyleColor(4);
@@ -1425,6 +1476,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "Brain") {
+				ecsManager.RemoveComponent<BrainComponent>(request.entity);
+				std::cout << "[Inspector] Removed Brain from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;

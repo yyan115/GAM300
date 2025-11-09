@@ -3,6 +3,7 @@
 
 #pragma region Reflection
 REFL_REGISTER_START(SpriteRenderComponent)
+	REFL_REGISTER_PROPERTY(isVisible)
 	REFL_REGISTER_PROPERTY(textureGUID)
 	REFL_REGISTER_PROPERTY(shaderGUID)
 	REFL_REGISTER_PROPERTY(position)

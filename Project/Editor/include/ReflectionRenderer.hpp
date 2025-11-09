@@ -1,7 +1,7 @@
 /* Start Header ************************************************************************/
 /*!
 \file       ReflectionRenderer.hpp
-\author     Claude Code Assistant
+\author     Lucas Yee
 \date       2025
 \brief      Utility class for automatic ImGui rendering of reflected components.
             Eliminates hardcoded component rendering by using the reflection system.
