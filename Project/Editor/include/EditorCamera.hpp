@@ -75,6 +75,7 @@ public:
      * @param isAltPressed Whether Alt key is pressed
      * @param isLeftMousePressed Whether left mouse button is pressed
      * @param isMiddleMousePressed Whether middle mouse button is pressed
+     * @param isRightMousePressed Whether right mouse button is pressed
      * @param mouseDeltaX Mouse X movement
      * @param mouseDeltaY Mouse Y movement
      * @param scrollDelta Mouse scroll delta
@@ -82,6 +83,7 @@ public:
      */
     void ProcessInput(float deltaTime, bool isWindowHovered,
                      bool isAltPressed, bool isLeftMousePressed, bool isMiddleMousePressed,
+                     bool isRightMousePressed,
                      float mouseDeltaX, float mouseDeltaY, float scrollDelta, bool is2DMode = false);
 
     /**

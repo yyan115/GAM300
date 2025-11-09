@@ -41,10 +41,16 @@
 // Static member definitions
 std::unique_ptr<PanelManager> GUIManager::panelManager = nullptr;
 bool GUIManager::dockspaceInitialized = false;
-Entity GUIManager::selectedEntity = static_cast<Entity>(-1);
+std::vector<Entity> GUIManager::selectedEntities = {};
 GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
+
+// Function definitions
+void GUIManager::SetSelectedEntities(const std::vector<Entity>& entities) { selectedEntities = entities; selectedAsset = GUID_128{0, 0}; }
+void GUIManager::AddSelectedEntity(Entity entity) { if (!IsEntitySelected(entity)) selectedEntities.push_back(entity); selectedAsset = GUID_128{0, 0}; }
+void GUIManager::RemoveSelectedEntity(Entity entity) { selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity), selectedEntities.end()); }
+void GUIManager::ClearSelectedEntities() { selectedEntities.clear(); }
 
 void GUIManager::Initialize() {
 	GLFWwindow* window = WindowManager::getWindow();

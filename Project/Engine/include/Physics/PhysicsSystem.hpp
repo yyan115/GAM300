@@ -1,4 +1,19 @@
+/*********************************************************************************
+* @File			PhysicsSystem.hpp
+* @Author		Ang Jia Jun Austin, a,jiajunaustin@digipen.edu
+* @Co-Author	-
+* @Date			23/10/2025
+* @Brief		Physics simulation system using Jolt Physics Engine. Manages
+*				physics initialization, simulation updates, collision detection,
+*				and synchronization between physics state and ECS components.
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
 
+
+#pragma once	
 class ECSManager;
 
 #include "pch.h"

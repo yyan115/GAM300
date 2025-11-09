@@ -1,3 +1,16 @@
+/*********************************************************************************
+* @File			RigidBodyComponent.hpp
+* @Author		Ang Jia Jun Austin, a.jiajunaustin@digipen.edu
+* @Co-Author	-
+* @Date			25/10/2025
+* @Brief		Rigid body component for physics simulation. Defines physical
+*				properties and motion behavior for entities in the physics system.
+*
+* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* of this file or its contents without the prior written consent of DigiPen
+* Institute of Technology is prohibited.
+*********************************************************************************/
+
 #pragma once
 #include "Physics/JoltInclude.hpp"
 #include "Reflection/ReflectionBase.hpp"
