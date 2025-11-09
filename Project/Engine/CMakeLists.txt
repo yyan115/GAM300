@@ -8,6 +8,12 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "src/*.c"
 )
 
+# Add Scripting sources from Scripting folder
+file(GLOB_RECURSE SCRIPTING_SOURCES
+    "${CMAKE_SOURCE_DIR}/Scripting/src/*.cpp"
+)
+list(APPEND ENGINE_SOURCES ${SCRIPTING_SOURCES})
+
 # Remove unused/broken source files
 list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/RenderSystem.cpp"
@@ -44,6 +50,13 @@ file(GLOB_RECURSE ENGINE_HEADERS
     "src/*.h"
     "src/*.hpp"
 )
+
+# Add Scripting headers from Scripting folder
+file(GLOB_RECURSE SCRIPTING_HEADERS
+    "${CMAKE_SOURCE_DIR}/Scripting/include/*.h"
+    "${CMAKE_SOURCE_DIR}/Scripting/include/*.hpp"
+)
+list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
@@ -146,6 +159,8 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
+        # Scripting library headers
+        ${CMAKE_SOURCE_DIR}/Scripting/include
         # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
         ${CMAKE_SOURCE_DIR}/Libraries/lua/src
