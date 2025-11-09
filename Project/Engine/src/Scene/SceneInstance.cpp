@@ -278,14 +278,41 @@ void SceneInstance::processInput(float deltaTime)
 	Camera* camera = mainECS.cameraSystem->GetActiveCamera();
 
 	float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::GetKey(Input::Key::W))
-		camera->ProcessKeyboard(FORWARD, deltaTime);
-	if (InputManager::GetKey(Input::Key::S))
-		camera->ProcessKeyboard(BACKWARD, deltaTime);
-	if (InputManager::GetKey(Input::Key::A))
-		camera->ProcessKeyboard(LEFT, deltaTime);
-	if (InputManager::GetKey(Input::Key::D))
-		camera->ProcessKeyboard(RIGHT, deltaTime);
+	//if (InputManager::GetKey(Input::Key::W))
+	//if (InputManager::GetKey(Input::Key::S))
+	//if (InputManager::GetKey(Input::Key::A))
+	//if (InputManager::GetKey(Input::Key::D))
+
+
+	Entity player = 21;
+	//Temp player controls for playable level
+	// Backwards = +z
+	Transform playerPos = mainECS.GetComponent<Transform>(player);
+
+
+	if (InputManager::GetKey(Input::Key::UP)) {
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z - 0.01f));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 180, 0));
+		camera->ProcessKeyboard(FORWARD, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::DOWN)) {
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z + 0.01f));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 0, 0));
+		camera->ProcessKeyboard(BACKWARD, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::LEFT)) {
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x - 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, -90, 0));
+		camera->ProcessKeyboard(LEFT, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::RIGHT)) {
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
+		camera->ProcessKeyboard(RIGHT, 0.004f);
+	}
+
+
+
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))

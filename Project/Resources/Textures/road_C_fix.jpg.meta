@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550ca13c7179-0003350bdc00006f",
+        "source": "../../Resources/Textures/road_C_fix.jpg",
+        "compiled": "../../Resources/Textures/road_C_fix.dds",
+        "last_compiled": "2025-11-08 09:20:47.6924920"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

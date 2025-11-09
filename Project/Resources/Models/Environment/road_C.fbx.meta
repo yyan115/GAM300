@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550cb04a699c-0003350ab2000011",
+        "source": "../../Resources/Models/Environment/road_C.fbx",
+        "compiled": "../../Resources/Models/Environment/road_C.mesh",
+        "last_compiled": "2025-11-08 09:18:17.8911023"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -895,7 +895,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.858404
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -978,7 +978,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.858404
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1074,7 +1074,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 9.3
+                            "data": 1
                         },
                         {
                             "type": "float",
@@ -1457,7 +1457,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.157742
                                 },
                                 {
                                     "type": "float",
@@ -1465,7 +1465,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.38009
                                 }
                             ]
                         },
@@ -1528,7 +1528,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.157742
                                 },
                                 {
                                     "type": "float",
@@ -1560,7 +1560,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.38009
                                 },
                                 {
                                     "type": "float",
@@ -3493,7 +3493,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -4933,7 +4933,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -6373,7 +6373,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -7813,7 +7813,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -7821,7 +7821,7 @@
         },
         {
             "id": 31,
-            "guid": "004ff1eeb1533061-00032d6d6c000001",
+            "guid": "0009550c969bd4fe-0003360b9a000083",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -8059,7 +8059,7 @@
         },
         {
             "id": 32,
-            "guid": "004ff1eeb3cf0e28-00032d6d6c000003",
+            "guid": "0009550c862e7754-0003360b9a000085",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -8297,7 +8297,7 @@
         },
         {
             "id": 33,
-            "guid": "004ff1ee9b04ad77-00032d6d6c000005",
+            "guid": "0009550cc82b0aa4-0003360b9a000087",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -8535,7 +8535,7 @@
         },
         {
             "id": 34,
-            "guid": "004ff1eef7a95f96-00032d6d6c000007",
+            "guid": "0009550c856e9236-0003360b9a000089",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -8773,7 +8773,7 @@
         },
         {
             "id": 35,
-            "guid": "004ff1eec55e672c-00032d6d6c000009",
+            "guid": "0009550cf294696a-0003360b9a00008b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -9011,7 +9011,7 @@
         },
         {
             "id": 36,
-            "guid": "004ff1eeaffa5b78-00032d6d6c00000b",
+            "guid": "0009550cc8e79e80-0003360b9a00008d",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"
@@ -9253,7 +9253,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }

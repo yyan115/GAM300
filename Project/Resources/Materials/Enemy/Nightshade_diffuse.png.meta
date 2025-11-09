@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550c87bd08a9-000337077a000505",
+        "source": "../../Resources/Materials/Enemy/Nightshade_diffuse.png",
+        "compiled": "../../Resources/Materials/Enemy/Nightshade_diffuse.dds",
+        "last_compiled": "2025-11-09 04:26:06.1525112"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
