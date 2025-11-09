@@ -231,7 +231,23 @@
                             "data": 25
                         },
                         "00374a214bc0f2cc-000331fc82000073"
-                    ]
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            -1.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    }
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -1945,6 +1961,10 @@
                 "ParticleComponent": {
                     "type": "ParticleComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
                         "00374a214bc0f2cc-000331fc82000073",
                         {
                             "type": "Vector3D",
@@ -2078,7 +2098,7 @@
         },
         {
             "id": 7,
-            "guid": "00225af414e120a2-000334c89c000001",
+            "guid": "003627eafa9113e6-0003371228000001",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -2316,7 +2336,7 @@
         },
         {
             "id": 8,
-            "guid": "00225af42d9ff83a-000334c89c000003",
+            "guid": "003627eada322939-0003371228000003",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -2554,7 +2574,7 @@
         },
         {
             "id": 9,
-            "guid": "00225af47ef8e1e2-000334c89c000005",
+            "guid": "003627eac38e1f23-0003371228000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -2792,7 +2812,7 @@
         },
         {
             "id": 10,
-            "guid": "00225af458c4b802-000334c89c000007",
+            "guid": "003627eafd758a25-0003371228000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -3030,7 +3050,7 @@
         },
         {
             "id": 11,
-            "guid": "00225af46a6d0adc-000334c89c000009",
+            "guid": "003627eae53e51d7-0003371228000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -3268,7 +3288,7 @@
         },
         {
             "id": 12,
-            "guid": "00225af401a09599-000334c89c00000b",
+            "guid": "003627ea95328976-000337122800000b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"
