@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/wooden_container.jpg",
         "compiled": "../../Resources/Textures/wooden_container.dds",
         "android_compiled": "Resources/Textures/wooden_container_android.ktx",
-        "last_compiled": "2025-11-08 06:57:57.0624135"
+        "last_compiled": "2025-11-09 11:53:30.8500466"
     },
     "TextureMetaData": {
         "type": "diffuse",

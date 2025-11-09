@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/container2.png",
         "compiled": "../../Resources/Textures/container2.dds",
         "android_compiled": "Resources/Textures/container2_android.ktx",
-        "last_compiled": "2025-11-08 06:57:57.0013393"
+        "last_compiled": "2025-11-09 11:53:25.1432082"
     },
     "TextureMetaData": {
         "type": "diffuse",

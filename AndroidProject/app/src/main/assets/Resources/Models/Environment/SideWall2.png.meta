@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b3b034e540dd0-0003323a2a000061",
+        "source": "../../Resources/Models/Environment/SideWall2.png",
+        "compiled": "../../Resources/Models/Environment/SideWall2.dds",
+        "android_compiled": "Resources/Models/Environment/SideWall2_android.ktx",
+        "last_compiled": "2025-11-09 11:53:24.9932716"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

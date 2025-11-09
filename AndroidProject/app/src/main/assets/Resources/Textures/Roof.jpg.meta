@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550ce96109eb-000336f6740000df",
+        "source": "../../Resources/Textures/Roof.jpg",
+        "compiled": "../../Resources/Textures/Roof.dds",
+        "android_compiled": "Resources/Textures/Roof_android.ktx",
+        "last_compiled": "2025-11-09 11:53:27.4733875"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

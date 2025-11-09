@@ -283,39 +283,48 @@ void SceneInstance::processInput(float deltaTime)
 	//if (InputManager::GetKey(Input::Key::A))
 	//if (InputManager::GetKey(Input::Key::D))
 
+	// temp
+	Entity player;
+	const auto& all = mainECS.GetAllEntities();
+	for (Entity e : all) {
+		std::string enttName = mainECS.GetComponent<NameComponent>(e).name;
+		if (enttName == "Kachujin") {
+			player = e;
+		}
+	}
 
-	Entity player = 21;
 	//Temp player controls for playable level
 	// Backwards = +z
 
 
 	if (InputManager::GetKey(Input::Key::W)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z - 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 180, 0));
 		camera->ProcessKeyboard(FORWARD, 0.004f);
 	}
 	if (InputManager::GetKey(Input::Key::S)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] S Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z + 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 0, 0));
 		camera->ProcessKeyboard(BACKWARD, 0.004f);
 	}
 	if (InputManager::GetKey(Input::Key::A)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] A Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x - 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, -90, 0));
 		camera->ProcessKeyboard(LEFT, 0.004f);
 	}
 	if (InputManager::GetKey(Input::Key::D)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] D Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
 		camera->ProcessKeyboard(RIGHT, 0.004f);
 	}
-
-
-
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))

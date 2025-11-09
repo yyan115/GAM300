@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550cc76b3c56-000336feaa0000ff",
+        "source": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
+        "compiled": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
+        "android_compiled": "Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
+        "last_compiled": "2025-11-09 11:53:25.0032265"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
