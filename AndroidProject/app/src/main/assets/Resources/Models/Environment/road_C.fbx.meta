@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Environment/road_C.fbx",
         "compiled": "../../Resources/Models/Environment/road_C.mesh",
         "android_compiled": "Resources/Models/Environment/road_C_android.mesh",
-        "last_compiled": "2025-11-09 11:53:30.9046225"
+        "last_compiled": "2025-11-09 12:29:35.3535152"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

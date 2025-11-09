@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Environment/SideWall2.fbx",
         "compiled": "../../Resources/Models/Environment/SideWall2.mesh",
         "android_compiled": "Resources/Models/Environment/SideWall2_android.mesh",
-        "last_compiled": "2025-11-09 11:53:35.8928919"
+        "last_compiled": "2025-11-09 12:29:40.0525873"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

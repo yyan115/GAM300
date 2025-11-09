@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/cube_backup.obj",
         "compiled": "../../Resources/Models/cube_backup.mesh",
         "android_compiled": "Resources/Models/cube_backup_android.mesh",
-        "last_compiled": "2025-11-09 11:53:33.7064492"
+        "last_compiled": "2025-11-09 12:29:37.8839410"
     },
     "ModelMetaData": {
         "optimizeMeshes": true
