@@ -78,6 +78,20 @@ std::string Script::CompileToResource(const std::string& assetPath, bool forAndr
     else {
         std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
         assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+
+        // Ensure parent directories exist
+        std::filesystem::path outputPath(assetPathAndroid);
+        std::filesystem::create_directories(outputPath.parent_path());
+
+        try {
+            // Copy the audio file to the Android assets location
+            std::filesystem::copy_file(assetPath, assetPathAndroid, std::filesystem::copy_options::overwrite_existing);
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Script] Failed to copy script file for Android: ", e.what(), "\n");
+            return std::string{};
+        }
+
         return assetPathAndroid;
     }
 }

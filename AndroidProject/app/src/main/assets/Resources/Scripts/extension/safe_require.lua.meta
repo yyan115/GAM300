@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007fa85ba52a26c9-00032d3fc8000005",
+        "source": "../../Resources/Scripts/extension/safe_require.lua",
+        "compiled": "../../Resources/Scripts/extension/safe_require.lua",
+        "android_compiled": "Resources/Scripts/extension/safe_require.lua",
+        "last_compiled": "2025-11-09 11:34:08.2791613"
+    }
+}

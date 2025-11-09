@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/backpack/specular.jpg",
         "compiled": "../../Resources/Models/backpack/specular.dds",
         "android_compiled": "Resources/Models/backpack/specular_android.ktx",
-        "last_compiled": "2025-11-09 10:47:16.4811183"
+        "last_compiled": "2025-11-09 11:34:13.8094755"
     },
     "TextureMetaData": {
         "type": "diffuse",
