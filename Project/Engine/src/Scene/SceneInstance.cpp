@@ -280,14 +280,14 @@ void SceneInstance::processInput(float deltaTime)
 
 	Camera* camera = mainECS.cameraSystem->GetActiveCamera();
 
-	float cameraSpeed = 2.5f * deltaTime;
+	//float cameraSpeed = 2.5f * deltaTime;
 	//if (InputManager::GetKey(Input::Key::W))
 	//if (InputManager::GetKey(Input::Key::S))
 	//if (InputManager::GetKey(Input::Key::A))
 	//if (InputManager::GetKey(Input::Key::D))
 
 	// temp
-	Entity player;
+	Entity player{};
 	const auto& all = mainECS.GetAllEntities();
 	for (Entity e : all) {
 		std::string enttName = mainECS.GetComponent<NameComponent>(e).name;

@@ -455,9 +455,6 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
 		size_t meshCount = meshesToCompile.size();
 		meshFile.write(reinterpret_cast<const char*>(&meshCount), sizeof(meshCount));
 
-		// For BoneMap writing
-		int meshIndex = 0;
-
 		// For each mesh, write its data to the file.
         for (const Mesh& mesh : meshesToCompile) {
 		    size_t vertexCount = mesh.vertices.size();
@@ -759,7 +756,7 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(mBoneCounter);
 
                 // Read each bone's name and offset matrix
-                for (unsigned int i = 0; i < mBoneCounter; ++i)
+                for (int i = 0; i < mBoneCounter; ++i)
                 {
 					// Get bone name
 					size_t nameLen = 0;
@@ -1122,8 +1119,9 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
 
 void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 {
+    scene;
     // 1) assign influences
-    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    for (unsigned int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
     {
         int boneID = -1;
         std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();

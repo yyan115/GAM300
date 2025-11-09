@@ -1607,10 +1607,10 @@ void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const r
     parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
 }
 
-void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON) {
-    if (childJSON.HasMember("data")) {
+void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& _childJSON) {
+    if (_childJSON.HasMember("data")) {
         childComp.children.clear();
-        const auto& childrenVectorJSON = childJSON["data"][0]["data"].GetArray();
+        const auto& childrenVectorJSON = _childJSON["data"][0]["data"].GetArray();
         for (const auto& childJSON : childrenVectorJSON) {
             // Use helper function to extract child GUIDs
             GUID_string childGUIDStr = extractGUIDString(childJSON);
@@ -1635,7 +1635,7 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
     if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
         const auto& d = cameraJSON["data"];
 
-        int idx = 0;
+        rapidjson::SizeType idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
         if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.priority = d[idx++]["data"].GetInt();
@@ -1797,7 +1797,7 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
 void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON) {
     if (activeJSON.HasMember("data") && activeJSON["data"].IsArray()) {
         const auto& d = activeJSON["data"];
-        int idx = 0;
+        rapidjson::SizeType idx = 0;
         if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
     }
 }

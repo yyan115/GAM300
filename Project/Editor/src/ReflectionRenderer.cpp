@@ -106,7 +106,7 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
         if (!fieldPtr) continue;
 
         // Check for custom field renderer (component::field specific)
-        std::string componentType = typeDesc->GetName();
+        componentType = typeDesc->GetName();
         std::string fieldKey = componentType + "::" + memberName;
         auto& fieldRenderers = GetFieldRenderers();
         if (fieldRenderers.find(fieldKey) != fieldRenderers.end()) {
@@ -321,7 +321,7 @@ bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr)
 }
 
 bool ReflectionRenderer::RenderGUID(const char* fieldName, void* fieldPtr,
-                                    Entity entity, ECSManager& ecsManager) {
+                                    Entity, ECSManager&) {
     GUID_128* guid = static_cast<GUID_128*>(fieldPtr);
 
     std::string displayName = CamelCaseToProperCase(fieldName);

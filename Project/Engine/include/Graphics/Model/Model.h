@@ -127,7 +127,7 @@ private:
         DAE,
         STL,
 		PLY
-    } modelFormat;
+    } modelFormat{};
 	bool flipUVs = false;
 
 	//void loadModel(const std::string& path);

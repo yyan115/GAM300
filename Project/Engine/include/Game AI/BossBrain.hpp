@@ -11,7 +11,7 @@ using BossUpdateCtrl = typename BossFSM::FullControl;
 
 struct BossIdle : BossFSM::State {
     template <typename TControl>
-    void enter(TControl& ctrl) noexcept { ENGINE_PRINT("[Boss] enter Idle\n"); }
+    void enter(TControl& ctrl) noexcept { ctrl; ENGINE_PRINT("[Boss] enter Idle\n"); }
 
     template <typename TControl>
     void exit(TControl& /*ctrl*/) noexcept { /* optional */ }
@@ -25,13 +25,12 @@ struct BossIdle : BossFSM::State {
 
 struct BossChase : BossFSM::State {
     template <typename TControl>
-    void enter(TControl& ctrl) noexcept { ENGINE_PRINT("[Boss] enter Chase\n"); }
+    void enter(TControl& ctrl) noexcept { ctrl; ENGINE_PRINT("[Boss] enter Chase\n"); }
 
     template <typename TControl>
     void exit(TControl& /*ctrl*/) noexcept { /* optional */ }
 
     void update(BossUpdateCtrl& ctrl) noexcept {
-        auto& ctx = ctrl.context();
         if (/* lost target */ false)
             ctrl.changeTo<BossIdle>();
     }

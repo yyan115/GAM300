@@ -1736,9 +1736,9 @@ void AssetBrowserPanel::OpenImportDialog() {
         else {
             // Multiple files selected
             while (*p) {
-                std::string filename = p;
-                selectedFiles.push_back(directory + "\\" + filename);
-                p += filename.size() + 1;
+                std::string filenameStr = p;
+                selectedFiles.push_back(directory + "\\" + filenameStr);
+                p += filenameStr.size() + 1;
             }
         }
 

@@ -365,9 +365,6 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				}
 			} else {
 				try {
-					// Get the active ECS manager
-					ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
 					ImGui::Text("Entity ID: %u", displayEntity);
 
 					// Lock button on the same line
@@ -794,8 +791,8 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 			MaterialInspector::DrawMaterialAsset(cachedMaterial, sourceFilePath, true, &inspectorLocked, lockCallback);
 		} 
 		else if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
-			std::shared_ptr<AssetMeta> assetMeta = AssetManager::GetInstance().GetAssetMeta(selectedAsset);
-			AssetInspector::DrawAssetMetaInfo(assetMeta, sourceFilePath, true, &inspectorLocked, lockCallback);
+			std::shared_ptr<AssetMeta> _assetMeta = AssetManager::GetInstance().GetAssetMeta(selectedAsset);
+			AssetInspector::DrawAssetMetaInfo(_assetMeta, sourceFilePath, true, &inspectorLocked, lockCallback);
 		}
 		else {
 			ImGui::Text("Asset type not supported for editing in Inspector");
@@ -1189,7 +1186,6 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (ecsManager.HasComponent<ModelRenderComponent>(entity))
 			{
 				auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
-				auto& transform = ecsManager.GetComponent<Transform>(entity);
 				if (rc.model)
 					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
 			}

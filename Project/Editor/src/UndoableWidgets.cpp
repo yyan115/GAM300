@@ -192,9 +192,6 @@ namespace UndoableWidgets {
             snapshotTakenForThisChange[v] = false;
         }
 
-        // Store the value BEFORE ImGui::Checkbox modifies it
-        bool valueBeforeCheckbox = *v;
-
         // Render the checkbox (this may toggle the value)
         bool changed = ImGui::Checkbox(label, v);
 

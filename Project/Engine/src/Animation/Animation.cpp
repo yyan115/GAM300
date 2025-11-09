@@ -30,8 +30,8 @@ glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from);
 
 Animation::Animation(aiAnimation* animation, const aiNode* rootNode, std::map<std::string, BoneInfo> boneInfoMap, int boneCount) 
 {
-	mDuration = animation->mDuration;
-	mTicksPerSecond = animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25;
+	mDuration = static_cast<float>(animation->mDuration);
+	mTicksPerSecond = animation->mTicksPerSecond != 0.0 ? static_cast<int>(animation->mTicksPerSecond) : 25;
 
 	mGlobalInverse = glm::inverse(aiMatrix4x4ToGlm(rootNode->mTransformation));
 	
@@ -133,7 +133,7 @@ void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::
 	if(IsAssimpFbxTrsNode(rawName))
 	{
 		glm::mat4 nextAccum = accum * local;
-		for (int i = 0; i < src->mNumChildren; i++)
+		for (unsigned int i = 0; i < src->mNumChildren; i++)
 		{
 			ReadHierarchyData(dest, src->mChildren[i], nextAccum);
 		}
@@ -155,7 +155,7 @@ void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::
 	dest.children.clear();
 	dest.childrenCount = 0;
 
-	for (int i = 0; i < src->mNumChildren; i++)
+	for (unsigned int i = 0; i < src->mNumChildren; i++)
 	{
 		AssimpNodeData newData{};
 		ReadHierarchyData(newData, src->mChildren[i]);

@@ -497,7 +497,7 @@ void PerformancePanel::RenderZoneStatistics() {
     ImGui::Spacing();
     ImGui::Separator();
     double totalAvgTime = 0.0;
-    for (const auto& [name, data] : zoneStats) {
+    for (const auto& [_name, data] : zoneStats) {
         totalAvgTime += data.avgTime;
     }
     ImGui::Text("Total measured time per frame: %.3f ms", totalAvgTime);

@@ -51,11 +51,11 @@ public:
 		material = mat;
 	}
 
-	Vector3D CalculateModelHalfExtent(const Model& model) {
+	Vector3D CalculateModelHalfExtent(const Model& _model) {
 		Vector3D minPt(FLT_MAX, FLT_MAX, FLT_MAX);
 		Vector3D maxPt(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-		for (const auto& mesh : model.meshes) {
+		for (const auto& mesh : _model.meshes) {
 			for (const auto& vertex : mesh.vertices) {
 				if (vertex.position.x < minPt.x) minPt.x = vertex.position.x;
 				if (vertex.position.y < minPt.y) minPt.y = vertex.position.y;
@@ -75,13 +75,13 @@ public:
 		return halfExtent;
 	}
 
-	float CalculateModelRadius(const Model& model)
+	float CalculateModelRadius(const Model& _model)
 	{
 		Vector3D minPt(FLT_MAX, FLT_MAX, FLT_MAX);
 		Vector3D maxPt(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		// 1️⃣ Find the bounding box of the model
-		for (const auto& mesh : model.meshes)
+		for (const auto& mesh : _model.meshes)
 		{
 			for (const auto& vertex : mesh.vertices)
 			{
@@ -102,7 +102,7 @@ public:
 
 		// 3️⃣ Compute the maximum distance from center to any vertex
 		float radius = 0.0f;
-		for (const auto& mesh : model.meshes)
+		for (const auto& mesh : _model.meshes)
 		{
 			for (const auto& vertex : mesh.vertices)
 			{

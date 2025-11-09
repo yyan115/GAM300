@@ -112,6 +112,7 @@ bool Script::LoadResource(const std::string& resourcePath, const std::string& as
 
 
 bool Script::ReloadResource(const std::string& resourcePath, const std::string& assetPath) {
+    assetPath;
     std::lock_guard<std::mutex> lk(m_mutex);
     // update path if provided
     if (!resourcePath.empty()) m_scriptPath = resourcePath;

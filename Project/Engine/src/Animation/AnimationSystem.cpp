@@ -61,6 +61,6 @@ void AnimationSystem::Update()
 			continue;
 		}
 
-		animComp.Update(TimeManager::GetDeltaTime());
+		animComp.Update(static_cast<float>(TimeManager::GetDeltaTime()));
 	}
 }
