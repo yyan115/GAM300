@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <Asset Manager/AssetManager.hpp>
 
 // define static
 std::atomic<bool> Script::s_fsRegistered{ false };
@@ -72,7 +73,13 @@ Script::~Script() {
 
 std::string Script::CompileToResource(const std::string& assetPath, bool forAndroid) {
     // by default, use the script file as-is. If you have a compilation step (bytecode), do it here.
-    return assetPath;
+    if (!forAndroid)
+        return assetPath;
+    else {
+        std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+        assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+        return assetPathAndroid;
+    }
 }
 
 bool Script::LoadResource(const std::string& resourcePath, const std::string& assetPath) {

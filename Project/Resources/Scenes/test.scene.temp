@@ -2343,33 +2343,33 @@
                     "autoInvokeEntry": true,
                     "instanceState": {
                         "fields": {
-                            "position": {
-                                "x": 0.0,
-                                "y": 0.0
-                            },
+                            "health": 60.0,
+                            "maxHealth": 100.0,
+                            "inputJumpAction": "jump",
                             "patrolPoints": [
                                 {
-                                    "x": 0.0,
-                                    "y": 0.0
+                                    "y": 0.0,
+                                    "x": 0.0
                                 },
                                 {
-                                    "x": 10.0,
-                                    "y": 0.0
+                                    "y": 0.0,
+                                    "x": 10.0
                                 },
                                 {
-                                    "x": 10.0,
-                                    "y": 6.0
+                                    "y": 6.0,
+                                    "x": 10.0
                                 },
                                 {
-                                    "x": 0.0,
-                                    "y": 6.0
+                                    "y": 6.0,
+                                    "x": 0.0
                                 }
                             ],
-                            "health": 60.0,
-                            "inputJumpAction": "jump",
-                            "maxHealth": 100.0,
-                            "name": "DemoAgent",
-                            "patrolSpeed": 3.5
+                            "position": {
+                                "y": 0.0,
+                                "x": 0.0
+                            },
+                            "patrolSpeed": 3.5,
+                            "name": "DemoAgent"
                         }
                     }
                 }
@@ -2628,7 +2628,7 @@
         },
         {
             "id": 9,
-            "guid": "0036f0b6674d8964-00033616b6000001",
+            "guid": "002fe4f739395a88-000337ac4e000001",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -2866,7 +2866,7 @@
         },
         {
             "id": 10,
-            "guid": "0036f0b606d66480-00033616b6000003",
+            "guid": "002fe4f71d7607f9-000337ac4e000003",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -3104,7 +3104,7 @@
         },
         {
             "id": 11,
-            "guid": "0036f0b666b1da82-00033616b6000005",
+            "guid": "002fe4f712b85e8d-000337ac4e000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -3342,7 +3342,7 @@
         },
         {
             "id": 12,
-            "guid": "0036f0b61fa990d9-00033616b6000007",
+            "guid": "002fe4f77369c50c-000337ac4e000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -3580,7 +3580,7 @@
         },
         {
             "id": 13,
-            "guid": "0036f0b60fc3dd70-00033616b6000009",
+            "guid": "002fe4f700aacef5-000337ac4e000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -3818,7 +3818,7 @@
         },
         {
             "id": 14,
-            "guid": "0036f0b639281ccc-00033616b600000b",
+            "guid": "002fe4f727e67b0c-000337ac4e00000b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

@@ -150,9 +150,6 @@
     <ClInclude Include="include\StatePreserver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ComponentProxy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Libraries\lua\src\lapi.c">
@@ -306,9 +303,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Scripting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ComponentProxy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
