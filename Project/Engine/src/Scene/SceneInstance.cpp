@@ -256,6 +256,7 @@ void SceneInstance::Exit() {
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
