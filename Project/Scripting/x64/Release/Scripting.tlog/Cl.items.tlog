@@ -1,35 +1,51 @@
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lapi.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lapi.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lauxlib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lauxlib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lbaselib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lbaselib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lcode.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lcode.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lcorolib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lcorolib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lctype.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lctype.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ldblib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ldblib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ldebug.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ldebug.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ldo.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ldo.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ldump.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ldump.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lfunc.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lfunc.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lgc.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lgc.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\linit.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\linit.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\liolib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\liolib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\llex.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\llex.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lmathlib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lmathlib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lmem.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lmem.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\loadlib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\loadlib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lobject.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lobject.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lopcodes.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lopcodes.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\loslib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\loslib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lparser.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lparser.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lstate.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lstate.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lstring.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lstring.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lstrlib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lstrlib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ltable.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ltable.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ltablib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ltablib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\ltm.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\ltm.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lua.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lua.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\luac.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\luac.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lundump.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lundump.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lutf8lib.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lutf8lib.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lvm.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lvm.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Libraries\lua\src\lzio.c;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\lzio.obj
-C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\src\hotload.cpp;C:\Users\ASUS\Downloads\Year 3 Tri 1\CSD3401 Game 300\GAM300\Project\Scripting\x64\Release\hotload.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lapi.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lapi.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lauxlib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lauxlib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lbaselib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lbaselib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lcode.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lcode.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lcorolib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lcorolib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lctype.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lctype.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ldblib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ldblib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ldebug.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ldebug.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ldo.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ldo.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ldump.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ldump.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lfunc.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lfunc.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lgc.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lgc.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\linit.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\linit.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\liolib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\liolib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\llex.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\llex.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lmathlib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lmathlib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lmem.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lmem.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\loadlib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\loadlib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lobject.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lobject.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lopcodes.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lopcodes.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\loslib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\loslib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lparser.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lparser.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lstate.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lstate.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lstring.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lstring.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lstrlib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lstrlib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ltable.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ltable.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ltablib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ltablib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\ltm.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ltm.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lua.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lua.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\luac.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\luac.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lundump.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lundump.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lutf8lib.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lutf8lib.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lvm.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lvm.obj
+C:\Users\admin\Desktop\GAM300\Project\Libraries\lua\src\lzio.c;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\lzio.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\CoroutineScheduler.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\CoroutineScheduler.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\HotReloadManager.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\HotReloadManager.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ModuleLoader.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ModuleLoader.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\RemoteDebug.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\RemoteDebug.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptComponent.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptComponent.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptError.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptError.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptFileSystem_android.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptFileSystem_android.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptFileSystem_default.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptFileSystem_default.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptFileSystem_win.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptFileSystem_win.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\Scripting.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\Scripting.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptingRuntime.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptingRuntime.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptInspector.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptInspector.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptProfiler.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptProfiler.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptRegistry.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptRegistry.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptSerializer.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptSerializer.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\ScriptUtils.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\ScriptUtils.obj
+C:\Users\admin\Desktop\GAM300\Project\Scripting\src\StatePreserver.cpp;C:\Users\admin\Desktop\GAM300\Project\Scripting\x64\Release\StatePreserver.obj
