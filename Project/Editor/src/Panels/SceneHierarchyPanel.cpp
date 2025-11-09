@@ -204,7 +204,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (GUIManager::GetSelectedEntity() == entityId) flags |= ImGuiTreeNodeFlags_Selected;
+    if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
 
     bool opened = false;
 
@@ -264,7 +264,18 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::PopStyleColor();
         }
         if (ImGui::IsItemClicked()) {
-            GUIManager::SetSelectedEntity(entityId);
+            ImGuiIO& io = ImGui::GetIO();
+            if (io.KeyCtrl) {
+                // Multi-select: toggle
+                if (GUIManager::IsEntitySelected(entityId)) {
+                    GUIManager::RemoveSelectedEntity(entityId);
+                } else {
+                    GUIManager::AddSelectedEntity(entityId);
+                }
+            } else {
+                // Single select
+                GUIManager::SetSelectedEntity(entityId);
+            }
 
             // Double-click to focus the entity in the scene view
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {

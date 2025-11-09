@@ -13,6 +13,7 @@
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Math/Vector3D.hpp"
 #include "Logging.hpp"
@@ -108,8 +109,8 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
 
         int entitiesWithComponent = 0;
 
-        // Test against entities 0-50, looking for Transform components OR SpriteRenderComponents
-        for (Entity entity = 0; entity <= 50; ++entity) {
+        // Test against all active entities, looking for Transform components OR SpriteRenderComponents
+        for (auto entity : ecsManager.GetActiveEntities()) {
             // Skip excluded entity (e.g., preview entity)
             if (entity == excludeEntity) {
                 continue;
@@ -164,7 +165,42 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                     ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with Transform component\n");
 
                     // Create AABB from the entity's transform
-                    entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+                        auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+                        if (modelComp.model) {
+                            auto modelAABB = modelComp.model->GetBoundingBox();
+                        RaycastUtil::AABB localAABB = {modelAABB.min, modelAABB.max};
+
+                            // Transform the 8 corners to world space
+                            glm::vec3 corners[8] = {
+                                glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.min.z),
+                                glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.min.z),
+                                glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.min.z),
+                                glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.min.z),
+                                glm::vec3(localAABB.min.x, localAABB.min.y, localAABB.max.z),
+                                glm::vec3(localAABB.max.x, localAABB.min.y, localAABB.max.z),
+                                glm::vec3(localAABB.min.x, localAABB.max.y, localAABB.max.z),
+                                glm::vec3(localAABB.max.x, localAABB.max.y, localAABB.max.z)
+                            };
+
+                            glm::vec3 worldMin = glm::vec3(std::numeric_limits<float>::max());
+                            glm::vec3 worldMax = glm::vec3(std::numeric_limits<float>::lowest());
+
+                            for (auto& corner : corners) {
+                                Vector3D cornerVec(corner.x, corner.y, corner.z);
+                                Vector3D worldCornerVec = transform.worldMatrix.TransformPoint(cornerVec);
+                                glm::vec3 worldCorner(worldCornerVec.x, worldCornerVec.y, worldCornerVec.z);
+                                worldMin = glm::min(worldMin, worldCorner);
+                                worldMax = glm::max(worldMax, worldCorner);
+                            }
+
+                            entityAABB = AABB(worldMin, worldMax);
+                        } else {
+                            entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                        }
+                    } else {
+                        entityAABB = CreateAABBFromTransform(transform.worldMatrix);
+                    }
                     hasValidAABB = true;
 
                     ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Transform) AABB: min("

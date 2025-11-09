@@ -4,6 +4,8 @@ class WindowManager;
 #pragma once
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 #include "Panels/PanelManager.hpp"
 #include <ECS/Entity.hpp>
 #include "Utilities/GUID.hpp"
@@ -47,13 +49,49 @@ public:
 	 * @brief Get the currently selected entity.
 	 * @return The selected entity ID, or static_cast<Entity>(-1) if none selected.
 	 */
-	static Entity GetSelectedEntity() { return selectedEntity; }
+	static Entity GetSelectedEntity() { return selectedEntities.empty() ? static_cast<Entity>(-1) : selectedEntities[0]; }
+
+	/**
+	 * @brief Get the currently selected entities.
+	 * @return Vector of selected entity IDs.
+	 */
+	static const std::vector<Entity>& GetSelectedEntities() { return selectedEntities; }
+
+	/**
+	 * @brief Check if an entity is selected.
+	 * @param entity The entity to check.
+	 * @return True if the entity is selected.
+	 */
+	static bool IsEntitySelected(Entity entity) { return std::find(selectedEntities.begin(), selectedEntities.end(), entity) != selectedEntities.end(); }
 
 	/**
 	 * @brief Set the currently selected entity.
 	 * @param entity The entity to select, or static_cast<Entity>(-1) to deselect.
 	 */
-	static void SetSelectedEntity(Entity entity) { selectedEntity = entity; selectedAsset = GUID_128{0, 0}; }
+	static void SetSelectedEntity(Entity entity) { selectedEntities = entity == static_cast<Entity>(-1) ? std::vector<Entity>() : std::vector<Entity>{entity}; selectedAsset = GUID_128{0, 0}; }
+
+	/**
+	 * @brief Set the currently selected entities.
+	 * @param entities The entities to select.
+	 */
+	static void SetSelectedEntities(const std::vector<Entity>& entities);
+
+	/**
+	 * @brief Add an entity to the selection.
+	 * @param entity The entity to add.
+	 */
+	static void AddSelectedEntity(Entity entity);
+
+	/**
+	 * @brief Remove an entity from the selection.
+	 * @param entity The entity to remove.
+	 */
+	static void RemoveSelectedEntity(Entity entity);
+
+	/**
+	 * @brief Clear all selected entities.
+	 */
+	static void ClearSelectedEntities();
 
 	/**
 	 * @brief Get the currently selected asset GUID.
@@ -65,7 +103,7 @@ public:
 	 * @brief Set the currently selected asset.
 	 * @param assetGuid The asset GUID to select.
 	 */
-	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; selectedEntity = static_cast<Entity>(-1); }
+	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; selectedEntities.clear(); }
 
 private:
 	/**
@@ -100,7 +138,7 @@ private:
 
 	static std::unique_ptr<PanelManager> panelManager;
 	static bool dockspaceInitialized;
-	static Entity selectedEntity;
+	static std::vector<Entity> selectedEntities;
 	static GUID_128 selectedAsset;
 
 	static std::string notificationMessage;
