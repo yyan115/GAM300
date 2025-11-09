@@ -1,20 +1,5 @@
-﻿  The vcpkg manifest was disabled, but we found a manifest file in D:\Woon Li\Documents\University\Year 3\GAM300\Project\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
-  CoroutineScheduler.cpp
-  HotReloadManager.cpp
-  ModuleLoader.cpp
-  RemoteDebug.cpp
-  ScriptComponent.cpp
-  ScriptError.cpp
-  ScriptFileSystem_android.cpp
+﻿  The vcpkg manifest was disabled, but we found a manifest file in C:\Users\admin\Desktop\GAM300\Project\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
   ScriptFileSystem_default.cpp
-  ScriptFileSystem_win.cpp
   Scripting.cpp
-  ScriptingRuntime.cpp
-  ScriptInspector.cpp
-  ScriptProfiler.cpp
-  ScriptRegistry.cpp
-  ScriptSerializer.cpp
-  ScriptUtils.cpp
-  StatePreserver.cpp
 lua.obj : warning LNK4006: main already defined in luac.obj; second definition ignored
-  Scripting.vcxproj -> D:\Woon Li\Documents\University\Year 3\GAM300\Project\Build\EditorRelease\Scripting.lib
+  Scripting.vcxproj -> C:\Users\admin\Desktop\GAM300\Project\Build\EditorRelease\Scripting.lib

@@ -12,6 +12,10 @@
 #include <fstream>
 #include <memory>
 
+#ifdef ANDROID
+#include <dirent.h>
+#endif
+
 namespace Scripting {
 
     struct DefaultFileSystem : public IScriptFileSystem {
@@ -33,6 +37,28 @@ namespace Scripting {
             struct stat st;
             if (stat(path.c_str(), &st) != 0) return 0;
             return static_cast<uint64_t>(st.st_mtime);
+        }
+
+        bool ListDirectory(const std::string& path, std::vector<std::string>& outEntries) override {
+#ifdef ANDROID
+            DIR* dir = opendir(path.c_str());
+            if (!dir) return false;
+
+            struct dirent* entry;
+            while ((entry = readdir(dir)) != nullptr) {
+                std::string name = entry->d_name;
+                if (name != "." && name != "..") {
+                    outEntries.push_back(name);
+                }
+            }
+            closedir(dir);
+            return true;
+#else
+            // Default non-Android POSIX implementation
+            (void)path;
+            (void)outEntries;
+            return false; // Not implemented for generic POSIX
+#endif
         }
     };
 

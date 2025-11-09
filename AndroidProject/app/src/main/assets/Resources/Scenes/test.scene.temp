@@ -2346,30 +2346,30 @@
                             "health": 60.0,
                             "maxHealth": 100.0,
                             "inputJumpAction": "jump",
+                            "position": {
+                                "x": 0.0,
+                                "y": 0.0
+                            },
                             "patrolPoints": [
                                 {
-                                    "y": 0.0,
-                                    "x": 0.0
+                                    "x": 0.0,
+                                    "y": 0.0
                                 },
                                 {
-                                    "y": 0.0,
-                                    "x": 10.0
+                                    "x": 10.0,
+                                    "y": 0.0
                                 },
                                 {
-                                    "y": 6.0,
-                                    "x": 10.0
+                                    "x": 10.0,
+                                    "y": 6.0
                                 },
                                 {
-                                    "y": 6.0,
-                                    "x": 0.0
+                                    "x": 0.0,
+                                    "y": 6.0
                                 }
                             ],
-                            "position": {
-                                "y": 0.0,
-                                "x": 0.0
-                            },
-                            "patrolSpeed": 3.5,
-                            "name": "DemoAgent"
+                            "name": "DemoAgent",
+                            "patrolSpeed": 3.5
                         }
                     }
                 }
@@ -2628,7 +2628,7 @@
         },
         {
             "id": 9,
-            "guid": "002fe4f739395a88-000337ac4e000001",
+            "guid": "00688999c37e1616-000337c26000000d",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -2866,7 +2866,7 @@
         },
         {
             "id": 10,
-            "guid": "002fe4f71d7607f9-000337ac4e000003",
+            "guid": "0068899997c17b37-000337c26000000f",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -3104,7 +3104,7 @@
         },
         {
             "id": 11,
-            "guid": "002fe4f712b85e8d-000337ac4e000005",
+            "guid": "00688999f0521d7d-000337c260000011",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -3342,7 +3342,7 @@
         },
         {
             "id": 12,
-            "guid": "002fe4f77369c50c-000337ac4e000007",
+            "guid": "00688999ed8a96b8-000337c260000013",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -3580,7 +3580,7 @@
         },
         {
             "id": 13,
-            "guid": "002fe4f700aacef5-000337ac4e000009",
+            "guid": "00688999f2ee7383-000337c260000015",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -3818,7 +3818,7 @@
         },
         {
             "id": 14,
-            "guid": "002fe4f727e67b0c-000337ac4e00000b",
+            "guid": "00688999a91f12e1-000337c260000017",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

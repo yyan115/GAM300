@@ -26,15 +26,46 @@ using namespace Scripting;
 
 namespace {
 
+#ifdef ANDROID
+    // Android doesn't support std::atomic<std::shared_ptr<>>, use mutex instead
+    template<typename T>
+    class AtomicSharedPtr {
+    public:
+        AtomicSharedPtr(std::shared_ptr<T> ptr = nullptr) : m_ptr(std::move(ptr)) {}
+
+        std::shared_ptr<T> load() const {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            return m_ptr;
+        }
+
+        void store(std::shared_ptr<T> ptr) {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_ptr = std::move(ptr);
+        }
+
+    private:
+        mutable std::mutex m_mutex;
+        std::shared_ptr<T> m_ptr;
+    };
+#else
+    // Windows/Desktop: use std::atomic<std::shared_ptr<>>
+    template<typename T>
+    using AtomicSharedPtr = std::atomic<std::shared_ptr<T>>;
+#endif
+
     // adapter object implementing IScriptFileSystem that forwards to ReadAllTextFn
     struct ReadAllTextAdapter : public IScriptFileSystem {
-        ReadAllTextAdapter(std::atomic<std::shared_ptr<ReadAllTextFn>>& src)
+        ReadAllTextAdapter(AtomicSharedPtr<ReadAllTextFn>& src)
             : m_src(src) {
         }
 
         // Read entire file contents. Prefer engine callback; fall back to host FS.
         bool ReadAllText(const std::string& path, std::string& out) override {
+#ifdef ANDROID
+            auto sp = m_src.load();
+#else
             auto sp = m_src.load(std::memory_order_acquire);
+#endif
             if (sp && *sp) {
                 try {
                     if ((*sp)(path, out)) return true;
@@ -55,7 +86,11 @@ namespace {
 
         // Check existence: prefer engine callback probe, else host FS check
         bool Exists(const std::string& path) override {
+#ifdef ANDROID
+            auto sp = m_src.load();
+#else
             auto sp = m_src.load(std::memory_order_acquire);
+#endif
             if (sp && *sp) {
                 try {
                     std::string tmp;
@@ -105,7 +140,7 @@ namespace {
         }
 
     private:
-        std::atomic<std::shared_ptr<ReadAllTextFn>>& m_src;
+        AtomicSharedPtr<ReadAllTextFn>& m_src;
     };
 
 
@@ -115,9 +150,9 @@ namespace {
     static std::shared_ptr<ReadAllTextAdapter> g_fsAdapter;
 
     // atomics to store engine-provided callbacks (same pattern as previous glue)
-    static std::atomic<std::shared_ptr<HostLogFn>> g_hostLoggerPtr{ nullptr };
-    static std::atomic<std::shared_ptr<ReadAllTextFn>> g_fileReaderPtr{ nullptr };
-    static std::atomic<std::shared_ptr<HostGetComponentFn>> g_hostGetComponentPtr{ nullptr };
+    static AtomicSharedPtr<HostLogFn> g_hostLoggerPtr{ nullptr };
+    static AtomicSharedPtr<ReadAllTextFn> g_fileReaderPtr{ nullptr };
+    static AtomicSharedPtr<HostGetComponentFn> g_hostGetComponentPtr{ nullptr };
 
     // Keep the same lightweight message handler and helper functions that the old glue used.
     // push a message handler *below* the function that will be called.
@@ -135,7 +170,11 @@ namespace {
     }
 
     static int LoadScriptToTop(lua_State* L, const std::string& path) {
+#ifdef ANDROID
+        auto readerShared = g_fileReaderPtr.load();
+#else
         auto readerShared = g_fileReaderPtr.load(std::memory_order_acquire);
+#endif
         if (readerShared && *readerShared) {
             std::string content;
             if ((*readerShared)(path, content)) {
@@ -172,7 +211,11 @@ bool Scripting::Init(const InitOptions& opts) {
     }
 
     // forward host logger if already provided by engine
+#ifdef ANDROID
+    auto hostSp = g_hostLoggerPtr.load();
+#else
     auto hostSp = g_hostLoggerPtr.load(std::memory_order_acquire);
+#endif
     if (hostSp && *hostSp) {
         g_runtime->SetHostLogHandler([hostSp](const std::string& s) {
             try { (*hostSp)(s); }
@@ -214,8 +257,13 @@ void Scripting::Shutdown() {
     g_fsAdapter.reset();
 
     // clear callbacks
+#ifdef ANDROID
+    g_hostLoggerPtr.store(nullptr);
+    g_fileReaderPtr.store(nullptr);
+#else
     g_hostLoggerPtr.store(nullptr, std::memory_order_release);
     g_fileReaderPtr.store(nullptr, std::memory_order_release);
+#endif
 
     ENGINE_PRINT(EngineLogging::LogLevel::Info, "Scripting::Shutdown - done");
 }
@@ -239,7 +287,7 @@ void Scripting::SetLuaState(lua_State* L) {
     g_runtime->SetHostLogHandler(nullptr); // cleared
     // Use runtime's SetHostLogHandler to reset later; we need to call SetLuaState directly on runtime object.
     g_runtime->SetHostLogHandler(nullptr);
-    // There isn't a public SetLuaState on ScriptingRuntime in the header — we can't call it.
+    // There isn't a public SetLuaState on ScriptingRuntime in the header ï¿½ we can't call it.
     // Instead call Scripting::SetLuaState below (public API) to set the global VM used by glue layer.
     // NOTE: We'll fall back to runtime->Initialize with createNewVM=false alternative above.
     // Simpler: just call Scripting::Shutdown() then Scripting::Init() with createNewVM=false in caller.
@@ -432,7 +480,11 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
 
 void Scripting::SetHostLogHandler(HostLogFn fn) {
     auto sp = std::make_shared<HostLogFn>(std::move(fn));
+#ifdef ANDROID
+    g_hostLoggerPtr.store(sp);
+#else
     g_hostLoggerPtr.store(sp, std::memory_order_release);
+#endif
     if (g_runtime) {
         g_runtime->SetHostLogHandler([sp](const std::string& s) {
             try { (*sp)(s); }
@@ -443,7 +495,11 @@ void Scripting::SetHostLogHandler(HostLogFn fn) {
 
 void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
     auto sp = std::make_shared<ReadAllTextFn>(std::move(fn));
+#ifdef ANDROID
+    g_fileReaderPtr.store(sp);
+#else
     g_fileReaderPtr.store(sp, std::memory_order_release);
+#endif
 
     // (re)create adapter and hand to ModuleLoader and Runtime if present
     g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
@@ -467,7 +523,11 @@ void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
 
 void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {
     auto sp = std::make_shared<HostGetComponentFn>(std::move(fn));
+#ifdef ANDROID
+    g_hostGetComponentPtr.store(sp);
+#else
     g_hostGetComponentPtr.store(sp, std::memory_order_release);
+#endif
     if (g_runtime) {
         // forward to runtime (runtime exposes setter implemented below)
         g_runtime->SetHostGetComponentHandler([sp](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {

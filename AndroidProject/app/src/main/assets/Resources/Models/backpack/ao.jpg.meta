@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/backpack/ao.jpg",
         "compiled": "../../Resources/Models/backpack/ao.dds",
         "android_compiled": "Resources/Models/backpack/ao_android.ktx",
-        "last_compiled": "2025-11-09 09:42:04.5724921"
+        "last_compiled": "2025-11-09 10:47:23.2748679"
     },
     "TextureMetaData": {
         "type": "diffuse",

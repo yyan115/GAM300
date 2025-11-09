@@ -104,7 +104,6 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
-Resources/Models/SideWall2.mesh
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua

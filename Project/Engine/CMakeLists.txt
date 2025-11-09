@@ -37,11 +37,14 @@ list(REMOVE_ITEM ENGINE_SOURCES
 )
 
 # Android uses OpenGL ES, not desktop OpenGL - exclude GLAD (desktop OpenGL loader)
+# Also exclude Windows-specific Scripting files
 if(ANDROID)
     list(REMOVE_ITEM ENGINE_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/glad.c"
+        "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
+        "${CMAKE_SOURCE_DIR}/Scripting/src/ScriptFileSystem_win.cpp"
     )
-    message(STATUS "Excluded glad.c for Android (uses OpenGL ES, not desktop OpenGL)")
+    message(STATUS "Excluded glad.c and Windows-specific Scripting files for Android")
 endif()
 
 file(GLOB_RECURSE ENGINE_HEADERS
