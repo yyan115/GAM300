@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/SideWall2.png",
         "compiled": "../../Resources/Textures/SideWall2.dds",
         "android_compiled": "Resources/Textures/SideWall2_android.ktx",
-        "last_compiled": "2025-11-09 12:29:35.2589085"
+        "last_compiled": "2025-11-09 12:41:07.3278025"
     },
     "TextureMetaData": {
         "type": "diffuse",

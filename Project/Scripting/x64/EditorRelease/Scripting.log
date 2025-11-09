@@ -1,4 +1,4 @@
-﻿  The vcpkg manifest was disabled, but we found a manifest file in C:\Users\admin\Desktop\GAM300\Project\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
+﻿  The vcpkg manifest was disabled, but we found a manifest file in D:\Woon Li\Documents\University\Year 3\GAM300\Project\. You may want to enable vcpkg manifests in your properties page or pass /p:VcpkgEnableManifest=true to the msbuild invocation.
   lapi.c
   lauxlib.c
   lbaselib.c
@@ -52,4 +52,4 @@
   ScriptingRuntime.cpp
   StatePreserver.cpp
 lua.obj : warning LNK4006: main already defined in luac.obj; second definition ignored
-  Scripting.vcxproj -> C:\Users\admin\Desktop\GAM300\Project\Build\EditorRelease\Scripting.lib
+  Scripting.vcxproj -> D:\Woon Li\Documents\University\Year 3\GAM300\Project\Build\EditorRelease\Scripting.lib
