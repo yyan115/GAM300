@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/road_C_fix.jpg",
         "compiled": "../../Resources/Textures/road_C_fix.dds",
         "android_compiled": "Resources/Textures/road_C_fix_android.ktx",
-        "last_compiled": "2025-11-09 12:51:55.6032240"
+        "last_compiled": "2025-11-09 14:17:57.2124840"
     },
     "TextureMetaData": {
         "type": "diffuse",

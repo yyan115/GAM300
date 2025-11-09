@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Kachujin/Kachujin_diffuse.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse.dds",
         "android_compiled": "Resources/Models/Kachujin/Kachujin_diffuse_android.ktx",
-        "last_compiled": "2025-11-09 12:51:47.3141597"
+        "last_compiled": "2025-11-09 14:17:51.1518551"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Environment/Roof.fbx",
         "compiled": "../../Resources/Models/Environment/Roof.mesh",
         "android_compiled": "Resources/Models/Environment/Roof_android.mesh",
-        "last_compiled": "2025-11-09 12:52:05.9160605"
+        "last_compiled": "2025-11-09 14:18:05.8854005"
     },
     "ModelMetaData": {
         "optimizeMeshes": true
