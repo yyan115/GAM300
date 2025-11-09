@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/Nightshade_diffuse.png",
         "compiled": "../../Resources/Textures/Nightshade_diffuse.dds",
         "android_compiled": "Resources/Textures/Nightshade_diffuse_android.ktx",
-        "last_compiled": "2025-11-09 12:41:03.8284389"
+        "last_compiled": "2025-11-09 12:51:54.5312476"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -74,8 +74,8 @@ void VirtualControls::InitializeButtons() {
     // Position buttons in bottom-left corner for WASD layout
     const float buttonSize = 0.15f; // 15% of screen (bigger for debugging)
     const float spacing = 0.03f;    // 3% spacing
-    const float baseX = 0.2f;       // 20% from left edge
-    const float baseY = 0.7f;       // 70% from top (higher up for visibility)
+    const float baseX = 0.1f;       // 10% from left edge (moved left from 0.2f)
+    const float baseY = 0.8f;       // 80% from top (moved down from 0.7f)
     
     // W button (top)
     s_buttons[0] = {
@@ -106,7 +106,7 @@ void VirtualControls::InitializeButtons() {
     
     // D button (right)
     s_buttons[3] = {
-        baseX + buttonSize * 2 + spacing, baseY,         // x, y
+        baseX + buttonSize * 2, baseY,                    // x, y
         buttonSize, buttonSize,                           // width, height
         Input::Key::D,                                    // key
         false,                                            // isPressed
@@ -160,11 +160,11 @@ void VirtualControls::InitializeRenderResources() {
 }
 
 void VirtualControls::Render(int screenWidth, int screenHeight) {
-    __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "VirtualControls::Render called - initialized=%s, enabled=%s, screenSize=%dx%d",
-                       s_initialized ? "true" : "false", s_enabled ? "true" : "false", screenWidth, screenHeight);
-    
+    // __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "VirtualControls::Render called - initialized=%s, enabled=%s, screenSize=%dx%d",
+    //                    s_initialized ? "true" : "false", s_enabled ? "true" : "false", screenWidth, screenHeight);
+
     if (!s_initialized || !s_enabled) {
-        __android_log_print(ANDROID_LOG_WARN, "GAM300", "VirtualControls::Render early return - not initialized or disabled");
+        // __android_log_print(ANDROID_LOG_WARN, "GAM300", "VirtualControls::Render early return - not initialized or disabled");
         return;
     }
     
@@ -254,9 +254,9 @@ void VirtualControls::RenderButton(const VirtualButton& button, int screenWidth,
     float screenY = button.y * screenHeight;
     float screenW = button.width * screenWidth;
     float screenH = button.height * screenHeight;
-    
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "Rendering button key=%d at screen: %.1f,%.1f size: %.1fx%.1f", 
-                       static_cast<int>(button.key), screenX, screenY, screenW, screenH);
+
+    // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Rendering button key=%d at screen: %.1f,%.1f size: %.1fx%.1f",
+    //                    static_cast<int>(button.key), screenX, screenY, screenW, screenH);
     
     // Create transformation matrix to position and scale the button
     // Convert screen coordinates to NDC (-1 to 1)
@@ -343,13 +343,13 @@ bool VirtualControls::IsPointInButton(const VirtualButton& button, float x, floa
 void VirtualControls::UpdateButtonState(VirtualButton& button, bool pressed) {
     if (button.isPressed != pressed) {
         button.isPressed = pressed;
-        
+
         // Send input event to InputManager
         Input::KeyAction action = pressed ? Input::KeyAction::PRESS : Input::KeyAction::RELEASE;
         InputManager::OnKeyEvent(button.key, action);
-        
-        __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Virtual button %d %s", 
-                           static_cast<int>(button.key), pressed ? "pressed" : "released");
+
+        // __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Virtual button %d %s",
+        //                    static_cast<int>(button.key), pressed ? "pressed" : "released");
     }
 }
 

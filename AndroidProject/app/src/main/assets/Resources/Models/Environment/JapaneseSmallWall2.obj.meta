@@ -5,7 +5,7 @@
         "source": "../../Resources/Models/Environment/JapaneseSmallWall2.obj",
         "compiled": "../../Resources/Models/Environment/JapaneseSmallWall2.mesh",
         "android_compiled": "Resources/Models/Environment/JapaneseSmallWall2_android.mesh",
-        "last_compiled": "2025-11-09 12:41:10.2059042"
+        "last_compiled": "2025-11-09 12:52:03.3447557"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

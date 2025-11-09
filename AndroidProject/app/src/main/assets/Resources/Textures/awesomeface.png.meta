@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/awesomeface.png",
         "compiled": "../../Resources/Textures/awesomeface.dds",
         "android_compiled": "Resources/Textures/awesomeface_android.ktx",
-        "last_compiled": "2025-11-09 12:41:02.9879524"
+        "last_compiled": "2025-11-09 12:51:53.2413725"
     },
     "TextureMetaData": {
         "type": "diffuse",

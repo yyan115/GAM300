@@ -5,7 +5,7 @@
         "source": "../../Resources/Textures/Roof.jpg",
         "compiled": "../../Resources/Textures/Roof.dds",
         "android_compiled": "Resources/Textures/Roof_android.ktx",
-        "last_compiled": "2025-11-09 12:41:02.9002855"
+        "last_compiled": "2025-11-09 12:51:53.0642174"
     },
     "TextureMetaData": {
         "type": "diffuse",
