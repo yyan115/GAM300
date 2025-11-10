@@ -1,7 +1,7 @@
 /* Start Header ************************************************************************/
 /*!
 \file       ReflectionRenderer.cpp
-\author     Claude Code Assistant
+\author     Lucas Yee
 \date       2025
 \brief      Implementation of automatic ImGui rendering for reflected components.
 
@@ -17,6 +17,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Transform/Quaternion.hpp"
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/AssetManager.hpp"
+#include "UndoableWidgets.hpp"
 #include <sstream>
 #include <iomanip>
 #include <cctype>
@@ -105,15 +106,17 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
         if (!fieldPtr) continue;
 
         // Check for custom field renderer (component::field specific)
-        std::string componentType = typeDesc->GetName();
+        componentType = typeDesc->GetName();
         std::string fieldKey = componentType + "::" + memberName;
         auto& fieldRenderers = GetFieldRenderers();
         if (fieldRenderers.find(fieldKey) != fieldRenderers.end()) {
-            modified |= fieldRenderers[fieldKey](member.name, fieldPtr, entity, ecsManager);
+            // Custom field renderer handles its own undo/redo via UndoableWidgets
+            bool fieldModified = fieldRenderers[fieldKey](member.name, fieldPtr, entity, ecsManager);
+            modified |= fieldModified;
             continue;
         }
 
-        // Render using type-based renderer
+        // Render using type-based renderer (has its own snapshot handling in RenderField)
         modified |= RenderField(member.name, fieldPtr, member.type, entity, ecsManager);
     }
 
@@ -126,44 +129,49 @@ bool ReflectionRenderer::RenderField(const char* fieldName, void* fieldPtr,
     if (!fieldPtr || !fieldType) return false;
 
     std::string typeName = fieldType->GetName();
+    bool modified = false;
 
     // Check for custom type renderer
     auto& customRenderers = GetCustomRenderers();
     if (customRenderers.find(typeName) != customRenderers.end()) {
-        return customRenderers[typeName](fieldName, fieldPtr, entity, ecsManager);
+        modified = customRenderers[typeName](fieldName, fieldPtr, entity, ecsManager);
     }
-
     // Handle common types
-    if (typeName == "bool" || typeName == "int" || typeName == "unsigned" ||
+    else if (typeName == "bool" || typeName == "int" || typeName == "unsigned" ||
         typeName == "float" || typeName == "double" ||
         typeName == "int64_t" || typeName == "uint64_t") {
-        return RenderPrimitive(fieldName, fieldPtr, typeName);
+        modified = RenderPrimitive(fieldName, fieldPtr, typeName);
     }
     else if (typeName == "std::string") {
-        return RenderString(fieldName, fieldPtr);
+        modified = RenderString(fieldName, fieldPtr);
     }
     else if (typeName == "Vector3D") {
-        return RenderVector3D(fieldName, fieldPtr);
+        modified = RenderVector3D(fieldName, fieldPtr);
     }
     else if (typeName == "Quaternion") {
-        return RenderQuaternion(fieldName, fieldPtr);
+        modified = RenderQuaternion(fieldName, fieldPtr);
     }
     else if (typeName == "GUID_128") {
-        return RenderGUID(fieldName, fieldPtr, entity, ecsManager);
+        modified = RenderGUID(fieldName, fieldPtr, entity, ecsManager);
     }
     else {
         // Try to render as struct (nested reflection)
         TypeDescriptor_Struct* structType = dynamic_cast<TypeDescriptor_Struct*>(fieldType);
         if (structType) {
-            return RenderStruct(fieldName, fieldPtr, fieldType, entity, ecsManager);
+            modified = RenderStruct(fieldName, fieldPtr, fieldType, entity, ecsManager);
         }
-
-        // Unknown type - just show type name
-        ImGui::Text("%s", fieldName);
-        ImGui::SameLine();
-        ImGui::TextDisabled("(%s - not rendered)", typeName.c_str());
-        return false;
+        else {
+            // Unknown type - just show type name
+            ImGui::Text("%s", fieldName);
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%s - not rendered)", typeName.c_str());
+        }
     }
+
+    // Snapshots are now handled inside each widget renderer (RenderPrimitive, etc.)
+    // This ensures we capture the OLD value before modification, not after
+
+    return modified;
 }
 
 // Helper function to convert camelCase to "Proper Case"
@@ -194,8 +202,8 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
 
     if (typeName == "bool") {
         bool* value = static_cast<bool*>(fieldPtr);
+
         // Booleans get their own line with label (Unity-style)
-        // Use just the ID for the checkbox widget (label is in front)
         ImGui::Text("%s", displayName.c_str());
         ImGui::SameLine();
 
@@ -206,7 +214,8 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
         ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
         ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Even lighter when clicking
 
-        bool changed = ImGui::Checkbox(id.c_str(), value);
+        // Use UndoableWidgets wrapper for automatic undo/redo
+        bool changed = UndoableWidgets::Checkbox(id.c_str(), value);
 
         ImGui::PopStyleColor(4); // Pop all 4 colors
         ImGui::PopStyleVar();
@@ -219,14 +228,15 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1);
 
+    // Use UndoableWidgets wrappers for automatic undo/redo
     if (typeName == "int") {
         int* value = static_cast<int*>(fieldPtr);
-        return ImGui::DragInt(id.c_str(), value, 1.0f);
+        return UndoableWidgets::DragInt(id.c_str(), value, 1.0f);
     }
     else if (typeName == "unsigned") {
         unsigned* value = static_cast<unsigned*>(fieldPtr);
         int temp = static_cast<int>(*value);
-        if (ImGui::DragInt(id.c_str(), &temp, 1.0f, 0, INT_MAX)) {
+        if (UndoableWidgets::DragInt(id.c_str(), &temp, 1.0f, 0, INT_MAX)) {
             *value = static_cast<unsigned>(temp);
             return true;
         }
@@ -234,12 +244,12 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     }
     else if (typeName == "float") {
         float* value = static_cast<float*>(fieldPtr);
-        return ImGui::DragFloat(id.c_str(), value, 0.01f);
+        return UndoableWidgets::DragFloat(id.c_str(), value, 0.01f);
     }
     else if (typeName == "double") {
         double* value = static_cast<double*>(fieldPtr);
         float temp = static_cast<float>(*value);
-        if (ImGui::DragFloat(id.c_str(), &temp, 0.01f)) {
+        if (UndoableWidgets::DragFloat(id.c_str(), &temp, 0.01f)) {
             *value = static_cast<double>(temp);
             return true;
         }
@@ -248,7 +258,7 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     else if (typeName == "int64_t") {
         int64_t* value = static_cast<int64_t*>(fieldPtr);
         int temp = static_cast<int>(*value);
-        if (ImGui::DragInt(id.c_str(), &temp)) {
+        if (UndoableWidgets::DragInt(id.c_str(), &temp)) {
             *value = static_cast<int64_t>(temp);
             return true;
         }
@@ -257,7 +267,7 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     else if (typeName == "uint64_t") {
         uint64_t* value = static_cast<uint64_t*>(fieldPtr);
         int temp = static_cast<int>(*value);
-        if (ImGui::DragInt(id.c_str(), &temp, 1.0f, 0, INT_MAX)) {
+        if (UndoableWidgets::DragInt(id.c_str(), &temp, 1.0f, 0, INT_MAX)) {
             *value = static_cast<uint64_t>(temp);
             return true;
         }
@@ -278,7 +288,7 @@ bool ReflectionRenderer::RenderVector3D(const char* fieldName, void* fieldPtr) {
     float values[3] = { vec->x, vec->y, vec->z };
     std::string id = MakeFieldID(fieldName, fieldPtr);
 
-    if (ImGui::DragFloat3(id.c_str(), values, 0.1f)) {
+    if (UndoableWidgets::DragFloat3(id.c_str(), values, 0.1f)) {
         vec->x = values[0];
         vec->y = values[1];
         vec->z = values[2];
@@ -302,7 +312,7 @@ bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr)
     float values[3] = { euler.x, euler.y, euler.z };
     std::string id = MakeFieldID(fieldName, fieldPtr);
 
-    if (ImGui::DragFloat3(id.c_str(), values, 1.0f, -180.0f, 180.0f, "%.1f")) {
+    if (UndoableWidgets::DragFloat3(id.c_str(), values, 1.0f, -180.0f, 180.0f, "%.1f")) {
         *quat = Quaternion::FromEulerDegrees(Vector3D(values[0], values[1], values[2]));
         return true;
     }
@@ -311,7 +321,7 @@ bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr)
 }
 
 bool ReflectionRenderer::RenderGUID(const char* fieldName, void* fieldPtr,
-                                    Entity entity, ECSManager& ecsManager) {
+                                    Entity, ECSManager&) {
     GUID_128* guid = static_cast<GUID_128*>(fieldPtr);
 
     std::string displayName = CamelCaseToProperCase(fieldName);
@@ -357,7 +367,7 @@ bool ReflectionRenderer::RenderString(const char* fieldName, void* fieldPtr) {
     }
 
     std::string id = MakeFieldID(fieldName, fieldPtr);
-    if (ImGui::InputText(id.c_str(), buffer.data(), buffer.size())) {
+    if (UndoableWidgets::InputText(id.c_str(), buffer.data(), buffer.size())) {
         *str = std::string(buffer.data());
         return true;
     }

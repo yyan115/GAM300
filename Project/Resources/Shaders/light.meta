@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "0037a8a2499a0f39-00031f529a000043",
-        "source": "../../Resources/Shaders/light",
-        "compiled": "../../Resources/Shaders/light.shader",
-        "last_compiled": "2025-11-04 07:19:20.0272189"
-    }
-}

@@ -45,7 +45,8 @@ private:
         Shaders,
         Audio,
         Fonts,
-        Materials
+        Materials,
+        Scripts
     };
 
     // UI state

@@ -85,7 +85,9 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Particle system initialized");
 	ecsManager.animationSystem->Initialise();
 	ENGINE_LOG_INFO("Animation system initialized");
-	InitializePhysics();
+	InitializePhysics(); //can we all do like this?
+	ecsManager.scriptSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Script system initialized");
 
 	//glEnable(GL_DEBUG_OUTPUT);
 	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -130,6 +132,7 @@ void SceneInstance::Update(double dt) {
 
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
+	mainECS.scriptSystem->Update(0.1f,mainECS); //i will need change this to remove dt
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem) {
@@ -253,6 +256,7 @@ void SceneInstance::Exit() {
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
@@ -277,15 +281,54 @@ void SceneInstance::processInput(float deltaTime)
 
 	Camera* camera = mainECS.cameraSystem->GetActiveCamera();
 
-	float cameraSpeed = 2.5f * deltaTime;
-	if (InputManager::GetKey(Input::Key::W))
-		camera->ProcessKeyboard(FORWARD, deltaTime);
-	if (InputManager::GetKey(Input::Key::S))
-		camera->ProcessKeyboard(BACKWARD, deltaTime);
-	if (InputManager::GetKey(Input::Key::A))
-		camera->ProcessKeyboard(LEFT, deltaTime);
-	if (InputManager::GetKey(Input::Key::D))
-		camera->ProcessKeyboard(RIGHT, deltaTime);
+	//float cameraSpeed = 2.5f * deltaTime;
+	//if (InputManager::GetKey(Input::Key::W))
+	//if (InputManager::GetKey(Input::Key::S))
+	//if (InputManager::GetKey(Input::Key::A))
+	//if (InputManager::GetKey(Input::Key::D))
+
+	// temp
+	Entity player{};
+	const auto& all = mainECS.GetAllEntities();
+	for (Entity e : all) {
+		std::string enttName = mainECS.GetComponent<NameComponent>(e).name;
+		if (enttName == "Kachujin") {
+			player = e;
+		}
+	}
+
+	//Temp player controls for playable level
+	// Backwards = +z
+
+
+	if (InputManager::GetKey(Input::Key::W)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
+		Transform playerPos = mainECS.GetComponent<Transform>(player);
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z - 0.01f));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 180, 0));
+		camera->ProcessKeyboard(FORWARD, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::S)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] S Key Pressed");
+		Transform playerPos = mainECS.GetComponent<Transform>(player);
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z + 0.01f));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 0, 0));
+		camera->ProcessKeyboard(BACKWARD, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::A)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] A Key Pressed");
+		Transform playerPos = mainECS.GetComponent<Transform>(player);
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x - 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, -90, 0));
+		camera->ProcessKeyboard(LEFT, 0.004f);
+	}
+	if (InputManager::GetKey(Input::Key::D)) {
+		ENGINE_LOG_DEBUG("[ProcessInput] D Key Pressed");
+		Transform playerPos = mainECS.GetComponent<Transform>(player);
+		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
+		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
+		camera->ProcessKeyboard(RIGHT, 0.004f);
+	}
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))

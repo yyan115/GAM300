@@ -48,15 +48,15 @@ private:
     // Add more effects here as needed
 
     // HDR framebuffer resources
-    unsigned int hdrFramebuffer;
-    unsigned int hdrColorTexture;
-    unsigned int hdrDepthRenderbuffer;
-    int hdrWidth;
-    int hdrHeight;
+    unsigned int hdrFramebuffer{};
+    unsigned int hdrColorTexture{};
+    unsigned int hdrDepthRenderbuffer{};
+    int hdrWidth{};
+    int hdrHeight{};
 
     // Screen quad for rendering post-process effects
-    unsigned int screenQuadVAO;
-    unsigned int screenQuadVBO;
+    unsigned int screenQuadVAO{};
+    unsigned int screenQuadVBO{};
 
-    bool initialized;
+    bool initialized{};
 };

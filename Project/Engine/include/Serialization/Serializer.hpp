@@ -23,12 +23,16 @@
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
+#include <Scripting.h>
+#include "Engine.h"
+#include <Game AI/BrainComponent.hpp>
 
 class Serializer {
 public:
-	static void SerializeScene(const std::string& scenePath);
-	static void DeserializeScene(const std::string& scenePath);
-	static void ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
+	static void ENGINE_API SerializeScene(const std::string& scenePath);
+	static void ENGINE_API DeserializeScene(const std::string& scenePath);
+	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 
 	static Entity CreateEntityViaGUID(const rapidjson::Value& entityJSON);
 	static void DeserializeNameComponent(NameComponent& nameComp, const rapidjson::Value& nameJSON);
@@ -50,7 +54,9 @@ public:
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
+	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
+	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 
 private:
 	Serializer() = delete;

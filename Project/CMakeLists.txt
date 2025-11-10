@@ -8,11 +8,15 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
 endif()
 
 # Project definition
-project(GAM300 VERSION 1.0.0 LANGUAGES CXX)
+project(GAM300 VERSION 1.0.0 LANGUAGES C CXX)
 
 # C++ Standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# C Standard (for C files like glad.c and Lua sources)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Import dependencies using centralized module
 include(ImportDependencies.cmake)
@@ -55,6 +59,9 @@ else()
         find_package(PkgConfig REQUIRED)
     endif()
 endif()
+
+# Add Lua
+add_subdirectory("${CMAKE_SOURCE_DIR}/Libraries/lua")
 
 # Always build Engine (always shared library)
 add_subdirectory(Engine)

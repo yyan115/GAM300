@@ -147,6 +147,9 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	else if (materialExtensions.find(extension) != materialExtensions.end()) {
 		return CompileAsset<Material>(filePathStr, forceCompile, forAndroid);
 	}
+	else if (scriptExtensions.find(extension) != scriptExtensions.end()) {
+		return CompileAsset<Script>(filePathStr, forceCompile, forAndroid);
+	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
 		return false;
@@ -174,6 +177,9 @@ bool AssetManager::CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool force
 	}
 	else if (materialExtensions.find(extension) != materialExtensions.end()) {
 		return CompileAsset<Material>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (scriptExtensions.find(extension) != scriptExtensions.end()) {
+		return CompileAsset<Script>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
 	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
@@ -302,6 +308,12 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 			ResourceManager::GetInstance().UnloadResource<Shader>(guid, it->second->compiledFilePath);
 			//MetaFilesManager::DeleteMetaFile(assetPath);
 		}
+		else if (materialExtensions.find(extension) != materialExtensions.end()) {
+			ResourceManager::GetInstance().UnloadResource<Material>(guid, it->second->compiledFilePath);
+		}
+		else if (scriptExtensions.find(extension) != shaderExtensions.end()) {
+			ResourceManager::GetInstance().UnloadResource<Script>(guid, it->second->compiledFilePath);
+		}
 		else {
 			std::cerr << "[AssetManager] ERROR: Trying to unload unsupported asset extension: " << extension << std::endl;
 		}
@@ -342,6 +354,7 @@ void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(modelExtensions.begin(), modelExtensions.end());
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
 	supportedAssetExtensions.insert(materialExtensions.begin(), materialExtensions.end());
+	supportedAssetExtensions.insert(scriptExtensions.begin(), scriptExtensions.end());
 }
 
 std::unordered_set<std::string>& AssetManager::GetSupportedExtensions() {
@@ -572,6 +585,8 @@ std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName
 			return assetPath;
 		}
 	}
+
+	return "";
 }
 
 bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {

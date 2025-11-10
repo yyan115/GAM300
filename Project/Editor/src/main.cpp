@@ -9,8 +9,8 @@
 #include "Logging.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
-
-int main() {
+int main()
+{
     ENGINE_PRINT("=== EDITOR BUILD ===");
 
     if (!glfwInit()) {
@@ -32,7 +32,8 @@ int main() {
     GameManager::Initialize();
 	GUIManager::Initialize();
 
-    while (Engine::IsRunning()) {
+    while (Engine::IsRunning()) 
+    {
         // Begin frame profiling
         PerformanceProfiler::GetInstance().BeginFrame();
         
@@ -41,6 +42,8 @@ int main() {
 
             Engine::Update();
             GameManager::Update();
+
+            // --- end scripting/hot-reload work ---
             Engine::StartDraw();
             //Engine::Draw();
             GUIManager::Render();
@@ -48,10 +51,11 @@ int main() {
 		
         // WindowManager handles buffer swapping for editor
         //WindowManager::SwapBuffers();
-        
+     
         // End frame profiling
         PerformanceProfiler::GetInstance().EndFrame();
     }
+
 	GUIManager::Exit();
     GameManager::Shutdown();
     Engine::Shutdown();

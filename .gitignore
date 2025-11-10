@@ -44,3 +44,5 @@ AndroidProject/local.properties
 *.font
 *.dds
 *.ktx
+*.meta
+/Project/Scripting/x64

@@ -225,7 +225,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;JPH_PROFILE_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\joltphysics;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -247,7 +247,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);EDITOR=1;JPH_DEBUG_RENDERER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -264,7 +264,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\joltphysics;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -286,7 +286,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Engine\vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)Engine\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

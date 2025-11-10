@@ -63,7 +63,7 @@ public:
      * @return AABB in world space
      */
     static AABB CreateAABBFromTransform(const Matrix4x4& transform,
-                                       const glm::vec3& modelSize = glm::vec3(1.0f));
+                                       const glm::vec3& modelSize = glm::vec3(2.0f));
 
     /**
      * @brief Create AABB from sprite position and scale.

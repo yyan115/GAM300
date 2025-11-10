@@ -232,3 +232,17 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         SyncAnimatorToActiveClip();
     }
 }
+
+void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
+	activeClip = clipIndex;
+	isLoop = loop;
+	isPlay = true;
+}
+
+void AnimationComponent::PlayOnce(std::size_t clipIndex) {
+	PlayClip(clipIndex, false);
+}
+
+bool AnimationComponent::IsPlaying() const {
+	return isPlay;
+}

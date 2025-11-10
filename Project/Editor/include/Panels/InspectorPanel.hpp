@@ -37,6 +37,7 @@ private:
     void DrawTagComponent(Entity entity);
     void DrawLayerComponent(Entity entity);
     void DrawModelRenderComponent(Entity entity);
+	void DrawBrainComponent(Entity entity);
 
     // Generic reflection-based rendering
     void DrawComponentGeneric(void* componentPtr, const char* componentTypeName, Entity entity);

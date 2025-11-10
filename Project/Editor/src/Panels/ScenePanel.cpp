@@ -30,6 +30,7 @@
 #include <cmath>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include "SnapshotManager.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
@@ -240,6 +241,7 @@ void ScenePanel::HandleCameraInput() {
     bool isAltPressed = io.KeyAlt;
     bool isLeftMousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
     bool isMiddleMousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
+    bool isRightMousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Right);
     float scrollDelta = io.MouseWheel;
 
     // Get the PlayControlPanel to check state
@@ -269,6 +271,7 @@ void ScenePanel::HandleCameraInput() {
         isAltPressed,
         isLeftMousePressed,
         isMiddleMousePressed,
+        isRightMousePressed,
         mouseDelta.x,
         -mouseDelta.y,  // Invert Y for standard camera behavior
         scrollDelta,
@@ -293,10 +296,12 @@ void ScenePanel::HandleEntitySelection() {
     ImGuiIO& io = ImGui::GetIO();
     bool isLeftClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     bool isDoubleClicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+    bool isLeftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    bool isLeftReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
     bool isAltPressed = io.KeyAlt;
 
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
-    if ((isLeftClicked || isDoubleClicked) && !isAltPressed) {
+    if ((isLeftClicked || isDoubleClicked || isLeftDown || isLeftReleased) && !isAltPressed) {
         // Get mouse position relative to the scene window
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 windowPos = ImGui::GetWindowPos();
@@ -314,6 +319,82 @@ void ScenePanel::HandleEntitySelection() {
         // Check if click is within scene bounds
         if (relativeX >= 0 && relativeX <= sceneWidth &&
             relativeY >= 0 && relativeY <= sceneHeight) {
+
+            // Handle marquee selection
+            if (isLeftClicked && !isDoubleClicked) {
+                isMarqueeSelecting = false;
+                marqueeStart = ImVec2(relativeX, relativeY);
+                marqueeEnd = marqueeStart;
+            }
+
+            if (isLeftDown) {
+                ImVec2 currentPos(relativeX, relativeY);
+                if (!isMarqueeSelecting) {
+                    float dx = currentPos.x - marqueeStart.x;
+                    float dy = currentPos.y - marqueeStart.y;
+                    float dist = std::sqrt(dx * dx + dy * dy);
+                    if (dist > 5.0f) {
+                        isMarqueeSelecting = true;
+                    }
+                }
+                if (isMarqueeSelecting) {
+                    marqueeEnd = currentPos;
+                }
+            }
+
+            if (isLeftReleased) {
+                if (isMarqueeSelecting) {
+                    isMarqueeSelecting = false;
+
+                    // Calculate marquee bounds
+                    float minX = std::min(marqueeStart.x, marqueeEnd.x);
+                    float maxX = std::max(marqueeStart.x, marqueeEnd.x);
+                    float minY = std::min(marqueeStart.y, marqueeEnd.y);
+                    float maxY = std::max(marqueeStart.y, marqueeEnd.y);
+
+                    // Marquee selection
+                    std::vector<Entity> selectedEntities;
+                    try {
+                        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                        EditorState& editorState = EditorState::GetInstance();
+                        bool is2DMode = editorState.Is2DMode();
+
+                        float aspectRatio = sceneWidth / sceneHeight;
+                        glm::mat4 glmViewMatrix = is2DMode ? editorCamera.Get2DViewMatrix() : editorCamera.GetViewMatrix();
+                        glm::mat4 glmProjMatrix = is2DMode ? editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight) : editorCamera.GetProjectionMatrix(aspectRatio);
+                        glm::mat4 vp = glmProjMatrix * glmViewMatrix;
+
+                        for (auto entity : ecsManager.GetActiveEntities()) {
+                            if (ecsManager.HasComponent<Transform>(entity)) {
+                                Transform& transform = ecsManager.GetComponent<Transform>(entity);
+                                glm::vec3 worldPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+
+                                glm::vec4 clipSpace = vp * glm::vec4(worldPos, 1.0f);
+                                if (clipSpace.w > 0.0001f) {
+                                    glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+                                    float screenX = (ndc.x + 1.0f) * 0.5f * sceneWidth;
+                                    float screenY = (1.0f - ndc.y) * 0.5f * sceneHeight;
+
+                                    if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+                                        selectedEntities.push_back(entity);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!selectedEntities.empty()) {
+                            GUIManager::SetSelectedEntities(selectedEntities);
+                            ENGINE_PRINT("[ScenePanel] Marquee selected ", selectedEntities.size(), " entities\n");
+                        } else {
+                            GUIManager::ClearSelectedEntities();
+                            ENGINE_PRINT("[ScenePanel] Marquee selection cleared\n");
+                        }
+                    } catch (const std::exception& e) {
+                        ENGINE_PRINT("[ScenePanel] Error during marquee selection: ", e.what(), "\n");
+                    }
+                    return; // Skip raycast for marquee
+                }
+            }
 
             // Perform proper raycasting for entity selection
             EditorState& editorState = EditorState::GetInstance();
@@ -515,6 +596,14 @@ void ScenePanel::OnImGuiRender()
                 DrawGameViewportIndicator();
             }
 
+            // Draw marquee selection box if active
+            if (isMarqueeSelecting) {
+                ImVec2 startPos = ImVec2(childPos.x + marqueeStart.x, childPos.y + marqueeStart.y);
+                ImVec2 endPos = ImVec2(childPos.x + marqueeEnd.x, childPos.y + marqueeEnd.y);
+                ImU32 marqueeColor = IM_COL32(0, 120, 255, 100);  // Semi-transparent blue
+                dl->AddRect(startPos, endPos, marqueeColor, 0.0f, 0, 2.0f);
+            }
+
             // Hover state for input routing
             // Use flags to ensure hover works correctly when docked with other panels
             isSceneHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
@@ -709,13 +798,36 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
         }
 
-        bool isUsing = ImGuizmo::Manipulate(
+        ImGuizmo::Manipulate(
             viewMatrix, projMatrix,
             gizmoOperation, gizmoMode,
             selectedObjectMatrix,
             nullptr, nullptr
         );
 
+        // Use ImGuizmo::IsUsing() for reliable state detection (doesn't flicker during drag)
+        bool isUsing = ImGuizmo::IsUsing();
+
+        // Track gizmo manipulation for undo/redo
+        static bool wasUsing = false;
+        static bool snapshotTaken = false;
+        static Entity lastManipulatedEntity = static_cast<Entity>(-1);
+
+        // When user STARTS dragging: take ONE snapshot and disable auto-snapshots from Inspector
+        if (isUsing && !wasUsing && !snapshotTaken) {
+            SnapshotManager::GetInstance().TakeSnapshot("Transform Entity");
+            SnapshotManager::GetInstance().SetSnapshotEnabled(false);  // Disable Inspector snapshots
+            snapshotTaken = true;
+            lastManipulatedEntity = selectedEntity;
+        }
+
+        // When user STOPS dragging: re-enable auto-snapshots and reset flag
+        if (!isUsing && wasUsing) {
+            SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
+            snapshotTaken = false;  // Reset for next drag operation
+        }
+
+        wasUsing = isUsing;
 
         // Apply transform changes to the actual entity
         if (isUsing) {

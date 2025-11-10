@@ -8,6 +8,12 @@ file(GLOB_RECURSE ENGINE_SOURCES
     "src/*.c"
 )
 
+# Add Scripting sources from Scripting folder
+file(GLOB_RECURSE SCRIPTING_SOURCES
+    "${CMAKE_SOURCE_DIR}/Scripting/src/*.cpp"
+)
+list(APPEND ENGINE_SOURCES ${SCRIPTING_SOURCES})
+
 # Remove unused/broken source files
 list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/RenderSystem.cpp"
@@ -30,12 +36,30 @@ list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vfetchoptimizer.cpp"
 )
 
+# Android uses OpenGL ES, not desktop OpenGL - exclude GLAD (desktop OpenGL loader)
+# Also exclude Windows-specific Scripting files
+if(ANDROID)
+    list(REMOVE_ITEM ENGINE_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/glad.c"
+        "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
+        "${CMAKE_SOURCE_DIR}/Scripting/src/ScriptFileSystem_win.cpp"
+    )
+    message(STATUS "Excluded glad.c and Windows-specific Scripting files for Android")
+endif()
+
 file(GLOB_RECURSE ENGINE_HEADERS
     "include/*.h"
     "include/*.hpp"
     "src/*.h"
     "src/*.hpp"
 )
+
+# Add Scripting headers from Scripting folder
+file(GLOB_RECURSE SCRIPTING_HEADERS
+    "${CMAKE_SOURCE_DIR}/Scripting/include/*.h"
+    "${CMAKE_SOURCE_DIR}/Scripting/include/*.hpp"
+)
+list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
@@ -138,8 +162,11 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        # Keep manual libraries: ImGui (docking), FMOD (commercial)
+        # Scripting library headers
+        ${CMAKE_SOURCE_DIR}/Scripting/include
+        # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
+        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -169,6 +196,8 @@ if(ANDROID)
         PRIVATE
             # FetchContent Jolt Physics - PRIVATE so Game doesn't see it
             Jolt
+            # Lua scripting library
+            lua
             # Prebuilt libraries
             ${SPDLOG_LIBRARY}
             ${FREETYPE_LIBRARY}
@@ -187,6 +216,7 @@ else()
             # All dependencies are PRIVATE - Game only sees Engine.h
             glm::glm
             Jolt
+            lua
             assimp::assimp
             glfw
             Freetype::Freetype

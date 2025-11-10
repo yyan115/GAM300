@@ -469,7 +469,7 @@ void AssetBrowserPanel::RenderToolbar() {
     ImGui::SameLine();
     ImGui::SetNextItemWidth(120.0f);
 
-    const char* assetTypeNames[] = { "All", "Textures", "Models", "Shaders", "Audio", "Fonts", "Materials" };
+    const char* assetTypeNames[] = { "All", "Textures", "Models", "Shaders", "Audio", "Fonts", "Materials", "Scripts"};
     int currentTypeIndex = static_cast<int>(selectedAssetType);
 
     if (ImGui::Combo("##Filter", &currentTypeIndex, assetTypeNames, IM_ARRAYSIZE(assetTypeNames))) {
@@ -628,9 +628,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                            lowerExt == ".mp3" || lowerExt == ".flac");
             bool isFont = (lowerExt == ".ttf" || lowerExt == ".otf");
             bool isPrefab = (lowerExt == ".prefab");
+            bool isScript = (lowerExt == ".lua");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio || isFont) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont || isScript) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -663,6 +664,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Send font path directly
                     ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
+                } else if (isScript) {
+                    // Send script path directly
+                    ImGui::SetDragDropPayload("SCRIPT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Script: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -1128,6 +1133,9 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".mat") {
         return AssetType::Materials;
     }
+    else if (lowerExt == ".lua") {
+        return AssetType::Scripts;
+    }
 
     return AssetType::All;
 }
@@ -1398,7 +1406,8 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".ttf", ".otf",                                    // Fonts
         ".mat",                                            // Materials
         ".prefab",                                         // Prefabs
-        ".scene"                                           // Scenes
+        ".scene",                                          // Scenes
+        ".lua",                                            // Scripts
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;
@@ -1727,9 +1736,9 @@ void AssetBrowserPanel::OpenImportDialog() {
         else {
             // Multiple files selected
             while (*p) {
-                std::string filename = p;
-                selectedFiles.push_back(directory + "\\" + filename);
-                p += filename.size() + 1;
+                std::string filenameStr = p;
+                selectedFiles.push_back(directory + "\\" + filenameStr);
+                p += filenameStr.size() + 1;
             }
         }
 

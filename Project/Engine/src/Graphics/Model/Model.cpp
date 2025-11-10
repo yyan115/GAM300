@@ -126,6 +126,18 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
         else {
             std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
             assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+            // Ensure parent directories exist
+            std::filesystem::path outputPath(assetPathAndroid);
+            std::filesystem::create_directories(outputPath.parent_path());
+
+            try {
+                // Copy the audio file to the Android assets location
+                std::filesystem::copy_file(assetPath, assetPathAndroid, std::filesystem::copy_options::overwrite_existing);
+            }
+            catch (const std::filesystem::filesystem_error& e) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Model] Failed to copy model (animation) file for Android: ", e.what(), "\n");
+                return std::string{};
+            }
             return assetPathAndroid;
         }
     }
@@ -334,9 +346,12 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
         }
 
         // Load textures and assign to material
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
-        LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+        if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
+        if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
+        if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
 
     }
 
@@ -439,9 +454,6 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
 		// Write the number of meshes to the file as binary data.
 		size_t meshCount = meshesToCompile.size();
 		meshFile.write(reinterpret_cast<const char*>(&meshCount), sizeof(meshCount));
-
-		// For BoneMap writing
-		int meshIndex = 0;
 
 		// For each mesh, write its data to the file.
         for (const Mesh& mesh : meshesToCompile) {
@@ -744,7 +756,7 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
                 offset += sizeof(mBoneCounter);
 
                 // Read each bone's name and offset matrix
-                for (unsigned int i = 0; i < mBoneCounter; ++i)
+                for (int i = 0; i < mBoneCounter; ++i)
                 {
 					// Get bone name
 					size_t nameLen = 0;
@@ -1107,8 +1119,9 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
 
 void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 {
+    scene;
     // 1) assign influences
-    for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    for (unsigned int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
     {
         int boneID = -1;
         std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();

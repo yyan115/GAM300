@@ -47,8 +47,18 @@ Resources/Materials/cube_backup_initialShadingGroup.mat
 Resources/Materials/cube_backup_initialShadingGroup.mat.meta
 Resources/Materials/cube_initialShadingGroup.mat
 Resources/Materials/cube_initialShadingGroup.mat.meta
+Resources/Materials/Enemy/Nightshade_diffuse.dds
+Resources/Materials/Enemy/Nightshade_diffuse.png
+Resources/Materials/Enemy/Nightshade_diffuse.png.meta
+Resources/Materials/Environment/road_C_fix.dds
+Resources/Materials/Environment/road_C_fix.jpg
+Resources/Materials/Environment/road_C_fix.jpg.meta
 Resources/Materials/FinalBaseMesh_default.mat
 Resources/Materials/FinalBaseMesh_default.mat.meta
+Resources/Materials/JapaneseSmallWall2_SideWall2.mat
+Resources/Materials/JapaneseSmallWall2_SideWall2.mat.meta
+Resources/Materials/JapaneseSmallWall_SideWall2.mat
+Resources/Materials/JapaneseSmallWall_SideWall2.mat.meta
 Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat
 Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat.meta
 Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat
@@ -57,6 +67,14 @@ Resources/Materials/Kachujin_kachujin_MAT.mat
 Resources/Materials/Kachujin_kachujin_MAT.mat.meta
 Resources/Materials/Kachujin_kachujin_MAT_.mat
 Resources/Materials/Kachujin_kachujin_MAT_.mat.meta
+Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat
+Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat.meta
+Resources/Materials/road_C_Material.002.mat
+Resources/Materials/road_C_Material.002.mat.meta
+Resources/Materials/Roof_Roof.001.mat
+Resources/Materials/Roof_Roof.001.mat.meta
+Resources/Materials/SideWall2_OldConcreto.mat
+Resources/Materials/SideWall2_OldConcreto.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -75,15 +93,41 @@ Resources/Models/backpack/roughness.jpg.meta
 Resources/Models/backpack/specular.dds
 Resources/Models/backpack/specular.jpg
 Resources/Models/backpack/specular.jpg.meta
+Resources/Models/Character/Enemy/Nightshade J Friedrich.fbx
+Resources/Models/Character/Enemy/Nightshade J Friedrich.fbx.meta
+Resources/Models/Character/Enemy/Nightshade J Friedrich.mesh
 Resources/Models/cube.mesh
 Resources/Models/cube.obj
 Resources/Models/cube.obj.meta
 Resources/Models/cube_backup.mesh
 Resources/Models/cube_backup.obj
 Resources/Models/cube_backup.obj.meta
+Resources/Models/Environment/JapaneseSmallWall.mesh
+Resources/Models/Environment/JapaneseSmallWall.obj
+Resources/Models/Environment/JapaneseSmallWall.obj.meta
+Resources/Models/Environment/JapaneseSmallWall2.mesh
+Resources/Models/Environment/JapaneseSmallWall2.obj
+Resources/Models/Environment/JapaneseSmallWall2.obj.meta
+Resources/Models/Environment/Kachujin G Rosales.fbx
+Resources/Models/Environment/Kachujin G Rosales.fbx.meta
+Resources/Models/Environment/Kachujin G Rosales.mesh
+Resources/Models/Environment/road_C.fbx
+Resources/Models/Environment/road_C.fbx.meta
+Resources/Models/Environment/road_C.mesh
+Resources/Models/Environment/Roof.fbx
+Resources/Models/Environment/Roof.fbx.meta
+Resources/Models/Environment/Roof.mesh
+Resources/Models/Environment/SideWall2.dds
+Resources/Models/Environment/SideWall2.fbx
+Resources/Models/Environment/SideWall2.fbx.meta
+Resources/Models/Environment/SideWall2.mesh
+Resources/Models/Environment/SideWall2.png
+Resources/Models/Environment/SideWall2.png.meta
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx.meta
 Resources/Models/Kachujin/Animation/Slash.fbx
 Resources/Models/Kachujin/Animation/Slash.fbx.meta
 Resources/Models/Kachujin/Kachujin G Rosales.fbx
@@ -104,6 +148,44 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
+Resources/Scripts/extension/data_asset.lua
+Resources/Scripts/extension/data_asset.lua.meta
+Resources/Scripts/extension/debug_helpers.lua
+Resources/Scripts/extension/debug_helpers.lua.meta
+Resources/Scripts/extension/engine_bootstrap.lua
+Resources/Scripts/extension/engine_bootstrap.lua.meta
+Resources/Scripts/extension/event_bus.lua
+Resources/Scripts/extension/event_bus.lua.meta
+Resources/Scripts/extension/input_map.lua
+Resources/Scripts/extension/input_map.lua.meta
+Resources/Scripts/extension/inspector_meta.lua
+Resources/Scripts/extension/inspector_meta.lua.meta
+Resources/Scripts/extension/mono_helper.lua
+Resources/Scripts/extension/mono_helper.lua.meta
+Resources/Scripts/extension/safe_require.lua
+Resources/Scripts/extension/safe_require.lua.meta
+Resources/Scripts/extension/scheduler.lua
+Resources/Scripts/extension/scheduler.lua.meta
+Resources/Scripts/extension/simple_fsm.lua
+Resources/Scripts/extension/simple_fsm.lua.meta
+Resources/Scripts/extension/ui_helpers.lua
+Resources/Scripts/extension/ui_helpers.lua.meta
+Resources/Scripts/sample_mono_behavior.lua
+Resources/Scripts/sample_mono_behavior.lua.meta
+Resources/Scripts/sample_mono_behavior_NEW.lua
+Resources/Scripts/sample_mono_behavior_NEW.lua.meta
+Resources/Scripts/template/ai_patrol.lua
+Resources/Scripts/template/ai_patrol.lua.meta
+Resources/Scripts/template/data_chest.lua
+Resources/Scripts/template/data_chest.lua.meta
+Resources/Scripts/template/listener.lua
+Resources/Scripts/template/listener.lua.meta
+Resources/Scripts/template/simple_mover.lua
+Resources/Scripts/template/simple_mover.lua.meta
+Resources/Scripts/template/ui_healthbar.lua
+Resources/Scripts/template/ui_healthbar.lua.meta
+Resources/Scripts/test.lua
+Resources/Scripts/test.lua.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
@@ -140,6 +222,10 @@ Resources/Shaders/skybox.frag
 Resources/Shaders/skybox.meta
 Resources/Shaders/skybox.shader
 Resources/Shaders/skybox.vert
+Resources/Shaders/skyboxandroid.frag
+Resources/Shaders/skyboxandroid.meta
+Resources/Shaders/skyboxandroid.shader
+Resources/Shaders/skyboxandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
 Resources/Shaders/sprite.shader
@@ -177,6 +263,18 @@ Resources/Textures/container2.png.meta
 Resources/Textures/container2_specular.dds
 Resources/Textures/container2_specular.png
 Resources/Textures/container2_specular.png.meta
+Resources/Textures/Nightshade_diffuse.dds
+Resources/Textures/Nightshade_diffuse.png
+Resources/Textures/Nightshade_diffuse.png.meta
+Resources/Textures/road_C_fix.dds
+Resources/Textures/road_C_fix.jpg
+Resources/Textures/road_C_fix.jpg.meta
+Resources/Textures/Roof.dds
+Resources/Textures/Roof.jpg
+Resources/Textures/Roof.jpg.meta
+Resources/Textures/SideWall2.dds
+Resources/Textures/SideWall2.png
+Resources/Textures/SideWall2.png.meta
 Resources/Textures/wooden_container.dds
 Resources/Textures/wooden_container.jpg
 Resources/Textures/wooden_container.jpg.meta
