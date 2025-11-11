@@ -18,6 +18,8 @@ bool AnimationSystem::Initialise()
 		if (modelCompOpt.has_value() && animCompOpt.has_value())
 		{
 			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+			if (modelComp.model == nullptr)
+				continue;
 			auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
 
 			Animator* animator = animComp.EnsureAnimator();

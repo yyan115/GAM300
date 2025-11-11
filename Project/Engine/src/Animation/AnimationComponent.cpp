@@ -157,8 +157,9 @@ void AnimationComponent::Pause() { isPlay = false; }
 void AnimationComponent::Stop() 
 { 
     isPlay = false;
-    if(animator)
-        animator->PlayAnimation(clips[activeClip].get()); 
+    if(!clips.empty())
+        if(animator)
+            animator->PlayAnimation(clips[activeClip].get()); 
 }
 
 void AnimationComponent::SetLooping(bool v) { isLoop = v; }
@@ -187,7 +188,12 @@ Animator* AnimationComponent::EnsureAnimator()
 Animation& AnimationComponent::GetClip(size_t i) { return *clips[i]; }
 const Animation& AnimationComponent::GetClip(size_t i) const { return *clips[i]; }
 const std::vector<std::unique_ptr<Animation>>& AnimationComponent::GetClips() const { return clips; }
-size_t AnimationComponent::GetActiveClipIndex() const { return activeClip; }
+size_t AnimationComponent::GetActiveClipIndex() const 
+{ 
+    if (activeClip > clipCount)
+        return clipCount - 1;
+    return activeClip; 
+}
 
 
 void AnimationComponent::SyncAnimatorToActiveClip()
