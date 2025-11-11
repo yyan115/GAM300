@@ -45,4 +45,4 @@ AndroidProject/local.properties
 *.dds
 *.ktx
 *.meta
-/Project/Scripting/x64
+/Project/Scripting
