@@ -1,0 +1,99 @@
+// include/Scripting.h
+#pragma once
+// Public integration surface for the scripting subsystem.
+//
+// - Keeps the engine/editor decoupled from Lua internals:
+//     * CreateInstanceFromFile returns an opaque int instance id (registry ref),
+//       but editors should test validity with IsValidInstance() rather than
+//       comparing to LUA_NOREF.
+//     * Host log handler takes a single formatted string (std::string).
+// - All APIs are main-thread only unless noted otherwise.
+//
+// Minimal usage:
+//   Scripting::Init();
+//   Scripting::SetHostLogHandler([](const std::string& s){ ENGINE_PRINT(s.c_str()); });
+//   int inst = Scripting::CreateInstanceFromFile("path.lua");
+//   if (Scripting::IsValidInstance(inst)) { Scripting::CallInstanceFunction(inst, "Awake"); }
+//   Scripting::DestroyInstance(inst);
+//   Scripting::Shutdown();
+
+#include <string>
+#include <vector>
+#include <functional>
+
+extern "C" { struct lua_State; }
+
+namespace Scripting {
+
+    using HostLogFn = std::function<void(const std::string&)>; // scripts pass one formatted string
+    using ReadAllTextFn = std::function<bool(const std::string& path, std::string& out)>;
+
+    using EnvironmentId = uint32_t;
+    static constexpr EnvironmentId InvalidEnvironmentId = 0u;
+
+    struct InitOptions {
+        bool createNewVM = true;
+        bool openLibs = true; // luaL_openlibs
+    };
+
+    // Initialize/shutdown
+    bool Init(const InitOptions& opts = InitOptions{});
+    void Shutdown();
+
+    // If the engine wants to provide its own lua_State, call SetLuaState() before other calls.
+    // If Init was called with createNewVM == true, the library will own the VM and Shutdown() will close it.
+    void SetLuaState(lua_State* L);
+    lua_State* GetLuaState(); // may return nullptr if uninitialized
+
+    // Per-frame tick. Main-thread only. Must be called frequently to advance coroutines.
+    void Tick(float dtSeconds);
+
+    // Create/destroy instances (returns a registry-ref-like int). Use IsValidInstance() to check.
+    int CreateInstanceFromFile(const std::string& scriptPath);
+    void DestroyInstance(int instanceRef);
+    bool IsValidInstance(int instanceRef);
+
+    // Call named function on instance (no variadic args support in this helper).
+    // Returns true on success (function executed with no errors).
+    bool CallInstanceFunction(int instanceRef, const std::string& funcName);
+
+    // Host logger injection (single string parameter). The binding `cpp_log(s)` will call this handler.
+    // If not set, messages go to ENGINE_PRINT with LogLevel::Info.
+    void SetHostLogHandler(HostLogFn fn);
+
+    // Allow engine to override script file reading (editor may read from virtual FS).
+    void SetFileSystemReadAllText(ReadAllTextFn fn);
+
+    // Host -> Scripting: callback to resolve a component for a given entity.
+    // Semantic: callback receives the lua_State* and must push exactly one Lua value
+    // (the component representation) on the Lua stack and return true on success.
+    // If the callback returns false or pushes nothing, the scripting runtime will return nil.
+    using HostGetComponentFn = std::function<bool(lua_State* L, uint32_t entityId, const std::string& compName)>;
+
+    // Set handler (engine should call this early in initialization).
+    void SetHostGetComponentHandler(HostGetComponentFn fn);
+
+    // Bind a scripting instance registry-ref to an entity id. This will:
+    //  - set instance.entityId = <entityId>
+    //  - set instance:GetComponent(name) helper that forwards to GetComponent(entityId, name)
+    // Call from engine after creating/attaching a ScriptComponent and after the instance exists.
+    bool BindInstanceToEntity(int instanceRef, uint32_t entityId);
+
+    // Serializer/inspector wrappers (thin)
+    std::string SerializeInstanceToJson(int instanceRef);
+    bool DeserializeJsonToInstance(int instanceRef, const std::string& json);
+
+    // StatePreserver wrappers
+    void RegisterInstancePreserveKeys(int instanceRef, const std::vector<std::string>& keys);
+    std::string ExtractInstancePreserveState(int instanceRef);
+    bool ReinjectInstancePreserveState(int instanceRef, const std::string& json);
+
+    // Hot-reload helpers
+    void EnableHotReload(bool enable);
+    void RequestReloadNow();
+
+    // Coroutine scheduler control (optional)
+    void InitializeCoroutineScheduler();
+    void ShutdownCoroutineScheduler();
+
+} // namespace Scripting

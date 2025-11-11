@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0009550ca13c7179-0003350bdc00006f",
+        "source": "../../Resources/Textures/road_C_fix.jpg",
+        "compiled": "../../Resources/Textures/road_C_fix.dds",
+        "android_compiled": "Resources/Textures/road_C_fix_android.ktx",
+        "last_compiled": "2025-11-09 14:17:57.2124840"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

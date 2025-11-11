@@ -1,0 +1,3 @@
+-- Example script template (not C++ code).
+-- - Shows idiomatic script structure for engine users: Awake, Start, Update, OnDestroy, and how to use coroutines and metadata.
+-- - Use cases: used to generate new script templates in editor and to test runtime.

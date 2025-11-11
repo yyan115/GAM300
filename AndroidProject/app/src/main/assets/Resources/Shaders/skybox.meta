@@ -1,0 +1,10 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0060f444c076acd2-000337e664000013",
+        "source": "../../Resources/Shaders/skybox",
+        "compiled": "../../Resources/Shaders/skybox.shader",
+        "android_compiled": "Resources/Shaders/skybox.shader",
+        "last_compiled": "2025-11-09 14:18:08.3862667"
+    }
+}
