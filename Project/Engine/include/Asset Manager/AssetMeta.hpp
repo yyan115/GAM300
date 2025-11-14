@@ -5,10 +5,10 @@
 #include <string>
 #include <array>
 
-class AssetMeta {
+class ENGINE_API AssetMeta {
 public:
-	enum class Type { 
-		Base, 
+	enum class Type {
+		Base,
 		Texture,
 		Model
 	};
@@ -25,7 +25,7 @@ public:
 	virtual Type GetType() const { return Type::Base; }
 };
 
-class TextureMeta : public AssetMeta {
+class ENGINE_API TextureMeta : public AssetMeta {
 public:
 	ENGINE_API static const std::array<std::string, 3> textureTypes;
 	std::string type;
@@ -37,7 +37,7 @@ public:
 	Type GetType() const override { return Type::Texture; }
 };
 
-class ModelMeta : public AssetMeta {
+class ENGINE_API ModelMeta : public AssetMeta {
 public:
 	bool optimizeMeshes = true;
 	bool generateLODs = false;

@@ -67,6 +67,7 @@ target_include_directories(Editor
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui/backends
         ${CMAKE_SOURCE_DIR}/Libraries/FileWatch
+        ${CMAKE_SOURCE_DIR}/Libraries/IconFontCppHeaders
         # FMOD headers needed by Engine dependencies
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
 )
@@ -117,7 +118,7 @@ if(WIN32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/libfmod.so.14.9
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

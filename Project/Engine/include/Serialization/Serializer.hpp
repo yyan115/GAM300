@@ -4,7 +4,7 @@
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
-#include "ECS/layerManager.hpp"
+#include "ECS/LayerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>

@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <functional>
+#include <memory>
 
 extern "C" { struct lua_State; }
 

@@ -10,7 +10,7 @@
 
 std::string get_file_contents(const char* filename);
 
-class Shader : public IAsset {
+class ENGINE_API Shader : public IAsset {
 public:
     GLuint ID{};
 

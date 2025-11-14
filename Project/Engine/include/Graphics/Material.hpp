@@ -13,7 +13,7 @@
 #include "../Engine.h"
 
 
-class Material : public IAsset {
+class ENGINE_API Material : public IAsset {
 public:
 	enum class TextureType {
 		NONE = 0,

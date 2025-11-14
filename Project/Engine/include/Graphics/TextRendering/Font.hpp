@@ -17,7 +17,7 @@ struct Character {
 	unsigned int advance;
 };
 
-class Font : public IAsset {
+class ENGINE_API Font : public IAsset {
 public:
 	ENGINE_API Font(unsigned int fontSize = 48);
 	Font(std::shared_ptr<AssetMeta> fontMeta, unsigned int fontSize = 48);

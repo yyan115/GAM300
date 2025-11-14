@@ -1510,12 +1510,22 @@ void AssetBrowserPanel::StartRenameAsset(const GUID_128& guid) {
 
             // Set up the rename buffer with the current filename (without extension for files, full name for folders)
             if (asset.isDirectory) {
+#ifdef _WIN32
                 strncpy_s(renameBuffer, asset.fileName.c_str(), sizeof(renameBuffer) - 1);
+#else
+                strncpy(renameBuffer, asset.fileName.c_str(), sizeof(renameBuffer) - 1);
+                renameBuffer[sizeof(renameBuffer) - 1] = '\0';  // Ensure null termination
+#endif
             } else {
                 // For files, keep the extension but allow renaming the base name
                 std::filesystem::path path(asset.fileName);
                 std::string baseName = path.stem().string();
+#ifdef _WIN32
                 strncpy_s(renameBuffer, baseName.c_str(), sizeof(renameBuffer) - 1);
+#else
+                strncpy(renameBuffer, baseName.c_str(), sizeof(renameBuffer) - 1);
+                renameBuffer[sizeof(renameBuffer) - 1] = '\0';  // Ensure null termination
+#endif
             }
             break;
         }
@@ -1704,6 +1714,7 @@ void AssetBrowserPanel::SyncTreeWithCurrentDirectory() {
 }
 
 void AssetBrowserPanel::OpenImportDialog() {
+#ifdef _WIN32
     // Store current working directory to restore it later (prevents dialog from changing it)
     std::filesystem::path originalWorkingDir = std::filesystem::current_path();
 
@@ -1763,4 +1774,9 @@ void AssetBrowserPanel::OpenImportDialog() {
 
     // Restore the original working directory (prevents side effects from the dialog)
     std::filesystem::current_path(originalWorkingDir);
+#else
+    // Linux: File dialog not implemented yet - use command line or file manager
+    // TODO: Implement Linux file dialog using zenity, kdialog, or ImGuiFileDialog
+    ENGINE_LOG_WARN("AssetBrowserPanel::OpenImportDialog() not implemented on Linux yet");
+#endif
 }

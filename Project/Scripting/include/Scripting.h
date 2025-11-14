@@ -1,5 +1,6 @@
 // include/Scripting.h
 #pragma once
+#include <cstdint>
 // Public integration surface for the scripting subsystem.
 //
 // - Keeps the engine/editor decoupled from Lua internals:
