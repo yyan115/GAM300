@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374a216e66dbbc-000331fc80000069",
+        "source": "../../Resources/Shaders/sprite",
+        "compiled": "../../Resources/Shaders/sprite.shader"
+    }
+}

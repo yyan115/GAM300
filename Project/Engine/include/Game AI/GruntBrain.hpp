@@ -34,6 +34,7 @@ namespace {
 
     // robust “is finished” check:
     inline bool finished(const AnimationComponent& a) {
+        if (a.clipCount < 1) return true;
         // Robust in both PLAY (AnimationSystem ticks) and EDIT (Inspector ticks).
         const Animator* anim = a.GetAnimatorPtr();
         if (!anim) return true;                       // no animator -> treat as finished

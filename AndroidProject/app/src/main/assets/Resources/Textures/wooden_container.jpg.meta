@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374a2179675ad7-000331fc82000079",
+        "source": "../../Resources/Textures/wooden_container.jpg",
+        "compiled": "../../Resources/Textures/wooden_container.dds",
+        "android_compiled": "Resources/Textures/wooden_container_android.ktx",
+        "last_compiled": "2025-11-09 14:18:00.6305346"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
