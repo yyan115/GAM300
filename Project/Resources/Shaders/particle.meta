@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "00374a21280536cd-000331fc80000065",
         "source": "../../Resources/Shaders/particle",
-        "compiled": "../../Resources/Shaders/particle.shader",
-        "last_compiled": "2025-11-09 14:17:18.8705182"
+        "compiled": "../../Resources/Shaders/particle.shader"
     }
 }

@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "007b3b0374c020aa-00033237a000000d",
         "source": "../../Resources/Models/Environment/SideWall2.fbx",
-        "compiled": "../../Resources/Models/Environment/SideWall2.mesh",
-        "last_compiled": "2025-11-09 14:17:13.9561425"
+        "compiled": "../../Resources/Models/Environment/SideWall2.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

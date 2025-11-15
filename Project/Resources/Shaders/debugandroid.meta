@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "00374a2110c6f883-000331fc8000005b",
         "source": "../../Resources/Shaders/debugandroid",
-        "compiled": "../../Resources/Shaders/debugandroid.shader",
-        "last_compiled": "2025-11-09 14:17:18.7541297"
+        "compiled": "../../Resources/Shaders/debugandroid.shader"
     }
 }
