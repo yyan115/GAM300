@@ -253,19 +253,17 @@ namespace Scripting {
 #ifdef ANDROID
         // Read file using Android AssetManager
         std::string scriptContent;
-        if (!AssetManager::GetInstance().ReadTextFile("Resources/Scenes/luascene.scene", scriptContent)) {
+        if (!AssetManager::GetInstance().ReadTextFile(scriptPath, scriptContent)) {
             SC_LOG(EngineLogging::LogLevel::Error, "Failed to read Android asset: ", scriptPath.c_str());
             return false;
         }
-
+        SC_LOG(EngineLogging::LogLevel::Info, "hello can work anot?");
         // Load Lua from string instead of file
         int loadStatus = luaL_loadstring(L, scriptContent.c_str());
         
 #else
-        SC_LOG(EngineLogging::LogLevel::Info, "NON-ANDROID: scriptPath = '", scriptPath.c_str(), "'");
         int loadStatus = luaL_loadfile(L, scriptPath.c_str());
 #endif
-        SC_LOG(EngineLogging::LogLevel::Info, "hello can work anot?" , std::to_string(loadStatus));
         m_scriptPath = scriptPath;
         m_awakeCalled = false;
         m_startCalled = false;
