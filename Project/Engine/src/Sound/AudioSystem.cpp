@@ -5,9 +5,15 @@
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 void AudioSystem::Update(float deltaTime) {
 	PROFILE_FUNCTION();
@@ -25,16 +31,30 @@ void AudioSystem::Update(float deltaTime) {
         AudioListenerComponent& listenerComp = ecsManager.GetComponent<AudioListenerComponent>(entity);
         if (!listenerComp.enabled) continue;
 
-        // Compute new values from Transform (if available)
+        // Compute new values from Transform and Camera
         Vector3D newPosition = listenerComp.GetPosition();
-        Vector3D newForward = listenerComp.GetForward();
-        Vector3D newUp = listenerComp.GetUp();
+        Vector3D newForward = Vector3D(0.0f, 0.0f, 1.0f); // Default forward
+        Vector3D newUp = Vector3D(0.0f, 1.0f, 0.0f); // Default up
 
         if (ecsManager.HasComponent<Transform>(entity)) {
             const Transform& transform = ecsManager.GetComponent<Transform>(entity);
             newPosition = transform.localPosition;
-            newForward = Vector3D(0.0f, 0.0f, 1.0f); // Placeholder
-            newUp = Vector3D(0.0f, 1.0f, 0.0f);
+        }
+
+        if (ecsManager.HasComponent<CameraComponent>(entity)) {
+            const CameraComponent& camera = ecsManager.GetComponent<CameraComponent>(entity);
+            float yaw_rad = camera.yaw * (M_PI / 180.0f);
+            float pitch_rad = camera.pitch * (M_PI / 180.0f);
+            newForward.x = cos(yaw_rad) * cos(pitch_rad);
+            newForward.y = sin(pitch_rad);
+            newForward.z = sin(yaw_rad) * cos(pitch_rad);
+            newForward.Normalize();
+            Vector3D world_up(0.0f, 1.0f, 0.0f);
+            Vector3D right = newForward.Cross(world_up);
+            right.Normalize();
+            right = -right;  // Negate right to fix left/right inversion
+            newUp = right.Cross(newForward);
+            newUp.Normalize();
         }
 
         listenerComp.OnTransformChanged(newPosition, newForward, newUp);
