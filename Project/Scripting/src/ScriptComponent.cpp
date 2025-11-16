@@ -8,6 +8,7 @@
 extern "C" {
 #include "lauxlib.h"
 #include "lualib.h"
+#include <Asset Manager/AssetManager.hpp>
 }
 
 namespace Scripting {
@@ -250,13 +251,18 @@ namespace Scripting {
         // detach current script (safe even if none)
         DetachScript();
 
+#ifdef ANDROID
+        m_scriptPath = AssetManager::GetInstance().GetRootAssetDirectory() + scriptPath;
+#else
         m_scriptPath = scriptPath;
+#endif
         m_awakeCalled = false;
         m_startCalled = false;
 
         // protected call with message handler for traceback
         int msgh = PushMessageHandler(L);
         MessageHandlerGuard guard(L, msgh);
+
         int loadStatus = luaL_loadfile(L, scriptPath.c_str());
         if (loadStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);

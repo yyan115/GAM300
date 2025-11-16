@@ -3,8 +3,6 @@
         "version": 7,
         "guid": "007fa85beb6a50a6-00032d3fc800000d",
         "source": "../../Resources/Scripts/sample_mono_behavior.lua",
-        "compiled": "../../Resources/Scripts/sample_mono_behavior.lua",
-        "android_compiled": "Resources/Scripts/sample_mono_behavior.lua",
-        "last_compiled": "2025-11-09 14:17:55.3710934"
+        "compiled": "../../Resources/Scripts/sample_mono_behavior.lua"
     }
 }
