@@ -74,7 +74,7 @@
 #include "../Engine.h"
 
 // Scripting public API header (only the public surface)
-#include <Script/Scripting.h>
+#include "../../Scripting/include/Scripting.h"
 
 class Script : public IAsset {
 public:

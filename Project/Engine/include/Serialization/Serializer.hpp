@@ -24,7 +24,7 @@
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
 #include <Script/ScriptComponentData.hpp>
-#include <Script/Scripting.h>
+#include <Scripting.h>
 #include "Engine.h"
 #include <Game AI/BrainComponent.hpp>
 
