@@ -2,13 +2,12 @@
 #include "ScriptComponent.h"
 #include "ScriptSerializer.h" // concrete serializer
 #include "Logging.hpp"        // ENGINE_PRINT / logging levels
-
-#include <cassert>
 #include <Asset Manager/AssetManager.hpp>
+#include <cassert>
+
 extern "C" {
 #include "lauxlib.h"
 #include "lualib.h"
-
 }
 
 namespace Scripting {
@@ -243,30 +242,43 @@ namespace Scripting {
     bool ScriptComponent::AttachScript(const std::string& scriptPath) {
         SC_LOG(EngineLogging::LogLevel::Info, "AttachScript: loading '", scriptPath.c_str(), "'");
         lua_State* L = GetMainState();
+
         if (!L) {
             SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript: no Lua state available");
             return false;
         }
-
         // detach current script (safe even if none)
         DetachScript();
 
 #ifdef ANDROID
-        m_scriptPath = AssetManager::GetInstance().GetRootAssetDirectory() + scriptPath;
+        // Read file using Android AssetManager
+        std::string scriptContent;
+        if (!AssetManager::GetInstance().ReadTextFile("Resources/Scenes/luascene.scene", scriptContent)) {
+            SC_LOG(EngineLogging::LogLevel::Error, "Failed to read Android asset: ", scriptPath.c_str());
+            return false;
+        }
+
+        // Load Lua from string instead of file
+        int loadStatus = luaL_loadstring(L, scriptContent.c_str());
+        
 #else
-        m_scriptPath = scriptPath;
+        SC_LOG(EngineLogging::LogLevel::Info, "NON-ANDROID: scriptPath = '", scriptPath.c_str(), "'");
+        int loadStatus = luaL_loadfile(L, scriptPath.c_str());
 #endif
+        SC_LOG(EngineLogging::LogLevel::Info, "hello can work anot?" , std::to_string(loadStatus));
+        m_scriptPath = scriptPath;
         m_awakeCalled = false;
         m_startCalled = false;
 
         // protected call with message handler for traceback
         int msgh = PushMessageHandler(L);
         MessageHandlerGuard guard(L, msgh);
-
-        int loadStatus = luaL_loadfile(L, scriptPath.c_str());
         if (loadStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
             SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: ", msg ? msg : "(no msg)");
+            SC_LOG(EngineLogging::LogLevel::Error, "  Attempted path: ",
+                scriptPath.c_str()
+            );
             lua_pop(L, 1);
             return false;
         }
