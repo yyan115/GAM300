@@ -158,4 +158,16 @@ struct Quaternion
         return q;
     }
 
+    // Rotate a vector by this quaternion
+    Vector3D RotateVector(const Vector3D& v) const {
+        // Conjugate of this quaternion
+        Quaternion conj(w, -x, -y, -z);
+        // v as quaternion
+        Quaternion vq(0.0f, v.x, v.y, v.z);
+        // result = this * vq * conj
+        Quaternion temp = *this * vq;
+        Quaternion result = temp * conj;
+        return Vector3D(result.x, result.y, result.z);
+    }
+
 };

@@ -3,8 +3,6 @@
 #include <Asset Manager/AssetManager.hpp>
 #include "Sound/AudioManager.hpp"
 #include "Logging.hpp"
-#include <filesystem>
-#include <fstream>
 #include "Utilities/FileUtilities.hpp"
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
