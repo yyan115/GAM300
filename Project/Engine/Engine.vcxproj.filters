@@ -110,6 +110,24 @@
     <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
     <ClCompile Include="src\Game AI\BrainComponent.cpp" />
+    <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\CoroutineScheduler.cpp" />
+    <ClCompile Include="src\Script\HotReloadManager.cpp" />
+    <ClCompile Include="src\Script\ModuleLoader.cpp" />
+    <ClCompile Include="src\Script\RemoteDebug.cpp" />
+    <ClCompile Include="src\Script\ScriptComponent.cpp" />
+    <ClCompile Include="src\Script\ScriptError.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_android.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_default.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_win.cpp" />
+    <ClCompile Include="src\Script\Scripting.cpp" />
+    <ClCompile Include="src\Script\ScriptingRuntime.cpp" />
+    <ClCompile Include="src\Script\ScriptInspector.cpp" />
+    <ClCompile Include="src\Script\ScriptProfiler.cpp" />
+    <ClCompile Include="src\Script\ScriptRegistry.cpp" />
+    <ClCompile Include="src\Script\ScriptSerializer.cpp" />
+    <ClCompile Include="src\Script\ScriptUtils.cpp" />
+    <ClCompile Include="src\Script\StatePreserver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -279,6 +297,24 @@
     <ClInclude Include="include\Game AI\BrainSystems.hpp" />
     <ClInclude Include="include\Game AI\Events.hpp" />
     <ClInclude Include="include\Game AI\HfsmCommon.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
+    <ClInclude Include="include\Script\ComponentProxy.h" />
+    <ClInclude Include="include\Script\CoroutineScheduler.h" />
+    <ClInclude Include="include\Script\HotReloadManager.h" />
+    <ClInclude Include="include\Script\ModuleLoader.h" />
+    <ClInclude Include="include\Script\RemoteDebug.h" />
+    <ClInclude Include="include\Script\ScriptComponent.h" />
+    <ClInclude Include="include\Script\ScriptError.h" />
+    <ClInclude Include="include\Script\ScriptFileSystem.h" />
+    <ClInclude Include="include\Script\Scripting.h" />
+    <ClInclude Include="include\Script\ScriptingRuntime.h" />
+    <ClInclude Include="include\Script\ScriptingTypes.h" />
+    <ClInclude Include="include\Script\ScriptInspector.h" />
+    <ClInclude Include="include\Script\ScriptProfiler.h" />
+    <ClInclude Include="include\Script\ScriptRegistry.h" />
+    <ClInclude Include="include\Script\ScriptSerializer.h" />
+    <ClInclude Include="include\Script\ScriptUtils.h" />
+    <ClInclude Include="include\Script\StatePreserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -387,7 +423,6 @@
     <ClInclude Include="include\Script\Script.hpp" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
-    <ClInclude Include="include\ECS\ComponentRegistry.h" />
     <ClInclude Include="include\Sound\AudioReverbZoneComponent.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -22,7 +22,7 @@
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
-#include "Scripting.h"
+#include "Script/Scripting.h"
 #define LUA_TEST 1
 
 #ifdef ANDROID

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <Asset Manager/AssetManager.hpp>
 
+
 // define static
 std::atomic<bool> Script::s_fsRegistered{ false };
 

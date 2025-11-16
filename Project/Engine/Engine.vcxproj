@@ -101,8 +101,24 @@
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
+    <ClInclude Include="include\Script\CoroutineScheduler.h" />
+    <ClInclude Include="include\Script\HotReloadManager.h" />
+    <ClInclude Include="include\Script\ModuleLoader.h" />
+    <ClInclude Include="include\Script\RemoteDebug.h" />
+    <ClInclude Include="include\Script\ScriptComponent.h" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
+    <ClInclude Include="include\Script\ScriptError.h" />
+    <ClInclude Include="include\Script\ScriptFileSystem.h" />
+    <ClInclude Include="include\Script\Scripting.h" />
+    <ClInclude Include="include\Script\ScriptingRuntime.h" />
+    <ClInclude Include="include\Script\ScriptingTypes.h" />
+    <ClInclude Include="include\Script\ScriptInspector.h" />
+    <ClInclude Include="include\Script\ScriptProfiler.h" />
+    <ClInclude Include="include\Script\ScriptRegistry.h" />
+    <ClInclude Include="include\Script\ScriptSerializer.h" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
+    <ClInclude Include="include\Script\ScriptUtils.h" />
+    <ClInclude Include="include\Script\StatePreserver.h" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.ipp" />
     <ClInclude Include="include\Asset Manager\Asset.hpp" />
@@ -197,6 +213,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\CoroutineScheduler.cpp" />
+    <ClCompile Include="src\Script\HotReloadManager.cpp" />
+    <ClCompile Include="src\Script\ModuleLoader.cpp" />
+    <ClCompile Include="src\Script\RemoteDebug.cpp" />
+    <ClCompile Include="src\Script\ScriptComponent.cpp" />
+    <ClCompile Include="src\Script\ScriptError.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_android.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_default.cpp" />
+    <ClCompile Include="src\Script\ScriptFileSystem_win.cpp" />
+    <ClCompile Include="src\Script\Scripting.cpp" />
+    <ClCompile Include="src\Script\ScriptingRuntime.cpp" />
+    <ClCompile Include="src\Script\ScriptInspector.cpp" />
+    <ClCompile Include="src\Script\ScriptProfiler.cpp" />
+    <ClCompile Include="src\Script\ScriptRegistry.cpp" />
+    <ClCompile Include="src\Script\ScriptSerializer.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />
     <ClCompile Include="src\Animation\Animation.cpp" />
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />
@@ -270,6 +301,8 @@
     <ClCompile Include="src\RunTimeVar.cpp" />
     <ClCompile Include="src\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Script\Script.cpp" />
+    <ClCompile Include="src\Script\ScriptUtils.cpp" />
+    <ClCompile Include="src\Script\StatePreserver.cpp" />
     <ClCompile Include="src\Serialization\Deserialization.cpp" />
     <ClCompile Include="src\Asset Manager\MetaFilesManager.cpp" />
     <ClCompile Include="src\ECS\ECSManager.cpp" />
@@ -512,7 +545,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Scripting\include;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Libraries\luabridge3\source;$(SolutionDir)Libraries\hfsm2</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -535,7 +568,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR=1;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Scripting\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Libraries\luabridge3\source</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -561,7 +594,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Libraries\luabridge3\source</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -586,7 +619,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_EXPORTS;EDITOR;JPH_DEBUG_RENDERER;HFSM2_ENABLE_PLANS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Scripting\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)vcpkg_installed\x64-windows\include;$(SolutionDir)Libraries\glfw\include;$(SolutionDir)Libraries\GLAD\include;$(SolutionDir)Libraries\GLM;$(SolutionDir)Libraries\assimp\include;$(SolutionDir)Libraries\freetype\include;$(SolutionDir)Libraries\imgui;$(SolutionDir)Libraries\rapidjson;$(SolutionDir)Libraries\gli;$(SolutionDir)Libraries\spdlog\include;$(SolutionDir)Libraries\FileWatch;$(SolutionDir)Libraries\FMOD\core\inc;$(SolutionDir)Libraries\Compressonator\include;$(SolutionDir)Libraries\meshoptimizer-master;$(SolutionDir)Libraries\hfsm2;$(SolutionDir)\Libraries\lua\src;$(SolutionDir)\Libraries\luabridge3\source</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

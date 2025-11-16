@@ -7,7 +7,7 @@
 
 #include "Logging.hpp"
 
-#include "Scripting.h"          // for public glue functions used
+#include "Script/Scripting.h"          // for public glue functions used
 
 #include <fstream>
 #include <sstream>
