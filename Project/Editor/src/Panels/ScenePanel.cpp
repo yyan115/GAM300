@@ -21,14 +21,15 @@
 #include "Physics/ColliderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "RaycastUtil.hpp"
-#include "imgui.h"
-#include "ImGuizmo.h"
+#include <imgui.h>
+#include <ImGuizmo.h>
 #include "EditorState.hpp"
 #include "PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <glm/gtc/type_ptr.hpp>
 #include "SnapshotManager.hpp"
 #include <glm/gtc/matrix_transform.hpp>
@@ -137,6 +138,29 @@ void ScenePanel::Mat4ToFloatArray(const glm::mat4& mat, float* arr) {
     }
 }
 
+ImVec2 ScenePanel::ProjectToScreen(const glm::vec3& worldPoint, bool& isVisible, const glm::mat4& vp, const ImVec2& windowPos, const ImVec2& windowSize) const {
+    glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
+    if (clipSpace.w <= 0.0001f) {
+        isVisible = false;
+        return ImVec2(-10000, -10000);
+    }
+    glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+    float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
+    float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
+    isVisible = true;
+    return ImVec2(screenX, screenY);
+}
+
+void ScenePanel::UpdateMouseState(ImVec2& relativeMousePos, bool& isHovering, float& sceneWidth, float& sceneHeight) {
+    ImVec2 mousePos = ImGui::GetMousePos();
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+    ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+    relativeMousePos = ImVec2(mousePos.x - (windowPos.x + contentMin.x), mousePos.y - (windowPos.y + contentMin.y));
+    sceneWidth = contentMax.x - contentMin.x;
+    sceneHeight = contentMax.y - contentMin.y;
+    isHovering = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+}
 
 void ScenePanel::HandleKeyboardInput() {
     // Get the PlayControlPanel to modify its state
@@ -145,55 +169,60 @@ void ScenePanel::HandleKeyboardInput() {
     if (!playControlPanel) return;
     
     // Check keyboard input regardless of camera input conditions
-    if (EditorInputManager::IsGizmoShortcutPressed(0)) {
-        // Q key - Toggle pan mode
-        if (playControlPanel->HasToolSelected() && playControlPanel->IsNormalPanMode()) {
-            // Already in pan mode, deselect all tools
-            playControlPanel->SetNormalPanMode(false);
-            ENGINE_PRINT("[ScenePanel] Q pressed - Deselected all tools\n");
-        } else {
-            // Not in pan mode, switch to pan
-            playControlPanel->SetNormalPanMode(true);
-            ENGINE_PRINT("[ScenePanel] Q pressed - Switched to Pan mode\n");
+    // But don't process gizmo shortcuts when right-click is held (rotating)
+    bool isRightClickHeld = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    
+    if (!isRightClickHeld) {
+        if (EditorInputManager::IsGizmoShortcutPressed(0)) {
+            // Q key - Toggle pan mode
+            if (playControlPanel->HasToolSelected() && playControlPanel->IsNormalPanMode()) {
+                // Already in pan mode, deselect all tools
+                playControlPanel->SetNormalPanMode(false);
+                ENGINE_PRINT("[ScenePanel] Q pressed - Deselected all tools\n");
+            } else {
+                // Not in pan mode, switch to pan
+                playControlPanel->SetNormalPanMode(true);
+                ENGINE_PRINT("[ScenePanel] Q pressed - Switched to Pan mode\n");
+            }
         }
-    }
-    if (EditorInputManager::IsGizmoShortcutPressed(1)) {
-        // W key - Toggle translate mode
-        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::TRANSLATE) {
-            // Already in translate mode, deselect all tools
-            playControlPanel->SetNormalPanMode(false);
-            ENGINE_PRINT("[ScenePanel] W pressed - Deselected all tools\n");
-        } else {
-            // Not in translate mode, switch to translate
-            playControlPanel->SetNormalPanMode(false);
-            playControlPanel->SetGizmoOperation(ImGuizmo::TRANSLATE);
-            ENGINE_PRINT("[ScenePanel] W pressed - Switched to Translate mode\n");
+        if (EditorInputManager::IsGizmoShortcutPressed(1)) {
+            // W key - Toggle translate mode
+            if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::TRANSLATE) {
+                // Already in translate mode, deselect all tools
+                playControlPanel->SetNormalPanMode(false);
+                ENGINE_PRINT("[ScenePanel] W pressed - Deselected all tools\n");
+            } else {
+                // Not in translate mode, switch to translate
+                playControlPanel->SetNormalPanMode(false);
+                playControlPanel->SetGizmoOperation(ImGuizmo::TRANSLATE);
+                ENGINE_PRINT("[ScenePanel] W pressed - Switched to Translate mode\n");
+            }
         }
-    }
-    if (EditorInputManager::IsGizmoShortcutPressed(2)) {
-        // E key - Toggle rotate mode
-        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::ROTATE) {
-            // Already in rotate mode, deselect all tools
-            playControlPanel->SetNormalPanMode(false);
-            ENGINE_PRINT("[ScenePanel] E pressed - Deselected all tools\n");
-        } else {
-            // Not in rotate mode, switch to rotate
-            playControlPanel->SetNormalPanMode(false);
-            playControlPanel->SetGizmoOperation(ImGuizmo::ROTATE);
-            ENGINE_PRINT("[ScenePanel] E pressed - Switched to Rotate mode\n");
+        if (EditorInputManager::IsGizmoShortcutPressed(2)) {
+            // E key - Toggle rotate mode
+            if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::ROTATE) {
+                // Already in rotate mode, deselect all tools
+                playControlPanel->SetNormalPanMode(false);
+                ENGINE_PRINT("[ScenePanel] E pressed - Deselected all tools\n");
+            } else {
+                // Not in rotate mode, switch to rotate
+                playControlPanel->SetNormalPanMode(false);
+                playControlPanel->SetGizmoOperation(ImGuizmo::ROTATE);
+                ENGINE_PRINT("[ScenePanel] E pressed - Switched to Rotate mode\n");
+            }
         }
-    }
-    if (EditorInputManager::IsGizmoShortcutPressed(3)) {
-        // R key - Toggle scale mode
-        if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::SCALE) {
-            // Already in scale mode, deselect all tools
-            playControlPanel->SetNormalPanMode(false);
-            ENGINE_PRINT("[ScenePanel] R pressed - Deselected all tools\n");
-        } else {
-            // Not in scale mode, switch to scale
-            playControlPanel->SetNormalPanMode(false);
-            playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
-            ENGINE_PRINT("[ScenePanel] R pressed - Switched to Scale mode\n");
+        if (EditorInputManager::IsGizmoShortcutPressed(3)) {
+            // R key - Toggle scale mode
+            if (playControlPanel->HasToolSelected() && !playControlPanel->IsNormalPanMode() && playControlPanel->GetGizmoOperation() == ImGuizmo::SCALE) {
+                // Already in scale mode, deselect all tools
+                playControlPanel->SetNormalPanMode(false);
+                ENGINE_PRINT("[ScenePanel] R pressed - Deselected all tools\n");
+            } else {
+                // Not in scale mode, switch to scale
+                playControlPanel->SetNormalPanMode(false);
+                playControlPanel->SetGizmoOperation(ImGuizmo::SCALE);
+                ENGINE_PRINT("[ScenePanel] R pressed - Switched to Scale mode\n");
+            }
         }
     }
 
@@ -265,6 +294,9 @@ void ScenePanel::HandleCameraInput() {
         editorCamera.PanSensitivity = 0.005f; // Slower panning in 3D mode
     }
 
+    // Set orbit sensitivity based on zoom level (distance) - more zoomed in = slower rotation
+    editorCamera.OrbitSensitivity = 0.35f * (5.0f / (editorCamera.Distance + 5.0f));
+
     editorCamera.ProcessInput(
         io.DeltaTime,
         true,
@@ -277,10 +309,41 @@ void ScenePanel::HandleCameraInput() {
         scrollDelta,
         is2DMode
     );
+
+    // WASD movement when right-click rotating
+    if (isRightMousePressed && !is2DMode) {
+        float moveSpeed = editorCamera.Distance * 0.01f; // Scale movement speed by distance
+        
+        if (ImGui::IsKeyDown(ImGuiKey_W)) {
+            editorCamera.Position += editorCamera.Front * moveSpeed;
+            editorCamera.Target += editorCamera.Front * moveSpeed;
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_S)) {
+            editorCamera.Position -= editorCamera.Front * moveSpeed;
+            editorCamera.Target -= editorCamera.Front * moveSpeed;
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_A)) {
+            editorCamera.Position -= editorCamera.Right * moveSpeed;
+            editorCamera.Target -= editorCamera.Right * moveSpeed;
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_D)) {
+            editorCamera.Position += editorCamera.Right * moveSpeed;
+            editorCamera.Target += editorCamera.Right * moveSpeed;
+        }
+        
+        // Update camera vectors after movement
+        editorCamera.UpdateCameraVectors();
+    }
 }
 
 void ScenePanel::HandleEntitySelection() {
     // Hover check is now handled by the caller
+
+    // Prevent selection if we just finished dragging with gizmo
+    if (justFinishedGizmoDrag) {
+        justFinishedGizmoDrag = false;
+        return;
+    }
 
     // Get the PlayControlPanel to check state
     auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
@@ -303,18 +366,13 @@ void ScenePanel::HandleEntitySelection() {
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
     if ((isLeftClicked || isDoubleClicked || isLeftDown || isLeftReleased) && !isAltPressed) {
         // Get mouse position relative to the scene window
-        ImVec2 mousePos = ImGui::GetMousePos();
-        ImVec2 windowPos = ImGui::GetWindowPos();
-        ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-        ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+        ImVec2 relativeMousePos;
+        bool isHovering;
+        float sceneWidth, sceneHeight;
+        UpdateMouseState(relativeMousePos, isHovering, sceneWidth, sceneHeight);
 
-        // Calculate relative mouse position within the scene view
-        float relativeX = mousePos.x - (windowPos.x + contentMin.x);
-        float relativeY = mousePos.y - (windowPos.y + contentMin.y);
-
-        // Get scene view dimensions
-        float sceneWidth = contentMax.x - contentMin.x;
-        float sceneHeight = contentMax.y - contentMin.y;
+        float relativeX = relativeMousePos.x;
+        float relativeY = relativeMousePos.y;
 
         // Check if click is within scene bounds
         if (relativeX >= 0 && relativeX <= sceneWidth &&
@@ -615,6 +673,11 @@ void ScenePanel::OnImGuiRender()
                 ImGui::SetWindowFocus();
             }
 
+            // Cache matrices for performance
+            cachedViewMatrix = editorCamera.GetViewMatrix();
+            cachedProjectionMatrix = editorCamera.GetProjectionMatrix(static_cast<float>(sceneViewWidth) / sceneViewHeight);
+            cachedWindowSize = ImVec2((float)sceneViewWidth, (float)sceneViewHeight);
+
             // ImGuizmo manipulation inside the child
             HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
 
@@ -622,6 +685,12 @@ void ScenePanel::OnImGuiRender()
             DrawColliderGizmos();
             DrawCameraGizmos();
             DrawAudioGizmos();
+
+            // Draw selection outline for selected entities
+            auto selectedEntities = GUIManager::GetSelectedEntities();
+            for (auto entity : selectedEntities) {
+                DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
+            }
 
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
@@ -770,33 +839,60 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
     ImGuizmo::OPERATION gizmoOperation = playControlPanel ? playControlPanel->GetGizmoOperation() : ImGuizmo::TRANSLATE;
 
-    // Only show gizmo when an entity is selected AND not in normal pan mode
-    Entity selectedEntity = GUIManager::GetSelectedEntity();
-    if (selectedEntity != static_cast<Entity>(-1) && !isNormalPanMode) {
-        // Check if entity should show gizmo based on 2D/3D mode
-        //EditorState& editorState = EditorState::GetInstance();
+    // Only show gizmo when entities are selected AND not in normal pan mode
+    auto selectedEntities = GUIManager::GetSelectedEntities();
+    if (!selectedEntities.empty() && !isNormalPanMode) {
+        // Check if entities should show gizmo based on 2D/3D mode
+        EditorState& editorState = EditorState::GetInstance();
         bool is2DMode = editorState.Is2DMode();
-        bool entityIs3D = RaycastUtil::IsEntity3D(selectedEntity);
 
-        // In 2D mode, only show gizmo for 2D entities (sprites, 2D text)
-        // In 3D mode, only show gizmo for 3D entities (models, 3D sprites, 3D text)
-        bool shouldShowGizmo = (is2DMode && !entityIs3D) || (!is2DMode && entityIs3D);
+        // Check if all selected entities are compatible (all 2D or all 3D)
+        bool all2D = true;
+        bool all3D = true;
+        for (auto entity : selectedEntities) {
+            bool is3D = RaycastUtil::IsEntity3D(entity);
+            if (is3D) all2D = false;
+            else all3D = false;
+        }
+
+        // In 2D mode, only show gizmo for 2D entities
+        // In 3D mode, only show gizmo for 3D entities
+        bool shouldShowGizmo = (is2DMode && all2D) || (!is2DMode && all3D);
 
         if (!shouldShowGizmo) {
             ImGui::PopID();
             return; // Skip gizmo rendering
         }
 
-        // Get the actual transform matrix from the selected entity
+        // Compute pivot matrix for gizmo
         static float selectedObjectMatrix[16];
+        glm::vec3 avgPos(0.0f);
+        bool hasValidEntities = false;
 
-        // Get transform using RaycastUtil helper to avoid OpenGL header conflicts
-        bool hasTransform = RaycastUtil::GetEntityTransform(selectedEntity, selectedObjectMatrix);
-
-        if (!hasTransform) {
-            // Fallback to identity if entity doesn't have transform
-            memcpy(selectedObjectMatrix, identityMatrix, sizeof(selectedObjectMatrix));
+        for (auto entity : selectedEntities) {
+            float matrix[16];
+            if (RaycastUtil::GetEntityTransform(entity, matrix)) {
+                avgPos += glm::vec3(matrix[12], matrix[13], matrix[14]);
+                hasValidEntities = true;
+            }
         }
+
+        if (!hasValidEntities) {
+            ImGui::PopID();
+            return;
+        }
+
+        avgPos /= static_cast<float>(selectedEntities.size());
+
+        // Use rotation and scale from first entity
+        float firstMatrix[16];
+        RaycastUtil::GetEntityTransform(selectedEntities[0], firstMatrix);
+
+        // Set position to average position, keep rotation and scale
+        memcpy(selectedObjectMatrix, firstMatrix, sizeof(selectedObjectMatrix));
+        selectedObjectMatrix[12] = avgPos.x;
+        selectedObjectMatrix[13] = avgPos.y;
+        selectedObjectMatrix[14] = avgPos.z;
 
         ImGuizmo::Manipulate(
             viewMatrix, projMatrix,
@@ -809,35 +905,55 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
         bool isUsing = ImGuizmo::IsUsing();
 
         // Track gizmo manipulation for undo/redo
-        static bool wasUsing = false;
-        static bool snapshotTaken = false;
-        static Entity lastManipulatedEntity = static_cast<Entity>(-1);
 
         // When user STARTS dragging: take ONE snapshot and disable auto-snapshots from Inspector
-        if (isUsing && !wasUsing && !snapshotTaken) {
-            SnapshotManager::GetInstance().TakeSnapshot("Transform Entity");
+        if (isUsing && !gizmoWasUsing && !gizmoSnapshotTaken) {
+            SnapshotManager::GetInstance().TakeSnapshot("Transform Entities");
             SnapshotManager::GetInstance().SetSnapshotEnabled(false);  // Disable Inspector snapshots
-            snapshotTaken = true;
-            lastManipulatedEntity = selectedEntity;
+            gizmoSnapshotTaken = true;
+            Entity lastManipulatedEntity = selectedEntities[0];  // Use first for tracking
+
+            // Store original matrices for all selected entities
+            originalMatrices.clear();
+            for (auto entity : selectedEntities) {
+                std::array<float, 16> mat;
+                RaycastUtil::GetEntityTransform(entity, mat.data());
+                originalMatrices.push_back(mat);
+            }
+            memcpy(originalPivot.data(), selectedObjectMatrix, sizeof(selectedObjectMatrix));
         }
 
         // When user STOPS dragging: re-enable auto-snapshots and reset flag
-        if (!isUsing && wasUsing) {
+        if (!isUsing && gizmoWasUsing) {
             SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
-            snapshotTaken = false;  // Reset for next drag operation
+            gizmoSnapshotTaken = false;  // Reset for next drag operation
+            justFinishedGizmoDrag = true;  // Prevent accidental selection on release
+            originalMatrices.clear();  // Free memory
         }
 
-        wasUsing = isUsing;
+        gizmoWasUsing = isUsing;
 
-        // Apply transform changes to the actual entity
+        // Apply transform changes to the actual entities
         if (isUsing) {
-            // Update the entity's transform in the ECS system
-            RaycastUtil::SetEntityTransform(selectedEntity, selectedObjectMatrix);
+            // Compute delta transform from original pivot to new pivot
+            glm::mat4 origPivotMat = glm::make_mat4(originalPivot.data());
+            glm::mat4 newPivotMat = glm::make_mat4(selectedObjectMatrix);
+            glm::mat4 delta = newPivotMat * glm::inverse(origPivotMat);
 
+            // Apply delta to each selected entity
+            for (size_t i = 0; i < selectedEntities.size(); ++i) {
+                glm::mat4 origEntMat = glm::make_mat4(originalMatrices[i].data());
+                glm::mat4 newEntMat = delta * origEntMat;
+
+                float newMat[16];
+                Mat4ToFloatArray(newEntMat, newMat);
+                RaycastUtil::SetEntityTransform(selectedEntities[i], newMat);
+            }
         }
     }
 
     // Draw light direction gizmos for selected light entities
+    Entity selectedEntity = selectedEntities.empty() ? static_cast<Entity>(-1) : selectedEntities[0];
     if (selectedEntity != static_cast<Entity>(-1)) {
         try {
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -1304,41 +1420,19 @@ void ScenePanel::DrawColliderGizmos() {
         glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
 
         // Get viewport dimensions from current ImGui window
-        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 windowSize = cachedWindowSize;
         if (windowSize.x == 0 || windowSize.y == 0) return;
 
         float aspectRatio = windowSize.x / windowSize.y;
 
         // Project to screen space
-        glm::mat4 view = editorCamera.GetViewMatrix();
-        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
-        glm::mat4 vp = projection * view;
+        glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 windowPos = ImGui::GetWindowPos();
 
         // Green color for collider gizmos (like Unity)
         ImU32 gizmoColor = IM_COL32(0, 255, 0, 255);
-
-        // Helper lambda to project 3D point to screen space with depth check
-        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
-            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
-
-            // Check if point is behind camera or at camera plane
-            if (clipSpace.w <= 0.0001f) {
-                isVisible = false;
-                return ImVec2(-10000, -10000);
-            }
-
-            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
-
-            // Convert NDC to screen coordinates
-            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
-            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
-
-            isVisible = true;
-            return ImVec2(screenX, screenY);
-        };
 
         // Draw based on shape type
         switch (collider.shapeType) {
@@ -1366,7 +1460,7 @@ void ScenePanel::DrawColliderGizmos() {
                 ImVec2 screenCorners[8];
                 bool visible[8];
                 for (int i = 0; i < 8; i++) {
-                    screenCorners[i] = projectToScreen(corners[i], visible[i]);
+                    screenCorners[i] = ProjectToScreen(corners[i], visible[i], vp, windowPos, windowSize);
                 }
 
                 // Draw 12 edges of the box - only draw if both endpoints are visible
@@ -1401,8 +1495,8 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = projectToScreen(p1, vis1);
-                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
@@ -1417,8 +1511,8 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = projectToScreen(p1, vis1);
-                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
@@ -1433,8 +1527,8 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 p2 = worldPos + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = projectToScreen(p1, vis1);
-                    ImVec2 s2 = projectToScreen(p2, vis2);
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
@@ -1458,8 +1552,8 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = projectToScreen(top + offset, vis1);
-                    ImVec2 s2 = projectToScreen(bottom + offset, vis2);
+                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
@@ -1474,10 +1568,10 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
                     bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = projectToScreen(top + p1, vis1);
-                    ImVec2 s2 = projectToScreen(top + p2, vis2);
-                    ImVec2 s3 = projectToScreen(bottom + p1, vis3);
-                    ImVec2 s4 = projectToScreen(bottom + p2, vis4);
+                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
+                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
+                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
 
                     if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
@@ -1501,8 +1595,8 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = projectToScreen(top + offset, vis1);
-                    ImVec2 s2 = projectToScreen(bottom + offset, vis2);
+                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
@@ -1517,10 +1611,10 @@ void ScenePanel::DrawColliderGizmos() {
                     glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
                     bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = projectToScreen(top + p1, vis1);
-                    ImVec2 s2 = projectToScreen(top + p2, vis2);
-                    ImVec2 s3 = projectToScreen(bottom + p1, vis3);
-                    ImVec2 s4 = projectToScreen(bottom + p2, vis4);
+                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
+                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
+                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
 
                     if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
@@ -1560,13 +1654,11 @@ void ScenePanel::DrawCameraGizmos() {
         }
 
         // Get window and viewport info for editor camera
-        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 windowSize = cachedWindowSize;
         float editorAspectRatio = windowSize.x / windowSize.y;
 
-        // Build editor view-projection matrix (use editor's aspect ratio for viewing)
-        glm::mat4 view = editorCamera.GetViewMatrix();
-        glm::mat4 projection = editorCamera.GetProjectionMatrix(editorAspectRatio);
-        glm::mat4 vp = projection * view;
+        // Build editor view-projection matrix
+        glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
 
         // Get camera world position from transform
         glm::vec3 camPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
@@ -1592,20 +1684,6 @@ void ScenePanel::DrawCameraGizmos() {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 windowPos = ImGui::GetWindowPos();
 
-        // Project 3D point to screen space
-        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
-            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
-            if (clipSpace.w <= 0.0001f) {
-                isVisible = false;
-                return ImVec2(-10000, -10000);
-            }
-            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
-            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
-            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
-            isVisible = true;
-            return ImVec2(screenX, screenY);
-        };
-
         // Colors
         ImU32 frustumColor = IM_COL32(255, 255, 255, 255);  // White
         ImU32 directionColor = IM_COL32(255, 255, 255, 255);  // White
@@ -1613,8 +1691,8 @@ void ScenePanel::DrawCameraGizmos() {
         // ==== 1. Draw Camera Direction Arrow ====
         glm::vec3 arrowEnd = camPos + camForward * 1.5f;
         bool vis1, vis2;
-        ImVec2 startScreen = projectToScreen(camPos, vis1);
-        ImVec2 endScreen = projectToScreen(arrowEnd, vis2);
+        ImVec2 startScreen = ProjectToScreen(camPos, vis1, vp, windowPos, windowSize);
+        ImVec2 endScreen = ProjectToScreen(arrowEnd, vis2, vp, windowPos, windowSize);
 
         if (vis1 && vis2) {
             // Draw arrow line
@@ -1682,8 +1760,8 @@ void ScenePanel::DrawCameraGizmos() {
         bool nearVisible[4], farVisible[4];
 
         for (int i = 0; i < 4; i++) {
-            nearScreenCorners[i] = projectToScreen(nearCorners[i], nearVisible[i]);
-            farScreenCorners[i] = projectToScreen(farCorners[i], farVisible[i]);
+            nearScreenCorners[i] = ProjectToScreen(nearCorners[i], nearVisible[i], vp, windowPos, windowSize);
+            farScreenCorners[i] = ProjectToScreen(farCorners[i], farVisible[i], vp, windowPos, windowSize);
         }
 
         // Draw near plane rectangle
@@ -1711,7 +1789,7 @@ void ScenePanel::DrawCameraGizmos() {
 
         // ==== 3. Draw Camera Icon ====
         bool camIconVis;
-        ImVec2 iconPos = projectToScreen(camPos, camIconVis);
+        ImVec2 iconPos = ProjectToScreen(camPos, camIconVis, vp, windowPos, windowSize);
         if (camIconVis) {
             // Draw camera body (rectangle)
             drawList->AddRectFilled(
@@ -1758,31 +1836,15 @@ void ScenePanel::DrawAudioGizmos() {
         if (!hasAudioComponent && !hasReverbZone) return;
 
         // Get window and viewport info for editor camera
-        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 windowSize = cachedWindowSize;
         float editorAspectRatio = windowSize.x / windowSize.y;
 
         // Build editor view-projection matrix
-        glm::mat4 view = editorCamera.GetViewMatrix();
-        glm::mat4 projection = editorCamera.GetProjectionMatrix(editorAspectRatio);
-        glm::mat4 vp = projection * view;
+        glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
 
         // Get ImGui draw list
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 windowPos = ImGui::GetWindowPos();
-
-        // Project 3D point to screen space
-        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
-            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
-            if (clipSpace.w <= 0.0001f) {
-                isVisible = false;
-                return ImVec2(-10000, -10000);
-            }
-            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
-            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
-            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
-            isVisible = true;
-            return ImVec2(screenX, screenY);
-        };
 
         // Lambda to draw sphere wireframes
         auto drawWireSphere = [&](const glm::vec3& center, float radius, ImU32 color, int segments = 32) {
@@ -1805,8 +1867,8 @@ void ScenePanel::DrawAudioGizmos() {
                 );
                 
                 bool vis1, vis2;
-                ImVec2 screen1 = projectToScreen(p1, vis1);
-                ImVec2 screen2 = projectToScreen(p2, vis2);
+                ImVec2 screen1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 screen2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                 
                 if (vis1 && vis2) {
                     drawList->AddLine(screen1, screen2, color, 2.0f);
@@ -1830,8 +1892,8 @@ void ScenePanel::DrawAudioGizmos() {
                 );
                 
                 bool vis1, vis2;
-                ImVec2 screen1 = projectToScreen(p1, vis1);
-                ImVec2 screen2 = projectToScreen(p2, vis2);
+                ImVec2 screen1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 screen2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                 
                 if (vis1 && vis2) {
                     drawList->AddLine(screen1, screen2, color, 2.0f);
@@ -1855,8 +1917,8 @@ void ScenePanel::DrawAudioGizmos() {
                 );
                 
                 bool vis1, vis2;
-                ImVec2 screen1 = projectToScreen(p1, vis1);
-                ImVec2 screen2 = projectToScreen(p2, vis2);
+                ImVec2 screen1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 screen2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                 
                 if (vis1 && vis2) {
                     drawList->AddLine(screen1, screen2, color, 2.0f);
@@ -1881,7 +1943,7 @@ void ScenePanel::DrawAudioGizmos() {
 
                 // Draw audio source icon at center
                 bool iconVis;
-                ImVec2 iconPos = projectToScreen(audioPos, iconVis);
+                ImVec2 iconPos = ProjectToScreen(audioPos, iconVis, vp, windowPos, windowSize);
                 if (iconVis) {
                     // Draw speaker icon (simplified)
                     // Left rectangle (speaker body)
@@ -1935,7 +1997,7 @@ void ScenePanel::DrawAudioGizmos() {
 
                 // Draw reverb icon at center
                 bool iconVis;
-                ImVec2 iconPos = projectToScreen(audioPos, iconVis);
+                ImVec2 iconPos = ProjectToScreen(audioPos, iconVis, vp, windowPos, windowSize);
                 if (iconVis) {
                     // Draw reverb icon (circle with waves)
                     drawList->AddCircleFilled(iconPos, 7.0f, IM_COL32(100, 150, 255, 200));
@@ -1951,5 +2013,132 @@ void ScenePanel::DrawAudioGizmos() {
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing audio gizmos: ", e.what(), "\n");
+    }
+}
+
+void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight) {
+    try {
+        // Get the active ECS manager
+        ECSRegistry& registry = ECSRegistry::GetInstance();
+        ECSManager& ecsManager = registry.GetActiveECSManager();
+
+        // Compute view and projection matrices
+        float aspectRatio = static_cast<float>(sceneWidth) / sceneHeight;
+        glm::mat4 view = editorCamera.GetViewMatrix();
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+
+        glm::vec3 localCorners[8];
+        bool hasValidBounds = false;
+
+        Matrix4x4 worldMatrix;
+        bool hasTransform = ecsManager.HasComponent<Transform>(entity);
+        if (hasTransform) {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            worldMatrix = transform.worldMatrix;
+        } else {
+            // Identity matrix if no transform
+            worldMatrix = Matrix4x4::Identity();
+        }
+
+        // Define local corners based on component type
+        if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+            glm::vec3 scale = sprite.scale.ConvertToGLM();
+            // For sprites, assume centered at origin in local space
+            localCorners[0] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[1] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[2] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[3] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[4] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[5] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[6] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[7] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            hasValidBounds = true;
+        } else if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+            if (modelComp.model) {
+                auto modelAABB = modelComp.model->GetBoundingBox();
+                localCorners[0] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.min.z);
+                localCorners[1] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.min.z);
+                localCorners[2] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.min.z);
+                localCorners[3] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.min.z);
+                localCorners[4] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.max.z);
+                localCorners[5] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.max.z);
+                localCorners[6] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.max.z);
+                localCorners[7] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.max.z);
+                hasValidBounds = true;
+            }
+        }
+
+        // Default small box if no specific component
+        if (!hasValidBounds) {
+            localCorners[0] = glm::vec3(-0.5f, -0.5f, -0.5f);
+            localCorners[1] = glm::vec3( 0.5f, -0.5f, -0.5f);
+            localCorners[2] = glm::vec3(-0.5f,  0.5f, -0.5f);
+            localCorners[3] = glm::vec3( 0.5f,  0.5f, -0.5f);
+            localCorners[4] = glm::vec3(-0.5f, -0.5f,  0.5f);
+            localCorners[5] = glm::vec3( 0.5f, -0.5f,  0.5f);
+            localCorners[6] = glm::vec3(-0.5f,  0.5f,  0.5f);
+            localCorners[7] = glm::vec3( 0.5f,  0.5f,  0.5f);
+            hasValidBounds = true;
+        }
+
+        // Transform local corners to world space
+        glm::vec3 worldCorners[8];
+        for (int i = 0; i < 8; ++i) {
+            Vector3D localVec(localCorners[i].x, localCorners[i].y, localCorners[i].z);
+            Vector3D worldVec = worldMatrix.TransformPoint(localVec);
+            worldCorners[i] = glm::vec3(worldVec.x, worldVec.y, worldVec.z);
+        }
+
+        // Get window position and size for screen coordinate calculation
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+
+        // Project to screen space
+        ImVec2 screenPoints[8];
+        bool allVisible = true;
+        glm::mat4 vp = projection * view;
+        for (int i = 0; i < 8; ++i) {
+            bool isVisible;
+            screenPoints[i] = ProjectToScreen(worldCorners[i], isVisible, vp, windowPos, windowSize);
+            if (!isVisible) {
+                allVisible = false;
+                break;
+            }
+        }
+
+        if (!allVisible) {
+            return; // Don't draw if any point is behind camera
+        }
+
+        // Get ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+        // Draw the outline with a bright color (similar to Unity's selection)
+        ImU32 outlineColor = IM_COL32(255, 165, 0, 255); // Orange outline
+        float thickness = 2.0f;
+
+        // Draw the 12 edges of the box
+        // Bottom face
+        drawList->AddLine(screenPoints[0], screenPoints[1], outlineColor, thickness);
+        drawList->AddLine(screenPoints[1], screenPoints[3], outlineColor, thickness);
+        drawList->AddLine(screenPoints[3], screenPoints[2], outlineColor, thickness);
+        drawList->AddLine(screenPoints[2], screenPoints[0], outlineColor, thickness);
+
+        // Top face
+        drawList->AddLine(screenPoints[4], screenPoints[5], outlineColor, thickness);
+        drawList->AddLine(screenPoints[5], screenPoints[7], outlineColor, thickness);
+        drawList->AddLine(screenPoints[7], screenPoints[6], outlineColor, thickness);
+        drawList->AddLine(screenPoints[6], screenPoints[4], outlineColor, thickness);
+
+        // Vertical edges
+        drawList->AddLine(screenPoints[0], screenPoints[4], outlineColor, thickness);
+        drawList->AddLine(screenPoints[1], screenPoints[5], outlineColor, thickness);
+        drawList->AddLine(screenPoints[2], screenPoints[6], outlineColor, thickness);
+        drawList->AddLine(screenPoints[3], screenPoints[7], outlineColor, thickness);
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error drawing selection outline: ", e.what(), "\n");
     }
 }
