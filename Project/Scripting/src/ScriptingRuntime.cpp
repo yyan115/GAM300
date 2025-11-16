@@ -515,14 +515,15 @@ namespace Scripting {
     }
 
     void ScriptingRuntime::SetHostLogHandler(std::function<void(const std::string&)> handler) {
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_hostLogHandler = std::move(handler);
-            // also set global so C functions can use it
-            s_globalHostLogHandler = m_hostLogHandler;
-        }
-        // if we have a live state, bind the C function
+        // single lock; do not attempt to re-lock the same mutex twice
         std::lock_guard<std::mutex> lock(m_mutex);
+
+        m_hostLogHandler = std::move(handler);
+        // also set the C-binding friendly global so C functions can use it
+        s_globalHostLogHandler = m_hostLogHandler;
+
+        // If VM exists, install the global C function into the state under the same lock
+        // (we hold the runtime lock to avoid races with state swap in Tick/Reload).
         if (m_L) {
             lua_pushcfunction(m_L, &l_cpp_log);
             lua_setglobal(m_L, "cpp_log");

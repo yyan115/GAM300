@@ -1377,15 +1377,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0000300157
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.00000616995
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.00000749536
                                 }
                             ]
                         },
@@ -1394,15 +1394,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.00000323287
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.0000107286
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0000195995
                                 }
                             ]
                         },
@@ -2266,10 +2266,9 @@
                                 "y": 0.0,
                                 "x": 0.0
                             },
-                            "patrolSpeed": 3.5,
                             "maxHealth": 100.0,
                             "health": 60.0,
-                            "name": "DemoAgent",
+                            "inputJumpAction": "jump",
                             "patrolPoints": [
                                 {
                                     "y": 0.0,
@@ -2288,7 +2287,8 @@
                                     "x": 0.0
                                 }
                             ],
-                            "inputJumpAction": "jump"
+                            "name": "DemoAgent",
+                            "patrolSpeed": 3.5
                         }
                     }
                 }
@@ -5427,7 +5427,7 @@
         },
         {
             "id": 21,
-            "guid": "005591a9037d524e-00034820d4000001",
+            "guid": "0058be7800c0eeb5-00034a3eac00003d",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -5665,7 +5665,7 @@
         },
         {
             "id": 22,
-            "guid": "005591a93f3cfa49-00034820d4000003",
+            "guid": "0058be787fa6b6d7-00034a3eac00003f",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -5903,7 +5903,7 @@
         },
         {
             "id": 23,
-            "guid": "005591a92ae7b659-00034820d4000005",
+            "guid": "0058be780de87801-00034a3eac000041",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -6141,7 +6141,7 @@
         },
         {
             "id": 24,
-            "guid": "005591a90d1d67ff-00034820d4000007",
+            "guid": "0058be782b0c018c-00034a3eac000043",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -6379,7 +6379,7 @@
         },
         {
             "id": 25,
-            "guid": "005591a92a5b5c7a-00034820d4000009",
+            "guid": "0058be78079604a9-00034a3eac000045",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -6617,7 +6617,7 @@
         },
         {
             "id": 26,
-            "guid": "005591a92ad3e7ec-00034820d400000b",
+            "guid": "0058be783915dcc7-00034a3eac000047",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"

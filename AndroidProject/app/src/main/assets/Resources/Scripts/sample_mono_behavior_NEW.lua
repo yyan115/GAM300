@@ -1,4 +1,4 @@
--- sample_mono_behaviour.lua
+-- sample_mono_behaviour_NEW.lua
 -- Demonstrative component that shows scheduler, event_bus, input_map, FSM, UI, coroutine, and inspector metadata.
 -- Improved: more visible behaviour for teaching/demo purposes.
 
