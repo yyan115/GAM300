@@ -4,11 +4,11 @@
 #include "Logging.hpp"        // ENGINE_PRINT / logging levels
 
 #include <cassert>
-
+#include <Asset Manager/AssetManager.hpp>
 extern "C" {
 #include "lauxlib.h"
 #include "lualib.h"
-#include <Asset Manager/AssetManager.hpp>
+
 }
 
 namespace Scripting {
