@@ -23,7 +23,7 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 #include "Scripting.h"
-#define LUA_TEST 1
+#define LUA_TEST 0
 
 #ifdef ANDROID
 #include "Input/VirtualControls.hpp"

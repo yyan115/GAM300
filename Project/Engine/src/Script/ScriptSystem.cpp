@@ -4,7 +4,7 @@
 #include "Script/ScriptSystem.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
-
+#include <LuaBridge.h>
 #include "Logging.hpp"
 
 #include "Scripting.h"          // for public glue functions used
@@ -18,52 +18,113 @@
 ScriptSystem::~ScriptSystem() = default; 
 void ScriptSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
-
+    Scripting::Init();
     // --- Build / register Transform TypeDescriptor inline (raw) ---
     // We keep the created descriptors alive for program lifetime by storing them
     // in a static vector (intended leak so reflection stays valid).
-    static bool s_transformDescRegistered = false;
-    static std::vector<TypeDescriptor*> s_leakedDescriptors;
-    if (!s_transformDescRegistered) {
-        // Try to get an existing descriptor first.
-        TypeDescriptor* transformTd = nullptr;
-        try { transformTd = TypeResolver<Transform>::Get(); }
-        catch (...) { transformTd = nullptr; }
+// --- LuaBridge registration ---
+    lua_State* L = Scripting::GetLuaState();
+    if (L) {
+        luaL_checkversion(L);    // optional safety
 
-        // Register the component with an explicit TypeDescriptor (raw getter + td)
-        ComponentRegistry::Instance().RegisterRaw(
-            "Transform",
-            [](ECSManager* ecs, Entity e) -> void* {
-                if (!ecs->HasComponent<Transform>(e)) return nullptr;
-                return &ecs->GetComponent<Transform>(e);
-            },
-            transformTd
-        );
+        // Register value types: Vector3D
+        luabridge::getGlobalNamespace(L)
+            .beginClass<Vector3D>("Vector3D")
+            .addProperty("x", &Vector3D::x, &Vector3D::x)
+            .addProperty("y", &Vector3D::y, &Vector3D::y)
+            .addProperty("z", &Vector3D::z, &Vector3D::z)
+            .endClass();
 
-        s_transformDescRegistered = true;
+        // Register Quaternion
+        luabridge::getGlobalNamespace(L)
+            .beginClass<Quaternion>("Quaternion")
+            .addProperty("w", &Quaternion::w, &Quaternion::w)
+            .addProperty("x", &Quaternion::x, &Quaternion::x)
+            .addProperty("y", &Quaternion::y, &Quaternion::y)
+            .addProperty("z", &Quaternion::z, &Quaternion::z)
+            .endClass();
+
+        // Register Transform
+        luabridge::getGlobalNamespace(L)
+            .beginClass<Transform>("Transform")
+            .addProperty("overrideFromPrefab", &Transform::overrideFromPrefab, &Transform::overrideFromPrefab)
+            .addProperty("localPosition", &Transform::localPosition, &Transform::localPosition)   // Vector3D
+            .addProperty("localScale", &Transform::localScale, &Transform::localScale)         // Vector3D
+            .addProperty("localRotation", &Transform::localRotation, &Transform::localRotation)   // Quaternion
+            .addProperty("isDirty", &Transform::isDirty, &Transform::isDirty)
+            .endClass();
+
+        // Optional: create a global Components table for discovery
+        lua_newtable(L); // Components table
+        // Sub-table to list metadata for Transform (simple list of fields)
+        lua_pushstring(L, "Transform");   // key
+        lua_newtable(L);                  // value (metadata table)
+        lua_pushstring(L, "localPosition"); lua_setfield(L, -2, "localPosition");
+        lua_pushstring(L, "localScale");    lua_setfield(L, -2, "localScale");
+        lua_pushstring(L, "localRotation"); lua_setfield(L, -2, "localRotation");
+        lua_pushstring(L, "isDirty");       lua_setfield(L, -2, "isDirty");
+        lua_settable(L, -3); // Components["Transform"] = metadata_table
+        lua_setglobal(L, "Components"); // global Components = { Transform = { ... } }
     }
-
-    // ensure metatable registered
-    RegisterComponentProxyMeta(Scripting::GetLuaState());
+    m_luaRegisteredComponents.insert("Transform");
 
     // install host get-component handler that uses ComponentRegistry
     Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
-        ENGINE_PRINT("[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
 
+        // Check if component type is registered
         if (!ComponentRegistry::Instance().Has(compName)) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not registered in ComponentRegistry");
             lua_pushnil(L);
             return true;
         }
 
+        // Get the getter function
         auto getter = ComponentRegistry::Instance().GetGetter(compName);
-        if (!getter) { lua_pushnil(L); return true; }
-        void* compPtr = getter(m_ecs, static_cast<Entity>(entityId));
-        if (!compPtr) { lua_pushnil(L); return true; }
+        if (!getter) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] No getter function for '", compName, "'");
+            lua_pushnil(L);
+            return true;
+        }
 
-        // push proxy userdata that will look up the component on access
+        // Call the getter
+        void* compPtr = getter(m_ecs, static_cast<Entity>(entityId));
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Getter returned ptr=", compPtr, " for comp=", compName, " entity=", entityId);
+
+        if (!compPtr) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not found on entity ", entityId, " (getter returned null)");
+            lua_pushnil(L);
+            return true;
+        }
+
+        // If we registered this component with LuaBridge, push the typed pointer
+        if (m_luaRegisteredComponents.find(compName) != m_luaRegisteredComponents.end()) {
+            if (compName == "Transform") {
+                Transform* t = reinterpret_cast<Transform*>(compPtr);
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing Transform userdata to Lua");
+                luabridge::push(L, t);
+                return true;
+            }
+        }
+
+        // fallback: push proxy userdata
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing component proxy for ", compName);
         PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), compName);
         return true;
         });
+
+    ComponentRegistry::Instance().Register<Transform>("Transform",
+        [](ECSManager* ecs, Entity e) -> Transform* {
+            if (!ecs) return nullptr;
+            if (!ecs->HasComponent<Transform>(e)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ComponentRegistry] Entity ", e, " does not have Transform component");
+                return nullptr;
+            }
+            Transform* t = &ecs->GetComponent<Transform>(e);
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ComponentRegistry] Got Transform ptr=", (void*)t, " for entity ", e);
+            return t;
+        }
+    );
 
     // Only set a disk fallback reader if nobody registered a FS callback earlier.
     static bool s_fsRegistered = false;
@@ -146,7 +207,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
     ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
     if (!comp) return false;
 
-    // If runtime already created, update POD and return
+    // Fast-path: if runtime already created, update POD and return
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
@@ -157,7 +218,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
         }
     }
 
-    // Ensure Lua runtime exists and we are allowed to create instances now.
+    // Must ensure Lua runtime available
     if (!Scripting::GetLuaState()) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] runtime missing; cannot create script for entity ", e, "\n");
         return false;
@@ -168,97 +229,81 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager) {
         return false;
     }
 
-    // Create runtime object (scripting-project)
-    auto runtimeComp = std::make_unique<Scripting::ScriptComponent>();
+    // Create and initialize a new runtime ScriptComponent *without holding the system mutex*
+    std::unique_ptr<Scripting::ScriptComponent> runtimeComp = std::make_unique<Scripting::ScriptComponent>();
+
+    // Attach script (this touches Lua). Do it outside the ScriptSystem mutex.
     if (!runtimeComp->AttachScript(comp->scriptPath)) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] AttachScript failed for ", comp->scriptPath.c_str(), " entity=", e, "\n");
         return false;
     }
 
-    // Register preserve keys (Scripting glue expected to accept the registry ref returned by ScriptComponent::GetInstanceRef())
+    // Optionally register preserve keys (uses Scripting API and should be safe now)
     if (!comp->preserveKeys.empty()) {
         Scripting::RegisterInstancePreserveKeys(runtimeComp->GetInstanceRef(), comp->preserveKeys);
     }
 
-    // Move runtime into our map and update POD. Do Lua-related per-instance operations *while holding the mutex*
-    // so we avoid races with other threads trying to query m_runtimeMap.
+    // Try to bind instance to entity (runtime helper will set entityId + GetComponent)
+    // Prefer runtime glue BindInstanceToEntity; fallback to manual set if it fails.
+    bool bound = false;
+    try {
+        bound = Scripting::BindInstanceToEntity(runtimeComp->GetInstanceRef(), static_cast<uint32_t>(e));
+    }
+    catch (...) {
+        bound = false;
+    }
+
+    if (!bound) {
+        // fallback: set entityId field on instance table
+        lua_State* L = ::Scripting::GetLuaState();
+        if (L) {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, runtimeComp->GetInstanceRef()); // push instance
+            if (lua_istable(L, -1)) {
+                lua_pushinteger(L, static_cast<lua_Integer>(e));
+                lua_setfield(L, -2, "entityId");
+            }
+            lua_pop(L, 1);
+        }
+    }
+
+    // If the ScriptComponentData contains pending serialized state, apply it now (safe)
+    if (!comp->pendingInstanceState.empty()) {
+        bool ok = false;
+        try {
+            ok = runtimeComp->DeserializeState(comp->pendingInstanceState);
+        }
+        catch (...) {
+            ok = false;
+        }
+        if (ok) {
+            comp->pendingInstanceState.clear();
+        }
+        else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending script state for entity ", e, "\n");
+        }
+    }
+
+    // Move runtimeComp into map and update POD under lock
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         m_runtimeMap[e] = std::move(runtimeComp);
         Scripting::ScriptComponent* scPtr = m_runtimeMap[e].get();
+        comp->instanceId = scPtr ? scPtr->GetInstanceRef() : LUA_NOREF;
+        comp->instanceCreated = (scPtr != nullptr);
+    }
 
-        // update engine POD (debug mirror)
-        comp->instanceId = scPtr->GetInstanceRef();
-        comp->instanceCreated = true;
-
-        // If this entity had pending serialized Lua state from scene load, try to apply it now.
-        if (!comp->pendingInstanceState.empty()) {
-            try {
-                bool ok = scPtr->DeserializeState(comp->pendingInstanceState);
-                if (ok) {
-                    // applied successfully, clear pending state
-                    comp->pendingInstanceState.clear();
-                }
-                else {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending script state for entity ", e, "\n");
-                    // keep pending; ScriptSystem may retry later or log for debugging
-                }
-            }
-            catch (const std::exception& ex) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Exception while applying pending script state for entity ", e, " : ", ex.what(), "\n");
-            }
-            catch (...) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Unknown exception while applying pending script state for entity ", e, "\n");
-            }
-        }
-
-        // Bind the Lua instance to this entity so scripts can call self:GetComponent(...) or host GetComponent handler can route.
-        // NOTE: There are two common approaches — pick the one your Scripting API expects:
-        // 1) If you have a Scripting::BindInstanceToEntity(instanceRefOrId, entityId) glue function, use it.
-        //    (Leave the call below as-is if your glue accepts the value returned by ScriptComponent::GetInstanceRef()).
-        // 2) If you DON'T have that glue, we set an 'entityId' field on the instance table in Lua so scripts can read it (fallback).
-        //
-        // The code below first tries the public glue; if it is not available or returns false, it falls back to setting instance.entityId.
-        {
-            int instRef = scPtr->GetInstanceRef();
-            bool bound = false;
-            // Attempt public glue binding (if implemented). If your Scripting API expects a different integer
-            // (e.g. a numeric "instance id" produced by Scripting::CreateInstanceFromFile), ensure the glue
-            // accepts the registry ref value or adapt accordingly.
-            try {
-                // NOTE: If Scripting::BindInstanceToEntity is not implemented in your Scripting.h, you'll get a link error.
-                // Replace this call with your actual binding API, or remove block and use the fallback below.
-                bound = Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(e));
-            }
-            catch (...) {
-                bound = false;
-            }
-
-            if (!bound) {
-                // Fallback: attach a plain numeric field "entityId" to the instance table so scripts can access it.
-                // This avoids depending on additional glue APIs. We need to manipulate Lua stack; do it using ScriptComponent's API
-                // through the Scripting public surface if possible. If not available, we do a minimal direct Lua ops below.
-                lua_State* L = ::Scripting::GetLuaState();
-                if (L) {
-                    // push instance table from registry and set field entityId = <e>
-                    lua_rawgeti(L, LUA_REGISTRYINDEX, instRef);   // push instance table
-                    if (lua_istable(L, -1)) {
-                        lua_pushinteger(L, static_cast<lua_Integer>(e));
-                        lua_setfield(L, -2, "entityId"); // instance.entityId = e
-                    }
-                    lua_pop(L, 1); // pop instance (or nil)
-                }
-            }
-        }
-    } // release lock
-
-    // Call lifecycle entry functions outside of the larger mutex-held block above (we still need to protect map access)
+    // Finally, call lifecycle Awake/Start outside the mutex to avoid lock inversion with Lua runtime.
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        auto it = m_runtimeMap.find(e);
-        if (it != m_runtimeMap.end() && it->second) {
-            it->second->Awake();
-            it->second->Start();
+        Scripting::ScriptComponent* scPtr = nullptr;
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            auto it = m_runtimeMap.find(e);
+            if (it != m_runtimeMap.end()) scPtr = it->second.get();
+        }
+        if (scPtr) {
+            // These calls may call back into engine or use runtime; don't hold ScriptSystem lock while doing them
+            scPtr->Awake();
+            scPtr->Start();
         }
     }
 
