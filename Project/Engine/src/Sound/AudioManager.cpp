@@ -3,9 +3,8 @@
 #include "Sound/Audio.hpp"
 #include <fmod.h>
 #include <fmod_errors.h>
-#include <iostream>
-#include <filesystem>
 #include <atomic>
+#include <shared_mutex>
 #include "Logging.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
@@ -25,7 +24,7 @@ AudioManager& AudioManager::GetInstance() {
 AudioManager::AudioManager() {}
 
 bool AudioManager::Initialise() {
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (System) return true;
 
     ShuttingDown.store(false);
@@ -75,7 +74,7 @@ void AudioManager::Shutdown() {
     std::vector<FMOD_CHANNELGROUP*> groups;
 
     {
-        std::lock_guard<std::mutex> lock(Mutex);
+        std::unique_lock<std::shared_mutex> lock(Mutex);
 
         // Stop and collect all channels
         for (auto& kv : ChannelMap) {
@@ -119,17 +118,21 @@ void AudioManager::Update() {
     
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::shared_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
-        FMOD_System_Update(System);
-        CleanupStoppedChannels();
+    FMOD_System_Update(System);
+    CleanupStoppedChannels();
+    lock.unlock();
+
+    // Apply batched updates outside of the read lock
+    ApplyBatchUpdates();
 }
 
 ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System || !audioAsset || !audioAsset->sound) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAudio called with invalid parameters.\n");
         return 0;
@@ -137,11 +140,18 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-    if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
-        return 0;
+    // Try to get a channel from the pool first
+    if (!ChannelPool.empty()) {
+        channel = ChannelPool.back();
+        ChannelPool.pop_back();
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool.\n");
+    } else {
+        // Play paused so we can configure the channel before it starts
+        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+        if (res != FMOD_OK) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
+            return 0;
+        }
     }
 
     // Configure per-channel looping explicitly
@@ -158,7 +168,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
-    res = FMOD_Channel_SetPaused(channel, false);
+    FMOD_RESULT res = FMOD_Channel_SetPaused(channel, false);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] Failed to unpause channel: %s\n", FMOD_ErrorString(res));
     }
@@ -179,16 +189,23 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
 ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-    if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
-        return 0;
+    // Try to get a channel from the pool first
+    if (!ChannelPool.empty()) {
+        channel = ChannelPool.back();
+        ChannelPool.pop_back();
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool for 3D audio.\n");
+    } else {
+        // Play paused so we can configure the channel before it starts
+        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+        if (res != FMOD_OK) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
+            return 0;
+        }
     }
 
     // Per-channel looping and 3D mode
@@ -203,7 +220,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
 
     // Set 3D min/max distance for distance attenuation
-    res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
+    FMOD_RESULT res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
     }
@@ -240,7 +257,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
 ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System || !audioAsset || !audioAsset->sound) return 0;
 
     FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
@@ -248,11 +265,18 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Play paused so we can configure the channel
-    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-    if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
-        return 0;
+    // Try to get a channel from the pool first
+    if (!ChannelPool.empty()) {
+        channel = ChannelPool.back();
+        ChannelPool.pop_back();
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool for bus audio.\n");
+    } else {
+        // Play paused so we can configure the channel
+        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+        if (res != FMOD_OK) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
+            return 0;
+        }
     }
 
     // Attach to bus
@@ -286,7 +310,7 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
 void AudioManager::Stop(ChannelHandle channel) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end()) return;
 
@@ -300,7 +324,7 @@ void AudioManager::Stop(ChannelHandle channel) {
 void AudioManager::StopAll() {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     for (auto& kv : ChannelMap) {
         if (kv.second.Channel) {
             FMOD_Channel_Stop(kv.second.Channel);
@@ -313,7 +337,7 @@ void AudioManager::StopAll() {
 void AudioManager::Pause(ChannelHandle channel) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
@@ -324,7 +348,7 @@ void AudioManager::Pause(ChannelHandle channel) {
 void AudioManager::Resume(ChannelHandle channel) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
@@ -335,7 +359,7 @@ void AudioManager::Resume(ChannelHandle channel) {
 bool AudioManager::IsPlaying(ChannelHandle channel) {
     if (ShuttingDown.load()) return false;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::shared_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return false;
 
@@ -347,7 +371,7 @@ bool AudioManager::IsPlaying(ChannelHandle channel) {
 bool AudioManager::IsPaused(ChannelHandle channel) {
     if (ShuttingDown.load()) return false;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::shared_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end()) return false;
 
@@ -357,7 +381,7 @@ bool AudioManager::IsPaused(ChannelHandle channel) {
 AudioSourceState AudioManager::GetState(ChannelHandle channel) {
     if (ShuttingDown.load()) return AudioSourceState::Stopped;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::shared_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end()) return AudioSourceState::Stopped;
 
@@ -368,58 +392,62 @@ AudioSourceState AudioManager::GetState(ChannelHandle channel) {
 void AudioManager::SetChannelVolume(ChannelHandle channel, float volume) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    float finalVolume = volume * MasterVolume.load();
-    FMOD_Channel_SetVolume(it->second.Channel, finalVolume);
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].volume = volume;
+    PendingUpdates[channel].flags |= UPDATE_VOLUME;
 }
 
 void AudioManager::SetChannelPitch(ChannelHandle channel, float pitch) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_Channel_SetPitch(it->second.Channel, pitch);
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].pitch = pitch;
+    PendingUpdates[channel].flags |= UPDATE_PITCH;
 }
 
 void AudioManager::SetChannelLoop(ChannelHandle channel, bool loop) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_MODE mode = loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
-    FMOD_Channel_SetMode(it->second.Channel, mode);
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].loop = loop;
+    PendingUpdates[channel].flags |= UPDATE_LOOP;
 }
 
 void AudioManager::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_VECTOR pos = { position.x, position.y, position.z };
-    FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
-    FMOD_Channel_Set3DAttributes(it->second.Channel, &pos, &vel);
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].position = position;
+    PendingUpdates[channel].flags |= UPDATE_POSITION;
 }
 
 void AudioManager::SetChannel3DMinMaxDistance(ChannelHandle channel, float minDistance, float maxDistance) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    FMOD_RESULT res = FMOD_Channel_Set3DMinMaxDistance(it->second.Channel, minDistance, maxDistance);
-    if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
-    }
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].minDistance = minDistance;
+    PendingUpdates[channel].maxDistance = maxDistance;
+    PendingUpdates[channel].flags |= UPDATE_3D_MINMAX;
 }
 
 FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
@@ -442,7 +470,7 @@ FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
 void AudioManager::SetBusVolume(const std::string& busName, float volume) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = BusMap.find(busName);
     if (it == BusMap.end() || !it->second) return;
 
@@ -452,7 +480,7 @@ void AudioManager::SetBusVolume(const std::string& busName, float volume) {
 void AudioManager::SetBusPaused(const std::string& busName, bool paused) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     auto it = BusMap.find(busName);
     if (it == BusMap.end() || !it->second) return;
 
@@ -464,7 +492,7 @@ void AudioManager::SetMasterVolume(float volume) {
     
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
     // Update all existing channels
@@ -486,7 +514,7 @@ void AudioManager::SetGlobalPaused(bool paused) {
     
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
     // Apply to all channels
@@ -500,7 +528,7 @@ void AudioManager::SetGlobalPaused(bool paused) {
 FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
     if (ShuttingDown.load()) return nullptr;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSound called but system not initialized.\n");
         return nullptr;
@@ -524,7 +552,7 @@ FMOD_SOUND* AudioManager::CreateSound(const std::string& assetPath) {
 FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath) {
     if (ShuttingDown.load() || !data || length == 0) return nullptr;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: CreateSoundFromMemory called but system not initialized.\n");
         return nullptr;
@@ -551,7 +579,7 @@ FMOD_SOUND* AudioManager::CreateSoundFromMemory(const void* data, unsigned int l
 void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!sound) return;
 
     FMOD_RESULT res = FMOD_Sound_Release(sound);
@@ -562,6 +590,7 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 
 void AudioManager::CleanupStoppedChannels() {
     std::vector<ChannelHandle> toErase;
+    std::vector<FMOD_CHANNEL*> channelsToPool;
     
     for (auto& kv : ChannelMap) {
         if (kv.second.Channel) {
@@ -571,16 +600,34 @@ void AudioManager::CleanupStoppedChannels() {
             if (!playing && kv.second.State != AudioSourceState::Paused) {
                 kv.second.State = AudioSourceState::Stopped;
                 toErase.push_back(kv.first);
+                
+                // Return channel to pool if not full
+                if (ChannelPool.size() < MAX_POOL_SIZE) {
+                    // Stop the channel completely and reset it
+                    FMOD_Channel_Stop(kv.second.Channel);
+                    FMOD_Channel_SetUserData(kv.second.Channel, nullptr);
+                    channelsToPool.push_back(kv.second.Channel);
+                } else {
+                    // Pool is full, just stop and let FMOD manage it
+                    FMOD_Channel_Stop(kv.second.Channel);
+                }
             }
         }
     }
     
+    // Remove from map
     for (auto id : toErase) {
         ChannelMap.erase(id);
+    }
+    
+    // Add to pool
+    for (auto ch : channelsToPool) {
+        ChannelPool.push_back(ch);
     }
 }
 
 bool AudioManager::IsChannelValid(ChannelHandle channel) {
+    std::shared_lock<std::shared_mutex> lock(Mutex);
     auto it = ChannelMap.find(channel);
     return it != ChannelMap.end() && it->second.Channel != nullptr;
 }
@@ -607,7 +654,7 @@ void AudioManager::UpdateChannelState(ChannelHandle channel) {
 void AudioManager::SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
     FMOD_VECTOR fmodPos = { position.x, position.y, position.z };
@@ -626,7 +673,7 @@ void AudioManager::SetListenerAttributes(int listener, const Vector3D& position,
 FMOD_REVERB3D* AudioManager::CreateReverbZone() {
     if (ShuttingDown.load()) return nullptr;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return nullptr;
 
     FMOD_REVERB3D* reverb = nullptr;
@@ -644,7 +691,7 @@ FMOD_REVERB3D* AudioManager::CreateReverbZone() {
 void AudioManager::ReleaseReverbZone(FMOD_REVERB3D* reverb) {
     if (!reverb || ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     
     FMOD_RESULT res = FMOD_Reverb3D_Release(reverb);
     if (res != FMOD_OK) {
@@ -657,7 +704,7 @@ void AudioManager::ReleaseReverbZone(FMOD_REVERB3D* reverb) {
 void AudioManager::SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D& position, float minDistance, float maxDistance) {
     if (!reverb || ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
     FMOD_VECTOR fmodPos = { position.x, position.y, position.z };
@@ -671,7 +718,7 @@ void AudioManager::SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D
 void AudioManager::SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REVERB_PROPERTIES* properties) {
     if (!reverb || !properties || ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
+    std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
     FMOD_RESULT res = FMOD_Reverb3D_SetProperties(reverb, properties);
@@ -683,16 +730,131 @@ void AudioManager::SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REV
 void AudioManager::SetChannelReverbMix(ChannelHandle channel, float reverbMix) {
     if (ShuttingDown.load()) return;
 
-    std::lock_guard<std::mutex> lock(Mutex);
-    if (!System || !IsChannelValid(channel)) return;
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
 
-    auto& chData = ChannelMap[channel];
-    
-    // Apply reverb mix to channel (instance 0 is the default reverb slot)
-    FMOD_RESULT res = FMOD_Channel_SetReverbProperties(chData.Channel, 0, reverbMix);
-    if (res != FMOD_OK) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] WARN: Failed to set channel reverb mix: ", FMOD_ErrorString(res), "\n");
-    } else {
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Set channel reverb mix to ", reverbMix, "\n");
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].reverbMix = reverbMix;
+    PendingUpdates[channel].flags |= UPDATE_REVERB_MIX;
+}
+
+void AudioManager::SetChannelPriority(ChannelHandle channel, int priority) {
+    if (ShuttingDown.load()) return;
+
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
+
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].priority = priority;
+    PendingUpdates[channel].flags |= UPDATE_PRIORITY;
+}
+
+void AudioManager::SetChannelStereoPan(ChannelHandle channel, float pan) {
+    if (ShuttingDown.load()) return;
+
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
+
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].stereoPan = pan;
+    PendingUpdates[channel].flags |= UPDATE_STEREO_PAN;
+}
+
+void AudioManager::SetChannelDopplerLevel(ChannelHandle channel, float level) {
+    if (ShuttingDown.load()) return;
+
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    auto it = ChannelMap.find(channel);
+    if (it == ChannelMap.end() || !it->second.Channel) return;
+
+    // Add to pending updates instead of immediate FMOD call
+    PendingUpdates[channel].dopplerLevel = level;
+    PendingUpdates[channel].flags |= UPDATE_DOPPLER_LEVEL;
+}
+
+void AudioManager::ApplyBatchUpdates() {
+    if (ShuttingDown.load()) return;
+
+    std::unordered_map<ChannelHandle, ChannelUpdate> updatesToProcess;
+
+    {
+        std::unique_lock<std::shared_mutex> lock(Mutex);
+        if (PendingUpdates.empty()) return;
+        updatesToProcess = std::move(PendingUpdates);
+        PendingUpdates.clear();
+    }
+
+    // Process updates outside of lock
+    for (const auto& updatePair : updatesToProcess) {
+        ChannelHandle channel = updatePair.first;
+        const ChannelUpdate& update = updatePair.second;
+
+        std::shared_lock<std::shared_mutex> readLock(Mutex);
+        auto it = ChannelMap.find(channel);
+        if (it == ChannelMap.end() || !it->second.Channel) continue;
+        FMOD_CHANNEL* fmodChannel = it->second.Channel;
+        readLock.unlock();
+
+        // Apply updates to FMOD channel
+        if (update.flags & UPDATE_VOLUME) {
+            float finalVolume = update.volume * MasterVolume.load();
+            FMOD_Channel_SetVolume(fmodChannel, finalVolume);
+        }
+
+        if (update.flags & UPDATE_PITCH) {
+            FMOD_Channel_SetPitch(fmodChannel, update.pitch);
+        }
+
+        if (update.flags & UPDATE_POSITION) {
+            FMOD_VECTOR pos = { update.position.x, update.position.y, update.position.z };
+            FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
+            FMOD_Channel_Set3DAttributes(fmodChannel, &pos, &vel);
+        }
+
+        // Set channel mode based on 2D/3D and loop flags
+        FMOD_MODE mode = FMOD_DEFAULT;
+        bool setMode = false;
+        if (update.flags & UPDATE_STEREO_PAN) {
+            mode |= FMOD_2D;
+            setMode = true;
+        } else if (update.flags & UPDATE_POSITION) {
+            mode |= FMOD_3D;
+            setMode = true;
+        }
+        if (update.flags & UPDATE_LOOP) {
+            if (update.loop) {
+                mode |= FMOD_LOOP_NORMAL;
+            } else {
+                mode |= FMOD_LOOP_OFF;
+            }
+            FMOD_Channel_SetLoopCount(fmodChannel, update.loop ? -1 : 0);
+            setMode = true;
+        }
+        if (setMode) {
+            FMOD_Channel_SetMode(fmodChannel, mode);
+        }
+
+        if (update.flags & UPDATE_3D_MINMAX) {
+            FMOD_Channel_Set3DMinMaxDistance(fmodChannel, update.minDistance, update.maxDistance);
+        }
+
+        if (update.flags & UPDATE_REVERB_MIX) {
+            FMOD_Channel_SetReverbProperties(fmodChannel, 0, update.reverbMix);
+        }
+
+        if (update.flags & UPDATE_PRIORITY) {
+            FMOD_Channel_SetPriority(fmodChannel, update.priority);
+        }
+
+        if (update.flags & UPDATE_STEREO_PAN) {
+            FMOD_Channel_SetPan(fmodChannel, update.stereoPan);
+        }
+
+        if (update.flags & UPDATE_DOPPLER_LEVEL) {
+            FMOD_Channel_Set3DDopplerLevel(fmodChannel, update.dopplerLevel);
+        }
     }
 }

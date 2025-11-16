@@ -227,6 +227,11 @@ void AudioComponent::UpdateComponent() {
 
     UpdatePlaybackState();
 
+    // Update channel properties if playing (batched for efficiency)
+    if (CurrentChannel != 0 && IsPlaying) {
+        UpdateChannelProperties();
+    }
+
     if (PlayOnAwake) {
         if (!PlayOnAwakeTriggered && !GetIsPlaying() && HasValidClip() && !IsPlaying) {
             if (Engine::IsPlayMode()) {
@@ -265,7 +270,14 @@ void AudioComponent::UpdateChannelProperties() {
     audioMgr.SetChannelLoop(CurrentChannel, Loop);
     
     // Apply reverb zone mix
-    audioMgr.SetChannelReverbMix(CurrentChannel, reverbZoneMix);
+    audioMgr.SetChannelReverbMix(CurrentChannel, bypassListenerEffects ? 0.0f : reverbZoneMix);
+    
+    // New optimized batched properties
+    audioMgr.SetChannelPriority(CurrentChannel, Priority);
+    if (!(Spatialize && SpatialBlend > 0.0f)) {
+        audioMgr.SetChannelStereoPan(CurrentChannel, StereoPan);
+    }
+    audioMgr.SetChannelDopplerLevel(CurrentChannel, DopplerLevel);
     
     if (Spatialize && SpatialBlend > 0.0f) {
         audioMgr.UpdateChannelPosition(CurrentChannel, Position);
@@ -288,6 +300,7 @@ void AudioComponent::UpdatePlaybackState() {
         IsPlaying = false;
         IsPaused = false;
         WasPlayingBeforePause = false;
+        PlayOnAwakeTriggered = false;  // Reset for next play mode
     } else {
         IsPlaying = (actualState == AudioSourceState::Playing);
         IsPaused = (actualState == AudioSourceState::Paused);
@@ -310,7 +323,12 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     
     if (channel != 0) {
         audioMgr.SetChannelPitch(channel, Pitch);
-        audioMgr.SetChannelReverbMix(channel, reverbZoneMix);
+        audioMgr.SetChannelReverbMix(channel, bypassListenerEffects ? 0.0f : reverbZoneMix);
+        audioMgr.SetChannelPriority(channel, Priority);
+        if (!(Spatialize && SpatialBlend > 0.0f)) {
+            audioMgr.SetChannelStereoPan(channel, StereoPan);
+        }
+        audioMgr.SetChannelDopplerLevel(channel, DopplerLevel);
         if (Mute) {
             audioMgr.SetChannelVolume(channel, 0.0f);
         }

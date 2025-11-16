@@ -1100,11 +1100,8 @@ void RegisterInspectorCustomRenderers()
 
             if (audio.Spatialize)
             {
-                // Spatial Blend (editable drag with undo support)
-                ImGui::Text("Spatial Blend");
-                ImGui::SameLine(labelWidth);
-                ImGui::SetNextItemWidth(-1);
-                if (UndoableWidgets::DragFloat("##SpatialBlend", &audio.SpatialBlend, 0.01f, 0.0f, 1.0f, "%.2f"))
+                // Spatial Blend (editable dra with undo support)
+                if (EditorComponents::DrawSliderWithInput("Spatial Blend", &audio.SpatialBlend, 0.0f, 1.0f, false, labelWidth))
                 {
                     audio.SetSpatialBlend(audio.SpatialBlend);
                 }
