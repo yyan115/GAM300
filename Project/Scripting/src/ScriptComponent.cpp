@@ -250,6 +250,14 @@ namespace Scripting {
         // detach current script (safe even if none)
         DetachScript();
 
+
+        m_scriptPath = scriptPath;
+        m_awakeCalled = false;
+        m_startCalled = false;
+
+        // protected call with message handler for traceback
+        int msgh = PushMessageHandler(L);
+        MessageHandlerGuard guard(L, msgh);
 #ifdef ANDROID
         // Read file using Android AssetManager
         std::string scriptContent;
@@ -260,17 +268,10 @@ namespace Scripting {
         SC_LOG(EngineLogging::LogLevel::Info, "hello can work anot?");
         // Load Lua from string instead of file
         int loadStatus = luaL_loadstring(L, scriptContent.c_str());
-        
+
 #else
         int loadStatus = luaL_loadfile(L, scriptPath.c_str());
 #endif
-        m_scriptPath = scriptPath;
-        m_awakeCalled = false;
-        m_startCalled = false;
-
-        // protected call with message handler for traceback
-        int msgh = PushMessageHandler(L);
-        MessageHandlerGuard guard(L, msgh);
         if (loadStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
             SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: ", msg ? msg : "(no msg)");

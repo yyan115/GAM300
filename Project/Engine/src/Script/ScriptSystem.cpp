@@ -200,6 +200,8 @@ void ScriptSystem::Shutdown() {
         }
     }
 
+    Scripting::Shutdown();
+
     ENGINE_PRINT("[ScriptSystem] Shutdown complete\n");
 }
 
