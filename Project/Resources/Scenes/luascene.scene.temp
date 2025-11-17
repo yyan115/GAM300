@@ -244,7 +244,48 @@
                         "health"
                     ],
                     "entryFunction": "Start",
-                    "autoInvokeEntry": true
+                    "autoInvokeEntry": true,
+                    "instanceState": {
+                        "centerZ": 0.0,
+                        "centerOnStart": true,
+                        "__field_list": {
+                            "centerZ": 0.0,
+                            "centerOnStart": true,
+                            "phiEpsilon": 0.01,
+                            "centerY": 0.0,
+                            "phiSpeed": 0.0,
+                            "initialPhi": 1.0,
+                            "centerX": 0.0,
+                            "thetaSpeed": 1.0,
+                            "radius": 2.0,
+                            "initialTheta": 0.0
+                        },
+                        "centerX": 0.0,
+                        "__created_at": 1763396330.0,
+                        "radius": 2.0,
+                        "initialTheta": 0.0,
+                        "phiEpsilon": 0.01,
+                        "_subscriptions": {},
+                        "center": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "centerY": 0.0,
+                        "phiSpeed": 0.0,
+                        "initialPhi": 1.0,
+                        "_private": {},
+                        "phi": 1.0,
+                        "__meta": {},
+                        "_prevPos": {
+                            "x": 1.682941969615793,
+                            "y": 1.0806046117362795,
+                            "z": 0.0
+                        },
+                        "thetaSpeed": 1.0,
+                        "theta": 0.0,
+                        "_transform_fetched": false
+                    }
                 }
             }
         },
@@ -492,7 +533,21 @@
                         "health"
                     ],
                     "entryFunction": "Start",
-                    "autoInvokeEntry": true
+                    "autoInvokeEntry": true,
+                    "instanceState": {
+                        "_transform_fetched": false,
+                        "_subscriptions": {},
+                        "__field_list": {
+                            "rotationSpeed": 45.0,
+                            "axis": "Y"
+                        },
+                        "_private": {},
+                        "__meta": {},
+                        "__created_at": 1763396330.0,
+                        "currentAngle": 0.0,
+                        "axis": "Y",
+                        "rotationSpeed": 45.0
+                    }
                 }
             }
         },
@@ -3629,7 +3684,7 @@
         },
         {
             "id": 15,
-            "guid": "0064ed68c03c0573-00034aead6000001",
+            "guid": "0062bb4411225f49-00034d8a9e000001",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 0"
@@ -3867,7 +3922,7 @@
         },
         {
             "id": 16,
-            "guid": "0064ed68902aed21-00034aead6000003",
+            "guid": "0062bb444891b122-00034d8a9e000003",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 1"
@@ -4105,7 +4160,7 @@
         },
         {
             "id": 17,
-            "guid": "0064ed6890b730ff-00034aead6000005",
+            "guid": "0062bb4434e36cb4-00034d8a9e000005",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 2"
@@ -4343,7 +4398,7 @@
         },
         {
             "id": 18,
-            "guid": "0064ed68e2ebaa74-00034aead6000007",
+            "guid": "0062bb4413339c9b-00034d8a9e000007",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 3"
@@ -4581,7 +4636,7 @@
         },
         {
             "id": 19,
-            "guid": "0064ed68c1c713a7-00034aead6000009",
+            "guid": "0062bb44023c7d67-00034d8a9e000009",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Cube 4"
@@ -4819,7 +4874,7 @@
         },
         {
             "id": 20,
-            "guid": "0064ed68efdbb556-00034aead600000b",
+            "guid": "0062bb447d5c4a56-00034d8a9e00000b",
             "components": {
                 "NameComponent": {
                     "name": "HDR Test Light"
