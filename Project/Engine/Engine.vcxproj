@@ -321,6 +321,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="src\Script\LuaComponentBindings.inc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scripting\Scripting.vcxproj">
