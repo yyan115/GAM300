@@ -19,6 +19,7 @@
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include "Graphics/Material.hpp"
 #include "Physics/ColliderComponent.hpp"
+#include "Graphics/DebugDraw/DebugDrawSystem.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "RaycastUtil.hpp"
 #include "imgui.h"
@@ -622,6 +623,7 @@ void ScenePanel::OnImGuiRender()
             DrawColliderGizmos();
             DrawCameraGizmos();
             DrawAudioGizmos();
+            DrawLightGizmos();
 
             // View gizmo in the corner
             RenderViewGizmo((float)sceneViewWidth, (float)sceneViewHeight);
@@ -1951,5 +1953,330 @@ void ScenePanel::DrawAudioGizmos() {
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing audio gizmos: ", e.what(), "\n");
+    }
+}
+
+void ScenePanel::DrawLightGizmos() {
+    Entity selectedEntity = GUIManager::GetSelectedEntity();
+    if (selectedEntity == static_cast<Entity>(-1)) return;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Check if entity has transform
+        if (!ecsManager.HasComponent<Transform>(selectedEntity)) return;
+        Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+
+        // Check which light component types this entity has (early check to avoid camera access if not needed)
+        bool hasDirectionalLight = ecsManager.HasComponent<DirectionalLightComponent>(selectedEntity);
+        bool hasPointLight = ecsManager.HasComponent<PointLightComponent>(selectedEntity);
+        bool hasSpotLight = ecsManager.HasComponent<SpotLightComponent>(selectedEntity);
+
+        // Early exit if no light components
+        if (!hasDirectionalLight && !hasPointLight && !hasSpotLight) return;
+
+        // Get window and viewport info
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        float editorAspectRatio = windowSize.x / windowSize.y;
+
+        // Manually construct view matrix to avoid glm::lookAt assertion
+        glm::vec3 camPos = editorCamera.Position;
+        glm::vec3 camTarget = editorCamera.Target;
+        glm::vec3 camUp = editorCamera.Up;
+
+        // Validate camera vectors
+        glm::vec3 forward = camTarget - camPos;
+        if (glm::length(forward) < 0.001f) return; // Position == Target
+        forward = glm::normalize(forward);
+
+        glm::vec3 right = glm::cross(forward, camUp);
+        if (glm::length(right) < 0.001f) return; // Up parallel to forward
+        right = glm::normalize(right);
+
+        glm::vec3 up = glm::cross(right, forward);
+
+        // Construct view matrix manually (same as glm::lookAt but with validation)
+        glm::mat4 view = glm::mat4(1.0f);
+        view[0][0] = right.x;
+        view[1][0] = right.y;
+        view[2][0] = right.z;
+        view[0][1] = up.x;
+        view[1][1] = up.y;
+        view[2][1] = up.z;
+        view[0][2] = -forward.x;
+        view[1][2] = -forward.y;
+        view[2][2] = -forward.z;
+        view[3][0] = -glm::dot(right, camPos);
+        view[3][1] = -glm::dot(up, camPos);
+        view[3][2] = glm::dot(forward, camPos);
+
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(editorAspectRatio);
+        glm::mat4 vp = projection * view;
+
+        ImVec2 windowPos = ImGui::GetWindowPos();
+
+        // Get light position from world matrix
+        glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+        glm::vec3 lightPos = glm::vec3(worldMat[3]); // Extract translation
+
+        // Get ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+        // Project 3D point to screen space
+        auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
+            glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
+            if (clipSpace.w <= 0.0001f) {
+                isVisible = false;
+                return ImVec2(-10000, -10000);
+            }
+            glm::vec3 ndc = glm::vec3(clipSpace) / clipSpace.w;
+            float screenX = (ndc.x + 1.0f) * 0.5f * windowSize.x + windowPos.x;
+            float screenY = (1.0f - ndc.y) * 0.5f * windowSize.y + windowPos.y;
+            isVisible = true;
+            return ImVec2(screenX, screenY);
+        };
+
+        // ==== DIRECTIONAL LIGHT ====
+        if (ecsManager.HasComponent<DirectionalLightComponent>(selectedEntity)) {
+            DirectionalLightComponent& light = ecsManager.GetComponent<DirectionalLightComponent>(selectedEntity);
+            if (light.enabled) {
+                // Use canonical forward direction (0, 0, -1) and apply transform rotation
+                // This makes the transform rotation the sole controller of light direction
+                glm::vec3 canonicalDirection(0.0f, 0.0f, -1.0f);
+                glm::mat3 rotationMatrix = glm::mat3(worldMat);
+                glm::vec3 direction = glm::normalize(rotationMatrix * canonicalDirection);
+
+                glm::vec3 lightColor = light.color.ConvertToGLM();
+                ImU32 color = IM_COL32(
+                    (int)(lightColor.r * 255),
+                    (int)(lightColor.g * 255),
+                    (int)(lightColor.b * 255),
+                    220
+                );
+
+                // Draw central sphere
+                bool centerVis;
+                ImVec2 centerScreen = projectToScreen(lightPos, centerVis);
+                if (centerVis) {
+                    drawList->AddCircleFilled(centerScreen, 6.0f, color);
+                    drawList->AddCircle(centerScreen, 6.0f, IM_COL32(255, 255, 255, 255), 0, 2.0f);
+                }
+
+                // Draw direction arrow
+                glm::vec3 arrowEnd = lightPos + direction * 1.5f;
+                bool arrowVis;
+                ImVec2 arrowScreen = projectToScreen(arrowEnd, arrowVis);
+
+                if (centerVis && arrowVis) {
+                    // Arrow line
+                    drawList->AddLine(centerScreen, arrowScreen, color, 3.0f);
+
+                    // Arrow head
+                    ImVec2 dir = ImVec2(arrowScreen.x - centerScreen.x, arrowScreen.y - centerScreen.y);
+                    float len = sqrt(dir.x * dir.x + dir.y * dir.y);
+                    if (len > 0) {
+                        dir.x /= len;
+                        dir.y /= len;
+                        ImVec2 perp = ImVec2(-dir.y, dir.x);
+
+                        ImVec2 head1 = ImVec2(arrowScreen.x - dir.x * 12 + perp.x * 6, arrowScreen.y - dir.y * 12 + perp.y * 6);
+                        ImVec2 head2 = ImVec2(arrowScreen.x - dir.x * 12 - perp.x * 6, arrowScreen.y - dir.y * 12 - perp.y * 6);
+
+                        drawList->AddLine(arrowScreen, head1, color, 2.5f);
+                        drawList->AddLine(arrowScreen, head2, color, 2.5f);
+                    }
+                }
+
+                // Draw sun rays
+                glm::vec3 perpendicular1 = glm::vec3(-direction.y, direction.x, 0.0f);
+                if (glm::length(perpendicular1) < 0.01f) perpendicular1 = glm::vec3(1.0f, 0.0f, 0.0f);
+                perpendicular1 = glm::normalize(perpendicular1);
+                glm::vec3 perpendicular2 = glm::normalize(glm::cross(direction, perpendicular1));
+
+                for (int i = 0; i < 8; i++) {
+                    float angle = (i / 8.0f) * 2.0f * 3.14159265f;
+                    glm::vec3 rayStart = lightPos + perpendicular1 * cos(angle) * 0.25f + perpendicular2 * sin(angle) * 0.25f;
+                    glm::vec3 rayEnd = lightPos + perpendicular1 * cos(angle) * 0.5f + perpendicular2 * sin(angle) * 0.5f;
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(rayStart, vis1);
+                    ImVec2 screen2 = projectToScreen(rayEnd, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 2.0f);
+                    }
+                }
+            }
+        }
+
+        // ==== POINT LIGHT ====
+        if (ecsManager.HasComponent<PointLightComponent>(selectedEntity)) {
+            PointLightComponent& light = ecsManager.GetComponent<PointLightComponent>(selectedEntity);
+            if (light.enabled) {
+                glm::vec3 lightColor = light.color.ConvertToGLM();
+                ImU32 color = IM_COL32(
+                    (int)(lightColor.r * 255),
+                    (int)(lightColor.g * 255),
+                    (int)(lightColor.b * 255),
+                    180
+                );
+
+                // Calculate effective radius
+                float effectiveRadius = 5.0f;
+                if (light.quadratic > 0.0f) {
+                    effectiveRadius = sqrt(1.0f / light.quadratic) * 2.0f;
+                }
+
+                // Draw central sphere
+                bool centerVis;
+                ImVec2 centerScreen = projectToScreen(lightPos, centerVis);
+                if (centerVis) {
+                    drawList->AddCircleFilled(centerScreen, 8.0f, color);
+                    drawList->AddCircle(centerScreen, 8.0f, IM_COL32(255, 255, 255, 255), 0, 2.0f);
+                }
+
+                // Draw range sphere (wireframe circles)
+                int segments = 32;
+
+                // XY circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (i / (float)segments) * 2.0f * 3.14159265f;
+                    float angle2 = ((i + 1) / (float)segments) * 2.0f * 3.14159265f;
+
+                    glm::vec3 p1 = lightPos + glm::vec3(effectiveRadius * cos(angle1), effectiveRadius * sin(angle1), 0.0f);
+                    glm::vec3 p2 = lightPos + glm::vec3(effectiveRadius * cos(angle2), effectiveRadius * sin(angle2), 0.0f);
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(p1, vis1);
+                    ImVec2 screen2 = projectToScreen(p2, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 1.5f);
+                    }
+                }
+
+                // XZ circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (i / (float)segments) * 2.0f * 3.14159265f;
+                    float angle2 = ((i + 1) / (float)segments) * 2.0f * 3.14159265f;
+
+                    glm::vec3 p1 = lightPos + glm::vec3(effectiveRadius * cos(angle1), 0.0f, effectiveRadius * sin(angle1));
+                    glm::vec3 p2 = lightPos + glm::vec3(effectiveRadius * cos(angle2), 0.0f, effectiveRadius * sin(angle2));
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(p1, vis1);
+                    ImVec2 screen2 = projectToScreen(p2, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 1.5f);
+                    }
+                }
+
+                // YZ circle
+                for (int i = 0; i < segments; i++) {
+                    float angle1 = (i / (float)segments) * 2.0f * 3.14159265f;
+                    float angle2 = ((i + 1) / (float)segments) * 2.0f * 3.14159265f;
+
+                    glm::vec3 p1 = lightPos + glm::vec3(0.0f, effectiveRadius * cos(angle1), effectiveRadius * sin(angle1));
+                    glm::vec3 p2 = lightPos + glm::vec3(0.0f, effectiveRadius * cos(angle2), effectiveRadius * sin(angle2));
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(p1, vis1);
+                    ImVec2 screen2 = projectToScreen(p2, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 1.5f);
+                    }
+                }
+            }
+        }
+
+        // ==== SPOT LIGHT ====
+        if (ecsManager.HasComponent<SpotLightComponent>(selectedEntity)) {
+            SpotLightComponent& light = ecsManager.GetComponent<SpotLightComponent>(selectedEntity);
+            if (light.enabled) {
+                // Use canonical forward direction (0, 0, -1) and apply transform rotation
+                // This makes the transform rotation the sole controller of light direction
+                glm::vec3 canonicalDirection(0.0f, 0.0f, -1.0f);
+                glm::mat3 rotationMatrix = glm::mat3(worldMat);
+                glm::vec3 direction = glm::normalize(rotationMatrix * canonicalDirection);
+
+                glm::vec3 lightColor = light.color.ConvertToGLM();
+                ImU32 color = IM_COL32(
+                    (int)(lightColor.r * 255),
+                    (int)(lightColor.g * 255),
+                    (int)(lightColor.b * 255),
+                    180
+                );
+
+                // Calculate range and cone angle
+                float range = 10.0f;
+                if (light.quadratic > 0.0f) {
+                    range = sqrt(1.0f / light.quadratic) * 1.5f;
+                }
+                float coneAngle = acos(light.cutOff);
+                float coneRadius = range * tan(coneAngle);
+
+                // Draw central sphere
+                bool centerVis;
+                ImVec2 centerScreen = projectToScreen(lightPos, centerVis);
+                if (centerVis) {
+                    drawList->AddCircleFilled(centerScreen, 6.0f, color);
+                    drawList->AddCircle(centerScreen, 6.0f, IM_COL32(255, 255, 255, 255), 0, 2.0f);
+                }
+
+                // Calculate perpendicular vectors for cone
+                glm::vec3 perpendicular1 = glm::vec3(-direction.y, direction.x, 0.0f);
+                if (glm::length(perpendicular1) < 0.01f) perpendicular1 = glm::vec3(1.0f, 0.0f, 0.0f);
+                perpendicular1 = glm::normalize(perpendicular1);
+                glm::vec3 perpendicular2 = glm::normalize(glm::cross(direction, perpendicular1));
+
+                glm::vec3 coneEnd = lightPos + direction * range;
+
+                // Draw cone lines from apex to circle
+                int numLines = 8;
+                for (int i = 0; i < numLines; i++) {
+                    float angle = (i / (float)numLines) * 2.0f * 3.14159265f;
+                    glm::vec3 pointOnCircle = coneEnd +
+                        perpendicular1 * cos(angle) * coneRadius +
+                        perpendicular2 * sin(angle) * coneRadius;
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(lightPos, vis1);
+                    ImVec2 screen2 = projectToScreen(pointOnCircle, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 2.0f);
+                    }
+                }
+
+                // Draw circle at cone end
+                for (int i = 0; i < numLines; i++) {
+                    float angle1 = (i / (float)numLines) * 2.0f * 3.14159265f;
+                    float angle2 = ((i + 1) / (float)numLines) * 2.0f * 3.14159265f;
+
+                    glm::vec3 point1 = coneEnd + perpendicular1 * cos(angle1) * coneRadius + perpendicular2 * sin(angle1) * coneRadius;
+                    glm::vec3 point2 = coneEnd + perpendicular1 * cos(angle2) * coneRadius + perpendicular2 * sin(angle2) * coneRadius;
+
+                    bool vis1, vis2;
+                    ImVec2 screen1 = projectToScreen(point1, vis1);
+                    ImVec2 screen2 = projectToScreen(point2, vis2);
+
+                    if (vis1 && vis2) {
+                        drawList->AddLine(screen1, screen2, color, 1.5f);
+                    }
+                }
+
+                // Draw center direction line
+                bool endVis;
+                ImVec2 endScreen = projectToScreen(coneEnd, endVis);
+                if (centerVis && endVis) {
+                    drawList->AddLine(centerScreen, endScreen, color, 2.5f);
+                }
+            }
+        }
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error drawing light gizmos: ", e.what(), "\n");
     }
 }

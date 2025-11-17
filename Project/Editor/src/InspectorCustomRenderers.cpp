@@ -1370,67 +1370,7 @@ void RegisterInspectorCustomRenderers()
         UndoableWidgets::ColorEdit3("Color", &light.color.x);
         UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
-        ImGui::Separator();
-        ImGui::Text("Direction");
-
-        // Direction controls with visual helper
-        UndoableWidgets::DragFloat3("##Direction", &light.direction.x, 0.01f, -1.0f, 1.0f);
-
-        // Direction visualization
-        ImGui::SameLine();
-        if (ImGui::Button("Normalize"))
-        {
-            light.direction = light.direction.Normalized();
-        }
-
-        // Show direction as normalized vector
-        Vector3D normalizedDir = light.direction.Normalized();
-        ImGui::Text("Normalized: (%.2f, %.2f, %.2f)", normalizedDir.x, normalizedDir.y, normalizedDir.z);
-
-        // Common direction presets
-        ImGui::Text("Presets:");
-        if (ImGui::Button("Down"))
-            light.direction = Vector3D(0.0f, -1.0f, 0.0f);
-        ImGui::SameLine();
-        if (ImGui::Button("Forward-Down"))
-            light.direction = Vector3D(-0.2f, -1.0f, -0.3f);
-        ImGui::SameLine();
-        if (ImGui::Button("Side-Down"))
-            light.direction = Vector3D(-1.0f, -1.0f, 0.0f);
-
-        // Visual direction indicator
-        ImGui::Text("Direction Visualization:");
-        ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-        ImVec2 canvas_size = ImVec2(100, 100);
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-        // Draw a circle representing the "world"
-        ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
-        draw_list->AddCircle(center, 40.0f, IM_COL32(100, 100, 100, 255), 0, 2.0f);
-
-        // Draw direction arrow (project 3D direction to 2D)
-        Vector3D dir = light.direction.Normalized();
-        ImVec2 arrow_end = ImVec2(center.x + dir.x * 35.0f, center.y + dir.y * 35.0f);
-        draw_list->AddLine(center, arrow_end, IM_COL32(255, 255, 0, 255), 3.0f);
-
-        // Arrow head
-        ImVec2 arrowDir = ImVec2(arrow_end.x - center.x, arrow_end.y - center.y);
-        float arrowLength = sqrt(arrowDir.x * arrowDir.x + arrowDir.y * arrowDir.y);
-        if (arrowLength > 0)
-        {
-            arrowDir.x /= arrowLength;
-            arrowDir.y /= arrowLength;
-            ImVec2 perpendicular = ImVec2(-arrowDir.y, arrowDir.x);
-            ImVec2 arrowHead1 = ImVec2(arrow_end.x - arrowDir.x * 8 + perpendicular.x * 4,
-                                        arrow_end.y - arrowDir.y * 8 + perpendicular.y * 4);
-            ImVec2 arrowHead2 = ImVec2(arrow_end.x - arrowDir.x * 8 - perpendicular.x * 4,
-                                        arrow_end.y - arrowDir.y * 8 - perpendicular.y * 4);
-            draw_list->AddLine(arrow_end, arrowHead1, IM_COL32(255, 255, 0, 255), 2.0f);
-            draw_list->AddLine(arrow_end, arrowHead2, IM_COL32(255, 255, 0, 255), 2.0f);
-        }
-
-        ImGui::Dummy(canvas_size);
-
+        // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
         UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
@@ -1483,9 +1423,7 @@ void RegisterInspectorCustomRenderers()
         UndoableWidgets::ColorEdit3("Color", &light.color.x);
         UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
-        // Direction with automatic undo/redo
-        UndoableWidgets::DragFloat3("Direction", &light.direction.x, 0.1f, -1.0f, 1.0f);
-
+        // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Cone Settings");
 

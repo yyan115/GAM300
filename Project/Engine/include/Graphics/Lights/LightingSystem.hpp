@@ -34,6 +34,7 @@ private:
         std::vector<float> constant;
         std::vector<float> linear;
         std::vector<float> quadratic;
+        std::vector<float> intensity;
     } pointLightData;
 
     // Single directional light data
@@ -43,6 +44,7 @@ private:
         glm::vec3 ambient;
         glm::vec3 diffuse;
         glm::vec3 specular;
+        float intensity = 1.0f;
     } directionalLightData;
 
     // Single spot light data -> Multiple spot light data
@@ -57,6 +59,7 @@ private:
         std::vector<float> quadratic;
         std::vector<float> cutOff;
         std::vector<float> outerCutOff;
+        std::vector<float> intensity;
     } spotLightData;
 
     void CollectLightData();

@@ -10,7 +10,7 @@
 
 class Model;
 
-class DebugDrawSystem : public System {
+class ENGINE_API DebugDrawSystem : public System {
 public:
     DebugDrawSystem() = default;
     ~DebugDrawSystem() = default;
@@ -23,6 +23,11 @@ public:
     static void DrawSphere(const Vector3D& position, float radius = 1.0f, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f);
     static void DrawLine(const Vector3D& start, const Vector3D& end, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f, float width = 1.0f);
     static void DrawMeshWireframe(std::shared_ptr<Model> model, const Vector3D& position, const Vector3D& color = Vector3D(1.0f, 1.0f, 1.0f), float duration = 0.0f);
+
+    // Light gizmos
+    static void DrawDirectionalLightGizmo(const Vector3D& position, const Vector3D& direction, const Vector3D& color = Vector3D(1.0f, 0.9f, 0.6f), float duration = 0.0f);
+    static void DrawPointLightGizmo(const Vector3D& position, float radius, const Vector3D& color = Vector3D(1.0f, 0.9f, 0.6f), float duration = 0.0f);
+    static void DrawSpotLightGizmo(const Vector3D& position, const Vector3D& direction, float angle, float range, const Vector3D& color = Vector3D(1.0f, 0.9f, 0.6f), float duration = 0.0f);
     
 private:
     static std::vector<DebugDrawData> debugQueue;

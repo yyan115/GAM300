@@ -33,7 +33,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setVec3("dirLight.ambient", directionalLightData.ambient);
         shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
         shader.setVec3("dirLight.specular", directionalLightData.specular);
-        shader.setFloat("dirLight.intensity", 1.0f);
+        shader.setFloat("dirLight.intensity", directionalLightData.intensity);
     }
     else
     {
@@ -59,7 +59,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".constant", pointLightData.constant[i]);
         shader.setFloat(base + ".linear", pointLightData.linear[i]);
         shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
-        shader.setFloat(base + ".intensity", 1.0f);
+        shader.setFloat(base + ".intensity", pointLightData.intensity[i]);
     }
 
     // Only loop through and set active spot lights
@@ -76,7 +76,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
         shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
         shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
-        shader.setFloat(base + ".intensity", 1.0f);
+        shader.setFloat(base + ".intensity", spotLightData.intensity[i]);
     }
 }
 
@@ -92,6 +92,7 @@ void LightingSystem::CollectLightData()
     pointLightData.constant.clear();
     pointLightData.linear.clear();
     pointLightData.quadratic.clear();
+    pointLightData.intensity.clear();
 
     directionalLightData.hasDirectionalLight = false;
 
@@ -105,6 +106,7 @@ void LightingSystem::CollectLightData()
     spotLightData.quadratic.clear();
     spotLightData.cutOff.clear();
     spotLightData.outerCutOff.clear();
+    spotLightData.intensity.clear();
 
     for (const auto& entity : entities)
     {
@@ -124,13 +126,14 @@ void LightingSystem::CollectLightData()
             {
                 directionalLightData.hasDirectionalLight = true;
 
-                // FIX 1: Transform direction to world space if entity has rotation
-                glm::vec3 direction = light.direction.ConvertToGLM();
+                // Use canonical forward direction (0, 0, -1) and apply transform rotation
+                // This makes the transform rotation the sole controller of light direction
+                glm::vec3 direction(0.0f, 0.0f, -1.0f);
                 if (ecsManager.HasComponent<Transform>(entity))
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
                     glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                    // Extract rotation part and apply to direction
+                    // Extract rotation part and apply to canonical direction
                     glm::mat3 rotationMatrix = glm::mat3(worldMat);
                     direction = glm::normalize(rotationMatrix * direction);
                 }
@@ -139,6 +142,7 @@ void LightingSystem::CollectLightData()
                 directionalLightData.ambient = light.ambient.ConvertToGLM();
                 directionalLightData.diffuse = light.diffuse.ConvertToGLM();
                 directionalLightData.specular = light.specular.ConvertToGLM();
+                directionalLightData.intensity = light.intensity;
             }
         }
 
@@ -167,6 +171,7 @@ void LightingSystem::CollectLightData()
                     pointLightData.constant.push_back(light.constant);
                     pointLightData.linear.push_back(light.linear);
                     pointLightData.quadratic.push_back(light.quadratic);
+                    pointLightData.intensity.push_back(light.intensity);
                 }
                 else
                 {
@@ -191,17 +196,18 @@ void LightingSystem::CollectLightData()
                 if (spotLightData.positions.size() < MAX_SPOT_LIGHTS)
                 {
                     glm::vec3 position(0.0f);
-                    glm::vec3 direction = light.direction.ConvertToGLM();
+                    // Use canonical forward direction (0, 0, -1) and apply transform rotation
+                    glm::vec3 direction(0.0f, 0.0f, -1.0f);
 
                     if (ecsManager.HasComponent<Transform>(entity))
                     {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
                         glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
 
-                        // FIX 3: Use world position from world matrix
+                        // Use world position from world matrix
                         position = glm::vec3(worldMat[3]); // Extract translation from 4th column
 
-                        // FIX 4: Transform direction to world space
+                        // Transform canonical direction to world space
                         glm::mat3 rotationMatrix = glm::mat3(worldMat);
                         direction = glm::normalize(rotationMatrix * direction);
                     }
@@ -216,6 +222,7 @@ void LightingSystem::CollectLightData()
                     spotLightData.quadratic.push_back(light.quadratic);
                     spotLightData.cutOff.push_back(light.cutOff);
                     spotLightData.outerCutOff.push_back(light.outerCutOff);
+                    spotLightData.intensity.push_back(light.intensity);
                 }
                 else
                 {
