@@ -26,6 +26,12 @@ void LightingSystem::Shutdown()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
+    shader.setInt("ambientMode", static_cast<int>(ambientMode));
+    shader.setVec3("ambientSky", ambientSky);
+    shader.setVec3("ambientEquator", ambientEquator);
+    shader.setVec3("ambientGround", ambientGround);
+    shader.setFloat("ambientIntensity", ambientIntensity);
+
     // Apply directional light
     if (directionalLightData.hasDirectionalLight)
     {

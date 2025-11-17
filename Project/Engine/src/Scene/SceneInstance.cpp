@@ -157,6 +157,14 @@ void SceneInstance::Draw() {
 	PostProcessingManager::GetInstance().BeginHDRRender(RunTimeVar::window.width, RunTimeVar::window.height);
 	gfxManager.BeginFrame();
 
+	Entity activeCam = mainECS.cameraSystem ? mainECS.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+	if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam)) {
+		auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+		gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+	} else {
+		gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
+	}
+
 	// Update transforms before camera (camera needs up-to-date transform matrices)
 	mainECS.transformSystem->Update();
 

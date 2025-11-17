@@ -24,6 +24,24 @@ public:
 
     void ApplyLighting(Shader& shader);
 
+    enum class AmbientMode {
+        Color,
+        Gradient,
+        Skybox
+    };
+
+    AmbientMode ambientMode = AmbientMode::Color;
+    glm::vec3 ambientSky = glm::vec3(0.7f, 0.7f, 0.7f);
+    glm::vec3 ambientEquator = glm::vec3(0.5f, 0.5f, 0.5f);
+    glm::vec3 ambientGround = glm::vec3(0.3f, 0.3f, 0.3f);
+    float ambientIntensity = 1.0f;
+
+    void SetAmbientMode(AmbientMode mode) { ambientMode = mode; }
+    void SetAmbientSky(glm::vec3 color) { ambientSky = color; }
+    void SetAmbientEquator(glm::vec3 color) { ambientEquator = color; }
+    void SetAmbientGround(glm::vec3 color) { ambientGround = color; }
+    void SetAmbientIntensity(float intensity) { ambientIntensity = intensity; }
+
 private:
     // Simple arrays to store light data
     struct {

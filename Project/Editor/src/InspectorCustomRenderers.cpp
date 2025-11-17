@@ -638,9 +638,38 @@ void RegisterInspectorCustomRenderers()
             camera.up = glm::vec3(up[0], up[1], up[2]);
         }
 
-        // Return false to continue with reflected properties (all the floats/bools)
-        // This ensures fields like enabled, isActive, priority, yaw, pitch, fov, nearPlane, etc.
-        // are rendered by the reflection system using UndoableWidgets
+        ImGui::Text("Clear Flags");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        const char* clearFlagsOptions[] = {"Skybox", "Solid Color", "Depth Only", "Don't Clear"};
+        int currentClearFlags = static_cast<int>(camera.clearFlags);
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##ClearFlags", &currentClearFlags, clearFlagsOptions, 4))
+        {
+            camera.clearFlags = static_cast<CameraClearFlags>(currentClearFlags);
+        }
+        EditorComponents::PopComboColors();
+
+        ImGui::Text("Background");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        float bgColor[3] = {camera.backgroundColor.r, camera.backgroundColor.g, camera.backgroundColor.b};
+        if (UndoableWidgets::ColorEdit3("##Background", bgColor))
+        {
+            camera.backgroundColor = glm::vec3(bgColor[0], bgColor[1], bgColor[2]);
+        }
+
+        ImGui::Text("Ambient Intensity");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        if (ecs.lightingSystem) {
+            float ambientIntensity = ecs.lightingSystem->ambientIntensity;
+            if (UndoableWidgets::SliderFloat("##AmbientIntensity", &ambientIntensity, 0.0f, 5.0f))
+            {
+                ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
+            }
+        }
+
         return false;
     });
 

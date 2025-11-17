@@ -146,6 +146,100 @@
                         }
                     ]
                 },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": -90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 45
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "float",
+                            "data": 10
+                        },
+                        {
+                            "type": "float",
+                            "data": 2.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 90
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 25
+                        },
+                        "0000000000000000-0000000000000000"
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            -1.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    }
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -475,7 +569,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.739944
+                                    "data": 0.739943
                                 },
                                 {
                                     "type": "float",
@@ -491,7 +585,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.620883
+                                    "data": -0.620884
                                 },
                                 {
                                     "type": "float",
@@ -511,7 +605,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.346157
+                                    "data": 0.346156
                                 },
                                 {
                                     "type": "float",
