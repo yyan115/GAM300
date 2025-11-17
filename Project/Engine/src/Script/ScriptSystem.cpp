@@ -3,12 +3,13 @@
 #include "Script/ScriptSystem.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
+#include "Script/LuaBindableComponents.hpp"
 #include <lua.hpp>
 #include <LuaBridge.h>
 #include "Logging.hpp"
 
 #include "Scripting.h"          // for public glue functions used
-
+#include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
 #include <fstream>
 #include <sstream>
 #include <algorithm>

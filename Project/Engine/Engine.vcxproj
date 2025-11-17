@@ -101,6 +101,7 @@
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
+    <ClInclude Include="include\Script\LuaBindableComponents.hpp" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Serialization\Deserialization.hpp" />
