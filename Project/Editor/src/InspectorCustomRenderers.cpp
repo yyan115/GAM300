@@ -41,6 +41,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Animation/AnimationComponent.hpp"
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
+#include "Script/ScriptComponentData.hpp"
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
@@ -57,6 +58,8 @@ extern GUID_128 DraggedAudioGuid;
 extern std::string DraggedAudioPath;
 extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
+extern GUID_128 DraggedScriptGuid;
+extern std::string DraggedScriptPath;
 
 void RegisterInspectorCustomRenderers()
 {
@@ -635,9 +638,38 @@ void RegisterInspectorCustomRenderers()
             camera.up = glm::vec3(up[0], up[1], up[2]);
         }
 
-        // Return false to continue with reflected properties (all the floats/bools)
-        // This ensures fields like enabled, isActive, priority, yaw, pitch, fov, nearPlane, etc.
-        // are rendered by the reflection system using UndoableWidgets
+        ImGui::Text("Clear Flags");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        const char* clearFlagsOptions[] = {"Skybox", "Solid Color", "Depth Only", "Don't Clear"};
+        int currentClearFlags = static_cast<int>(camera.clearFlags);
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##ClearFlags", &currentClearFlags, clearFlagsOptions, 4))
+        {
+            camera.clearFlags = static_cast<CameraClearFlags>(currentClearFlags);
+        }
+        EditorComponents::PopComboColors();
+
+        ImGui::Text("Background");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        float bgColor[3] = {camera.backgroundColor.r, camera.backgroundColor.g, camera.backgroundColor.b};
+        if (UndoableWidgets::ColorEdit3("##Background", bgColor))
+        {
+            camera.backgroundColor = glm::vec3(bgColor[0], bgColor[1], bgColor[2]);
+        }
+
+        ImGui::Text("Ambient Intensity");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        if (ecs.lightingSystem) {
+            float ambientIntensity = ecs.lightingSystem->ambientIntensity;
+            if (UndoableWidgets::SliderFloat("##AmbientIntensity", &ambientIntensity, 0.0f, 5.0f))
+            {
+                ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
+            }
+        }
+
         return false;
     });
 
@@ -1367,67 +1399,7 @@ void RegisterInspectorCustomRenderers()
         UndoableWidgets::ColorEdit3("Color", &light.color.x);
         UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
-        ImGui::Separator();
-        ImGui::Text("Direction");
-
-        // Direction controls with visual helper
-        UndoableWidgets::DragFloat3("##Direction", &light.direction.x, 0.01f, -1.0f, 1.0f);
-
-        // Direction visualization
-        ImGui::SameLine();
-        if (ImGui::Button("Normalize"))
-        {
-            light.direction = light.direction.Normalized();
-        }
-
-        // Show direction as normalized vector
-        Vector3D normalizedDir = light.direction.Normalized();
-        ImGui::Text("Normalized: (%.2f, %.2f, %.2f)", normalizedDir.x, normalizedDir.y, normalizedDir.z);
-
-        // Common direction presets
-        ImGui::Text("Presets:");
-        if (ImGui::Button("Down"))
-            light.direction = Vector3D(0.0f, -1.0f, 0.0f);
-        ImGui::SameLine();
-        if (ImGui::Button("Forward-Down"))
-            light.direction = Vector3D(-0.2f, -1.0f, -0.3f);
-        ImGui::SameLine();
-        if (ImGui::Button("Side-Down"))
-            light.direction = Vector3D(-1.0f, -1.0f, 0.0f);
-
-        // Visual direction indicator
-        ImGui::Text("Direction Visualization:");
-        ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-        ImVec2 canvas_size = ImVec2(100, 100);
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-        // Draw a circle representing the "world"
-        ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
-        draw_list->AddCircle(center, 40.0f, IM_COL32(100, 100, 100, 255), 0, 2.0f);
-
-        // Draw direction arrow (project 3D direction to 2D)
-        Vector3D dir = light.direction.Normalized();
-        ImVec2 arrow_end = ImVec2(center.x + dir.x * 35.0f, center.y + dir.y * 35.0f);
-        draw_list->AddLine(center, arrow_end, IM_COL32(255, 255, 0, 255), 3.0f);
-
-        // Arrow head
-        ImVec2 arrowDir = ImVec2(arrow_end.x - center.x, arrow_end.y - center.y);
-        float arrowLength = sqrt(arrowDir.x * arrowDir.x + arrowDir.y * arrowDir.y);
-        if (arrowLength > 0)
-        {
-            arrowDir.x /= arrowLength;
-            arrowDir.y /= arrowLength;
-            ImVec2 perpendicular = ImVec2(-arrowDir.y, arrowDir.x);
-            ImVec2 arrowHead1 = ImVec2(arrow_end.x - arrowDir.x * 8 + perpendicular.x * 4,
-                                        arrow_end.y - arrowDir.y * 8 + perpendicular.y * 4);
-            ImVec2 arrowHead2 = ImVec2(arrow_end.x - arrowDir.x * 8 - perpendicular.x * 4,
-                                        arrow_end.y - arrowDir.y * 8 - perpendicular.y * 4);
-            draw_list->AddLine(arrow_end, arrowHead1, IM_COL32(255, 255, 0, 255), 2.0f);
-            draw_list->AddLine(arrow_end, arrowHead2, IM_COL32(255, 255, 0, 255), 2.0f);
-        }
-
-        ImGui::Dummy(canvas_size);
-
+        // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
         UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
@@ -1480,9 +1452,7 @@ void RegisterInspectorCustomRenderers()
         UndoableWidgets::ColorEdit3("Color", &light.color.x);
         UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
-        // Direction with automatic undo/redo
-        UndoableWidgets::DragFloat3("Direction", &light.direction.x, 0.1f, -1.0f, 1.0f);
-
+        // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Cone Settings");
 
@@ -1753,4 +1723,108 @@ void RegisterInspectorCustomRenderers()
 
         return true;
     });
+
+    // ==================== SCRIPT COMPONENT ====================
+    // Custom renderer for ScriptComponentData scriptPath field with drag-drop support
+
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "scriptPath",
+    [](const char *, void *ptr, Entity entity, ECSManager &ecs)
+    {
+        ecs;
+        std::string *scriptPath = static_cast<std::string *>(ptr);
+
+        ImGui::Text("Script:");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+
+        // Display the script file name (or "None" if empty)
+        std::string displayText = scriptPath->empty() ? "None (Lua Script)" :
+                                  scriptPath->substr(scriptPath->find_last_of("/\\") + 1);
+
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+        // Handle drag-drop from asset browser
+        if (ImGui::BeginDragDropTarget())
+        {
+            ImGui::SetTooltip("Drop .lua script here to assign");
+
+            // Accept both SCRIPT_PAYLOAD and direct path payload
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD"))
+            {
+                // Take snapshot before changing script
+                SnapshotManager::GetInstance().TakeSnapshot("Assign Script");
+
+                const char *droppedPath = (const char *)payload->Data;
+                std::string pathStr(droppedPath, payload->DataSize);
+                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                *scriptPath = pathStr;
+
+                // Notify the ScriptSystem that the script has changed
+                // The system will handle reloading on next update
+                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
+                scriptData.instanceCreated = false;  // Force recreation
+                scriptData.instanceId = -1;
+
+                ImGui::EndDragDropTarget();
+                return true; // Field was modified
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Add a small "Clear" button next to the script field
+        if (!scriptPath->empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearScript"))
+            {
+                SnapshotManager::GetInstance().TakeSnapshot("Clear Script");
+                scriptPath->clear();
+
+                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
+                scriptData.instanceCreated = false;
+                scriptData.instanceId = -1;
+
+                return true;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Clear script");
+            }
+
+            // Add an "Open" button to edit the script in external editor
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_PEN_TO_SQUARE "##EditScript"))
+            {
+                #ifdef _WIN32
+                    std::string command = "start \"\" \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #elif __linux__
+                    std::string command = "xdg-open \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #elif __APPLE__
+                    std::string command = "open \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #endif
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Open script in external editor");
+            }
+        }
+
+        return true; // Skip default rendering
+    });
+
+    // Hide internal/runtime fields from inspector
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "instanceId",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "instanceCreated",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "pendingInstanceState",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
 }

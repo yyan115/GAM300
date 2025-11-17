@@ -5,8 +5,10 @@
 
 #include <string>
 #include <vector>
+#include "Reflection/ReflectionBase.hpp"
 
 struct ScriptComponentData {
+    REFL_SERIALIZABLE
     std::string scriptPath;                 // e.g. "Resources/Scripts/mono_behaviour.lua"
     bool enabled = true;
     std::vector<std::string> preserveKeys;  // keys to preserve across hot-reload (optional)

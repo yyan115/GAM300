@@ -23,6 +23,13 @@ enum class ProjectionType {
     ORTHOGRAPHIC
 };
 
+enum class CameraClearFlags {
+    Skybox,
+    SolidColor,
+    DepthOnly,
+    DontClear
+};
+
 class CameraComponent {
 public:
     REFL_SERIALIZABLE
@@ -60,10 +67,13 @@ public:
     float shakeFrequency = 25.0f;  // How fast the shake oscillates
     glm::vec3 shakeOffset = glm::vec3(0.0f);  // Current shake offset
 
-    // Skybox settings
+    CameraClearFlags clearFlags = CameraClearFlags::Skybox;
+    glm::vec3 backgroundColor = glm::vec3(0.192f, 0.301f, 0.475f);
+
     GUID_128 skyboxTextureGUID{};
     std::shared_ptr<Texture> skyboxTexture;
     std::string skyboxTexturePath;
+    bool useSkybox = true;
 
     CameraComponent() = default;
     ~CameraComponent() = default;

@@ -111,6 +111,7 @@
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
     <ClCompile Include="src\Game AI\BrainComponent.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\ScriptComponentData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />

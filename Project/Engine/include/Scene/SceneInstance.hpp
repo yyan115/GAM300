@@ -38,5 +38,6 @@ public:
 	std::shared_ptr<Shader> textShader;
 
 private:
-	void CreateHDRTestScene(ECSManager& ecsManager); // Testing 
+	void CreateHDRTestScene(ECSManager& ecsManager); // Testing
+	void CreateDefaultCamera(ECSManager& ecsManager); // Create default main camera for new scenes
 };
