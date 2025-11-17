@@ -3,8 +3,6 @@
         "version": 7,
         "guid": "007fa85bfc0b8eb3-00032d3fc8000015",
         "source": "../../Resources/Scripts/template/listener.lua",
-        "compiled": "../../Resources/Scripts/template/listener.lua",
-        "android_compiled": "Resources/Scripts/template/listener.lua",
-        "last_compiled": "2025-11-09 14:17:55.3803002"
+        "compiled": "../../Resources/Scripts/template/listener.lua"
     }
 }

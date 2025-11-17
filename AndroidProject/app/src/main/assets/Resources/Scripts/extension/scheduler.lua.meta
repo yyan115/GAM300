@@ -3,8 +3,6 @@
         "version": 7,
         "guid": "007fa85bdf59fac5-00032d3fc8000007",
         "source": "../../Resources/Scripts/extension/scheduler.lua",
-        "compiled": "../../Resources/Scripts/extension/scheduler.lua",
-        "android_compiled": "Resources/Scripts/extension/scheduler.lua",
-        "last_compiled": "2025-11-09 14:17:55.3655616"
+        "compiled": "../../Resources/Scripts/extension/scheduler.lua"
     }
 }

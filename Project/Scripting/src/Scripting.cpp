@@ -236,6 +236,20 @@ bool Scripting::Init(const InitOptions& opts) {
         g_moduleLoader->InstallLuaSearcher(L, -1);
     }
 
+    // Redirect Lua print to your logging system
+    lua_getglobal(L, "print");
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        int n = lua_gettop(L);
+        std::string msg;
+        for (int i = 1; i <= n; i++) {
+            if (i > 1) msg += "\t";
+            const char* s = lua_tostring(L, i);
+            msg += (s ? s : "(non-string)");
+        }
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[LUA] ", msg);
+        return 0;
+        });
+    lua_setglobal(L, "print");
     ENGINE_PRINT(EngineLogging::LogLevel::Info, "Scripting::Init (via ScriptingRuntime) - done");
     return true;
 }
