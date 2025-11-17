@@ -197,6 +197,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\ScriptComponentData.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />
     <ClCompile Include="src\Animation\Animation.cpp" />
     <ClCompile Include="src\Animation\AnimationComponent.cpp" />

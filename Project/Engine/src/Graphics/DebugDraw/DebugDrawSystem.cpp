@@ -281,12 +281,131 @@ void DebugDrawSystem::DrawMeshWireframe(std::shared_ptr<Model> model, const Vect
 {
     if (!model) return;
 
-    DebugDrawData meshData(DebugDrawType::MESH_WIREFRAME); 
-    meshData.position = position; 
+    DebugDrawData meshData(DebugDrawType::MESH_WIREFRAME);
+    meshData.position = position;
     meshData.scale = Vector3D(1.0f, 1.0f, 1.0f);
-    meshData.color = color; 
-    meshData.duration = duration; 
-    meshData.meshModel = model; 
+    meshData.color = color;
+    meshData.duration = duration;
+    meshData.meshModel = model;
 
-    debugQueue.push_back(meshData); 
+    debugQueue.push_back(meshData);
+}
+
+// ==================== LIGHT GIZMOS ====================
+
+void DebugDrawSystem::DrawDirectionalLightGizmo(const Vector3D& position, const Vector3D& direction, const Vector3D& color, float duration)
+{
+    // Draw a small sphere at the center
+    DrawSphere(position, 0.15f, color, duration);
+
+    // Normalize direction
+    Vector3D dir = direction.Normalized();
+
+    // Draw main arrow showing light direction
+    Vector3D arrowEnd = position + dir * 1.5f;
+    DrawLine(position, arrowEnd, color, duration, 3.0f);
+
+    // Draw arrowhead
+    Vector3D perpendicular1 = Vector3D(-dir.y, dir.x, 0.0f).Normalized();
+    if (perpendicular1.Length() < 0.01f) {
+        perpendicular1 = Vector3D(1.0f, 0.0f, 0.0f);
+    }
+    Vector3D perpendicular2 = dir.Cross(perpendicular1).Normalized();
+
+    float arrowSize = 0.3f;
+    DrawLine(arrowEnd, arrowEnd - dir * arrowSize + perpendicular1 * arrowSize * 0.5f, color, duration, 2.0f);
+    DrawLine(arrowEnd, arrowEnd - dir * arrowSize - perpendicular1 * arrowSize * 0.5f, color, duration, 2.0f);
+    DrawLine(arrowEnd, arrowEnd - dir * arrowSize + perpendicular2 * arrowSize * 0.5f, color, duration, 2.0f);
+    DrawLine(arrowEnd, arrowEnd - dir * arrowSize - perpendicular2 * arrowSize * 0.5f, color, duration, 2.0f);
+
+    // Draw sun rays (8 rays around the sphere)
+    for (int i = 0; i < 8; i++)
+    {
+        float angle = (i / 8.0f) * 2.0f * 3.14159265f;
+        Vector3D rayStart = position + perpendicular1 * cos(angle) * 0.2f + perpendicular2 * sin(angle) * 0.2f;
+        Vector3D rayEnd = position + perpendicular1 * cos(angle) * 0.5f + perpendicular2 * sin(angle) * 0.5f;
+        DrawLine(rayStart, rayEnd, color, duration, 2.0f);
+    }
+}
+
+void DebugDrawSystem::DrawPointLightGizmo(const Vector3D& position, float radius, const Vector3D& color, float duration)
+{
+    // Draw central sphere
+    DrawSphere(position, 0.15f, color, duration);
+
+    // Draw outer sphere showing light range
+    DrawSphere(position, radius, color * 0.5f, duration);
+
+    // Draw rays emanating from center (6 directions)
+    float rayLength = radius * 0.7f;
+    Vector3D directions[] = {
+        Vector3D(1, 0, 0), Vector3D(-1, 0, 0),
+        Vector3D(0, 1, 0), Vector3D(0, -1, 0),
+        Vector3D(0, 0, 1), Vector3D(0, 0, -1)
+    };
+
+    for (int i = 0; i < 6; i++)
+    {
+        Vector3D rayEnd = position + directions[i] * rayLength;
+        DrawLine(position, rayEnd, color, duration, 2.0f);
+
+        // Draw small perpendicular lines at the end of each ray
+        Vector3D perp;
+        if (i < 2) perp = Vector3D(0, 1, 0); // For X-axis rays
+        else if (i < 4) perp = Vector3D(1, 0, 0); // For Y-axis rays
+        else perp = Vector3D(1, 0, 0); // For Z-axis rays
+
+        float perpSize = 0.15f;
+        DrawLine(rayEnd + perp * perpSize, rayEnd - perp * perpSize, color, duration, 1.5f);
+    }
+}
+
+void DebugDrawSystem::DrawSpotLightGizmo(const Vector3D& position, const Vector3D& direction, float angle, float range, const Vector3D& color, float duration)
+{
+    // Draw small sphere at position
+    DrawSphere(position, 0.15f, color, duration);
+
+    // Normalize direction
+    Vector3D dir = direction.Normalized();
+
+    // Calculate cone radius at the end
+    float coneRadius = range * tan(angle);
+
+    // Create perpendicular vectors
+    Vector3D perpendicular1 = Vector3D(-dir.y, dir.x, 0.0f).Normalized();
+    if (perpendicular1.Length() < 0.01f) {
+        perpendicular1 = Vector3D(1.0f, 0.0f, 0.0f);
+    }
+    Vector3D perpendicular2 = dir.Cross(perpendicular1).Normalized();
+
+    // Draw cone outline (8 lines from apex to circle)
+    Vector3D coneEnd = position + dir * range;
+    int numLines = 8;
+    for (int i = 0; i < numLines; i++)
+    {
+        float circleAngle = (i / (float)numLines) * 2.0f * 3.14159265f;
+        Vector3D pointOnCircle = coneEnd +
+            perpendicular1 * cos(circleAngle) * coneRadius +
+            perpendicular2 * sin(circleAngle) * coneRadius;
+        DrawLine(position, pointOnCircle, color, duration, 2.0f);
+    }
+
+    // Draw circle at the end of cone
+    for (int i = 0; i < numLines; i++)
+    {
+        float angle1 = (i / (float)numLines) * 2.0f * 3.14159265f;
+        float angle2 = ((i + 1) / (float)numLines) * 2.0f * 3.14159265f;
+
+        Vector3D point1 = coneEnd +
+            perpendicular1 * cos(angle1) * coneRadius +
+            perpendicular2 * sin(angle1) * coneRadius;
+        Vector3D point2 = coneEnd +
+            perpendicular1 * cos(angle2) * coneRadius +
+            perpendicular2 * sin(angle2) * coneRadius;
+
+        DrawLine(point1, point2, color, duration, 1.5f);
+    }
+
+    // Draw center line showing direction
+    DrawLine(position, coneEnd, color, duration, 2.5f);
 }

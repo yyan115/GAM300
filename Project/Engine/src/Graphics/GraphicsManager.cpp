@@ -947,6 +947,7 @@ void GraphicsManager::RenderSkybox()
 	}
 
 	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
 
 	skyboxShader->Activate();
@@ -969,7 +970,9 @@ void GraphicsManager::RenderSkybox()
 	skyboxShader->setInt("skyboxTexture", 0);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
+	glDepthMask(GL_TRUE);
 	glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 }

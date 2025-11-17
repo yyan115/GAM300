@@ -58,6 +58,7 @@ extern std::string DraggedFontPath;
 #include "Sound/AudioListenerComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
@@ -239,6 +240,12 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<BrainComponent>(entity) ?
 				(void*)&ecs.GetComponent<BrainComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<BrainComponent>(entity); }},
+
+		// Script component
+		{"Script", "ScriptComponentData",
+			[&]() { return ecs.HasComponent<ScriptComponentData>(entity) ?
+				(void*)&ecs.GetComponent<ScriptComponentData>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ScriptComponentData>(entity); }},
 	};
 
 	// Render each component that exists
@@ -927,6 +934,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				ImGui::EndMenu();
 			}
 
+			// Scripting Components
+			if (ImGui::BeginMenu("Scripting")) {
+				if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
+					if (ImGui::MenuItem("Script")) {
+						AddComponent(entity, "ScriptComponentData");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 			// General Components
 			if (ImGui::BeginMenu("General")) {
 				if (!ecsManager.HasComponent<TagComponent>(entity)) {
@@ -1269,7 +1286,14 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			BrainComponent component;
 			ecsManager.AddComponent<BrainComponent>(entity, component);
 			std::cout << "[Inspector] Added Brain to entity " << entity << std::endl;
-			}
+		}
+		else if (componentType == "ScriptComponentData") {
+			ScriptComponentData component;
+			// Default values are set in the struct definition
+			// scriptPath is empty, enabled is true, etc.
+			ecsManager.AddComponent<ScriptComponentData>(entity, component);
+			std::cout << "[Inspector] Added ScriptComponentData to entity " << entity << " (ready for script assignment)" << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1342,6 +1366,9 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "ScriptComponentData") {
+			auto& comp = ecs.GetComponent<ScriptComponentData>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
 
@@ -1480,6 +1507,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "Brain") {
 				ecsManager.RemoveComponent<BrainComponent>(request.entity);
 				std::cout << "[Inspector] Removed Brain from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ScriptComponentData") {
+				ecsManager.RemoveComponent<ScriptComponentData>(request.entity);
+				std::cout << "[Inspector] Removed ScriptComponentData from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;

@@ -2018,6 +2018,7 @@ void ScenePanel::DrawAudioGizmos() {
     }
 }
 
+<<<<<<< HEAD
 void ScenePanel::DrawLightGizmos() {
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity == static_cast<Entity>(-1)) return;
@@ -2080,10 +2081,108 @@ void ScenePanel::DrawLightGizmos() {
         // Get light position from world matrix
         glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
         glm::vec3 lightPos = glm::vec3(worldMat[3]); // Extract translation
+=======
+void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight) {
+    try {
+        // Get the active ECS manager
+        ECSRegistry& registry = ECSRegistry::GetInstance();
+        ECSManager& ecsManager = registry.GetActiveECSManager();
+
+        // Compute view and projection matrices
+        float aspectRatio = static_cast<float>(sceneWidth) / sceneHeight;
+        glm::mat4 view = editorCamera.GetViewMatrix();
+        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+
+        glm::vec3 localCorners[8];
+        bool hasValidBounds = false;
+
+        Matrix4x4 worldMatrix;
+        bool hasTransform = ecsManager.HasComponent<Transform>(entity);
+        if (hasTransform) {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            worldMatrix = transform.worldMatrix;
+        } else {
+            // Identity matrix if no transform
+            worldMatrix = Matrix4x4::Identity();
+        }
+
+        // Define local corners based on component type
+        if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+            glm::vec3 scale = sprite.scale.ConvertToGLM();
+            // For sprites, assume centered at origin in local space
+            localCorners[0] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[1] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[2] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[3] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
+            localCorners[4] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[5] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[6] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            localCorners[7] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            hasValidBounds = true;
+        } else if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+            if (modelComp.model) {
+                auto modelAABB = modelComp.model->GetBoundingBox();
+                localCorners[0] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.min.z);
+                localCorners[1] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.min.z);
+                localCorners[2] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.min.z);
+                localCorners[3] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.min.z);
+                localCorners[4] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.max.z);
+                localCorners[5] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.max.z);
+                localCorners[6] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.max.z);
+                localCorners[7] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.max.z);
+                hasValidBounds = true;
+            }
+        }
+
+        // Default small box if no specific component
+        if (!hasValidBounds) {
+            localCorners[0] = glm::vec3(-0.5f, -0.5f, -0.5f);
+            localCorners[1] = glm::vec3( 0.5f, -0.5f, -0.5f);
+            localCorners[2] = glm::vec3(-0.5f,  0.5f, -0.5f);
+            localCorners[3] = glm::vec3( 0.5f,  0.5f, -0.5f);
+            localCorners[4] = glm::vec3(-0.5f, -0.5f,  0.5f);
+            localCorners[5] = glm::vec3( 0.5f, -0.5f,  0.5f);
+            localCorners[6] = glm::vec3(-0.5f,  0.5f,  0.5f);
+            localCorners[7] = glm::vec3( 0.5f,  0.5f,  0.5f);
+            hasValidBounds = true;
+        }
+
+        // Transform local corners to world space
+        glm::vec3 worldCorners[8];
+        for (int i = 0; i < 8; ++i) {
+            Vector3D localVec(localCorners[i].x, localCorners[i].y, localCorners[i].z);
+            Vector3D worldVec = worldMatrix.TransformPoint(localVec);
+            worldCorners[i] = glm::vec3(worldVec.x, worldVec.y, worldVec.z);
+        }
+
+        // Get window position and size for screen coordinate calculation
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+
+        // Project to screen space
+        ImVec2 screenPoints[8];
+        bool allVisible = true;
+        glm::mat4 vp = projection * view;
+        for (int i = 0; i < 8; ++i) {
+            bool isVisible;
+            screenPoints[i] = ProjectToScreen(worldCorners[i], isVisible, vp, windowPos, windowSize);
+            if (!isVisible) {
+                allVisible = false;
+                break;
+            }
+        }
+
+        if (!allVisible) {
+            return; // Don't draw if any point is behind camera
+        }
+>>>>>>> main
 
         // Get ImGui draw list
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
+<<<<<<< HEAD
         // Project 3D point to screen space
         auto projectToScreen = [&](const glm::vec3& worldPoint, bool& isVisible) -> ImVec2 {
             glm::vec4 clipSpace = vp * glm::vec4(worldPoint, 1.0f);
@@ -2340,108 +2439,7 @@ void ScenePanel::DrawLightGizmos() {
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing light gizmos: ", e.what(), "\n");
-    }
-}
-
-void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight) {
-    try {
-        // Get the active ECS manager
-        ECSRegistry& registry = ECSRegistry::GetInstance();
-        ECSManager& ecsManager = registry.GetActiveECSManager();
-
-        // Compute view and projection matrices
-        float aspectRatio = static_cast<float>(sceneWidth) / sceneHeight;
-        glm::mat4 view = editorCamera.GetViewMatrix();
-        glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
-
-        glm::vec3 localCorners[8];
-        bool hasValidBounds = false;
-
-        Matrix4x4 worldMatrix;
-        bool hasTransform = ecsManager.HasComponent<Transform>(entity);
-        if (hasTransform) {
-            auto& transform = ecsManager.GetComponent<Transform>(entity);
-            worldMatrix = transform.worldMatrix;
-        } else {
-            // Identity matrix if no transform
-            worldMatrix = Matrix4x4::Identity();
-        }
-
-        // Define local corners based on component type
-        if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
-            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
-            glm::vec3 scale = sprite.scale.ConvertToGLM();
-            // For sprites, assume centered at origin in local space
-            localCorners[0] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[1] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[2] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[3] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[4] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[5] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[6] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[7] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            hasValidBounds = true;
-        } else if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
-            auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-            if (modelComp.model) {
-                auto modelAABB = modelComp.model->GetBoundingBox();
-                localCorners[0] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.min.z);
-                localCorners[1] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.min.z);
-                localCorners[2] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.min.z);
-                localCorners[3] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.min.z);
-                localCorners[4] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.max.z);
-                localCorners[5] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.max.z);
-                localCorners[6] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.max.z);
-                localCorners[7] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.max.z);
-                hasValidBounds = true;
-            }
-        }
-
-        // Default small box if no specific component
-        if (!hasValidBounds) {
-            localCorners[0] = glm::vec3(-0.5f, -0.5f, -0.5f);
-            localCorners[1] = glm::vec3( 0.5f, -0.5f, -0.5f);
-            localCorners[2] = glm::vec3(-0.5f,  0.5f, -0.5f);
-            localCorners[3] = glm::vec3( 0.5f,  0.5f, -0.5f);
-            localCorners[4] = glm::vec3(-0.5f, -0.5f,  0.5f);
-            localCorners[5] = glm::vec3( 0.5f, -0.5f,  0.5f);
-            localCorners[6] = glm::vec3(-0.5f,  0.5f,  0.5f);
-            localCorners[7] = glm::vec3( 0.5f,  0.5f,  0.5f);
-            hasValidBounds = true;
-        }
-
-        // Transform local corners to world space
-        glm::vec3 worldCorners[8];
-        for (int i = 0; i < 8; ++i) {
-            Vector3D localVec(localCorners[i].x, localCorners[i].y, localCorners[i].z);
-            Vector3D worldVec = worldMatrix.TransformPoint(localVec);
-            worldCorners[i] = glm::vec3(worldVec.x, worldVec.y, worldVec.z);
-        }
-
-        // Get window position and size for screen coordinate calculation
-        ImVec2 windowPos = ImGui::GetWindowPos();
-        ImVec2 windowSize = ImGui::GetWindowSize();
-
-        // Project to screen space
-        ImVec2 screenPoints[8];
-        bool allVisible = true;
-        glm::mat4 vp = projection * view;
-        for (int i = 0; i < 8; ++i) {
-            bool isVisible;
-            screenPoints[i] = ProjectToScreen(worldCorners[i], isVisible, vp, windowPos, windowSize);
-            if (!isVisible) {
-                allVisible = false;
-                break;
-            }
-        }
-
-        if (!allVisible) {
-            return; // Don't draw if any point is behind camera
-        }
-
-        // Get ImGui draw list
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-
+=======
         // Draw the outline with a bright color (similar to Unity's selection)
         ImU32 outlineColor = IM_COL32(255, 165, 0, 255); // Orange outline
         float thickness = 2.0f;
@@ -2467,5 +2465,6 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing selection outline: ", e.what(), "\n");
+>>>>>>> main
     }
 }

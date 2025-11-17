@@ -100,6 +100,7 @@ private:
     void DrawColliderGizmos();
     void DrawCameraGizmos();
     void DrawAudioGizmos();
+    void DrawLightGizmos();
     void DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight);
 
     // Helper functions

@@ -48,7 +48,7 @@ void SceneInstance::Initialize() {
 
 	// Configure HDR settings
 	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
-	if (hdrEffect) 
+	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
 		hdrEffect->SetExposure(1.f);
@@ -57,8 +57,8 @@ void SceneInstance::Initialize() {
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	CreateHDRTestScene(ecsManager);
-	
+	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -156,6 +156,14 @@ void SceneInstance::Draw() {
 	// Begin HDR rendering to floating-point framebuffer (this also clears the buffer)
 	PostProcessingManager::GetInstance().BeginHDRRender(RunTimeVar::window.width, RunTimeVar::window.height);
 	gfxManager.BeginFrame();
+
+	Entity activeCam = mainECS.cameraSystem ? mainECS.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+	if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam)) {
+		auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+		gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+	} else {
+		gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
+	}
 
 	// Update transforms before camera (camera needs up-to-date transform matrices)
 	mainECS.transformSystem->Update();
@@ -468,4 +476,32 @@ void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
 	ENGINE_PRINT("[HDR Test] Expected result:\n");
 	ENGINE_PRINT("[HDR Test] - WITHOUT HDR: All bright cubes would look similar (white)\n");
 	ENGINE_PRINT("[HDR Test] - WITH HDR: Each cube should have distinct brightness levels\n");
+}
+
+void SceneInstance::CreateDefaultCamera(ECSManager& ecsManager) {
+	ENGINE_PRINT("[SceneInstance] Creating default main camera...\n");
+
+	// Create camera entity
+	Entity cameraEntity = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(cameraEntity).name = "Main Camera";
+
+	// Set transform - position camera back a bit so it can see objects at origin
+	ecsManager.transformSystem->SetLocalPosition(cameraEntity, Vector3D(0.0f, 0.0f, 5.0f));
+
+	// Add camera component with default settings
+	CameraComponent camComp;
+	camComp.isActive = true;
+	camComp.fov = 45.0f;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 1000.0f;
+	camComp.movementSpeed = 2.5f;
+	camComp.mouseSensitivity = 0.1f;
+	camComp.yaw = -90.0f;    // Looking forward (-Z)
+	camComp.pitch = 0.0f;    // Level horizon
+	camComp.minZoom = 1.0f;
+	camComp.maxZoom = 90.0f;
+
+	ecsManager.AddComponent<CameraComponent>(cameraEntity, camComp);
+
+	ENGINE_PRINT("[SceneInstance] Default camera created successfully (Entity ID: ", cameraEntity, ")\n");
 }
