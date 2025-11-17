@@ -23,6 +23,8 @@
 #include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
 #include <FileWatch.hpp>
+#include <random>
+#include <iomanip>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 DraggedMaterialGuid = {0, 0};
@@ -1356,8 +1358,97 @@ void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
         newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
     }
 
-    std::ofstream file(newScenePathFull.generic_string());
-    file.close();
+    std::string scenePath = newScenePathFull.generic_string();
+
+    // Write a minimal scene JSON with a default Main Camera entity
+    std::ofstream file(scenePath);
+    if (file.is_open()) {
+        // Generate a random GUID for the camera entity
+        std::random_device rd;
+        std::mt19937_64 gen(rd());
+        std::uniform_int_distribution<uint64_t> dis;
+        uint64_t guid_high = dis(gen);
+        uint64_t guid_low = dis(gen);
+
+        // Write minimal scene JSON with Main Camera
+        file << R"({
+    "entities": [
+        {
+            "id": 0,
+            "guid": ")" << std::hex << std::setfill('0') << std::setw(16) << guid_high << "-"
+                        << std::setw(16) << guid_low << std::dec << R"(",
+            "components": {
+                "NameComponent": {
+                    "name": "Main Camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 5 }
+                        ]},
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 }
+                        ]},
+                        { "type": "Quaternion", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 }
+                        ]},
+                        { "type": "bool", "data": false },
+                        { "type": "Matrix4x4", "data": [] }
+                    ]
+                },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        { "type": "bool", "data": true },
+                        { "type": "bool", "data": true },
+                        { "type": "int", "data": 0 },
+                        { "type": "float", "data": -90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "bool", "data": true },
+                        { "type": "float", "data": 45 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1000 },
+                        { "type": "float", "data": 5 },
+                        { "type": "float", "data": 2.5 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1 },
+                        { "type": "float", "data": 90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        "0000000000000000-0000000000000000"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        { "type": "bool", "data": true }
+                    ]
+                }
+            }
+        }
+    ]
+})";
+        file.close();
+        ENGINE_PRINT("[AssetBrowser] Created new scene with default camera: ", scenePath, "\n");
+    }
+    else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowser] Failed to create scene file: ", scenePath, "\n");
+    }
 
     RefreshAssets();
 }

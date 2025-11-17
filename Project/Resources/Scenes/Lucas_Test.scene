@@ -2,10 +2,10 @@
     "entities": [
         {
             "id": 0,
-            "guid": "000429026b55fd29-00034cbfec000001",
+            "guid": "c80b909bcf60280e-fec89f37d79a60d7",
             "components": {
                 "NameComponent": {
-                    "name": "Empty Entity"
+                    "name": "Main Camera"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29,7 +29,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 5
                                 }
                             ]
                         },
@@ -124,7 +124,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 5
                                 },
                                 {
                                     "type": "float",
@@ -146,6 +146,100 @@
                         }
                     ]
                 },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": -90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 45
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 25
+                        },
+                        "00374a214bc0f2cc-000331fc82000073"
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            -1.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    }
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -154,14 +248,6 @@
                             "data": true
                         }
                     ]
-                },
-                "ScriptComponent": {
-                    "scriptPath": "../../Resources/Scripts/test.lua",
-                    "enabled": true,
-                    "preserveKeys": [],
-                    "entryFunction": "OnInit",
-                    "autoInvokeEntry": true,
-                    "instanceState": {}
                 }
             }
         }
