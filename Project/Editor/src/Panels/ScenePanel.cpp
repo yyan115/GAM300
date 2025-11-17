@@ -2438,6 +2438,10 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
         if (!allVisible) {
             return; // Don't draw if any point is behind camera
         }
+
+        // Get ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
         // Draw the outline with a bright color (similar to Unity's selection)
         ImU32 outlineColor = IM_COL32(255, 165, 0, 255); // Orange outline
         float thickness = 2.0f;
@@ -2463,7 +2467,5 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing selection outline: ", e.what(), "\n");
-    }
-}
     }
 }
