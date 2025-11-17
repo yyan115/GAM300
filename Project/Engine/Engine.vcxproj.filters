@@ -110,6 +110,8 @@
     <ClCompile Include="src\Graphics\PostProcessing\HDR\HDREffect.cpp" />
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
     <ClCompile Include="src\Game AI\BrainComponent.cpp" />
+    <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\ScriptComponentData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -279,6 +281,8 @@
     <ClInclude Include="include\Game AI\BrainSystems.hpp" />
     <ClInclude Include="include\Game AI\Events.hpp" />
     <ClInclude Include="include\Game AI\HfsmCommon.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
+    <ClInclude Include="include\Script\ComponentProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -387,7 +391,6 @@
     <ClInclude Include="include\Script\Script.hpp" />
     <ClInclude Include="include\Script\ScriptSystem.hpp" />
     <ClInclude Include="include\Script\ScriptComponentData.hpp" />
-    <ClInclude Include="include\ECS\ComponentRegistry.h" />
     <ClInclude Include="include\Sound\AudioReverbZoneComponent.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -40,6 +40,10 @@ std::string DraggedAudioPath;
 GUID_128 DraggedFontGuid = {0, 0};
 std::string DraggedFontPath;
 
+// Global drag-drop state for cross-window script dragging
+GUID_128 DraggedScriptGuid = {0, 0};
+std::string DraggedScriptPath;
+
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 
@@ -661,10 +665,18 @@ void AssetBrowserPanel::RenderAssetGrid()
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
                 } else if (isFont) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedFontGuid = asset.guid;
+                    DraggedFontPath = asset.filePath;
+
                     // Send font path directly
                     ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 } else if (isScript) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedScriptGuid = asset.guid;
+                    DraggedScriptPath = asset.filePath;
+
                     // Send script path directly
                     ImGui::SetDragDropPayload("SCRIPT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Script: %s", asset.fileName.c_str());

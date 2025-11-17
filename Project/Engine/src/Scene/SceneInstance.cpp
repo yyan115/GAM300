@@ -48,7 +48,7 @@ void SceneInstance::Initialize() {
 
 	// Configure HDR settings
 	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
-	if (hdrEffect) 
+	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
 		hdrEffect->SetExposure(1.f);
@@ -57,8 +57,8 @@ void SceneInstance::Initialize() {
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	CreateHDRTestScene(ecsManager);
-	
+	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");

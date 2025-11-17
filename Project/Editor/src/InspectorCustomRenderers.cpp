@@ -41,6 +41,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Animation/AnimationComponent.hpp"
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
+#include "Script/ScriptComponentData.hpp"
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
@@ -57,6 +58,8 @@ extern GUID_128 DraggedAudioGuid;
 extern std::string DraggedAudioPath;
 extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
+extern GUID_128 DraggedScriptGuid;
+extern std::string DraggedScriptPath;
 
 void RegisterInspectorCustomRenderers()
 {
@@ -1753,4 +1756,108 @@ void RegisterInspectorCustomRenderers()
 
         return true;
     });
+
+    // ==================== SCRIPT COMPONENT ====================
+    // Custom renderer for ScriptComponentData scriptPath field with drag-drop support
+
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "scriptPath",
+    [](const char *, void *ptr, Entity entity, ECSManager &ecs)
+    {
+        ecs;
+        std::string *scriptPath = static_cast<std::string *>(ptr);
+
+        ImGui::Text("Script:");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+
+        // Display the script file name (or "None" if empty)
+        std::string displayText = scriptPath->empty() ? "None (Lua Script)" :
+                                  scriptPath->substr(scriptPath->find_last_of("/\\") + 1);
+
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+        // Handle drag-drop from asset browser
+        if (ImGui::BeginDragDropTarget())
+        {
+            ImGui::SetTooltip("Drop .lua script here to assign");
+
+            // Accept both SCRIPT_PAYLOAD and direct path payload
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD"))
+            {
+                // Take snapshot before changing script
+                SnapshotManager::GetInstance().TakeSnapshot("Assign Script");
+
+                const char *droppedPath = (const char *)payload->Data;
+                std::string pathStr(droppedPath, payload->DataSize);
+                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                *scriptPath = pathStr;
+
+                // Notify the ScriptSystem that the script has changed
+                // The system will handle reloading on next update
+                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
+                scriptData.instanceCreated = false;  // Force recreation
+                scriptData.instanceId = -1;
+
+                ImGui::EndDragDropTarget();
+                return true; // Field was modified
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // Add a small "Clear" button next to the script field
+        if (!scriptPath->empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearScript"))
+            {
+                SnapshotManager::GetInstance().TakeSnapshot("Clear Script");
+                scriptPath->clear();
+
+                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
+                scriptData.instanceCreated = false;
+                scriptData.instanceId = -1;
+
+                return true;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Clear script");
+            }
+
+            // Add an "Open" button to edit the script in external editor
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_PEN_TO_SQUARE "##EditScript"))
+            {
+                #ifdef _WIN32
+                    std::string command = "start \"\" \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #elif __linux__
+                    std::string command = "xdg-open \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #elif __APPLE__
+                    std::string command = "open \"" + *scriptPath + "\"";
+                    system(command.c_str());
+                #endif
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Open script in external editor");
+            }
+        }
+
+        return true; // Skip default rendering
+    });
+
+    // Hide internal/runtime fields from inspector
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "instanceId",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "instanceCreated",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "pendingInstanceState",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
 }

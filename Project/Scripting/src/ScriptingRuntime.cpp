@@ -526,6 +526,9 @@ namespace Scripting {
         if (m_L) {
             lua_pushcfunction(m_L, &l_cpp_log);
             lua_setglobal(m_L, "cpp_log");
+            // Also register as cpp_print for backwards compatibility
+            lua_pushcfunction(m_L, &l_cpp_log);
+            lua_setglobal(m_L, "cpp_print");
         }
     }
 
@@ -558,6 +561,10 @@ namespace Scripting {
         lua_pushcfunction(L, l_cpp_log);
         lua_setglobal(L, "cpp_log");
 
+        // Also register as cpp_print for backwards compatibility with old scripts
+        lua_pushcfunction(L, l_cpp_log);
+        lua_setglobal(L, "cpp_print");
+
         // register GetComponent(entityId, name)
         lua_pushcfunction(L, l_get_component);
         lua_setglobal(L, "GetComponent");
@@ -571,7 +578,7 @@ namespace Scripting {
             "  end\n"
             "end\n";
         if (luaL_dostring(L, helper_code) != LUA_OK) {
-            // ignore errors — fallback will be used by BindInstanceToEntity
+            // ignore errors ï¿½ fallback will be used by BindInstanceToEntity
             lua_pop(L, 1);
         }
     }

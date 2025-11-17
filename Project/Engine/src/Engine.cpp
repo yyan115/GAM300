@@ -516,13 +516,13 @@ bool Engine::Initialize() {
     //float dt = 1.0f / 60.0f;
 
     // 5) create a script instance from file (path on disk)
-    int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua"); //Awake is called
-    if (Scripting::IsValidInstance(inst)) {
-        Scripting::CallInstanceFunction(inst, "Start");
-        // serialize (editor UI)
-        std::string json = Scripting::SerializeInstanceToJson(inst);
-        std::cout << json << std::endl;
-    }
+    //int inst = Scripting::CreateInstanceFromFile("Resources/Scripts/sample_mono_behavior_NEW.lua"); //Awake is called
+    //if (Scripting::IsValidInstance(inst)) {
+    //    Scripting::CallInstanceFunction(inst, "Start");
+    //    // serialize (editor UI)
+    //    std::string json = Scripting::SerializeInstanceToJson(inst);
+    //    std::cout << json << std::endl;
+    //}
 
 #endif
 
