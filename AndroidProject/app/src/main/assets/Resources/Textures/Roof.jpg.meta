@@ -4,8 +4,7 @@
         "guid": "0009550ce96109eb-000336f6740000df",
         "source": "../../Resources/Textures/Roof.jpg",
         "compiled": "../../Resources/Textures/Roof.dds",
-        "android_compiled": "Resources/Textures/Roof_android.ktx",
-        "last_compiled": "2025-11-09 14:17:55.3548929"
+        "android_compiled": "Resources/Textures/Roof_android.ktx"
     },
     "TextureMetaData": {
         "type": "diffuse",

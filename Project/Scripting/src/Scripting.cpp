@@ -60,27 +60,43 @@ namespace {
         }
 
         // Read entire file contents. Prefer engine callback; fall back to host FS.
-        bool ReadAllText(const std::string& path, std::string& out) override {
+    bool ReadAllText(const std::string& path, std::string& out) override {
+            ENGINE_LOG_INFO("Scripting: Reading file: " + path);
+
 #ifdef ANDROID
             auto sp = m_src.load();
 #else
             auto sp = m_src.load(std::memory_order_acquire);
 #endif
+
             if (sp && *sp) {
                 try {
                     if ((*sp)(path, out)) return true;
                 }
                 catch (...) {
-                    // swallow and fallback to host FS
+                    ENGINE_LOG_INFO("Custom loader failed, falling back to filesystem");
                 }
             }
 
             // Fallback: try reading from host filesystem
             std::ifstream ifs(path, std::ios::binary);
-            if (!ifs.good()) return false;
-            std::ostringstream ss;
-            ss << ifs.rdbuf();
-            out = ss.str();
+            if (!ifs) {
+                ENGINE_LOG_INFO("Failed to open file: " + path);
+                return false;
+            }
+
+            // More efficient reading for both platforms
+            ifs.seekg(0, std::ios::end);
+            std::streamsize size = ifs.tellg();
+            if (size < 0) return false;
+
+            ifs.seekg(0, std::ios::beg);
+            out.resize(static_cast<size_t>(size));
+
+            if (size > 0 && !ifs.read(&out[0], size)) {
+                return false;
+            }
+
             return true;
         }
 

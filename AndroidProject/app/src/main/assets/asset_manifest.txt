@@ -148,6 +148,7 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
+Resources/Models/SideWall2.mesh
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -168,12 +169,18 @@ Resources/Scripts/extension/scheduler.lua
 Resources/Scripts/extension/scheduler.lua.meta
 Resources/Scripts/extension/simple_fsm.lua
 Resources/Scripts/extension/simple_fsm.lua.meta
+Resources/Scripts/extension/transform_mixin.lua
+Resources/Scripts/extension/transform_mixin.lua.meta
 Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
+Resources/Scripts/rotate.lua
+Resources/Scripts/rotate.lua.meta
 Resources/Scripts/sample_mono_behavior.lua
 Resources/Scripts/sample_mono_behavior.lua.meta
 Resources/Scripts/sample_mono_behavior_NEW.lua
 Resources/Scripts/sample_mono_behavior_NEW.lua.meta
+Resources/Scripts/simplemove.lua
+Resources/Scripts/simplemove.lua.meta
 Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/ai_patrol.lua.meta
 Resources/Scripts/template/data_chest.lua

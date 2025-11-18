@@ -94,9 +94,13 @@ namespace Scripting {
         std::replace(qname.begin(), qname.end(), '.', '/');
 
         std::lock_guard<std::mutex> lk(m_mutex);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::ResolveModuleName called for '", modulename.c_str(),
+            "' (this=", (void*)this, ", m_fs=", (void*)m_fs, ")");
+
         for (const auto& pat : m_searchPaths) {
             std::string candidate;
             candidate.reserve(pat.size() + qname.size());
+
             // replace single '?' with qname (simple policy)
             size_t p = pat.find('?');
             if (p != std::string::npos) {
@@ -105,60 +109,37 @@ namespace Scripting {
             else {
                 candidate = pat;
             }
-            // ask FS if it exists / readable
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::ResolveModuleName called for '",modulename.c_str(),"' (this=", (void*)this,", m_fs=", (void*)m_fs,")");
 
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader trying candidate: ", candidate.c_str());
+
+            // ask FS if it exists / readable
             if (m_fs) {
                 std::string content;
                 if (m_fs->ReadAllText(candidate, content)) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file via FS at: ", candidate.c_str());
                     m_resolveCache.emplace(modulename, candidate);
                     return candidate;
+                }
+                else {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: FS couldn't read: ", candidate.c_str());
                 }
             }
             else {
                 // fallback: check file exists on host FS
                 std::ifstream ifs(candidate, std::ios::binary);
                 if (ifs.good()) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file on host FS at: ", candidate.c_str());
                     m_resolveCache.emplace(modulename, candidate);
                     return candidate;
                 }
-            }
-
-            for (const auto& pat : m_searchPaths) {
-                // ... build candidate ...
-                ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader trying candidate: ", candidate.c_str());
-                if (m_fs) {
-                    std::string content;
-                    if (m_fs->ReadAllText(candidate, content)) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file via FS at: ", candidate.c_str());
-                        m_resolveCache.emplace(modulename, candidate);
-                        return candidate;
-                    }
-                    else {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: FS couldn't read: ", candidate.c_str());
-                    }
-                }
                 else {
-                    std::ifstream ifs(candidate, std::ios::binary);
-                    if (ifs.good()) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file on host FS at: ", candidate.c_str());
-                        m_resolveCache.emplace(modulename, candidate);
-                        return candidate;
-                    }
-                    else {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: no file at: ", candidate.c_str());
-                    }
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: no file at: ", candidate.c_str());
                 }
             }
-
         }
+
         // not found: cache empty result to avoid repeated attempts
-        {
-            std::lock_guard<std::mutex> lk2(m_mutex);
-            m_resolveCache.emplace(modulename, std::string());
-        }
-
-
+        m_resolveCache.emplace(modulename, std::string());
         return std::string();
     }
 
