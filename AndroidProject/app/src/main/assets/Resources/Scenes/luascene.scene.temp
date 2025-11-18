@@ -237,7 +237,7 @@
                     ]
                 },
                 "ScriptComponent": {
-                    "scriptPath": "Resources/Scripts/test.lua",
+                    "scriptPath": "Resources/Scripts/template/test.lua",
                     "enabled": true,
                     "preserveKeys": [
                         "position",
@@ -485,7 +485,7 @@
                     ]
                 },
                 "ScriptComponent": {
-                    "scriptPath": "Resources/Scripts/rotate.lua",
+                    "scriptPath": "Resources/Scripts/template/rotate.lua",
                     "enabled": true,
                     "preserveKeys": [
                         "position",

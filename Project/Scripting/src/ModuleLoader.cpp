@@ -2,6 +2,11 @@
 #include "ScriptFileSystem.h" // for IScriptFileSystem
 #include "Logging.hpp"
 
+#ifdef ANDROID
+#include "WindowManager.hpp" // for WindowManager::GetPlatform()
+#include "Platform/AndroidPlatform.h"
+#endif
+
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -51,9 +56,91 @@ namespace Scripting {
         m_searchPaths.push_back(pattern);
     }
 
+#ifdef ANDROID
+    // Forward declare the friend function
+    int AndroidAssetSearcher_CFunc(lua_State* L);
+
+    // Android asset searcher - handles module loading from APK assets
+    // This is a free function (not a member) that's declared as friend in the header
+    int AndroidAssetSearcher_CFunc(lua_State* L) {
+        // upvalue 1 is the ModuleLoader* (lightuserdata)
+        void* ud = lua_touserdata(L, lua_upvalueindex(1));
+        ModuleLoader* loader = static_cast<ModuleLoader*>(ud);
+        if (!loader) {
+            lua_pushstring(L, "\n\tAndroidAssetSearcher: ModuleLoader missing in upvalue");
+            return 1;
+        }
+
+        const char* moduleName = luaL_checkstring(L, 1);
+        if (!moduleName) {
+            lua_pushstring(L, "\n\tmodule name is nil");
+            return 1;
+        }
+
+        // Convert module name to path (e.g., "extension.engine_bootstrap" -> "extension/engine_bootstrap")
+        std::string modulePath = moduleName;
+        std::replace(modulePath.begin(), modulePath.end(), '.', '/');
+
+        // Build search paths based on configured patterns
+        std::vector<std::string> searchPaths;
+        {
+            std::lock_guard<std::mutex> lk(loader->m_mutex);
+            for (const auto& pattern : loader->m_searchPaths) {
+                size_t pos = pattern.find('?');
+                if (pos != std::string::npos) {
+                    searchPaths.push_back(pattern.substr(0, pos) + modulePath + pattern.substr(pos + 1));
+                }
+            }
+        }
+
+        // Get platform interface for asset access
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform) {
+            std::string err = std::string("\n\tno module '") + moduleName +
+                "' in Android assets (platform unavailable)";
+            lua_pushstring(L, err.c_str());
+            return 1;
+        }
+
+        // Try each search path
+        for (const auto& path : searchPaths) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+                "AndroidAssetSearcher trying: ", path.c_str());
+
+            if (platform->FileExists(path)) {
+                std::vector<uint8_t> scriptData = platform->ReadAsset(path);
+                if (!scriptData.empty()) {
+                    // Load the module
+                    int loadStatus = luaL_loadbuffer(L,
+                        reinterpret_cast<const char*>(scriptData.data()),
+                        scriptData.size(),
+                        path.c_str());
+
+                    if (loadStatus == LUA_OK) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Info,
+                            "AndroidAssetSearcher loaded: ", path.c_str());
+                        return 1; // Return the loaded chunk
+                    }
+                    else {
+                        // Load error - error message is already on stack
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        // Not found - return error message
+        std::string err = std::string("\n\tno module '") + moduleName +
+            "' in Android assets";
+        lua_pushstring(L, err.c_str());
+        return 1;
+    }
+#endif
+
     void ModuleLoader::InstallLuaSearcher(lua_State* L, int pos) {
         if (!L) return;
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::InstallLuaSearcher called (pos=", pos,")");
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::InstallLuaSearcher called (pos=", pos, ")");
+
         // get package.searchers (Lua 5.2+ uses package.searchers, older uses package.loaders)
         lua_getglobal(L, "package");
 #if LUA_VERSION_NUM >= 502
@@ -67,9 +154,18 @@ namespace Scripting {
             return;
         }
 
-        // push our C function with a lightuserdata pointing to this ModuleLoader instance
+#ifdef ANDROID
+        // On Android, install the AndroidAssetSearcher instead of the regular loader
         lua_pushlightuserdata(L, this);
-        lua_pushcclosure(L, &ModuleLoader::LuaLoader_CFunc, 1); // closure with 1 upvalue (this)
+        lua_pushcclosure(L, &AndroidAssetSearcher_CFunc, 1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader: Installing AndroidAssetSearcher");
+#else
+        // On other platforms, use the regular ModuleLoader
+        lua_pushlightuserdata(L, this);
+        lua_pushcclosure(L, &ModuleLoader::LuaLoader_CFunc, 1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader: Installing regular searcher");
+#endif
+
         // Insert it into the searchers table at pos (1-based). If pos == -1 append.
         int insertPos = pos;
         if (insertPos == -1) {
