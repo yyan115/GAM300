@@ -92,6 +92,15 @@ namespace Scripting {
             out = ss.str();
             return true;
         }
+
+        // Compatibility wrapper for obtaining table length across Lua versions
+        inline int lua_table_len(lua_State * L, int idx) {
+            #if LUA_VERSION_NUM >= 502
+                 return (int)lua_rawlen(L, idx);
+            #else
+                 return (int)lua_objlen(L, idx);
+            #endif
+        }
     } // namespace
 
     // -------------------------------------------------------------------------
@@ -169,7 +178,7 @@ namespace Scripting {
             // Debug verification
             lua_getglobal(newL, "package");
             lua_getfield(newL, -1, "searchers");
-            int len = (int)lua_rawlen(newL, -1);
+            int len = lua_table_len(newL, -1);
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "package.searchers length = ", len);
             lua_rawgeti(newL, -1, len);
             bool isFunc = lua_isfunction(newL, -1);
@@ -549,6 +558,38 @@ namespace Scripting {
         // so nothing more to do here.
     }
 
+    void ScriptingRuntime::SetFileSystem(std::shared_ptr<IScriptFileSystem> fs)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (fs) {
+            m_fsShared = std::move(fs);
+            m_fs = m_fsShared.get();
+        }
+        else {
+            m_fsShared.reset();
+            m_fs = nullptr;
+        }
+
+        // Reinitialize ModuleLoader with the new filesystem (preserves ModuleLoader instance)
+        if (m_moduleLoader) {
+            try {
+                m_moduleLoader->Initialize(m_fsShared);
+            }
+            catch (...) {
+                if (m_logger) m_logger->Warn("SetFileSystem: ModuleLoader::Initialize threw");
+            }
+        }
+
+        // If a live VM exists, reinstall the Lua searcher so new requires use the new FS
+        if (m_L && m_moduleLoader) {
+            try {
+                m_moduleLoader->InstallLuaSearcher(m_L, -1);
+            }
+            catch (...) {
+                if (m_logger) m_logger->Warn("SetFileSystem: InstallLuaSearcher threw");
+            }
+        }
+    }
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 -- spherical_mover.lua
 -- Moves an entity around the surface of a sphere using spherical coordinates.
 
-require("extension.engine_bootstrap")
-local Component = require("extension.mono_helper")
-local TransformMixin = require("extension.transform_mixin")
+require("engine_bootstrap")
+local Component = require("mono_helper")
+local TransformMixin = require("transform_mixin")
 
 return Component {
     mixins = { TransformMixin },

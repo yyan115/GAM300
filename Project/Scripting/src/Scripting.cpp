@@ -290,13 +290,26 @@ void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
     g_fileReaderPtr.store(sp, std::memory_order_release);
 #endif
 
-    // (re)create adapter and hand to Runtime's ModuleLoader
+    // (re)create adapter and hand to ModuleLoader and Runtime if present
     g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
 
     if (g_runtime) {
-        // Update the runtime's ModuleLoader's filesystem
+        // Update module loader to use the new adapter
         if (auto* loader = g_runtime->GetModuleLoader()) {
-            loader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
+            try {
+                loader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
+            }
+            catch (...) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Scripting::SetFileSystemReadAllText: ModuleLoader::Initialize threw");
+            }
+        }
+
+        // Also inform the runtime itself so it can update its m_fsShared/m_fs and reinstall searcher
+        try {
+            g_runtime->SetFileSystem(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
+        }
+        catch (...) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Scripting::SetFileSystemReadAllText: g_runtime->SetFileSystem threw");
         }
     }
 }
@@ -524,34 +537,6 @@ void Scripting::SetHostLogHandler(HostLogFn fn) {
             catch (...) {}
             });
     }
-}
-
-void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
-    auto sp = std::make_shared<ReadAllTextFn>(std::move(fn));
-#ifdef ANDROID
-    g_fileReaderPtr.store(sp);
-#else
-    g_fileReaderPtr.store(sp, std::memory_order_release);
-#endif
-
-    // (re)create adapter and hand to ModuleLoader and Runtime if present
-    g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
-    if (g_moduleLoader) {
-        g_moduleLoader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
-        
-    }
-    // Also update runtime's FS pointer if runtime exists (so runtime and module loader share ownership)
-    if (g_runtime) 
-    {
-        // reinitialize runtime's stored FS to new adapter (keep lua state)
-        // simplest: store shared ptr into runtime (if you expose a method), or re-call Initialize with same VM.
-        // For now: assume FS changes before initialization; if you support runtime FS swap at runtime,
-        // implement a runtime->SetFileSystem(std::shared_ptr<IScriptFileSystem>) function.
-      
-    }
-    // The runtime already took g_fsAdapter at Initialize. If you change FS at runtime,
-    // you may want to re-init ModuleLoader and/or re-install searcher. ModuleLoader::Initialize
-    // above sets the m_fs pointer so new lookups will use the new reader.
 }
 
 void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {

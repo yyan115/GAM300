@@ -14,6 +14,14 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 
+static inline int lua_table_len_compat(lua_State* L, int idx) {
+#if LUA_VERSION_NUM >= 502
+    return (int)lua_rawlen(L, idx);
+#else
+    return (int)lua_objlen(L, idx);
+#endif
+}
+
 namespace Scripting {
 
     ModuleLoader::ModuleLoader() = default;
@@ -33,6 +41,7 @@ namespace Scripting {
         }
         if (m_searchPaths.empty()) {
             m_searchPaths.push_back("Resources/Scripts/?.lua");
+            m_searchPaths.push_back("Resources/Scripts/extension/?.lua");
             m_searchPaths.push_back("Resources/Scripts/?/init.lua");
         }
     }
@@ -65,12 +74,12 @@ namespace Scripting {
         int insertPos = pos;
         if (insertPos == -1) {
             // append: get length + 1
-            int len = (int)lua_rawlen(L, -2); // package.searchers is below closure we just pushed
+            int len = lua_table_len_compat(L, -2); // package.searchers is below closure we just pushed
             lua_rawseti(L, -2, len + 1); // pops our function and sets at len+1
         }
         else {
             // shift elements to make room: simple method - move elements up
-            int len = (int)lua_rawlen(L, -2);
+            int len = lua_table_len_compat(L, -2);
             for (int i = len; i >= insertPos; --i) {
                 lua_rawgeti(L, -2, i);
                 lua_rawseti(L, -2, i + 1);

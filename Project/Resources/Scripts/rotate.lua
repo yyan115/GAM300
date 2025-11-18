@@ -2,9 +2,9 @@
 -- Rotates an object continuously around the Y axis
 -- Beginner-friendly example!
 
-require("extension.engine_bootstrap")
-local Component = require("extension.mono_helper")
-local TransformMixin = require("extension.transform_mixin")
+require("engine_bootstrap")
+local Component = require("mono_helper")
+local TransformMixin = require("transform_mixin")
 
 -- Helper function to create a rotation quaternion from Euler angles (degrees)
 local function eulerToQuat(pitch, yaw, roll)

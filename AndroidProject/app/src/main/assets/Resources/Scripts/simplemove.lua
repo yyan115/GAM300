@@ -2,9 +2,9 @@
 -- Moves an entity in a direction at a given speed
 -- This is what a non-programmer would write!
 
-require("extension.engine_bootstrap")
-local Component = require("extension.mono_helper")
-local TransformMixin = require("extension.transform_mixin")
+require("engine_bootstrap")
+local Component = require("mono_helper")
+local TransformMixin = require("transform_mixin")
 
 return Component {
     -- Apply the transform mixin for easy movement
