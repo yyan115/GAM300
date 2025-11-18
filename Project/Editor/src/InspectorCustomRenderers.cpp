@@ -892,12 +892,15 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Text("Skybox Texture:");
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
         std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        bool hasTexture = (guid->high != 0 || guid->low != 0);
+        float availableWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = hasTexture ? availableWidth - 30.0f : availableWidth;
+
+        ImGui::SetNextItemWidth(buttonWidth);
         EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
         if (EditorComponents::BeginDragDropTarget())
@@ -907,7 +910,7 @@ void RegisterInspectorCustomRenderers()
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
             {
                 // Take snapshot before changing texture
-                SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+                SnapshotManager::GetInstance().TakeSnapshot("Assign Skybox Texture");
 
                 const char *texturePath = (const char *)payload->Data;
                 std::string pathStr(texturePath, payload->DataSize);
@@ -926,6 +929,45 @@ void RegisterInspectorCustomRenderers()
                 return true; // Field was modified
             }
             EditorComponents::EndDragDropTarget();
+        }
+
+        auto &cameraComp = ecs.GetComponent<CameraComponent>(entity);
+
+        if (guid->high != 0 || guid->low != 0)
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearSkybox"))
+            {
+                SnapshotManager::GetInstance().TakeSnapshot("Clear Skybox Texture");
+
+                *guid = GUID_128{0, 0};
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+
+                return true;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Clear skybox texture");
+            }
+
+            if (!cameraComp.skyboxTexture || cameraComp.skyboxTexturePath.empty())
+            {
+                std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+                if (!newTexturePath.empty())
+                {
+                    cameraComp.skyboxTexturePath = newTexturePath;
+                    cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(*guid, newTexturePath);
+                }
+            }
+        }
+        else
+        {
+            if (cameraComp.skyboxTexture != nullptr || !cameraComp.skyboxTexturePath.empty())
+            {
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+            }
         }
 
         return false;
