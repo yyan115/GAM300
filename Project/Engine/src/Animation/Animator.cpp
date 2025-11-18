@@ -49,12 +49,21 @@ void Animator::PlayAnimation(Animation* pAnimation)
 {
 	mCurrentAnimation = pAnimation;
 	mCurrentTime = 0.0f;
-	if (pAnimation) 
+	if (pAnimation)
 	{
 		size_t n = pAnimation->GetBoneIDMap().size();
 		mFinalBoneMatrices.assign(n ? n : 1, glm::mat4(1.0f));
 	}
 
+}
+
+void Animator::SetCurrentTime(float time)
+{
+	mCurrentTime = time;
+	// Update bone transforms for the new time
+	if (mCurrentAnimation) {
+		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+	}
 }
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)

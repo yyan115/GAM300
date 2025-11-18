@@ -15,6 +15,7 @@ public:
 
 	const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return mFinalBoneMatrices; }
 	float GetCurrentTime() const { return mCurrentTime; }
+	void SetCurrentTime(float time); // For editor preview
 
 private:
 	Animation* mCurrentAnimation;

@@ -1545,6 +1545,7 @@ void RegisterInspectorCustomRenderers()
             previewState[entity] = PreviewState::Stopped;
         }
 
+        // Inspector preview - uses separate editorPreviewTime (doesn't affect runtime)
         if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE)
         {
             if (previewState[entity] == PreviewState::Playing && animComp.enabled)
@@ -1552,7 +1553,45 @@ void RegisterInspectorCustomRenderers()
                 Animator *animator = animComp.GetAnimatorPtr();
                 if (animator && !animComp.GetClips().empty())
                 {
-                    animator->UpdateAnimation(ImGui::GetIO().DeltaTime * animComp.speed, animComp.isLoop);
+                    const auto& clips = animComp.GetClips();
+                    size_t activeClipIndex = animComp.GetActiveClipIndex();
+
+                    if (activeClipIndex < clips.size())
+                    {
+                        const Animation& clip = *clips[activeClipIndex];
+                        float tps = clip.GetTicksPerSecond();
+                        if (tps <= 0.0f) tps = 25.0f;
+
+                        // Update preview time
+                        animComp.editorPreviewTime += tps * ImGui::GetIO().DeltaTime * animComp.speed;
+
+                        // Handle looping
+                        float duration = clip.GetDuration();
+                        if (animComp.isLoop)
+                        {
+                            animComp.editorPreviewTime = fmod(animComp.editorPreviewTime, duration);
+                        }
+                        else
+                        {
+                            if (animComp.editorPreviewTime > duration)
+                            {
+                                animComp.editorPreviewTime = duration;
+                                previewState[entity] = PreviewState::Paused;
+                            }
+                        }
+
+                        // Set animator time for visualization (doesn't persist to runtime)
+                        animator->SetCurrentTime(animComp.editorPreviewTime);
+                    }
+                }
+            }
+            else if (previewState[entity] == PreviewState::Paused || previewState[entity] == PreviewState::Stopped)
+            {
+                // When paused or stopped, keep animator at preview time for visualization
+                Animator *animator = animComp.GetAnimatorPtr();
+                if (animator && !animComp.GetClips().empty())
+                {
+                    animator->SetCurrentTime(animComp.editorPreviewTime);
                 }
             }
         }
@@ -1605,7 +1644,17 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Load animation clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // CRITICAL: Link animator to model (same as AnimationSystem::Initialise)
+                            Animator* animator = animComp.EnsureAnimator();
+                            modelComp.SetAnimator(animator);
+
+                            // If clips were loaded successfully, set up the animator
+                            if (!animComp.GetClips().empty()) {
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            }
                         }
                     }
                 }
@@ -1626,7 +1675,18 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Reload clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // Update animator link
+                            if (!animComp.GetClips().empty()) {
+                                Animator* animator = animComp.EnsureAnimator();
+                                modelComp.SetAnimator(animator);
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            } else {
+                                // No clips left, unlink animator
+                                modelComp.SetAnimator(nullptr);
+                            }
                         }
                     }
                 }
@@ -1672,10 +1732,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth))
         {
             previewState[entity] = PreviewState::Playing;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            // Preview continues from current editorPreviewTime
         }
 
         ImGui::SameLine();
@@ -1688,10 +1745,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawStopButton())
         {
             previewState[entity] = PreviewState::Stopped;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            animComp.ResetPreview(); // Reset preview time to 0
         }
 
         ImGui::EndDisabled();
