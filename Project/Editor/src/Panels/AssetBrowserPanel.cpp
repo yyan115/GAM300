@@ -719,6 +719,26 @@ void AssetBrowserPanel::RenderAssetGrid()
                     ImGui::EndGroup();
                     break;
                 }
+                else if (lowerExt == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
+
+                    ImGui::PopID();
+                    ImGui::EndGroup();
+                    break;
+                }
                 else {
                     ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
                 }
@@ -895,9 +915,24 @@ void AssetBrowserPanel::RenderAssetGrid()
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
                 std::filesystem::path p(asset.fileName);
 
-                // Open scene confirmation dialogue.
                 if (p.extension() == ".scene") {
                     OpenScene(asset);
+                }
+                else if (p.extension() == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
                 }
             }
         }
@@ -1714,6 +1749,9 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     }
     else if (lowerExt == ".scene") {
         return ICON_FA_EARTH_AMERICAS;
+    }
+    else if (lowerExt == ".lua") {
+        return ICON_FA_FILE_CODE;
     }
 
     return ICON_FA_FILE; // Default file icon

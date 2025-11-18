@@ -52,6 +52,10 @@ private:
     void DrawAddComponentButton(Entity entity);
     void AddComponent(Entity entity, const std::string& componentType);
 
+    // Search state for add component
+    char componentSearchBuffer[256] = "";
+    bool componentSearchActive = false;
+
     // Lock functionality
     bool inspectorLocked = false;
     Entity lockedEntity = static_cast<Entity>(-1);

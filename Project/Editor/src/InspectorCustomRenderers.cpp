@@ -1744,6 +1744,26 @@ void RegisterInspectorCustomRenderers()
         float buttonWidth = ImGui::GetContentRegionAvail().x;
         EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
+        if (!scriptPath->empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        {
+            std::filesystem::path absolutePath = std::filesystem::absolute(*scriptPath);
+            std::string command;
+            #ifdef _WIN32
+                command = "code \"" + absolutePath.string() + "\"";
+            #elif __linux__
+                command = "code \"" + absolutePath.string() + "\" &";
+            #elif __APPLE__
+                command = "code \"" + absolutePath.string() + "\"";
+            #endif
+
+            system(command.c_str());
+        }
+
+        if (ImGui::IsItemHovered() && !scriptPath->empty())
+        {
+            ImGui::SetTooltip("Double-click to open in VS Code");
+        }
+
         // Handle drag-drop from asset browser
         if (ImGui::BeginDragDropTarget())
         {
