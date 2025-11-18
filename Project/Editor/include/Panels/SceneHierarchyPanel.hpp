@@ -39,6 +39,9 @@ private:
     Entity CreateCubeEntity();
     Entity CreateCameraEntity();
 
+    // Entity duplication
+    Entity DuplicateEntity(Entity sourceEntity);
+
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);
     std::vector<char> renameBuffer;

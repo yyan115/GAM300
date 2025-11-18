@@ -892,12 +892,15 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Text("Skybox Texture:");
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
         std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        bool hasTexture = (guid->high != 0 || guid->low != 0);
+        float availableWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = hasTexture ? availableWidth - 30.0f : availableWidth;
+
+        ImGui::SetNextItemWidth(buttonWidth);
         EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
         if (EditorComponents::BeginDragDropTarget())
@@ -907,7 +910,7 @@ void RegisterInspectorCustomRenderers()
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
             {
                 // Take snapshot before changing texture
-                SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+                SnapshotManager::GetInstance().TakeSnapshot("Assign Skybox Texture");
 
                 const char *texturePath = (const char *)payload->Data;
                 std::string pathStr(texturePath, payload->DataSize);
@@ -926,6 +929,45 @@ void RegisterInspectorCustomRenderers()
                 return true; // Field was modified
             }
             EditorComponents::EndDragDropTarget();
+        }
+
+        auto &cameraComp = ecs.GetComponent<CameraComponent>(entity);
+
+        if (guid->high != 0 || guid->low != 0)
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearSkybox"))
+            {
+                SnapshotManager::GetInstance().TakeSnapshot("Clear Skybox Texture");
+
+                *guid = GUID_128{0, 0};
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+
+                return true;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Clear skybox texture");
+            }
+
+            if (!cameraComp.skyboxTexture || cameraComp.skyboxTexturePath.empty())
+            {
+                std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+                if (!newTexturePath.empty())
+                {
+                    cameraComp.skyboxTexturePath = newTexturePath;
+                    cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(*guid, newTexturePath);
+                }
+            }
+        }
+        else
+        {
+            if (cameraComp.skyboxTexture != nullptr || !cameraComp.skyboxTexturePath.empty())
+            {
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+            }
         }
 
         return false;
@@ -1503,6 +1545,7 @@ void RegisterInspectorCustomRenderers()
             previewState[entity] = PreviewState::Stopped;
         }
 
+        // Inspector preview - uses separate editorPreviewTime (doesn't affect runtime)
         if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE)
         {
             if (previewState[entity] == PreviewState::Playing && animComp.enabled)
@@ -1510,7 +1553,45 @@ void RegisterInspectorCustomRenderers()
                 Animator *animator = animComp.GetAnimatorPtr();
                 if (animator && !animComp.GetClips().empty())
                 {
-                    animator->UpdateAnimation(ImGui::GetIO().DeltaTime * animComp.speed, animComp.isLoop);
+                    const auto& clips = animComp.GetClips();
+                    size_t activeClipIndex = animComp.GetActiveClipIndex();
+
+                    if (activeClipIndex < clips.size())
+                    {
+                        const Animation& clip = *clips[activeClipIndex];
+                        float tps = clip.GetTicksPerSecond();
+                        if (tps <= 0.0f) tps = 25.0f;
+
+                        // Update preview time
+                        animComp.editorPreviewTime += tps * ImGui::GetIO().DeltaTime * animComp.speed;
+
+                        // Handle looping
+                        float duration = clip.GetDuration();
+                        if (animComp.isLoop)
+                        {
+                            animComp.editorPreviewTime = fmod(animComp.editorPreviewTime, duration);
+                        }
+                        else
+                        {
+                            if (animComp.editorPreviewTime > duration)
+                            {
+                                animComp.editorPreviewTime = duration;
+                                previewState[entity] = PreviewState::Paused;
+                            }
+                        }
+
+                        // Set animator time for visualization (doesn't persist to runtime)
+                        animator->SetCurrentTime(animComp.editorPreviewTime);
+                    }
+                }
+            }
+            else if (previewState[entity] == PreviewState::Paused || previewState[entity] == PreviewState::Stopped)
+            {
+                // When paused or stopped, keep animator at preview time for visualization
+                Animator *animator = animComp.GetAnimatorPtr();
+                if (animator && !animComp.GetClips().empty())
+                {
+                    animator->SetCurrentTime(animComp.editorPreviewTime);
                 }
             }
         }
@@ -1563,7 +1644,17 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Load animation clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // CRITICAL: Link animator to model (same as AnimationSystem::Initialise)
+                            Animator* animator = animComp.EnsureAnimator();
+                            modelComp.SetAnimator(animator);
+
+                            // If clips were loaded successfully, set up the animator
+                            if (!animComp.GetClips().empty()) {
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            }
                         }
                     }
                 }
@@ -1584,7 +1675,18 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Reload clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // Update animator link
+                            if (!animComp.GetClips().empty()) {
+                                Animator* animator = animComp.EnsureAnimator();
+                                modelComp.SetAnimator(animator);
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            } else {
+                                // No clips left, unlink animator
+                                modelComp.SetAnimator(nullptr);
+                            }
                         }
                     }
                 }
@@ -1630,10 +1732,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth))
         {
             previewState[entity] = PreviewState::Playing;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            // Preview continues from current editorPreviewTime
         }
 
         ImGui::SameLine();
@@ -1646,10 +1745,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawStopButton())
         {
             previewState[entity] = PreviewState::Stopped;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            animComp.ResetPreview(); // Reset preview time to 0
         }
 
         ImGui::EndDisabled();
@@ -1743,6 +1839,26 @@ void RegisterInspectorCustomRenderers()
 
         float buttonWidth = ImGui::GetContentRegionAvail().x;
         EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+        if (!scriptPath->empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        {
+            std::filesystem::path absolutePath = std::filesystem::absolute(*scriptPath);
+            std::string command;
+            #ifdef _WIN32
+                command = "code \"" + absolutePath.string() + "\"";
+            #elif __linux__
+                command = "code \"" + absolutePath.string() + "\" &";
+            #elif __APPLE__
+                command = "code \"" + absolutePath.string() + "\"";
+            #endif
+
+            system(command.c_str());
+        }
+
+        if (ImGui::IsItemHovered() && !scriptPath->empty())
+        {
+            ImGui::SetTooltip("Double-click to open in VS Code");
+        }
 
         // Handle drag-drop from asset browser
         if (ImGui::BeginDragDropTarget())

@@ -65,6 +65,13 @@ public:
     std::vector<std::string> clipPaths;
     std::vector<GUID_128> clipGUIDs;
 
+    // Editor preview state (NOT serialized - only for inspector preview)
+    float editorPreviewTime = 0.0f;  // Separate time for inspector preview
+
+    // Runtime control
+    void ResetForPlay();  // Reset animator to 0 for fresh game start
+    void ResetPreview();  // Reset preview time to 0
+
 private:
     std::vector<std::unique_ptr<Animation>> clips;
     size_t activeClip = 0;
