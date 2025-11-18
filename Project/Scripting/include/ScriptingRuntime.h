@@ -111,6 +111,11 @@ namespace Scripting {
         std::unique_ptr<ModuleLoader> m_moduleLoader;
 
         std::function<void(const std::string&)> m_hostLogHandler;
+    public:
+        ModuleLoader* GetModuleLoader() {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            return m_moduleLoader.get();
+        }
     };
 
 } // namespace Scripting
