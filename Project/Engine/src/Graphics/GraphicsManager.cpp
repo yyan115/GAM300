@@ -113,6 +113,9 @@ void GraphicsManager::SetViewportSize(int width, int height)
 {
 	viewportWidth = width;
 	viewportHeight = height;
+
+	// Also set OpenGL viewport to keep state synchronized
+	glViewport(0, 0, width, height);
 }
 
 void GraphicsManager::GetViewportSize(int& width, int& height) const
@@ -138,9 +141,10 @@ void GraphicsManager::UpdateFrustum()
 
 	if (frustumCullingEnabled)
 	{
-		int renderWidth = currentFrameViewport.width;
-		int renderHeight = currentFrameViewport.height;
-		float aspectRatio = currentFrameViewport.aspectRatio;
+		ViewportDimensions currentVP = GetCurrentViewport();
+		int renderWidth = currentVP.width;
+		int renderHeight = currentVP.height;
+		float aspectRatio = currentVP.aspectRatio;
 
 		glm::mat4 view;
 		glm::mat4 projection;
@@ -185,15 +189,12 @@ void GraphicsManager::Render()
 		return;
 	}
 
-	if (frustumCullingEnabled) 
+	if (frustumCullingEnabled)
 	{
 		cullingStats.Reset();
 	}
 
-
 	currentFrameViewport = GetCurrentViewport();
-	// Update frustum for culling
-	UpdateFrustum();
 
 	// Render skybox first (before other objects)
 	RenderSkybox();

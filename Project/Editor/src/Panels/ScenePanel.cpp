@@ -772,11 +772,17 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
 
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
-        // Set viewport size in GraphicsManager for correct aspect ratio
-        GraphicsManager::GetInstance().SetViewportSize(width, height);
+        auto& gfx = GraphicsManager::GetInstance();
+
+        // Set viewport size for correct aspect ratio
+        gfx.SetViewportSize(width, height);
 
         // Pass our editor camera data to the rendering system
         SceneRenderer::BeginSceneRender(width, height);
+
+        // Update frustum with Scene Panel's viewport BEFORE rendering
+        gfx.UpdateFrustum();
+
         SceneRenderer::RenderSceneForEditor(
             editorCamera.Position,
             editorCamera.Front,

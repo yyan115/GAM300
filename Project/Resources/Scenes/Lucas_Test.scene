@@ -155,7 +155,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "int",
@@ -272,15 +272,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 3.54301
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.554505
+                                    "data": 1.97837
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.14532
                                 }
                             ]
                         },
@@ -343,7 +343,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 3.54301
                                 },
                                 {
                                     "type": "float",
@@ -359,7 +359,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.554505
+                                    "data": 1.97837
                                 },
                                 {
                                     "type": "float",
@@ -375,7 +375,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.14532
                                 },
                                 {
                                     "type": "float",
