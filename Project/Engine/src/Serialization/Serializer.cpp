@@ -263,6 +263,59 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("SpriteRenderComponent", v, alloc);
         }
+        if (ecs.HasComponent<SpriteAnimationComponent>(entity)) {
+            auto& c = ecs.GetComponent<SpriteAnimationComponent>(entity);
+
+            // Custom serialization to include UV coordinates
+            rapidjson::Value animValue(rapidjson::kObjectType);
+
+            // Serialize clips array
+            rapidjson::Value clipsArray(rapidjson::kArrayType);
+            for (const auto& clip : c.clips) {
+                rapidjson::Value clipObj(rapidjson::kObjectType);
+                clipObj.AddMember("name", rapidjson::Value(clip.name.c_str(), alloc), alloc);
+                clipObj.AddMember("loop", clip.loop, alloc);
+
+                // Serialize frames with UV coordinates
+                rapidjson::Value framesArray(rapidjson::kArrayType);
+                for (const auto& frame : clip.frames) {
+                    rapidjson::Value frameObj(rapidjson::kObjectType);
+
+                    // Texture GUID
+                    std::string guidStr = GUIDUtilities::ConvertGUID128ToString(frame.textureGUID);
+                    frameObj.AddMember("textureGUID", rapidjson::Value(guidStr.c_str(), alloc), alloc);
+                    frameObj.AddMember("texturePath", rapidjson::Value(frame.texturePath.c_str(), alloc), alloc);
+
+                    // UV coordinates - MANUALLY SERIALIZE
+                    rapidjson::Value uvOffsetArray(rapidjson::kArrayType);
+                    uvOffsetArray.PushBack(frame.uvOffset.x, alloc);
+                    uvOffsetArray.PushBack(frame.uvOffset.y, alloc);
+                    frameObj.AddMember("uvOffset", uvOffsetArray, alloc);
+
+                    rapidjson::Value uvScaleArray(rapidjson::kArrayType);
+                    uvScaleArray.PushBack(frame.uvScale.x, alloc);
+                    uvScaleArray.PushBack(frame.uvScale.y, alloc);
+                    frameObj.AddMember("uvScale", uvScaleArray, alloc);
+
+                    frameObj.AddMember("duration", frame.duration, alloc);
+                    framesArray.PushBack(frameObj, alloc);
+                }
+                clipObj.AddMember("frames", framesArray, alloc);
+                clipsArray.PushBack(clipObj, alloc);
+            }
+            animValue.AddMember("clips", clipsArray, alloc);
+
+            // Other fields
+            animValue.AddMember("currentClipIndex", c.currentClipIndex, alloc);
+            animValue.AddMember("currentFrameIndex", c.currentFrameIndex, alloc);
+            animValue.AddMember("timeInCurrentFrame", c.timeInCurrentFrame, alloc);
+            animValue.AddMember("playbackSpeed", c.playbackSpeed, alloc);
+            animValue.AddMember("playing", c.playing, alloc);
+            animValue.AddMember("enabled", c.enabled, alloc);
+            animValue.AddMember("autoPlay", c.autoPlay, alloc);
+
+            compsObj.AddMember("SpriteAnimationComponent", animValue, alloc);
+        }
         if (ecs.HasComponent<TextRenderComponent>(entity)) {
             auto& c = ecs.GetComponent<TextRenderComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -655,6 +708,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeSpriteComponent(spriteComp, mv);
         }
 
+        // SpriteAnimationComponent
+        if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
+            const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+            ecs.AddComponent<SpriteAnimationComponent>(newEnt, SpriteAnimationComponent{});
+            auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(newEnt);
+            DeserializeSpriteAnimationComponent(animComp, mv);
+        }
+
         // TextRenderComponent
         if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["TextRenderComponent"];
@@ -925,6 +986,13 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& mv = comps["SpriteRenderComponent"];
             auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(currEnt);
             DeserializeSpriteComponent(spriteComp, mv);
+        }
+
+        // SpriteAnimationComponent
+        if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
+            const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+            auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(currEnt);
+            DeserializeSpriteAnimationComponent(animComp, mv);
         }
 
         // TextRenderComponent
@@ -1269,6 +1337,98 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             spriteComp.layer = d[startIdx + 9]["data"].GetInt();
             readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
         }
+    }
+}
+
+void Serializer::DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON) {
+    if (!animJSON.IsObject()) return;
+
+    // Clear existing data
+    animComp.clips.clear();
+
+    // Deserialize clips
+    if (animJSON.HasMember("clips") && animJSON["clips"].IsArray()) {
+        const auto& clipsArray = animJSON["clips"];
+        for (rapidjson::SizeType i = 0; i < clipsArray.Size(); i++) {
+            const auto& clipObj = clipsArray[i];
+            if (!clipObj.IsObject()) continue;
+
+            SpriteAnimationClip clip;
+
+            // Name and loop
+            if (clipObj.HasMember("name") && clipObj["name"].IsString()) {
+                clip.name = clipObj["name"].GetString();
+            }
+            if (clipObj.HasMember("loop") && clipObj["loop"].IsBool()) {
+                clip.loop = clipObj["loop"].GetBool();
+            }
+
+            // Deserialize frames with UV coordinates
+            if (clipObj.HasMember("frames") && clipObj["frames"].IsArray()) {
+                const auto& framesArray = clipObj["frames"];
+                for (rapidjson::SizeType j = 0; j < framesArray.Size(); j++) {
+                    const auto& frameObj = framesArray[j];
+                    if (!frameObj.IsObject()) continue;
+
+                    SpriteFrame frame;
+
+                    // Texture GUID
+                    if (frameObj.HasMember("textureGUID") && frameObj["textureGUID"].IsString()) {
+                        std::string guidStr = frameObj["textureGUID"].GetString();
+                        frame.textureGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                    }
+
+                    // Texture path
+                    if (frameObj.HasMember("texturePath") && frameObj["texturePath"].IsString()) {
+                        frame.texturePath = frameObj["texturePath"].GetString();
+                    }
+
+                    // UV Offset - MANUAL DESERIALIZE
+                    if (frameObj.HasMember("uvOffset") && frameObj["uvOffset"].IsArray() && frameObj["uvOffset"].Size() >= 2) {
+                        frame.uvOffset.x = static_cast<float>(frameObj["uvOffset"][0].GetDouble());
+                        frame.uvOffset.y = static_cast<float>(frameObj["uvOffset"][1].GetDouble());
+                    }
+
+                    // UV Scale - MANUAL DESERIALIZE
+                    if (frameObj.HasMember("uvScale") && frameObj["uvScale"].IsArray() && frameObj["uvScale"].Size() >= 2) {
+                        frame.uvScale.x = static_cast<float>(frameObj["uvScale"][0].GetDouble());
+                        frame.uvScale.y = static_cast<float>(frameObj["uvScale"][1].GetDouble());
+                    }
+
+                    // Duration
+                    if (frameObj.HasMember("duration") && frameObj["duration"].IsNumber()) {
+                        frame.duration = static_cast<float>(frameObj["duration"].GetDouble());
+                    }
+
+                    clip.frames.push_back(frame);
+                }
+            }
+
+            animComp.clips.push_back(clip);
+        }
+    }
+
+    // Other fields
+    if (animJSON.HasMember("currentClipIndex") && animJSON["currentClipIndex"].IsInt()) {
+        animComp.currentClipIndex = animJSON["currentClipIndex"].GetInt();
+    }
+    if (animJSON.HasMember("currentFrameIndex") && animJSON["currentFrameIndex"].IsInt()) {
+        animComp.currentFrameIndex = animJSON["currentFrameIndex"].GetInt();
+    }
+    if (animJSON.HasMember("timeInCurrentFrame") && animJSON["timeInCurrentFrame"].IsNumber()) {
+        animComp.timeInCurrentFrame = static_cast<float>(animJSON["timeInCurrentFrame"].GetDouble());
+    }
+    if (animJSON.HasMember("playbackSpeed") && animJSON["playbackSpeed"].IsNumber()) {
+        animComp.playbackSpeed = static_cast<float>(animJSON["playbackSpeed"].GetDouble());
+    }
+    if (animJSON.HasMember("playing") && animJSON["playing"].IsBool()) {
+        animComp.playing = animJSON["playing"].GetBool();
+    }
+    if (animJSON.HasMember("enabled") && animJSON["enabled"].IsBool()) {
+        animComp.enabled = animJSON["enabled"].GetBool();
+    }
+    if (animJSON.HasMember("autoPlay") && animJSON["autoPlay"].IsBool()) {
+        animComp.autoPlay = animJSON["autoPlay"].GetBool();
     }
 }
 

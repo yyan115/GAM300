@@ -61,44 +61,44 @@ void SceneInstance::Initialize() {
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 
 	// Sprite Animation Entity for testing
-	Entity sAnim = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
-	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+	//Entity sAnim = ecsManager.CreateEntity();
+	//ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
+	//ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
+	//ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 
-	std::string idlePath[3] = {
-		"Resources/Textures/idle_1.png",
-		"Resources/Textures/idle_2.png",
-		"Resources/Textures/idle_3.png"
-	};
+	//std::string idlePath[3] = {
+	//	"Resources/Textures/idle_1.png",
+	//	"Resources/Textures/idle_2.png",
+	//	"Resources/Textures/idle_3.png"
+	//};
 
-	GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
-	GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
-	GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
+	//GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
+	//GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
+	//GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
 
-	// Setting Current Sprite
-	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	sprite.is3D = true;
+	//// Setting Current Sprite
+	//auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	//sprite.is3D = true;
 
-	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
+	//auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 
-	SpriteAnimationClip idleClip;
-	idleClip.name = "Idle";
-	idleClip.loop = true;
+	//SpriteAnimationClip idleClip;
+	//idleClip.name = "Idle";
+	//idleClip.loop = true;
 
-	for(int i = 0; i < 3; ++i) {
-		SpriteFrame frame;
-		frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
-		frame.texturePath = idlePath[i];
-		frame.uvOffset = glm::vec2(0.0f, 0.0f);
-		frame.uvScale = glm::vec2(1.0f, 1.0f);
-		frame.duration = 1.0f; // 0.2 seconds per frame
+	//for(int i = 0; i < 3; ++i) {
+	//	SpriteFrame frame;
+	//	frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
+	//	frame.texturePath = idlePath[i];
+	//	frame.uvOffset = glm::vec2(0.0f, 0.0f);
+	//	frame.uvScale = glm::vec2(1.0f, 1.0f);
+	//	frame.duration = 1.0f; // 0.2 seconds per frame
 
-		idleClip.frames.push_back(frame);
-	}
+	//	idleClip.frames.push_back(frame);
+	//}
 
-	anim.clips.push_back(idleClip);
-	anim.Play("Idle");
+	//anim.clips.push_back(idleClip);
+	//anim.Play("Idle");
 
 	// End of Sprite Animation Entity for testing
 

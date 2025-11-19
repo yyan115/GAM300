@@ -36,6 +36,7 @@
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "Panels/TagsLayersPanel.hpp"
+#include "Panels/SpriteAnimationEditorWindow.hpp"
 
 
 // Static member definitions
@@ -199,6 +200,10 @@ void GUIManager::SetupDefaultPanels() {
 	auto tagsLayersPanel = std::make_shared<TagsLayersPanel>();
 	assert(tagsLayersPanel != nullptr && "Failed to create TagsLayersPanel");
 	panelManager->RegisterPanel(tagsLayersPanel);
+
+	// Register the sprite animation editor window
+	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor());
+	panelManager->RegisterPanel(spriteAnimEditor);
 
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
 }

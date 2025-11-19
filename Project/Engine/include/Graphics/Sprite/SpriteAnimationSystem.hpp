@@ -11,4 +11,7 @@ public:
 
     bool Initialise();
     void Update();
+
+private:
+    bool wasInEditMode = true;  // Track if we were in edit mode last frame
 };

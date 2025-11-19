@@ -21,6 +21,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Math/Vector3D.hpp"
 #include <glm/glm.hpp>
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
+#include "Graphics/Sprite/SpriteAnimationComponent.hpp"
+#include "Panels/SpriteAnimationEditorWindow.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
@@ -68,6 +70,9 @@ extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
 extern GUID_128 DraggedScriptGuid;
 extern std::string DraggedScriptPath;
+
+// Forward declaration for sprite animation inspector
+void RegisterSpriteAnimationInspector();
 
 void RegisterInspectorCustomRenderers()
 {
@@ -2611,4 +2616,8 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "autoInvokeEntry",
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
+
+    // ==================== SPRITE ANIMATION COMPONENT ====================
+    // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)
+    RegisterSpriteAnimationInspector();
 }

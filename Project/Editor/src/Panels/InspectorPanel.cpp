@@ -11,6 +11,7 @@
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
@@ -171,6 +172,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<SpriteRenderComponent>(entity) ?
 				(void*)&ecs.GetComponent<SpriteRenderComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<SpriteRenderComponent>(entity); }},
+
+		{"Sprite Animation", "SpriteAnimationComponent",
+			[&]() { return ecs.HasComponent<SpriteAnimationComponent>(entity) ?
+				(void*)&ecs.GetComponent<SpriteAnimationComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<SpriteAnimationComponent>(entity); }},
 
 		{"Text Renderer", "TextRenderComponent",
 			[&]() { return ecs.HasComponent<TextRenderComponent>(entity) ?
@@ -839,6 +845,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
 				allComponents.push_back({"Sprite Renderer", "SpriteRenderComponent", "Rendering"});
 			}
+			if (!ecsManager.HasComponent<SpriteAnimationComponent>(entity)) {
+				allComponents.push_back({"Sprite Animation", "SpriteAnimationComponent", "Rendering"});
+			}
 			if (!ecsManager.HasComponent<TextRenderComponent>(entity)) {
 				allComponents.push_back({"Text Renderer", "TextRenderComponent", "Rendering"});
 			}
@@ -1100,6 +1109,18 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			}
 
 			std::cout << "[Inspector] Added SpriteRenderComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "SpriteAnimationComponent") {
+			SpriteAnimationComponent component;
+			// Initialize with some default values
+			component.playbackSpeed = 1.0f;
+			component.playing = false;
+			component.currentClipIndex = -1;
+			component.currentFrameIndex = 0;
+			component.timeInCurrentFrame = 0.0f;
+
+			ecsManager.AddComponent<SpriteAnimationComponent>(entity, component);
+			std::cout << "[Inspector] Added SpriteAnimationComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "DirectionalLightComponent") {
 			DirectionalLightComponent component;
@@ -1435,6 +1456,9 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		} else if (componentType == "SpriteAnimationComponent") {
+			auto& comp = ecs.GetComponent<SpriteAnimationComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
 

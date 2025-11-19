@@ -23,6 +23,8 @@
     <ClCompile Include="src\Panels\AssetInspector.cpp" />
     <ClCompile Include="src\Panels\TagsLayersPanel.cpp" />
     <ClCompile Include="src\InspectorCustomRenderers.cpp" />
+    <ClCompile Include="src\SpriteAnimationInspector.cpp" />
+    <ClCompile Include="src\Panels\SpriteAnimationEditorWindow.cpp" />
     <ClCompile Include="src\ReflectionRenderer.cpp" />
     <ClCompile Include="src\SnapshotManager.cpp" />
     <ClCompile Include="src\UndoableWidgets.cpp" />
@@ -51,6 +53,7 @@
     <ClInclude Include="include\Panels\ScenePanel.hpp" />
     <ClInclude Include="include\Panels\SceneHierarchyPanel.hpp" />
     <ClInclude Include="include\Panels\InspectorPanel.hpp" />
+    <ClInclude Include="include\Panels\SpriteAnimationEditorWindow.hpp" />
     <ClInclude Include="include\Panels\ConsolePanel.hpp" />
     <ClInclude Include="include\Panels\GamePanel.hpp" />
   </ItemGroup>

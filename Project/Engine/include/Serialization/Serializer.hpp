@@ -7,6 +7,7 @@
 #include "ECS/layerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
@@ -39,6 +40,7 @@ public:
 	static void DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t);
 	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
+	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);
 	static void DeserializeParticleComponent(ParticleComponent& particleComp, const rapidjson::Value& particleJSON);
 	static void DeserializeDirLightComponent(DirectionalLightComponent& dirLightComp, const rapidjson::Value& dirLightJSON);

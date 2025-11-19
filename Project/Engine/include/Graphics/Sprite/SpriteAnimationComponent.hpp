@@ -5,6 +5,7 @@
 
 struct SpriteFrame
 {
+	REFL_SERIALIZABLE
 	GUID_128 textureGUID; // Texture for this frame
 	std::string texturePath; // Path to the texture (for reference)
 	glm::vec2 uvOffset;   // bottom-left or top-left depending on your convention
@@ -14,16 +15,17 @@ struct SpriteFrame
 
 struct SpriteAnimationClip
 {
+	REFL_SERIALIZABLE
 	std::string name;
 	std::vector<SpriteFrame> frames;
 	bool loop = true;
 };
 
 
-class SpriteAnimationComponent
+class ENGINE_API SpriteAnimationComponent
 {
 public:
-	//REFL_SERIALIZABLE
+	REFL_SERIALIZABLE
     SpriteAnimationComponent() = default;
 
     std::vector<SpriteAnimationClip> clips;
@@ -34,7 +36,13 @@ public:
     float timeInCurrentFrame = 0.0f;  // timer for current frame
     float playbackSpeed = 1.0f;       // 1.0 = normal speed
 
-    bool playing = true;
+    bool playing = false;  // Start with animation not playing by default
+    bool enabled = true;  // Enable/disable the component
+    bool autoPlay = true;  // Automatically play on scene start
+
+    // Editor preview state (NOT serialized - only for inspector preview)
+    float editorPreviewTime = 0.0f;  // Separate time for inspector preview
+    int editorPreviewFrameIndex = 0;  // Current frame in editor preview
 
     void Play(const std::string& clipName, bool restartIfSame = false);
     void Stop() { playing = false; }
