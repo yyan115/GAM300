@@ -9,7 +9,7 @@ public:
     float speed = 5.0f;
     float jumpHeight = 2.0f;
 
-    // Optionally, store a pointer to the runtime controller for the entity
-    // Not serialized, just runtime use
-    class CharacterController* runtimeController = nullptr;
+    //// Optionally, store a pointer to the runtime controller for the entity
+    //// Not serialized, just runtime use
+    //class CharacterController* runtimeController = nullptr;
 };

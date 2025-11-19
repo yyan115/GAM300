@@ -20,6 +20,7 @@
 
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
+class CharacterControllerSystem;
 class ECSManager {
 public:
 	ECSManager() { Initialize(); };
@@ -119,6 +120,7 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<PhysicsSystem> physicsSystem;
+	std::shared_ptr<CharacterControllerSystem> characterControllerSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;

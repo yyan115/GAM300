@@ -1,5 +1,6 @@
-#include "ECS/ECSManager.hpp"
 #include "pch.h"
+#include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Physics/JoltInclude.hpp"
 #include "Physics/Kinematics/CharacterControllerComponent.hpp"
@@ -16,9 +17,10 @@ void CharacterControllerSystem::Update(float dt, ECSManager& ecs)
 {
     if (!physicsSystem) return;
 
-    auto& jolt = physicsSystem->GetJoltSystem();
+    // If you later want to interact with Jolt, you can still get it:
+    // auto& jolt = physicsSystem->GetJoltSystem();
 
-    for (auto e : ecs.GetAllEntities()) // Assumes ECSManager provides all entities
+    for (auto e : ecs.GetAllEntities())
     {
         if (!ecs.HasComponent<CharacterControllerComponent>(e) ||
             !ecs.HasComponent<Transform>(e))
@@ -27,35 +29,15 @@ void CharacterControllerSystem::Update(float dt, ECSManager& ecs)
         auto& cc = ecs.GetComponent<CharacterControllerComponent>(e);
         auto& tr = ecs.GetComponent<Transform>(e);
 
-        // Lazy initialization of runtime controller
-        if (!cc.runtimeController)
-        {
-            cc.runtimeController = new CharacterController(&jolt);
-        }
+        if (!cc.enabled)
+            continue;
 
-        if (!cc.enabled || !cc.runtimeController) continue;
-
-        // Update the character controller
-        cc.runtimeController->Update(dt);
-
-        // Sync position back to ECS transform
-        auto pos = cc.runtimeController->GetPosition();
-        tr.localPosition = Vector3D(pos.GetX(), pos.GetY(), pos.GetZ());
+        // Mark transform as dirty so ECS knows it changed
         tr.isDirty = true;
     }
 }
 
-void CharacterControllerSystem::Shutdown(ECSManager& ecs)
+void CharacterControllerSystem::Shutdown()
 {
-    for (auto e : ecs.GetAllEntities())
-    {
-        if (!ecs.HasComponent<CharacterControllerComponent>(e)) continue;
-
-        auto& cc = ecs.GetComponent<CharacterControllerComponent>(e);
-        if (cc.runtimeController)
-        {
-            delete cc.runtimeController;
-            cc.runtimeController = nullptr;
-        }
-    }
-} 
+    entities.clear();
+}

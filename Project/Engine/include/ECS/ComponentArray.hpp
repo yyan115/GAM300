@@ -61,9 +61,18 @@ public:
     }
 
     inline T& GetComponent(Entity entity) {
+        if (entityToIndexMap.find(entity) == entityToIndexMap.end()) {
+            // Print stack trace or at least the component type
+            std::cerr << "ERROR: Entity " << entity << " doesn't have component: "
+                << typeid(T).name() << std::endl;
+
+            // You can also add a breakpoint here to catch it in the debugger
+            __debugbreak(); // or DebugBreak() on Windows
+        }
         assert(entityToIndexMap.find(entity) != entityToIndexMap.end() && "Retrieving non-existent component.");
-		return componentArray[entityToIndexMap[entity]];
+        return componentArray[entityToIndexMap[entity]];
     }
+
 
     inline std::optional<std::reference_wrapper<T>> TryGetComponent(Entity entity) {
         if (entityToIndexMap.find(entity) != entityToIndexMap.end()) {

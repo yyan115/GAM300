@@ -1587,9 +1587,6 @@ void Serializer::DeserializeCharacterControllerComponent(CharacterControllerComp
         if (d.Size() > 0) ccComp.enabled = d[0]["data"].GetBool();
         if (d.Size() > 1) ccComp.speed = d[1]["data"].GetFloat();
         if (d.Size() > 2) ccComp.jumpHeight = d[2]["data"].GetFloat();
-
-        // Runtime pointer is never serialized/deserialized
-        ccComp.runtimeController = nullptr;
     }
 }
 
