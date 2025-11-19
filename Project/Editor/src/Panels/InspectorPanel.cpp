@@ -15,6 +15,7 @@
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
 #include <Physics/PhysicsSystem.hpp>
+#include <Physics/Kinematics/CharacterControllerComponent.hpp>
 #include <Graphics/Texture.h>
 #include <Graphics/ShaderClass.h>
 #include <Graphics/GraphicsManager.hpp>
@@ -219,10 +220,16 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<ColliderComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ColliderComponent>(entity); }},
 
-		{"Rigid Body", "RigidBodyComponent",
+		{"RigidBody", "RigidBodyComponent",
 			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity) ?
 				(void*)&ecs.GetComponent<RigidBodyComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity); }},
+
+		//CharacterControllerComponent
+		{"CharacterController", "CharacterControllerComponent",
+			[&]() { return ecs.HasComponent<CharacterControllerComponent>(entity) ?
+				(void*)&ecs.GetComponent<CharacterControllerComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<CharacterControllerComponent>(entity); }},
 
 		// Camera component
 		{"Camera", "CameraComponent",
@@ -907,6 +914,17 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("CharacterController"))
+			{
+				if (!ecsManager.HasComponent<CharacterControllerComponent>(entity)) {
+					if (ImGui::MenuItem("CharacterControllerComponent")) {
+						AddComponent(entity, "CharacterControllerComponent");
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+
 			// Animation Components
 			if (ImGui::BeginMenu("Animation")) {
 				if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
@@ -1215,6 +1233,16 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "CharacterControllerComponent")
+		{
+			CharacterControllerComponent component;
+			component.enabled = false;
+			component.speed = 1.0f;
+			component.jumpHeight = 2.0f;
+			ecsManager.AddComponent<CharacterControllerComponent>(entity, component);
+
+			std::cout << "[Inspector] Added CharacterControllerComponent to entity " << entity << std::endl;
+		}
 		else if (componentType == "TagComponent") {
 			TagComponent component;
 			ecsManager.AddComponent<TagComponent>(entity, component);
@@ -1340,6 +1368,10 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 		} else if (componentType == "RigidBodyComponent") {
 			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
+		}
+		else if (componentType == "CharacterControllerComponent") {
+			auto& comp = ecs.GetComponent<CharacterControllerComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
@@ -1464,6 +1496,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
 				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CharacterControllerComponent") {
+				ecsManager.RemoveComponent<CharacterControllerComponent>(request.entity);
+				std::cout << "[Inspector] Removed CharacterControllerComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.RemoveComponent<CameraComponent>(request.entity);

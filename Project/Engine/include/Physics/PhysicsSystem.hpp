@@ -38,6 +38,8 @@ public:
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
 
+	JPH::PhysicsSystem& GetJoltSystem() { return physics; }
+
 
 	MyBroadPhaseLayerInterface broadphase;
 	MyObjectVsBroadPhaseLayerFilter objVsBP;

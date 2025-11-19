@@ -329,6 +329,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("RigidBodyComponent", v, alloc);
         }
+        if (ecs.HasComponent<CharacterControllerComponent>(entity)) {
+            auto& c = ecs.GetComponent<CharacterControllerComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c); // Make sure your serializer handles REFL_SERIALIZABLE structs
+            compsObj.AddMember("CharacterControllerComponent", v, alloc);
+        }
         if (ecs.HasComponent<ColliderComponent>(entity)) {
             auto& c = ecs.GetComponent<ColliderComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -693,6 +698,15 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
             DeserializeRigidBodyComponent(rbComp, tv);
         }
+
+        // CharacterControllerComponent
+        if (comps.HasMember("CharacterControllerComponent") && comps["CharacterControllerComponent"].IsObject()) {
+            const rapidjson::Value& tv = comps["CharacterControllerComponent"];
+            ecs.AddComponent<CharacterControllerComponent>(newEnt, CharacterControllerComponent{});
+            auto& ccComp = ecs.GetComponent<CharacterControllerComponent>(newEnt);
+            DeserializeCharacterControllerComponent(ccComp, tv);
+        }
+
 
         // ColliderComponent
         if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
@@ -1563,6 +1577,22 @@ void Serializer::DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& a
         audioReverbZoneComp.wetLevel = d[15]["data"].GetFloat();
     }
 }
+
+void Serializer::DeserializeCharacterControllerComponent(CharacterControllerComponent& ccComp, const rapidjson::Value& ccJSON) {
+    if (ccJSON.HasMember("data") && ccJSON["data"].IsArray()) {
+        const auto& d = ccJSON["data"];
+
+        // Match the order of your serialized array
+        // Example: d[0] = enabled, d[1] = speed, d[2] = jumpHeight
+        if (d.Size() > 0) ccComp.enabled = d[0]["data"].GetBool();
+        if (d.Size() > 1) ccComp.speed = d[1]["data"].GetFloat();
+        if (d.Size() > 2) ccComp.jumpHeight = d[2]["data"].GetFloat();
+
+        // Runtime pointer is never serialized/deserialized
+        ccComp.runtimeController = nullptr;
+    }
+}
+
 
 void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON) {
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]

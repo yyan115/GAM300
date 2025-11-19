@@ -274,7 +274,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 #ifdef __ANDROID__
             __android_log_print(ANDROID_LOG_INFO, "GAM300",
                 "[Physics] Created body id=%u, motion=%d, CCD=%d, pos=(%f,%f,%f)",
-                rb.id.GetIndex(), static_cast<int>(motionType), rb.ccd,
+                rb.id.GetIndex(), static_cast<int>(motionType), rb.ccd,   
                 pos.GetX(), pos.GetY(), pos.GetZ());
 #endif
         }
