@@ -64,7 +64,7 @@ void SceneInstance::Initialize() {
 	Entity sAnim = ecsManager.CreateEntity();
 	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
 	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent());
+	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 
 	std::string idlePath[3] = {
 		"Resources/Textures/idle_1.png",
@@ -78,12 +78,7 @@ void SceneInstance::Initialize() {
 
 	// Setting Current Sprite
 	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	sprite.textureGUID = frame1;
-	sprite.texturePath = idlePath[0];
-	sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(idlePath[0]);
 	sprite.is3D = true;
-	std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(sprite.shaderGUID);
-	sprite.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(sprite.shaderGUID, shaderPath);
 
 	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 
