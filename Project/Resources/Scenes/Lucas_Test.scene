@@ -21645,6 +21645,41 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptPath": "../../Resources/Scripts/simplemove.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "__field_list": {
+                                    "directionX": 1.0,
+                                    "speed": 2.0,
+                                    "directionY": 0.0,
+                                    "directionZ": 0.0
+                                },
+                                "directionY": 5.0,
+                                "directionZ": 5.0,
+                                "_private": {},
+                                "directionX": 6.0,
+                                "__created_at": 1763542922.0,
+                                "__meta": {},
+                                "speed": 2.0,
+                                "_subscriptions": {},
+                                "_transform_fetched": false
+                            }
+                        },
+                        {
+                            "scriptPath": "../../Resources/Scripts/template/simple_mover.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         }

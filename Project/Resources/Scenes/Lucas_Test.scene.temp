@@ -21395,11 +21395,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.993668
+                                    "data": -0.99367
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.696769
                                 }
                             ]
                         },
@@ -21408,15 +21408,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 }
                             ]
                         },
@@ -21450,7 +21450,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 },
                                 {
                                     "type": "float",
@@ -21470,7 +21470,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 },
                                 {
                                     "type": "float",
@@ -21478,7 +21478,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.993668
+                                    "data": -0.99367
                                 },
                                 {
                                     "type": "float",
@@ -21490,11 +21490,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.01
+                                    "data": 0.003
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.696769
                                 },
                                 {
                                     "type": "float",
@@ -21645,6 +21645,13 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scriptPath": "../../Resources/Scripts/simplemove.lua",
+                    "enabled": true,
+                    "preserveKeys": [],
+                    "entryFunction": "OnInit",
+                    "autoInvokeEntry": true
                 }
             }
         }

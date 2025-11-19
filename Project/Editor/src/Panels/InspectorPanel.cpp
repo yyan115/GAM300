@@ -957,12 +957,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 									AddComponent(entity, "ScriptComponentData");
 								}
 
-								auto& scriptData = ecsManager.GetComponent<ScriptComponentData>(entity);
-								scriptData.scriptPath = comp.scriptPath;
-								scriptData.instanceCreated = false;
-								scriptData.instanceId = -1;
+								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
 
-								SnapshotManager::GetInstance().TakeSnapshot("Assign Script: " + comp.displayName);
+								// Add new script to the scripts vector (Unity-like behavior)
+								ScriptData newScript{};
+								newScript.scriptPath = comp.scriptPath;
+								newScript.instanceCreated = false;
+								newScript.instanceId = -1;
+								scriptComp.scripts.push_back(newScript);
+
+								SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
 							} else {
 								AddComponent(entity, comp.componentType);
 							}
@@ -1001,12 +1005,16 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 									AddComponent(entity, "ScriptComponentData");
 								}
 
-								auto& scriptData = ecsManager.GetComponent<ScriptComponentData>(entity);
-								scriptData.scriptPath = comp.scriptPath;
-								scriptData.instanceCreated = false;
-								scriptData.instanceId = -1;
+								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
 
-								SnapshotManager::GetInstance().TakeSnapshot("Assign Script: " + comp.displayName);
+								// Add new script to the scripts vector (Unity-like behavior)
+								ScriptData newScript{};
+								newScript.scriptPath = comp.scriptPath;
+								newScript.instanceCreated = false;
+								newScript.instanceId = -1;
+								scriptComp.scripts.push_back(newScript);
+
+								SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
 							} else {
 								AddComponent(entity, comp.componentType);
 							}
@@ -1383,7 +1391,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 							componentType == "LayerComponent");
 
 	if (!isCoreComponent) {
-		// Component enable/disable checkbox (Unity-style)
+		// Component enable/disable checkbox
 		// Get reference to actual component's enabled/isActive/isVisible field
 		ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 		bool* enabledFieldPtr = nullptr;
@@ -1427,9 +1435,6 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			enabledFieldPtr = &comp.enabled;
 		} else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
-			enabledFieldPtr = &comp.enabled;
-		} else if (componentType == "ScriptComponentData") {
-			auto& comp = ecs.GetComponent<ScriptComponentData>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
 

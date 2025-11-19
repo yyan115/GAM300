@@ -2,7 +2,7 @@
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 bool EditorComponents::DrawDragDropButton(const char* label, float width) {
-    // Push Unity-style appearance
+    // Push appearance
     ImGui::PushStyleColor(ImGuiCol_Button, DRAG_DROP_BUTTON_BG);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, DRAG_DROP_BUTTON_HOVER);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, DRAG_DROP_BUTTON_ACTIVE);

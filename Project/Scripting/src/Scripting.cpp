@@ -245,7 +245,7 @@ bool Scripting::Init(const InitOptions& opts) {
     // sensible defaults (you can add more via engine config)
     g_moduleLoader->AddSearchPath("Resources/Scripts/?.lua");
     g_moduleLoader->AddSearchPath("Resources/Scripts/?/init.lua");
-    g_moduleLoader->AddSearchPath("Resources/extensions/?.lua");
+    g_moduleLoader->AddSearchPath("Resources/Scripts/extension/?.lua");
     // install into the runtime lua state. Must be done after runtime created and libs opened.
     lua_State* L = g_runtime->GetLuaState();
     if (L) {

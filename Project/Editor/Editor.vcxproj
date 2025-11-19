@@ -92,6 +92,9 @@
     <ProjectReference Include="..\Game\Game.vcxproj">
       <Project>{bea8f13d-ac63-471b-a3fa-171f00c98e39}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\Scripting\Scripting.vcxproj">
+      <Project>{fd001d39-c7c6-4f03-81ea-6ac6115ecbe4}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

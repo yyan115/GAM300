@@ -203,7 +203,7 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
     if (typeName == "bool") {
         bool* value = static_cast<bool*>(fieldPtr);
 
-        // Booleans get their own line with label (Unity-style)
+        // Booleans get their own line with label 
         ImGui::Text("%s", displayName.c_str());
         ImGui::SameLine();
 

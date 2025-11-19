@@ -370,63 +370,96 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             compsObj.AddMember("ActiveComponent", v, alloc);
         }
         if (ecs.HasComponent<ScriptComponentData>(entity)) {
-            auto& sc = ecs.GetComponent<ScriptComponentData>(entity);
+            auto& scriptComp = ecs.GetComponent<ScriptComponentData>(entity);
             rapidjson::Value scriptObj(rapidjson::kObjectType);
 
-            // scriptPath
-            rapidjson::Value sp;
-            sp.SetString(sc.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sc.scriptPath.size()), alloc);
-            scriptObj.AddMember("scriptPath", sp, alloc);
+            // NEW FORMAT: Save scripts as an array
+            rapidjson::Value scriptsArr(rapidjson::kArrayType);
 
-            // enabled
-            rapidjson::Value enabledVal(sc.enabled);
-            scriptObj.AddMember("enabled", enabledVal, alloc);
+            for (const auto& sd : scriptComp.scripts) {
+                rapidjson::Value scriptDataObj(rapidjson::kObjectType);
 
-            // preserveKeys array
-            rapidjson::Value pkArr(rapidjson::kArrayType);
-            for (const auto& k : sc.preserveKeys) {
-                rapidjson::Value ks;
-                ks.SetString(k.c_str(), static_cast<rapidjson::SizeType>(k.size()), alloc);
-                pkArr.PushBack(ks, alloc);
-            }
-            scriptObj.AddMember("preserveKeys", pkArr, alloc);
+                // scriptPath
+                rapidjson::Value sp;
+                sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+                scriptDataObj.AddMember("scriptPath", sp, alloc);
 
-            // entryFunction and autoInvokeEntry
-            rapidjson::Value entryVal;
-            entryVal.SetString(sc.entryFunction.c_str(), static_cast<rapidjson::SizeType>(sc.entryFunction.size()), alloc);
-            scriptObj.AddMember("entryFunction", entryVal, alloc);
-            scriptObj.AddMember("autoInvokeEntry", rapidjson::Value(sc.autoInvokeEntry), alloc);
+                // enabled
+                scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
 
-            // instance state (best-effort): if runtime exists and instanceId valid, ask Scripting to serialize it
-            if (sc.instanceCreated && sc.instanceId >= 0 && Scripting::GetLuaState()) {
-                try {
-                    if (Scripting::IsValidInstance(sc.instanceId)) {
-                        std::string instJson = Scripting::SerializeInstanceToJson(sc.instanceId);
-                        if (!instJson.empty()) {
-                            rapidjson::Document tmp;
-                            if (!tmp.Parse(instJson.c_str()).HasParseError()) {
-                                rapidjson::Value instVal;
-                                instVal.CopyFrom(tmp, alloc);
-                                scriptObj.AddMember("instanceState", instVal, alloc);
-                            }
-                            else {
-                                // fallback: store as raw string
-                                rapidjson::Value raw;
-                                raw.SetString(instJson.c_str(), static_cast<rapidjson::SizeType>(instJson.size()), alloc);
-                                scriptObj.AddMember("instanceStateRaw", raw, alloc);
+                // preserveKeys array
+                rapidjson::Value pkArr(rapidjson::kArrayType);
+                for (const auto& k : sd.preserveKeys) {
+                    rapidjson::Value ks;
+                    ks.SetString(k.c_str(), static_cast<rapidjson::SizeType>(k.size()), alloc);
+                    pkArr.PushBack(ks, alloc);
+                }
+                scriptDataObj.AddMember("preserveKeys", pkArr, alloc);
+
+                // entryFunction and autoInvokeEntry
+                rapidjson::Value entryVal;
+                entryVal.SetString(sd.entryFunction.c_str(), static_cast<rapidjson::SizeType>(sd.entryFunction.size()), alloc);
+                scriptDataObj.AddMember("entryFunction", entryVal, alloc);
+                scriptDataObj.AddMember("autoInvokeEntry", rapidjson::Value(sd.autoInvokeEntry), alloc);
+
+                // instance state (best-effort): if runtime exists and instanceId valid, ask Scripting to serialize it
+                bool savedInstanceState = false;
+                if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
+                    try {
+                        if (Scripting::IsValidInstance(sd.instanceId)) {
+                            std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
+                            if (!instJson.empty()) {
+                                rapidjson::Document tmp;
+                                if (!tmp.Parse(instJson.c_str()).HasParseError()) {
+                                    rapidjson::Value instVal;
+                                    instVal.CopyFrom(tmp, alloc);
+                                    scriptDataObj.AddMember("instanceState", instVal, alloc);
+                                    savedInstanceState = true;
+                                }
+                                else {
+                                    // fallback: store as raw string
+                                    rapidjson::Value raw;
+                                    raw.SetString(instJson.c_str(), static_cast<rapidjson::SizeType>(instJson.size()), alloc);
+                                    scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+                                    savedInstanceState = true;
+                                }
                             }
                         }
                     }
+                    catch (const std::exception& e) {
+                        std::cerr << "[SerializeScene] Scripting::SerializeInstanceToJson failed: " << e.what() << "\n";
+                    }
+                    catch (...) {
+                        std::cerr << "[SerializeScene] unknown exception serializing script instance\n";
+                    }
                 }
-                catch (const std::exception& e) {
-                    // don't let scripting failure abort scene save; emit debug and continue
-                    std::cerr << "[SerializeScene] Scripting::SerializeInstanceToJson failed: " << e.what() << "\n";
+
+                // If no runtime instance was saved (EDIT mode), save pendingInstanceState instead
+                if (!savedInstanceState && !sd.pendingInstanceState.empty()) {
+                    ENGINE_PRINT("SAVE DEBUG: Saving pendingInstanceState for ", sd.scriptPath.c_str(), " (size=", sd.pendingInstanceState.size(), ")");
+                    rapidjson::Document tmp;
+                    if (!tmp.Parse(sd.pendingInstanceState.c_str()).HasParseError()) {
+                        rapidjson::Value instVal;
+                        instVal.CopyFrom(tmp, alloc);
+                        scriptDataObj.AddMember("instanceState", instVal, alloc);
+                        ENGINE_PRINT("  Saved as JSON object");
+                    }
+                    else {
+                        // fallback: store as raw string
+                        rapidjson::Value raw;
+                        raw.SetString(sd.pendingInstanceState.c_str(), static_cast<rapidjson::SizeType>(sd.pendingInstanceState.size()), alloc);
+                        scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+                        ENGINE_PRINT("  Saved as raw string (parse error)");
+                    }
                 }
-                catch (...) {
-                    std::cerr << "[SerializeScene] unknown exception serializing script instance\n";
+                else if (!savedInstanceState) {
+                    ENGINE_PRINT("SAVE DEBUG: NOT saving pendingInstanceState for ", sd.scriptPath.c_str(), " (empty=", sd.pendingInstanceState.empty(), ")");
                 }
+
+                scriptsArr.PushBack(scriptDataObj, alloc);
             }
 
+            scriptObj.AddMember("scripts", scriptsArr, alloc);
             compsObj.AddMember(rapidjson::Value("ScriptComponent", alloc).Move(), scriptObj, alloc);
         }
         if (ecs.HasComponent<BrainComponent>(entity)) {
@@ -999,101 +1032,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
-        // ScriptComponent (engine-side)
+        // ScriptComponent (engine-side) - use DeserializeScriptComponent for consistency
         if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject()) {
-            const rapidjson::Value& sv = comps["ScriptComponent"];
-
-            // Update the engine POD for this existing entity and attempt to (re)create/restore instance.
-            // We cannot assume runtime exists; handle both immediate-restore and deferred restore.
-            if (!ecs.HasComponent<ScriptComponentData>(currEnt)) {
-                ecs.AddComponent<ScriptComponentData>(currEnt, ScriptComponentData{});
-            }
-            auto& sc = ecs.GetComponent<ScriptComponentData>(currEnt);
-
-            // populate fields
-            if (sv.HasMember("scriptPath") && sv["scriptPath"].IsString())
-                sc.scriptPath = sv["scriptPath"].GetString();
-            if (sv.HasMember("enabled") && sv["enabled"].IsBool())
-                sc.enabled = sv["enabled"].GetBool();
-            if (sv.HasMember("entryFunction") && sv["entryFunction"].IsString())
-                sc.entryFunction = sv["entryFunction"].GetString();
-            if (sv.HasMember("autoInvokeEntry") && sv["autoInvokeEntry"].IsBool())
-                sc.autoInvokeEntry = sv["autoInvokeEntry"].GetBool();
-
-            sc.preserveKeys.clear();
-            if (sv.HasMember("preserveKeys") && sv["preserveKeys"].IsArray()) {
-                for (rapidjson::SizeType kk = 0; kk < sv["preserveKeys"].Size(); ++kk) {
-                    if (sv["preserveKeys"][kk].IsString())
-                        sc.preserveKeys.emplace_back(sv["preserveKeys"][kk].GetString());
-                }
-            }
-
-            // Retrieve instanceState if present. Prefer structured "instanceState" (object), fallback to "instanceStateRaw" string.
-            std::string instJson;
-            if (sv.HasMember("instanceState") && sv["instanceState"].IsObject()) {
-                rapidjson::StringBuffer sb;
-                rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
-                sv["instanceState"].Accept(writer);
-                instJson = sb.GetString();
-            }
-            else if (sv.HasMember("instanceStateRaw") && sv["instanceStateRaw"].IsString()) {
-                instJson = sv["instanceStateRaw"].GetString();
-            }
-
-            // If Lua runtime exists now, attempt to create instance and restore state immediately.
-            if (!sc.scriptPath.empty() && Scripting::GetLuaState()) {
-                try {
-                    // Destroy previous instance if present
-                    if (Scripting::IsValidInstance(sc.instanceId)) {
-                        Scripting::DestroyInstance(sc.instanceId);
-                        sc.instanceId = -1;
-                        sc.instanceCreated = false;
-                    }
-
-                    int newInst = Scripting::CreateInstanceFromFile(sc.scriptPath);
-                    if (Scripting::IsValidInstance(newInst)) {
-                        sc.instanceId = newInst;
-                        sc.instanceCreated = true;
-                        if (!sc.preserveKeys.empty()) {
-                            Scripting::RegisterInstancePreserveKeys(newInst, sc.preserveKeys);
-                        }
-                        // restore instance state if available
-                        if (!instJson.empty()) {
-                            bool ok = Scripting::DeserializeJsonToInstance(newInst, instJson);
-                            if (!ok) {
-                                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Serializer::ReloadScene: failed to deserialize script instance state for ", sc.scriptPath.c_str());
-                                // fallback: store pending state so ScriptSystem can attempt later
-                                sc.pendingInstanceState = instJson;
-                            }
-                            else {
-                                sc.pendingInstanceState.clear();
-                            }
-                        }
-                        // optionally invoke entry
-                        if (sc.autoInvokeEntry && !sc.entryFunction.empty()) {
-                            Scripting::CallInstanceFunction(newInst, sc.entryFunction);
-                        }
-                    }
-                    else {
-                        // cannot create now � defer by storing pending JSON
-                        if (!instJson.empty()) sc.pendingInstanceState = instJson;
-                        sc.instanceId = -1;
-                        sc.instanceCreated = false;
-                    }
-                }
-                catch (...) {
-                    // On any exception, do not fail reload; defer restore
-                    if (!instJson.empty()) sc.pendingInstanceState = instJson;
-                    sc.instanceId = -1;
-                    sc.instanceCreated = false;
-                }
-            }
-            else {
-                // No runtime available at this time: store pending state for later restore
-                sc.pendingInstanceState = instJson;
-                sc.instanceId = -1;
-                sc.instanceCreated = false;
-            }
+            Serializer::DeserializeScriptComponent(currEnt, comps["ScriptComponent"]);
         }
         // BrainComponent
         if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
@@ -1692,6 +1633,71 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
     }
 }
 
+// Helper function to deserialize a single script instance
+static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson) {
+    try {
+        int instId = Scripting::CreateInstanceFromFile(sd.scriptPath);
+        if (Scripting::IsValidInstance(instId)) {
+            sd.instanceId = instId;
+            sd.instanceCreated = true;
+
+            // register preserveKeys with runtime
+            if (!sd.preserveKeys.empty()) {
+                Scripting::RegisterInstancePreserveKeys(instId, sd.preserveKeys);
+            }
+
+            // deserialize instance state if available
+            if (!instJson.empty()) {
+                bool ok = Scripting::DeserializeJsonToInstance(instId, instJson);
+                if (!ok) {
+                    std::cerr << "[DeserializeSingleScript] Scripting::DeserializeJsonToInstance failed for " << sd.scriptPath << "\n";
+                    // fallback: store pending state
+                    sd.pendingInstanceState = instJson;
+                }
+                else {
+                    // Successfully deserialized, clear any pending state
+                    sd.pendingInstanceState.clear();
+                }
+            }
+
+            // optionally call entry function
+            if (sd.autoInvokeEntry && !sd.entryFunction.empty()) {
+                bool called = Scripting::CallInstanceFunction(instId, sd.entryFunction);
+                if (!called) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "DeserializeSingleScript: entry call failed: ", sd.entryFunction.c_str());
+                }
+            }
+        }
+        else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "DeserializeSingleScript: CreateInstanceFromFile failed for ", sd.scriptPath.c_str());
+            // Store pending state for later
+            if (!instJson.empty()) {
+                sd.pendingInstanceState = instJson;
+            }
+            sd.instanceId = -1;
+            sd.instanceCreated = false;
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "[DeserializeSingleScript] exception: " << e.what() << "\n";
+        // Store pending state for later
+        if (!instJson.empty()) {
+            sd.pendingInstanceState = instJson;
+        }
+        sd.instanceId = -1;
+        sd.instanceCreated = false;
+    }
+    catch (...) {
+        std::cerr << "[DeserializeSingleScript] unknown exception\n";
+        // Store pending state for later
+        if (!instJson.empty()) {
+            sd.pendingInstanceState = instJson;
+        }
+        sd.instanceId = -1;
+        sd.instanceCreated = false;
+    }
+}
+
 void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON) {
     // Ensure ECS manager exists
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -1700,97 +1706,118 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
     if (!ecs.HasComponent<ScriptComponentData>(entity)) {
         ecs.AddComponent<ScriptComponentData>(entity, ScriptComponentData{});
     }
-    auto& sc = ecs.GetComponent<ScriptComponentData>(entity);
+    auto& scriptComp = ecs.GetComponent<ScriptComponentData>(entity);
 
-    // Read simple fields
-    if (scriptJSON.HasMember("scriptPath") && scriptJSON["scriptPath"].IsString()) {
-        sc.scriptPath = scriptJSON["scriptPath"].GetString();
-    }
-    if (scriptJSON.HasMember("enabled") && scriptJSON["enabled"].IsBool()) {
-        sc.enabled = scriptJSON["enabled"].GetBool();
-    }
-    if (scriptJSON.HasMember("entryFunction") && scriptJSON["entryFunction"].IsString()) {
-        sc.entryFunction = scriptJSON["entryFunction"].GetString();
-    }
-    if (scriptJSON.HasMember("autoInvokeEntry") && scriptJSON["autoInvokeEntry"].IsBool()) {
-        sc.autoInvokeEntry = scriptJSON["autoInvokeEntry"].GetBool();
-    }
+    // Check if this is the new format (has "scripts" array) or old format (single script fields)
+    if (scriptJSON.HasMember("scripts") && scriptJSON["scripts"].IsArray()) {
+        // NEW FORMAT: Multiple scripts
+        const auto& scriptsArray = scriptJSON["scripts"];
+        scriptComp.scripts.clear();
 
-    // preserveKeys
-    sc.preserveKeys.clear();
-    if (scriptJSON.HasMember("preserveKeys") && scriptJSON["preserveKeys"].IsArray()) {
-        for (rapidjson::SizeType i = 0; i < scriptJSON["preserveKeys"].Size(); ++i) {
-            if (scriptJSON["preserveKeys"][i].IsString()) {
-                sc.preserveKeys.emplace_back(scriptJSON["preserveKeys"][i].GetString());
+        for (rapidjson::SizeType i = 0; i < scriptsArray.Size(); ++i) {
+            const auto& scriptData = scriptsArray[i];
+            ScriptData sd{};
+
+            // Read script fields
+            if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
+                sd.scriptPath = scriptData["scriptPath"].GetString();
             }
-        }
-    }
+            if (scriptData.HasMember("enabled") && scriptData["enabled"].IsBool()) {
+                sd.enabled = scriptData["enabled"].GetBool();
+            }
+            if (scriptData.HasMember("entryFunction") && scriptData["entryFunction"].IsString()) {
+                sd.entryFunction = scriptData["entryFunction"].GetString();
+            }
+            if (scriptData.HasMember("autoInvokeEntry") && scriptData["autoInvokeEntry"].IsBool()) {
+                sd.autoInvokeEntry = scriptData["autoInvokeEntry"].GetBool();
+            }
 
-    // If scripting runtime is available, attempt to create instance and restore saved state (best-effort)
-    if (!sc.scriptPath.empty() && Scripting::GetLuaState()) {
-        try {
-            int instId = Scripting::CreateInstanceFromFile(sc.scriptPath);
-            if (Scripting::IsValidInstance(instId)) {
-                sc.instanceId = instId;
-                sc.instanceCreated = true;
-
-                // register preserveKeys with runtime (so future hot-reloads preserve them)
-                if (!sc.preserveKeys.empty()) {
-                    Scripting::RegisterInstancePreserveKeys(instId, sc.preserveKeys);
-                }
-
-                // deserialize provided instanceState (object) or instanceStateRaw (string)
-                if (scriptJSON.HasMember("instanceState")) {
-                    // Dump instanceState back to string and call DeserializeJsonToInstance
-                    rapidjson::StringBuffer buf;
-                    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
-                    scriptJSON["instanceState"].Accept(writer);
-                    std::string instJsonStr = buf.GetString();
-
-                    // call public API to restore state
-                    bool ok = Scripting::DeserializeJsonToInstance(instId, instJsonStr);
-                    if (!ok) {
-                        std::cerr << "[DeserializeScriptComponent] Scripting::DeserializeJsonToInstance failed for " << sc.scriptPath << "\n";
-                    }
-                }
-                else if (scriptJSON.HasMember("instanceStateRaw") && scriptJSON["instanceStateRaw"].IsString()) {
-                    const char* s = scriptJSON["instanceStateRaw"].GetString();
-                    bool ok = Scripting::DeserializeJsonToInstance(instId, std::string(s));
-                    if (!ok) {
-                        std::cerr << "[DeserializeScriptComponent] Scripting::DeserializeJsonToInstance (raw) failed for " << sc.scriptPath << "\n";
-                    }
-                }
-
-                // optionally call entry function if requested (mirror engine CreateInstance behavior)
-                if (sc.autoInvokeEntry && !sc.entryFunction.empty()) {
-                    bool called = Scripting::CallInstanceFunction(instId, sc.entryFunction);
-                    if (!called) {
-                        // not fatal � log for debugging
-                        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "Serializer::DeserializeScriptComponent: entry call failed: ", sc.entryFunction.c_str());
+            // preserveKeys
+            if (scriptData.HasMember("preserveKeys") && scriptData["preserveKeys"].IsArray()) {
+                for (rapidjson::SizeType k = 0; k < scriptData["preserveKeys"].Size(); ++k) {
+                    if (scriptData["preserveKeys"][k].IsString()) {
+                        sd.preserveKeys.emplace_back(scriptData["preserveKeys"][k].GetString());
                     }
                 }
             }
-            else {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Serializer::DeserializeScriptComponent: CreateInstanceFromFile failed for ", sc.scriptPath.c_str());
-                sc.instanceId = -1;
-                sc.instanceCreated = false;
+
+            // Extract instanceState
+            std::string instJson;
+            if (scriptData.HasMember("instanceState")) {
+                rapidjson::StringBuffer buf;
+                rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
+                scriptData["instanceState"].Accept(writer);
+                instJson = buf.GetString();
             }
-        }
-        catch (const std::exception& e) {
-            std::cerr << "[DeserializeScriptComponent] exception while creating/restoring script instance: " << e.what() << "\n";
-            sc.instanceId = -1;
-            sc.instanceCreated = false;
-        }
-        catch (...) {
-            std::cerr << "[DeserializeScriptComponent] unknown exception while creating/restoring script instance\n";
-            sc.instanceId = -1;
-            sc.instanceCreated = false;
+            else if (scriptData.HasMember("instanceStateRaw") && scriptData["instanceStateRaw"].IsString()) {
+                instJson = scriptData["instanceStateRaw"].GetString();
+            }
+
+            // Try to create runtime instance if Lua is available
+            if (!sd.scriptPath.empty() && Scripting::GetLuaState()) {
+                DeserializeSingleScript(sd, instJson);
+            }
+            else if (!instJson.empty()) {
+                // No runtime available - store pending state
+                sd.pendingInstanceState = instJson;
+            }
+
+            scriptComp.scripts.push_back(sd);
         }
     }
     else {
-        // If no runtime available right now, leave instanceId unset; ScriptSystem or Script asset code should create runtime later.
-        sc.instanceId = -1;
-        sc.instanceCreated = false;
+        // OLD FORMAT: Single script (backward compatibility)
+        ScriptData sd{};
+
+        // Read simple fields
+        if (scriptJSON.HasMember("scriptPath") && scriptJSON["scriptPath"].IsString()) {
+            sd.scriptPath = scriptJSON["scriptPath"].GetString();
+        }
+        if (scriptJSON.HasMember("enabled") && scriptJSON["enabled"].IsBool()) {
+            sd.enabled = scriptJSON["enabled"].GetBool();
+        }
+        if (scriptJSON.HasMember("entryFunction") && scriptJSON["entryFunction"].IsString()) {
+            sd.entryFunction = scriptJSON["entryFunction"].GetString();
+        }
+        if (scriptJSON.HasMember("autoInvokeEntry") && scriptJSON["autoInvokeEntry"].IsBool()) {
+            sd.autoInvokeEntry = scriptJSON["autoInvokeEntry"].GetBool();
+        }
+
+        // preserveKeys
+        if (scriptJSON.HasMember("preserveKeys") && scriptJSON["preserveKeys"].IsArray()) {
+            for (rapidjson::SizeType i = 0; i < scriptJSON["preserveKeys"].Size(); ++i) {
+                if (scriptJSON["preserveKeys"][i].IsString()) {
+                    sd.preserveKeys.emplace_back(scriptJSON["preserveKeys"][i].GetString());
+                }
+            }
+        }
+
+        // Extract instanceState
+        std::string instJson;
+        if (scriptJSON.HasMember("instanceState")) {
+            rapidjson::StringBuffer buf;
+            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
+            scriptJSON["instanceState"].Accept(writer);
+            instJson = buf.GetString();
+        }
+        else if (scriptJSON.HasMember("instanceStateRaw") && scriptJSON["instanceStateRaw"].IsString()) {
+            instJson = scriptJSON["instanceStateRaw"].GetString();
+        }
+
+        // If scripting runtime is available, attempt to create instance and restore saved state (best-effort)
+        if (!sd.scriptPath.empty() && Scripting::GetLuaState()) {
+            DeserializeSingleScript(sd, instJson);
+        }
+        else if (!instJson.empty()) {
+            // No runtime available - store pending state
+            sd.pendingInstanceState = instJson;
+        }
+
+        // Add the single script to the scripts array (for backward compatibility)
+        scriptComp.scripts.clear();
+        if (!sd.scriptPath.empty()) {
+            scriptComp.scripts.push_back(sd);
+        }
     }
 }
 

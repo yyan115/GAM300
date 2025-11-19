@@ -252,7 +252,7 @@ void GamePanel::RenderResolutionPanel() {
             ImGui::DragFloat("##AspectRatio", &customAspectRatio, 0.01f, 0.1f, 10.0f, "%.2f:1");
         }
 
-        // Display current resolution info (Unity-style, on same line)
+        // Display current resolution info
         if (!freeAspect && !useCustomAspectRatio) {
             const auto& res = resolutions[selectedResolutionIndex];
             ImGui::SameLine();
