@@ -3,6 +3,8 @@
 #include "ScriptSerializer.h" // concrete serializer
 #include "Logging.hpp"        // ENGINE_PRINT / logging levels
 #include <Asset Manager/AssetManager.hpp>
+#include "Platform/IPlatform.h"
+#include "WindowManager.hpp"
 #include <cassert>
 
 extern "C" {
@@ -260,14 +262,30 @@ namespace Scripting {
         MessageHandlerGuard guard(L, msgh);
 #ifdef ANDROID
         // Read file using Android AssetManager
-        std::string scriptContent;
-        if (!AssetManager::GetInstance().ReadTextFile(scriptPath, scriptContent)) {
+        // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform) {
+            ENGINE_LOG_DEBUG("[ScriptComponent] ERROR: Platform not available for asset discovery!");
+            return false;
+        }
+        if (!platform->FileExists(scriptPath)) {
+            ENGINE_LOG_DEBUG("[ScriptComponent]: Script file not found: " + scriptPath);
+            return false;
+        }
+
+        std::vector<uint8_t> scriptData = platform->ReadAsset(scriptPath);
+        if (scriptData.empty()) {
             SC_LOG(EngineLogging::LogLevel::Error, "Failed to read Android asset: ", scriptPath.c_str());
             return false;
         }
-        SC_LOG(EngineLogging::LogLevel::Info, "hello can work anot?");
-        // Load Lua from string instead of file
-        int loadStatus = luaL_loadstring(L, scriptContent.c_str());
+
+        // Use luaL_loadbuffer with explicit size
+        int loadStatus = luaL_loadbuffer(
+            L,
+            reinterpret_cast<const char*>(scriptData.data()),
+            scriptData.size(),
+            scriptPath.c_str()   // chunk name for error messages
+        );
 
 #else
         int loadStatus = luaL_loadfile(L, scriptPath.c_str());

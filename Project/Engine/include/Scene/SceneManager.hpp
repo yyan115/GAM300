@@ -44,6 +44,8 @@ public:
 	static void ENGINE_API SaveLastOpenedScenePath(const std::string& scenePath);
 	static std::string ENGINE_API LoadLastOpenedScenePath();
 
+	ENGINE_API void CreateNewScene(const std::string& directory, bool loadAfterCreate = false);
+
 private:
 	SceneManager() = default;
 

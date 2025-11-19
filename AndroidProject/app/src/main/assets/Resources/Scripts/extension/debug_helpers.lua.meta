@@ -3,6 +3,7 @@
         "version": 7,
         "guid": "0076f0d9bce1dc31-00032d3484000001",
         "source": "../../Resources/Scripts/extension/debug_helpers.lua",
-        "compiled": "../../Resources/Scripts/extension/debug_helpers.lua"
+        "compiled": "../../Resources/Scripts/extension/debug_helpers.lua",
+        "android_compiled": "Resources/Scripts/extension/debug_helpers.lua"
     }
 }

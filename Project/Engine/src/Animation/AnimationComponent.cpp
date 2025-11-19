@@ -252,3 +252,18 @@ void AnimationComponent::PlayOnce(std::size_t clipIndex) {
 bool AnimationComponent::IsPlaying() const {
 	return isPlay;
 }
+
+void AnimationComponent::ResetForPlay() {
+	// Reset animator to beginning for fresh game start
+	if (!clips.empty() && animator) {
+		animator->PlayAnimation(clips[activeClip].get());
+	}
+}
+
+void AnimationComponent::ResetPreview() {
+	// Reset editor preview time to 0
+	editorPreviewTime = 0.0f;
+	if (!clips.empty() && animator) {
+		animator->PlayAnimation(clips[activeClip].get());
+	}
+}

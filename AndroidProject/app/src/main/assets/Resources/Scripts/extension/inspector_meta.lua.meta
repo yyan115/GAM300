@@ -3,6 +3,7 @@
         "version": 7,
         "guid": "007fa85beaa834b4-00032d3fbc000001",
         "source": "../../Resources/Scripts/extension/inspector_meta.lua",
-        "compiled": "../../Resources/Scripts/extension/inspector_meta.lua"
+        "compiled": "../../Resources/Scripts/extension/inspector_meta.lua",
+        "android_compiled": "Resources/Scripts/extension/inspector_meta.lua"
     }
 }

@@ -7,7 +7,8 @@
 #include <vector>
 #include "Reflection/ReflectionBase.hpp"
 
-struct ScriptComponentData {
+// Data for a single script instance
+struct ScriptData {
     REFL_SERIALIZABLE
     std::string scriptPath;                 // e.g. "Resources/Scripts/mono_behaviour.lua"
     bool enabled = true;
@@ -26,4 +27,10 @@ struct ScriptComponentData {
     // can restore it. This prevents losing instance data when loading in environments
     // where Lua isn't initialized yet (editor startup ordering, background loading, etc).
     std::string pendingInstanceState;
+};
+
+// Component that can hold multiple scripts per entity (like Unity)
+struct ScriptComponentData {
+    REFL_SERIALIZABLE
+    std::vector<ScriptData> scripts;
 };

@@ -4,8 +4,7 @@
         "guid": "00374a212f87c963-000331fc4000002f",
         "source": "../../Resources/Models/backpack/diffuse.jpg",
         "compiled": "../../Resources/Models/backpack/diffuse.dds",
-        "android_compiled": "Resources/Models/backpack/diffuse_android.ktx",
-        "last_compiled": "2025-11-09 14:17:39.9896609"
+        "android_compiled": "Resources/Models/backpack/diffuse_android.ktx"
     },
     "TextureMetaData": {
         "type": "diffuse",
