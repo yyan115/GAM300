@@ -156,7 +156,7 @@ bool EditorComponents::DrawStopButton(float buttonWidth) {
 
 float EditorComponents::GetLabelWidth() {
     const float charWidth = ImGui::CalcTextSize("A").x;
-    return charWidth * 18.0f;  // Approximate width for 18 characters (adjust as needed)
+    return charWidth * 16.0f;  // Approximate width for 16 characters (adjust as needed)
 }
 
 bool EditorComponents::DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth) {

@@ -291,9 +291,11 @@ void GUIManager::CreateDockspace() {
 void GUIManager::RenderMenuBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			// if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
-			//     // TODO: New scene functionality
-			// }
+			if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
+				std::filesystem::path scenesDir = std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / "Scenes";
+				SceneManager::GetInstance().CreateNewScene(scenesDir.generic_string(), true);
+				ShowNotification("New Scene Created!", 2.0f);
+			}
 			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+O")) {
 				std::string filepath = OpenSceneFileDialog();
 				if (!filepath.empty()) {

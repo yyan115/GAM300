@@ -78,6 +78,7 @@ void RegisterInspectorCustomRenderers()
     [](const char *name, void *ptr, Entity, ECSManager &)
     {
         glm::vec3 *vec = static_cast<glm::vec3 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Convert field name from camelCase to "Proper Case"
         std::string displayName = name;
@@ -95,7 +96,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("%s", displayName.c_str());
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         float values[3] = {vec->x, vec->y, vec->z};
@@ -310,9 +311,11 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Position");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
@@ -332,9 +335,11 @@ void RegisterInspectorCustomRenderers()
         Quaternion *quat = static_cast<Quaternion *>(ptr);
         Vector3D euler = quat->ToEulerDegrees();
         float arr[3] = {euler.x, euler.y, euler.z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Rotation");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
@@ -353,9 +358,11 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *scale = static_cast<Vector3D *>(ptr);
         float arr[3] = {scale->x, scale->y, scale->z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Scale");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f");
@@ -377,9 +384,10 @@ void RegisterInspectorCustomRenderers()
         ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
         auto &rc = ecs.GetComponent<ModelRenderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Shape Type");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder"};
         int currentShapeType = static_cast<int>(collider.shapeType);
@@ -405,7 +413,8 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Box:
         {
             ImGui::Text("Half Extents");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.boxHalfExtents = halfExtent;
             float halfExtents[3] = {collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z};
             if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f"))
@@ -418,7 +427,8 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Sphere:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.sphereRadius = radius;
             if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -429,14 +439,16 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Capsule:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
             }
             ImGui::Text("Half Height");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.capsuleHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -447,15 +459,17 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Cylinder:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
             }
             ImGui::Text("Half Height");
-            ImGui::SameLine();
-            collider.cylinderRadius = halfExtent.y;
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            collider.cylinderHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -477,9 +491,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Layer");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *layers[] = {"Non-Moving", "Moving", "Sensor", "Debris"};
         int currentLayer = static_cast<int>(collider.layer);
@@ -515,10 +530,11 @@ void RegisterInspectorCustomRenderers()
         auto &transform = ecs.GetComponent<Transform>(entity); // for info tab
 
         ImGui::PushID("RigidBodyComponent");
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // --- Motion Type dropdown ---
         ImGui::Text("Motion");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         const char *motionTypes[] = {"Static", "Kinematic", "Dynamic"};
@@ -533,6 +549,7 @@ void RegisterInspectorCustomRenderers()
         EditorComponents::PopComboColors();
 
         // --- Is Trigger checkbox ---
+        ImGui::AlignTextToFramePadding();
         UndoableWidgets::Checkbox("##IsTrigger", &rigidBody.isTrigger);
         ImGui::SameLine();
         ImGui::Text("Is Trigger");
@@ -540,6 +557,7 @@ void RegisterInspectorCustomRenderers()
         if (rigidBody.motion == Motion::Dynamic)
         {
             // --- CCD checkbox ---
+            ImGui::AlignTextToFramePadding();
             if (UndoableWidgets::Checkbox("##CCD", &rigidBody.ccd))
             {
                 rigidBody.motion_dirty = true;
@@ -550,18 +568,21 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
 
             // --- Linear & Angular Damping ---
-            UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Linear Damping");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
-            UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Angular Damping");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
             // --- Gravity Factor ---
-            UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Gravity Factor");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
         }
 
         // --- Info Section (Read-only) ---
@@ -570,28 +591,32 @@ void RegisterInspectorCustomRenderers()
             ImGui::BeginDisabled();
 
             // Position
+            ImGui::Text("Position");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float position[3] = {transform.localPosition.x, transform.localPosition.y, transform.localPosition.z};
             ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
-            ImGui::SameLine();
-            ImGui::Text("Position");
 
             // Rotation
+            ImGui::Text("Rotation");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float rotation[3] = {transform.localRotation.x, transform.localRotation.y, transform.localRotation.z};
             ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.3f");
-            ImGui::SameLine();
-            ImGui::Text("Rotation");
 
             // Linear Velocity
+            ImGui::Text("Linear Velocity");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float linearVel[3] = {rigidBody.linearVel.x, rigidBody.linearVel.y, rigidBody.linearVel.z};
             ImGui::DragFloat3("##LinearVelocity", linearVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
-            ImGui::Text("Linear Velocity");
 
             // Angular Velocity
+            ImGui::Text("Angular Velocity");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float angularVel[3] = {rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z};
             ImGui::DragFloat3("##AngularVelocity", angularVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
-            ImGui::Text("Angular Velocity");
 
             ImGui::EndDisabled();
         }
@@ -608,12 +633,13 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         CameraComponent &camera = *static_cast<CameraComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Manually render the non-reflected properties first
 
         // Projection Type dropdown - using UndoableWidgets
         ImGui::Text("Projection");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *projTypes[] = {"Perspective", "Orthographic"};
         int currentProj = static_cast<int>(camera.projectionType);
@@ -627,7 +653,7 @@ void RegisterInspectorCustomRenderers()
 
         // Target (glm::vec3)
         ImGui::Text("Target");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float target[3] = {camera.target.x, camera.target.y, camera.target.z};
         if (UndoableWidgets::DragFloat3("##Target", target, 0.1f))
@@ -637,7 +663,7 @@ void RegisterInspectorCustomRenderers()
 
         // Up (glm::vec3)
         ImGui::Text("Up");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float up[3] = {camera.up.x, camera.up.y, camera.up.z};
         if (UndoableWidgets::DragFloat3("##Up", up, 0.1f))
@@ -646,7 +672,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("Clear Flags");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char* clearFlagsOptions[] = {"Skybox", "Solid Color", "Depth Only", "Don't Clear"};
         int currentClearFlags = static_cast<int>(camera.clearFlags);
@@ -658,7 +684,7 @@ void RegisterInspectorCustomRenderers()
         EditorComponents::PopComboColors();
 
         ImGui::Text("Background");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float bgColor[3] = {camera.backgroundColor.r, camera.backgroundColor.g, camera.backgroundColor.b};
         if (UndoableWidgets::ColorEdit3("##Background", bgColor))
@@ -667,7 +693,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("Ambient Intensity");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         if (ecs.lightingSystem) {
             float ambientIntensity = ecs.lightingSystem->ambientIntensity;
@@ -688,9 +714,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Model:");
-        ImGui::SameLine();
+        ImGui::Text("Model");
+        ImGui::SameLine(labelWidth);
 
         // Display current model path or "None"
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -779,9 +806,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Shader:");
-        ImGui::SameLine();
+        ImGui::Text("Shader");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -800,9 +828,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Material:");
-        ImGui::SameLine();
+        ImGui::Text("Material");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -834,9 +863,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Texture");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -896,9 +926,11 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Skybox Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Skybox Texture");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
         std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
@@ -987,6 +1019,7 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *color = static_cast<Vector3D *>(ptr);
         auto &sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Convert to 0-255 range for display, combine with alpha
         float colorRGBA[4] = {
@@ -996,7 +1029,8 @@ void RegisterInspectorCustomRenderers()
             sprite.alpha};
 
         ImGui::Text("Color:");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         if (UndoableWidgets::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8))
         {
@@ -1020,9 +1054,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Texture");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -1067,9 +1102,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Font:");
-        ImGui::SameLine();
+        ImGui::Text("Font");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -1440,20 +1476,42 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         DirectionalLightComponent &light = *static_cast<DirectionalLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Basic properties with automatic undo/redo
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true; // Return true to skip default field rendering
     });
@@ -1465,24 +1523,58 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         PointLightComponent &light = *static_cast<PointLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
-        UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-        UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-        UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Constant");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+
+        ImGui::Text("Linear");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Quadratic");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true; // Return true to skip default field rendering
     });
@@ -1494,12 +1586,22 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         SpotLightComponent &light = *static_cast<SpotLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
@@ -1509,26 +1611,57 @@ void RegisterInspectorCustomRenderers()
         float cutOffDegrees = glm::degrees(glm::acos(light.cutOff));
         float outerCutOffDegrees = glm::degrees(glm::acos(light.outerCutOff));
 
-        if (UndoableWidgets::DragFloat("Inner Cutoff (degrees)", &cutOffDegrees, 1.0f, 0.0f, 90.0f))
+        ImGui::Text("Inner Cutoff (degrees)");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::DragFloat("##InnerCutoff", &cutOffDegrees, 1.0f, 0.0f, 90.0f))
         {
             light.cutOff = glm::cos(glm::radians(cutOffDegrees));
         }
-        if (UndoableWidgets::DragFloat("Outer Cutoff (degrees)", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f))
+
+        ImGui::Text("Outer Cutoff (degrees)");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::DragFloat("##OuterCutoff", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f))
         {
             light.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
         }
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
-        UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-        UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-        UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Constant");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+
+        ImGui::Text("Linear");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Quadratic");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true;
     });
@@ -1784,16 +1917,22 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         BrainComponent &brain = *static_cast<BrainComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Combo for Kind
+        ImGui::Text("Kind");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
         static const char *kKinds[] = {"None", "Grunt", "Boss"};
         int kindIdx = static_cast<int>(brain.kind);
-        if (ImGui::Combo("Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds)))
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds)))
         {
             brain.kind = static_cast<BrainKind>(kindIdx);
             brain.kindInt = kindIdx;
             // Mark as needing rebuild (optional UX)
         }
+        EditorComponents::PopComboColors();
 
         // Read-only current state
         ImGui::Text("Active State: %s", brain.activeState.empty() ? "None" : brain.activeState.c_str());
@@ -1853,6 +1992,7 @@ void RegisterInspectorCustomRenderers()
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
         ScriptComponentData &scriptComp = *static_cast<ScriptComponentData *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Get lua state
         lua_State* L = Scripting::GetLuaState();
@@ -2272,7 +2412,7 @@ void RegisterInspectorCustomRenderers()
                 {
                     float value = std::stof(field.defaultValueSerialized);
                     ImGui::Text("%s", displayName.c_str());
-                    ImGui::SameLine();
+                    ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
 
                     if (ImGui::DragFloat(("##" + field.name).c_str(), &value, 0.1f))
@@ -2287,7 +2427,7 @@ void RegisterInspectorCustomRenderers()
                 {
                     bool value = (field.defaultValueSerialized == "true" || field.defaultValueSerialized == "1");
                     ImGui::Text("%s", displayName.c_str());
-                    ImGui::SameLine();
+                    ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
 
                     if (ImGui::Checkbox(("##" + field.name).c_str(), &value))
@@ -2316,7 +2456,7 @@ void RegisterInspectorCustomRenderers()
                     buffer[copyLen] = '\0';
 
                     ImGui::Text("%s", displayName.c_str());
-                    ImGui::SameLine();
+                    ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
 
                     if (ImGui::InputText(("##" + field.name).c_str(), buffer.data(), 256))
@@ -2355,7 +2495,7 @@ void RegisterInspectorCustomRenderers()
                     {
                         // Render as vector3
                         ImGui::Text("%s", displayName.c_str());
-                        ImGui::SameLine();
+                        ImGui::SameLine(labelWidth);
                         ImGui::SetNextItemWidth(-1);
 
                         if (ImGui::DragFloat3(("##" + field.name).c_str(), vec3, 0.1f))
