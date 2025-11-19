@@ -17,6 +17,7 @@
 #include <Sound/AudioSystem.hpp>
 #include "Graphics/Camera/CameraSystem.hpp"
 #include <Animation/AnimationSystem.hpp>
+#include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
@@ -126,6 +127,8 @@ public:
 	std::shared_ptr<AnimationSystem> animationSystem;
 	std::shared_ptr<CameraSystem> cameraSystem;
 	std::shared_ptr<ScriptSystem> scriptSystem;
+	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
+
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

@@ -112,6 +112,8 @@
     <ClCompile Include="src\Game AI\BrainComponent.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Script\ScriptComponentData.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationComponent.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -284,6 +286,8 @@
     <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
     <ClInclude Include="include\Script\LuaBindableComponents.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

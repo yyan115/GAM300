@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000b223361a69ae4-0003529da2000001",
+        "source": "../../Resources/Textures/idle_1.png",
+        "compiled": "../../Resources/Textures/idle_1.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

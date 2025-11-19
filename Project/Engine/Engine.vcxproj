@@ -65,6 +65,8 @@
     <ClInclude Include="include\Graphics\PostProcessing\HDR\HDREffect.hpp" />
     <ClInclude Include="include\Graphics\PostProcessing\PostProcessEffect.hpp" />
     <ClInclude Include="include\Graphics\PostProcessing\PostProcessingManager.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationSystem.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
@@ -197,6 +199,8 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationComponent.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationSystem.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Script\ScriptComponentData.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />

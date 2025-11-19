@@ -32,6 +32,8 @@
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
 
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
+
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
 	componentManager = std::make_unique<ComponentManager>();
@@ -65,6 +67,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<LayerComponent>();
 	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
+	RegisterComponent<SpriteAnimationComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -155,6 +158,13 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<ScriptComponentData>());
 		SetSystemSignature<ScriptSystem>(signature);
+	}
+
+	spriteAnimationSystem = RegisterSystem<SpriteAnimationSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<SpriteAnimationComponent>());
+		SetSystemSignature<SpriteAnimationSystem>(signature);
 	}
 }
 

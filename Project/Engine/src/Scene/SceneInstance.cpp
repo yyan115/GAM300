@@ -19,6 +19,7 @@
 #include "Sound/AudioComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -59,6 +60,50 @@ void SceneInstance::Initialize() {
 
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 
+	// Sprite Animation Entity for testing
+	Entity sAnim = ecsManager.CreateEntity();
+	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
+	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
+	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent());
+
+	std::string idlePath[3] = {
+		"Resources/Textures/idle_1.png",
+		"Resources/Textures/idle_2.png",
+		"Resources/Textures/idle_3.png"
+	};
+
+	GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
+	GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
+	GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
+
+	// Setting Current Sprite
+	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	sprite.textureGUID = frame1;
+	sprite.texturePath = idlePath[0];
+	sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(idlePath[0]);
+
+	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
+
+	SpriteAnimationClip idleClip;
+	idleClip.name = "Idle";
+	idleClip.loop = true;
+
+	for(int i = 0; i < 3; ++i) {
+		SpriteFrame frame;
+		frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
+		frame.texturePath = idlePath[i];
+		frame.uvOffset = glm::vec2(0.0f, 0.0f);
+		frame.uvScale = glm::vec2(1.0f, 1.0f);
+		frame.duration = 1.0f; // 0.2 seconds per frame
+
+		idleClip.frames.push_back(frame);
+	}
+
+	anim.clips.push_back(idleClip);
+	anim.Play("Idle");
+
+	// End of Sprite Animation Entity for testing
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -88,6 +133,8 @@ void SceneInstance::Initialize() {
 	InitializePhysics(); //can we all do like this?
 	ecsManager.scriptSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Script system initialized");
+	ecsManager.spriteAnimationSystem->Initialise();
+	ENGINE_LOG_INFO("Sprite Animation system initialized");
 
 	//glEnable(GL_DEBUG_OUTPUT);
 	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -133,6 +180,8 @@ void SceneInstance::Update(double dt) {
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update(0.1f,mainECS); //i will need change this to remove dt
+
+	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem) {
