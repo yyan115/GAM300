@@ -81,6 +81,9 @@ void SceneInstance::Initialize() {
 	sprite.textureGUID = frame1;
 	sprite.texturePath = idlePath[0];
 	sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(idlePath[0]);
+	sprite.is3D = true;
+	std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(sprite.shaderGUID);
+	sprite.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(sprite.shaderGUID, shaderPath);
 
 	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 

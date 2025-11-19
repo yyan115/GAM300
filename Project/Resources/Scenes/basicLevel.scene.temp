@@ -24203,10 +24203,10 @@
         },
         {
             "id": 145,
-            "guid": "001627d1d17d88ee-00034e89b4000001",
+            "guid": "00423c6f7a8370f1-000352a968000001",
             "components": {
                 "NameComponent": {
-                    "name": "Empty Entity"
+                    "name": "Entity_145"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -24354,8 +24354,8 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0009550cde077f89-0003350b5a000043",
-                        "00374a216e66dbbc-000331fc80000069",
+                        "000b223361a69ae4-0003529da2000001",
+                        "0000000000000000-0000000000000000",
                         {
                             "type": "Vector3D",
                             "data": [
@@ -24378,11 +24378,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -24417,7 +24417,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "bool",
