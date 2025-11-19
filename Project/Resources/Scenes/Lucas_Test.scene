@@ -21649,35 +21649,80 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptPath": "../../Resources/Scripts/simplemove.lua",
+                            "scriptPath": "../../Resources/Scripts/template/simple_mover.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "_subscriptions": {},
+                                "_private": {},
+                                "position": {
+                                    "z": 2.0,
+                                    "y": 2.0,
+                                    "x": 2.0
+                                },
+                                "__meta": {},
+                                "name": "\"tester\"",
+                                "__created_at": 1763546387.0,
+                                "speed": 3.0,
+                                "__field_list": {
+                                    "position": {
+                                        "z": 0.0,
+                                        "y": 0.0,
+                                        "x": 0.0
+                                    },
+                                    "name": "Mover",
+                                    "speed": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "scriptPath": "../../Resources/Scripts/template/simplemove.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "UpdateSafe": null,
+                                "_call_lifecycle": null,
+                                "GetTransform": null,
+                                "_transform_fetched": false,
+                                "DebugTransform": null,
+                                "SerializeFields": null,
+                                "Destroy": null,
+                                "directionX": 1.0,
+                                "AwakeSafe": null,
+                                "SetScale": null,
+                                "speed": 2.0,
+                                "Every": null,
+                                "_subscriptions": {},
+                                "_private": {},
+                                "SetRotation": null,
+                                "Update": null,
+                                "directionZ": 5.0,
+                                "After": null,
+                                "SetPosition": null,
+                                "GetRotation": null,
+                                "StartSafe": null,
+                                "Unsubscribe": null,
                                 "__field_list": {
                                     "directionX": 1.0,
                                     "speed": 2.0,
                                     "directionY": 0.0,
                                     "directionZ": 0.0
                                 },
-                                "directionY": 5.0,
-                                "directionZ": 5.0,
-                                "_private": {},
-                                "directionX": 6.0,
-                                "__created_at": 1763542922.0,
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
+                                "GetPosition": null,
+                                "__created_at": 1763546391.0,
                                 "__meta": {},
-                                "speed": 2.0,
-                                "_subscriptions": {},
-                                "_transform_fetched": false
+                                "GetScale": null,
+                                "Subscribe": null,
+                                "directionY": 5.0,
+                                "Move": null,
+                                "Start": null
                             }
-                        },
-                        {
-                            "scriptPath": "../../Resources/Scripts/template/simple_mover.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
                         }
                     ]
                 }
