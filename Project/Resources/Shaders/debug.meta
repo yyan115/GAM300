@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "0060f444a1a88f7c-000337e66400000f",
         "source": "../../Resources/Shaders/debug",
-        "compiled": "../../Resources/Shaders/debug.shader",
-        "last_compiled": "2025-11-19 05:12:21.7633525"
+        "compiled": "../../Resources/Shaders/debug.shader"
     }
 }

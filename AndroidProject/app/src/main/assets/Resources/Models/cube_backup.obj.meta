@@ -4,8 +4,7 @@
         "guid": "00374a213774568a-000331fc5800003b",
         "source": "../../Resources/Models/cube_backup.obj",
         "compiled": "../../Resources/Models/cube_backup.mesh",
-        "android_compiled": "Resources/Models/cube_backup_android.mesh",
-        "last_compiled": "2025-11-09 14:18:03.4696006"
+        "android_compiled": "Resources/Models/cube_backup_android.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "00374a216e66dbbc-000331fc80000069",
         "source": "../../Resources/Shaders/sprite",
-        "compiled": "../../Resources/Shaders/sprite.shader",
-        "last_compiled": "2025-11-19 05:12:22.1748262"
+        "compiled": "../../Resources/Shaders/sprite.shader"
     }
 }

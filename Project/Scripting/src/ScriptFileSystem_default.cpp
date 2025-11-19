@@ -20,6 +20,7 @@ namespace Scripting {
 
     struct DefaultFileSystem : public IScriptFileSystem {
         bool ReadAllText(const std::string& path, std::string& out) override {
+            ENGINE_LOG_DEBUG("default: ");
             std::ifstream ifs(path, std::ios::binary);
             if (!ifs) return false;
             std::string content((std::istreambuf_iterator<char>(ifs)),

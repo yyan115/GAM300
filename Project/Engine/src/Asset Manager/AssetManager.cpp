@@ -694,3 +694,16 @@ bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::st
 
 	return true;
 }
+
+//For Scripting
+bool AssetManager::ReadTextFile(const std::string & path, std::string & outContent)
+{
+	std::ifstream file(path);
+	if (!file.is_open())
+		return false;
+
+	std::ostringstream ss;
+	ss << file.rdbuf();
+	outContent = ss.str();
+	return true;
+}

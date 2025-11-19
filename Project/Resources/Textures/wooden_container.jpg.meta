@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "00374a2179675ad7-000331fc82000079",
         "source": "../../Resources/Textures/wooden_container.jpg",
-        "compiled": "../../Resources/Textures/wooden_container.dds",
-        "last_compiled": "2025-11-19 05:12:26.3823932"
+        "compiled": "../../Resources/Textures/wooden_container.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

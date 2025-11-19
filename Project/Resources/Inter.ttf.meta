@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "00374a2169d220d1-000331fc3a000027",
         "source": "../../Resources/Inter.ttf",
-        "compiled": "../../Resources/Inter.font",
-        "last_compiled": "2025-11-19 05:11:48.9533229"
+        "compiled": "../../Resources/Inter.font"
     }
 }

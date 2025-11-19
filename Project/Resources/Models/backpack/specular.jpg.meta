@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "00374a212936e961-000331fc52000035",
         "source": "../../Resources/Models/backpack/specular.jpg",
-        "compiled": "../../Resources/Models/backpack/specular.dds",
-        "last_compiled": "2025-11-19 05:12:00.8876860"
+        "compiled": "../../Resources/Models/backpack/specular.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

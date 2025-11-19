@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Sound/AudioReverbZoneComponent.hpp"
+#include "Sound/AudioManager.hpp"
 #include "Logging.hpp"
+#include <fmod.h>
 
 #pragma region Reflection
 REFL_REGISTER_START(AudioReverbZoneComponent)
@@ -29,7 +31,8 @@ AudioReverbZoneComponent::AudioReverbZoneComponent() {
 }
 
 AudioReverbZoneComponent::~AudioReverbZoneComponent() {
-    // Cleanup if needed
+    // Release FMOD reverb zone
+    ReleaseReverbZone();
 }
 
 void AudioReverbZoneComponent::SetPosition(const Vector3D& pos) {
@@ -38,12 +41,15 @@ void AudioReverbZoneComponent::SetPosition(const Vector3D& pos) {
 }
 
 void AudioReverbZoneComponent::OnTransformChanged(const Vector3D& newPosition) {
-    Position = newPosition;
-    // Future: Update FMOD reverb zone position if needed
+    if (Position.x != newPosition.x || Position.y != newPosition.y || Position.z != newPosition.z) {
+        Position = newPosition;
+        needsUpdate = true;
+    }
 }
 
 void AudioReverbZoneComponent::ApplyPreset(ReverbPreset preset) {
     reverbPresetIndex = static_cast<int>(preset);
+    needsUpdate = true;
     
     // Apply FMOD reverb preset parameters based on Unity-like presets
     // These values are approximations based on typical reverb characteristics
@@ -462,13 +468,86 @@ void AudioReverbZoneComponent::SetReverbPresetByIndex(int index) {
     }
 }
 
+void AudioReverbZoneComponent::CreateReverbZone() {
+    if (reverbHandle) return; // Already created
+    
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    reverbHandle = audioMgr.CreateReverbZone();
+    
+    if (reverbHandle) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, 
+            "[AudioReverbZone] Created reverb zone at position (", Position.x, ",", Position.y, ",", Position.z, ")\n");
+        // Apply initial properties
+        UpdateReverbZone();
+    } else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioReverbZone] Failed to create reverb zone!\n");
+    }
+}
+
+void AudioReverbZoneComponent::ReleaseReverbZone() {
+    if (!reverbHandle) return;
+    
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    audioMgr.ReleaseReverbZone(reverbHandle);
+    reverbHandle = nullptr;
+    reverbInstanceIndex = -1;
+}
+
+void AudioReverbZoneComponent::UpdateReverbZone() {
+    if (!reverbHandle || !enabled) return;
+    
+    AudioManager& audioMgr = AudioManager::GetInstance();
+    
+    // Update 3D attributes (position and distances)
+    audioMgr.SetReverbZoneAttributes(reverbHandle, Position, MinDistance, MaxDistance);
+    
+    // Convert component parameters to FMOD reverb properties
+    // NOTE: FMOD uses different units than Unity:
+    // - DecayTime: milliseconds (not seconds)
+    // - Delays: milliseconds (not seconds)  
+    FMOD_REVERB_PROPERTIES props = {};
+    props.DecayTime = decayTime;           // Already in seconds, FMOD expects seconds
+    props.EarlyDelay = earlyDelay;         // Already in seconds
+    props.LateDelay = lateDelay;           // Already in seconds  
+    props.HFReference = hfReference;
+    props.HFDecayRatio = hfDecayRatio * 100.0f;  // FMOD expects percentage (0-100)
+    props.Diffusion = diffusion;
+    props.Density = density;
+    props.LowShelfFrequency = lowShelfFrequency;
+    props.LowShelfGain = lowShelfGain;
+    props.HighCut = highCut;
+    props.EarlyLateMix = earlyLateMix;
+    props.WetLevel = wetLevel;
+    
+    audioMgr.SetReverbZoneProperties(reverbHandle, &props);
+    
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, 
+        "[AudioReverbZone] Updated - Pos:(", Position.x, ",", Position.y, ",", Position.z, 
+        ") Min:", MinDistance, " Max:", MaxDistance, " Preset:", reverbPresetIndex, "\n");
+    
+    needsUpdate = false;
+}
+
 void AudioReverbZoneComponent::UpdateComponent() {
-    if (!enabled) return;
+    if (!enabled) {
+        if (reverbHandle) {
+            ReleaseReverbZone();
+        }
+        return;
+    }
+    
+    // Create reverb zone if it doesn't exist
+    if (!reverbHandle) {
+        CreateReverbZone();
+    }
     
     // Apply preset if not yet applied
     if (!presetApplied) {
         ApplyPreset(GetReverbPreset());
     }
     
-    // Future: Update FMOD reverb zone if needed
+    // Update FMOD reverb zone if needed
+    if (needsUpdate && reverbHandle) {
+        UpdateReverbZone();
+    }
 }

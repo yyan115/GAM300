@@ -111,6 +111,8 @@
     <ClCompile Include="src\Sound\AudioReverbZoneComponent.cpp" />
     <ClCompile Include="src\Game AI\BrainComponent.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
+    <ClCompile Include="src\Script\ScriptComponentData.cpp" />
+    <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Physics\Kinematics\CharacterController.cpp" />
     <ClCompile Include="src\Physics\Kinematics\CharacterControllerComponent.cpp" />
     <ClCompile Include="src\Physics\Kinematics\CharacterControllerSystem.cpp" />
@@ -285,6 +287,9 @@
     <ClInclude Include="include\Game AI\HfsmCommon.hpp" />
     <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
+    <ClInclude Include="include\Script\LuaBindableComponents.hpp" />
+    <ClInclude Include="include\ECS\ComponentRegistry.hpp" />
+    <ClInclude Include="include\Script\ComponentProxy.h" />
     <ClInclude Include="include\Physics\Kinematics\CharacterController.hpp" />
     <ClInclude Include="include\Physics\Kinematics\CharacterControllerComponent.hpp" />
     <ClInclude Include="include\Physics\Kinematics\CharacterControllerSystem.hpp" />
@@ -400,5 +405,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="src\Script\LuaComponentBindings.inc" />
   </ItemGroup>
 </Project>

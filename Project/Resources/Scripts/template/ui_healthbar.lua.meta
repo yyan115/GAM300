@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "007fa85bac1d2311-00032d3fca000019",
         "source": "../../Resources/Scripts/template/ui_healthbar.lua",
-        "compiled": "../../Resources/Scripts/template/ui_healthbar.lua",
-        "last_compiled": "2025-11-19 05:12:21.7104867"
+        "compiled": "../../Resources/Scripts/template/ui_healthbar.lua"
     }
 }

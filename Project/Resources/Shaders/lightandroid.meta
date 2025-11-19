@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "00374a215c25066a-000331fc80000063",
         "source": "../../Resources/Shaders/lightandroid",
-        "compiled": "../../Resources/Shaders/lightandroid.shader",
-        "last_compiled": "2025-11-19 05:12:21.9902603"
+        "compiled": "../../Resources/Shaders/lightandroid.shader"
     }
 }

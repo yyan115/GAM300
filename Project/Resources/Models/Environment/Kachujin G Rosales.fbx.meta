@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0009550cf879b817-0003356318000071",
         "source": "../../Resources/Models/Environment/Kachujin G Rosales.fbx",
-        "compiled": "../../Resources/Models/Environment/Kachujin G Rosales.mesh",
-        "last_compiled": "2025-11-19 05:12:07.9746923"
+        "compiled": "../../Resources/Models/Environment/Kachujin G Rosales.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

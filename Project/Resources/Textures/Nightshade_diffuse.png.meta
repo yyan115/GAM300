@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0025dbe74d00f17c-00033727f600005d",
         "source": "../../Resources/Textures/Nightshade_diffuse.png",
-        "compiled": "../../Resources/Textures/Nightshade_diffuse.dds",
-        "last_compiled": "2025-11-19 05:12:23.3882772"
+        "compiled": "../../Resources/Textures/Nightshade_diffuse.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

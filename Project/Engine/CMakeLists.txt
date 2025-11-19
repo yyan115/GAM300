@@ -167,6 +167,7 @@ target_include_directories(Engine
         # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
         ${CMAKE_SOURCE_DIR}/Libraries/lua/src
+        ${CMAKE_SOURCE_DIR}/Libraries/luabridge3/source
 )
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)

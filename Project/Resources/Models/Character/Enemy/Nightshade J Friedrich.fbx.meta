@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0025dbe70c8f8ceb-00033724b8000029",
         "source": "../../Resources/Models/Character/Enemy/Nightshade J Friedrich.fbx",
-        "compiled": "../../Resources/Models/Character/Enemy/Nightshade J Friedrich.mesh",
-        "last_compiled": "2025-11-19 05:12:01.8878981"
+        "compiled": "../../Resources/Models/Character/Enemy/Nightshade J Friedrich.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

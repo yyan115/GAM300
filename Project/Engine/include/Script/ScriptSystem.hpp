@@ -32,6 +32,7 @@ private:
     ScriptComponentData* GetScriptComponent(Entity e, ECSManager& ecsManager);
     const ScriptComponentData* GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const;
 
+    std::unordered_set<std::string> m_luaRegisteredComponents;
     std::unordered_map<Entity, std::unique_ptr<Scripting::ScriptComponent>> m_runtimeMap;
     ECSManager* m_ecs = nullptr;
     std::mutex m_mutex;

@@ -4,8 +4,7 @@
         "guid": "0060f444c0bc67cc-000337e642000005",
         "source": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.png",
         "compiled": "../../Resources/Models/Kachujin/Kachujin_diffuse_body.dds",
-        "android_compiled": "Resources/Models/Kachujin/Kachujin_diffuse_body_android.ktx",
-        "last_compiled": "2025-11-09 14:17:49.1629246"
+        "android_compiled": "Resources/Models/Kachujin/Kachujin_diffuse_body_android.ktx"
     },
     "TextureMetaData": {
         "type": "diffuse",

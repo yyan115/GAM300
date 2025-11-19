@@ -3,8 +3,8 @@
 #include "EditorPanel.hpp"
 #include "EditorCamera.hpp"
 #include "EditorState.hpp"
-#include "imgui.h"
-#include "ImGuizmo.h"
+#include <imgui.h>
+#include <ImGuizmo.h>
 #include "Utilities/GUID.hpp"
 #include <memory>
 #include <string>
@@ -72,6 +72,20 @@ private:
     ImVec2 marqueeStart;
     ImVec2 marqueeEnd;
     
+    // Gizmo drag state to prevent accidental selection after dragging
+    bool justFinishedGizmoDrag = false;
+    
+    // Cached matrices for performance
+    glm::mat4 cachedViewMatrix;
+    glm::mat4 cachedProjectionMatrix;
+    ImVec2 cachedWindowSize;
+    
+    // Gizmo manipulation state
+    bool gizmoWasUsing = false;
+    bool gizmoSnapshotTaken = false;
+    std::vector<std::array<float, 16>> originalMatrices;
+    std::array<float, 16> originalPivot;
+    
     void InitializeMatrices();
     void HandleKeyboardInput();
     void HandleCameraInput();
@@ -86,7 +100,11 @@ private:
     void DrawColliderGizmos();
     void DrawCameraGizmos();
     void DrawAudioGizmos();
+    void DrawLightGizmos();
+    void DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight);
 
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);
+    ImVec2 ProjectToScreen(const glm::vec3& worldPoint, bool& isVisible, const glm::mat4& vp, const ImVec2& windowPos, const ImVec2& windowSize) const;
+    void UpdateMouseState(ImVec2& relativeMousePos, bool& isHovering, float& sceneWidth, float& sceneHeight);
 };

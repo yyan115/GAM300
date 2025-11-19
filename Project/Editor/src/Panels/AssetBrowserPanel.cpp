@@ -23,6 +23,8 @@
 #include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
 #include <FileWatch.hpp>
+#include <random>
+#include <iomanip>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 DraggedMaterialGuid = {0, 0};
@@ -39,6 +41,10 @@ std::string DraggedAudioPath;
 // Global drag-drop state for cross-window font dragging
 GUID_128 DraggedFontGuid = {0, 0};
 std::string DraggedFontPath;
+
+// Global drag-drop state for cross-window script dragging
+GUID_128 DraggedScriptGuid = {0, 0};
+std::string DraggedScriptPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
@@ -661,10 +667,18 @@ void AssetBrowserPanel::RenderAssetGrid()
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
                 } else if (isFont) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedFontGuid = asset.guid;
+                    DraggedFontPath = asset.filePath;
+
                     // Send font path directly
                     ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 } else if (isScript) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedScriptGuid = asset.guid;
+                    DraggedScriptPath = asset.filePath;
+
                     // Send script path directly
                     ImGui::SetDragDropPayload("SCRIPT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Script: %s", asset.fileName.c_str());
@@ -701,6 +715,26 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Open the prefab editor
                     PrefabEditor::Open(asset.filePath);
                     // Early return so the rest of this frame doesn't re-use selection state
+                    ImGui::PopID();
+                    ImGui::EndGroup();
+                    break;
+                }
+                else if (lowerExt == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
+
                     ImGui::PopID();
                     ImGui::EndGroup();
                     break;
@@ -881,9 +915,24 @@ void AssetBrowserPanel::RenderAssetGrid()
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
                 std::filesystem::path p(asset.fileName);
 
-                // Open scene confirmation dialogue.
                 if (p.extension() == ".scene") {
                     OpenScene(asset);
+                }
+                else if (p.extension() == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
                 }
             }
         }
@@ -1344,8 +1393,97 @@ void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
         newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
     }
 
-    std::ofstream file(newScenePathFull.generic_string());
-    file.close();
+    std::string scenePath = newScenePathFull.generic_string();
+
+    // Write a minimal scene JSON with a default Main Camera entity
+    std::ofstream file(scenePath);
+    if (file.is_open()) {
+        // Generate a random GUID for the camera entity
+        std::random_device rd;
+        std::mt19937_64 gen(rd());
+        std::uniform_int_distribution<uint64_t> dis;
+        uint64_t guid_high = dis(gen);
+        uint64_t guid_low = dis(gen);
+
+        // Write minimal scene JSON with Main Camera
+        file << R"({
+    "entities": [
+        {
+            "id": 0,
+            "guid": ")" << std::hex << std::setfill('0') << std::setw(16) << guid_high << "-"
+                        << std::setw(16) << guid_low << std::dec << R"(",
+            "components": {
+                "NameComponent": {
+                    "name": "Main Camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 5 }
+                        ]},
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 }
+                        ]},
+                        { "type": "Quaternion", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 }
+                        ]},
+                        { "type": "bool", "data": false },
+                        { "type": "Matrix4x4", "data": [] }
+                    ]
+                },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        { "type": "bool", "data": true },
+                        { "type": "bool", "data": true },
+                        { "type": "int", "data": 0 },
+                        { "type": "float", "data": -90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "bool", "data": true },
+                        { "type": "float", "data": 45 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1000 },
+                        { "type": "float", "data": 5 },
+                        { "type": "float", "data": 2.5 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1 },
+                        { "type": "float", "data": 90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        "0000000000000000-0000000000000000"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        { "type": "bool", "data": true }
+                    ]
+                }
+            }
+        }
+    ]
+})";
+        file.close();
+        ENGINE_PRINT("[AssetBrowser] Created new scene with default camera: ", scenePath, "\n");
+    }
+    else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowser] Failed to create scene file: ", scenePath, "\n");
+    }
 
     RefreshAssets();
 }
@@ -1611,6 +1749,9 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     }
     else if (lowerExt == ".scene") {
         return ICON_FA_EARTH_AMERICAS;
+    }
+    else if (lowerExt == ".lua") {
+        return ICON_FA_FILE_CODE;
     }
 
     return ICON_FA_FILE; // Default file icon

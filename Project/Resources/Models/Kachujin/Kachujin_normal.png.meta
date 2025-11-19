@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0060f444b52c4748-000337e644000009",
         "source": "../../Resources/Models/Kachujin/Kachujin_normal.png",
-        "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds",
-        "last_compiled": "2025-11-19 05:12:21.3879045"
+        "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds"
     },
     "TextureMetaData": {
         "type": "normal",

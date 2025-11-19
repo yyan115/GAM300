@@ -4,7 +4,6 @@
         "guid": "007fa85bcaf4b76e-00032d3fc8000013",
         "source": "../../Resources/Scripts/template/data_chest.lua",
         "compiled": "../../Resources/Scripts/template/data_chest.lua",
-        "android_compiled": "Resources/Scripts/template/data_chest.lua",
-        "last_compiled": "2025-11-09 14:17:55.3785035"
+        "android_compiled": "Resources/Scripts/template/data_chest.lua"
     }
 }

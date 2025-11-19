@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "004b96f61b20d85a-00032d3d32000001",
         "source": "../../Resources/Scripts/extension/event_bus.lua",
-        "compiled": "../../Resources/Scripts/extension/event_bus.lua",
-        "last_compiled": "2025-11-19 05:12:21.4985608"
+        "compiled": "../../Resources/Scripts/extension/event_bus.lua"
     }
 }

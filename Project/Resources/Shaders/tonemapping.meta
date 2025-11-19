@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "0060f4448fa65466-000337e664000015",
         "source": "../../Resources/Shaders/tonemapping",
-        "compiled": "../../Resources/Shaders/tonemapping.shader",
-        "last_compiled": "2025-11-19 05:12:22.3191270"
+        "compiled": "../../Resources/Shaders/tonemapping.shader"
     }
 }

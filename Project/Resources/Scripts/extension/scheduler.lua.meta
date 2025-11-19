@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "007fa85bdf59fac5-00032d3fc8000007",
         "source": "../../Resources/Scripts/extension/scheduler.lua",
-        "compiled": "../../Resources/Scripts/extension/scheduler.lua",
-        "last_compiled": "2025-11-19 05:12:21.5734225"
+        "compiled": "../../Resources/Scripts/extension/scheduler.lua"
     }
 }

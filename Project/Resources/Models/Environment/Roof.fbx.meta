@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0009550c8bb8f335-000336f64a0000b3",
         "source": "../../Resources/Models/Environment/Roof.fbx",
-        "compiled": "../../Resources/Models/Environment/Roof.mesh",
-        "last_compiled": "2025-11-19 05:12:08.1034228"
+        "compiled": "../../Resources/Models/Environment/Roof.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

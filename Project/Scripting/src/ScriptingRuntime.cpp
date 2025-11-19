@@ -92,6 +92,15 @@ namespace Scripting {
             out = ss.str();
             return true;
         }
+
+        // Compatibility wrapper for obtaining table length across Lua versions
+        inline int lua_table_len(lua_State * L, int idx) {
+            #if LUA_VERSION_NUM >= 502
+                 return (int)lua_rawlen(L, idx);
+            #else
+                 return (int)lua_objlen(L, idx);
+            #endif
+        }
     } // namespace
 
     // -------------------------------------------------------------------------
@@ -121,11 +130,10 @@ namespace Scripting {
             m_config = cfg;
 
             if (fs) {
-                m_fsShared = std::move(fs); // take ownership (shared)
+                m_fsShared = std::move(fs);
                 m_fs = m_fsShared.get();
             }
             else {
-                // create default FS and store as shared_ptr
                 m_fsShared = CreateDefaultFileSystem();
                 if (!m_fsShared) {
                     if (logger) logger->Error("ScriptingRuntime::Initialize: CreateDefaultFileSystem failed");
@@ -139,14 +147,21 @@ namespace Scripting {
                 static DefaultLogger s_def;
                 m_logger = &s_def;
             }
-            // set global host handler if runtime was provided one earlier
+
             if (s_globalHostLogHandler) {
                 m_hostLogHandler = s_globalHostLogHandler;
             }
 
             // create and initialize module loader (use the same fs)
             m_moduleLoader = std::make_unique<ModuleLoader>();
-            m_moduleLoader->Initialize(m_fsShared); // pass shared ptr
+            m_moduleLoader->Initialize(m_fsShared);
+
+            // ADD THESE SEARCH PATHS HERE:
+            m_moduleLoader->AddSearchPath("Resources/Scripts/?.lua");
+            m_moduleLoader->AddSearchPath("Resources/Scripts/?/init.lua");
+            m_moduleLoader->AddSearchPath("Resources/extensions/?.lua");
+
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader search paths configured");
         }
 
         // create new state (no lock)
@@ -156,24 +171,22 @@ namespace Scripting {
             return false;
         }
 
-        // Install our module loader searcher into the new state so `require` works.
+        // Install our module loader searcher into the new state
         if (m_moduleLoader) {
-            m_moduleLoader->InstallLuaSearcher(newL, -1); // append to searchers
+            m_moduleLoader->InstallLuaSearcher(newL, -1);
 
-            // after InstallLuaSearcher(newL, -1)
+            // Debug verification
             lua_getglobal(newL, "package");
-            lua_getfield(newL, -1, "searchers"); // or "loaders" if old Lua
-            int len = (int)lua_rawlen(newL, -1);
+            lua_getfield(newL, -1, "searchers");
+            int len = lua_table_len(newL, -1);
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "package.searchers length = ", len);
-            // optional: inspect last entry (our added one should be at len or somewhere near)
             lua_rawgeti(newL, -1, len);
             bool isFunc = lua_isfunction(newL, -1);
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "last searcher is function? ", (int)isFunc);
             lua_pop(newL, 3);
         }
 
-
-        // record runtime pointer for C callbacks
+        // ... rest of initialization
         g_runtime_for_cfuncs = this;
 
         if (!m_config.mainScriptPath.empty()) {
@@ -260,23 +273,28 @@ namespace Scripting {
     }
 
 
-    void ScriptingRuntime::Tick(float dtSeconds) {
+    void ScriptingRuntime::Tick(float dtSeconds) 
+    {
         // handle reload request
         if (m_reloadRequested.exchange(false)) {
             lua_State* newL = nullptr;
             if (!create_lua_state(newL)) {
                 if (m_logger) m_logger->Error("Reload: failed to create new lua state");
             }
-            else 
+            else
             {
                 // Install module loader early so main script and bindings can require modules.
-                if (m_moduleLoader) 
+                if (m_moduleLoader)
                 {
+                    // Re-add search paths (they're stored in ModuleLoader already, but verify)
+                    // Actually, search paths persist in ModuleLoader instance, so just install searcher
                     m_moduleLoader->InstallLuaSearcher(newL, -1);
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader reinstalled for reload");
                 }
 
                 g_runtime_for_cfuncs = this;
                 bool success = true;
+
                 if (!m_config.mainScriptPath.empty()) 
                 {
                     if (!load_and_run_main_script(newL)) 
@@ -515,17 +533,21 @@ namespace Scripting {
     }
 
     void ScriptingRuntime::SetHostLogHandler(std::function<void(const std::string&)> handler) {
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_hostLogHandler = std::move(handler);
-            // also set global so C functions can use it
-            s_globalHostLogHandler = m_hostLogHandler;
-        }
-        // if we have a live state, bind the C function
+        // single lock; do not attempt to re-lock the same mutex twice
         std::lock_guard<std::mutex> lock(m_mutex);
+
+        m_hostLogHandler = std::move(handler);
+        // also set the C-binding friendly global so C functions can use it
+        s_globalHostLogHandler = m_hostLogHandler;
+
+        // If VM exists, install the global C function into the state under the same lock
+        // (we hold the runtime lock to avoid races with state swap in Tick/Reload).
         if (m_L) {
             lua_pushcfunction(m_L, &l_cpp_log);
             lua_setglobal(m_L, "cpp_log");
+            // Also register as cpp_print for backwards compatibility
+            lua_pushcfunction(m_L, &l_cpp_log);
+            lua_setglobal(m_L, "cpp_print");
         }
     }
 
@@ -536,6 +558,38 @@ namespace Scripting {
         // so nothing more to do here.
     }
 
+    void ScriptingRuntime::SetFileSystem(std::shared_ptr<IScriptFileSystem> fs)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (fs) {
+            m_fsShared = std::move(fs);
+            m_fs = m_fsShared.get();
+        }
+        else {
+            m_fsShared.reset();
+            m_fs = nullptr;
+        }
+
+        // Reinitialize ModuleLoader with the new filesystem (preserves ModuleLoader instance)
+        if (m_moduleLoader) {
+            try {
+                m_moduleLoader->Initialize(m_fsShared);
+            }
+            catch (...) {
+                if (m_logger) m_logger->Warn("SetFileSystem: ModuleLoader::Initialize threw");
+            }
+        }
+
+        // If a live VM exists, reinstall the Lua searcher so new requires use the new FS
+        if (m_L && m_moduleLoader) {
+            try {
+                m_moduleLoader->InstallLuaSearcher(m_L, -1);
+            }
+            catch (...) {
+                if (m_logger) m_logger->Warn("SetFileSystem: InstallLuaSearcher threw");
+            }
+        }
+    }
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -558,6 +612,10 @@ namespace Scripting {
         lua_pushcfunction(L, l_cpp_log);
         lua_setglobal(L, "cpp_log");
 
+        // Also register as cpp_print for backwards compatibility with old scripts
+        lua_pushcfunction(L, l_cpp_log);
+        lua_setglobal(L, "cpp_print");
+
         // register GetComponent(entityId, name)
         lua_pushcfunction(L, l_get_component);
         lua_setglobal(L, "GetComponent");
@@ -571,7 +629,7 @@ namespace Scripting {
             "  end\n"
             "end\n";
         if (luaL_dostring(L, helper_code) != LUA_OK) {
-            // ignore errors — fallback will be used by BindInstanceToEntity
+            // ignore errors ï¿½ fallback will be used by BindInstanceToEntity
             lua_pop(L, 1);
         }
     }

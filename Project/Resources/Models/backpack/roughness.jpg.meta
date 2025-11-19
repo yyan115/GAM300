@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "00374a21026550e7-000331fc4e000033",
         "source": "../../Resources/Models/backpack/roughness.jpg",
-        "compiled": "../../Resources/Models/backpack/roughness.dds",
-        "last_compiled": "2025-11-19 05:11:59.2734598"
+        "compiled": "../../Resources/Models/backpack/roughness.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

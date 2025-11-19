@@ -1,11 +1,8 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <memory>
-#include <mutex>
 #include <atomic>
 #include <vector>
+#include <shared_mutex>
 #include "Math/Vector3D.hpp"
 #include "Engine.h"
 
@@ -14,6 +11,8 @@ typedef struct FMOD_SYSTEM FMOD_SYSTEM;
 typedef struct FMOD_SOUND FMOD_SOUND;
 typedef struct FMOD_CHANNEL FMOD_CHANNEL;
 typedef struct FMOD_CHANNELGROUP FMOD_CHANNELGROUP;
+typedef struct FMOD_REVERB3D FMOD_REVERB3D;
+typedef struct FMOD_REVERB_PROPERTIES FMOD_REVERB_PROPERTIES;
 
 // Simple handles used by the engine to refer to audio and playback channels.
 using AudioHandle = uint64_t;
@@ -27,6 +26,34 @@ enum class AudioSourceState {
     Stopped,
     Playing,
     Paused
+};
+
+// Channel update flags for batch processing
+enum ChannelUpdateFlags {
+    UPDATE_VOLUME = 1 << 0,
+    UPDATE_PITCH = 1 << 1,
+    UPDATE_POSITION = 1 << 2,
+    UPDATE_LOOP = 1 << 3,
+    UPDATE_3D_MINMAX = 1 << 4,
+    UPDATE_REVERB_MIX = 1 << 5,
+    UPDATE_PRIORITY = 1 << 6,
+    UPDATE_STEREO_PAN = 1 << 7,
+    UPDATE_DOPPLER_LEVEL = 1 << 8
+};
+
+// Structure to batch channel property updates
+struct ChannelUpdate {
+    float volume = 1.0f;
+    float pitch = 1.0f;
+    Vector3D position = Vector3D(0.0f, 0.0f, 0.0f);
+    bool loop = false;
+    float minDistance = 1.0f;
+    float maxDistance = 100.0f;
+    float reverbMix = 0.0f;
+    int priority = 128;
+    float stereoPan = 0.0f;
+    float dopplerLevel = 1.0f;
+    uint32_t flags = 0; // Bitmask of ChannelUpdateFlags
 };
 
 // AudioManager: singleton backend for FMOD system management
@@ -57,12 +84,19 @@ public:
     bool IsPaused(ChannelHandle channel);
     AudioSourceState GetState(ChannelHandle channel);
 
-    // Channel property setters
+    // Channel property setters (now batched)
     void SetChannelVolume(ChannelHandle channel, float volume);
     void SetChannelPitch(ChannelHandle channel, float pitch);
     void SetChannelLoop(ChannelHandle channel, bool loop);
     void UpdateChannelPosition(ChannelHandle channel, const Vector3D& position);
     void SetChannel3DMinMaxDistance(ChannelHandle channel, float minDistance, float maxDistance);
+    void SetChannelReverbMix(ChannelHandle channel, float reverbMix);
+    void SetChannelPriority(ChannelHandle channel, int priority);
+    void SetChannelStereoPan(ChannelHandle channel, float pan);
+    void SetChannelDopplerLevel(ChannelHandle channel, float level);
+
+    // Batch update processing
+    void ApplyBatchUpdates();
 
     // Bus (channel group) management
     FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
@@ -81,6 +115,16 @@ public:
     // Create sound from raw memory (useful on Android when reading APK assets into memory)
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
     void SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up);
+
+    // Reverb Zone Management (Unity-like)
+    FMOD_REVERB3D* CreateReverbZone();
+    void ReleaseReverbZone(FMOD_REVERB3D* reverb);
+    void SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D& position, float minDistance, float maxDistance);
+    void SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REVERB_PROPERTIES* properties);
+    //void SetChannelReverbMix(ChannelHandle channel, float reverbMix);
+    
+    // Get FMOD system for advanced use
+    FMOD_SYSTEM* GetFMODSystem() const { return System; }
 public:
     AudioManager();
     ~AudioManager() = default; // No automatic shutdown
@@ -97,8 +141,8 @@ private:
         std::string AssetPath; // For debugging
     };
 
-    // Thread safety
-    mutable std::mutex Mutex;
+    // Thread safety - upgraded to shared_mutex for better concurrency
+    mutable std::shared_mutex Mutex;
     std::atomic<bool> ShuttingDown{ false };
     
     // FMOD handles
@@ -107,6 +151,13 @@ private:
     // Channel management
     std::unordered_map<ChannelHandle, ChannelData> ChannelMap;
     std::atomic<ChannelHandle> NextChannelHandle{ 1 };
+
+    // Channel reuse pool
+    std::vector<FMOD_CHANNEL*> ChannelPool;
+    static constexpr size_t MAX_POOL_SIZE = 32;
+
+    // Pending batch updates
+    std::unordered_map<ChannelHandle, ChannelUpdate> PendingUpdates;
 
     // Channel groups (buses)
     std::unordered_map<std::string, FMOD_CHANNELGROUP*> BusMap;

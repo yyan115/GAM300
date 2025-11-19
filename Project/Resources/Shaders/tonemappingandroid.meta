@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "0060f444f8640614-000337e664000017",
         "source": "../../Resources/Shaders/tonemappingandroid",
-        "compiled": "../../Resources/Shaders/tonemappingandroid.shader",
-        "last_compiled": "2025-11-19 05:12:22.3620235"
+        "compiled": "../../Resources/Shaders/tonemappingandroid.shader"
     }
 }
