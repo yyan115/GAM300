@@ -64,29 +64,21 @@ void SceneInstance::Initialize() {
 	Entity sAnim = ecsManager.CreateEntity();
 	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
 	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"))});
 
-	std::string idlePath[3] = {
+	std::string idlePath[5] = {
 		"Resources/Textures/idle_1.png",
 		"Resources/Textures/idle_2.png",
-		"Resources/Textures/idle_3.png"
+		"Resources/Textures/awesomeface.png",
+		"Resources/Textures/Nightshade_diffuse.png",
+		"Resources/Textures/container2.png"
 	};
-
-	GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
-	GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
-	GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
-
-	// Setting Current Sprite
-	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	sprite.is3D = true;
-
-	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 
 	SpriteAnimationClip idleClip;
 	idleClip.name = "Idle";
 	idleClip.loop = true;
 
-	for(int i = 0; i < 3; ++i) {
+	for(int i = 0; i < 5; ++i) {
 		SpriteFrame frame;
 		frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
 		frame.texturePath = idlePath[i];
@@ -97,6 +89,10 @@ void SceneInstance::Initialize() {
 		idleClip.frames.push_back(frame);
 	}
 
+	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	sprite.is3D = true;
+
+	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 	anim.clips.push_back(idleClip);
 	anim.Play("Idle");
 
