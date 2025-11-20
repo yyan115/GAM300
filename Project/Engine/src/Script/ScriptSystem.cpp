@@ -363,14 +363,12 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
                 ok = runtimeComp->DeserializeState(script.pendingInstanceState);
             } catch (...) { ok = false; }
 
-            if (ok)
-            {
-                script.pendingInstanceState.clear();
-            }
-            else
+            if (!ok)
             {
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending state for script ", scriptIdx, " entity ", e, "\n");
             }
+            // DO NOT clear pendingInstanceState - we need it to persist across multiple play/stop cycles
+            // This ensures Unity-like behavior where inspector edits are preserved
         }
 
         // Store in runtime map

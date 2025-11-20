@@ -51,7 +51,12 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
-        SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=", scriptPath.c_str(),")");
+        SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=%s)", scriptPath.c_str());
+        // Clear the cache for this script path since the instance is no longer valid
+        {
+            std::lock_guard<std::mutex> lk(m_cacheMutex);
+            m_cache.erase(scriptPath);
+        }
         return {};
     }
     int tableIndex = lua_gettop(L);
