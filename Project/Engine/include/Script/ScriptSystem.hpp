@@ -21,7 +21,7 @@ public:
     ~ScriptSystem(); // DECLARE only. definition goes in .cpp
 
     void Initialise(ECSManager& ecsManager);
-    void Update(float dt, ECSManager& ecsManager);
+    void Update();
     void Shutdown();
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);

@@ -65,9 +65,6 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
-
-    // TO BE DELETED: create an entity with mono_behavior script for testing
-
     
 	// Initialize the new scene.
 	currentScene->Initialize();

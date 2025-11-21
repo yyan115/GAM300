@@ -239,7 +239,7 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptPath": "../../Resources/Scripts/template/input.lua",
+                            "scriptPath": "../../Resources/Scripts/template/test.lua",
                             "enabled": true,
                             "preserveKeys": [
                                 "position",
@@ -3739,7 +3739,7 @@
         },
         {
             "id": 15,
-            "guid": "003a55fd53b182cd-000356d84a000001",
+            "guid": "007942fa3d50f269-000356e906000005",
             "components": {
                 "NameComponent": {
                     "name": "Entity_15"

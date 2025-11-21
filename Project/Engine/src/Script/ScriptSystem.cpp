@@ -8,6 +8,7 @@
 #include <lua.hpp>
 #include <LuaBridge.h>
 #include "Logging.hpp"
+#include <TimeManager.hpp>
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
@@ -223,18 +224,18 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
 }
-void ScriptSystem::Update(float dt, ECSManager& ecsManager)
+void ScriptSystem::Update()
 {
     // advance coroutines & runtime tick if runtime initialized
-    if (Scripting::GetLuaState()) Scripting::Tick(dt);
+    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
     {
-        ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
+        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
 
-        if (!EnsureInstanceForEntity(e, ecsManager)) continue;
+        if (!EnsureInstanceForEntity(e, *m_ecs)) continue;
 
         // call Update(dt) on all script instances for this entity
         {
@@ -246,7 +247,7 @@ void ScriptSystem::Update(float dt, ECSManager& ecsManager)
                 {
                     if (scriptInst)
                     {
-                        scriptInst->Update(dt);
+                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
                     }
                 }
             }
@@ -303,7 +304,8 @@ void ScriptSystem::Shutdown()
         }
     }
 
-    Scripting::Shutdown();
+    Scripting::Shutdown(); 
+    g_luaBindingsDone = false;
 
     ENGINE_PRINT("[ScriptSystem] Shutdown complete\n");
 }
