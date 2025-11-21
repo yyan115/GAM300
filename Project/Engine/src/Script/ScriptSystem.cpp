@@ -10,6 +10,7 @@
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
+#include "Asset Manager/AssetManager.hpp"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -108,6 +109,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             }
 
             #include "LuaComponentBindings.inc"
+#include <Asset Manager/AssetManager.hpp>
 
             #undef BEGIN_COMPONENT
             #undef PROPERTY
@@ -185,6 +187,16 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 return true;
                 });
             s_fsRegistered = true;
+        }
+
+        // Initialize the scripts' paths from the GUID.
+        for (const auto& entity : entities) {
+            auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+            for (auto& script : scriptComp.scripts) {
+                std::string scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+                script.scriptPath = scriptPath.substr(scriptPath.find("Resources"));
+                ENGINE_LOG_DEBUG("[ScriptSystem] Current script path: " + script.scriptPath);
+            }
         }
 
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
@@ -363,14 +375,12 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
                 ok = runtimeComp->DeserializeState(script.pendingInstanceState);
             } catch (...) { ok = false; }
 
-            if (ok)
-            {
-                script.pendingInstanceState.clear();
-            }
-            else
+            if (!ok)
             {
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending state for script ", scriptIdx, " entity ", e, "\n");
             }
+            // DO NOT clear pendingInstanceState - we need it to persist across multiple play/stop cycles
+            // This ensures Unity-like behavior where inspector edits are preserved
         }
 
         // Store in runtime map
