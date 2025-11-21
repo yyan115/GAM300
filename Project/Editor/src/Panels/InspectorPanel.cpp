@@ -1364,8 +1364,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			//Ensure have RigidBodyComponent
 			if (!ecsManager.HasComponent<RigidBodyComponent>(entity))
 			{
-				RigidBodyComponent rb;
-				ecsManager.AddComponent<RigidBodyComponent>(entity, rb);
+				RigidBodyComponent component;
+				component.motion = Motion::Kinematic;
+				component.motionID = static_cast<int>(component.motion);
+				ecsManager.AddComponent<RigidBodyComponent>(entity, component);
 				std::cout << "[Inspector] Added RigidBody component for CharacterController" << std::endl;
 			}
 

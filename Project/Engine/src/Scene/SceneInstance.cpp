@@ -264,7 +264,7 @@ void SceneInstance::Exit() {
 	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown(ECSRegistry::GetInstance().GetECSManager(scenePath));
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();

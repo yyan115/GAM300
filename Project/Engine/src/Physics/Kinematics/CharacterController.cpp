@@ -1,46 +1,22 @@
 #pragma once
 #include "pch.h"
 #include "Physics/Kinematics/CharacterController.hpp"
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
+#include "Physics/Kinematics/CharacterController.hpp"
+#include "Physics/ColliderComponent.hpp"
+#include "Physics/Kinematics/CharacterControllerComponent.hpp"
+#include "Transform/TransformComponent.hpp"
 
 
 
-
+//Separate initialise with ctor -> cannot guaranteed exist before that e.g components like rigidbody + collider
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
     : mPhysicsSystem(physicsSystem)
-{
-    // Create character virtual settings
-    JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
+    , mCharacter(nullptr)
+{}
 
-    // Configure character shape (capsule is typical for humanoid characters)
-    // Height = 1.8m, Radius = 0.3m (adjust as needed)
-    float characterHeight = 1.8f;
-    float characterRadius = 0.3f;
 
-    // Create capsule shape and offset it
-    JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(0.5f * characterHeight, characterRadius);
-
-    //// Offset the shape so the bottom is at the character's feet
-    //JPH::Vec3 offset(0, 0.5f * characterHeight + characterRadius, 0);
-    //settings->mShape = new JPH::RotatedTranslatedShape(offset, JPH::Quat::sIdentity(), capsule);
-
-    // Set character properties
-    settings->mMass = 70.0f; // 70kg character
-    settings->mMaxSlopeAngle = JPH::DegreesToRadians(45.0f); // Max walkable slope
-    settings->mMaxStrength = 100.0f; // Force to push other bodies
-    settings->mCharacterPadding = 0.02f; // Padding around character
-    settings->mPenetrationRecoverySpeed = 1.0f;
-    settings->mPredictiveContactDistance = 0.1f;
-
-    // Support for stairs/steps
-    settings->mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -characterRadius);
-
-    // Create the character virtual
-    mCharacter = new JPH::CharacterVirtual(settings, JPH::RVec3::sZero(), JPH::Quat::sIdentity(), mPhysicsSystem);
-
-    // Enable ground detection
-    mCharacter->SetListener(nullptr); // You can add a listener for events if needed
-}
 CharacterController::~CharacterController()
 {
     if (mCharacter)
@@ -50,10 +26,41 @@ CharacterController::~CharacterController()
     }
 }
 
+
+//Box = 0,
+//Sphere,
+//Capsule,
+//Cylinder
+
+
+void CharacterController::Initialise(CharacterControllerComponent& character, ColliderComponent& collider, Transform& transform)
+{
+    //SHAPE TYPE HAS TO BE A CAPSULE..
+    collider.shapeType = ColliderShapeType::Capsule;
+    float height = collider.capsuleHalfHeight * 2.0f;
+    float radius = collider.capsuleRadius;
+
+    JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(collider.capsuleHalfHeight, collider.capsuleRadius);
+    JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
+    settings->mShape = capsule;
+    settings->mMass = 70.0f;    //EXPOSE MASS AS COMPONENT AND INTIIALISE?
+    settings->mMaxStrength = 100.0f;
+
+    //  CREATE VIRTUAL CHARACTER    
+    mCharacter = new JPH::CharacterVirtual(
+        settings,
+        JPH::RVec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z),
+        JPH::Quat::sIdentity(),
+        mPhysicsSystem);
+}
+
+
+
 void CharacterController::Move(float x, float y, float z)
 {
     // Set the desired velocity
     mVelocity = JPH::Vec3(x, y, z);
+    
 }
 
 void CharacterController::Jump(float height)
@@ -83,7 +90,7 @@ void CharacterController::Update(float deltaTime)
     if (mCharacter->GetGroundState() != JPH::CharacterVirtual::EGroundState::OnGround ||
         mVelocity.GetY() > 0.0f)
     {
-        mVelocity += gravity * deltaTime;
+        mVelocity += gravity * deltaTime;  
     }
     else
     {

@@ -5396,7 +5396,7 @@
         },
         {
             "id": 21,
-            "guid": "0068922fbd3d6109-0003527b60000001",
+            "guid": "006d2dcfda20e25f-000354210c000001",
             "components": {
                 "NameComponent": {
                     "name": "Cube"
@@ -5630,7 +5630,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -5751,6 +5751,13 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scriptPath": "../../Resources/Scripts/template/CharacterTest.lua",
+                    "enabled": true,
+                    "preserveKeys": [],
+                    "entryFunction": "OnInit",
+                    "autoInvokeEntry": true
                 }
             }
         }

@@ -19,7 +19,7 @@ public:
     void Update(float dt, ECSManager& ecs);
 
     // Shutdown and clean up runtime controllers
-    void Shutdown();
+    void Shutdown(ECSManager& ecs);
 
 private:
     PhysicsSystem* physicsSystem = nullptr;

@@ -3,6 +3,12 @@
 #include "Physics/JoltInclude.hpp"
 #include "Math/Vector3D.hpp"
 
+
+struct ColliderComponent;
+struct CharacterControllerComponent;
+struct Transform;
+
+
 // Pure runtime class that handles movement logic
 class CharacterController
 {
@@ -12,6 +18,8 @@ public:
 
     // Destructor
     ~CharacterController();
+
+    void Initialise(CharacterControllerComponent &character, ColliderComponent &collider, Transform &transform);
 
     // Movement functions
     void Move(float x, float y, float z);   // Set linear velocity
