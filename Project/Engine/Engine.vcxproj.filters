@@ -288,6 +288,7 @@
     <ClInclude Include="include\Script\LuaBindableComponents.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteAnimationComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteAnimationSystem.hpp" />
+    <ClInclude Include="include\Script\LuaBindableSystems.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
@@ -400,6 +401,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="src\Script\LuaComponentBindings.inc" />
+    <None Include="include\Script\LuaComponentBindings.inc" />
+    <None Include="include\Script\LuaSystemBindings.inc" />
   </ItemGroup>
 </Project>

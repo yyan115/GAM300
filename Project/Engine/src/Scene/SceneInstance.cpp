@@ -183,7 +183,7 @@ void SceneInstance::Update(double dt)
 
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update(0.1f, mainECS); // i will need change this to remove dt
+	mainECS.scriptSystem->Update();
 
 	mainECS.spriteAnimationSystem->Update();
 

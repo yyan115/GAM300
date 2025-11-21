@@ -75,6 +75,13 @@ public:
 		systemManager->OnEntitySignatureChanged(entity, signature);
 	}
 
+	// return a shared_ptr to the requested system (or nullptr if not registered)
+	template <typename T>
+	std::shared_ptr<T> GetSystem() const {
+		if (!systemManager) return nullptr;
+		return systemManager->GetSystem<T>();
+	}
+
 	template <typename T>
 	T& GetComponent(Entity entity) {
 		return componentManager->GetComponent<T>(entity);

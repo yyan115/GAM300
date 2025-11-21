@@ -148,7 +148,6 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
-Resources/Models/SideWall2.mesh
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -177,6 +176,8 @@ Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/ai_patrol.lua.meta
 Resources/Scripts/template/data_chest.lua
 Resources/Scripts/template/data_chest.lua.meta
+Resources/Scripts/template/input.lua
+Resources/Scripts/template/input.lua.meta
 Resources/Scripts/template/listener.lua
 Resources/Scripts/template/listener.lua.meta
 Resources/Scripts/template/rotate.lua
