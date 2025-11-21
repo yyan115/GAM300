@@ -18,7 +18,7 @@ return Component {
     end,
     
     Update = function(self, dt)
-        -- Keyboard movement
+        -- Keyboard movement - Use GetKey() function with Key constants
         if Input.GetKey(Input.Key.W) then
             print("W key held - Moving forward")
             self.position.z = self.position.z + (dt * self.speed)
@@ -59,11 +59,6 @@ return Component {
         -- Check for any input
         if Input.GetAnyKeyDown() then
             print("Some key was just pressed!")
-        end
-        
-        -- Escape to quit/log
-        if Input.GetKeyDown(Input.Key.Escape) then
-            print("Escape pressed - Would quit game here")
         end
         
         -- F keys for debug

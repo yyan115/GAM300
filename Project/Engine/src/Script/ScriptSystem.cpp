@@ -79,15 +79,15 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 RegisterCompPusher<CppType>(_compName); \
                 luabridge::getGlobalNamespace(L).beginClass<CppType>(_compName)
 
-                #define PROPERTY(LuaFieldName, MemberPtr) \
+            #define PROPERTY(LuaFieldName, MemberPtr) \
                 .addProperty(LuaFieldName, MemberPtr, MemberPtr)
 
-                #define END_COMPONENT() \
+            #define END_COMPONENT() \
                 .endClass(); \
                 g_luaRegisteredComponents_global.insert(_compName); \
             }
 
-            #include "LuaComponentBindings.inc"
+            #include "Script/LuaComponentBindings.inc"
             
             #undef BEGIN_COMPONENT
             #undef PROPERTY
@@ -102,15 +102,15 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 lua_pushstring(L, _compName); \
                 lua_newtable(L);
 
-                #define PROPERTY(LuaFieldName, MemberPtr) \
+            #define PROPERTY(LuaFieldName, MemberPtr) \
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
 
-                #define END_COMPONENT() \
+            #define END_COMPONENT() \
                 lua_settable(L, -3); \
             }
 
-            #include "LuaComponentBindings.inc"
+            #include "Script/LuaComponentBindings.inc"
 
             #undef BEGIN_COMPONENT
             #undef PROPERTY
@@ -119,68 +119,167 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             lua_setglobal(L, "Components");
 
             // ============================================================================
-            // SYSTEM BINDINGS (generic system framework)
-            // ============================================================================
-            
-            // ---- Pass 1: Register all enums ----
-            #define BEGIN_SYSTEM_NAMESPACE(Name) \
-            { \
-                auto _ns = luabridge::getGlobalNamespace(L).beginNamespace(Name);
+// SYSTEM BINDINGS (Input System)
+// ============================================================================
 
-                #define BEGIN_ENUM(EnumName) \
-                _ns = _ns.beginNamespace(EnumName);
-                
-                #define ENUM_VALUE(LuaName, CppValue) \
-                _ns = _ns.addVariable(LuaName, &CppValue, false);
-                
-                #define END_ENUM() \
-                _ns = _ns.endNamespace();
-                
-                #define SYSTEM_FUNCTION(LuaName, CppFunction) \
-                /* Skip functions in first pass */
-                
-                #define END_SYSTEM_NAMESPACE() \
-                _ns.endNamespace(); \
-            }
+// Create wrapper functions as STATIC functions (not lambdas) so we can register them
+            struct InputWrappers {
+                static bool GetKey(int key) {
+                    return InputManager::GetKey(static_cast<Input::Key>(key));
+                }
 
-            #include "LuaSystemBindings.inc"
+                static bool GetKeyDown(int key) {
+                    return InputManager::GetKeyDown(static_cast<Input::Key>(key));
+                }
 
-            #undef BEGIN_SYSTEM_NAMESPACE
-            #undef BEGIN_ENUM
-            #undef ENUM_VALUE
-            #undef END_ENUM
-            #undef SYSTEM_FUNCTION
-            #undef END_SYSTEM_NAMESPACE
+                static bool GetMouseButton(int button) {
+                    return InputManager::GetMouseButton(static_cast<Input::MouseButton>(button));
+                }
 
-            // ---- Pass 2: Register all functions ----
-            #define BEGIN_SYSTEM_NAMESPACE(Name) \
-            { \
-                auto _ns = luabridge::getGlobalNamespace(L).beginNamespace(Name);
-            
-                #define BEGIN_ENUM(EnumName) \
-                /* Skip enums in second pass */
-            
-                #define ENUM_VALUE(LuaName, CppValue) \
-                /* Skip enum values in second pass */
-            
-                #define END_ENUM() \
-                /* Skip enum end in second pass */
-            
-                #define SYSTEM_FUNCTION(LuaName, CppFunction) \
-                _ns = _ns.addFunction(LuaName, &CppFunction);
-            
-                #define END_SYSTEM_NAMESPACE() \
-                _ns.endNamespace(); \
-            }
-            
-            #include "LuaSystemBindings.inc"
-            
-            #undef BEGIN_SYSTEM_NAMESPACE
-            #undef BEGIN_ENUM
-            #undef ENUM_VALUE
-            #undef END_ENUM
-            #undef SYSTEM_FUNCTION
-            #undef END_SYSTEM_NAMESPACE
+                static bool GetMouseButtonDown(int button) {
+                    return InputManager::GetMouseButtonDown(static_cast<Input::MouseButton>(button));
+                }
+            };
+
+            // Create Input table manually
+            lua_newtable(L);  // Input table
+
+            // Add wrapper functions as C functions
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                int key = luaL_checkinteger(L, 1);
+                bool result = InputManager::GetKey(static_cast<Input::Key>(key));
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetKey");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                int key = luaL_checkinteger(L, 1);
+                bool result = InputManager::GetKeyDown(static_cast<Input::Key>(key));
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetKeyDown");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                int button = luaL_checkinteger(L, 1);
+                bool result = InputManager::GetMouseButton(static_cast<Input::MouseButton>(button));
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetMouseButton");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                int button = luaL_checkinteger(L, 1);
+                bool result = InputManager::GetMouseButtonDown(static_cast<Input::MouseButton>(button));
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetMouseButtonDown");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                float result = InputManager::GetMouseX();
+                lua_pushnumber(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetMouseX");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                float result = InputManager::GetMouseY();
+                lua_pushnumber(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetMouseY");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                bool result = InputManager::GetAnyKeyDown();
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetAnyKeyDown");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                bool result = InputManager::GetAnyMouseButtonDown();
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetAnyMouseButtonDown");
+
+            lua_pushcfunction(L, [](lua_State* L) -> int {
+                bool result = InputManager::GetAnyInputDown();
+                lua_pushboolean(L, result);
+                return 1;
+                });
+            lua_setfield(L, -2, "GetAnyInputDown");
+
+            // Create Key table with constants
+            lua_newtable(L);
+            lua_pushinteger(L, static_cast<int>(Input::Key::A)); lua_setfield(L, -2, "A");
+            lua_pushinteger(L, static_cast<int>(Input::Key::B)); lua_setfield(L, -2, "B");
+            lua_pushinteger(L, static_cast<int>(Input::Key::C)); lua_setfield(L, -2, "C");
+            lua_pushinteger(L, static_cast<int>(Input::Key::D)); lua_setfield(L, -2, "D");
+            lua_pushinteger(L, static_cast<int>(Input::Key::E)); lua_setfield(L, -2, "E");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F)); lua_setfield(L, -2, "F");
+            lua_pushinteger(L, static_cast<int>(Input::Key::G)); lua_setfield(L, -2, "G");
+            lua_pushinteger(L, static_cast<int>(Input::Key::H)); lua_setfield(L, -2, "H");
+            lua_pushinteger(L, static_cast<int>(Input::Key::I)); lua_setfield(L, -2, "I");
+            lua_pushinteger(L, static_cast<int>(Input::Key::J)); lua_setfield(L, -2, "J");
+            lua_pushinteger(L, static_cast<int>(Input::Key::K)); lua_setfield(L, -2, "K");
+            lua_pushinteger(L, static_cast<int>(Input::Key::L)); lua_setfield(L, -2, "L");
+            lua_pushinteger(L, static_cast<int>(Input::Key::M)); lua_setfield(L, -2, "M");
+            lua_pushinteger(L, static_cast<int>(Input::Key::N)); lua_setfield(L, -2, "N");
+            lua_pushinteger(L, static_cast<int>(Input::Key::O)); lua_setfield(L, -2, "O");
+            lua_pushinteger(L, static_cast<int>(Input::Key::P)); lua_setfield(L, -2, "P");
+            lua_pushinteger(L, static_cast<int>(Input::Key::Q)); lua_setfield(L, -2, "Q");
+            lua_pushinteger(L, static_cast<int>(Input::Key::R)); lua_setfield(L, -2, "R");
+            lua_pushinteger(L, static_cast<int>(Input::Key::S)); lua_setfield(L, -2, "S");
+            lua_pushinteger(L, static_cast<int>(Input::Key::T)); lua_setfield(L, -2, "T");
+            lua_pushinteger(L, static_cast<int>(Input::Key::U)); lua_setfield(L, -2, "U");
+            lua_pushinteger(L, static_cast<int>(Input::Key::V)); lua_setfield(L, -2, "V");
+            lua_pushinteger(L, static_cast<int>(Input::Key::W)); lua_setfield(L, -2, "W");
+            lua_pushinteger(L, static_cast<int>(Input::Key::X)); lua_setfield(L, -2, "X");
+            lua_pushinteger(L, static_cast<int>(Input::Key::Y)); lua_setfield(L, -2, "Y");
+            lua_pushinteger(L, static_cast<int>(Input::Key::Z)); lua_setfield(L, -2, "Z");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_0)); lua_setfield(L, -2, "Num0");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_1)); lua_setfield(L, -2, "Num1");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_2)); lua_setfield(L, -2, "Num2");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_3)); lua_setfield(L, -2, "Num3");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_4)); lua_setfield(L, -2, "Num4");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_5)); lua_setfield(L, -2, "Num5");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_6)); lua_setfield(L, -2, "Num6");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_7)); lua_setfield(L, -2, "Num7");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_8)); lua_setfield(L, -2, "Num8");
+            lua_pushinteger(L, static_cast<int>(Input::Key::NUM_9)); lua_setfield(L, -2, "Num9");
+            lua_pushinteger(L, static_cast<int>(Input::Key::SPACE)); lua_setfield(L, -2, "Space");
+            lua_pushinteger(L, static_cast<int>(Input::Key::ENTER)); lua_setfield(L, -2, "Enter");
+            lua_pushinteger(L, static_cast<int>(Input::Key::TAB)); lua_setfield(L, -2, "Tab");
+            lua_pushinteger(L, static_cast<int>(Input::Key::BACKSPACE)); lua_setfield(L, -2, "Backspace");
+            lua_pushinteger(L, static_cast<int>(Input::Key::LEFT)); lua_setfield(L, -2, "Left");
+            lua_pushinteger(L, static_cast<int>(Input::Key::RIGHT)); lua_setfield(L, -2, "Right");
+            lua_pushinteger(L, static_cast<int>(Input::Key::UP)); lua_setfield(L, -2, "Up");
+            lua_pushinteger(L, static_cast<int>(Input::Key::DOWN)); lua_setfield(L, -2, "Down");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F1)); lua_setfield(L, -2, "F1");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F2)); lua_setfield(L, -2, "F2");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F3)); lua_setfield(L, -2, "F3");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F4)); lua_setfield(L, -2, "F4");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F5)); lua_setfield(L, -2, "F5");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F6)); lua_setfield(L, -2, "F6");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F7)); lua_setfield(L, -2, "F7");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F8)); lua_setfield(L, -2, "F8");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F9)); lua_setfield(L, -2, "F9");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F10)); lua_setfield(L, -2, "F10");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F11)); lua_setfield(L, -2, "F11");
+            lua_pushinteger(L, static_cast<int>(Input::Key::F12)); lua_setfield(L, -2, "F12");
+            lua_setfield(L, -2, "Key");  // Input.Key = key_table
+
+            // Create MouseButton table with constants
+            lua_newtable(L);
+            lua_pushinteger(L, static_cast<int>(Input::MouseButton::LEFT)); lua_setfield(L, -2, "Left");
+            lua_pushinteger(L, static_cast<int>(Input::MouseButton::RIGHT)); lua_setfield(L, -2, "Right");
+            lua_pushinteger(L, static_cast<int>(Input::MouseButton::MIDDLE)); lua_setfield(L, -2, "Middle");
+            lua_setfield(L, -2, "MouseButton");  // Input.MouseButton = mousebutton_table
+
+            lua_setglobal(L, "Input");  // Set Input table as global
 
             g_luaBindingsDone = true;
         }
@@ -236,7 +335,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing component proxy for ", compName);
             PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), compName);
             return true;
-            });
+        });
 
         // Only set a disk fallback reader if nobody registered a FS callback earlier.
         static bool s_fsRegistered = false;
@@ -249,14 +348,13 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 ss << ifs.rdbuf();
                 out = ss.str();
                 return true;
-                });
+            });
             s_fsRegistered = true;
         }
 
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
 }
-
 void ScriptSystem::Update(float dt, ECSManager& ecsManager)
 {
     // advance coroutines & runtime tick if runtime initialized

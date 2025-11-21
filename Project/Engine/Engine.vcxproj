@@ -100,6 +100,7 @@
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
+    <ClInclude Include="include\Script\LuaBindableSystems.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
@@ -327,7 +328,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="src\Script\LuaComponentBindings.inc" />
+    <None Include="include\Script\LuaSystemBindings.inc" />
+    <None Include="include\Script\LuaComponentBindings.inc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scripting\Scripting.vcxproj">
