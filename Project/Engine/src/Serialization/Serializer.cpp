@@ -379,10 +379,15 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             for (const auto& sd : scriptComp.scripts) {
                 rapidjson::Value scriptDataObj(rapidjson::kObjectType);
 
-                // scriptPath
-                rapidjson::Value sp;
-                sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
-                scriptDataObj.AddMember("scriptPath", sp, alloc);
+                // scriptGuidStr
+                rapidjson::Value sguid;
+                sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
+                scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
+
+                //// scriptPath
+                //rapidjson::Value sp;
+                //sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+                //scriptDataObj.AddMember("scriptPath", sp, alloc);
 
                 // enabled
                 scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
@@ -1719,6 +1724,11 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             ScriptData sd{};
 
             // Read script fields
+            if (scriptData.HasMember("scriptGuidStr") && scriptData["scriptGuidStr"].IsString()) {
+                sd.scriptGuidStr = scriptData["scriptGuidStr"].GetString();
+                if (!sd.scriptGuidStr.empty())
+                    sd.scriptGuid = GUIDUtilities::ConvertStringToGUID128(sd.scriptGuidStr);
+            }
             if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
                 sd.scriptPath = scriptData["scriptPath"].GetString();
             }

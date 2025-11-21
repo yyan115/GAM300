@@ -2127,6 +2127,8 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(droppedPath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
+                    scriptData.scriptGuid = DraggedScriptGuid;
+                    scriptData.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(scriptData.scriptGuid);
                     scriptData.scriptPath = pathStr;
                     scriptData.instanceCreated = false;
                     scriptData.instanceId = -1;
