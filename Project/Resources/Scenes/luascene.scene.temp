@@ -248,69 +248,45 @@
                             "entryFunction": "Start",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Subscribe": null,
-                                "phiSpeed": 0.0,
-                                "centerX": 0.0,
-                                "_transform_fetched": false,
-                                "Unsubscribe": null,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "SetPosition": null,
-                                "initialPhi": 1.0,
-                                "StartSafe": null,
-                                "__field_list": {
-                                    "centerOnStart": true,
-                                    "phiEpsilon": 0.01,
-                                    "phiSpeed": 0.0,
-                                    "centerX": 0.0,
-                                    "centerZ": 0.0,
-                                    "thetaSpeed": 1.0,
-                                    "radius": 2.0,
-                                    "initialTheta": 0.0,
-                                    "centerY": 0.0,
-                                    "initialPhi": 1.0
-                                },
-                                "_subscriptions": {},
-                                "__created_at": 1763454384.0,
-                                "__meta": {},
-                                "radius": 2.0,
-                                "SetRotation": null,
-                                "phiEpsilon": 0.01,
-                                "_prevPos": {
-                                    "y": 1.0806046117362795,
-                                    "z": 0.0,
-                                    "x": 1.682941969615793
-                                },
-                                "phi": 1.0,
-                                "theta": 0.0,
-                                "GetRotation": null,
-                                "Start": null,
-                                "Update": null,
-                                "_private": {},
-                                "Destroy": null,
                                 "center": {
                                     "y": 0.0,
-                                    "z": 0.0,
-                                    "x": 0.0
+                                    "x": 0.0,
+                                    "z": 0.0
                                 },
-                                "DeserializeFields": null,
-                                "DebugTransform": null,
-                                "centerOnStart": true,
-                                "GetPosition": null,
-                                "Move": null,
-                                "_safeGetPosition": null,
-                                "DisableSafe": null,
-                                "SetScale": null,
-                                "centerZ": 0.0,
-                                "UpdateSafe": null,
-                                "_call_lifecycle": null,
-                                "SerializeFields": null,
-                                "Every": null,
-                                "GetTransform": null,
-                                "initialTheta": 0.0,
-                                "GetScale": null,
+                                "__field_list": {
+                                    "centerY": 0.0,
+                                    "centerZ": 0.0,
+                                    "centerOnStart": true,
+                                    "phiSpeed": 0.0,
+                                    "centerX": 0.0,
+                                    "initialTheta": 0.0,
+                                    "phiEpsilon": 0.01,
+                                    "radius": 2.0,
+                                    "thetaSpeed": 1.0,
+                                    "initialPhi": 1.0
+                                },
+                                "phiEpsilon": 0.01,
+                                "thetaSpeed": 1.0,
+                                "phi": 1.0,
                                 "centerY": 0.0,
-                                "thetaSpeed": 1.0
+                                "centerZ": 0.0,
+                                "centerOnStart": true,
+                                "phiSpeed": 0.0,
+                                "_subscriptions": {},
+                                "initialTheta": 0.0,
+                                "_private": {},
+                                "__created_at": 1763454384.0,
+                                "_transform_fetched": false,
+                                "theta": 0.0,
+                                "__meta": {},
+                                "radius": 5.0,
+                                "centerX": 0.0,
+                                "_prevPos": {
+                                    "y": 1.0806046117362795,
+                                    "x": 1.682941969615793,
+                                    "z": 0.0
+                                },
+                                "initialPhi": 1.0
                             }
                         }
                     ]
@@ -4511,6 +4487,262 @@
             "components": {
                 "NameComponent": {
                     "name": "Entity_18"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "000b223361a69ae4-0003529da2000001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 19,
+            "guid": "0058ef7b413df82e-0003573de8000001",
+            "components": {
+                "NameComponent": {
+                    "name": "Entity_19"
                 },
                 "TagComponent": {
                     "tagIndex": 0
