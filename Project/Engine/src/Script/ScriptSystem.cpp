@@ -226,7 +226,8 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         // mark that we need at least one reconcile on the first Update after Initialise / Play
         m_needsReconcile = true;
 
-        // Initialize the scripts' paths from the GUID. NOT DONE BY ME(DOUBLE CHECK IF NEEDED)
+        //TODO add #if android to avoid bloating on editor
+        // Initialize the scripts' paths from the GUID for android
         for (const auto& entity : entities) {
             auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
             for (auto& script : scriptComp.scripts) {
