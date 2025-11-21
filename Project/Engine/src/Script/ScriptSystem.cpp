@@ -4,6 +4,7 @@
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "Script/LuaBindableComponents.hpp"
+#include "Script/LuaBindableSystems.hpp"
 #include <lua.hpp>
 #include <LuaBridge.h>
 #include "Logging.hpp"
