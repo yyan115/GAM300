@@ -76,9 +76,7 @@ void SpriteAnimationEditorWindow::OnImGuiRender() {
                 if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Animation...")) {
                     // LoadAnimation();
                 }
-                if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Export...")) {
-                    // ExportAnimation();
-                }
+                // Removed Export menu item - no animation files
                 ImGui::Separator();
                 if (ImGui::MenuItem(ICON_FA_XMARK " Close", "Esc")) {
                     Close();
@@ -495,8 +493,7 @@ void SpriteAnimationEditorWindow::DrawPreviewPanel() {
     if (ImGui::Checkbox("Grid", &m_EditorState.showGrid)) {}
     ImGui::SameLine();
     if (ImGui::Checkbox("Bounds", &m_EditorState.showFrameBounds)) {}
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Onion Skin", &m_EditorState.enableOnionSkin)) {}
+    // Removed onion skin - not needed
 
     ImGui::EndGroup();
 
@@ -692,16 +689,31 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
 
                 ImGui::Text("Frame %d", m_EditorState.selectedFrameIndex + 1);
 
-                // Texture
-                std::string texPath = frame.texturePath.empty() ? "None" : frame.texturePath;
-                ImGui::Text("Texture: %s", texPath.c_str());
+                // Texture field with drag-drop support
+                std::string texDisplay = "None";
+                if (!frame.texturePath.empty()) {
+                    // Show only filename, not full path
+                    size_t lastSlash = frame.texturePath.find_last_of("/\\");
+                    texDisplay = (lastSlash != std::string::npos) ?
+                                frame.texturePath.substr(lastSlash + 1) : frame.texturePath;
+                }
+
+                // Create a button that looks like a text field for drag-drop
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgHovered));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyleColorVec4(ImGuiCol_FrameBgActive));
+
+                ImGui::Button(("Texture: " + texDisplay + "###TextureField").c_str(),
+                             ImVec2(ImGui::GetContentRegionAvail().x - 80, 0));
+
+                ImGui::PopStyleColor(3);
 
                 ImGui::SameLine();
-                if (ImGui::Button("Browse...")) {
+                if (ImGui::Button("Browse")) {
                     // Open file browser
                 }
 
-                // Drag-drop target for texture
+                // Drag-drop target for the texture field
                 if (EditorComponents::BeginDragDropTarget()) {
                     ImGui::SetTooltip("Drop texture here");
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
@@ -756,11 +768,39 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
             for (int i = 0; i < (int)clip.frames.size(); i++) {
                 ImGui::PushID(i);
 
+                // Frame selectable with delete button
                 bool isSelected = (i == m_EditorState.selectedFrameIndex);
-                if (ImGui::Selectable(("Frame " + std::to_string(i + 1)).c_str(), isSelected)) {
+
+                // Calculate width for selectable
+                float availWidth = ImGui::GetContentRegionAvail().x;
+                if (ImGui::Selectable(("Frame " + std::to_string(i + 1)).c_str(), isSelected,
+                                     ImGuiSelectableFlags_None, ImVec2(availWidth - 30, 0))) {
                     m_EditorState.selectedFrameIndex = i;
                     m_EditorState.currentTime = GetFrameStartTime(clip, i);
                 }
+
+                // Right-click context menu for delete
+                if (ImGui::BeginPopupContextItem(("frame_context_" + std::to_string(i)).c_str())) {
+                    if (ImGui::MenuItem("Delete Frame")) {
+                        DeleteFrame(m_EditorState.selectedClipIndex, i);
+                        ImGui::EndPopup();
+                        ImGui::PopID();
+                        break; // Exit loop as frames array has changed
+                    }
+                    ImGui::EndPopup();
+                }
+
+                // X button for delete
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 0.3f));
+                if (ImGui::Button(("X##del" + std::to_string(i)).c_str(), ImVec2(20, 0))) {
+                    DeleteFrame(m_EditorState.selectedClipIndex, i);
+                    ImGui::PopStyleColor(2);
+                    ImGui::PopID();
+                    break; // Exit loop as frames array has changed
+                }
+                ImGui::PopStyleColor(2);
 
                 // Drag to reorder
                 if (ImGui::BeginDragDropSource()) {
@@ -871,6 +911,12 @@ void SpriteAnimationEditorWindow::AddNewFrame(int clipIndex) {
     m_EditBuffer.clips[clipIndex].frames.push_back(newFrame);
     m_EditorState.selectedFrameIndex = (int)m_EditBuffer.clips[clipIndex].frames.size() - 1;
     m_HasUnsavedChanges = true;
+
+    // Apply changes to component without taking snapshot
+    if (m_AnimComponent) {
+        m_AnimComponent->clips[clipIndex] = m_EditBuffer.clips[clipIndex];
+        UpdateSpriteRenderComponent();
+    }
 }
 
 void SpriteAnimationEditorWindow::DeleteFrame(int clipIndex, int frameIndex) {
@@ -886,6 +932,11 @@ void SpriteAnimationEditorWindow::DeleteFrame(int clipIndex, int frameIndex) {
     }
 
     m_HasUnsavedChanges = true;
+
+    // Apply changes to component without taking snapshot
+    if (m_AnimComponent) {
+        m_AnimComponent->clips[clipIndex] = clip;
+    }
 }
 
 void SpriteAnimationEditorWindow::DuplicateFrame(int clipIndex, int frameIndex) {
@@ -929,6 +980,12 @@ void SpriteAnimationEditorWindow::AddNewClip() {
     m_EditorState.selectedClipIndex = (int)m_EditBuffer.clips.size() - 1;
     m_EditorState.selectedFrameIndex = -1;
     m_HasUnsavedChanges = true;
+
+    // Apply changes to component without taking snapshot
+    if (m_AnimComponent) {
+        m_AnimComponent->clips = m_EditBuffer.clips;
+        UpdateSpriteRenderComponent();
+    }
 }
 
 void SpriteAnimationEditorWindow::DeleteClip(int clipIndex) {
@@ -936,12 +993,28 @@ void SpriteAnimationEditorWindow::DeleteClip(int clipIndex) {
 
     m_EditBuffer.clips.erase(m_EditBuffer.clips.begin() + clipIndex);
 
+    // Adjust selection
     if (m_EditorState.selectedClipIndex >= (int)m_EditBuffer.clips.size()) {
         m_EditorState.selectedClipIndex = (int)m_EditBuffer.clips.size() - 1;
     }
 
+    // If we deleted the current clip, update currentClipIndex in the component
+    if (clipIndex == m_EditBuffer.currentClipIndex) {
+        m_EditBuffer.currentClipIndex = m_EditorState.selectedClipIndex;
+    } else if (clipIndex < m_EditBuffer.currentClipIndex) {
+        // Adjust currentClipIndex if we deleted a clip before it
+        m_EditBuffer.currentClipIndex--;
+    }
+
     m_EditorState.selectedFrameIndex = -1;
     m_HasUnsavedChanges = true;
+
+    // Apply changes to component without taking snapshot
+    if (m_AnimComponent) {
+        m_AnimComponent->clips = m_EditBuffer.clips;
+        m_AnimComponent->currentClipIndex = m_EditBuffer.currentClipIndex;
+        UpdateSpriteRenderComponent();
+    }
 }
 
 void SpriteAnimationEditorWindow::DuplicateClip(int clipIndex) {
@@ -963,39 +1036,43 @@ void SpriteAnimationEditorWindow::SaveAnimation() {
     m_HasUnsavedChanges = false;
 
     // Update the sprite render component with the first frame if we have one
-    if (m_CurrentEntity != 0) {
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        if (ecs.HasComponent<SpriteRenderComponent>(m_CurrentEntity)) {
-            auto& sprite = ecs.GetComponent<SpriteRenderComponent>(m_CurrentEntity);
+    UpdateSpriteRenderComponent();
 
-            // Set the sprite to show the current frame
-            if (m_AnimComponent->currentClipIndex >= 0 &&
-                m_AnimComponent->currentClipIndex < (int)m_AnimComponent->clips.size()) {
-                const auto& clip = m_AnimComponent->clips[m_AnimComponent->currentClipIndex];
-                if (!clip.frames.empty()) {
-                    int frameIdx = m_AnimComponent->currentFrameIndex >= 0 &&
-                                   m_AnimComponent->currentFrameIndex < (int)clip.frames.size() ?
-                                   m_AnimComponent->currentFrameIndex : 0;
-                    const auto& frame = clip.frames[frameIdx];
+    // Take snapshot for undo
+    SnapshotManager::GetInstance().TakeSnapshot("Edit Animation");
+}
 
-                    // Update sprite with frame data
-                    sprite.textureGUID = frame.textureGUID;
-                    sprite.texturePath = frame.texturePath;
-                    sprite.uvOffset = frame.uvOffset;
-                    sprite.uvScale = frame.uvScale;
+void SpriteAnimationEditorWindow::UpdateSpriteRenderComponent() {
+    if (m_CurrentEntity == 0 || !m_AnimComponent) return;
 
-                    // Load the texture resource if needed
-                    if (frame.textureGUID != GUID_128{}) {
-                        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(frame.textureGUID);
-                        sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(frame.textureGUID, texturePath);
-                    }
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecs.HasComponent<SpriteRenderComponent>(m_CurrentEntity)) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(m_CurrentEntity);
+
+        // Set the sprite to show the current frame
+        if (m_AnimComponent->currentClipIndex >= 0 &&
+            m_AnimComponent->currentClipIndex < (int)m_AnimComponent->clips.size()) {
+            const auto& clip = m_AnimComponent->clips[m_AnimComponent->currentClipIndex];
+            if (!clip.frames.empty()) {
+                int frameIdx = m_AnimComponent->currentFrameIndex >= 0 &&
+                               m_AnimComponent->currentFrameIndex < (int)clip.frames.size() ?
+                               m_AnimComponent->currentFrameIndex : 0;
+                const auto& frame = clip.frames[frameIdx];
+
+                // Update sprite with frame data
+                sprite.textureGUID = frame.textureGUID;
+                sprite.texturePath = frame.texturePath;
+                sprite.uvOffset = frame.uvOffset;
+                sprite.uvScale = frame.uvScale;
+
+                // Load the texture resource if needed
+                if (frame.textureGUID != GUID_128{}) {
+                    std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(frame.textureGUID);
+                    sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(frame.textureGUID, texturePath);
                 }
             }
         }
     }
-
-    // Take snapshot for undo
-    SnapshotManager::GetInstance().TakeSnapshot("Edit Animation");
 }
 
 // Utility functions

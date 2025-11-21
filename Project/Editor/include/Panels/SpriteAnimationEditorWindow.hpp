@@ -115,6 +115,7 @@ private:
 
     // File operations
     void SaveAnimation();
+    void UpdateSpriteRenderComponent();
     void LoadAnimation(const std::string& path);
     void ExportAnimation(const std::string& path);
     void ImportSpriteSheet(const std::string& path);
