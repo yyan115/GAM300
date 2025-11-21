@@ -63,6 +63,14 @@ public:
 	const std::unordered_map<std::string, std::shared_ptr<System>>& GetAllSystems() const {
 		return systems;
 	}
+	
+	template <typename T>
+	std::shared_ptr<T> GetSystem() const {
+		std::string typeName = typeid(T).name();
+		auto it = systems.find(typeName);
+		if (it == systems.end()) return nullptr;
+		return std::static_pointer_cast<T>(it->second);
+	}
 
 private:
 	std::unordered_map<std::string, Signature> signatures{}; // Map from system type name to its signature.

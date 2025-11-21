@@ -221,11 +221,22 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             s_fsRegistered = true;
         }
 
+        // mark that we need at least one reconcile on the first Update after Initialise / Play
+        m_needsReconcile = true;
+
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
 }
 void ScriptSystem::Update()
 {
+    // one-shot reconcile on first update after initialise/play
+    if (m_needsReconcile && m_ecs)
+    {
+        m_needsReconcile = false;
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] One-shot reconcile: reloading all script instances");
+        ReloadAllInstances();
+    }
+
     // advance coroutines & runtime tick if runtime initialized
     if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
@@ -570,6 +581,41 @@ bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECS
 
     return anySuccess;
 }
+
+void ScriptSystem::ReloadSystem()
+{
+    Shutdown();
+    Initialise(*m_ecs);
+}
+
+void ScriptSystem::ReloadAllInstances()
+{
+    // collect entity list snapshot under lock to avoid iterator invalidation
+    std::vector<Entity> entitySnapshot;
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        entitySnapshot.assign(entities.begin(), entities.end());
+    }
+
+    if (!m_ecs) return;
+
+    for (Entity e : entitySnapshot)
+    {
+        // If the entity still has a ScriptComponentData, reload it; otherwise destroy any runtime instances
+        ScriptComponentData* sc = GetScriptComponent(e, *m_ecs);
+        if (sc)
+        {
+            // This will serialize/preserve state for preserveKeys and recreate instances
+            ReloadScriptForEntity(e, *m_ecs);
+        }
+        else
+        {
+            // If the entity lost its script component, ensure runtime is cleared
+            DestroyInstanceForEntity(e);
+        }
+    }
+}
+
 
 ScriptComponentData* ScriptSystem::GetScriptComponent(Entity e, ECSManager& ecsManager)
 {

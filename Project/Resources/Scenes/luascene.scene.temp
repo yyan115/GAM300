@@ -239,79 +239,14 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptPath": "../../Resources/Scripts/template/test.lua",
+                            "scriptPath": "../../Resources/Scripts/template/input.lua",
                             "enabled": true,
                             "preserveKeys": [
                                 "position",
                                 "health"
                             ],
                             "entryFunction": "Start",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "Subscribe": null,
-                                "phiSpeed": 0.0,
-                                "centerX": 0.0,
-                                "_transform_fetched": false,
-                                "Unsubscribe": null,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "SetPosition": null,
-                                "initialPhi": 1.0,
-                                "StartSafe": null,
-                                "__field_list": {
-                                    "centerOnStart": true,
-                                    "phiEpsilon": 0.01,
-                                    "phiSpeed": 0.0,
-                                    "centerX": 0.0,
-                                    "centerZ": 0.0,
-                                    "thetaSpeed": 1.0,
-                                    "radius": 2.0,
-                                    "initialTheta": 0.0,
-                                    "centerY": 0.0,
-                                    "initialPhi": 1.0
-                                },
-                                "_subscriptions": {},
-                                "__created_at": 1763454384.0,
-                                "__meta": {},
-                                "radius": 2.0,
-                                "SetRotation": null,
-                                "phiEpsilon": 0.01,
-                                "_prevPos": {
-                                    "y": 1.0806046117362795,
-                                    "z": 0.0,
-                                    "x": 1.682941969615793
-                                },
-                                "phi": 1.0,
-                                "theta": 0.0,
-                                "GetRotation": null,
-                                "Start": null,
-                                "Update": null,
-                                "_private": {},
-                                "Destroy": null,
-                                "center": {
-                                    "y": 0.0,
-                                    "z": 0.0,
-                                    "x": 0.0
-                                },
-                                "DeserializeFields": null,
-                                "DebugTransform": null,
-                                "centerOnStart": true,
-                                "GetPosition": null,
-                                "Move": null,
-                                "_safeGetPosition": null,
-                                "DisableSafe": null,
-                                "SetScale": null,
-                                "centerZ": 0.0,
-                                "UpdateSafe": null,
-                                "_call_lifecycle": null,
-                                "SerializeFields": null,
-                                "Every": null,
-                                "GetTransform": null,
-                                "initialTheta": 0.0,
-                                "GetScale": null,
-                                "centerY": 0.0,
-                                "thetaSpeed": 1.0
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
@@ -563,44 +498,7 @@
                                 "health"
                             ],
                             "entryFunction": "Start",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "currentAngle": 0.0,
-                                "GetTransform": null,
-                                "Subscribe": null,
-                                "UpdateSafe": null,
-                                "DeserializeFields": null,
-                                "Unsubscribe": null,
-                                "DisableSafe": null,
-                                "_transform_fetched": false,
-                                "GetRotation": null,
-                                "Start": null,
-                                "Update": null,
-                                "_private": {},
-                                "Destroy": null,
-                                "SetPosition": null,
-                                "AwakeSafe": null,
-                                "DebugTransform": null,
-                                "StartSafe": null,
-                                "axis": "Y",
-                                "__field_list": {
-                                    "rotationSpeed": 45.0,
-                                    "axis": "Y"
-                                },
-                                "_subscriptions": {},
-                                "_call_lifecycle": null,
-                                "__created_at": 1763454384.0,
-                                "__meta": {},
-                                "SetScale": null,
-                                "After": null,
-                                "SerializeFields": null,
-                                "Every": null,
-                                "GetScale": null,
-                                "SetRotation": null,
-                                "Move": null,
-                                "rotationSpeed": 45.0,
-                                "GetPosition": null
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
@@ -3739,7 +3637,7 @@
         },
         {
             "id": 15,
-            "guid": "007942fa3d50f269-000356e906000005",
+            "guid": "004c5b5018c9b84e-0003573874000001",
             "components": {
                 "NameComponent": {
                     "name": "Entity_15"

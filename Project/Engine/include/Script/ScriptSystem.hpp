@@ -25,7 +25,8 @@ public:
     void Shutdown();
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);
-
+    void ReloadSystem();
+    void ReloadAllInstances();
 private:
     bool EnsureInstanceForEntity(Entity e, ECSManager& ecsManager);
     void DestroyInstanceForEntity(Entity e);
@@ -36,4 +37,6 @@ private:
     std::unordered_map<Entity, std::vector<std::unique_ptr<Scripting::ScriptComponent>>> m_runtimeMap;
     ECSManager* m_ecs = nullptr;
     std::mutex m_mutex;
+
+    bool m_needsReconcile = true;
 };
