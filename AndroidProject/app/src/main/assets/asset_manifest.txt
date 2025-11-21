@@ -148,6 +148,7 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
+Resources/Models/SideWall2.mesh
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -269,6 +270,15 @@ Resources/Textures/container2.png.meta
 Resources/Textures/container2_specular.dds
 Resources/Textures/container2_specular.png
 Resources/Textures/container2_specular.png.meta
+Resources/Textures/idle_1.dds
+Resources/Textures/idle_1.png
+Resources/Textures/idle_1.png.meta
+Resources/Textures/idle_2.dds
+Resources/Textures/idle_2.png
+Resources/Textures/idle_2.png.meta
+Resources/Textures/idle_3.dds
+Resources/Textures/idle_3.png
+Resources/Textures/idle_3.png.meta
 Resources/Textures/Nightshade_diffuse.dds
 Resources/Textures/Nightshade_diffuse.png
 Resources/Textures/Nightshade_diffuse.png.meta

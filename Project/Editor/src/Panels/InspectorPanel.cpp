@@ -961,6 +961,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 								// Add new script to the scripts vector (Unity-like behavior)
 								ScriptData newScript{};
+								newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
+								newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
 								newScript.scriptPath = comp.scriptPath;
 								newScript.instanceCreated = false;
 								newScript.instanceId = -1;
@@ -1009,6 +1011,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 								// Add new script to the scripts vector (Unity-like behavior)
 								ScriptData newScript{};
+								newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
+								newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
 								newScript.scriptPath = comp.scriptPath;
 								newScript.instanceCreated = false;
 								newScript.instanceId = -1;

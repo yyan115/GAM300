@@ -10,6 +10,8 @@
 // Data for a single script instance
 struct ScriptData {
     REFL_SERIALIZABLE
+    GUID_128 scriptGuid;
+    GUID_string scriptGuidStr;
     std::string scriptPath;                 // e.g. "Resources/Scripts/mono_behaviour.lua"
     bool enabled = true;
     std::vector<std::string> preserveKeys;  // keys to preserve across hot-reload (optional)

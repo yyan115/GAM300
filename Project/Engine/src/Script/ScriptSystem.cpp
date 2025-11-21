@@ -12,6 +12,7 @@
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
+#include "Asset Manager/AssetManager.hpp"
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -112,6 +113,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             }
 
             #include "Script/LuaComponentBindings.inc"
+            #include <Asset Manager/AssetManager.hpp>
 
             #undef BEGIN_COMPONENT
             #undef PROPERTY
@@ -223,6 +225,16 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 
         // mark that we need at least one reconcile on the first Update after Initialise / Play
         m_needsReconcile = true;
+
+        // Initialize the scripts' paths from the GUID. NOT DONE BY ME(DOUBLE CHECK IF NEEDED)
+        for (const auto& entity : entities) {
+            auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+            for (auto& script : scriptComp.scripts) {
+                std::string scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+                script.scriptPath = scriptPath.substr(scriptPath.find("Resources"));
+                ENGINE_LOG_DEBUG("[ScriptSystem] Current script path: " + script.scriptPath);
+            }
+        }
 
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
