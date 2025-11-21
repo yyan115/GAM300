@@ -1078,6 +1078,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         }
     }
 
+    //THIS SHOULDNT BE HERE BUT NO CHOICE I GUESS OTHERWISE SCRIPTING DIES
+    ECSRegistry::GetInstance().GetActiveECSManager().GetSystem<ScriptSystem>()->ReloadSystem();
+
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
 }
 

@@ -4,6 +4,7 @@
 #include "ECS/ComponentRegistry.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include "ECS/ECSManager.hpp"
+#include "Logging.hpp"               // <--- added for ENGINE_PRINT
 #include <string>
 #include <cassert>
 #include <cstring>
@@ -66,6 +67,35 @@ static std::string GetProxyCompName(lua_State* L, int userdataIndex) {
     }
     lua_pop(L, 1); // pop uservalue (table or nil)
     return out;
+}
+
+// helper to cache/get the TypeDescriptor* in the uservalue table
+static void CacheTypeDescriptorInUservalue(lua_State* L, int userdataIndex, TypeDescriptor* td) {
+    if (!td) return;
+    int abs = lua_absindex(L, userdataIndex);
+    lua_getuservalue(L, abs); // pushes uservalue (must be table)
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        lua_newtable(L);
+    }
+    lua_pushlightuserdata(L, td);
+    lua_setfield(L, -2, "__typedesc");
+    lua_setuservalue(L, abs); // pops uservalue
+}
+
+static TypeDescriptor* GetCachedTypeDescriptor(lua_State* L, int userdataIndex) {
+    int abs = lua_absindex(L, userdataIndex);
+    lua_getuservalue(L, abs); // pushes uservalue
+    TypeDescriptor* td = nullptr;
+    if (lua_istable(L, -1)) {
+        lua_getfield(L, -1, "__typedesc");
+        if (lua_islightuserdata(L, -1)) {
+            td = reinterpret_cast<TypeDescriptor*>(lua_touserdata(L, -1));
+        }
+        lua_pop(L, 1); // pop __typedesc
+    }
+    lua_pop(L, 1); // pop uservalue
+    return td;
 }
 
 // ----- Push helpers (reflection->lua) -----
@@ -209,47 +239,6 @@ static bool ReadLuaToDescriptor(lua_State* L, int idx, TypeDescriptor* td, void*
 }
 
 // ---------- metamethods ----------
-
-//static int comp_index(lua_State* L) {
-//    // args: userdata, key
-//    if (!lua_isuserdata(L, 1)) { lua_pushnil(L); return 1; }
-//    ComponentProxy* p = (ComponentProxy*)lua_touserdata(L, 1);
-//    if (!p || !p->ecs) { lua_pushnil(L); return 1; }
-//
-//    const char* key = nullptr;
-//    if (lua_type(L, 2) == LUA_TSTRING) key = lua_tostring(L, 2);
-//    if (!key) { lua_pushnil(L); return 1; }
-//
-//    // If asking special keys return quickly
-//    if (strcmp(key, "__ent") == 0) { lua_pushinteger(L, static_cast<lua_Integer>(p->ent)); return 1; }
-//    if (strcmp(key, "__component") == 0) { std::string nm = GetProxyCompName(L, 1); lua_pushstring(L, nm.c_str()); return 1; }
-//
-//    // lookup component info via registry
-//    ComponentRegistry::ComponentInfo ci;
-//    std::string compName = GetProxyCompName(L, 1);
-//    if (compName.empty() || !ComponentRegistry::Instance().Get(compName, ci)) { lua_pushnil(L); return 1; }
-//
-//    void* compPtr = nullptr;
-//    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
-//    if (!compPtr) { lua_pushnil(L); return 1; }
-//
-//    // reflect into struct to find member
-//    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(ci.typeDesc);
-//    if (!ts) { lua_pushnil(L); return 1; }
-//
-//    auto members = ts->GetMembers();
-//    for (const auto& m : members) {
-//        if (std::strcmp(m.name, key) == 0) {
-//            void* memberPtr = m.get_ptr(compPtr);
-//            PushValueFromDescriptor(L, m.type, memberPtr);
-//            return 1;
-//        }
-//    }
-//
-//    // fallback: not found
-//    lua_pushnil(L);
-//    return 1;
-//}
 static int comp_index(lua_State* L) {
     // args: userdata, key
     if (!lua_isuserdata(L, 1)) { lua_pushnil(L); return 1; }
@@ -264,48 +253,47 @@ static int comp_index(lua_State* L) {
     if (strcmp(key, "__ent") == 0) { lua_pushinteger(L, static_cast<lua_Integer>(p->ent)); return 1; }
     if (strcmp(key, "__component") == 0) { std::string nm = GetProxyCompName(L, 1); lua_pushstring(L, nm.c_str()); return 1; }
 
-    // lookup component info via registry
-    ComponentRegistry::ComponentInfo ci;
+    // lookup component info via registry (but first check cached typedesc)
     std::string compName = GetProxyCompName(L, 1);
-    if (!ComponentRegistry::Instance().Get(compName, ci)) { lua_pushnil(L); return 1; }
-
-    void* compPtr = nullptr;
-    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
-    if (!compPtr) { lua_pushnil(L); return 1; }
-
-    // --- Special-case: manual Transform handling when no TypeDescriptor is available ---
-    if (!ci.typeDesc && compName == "Transform") {
-        Transform* t = reinterpret_cast<Transform*>(compPtr);
-        if (!t) { lua_pushnil(L); return 1; }
-
-        if (strcmp(key, "overrideFromPrefab") == 0) {
-            lua_pushboolean(L, t->overrideFromPrefab ? 1 : 0); return 1;
-        }
-        if (strcmp(key, "localPosition") == 0) {
-            PushVector3D(L, &t->localPosition); return 1;
-        }
-        if (strcmp(key, "localScale") == 0) {
-            PushVector3D(L, &t->localScale); return 1;
-        }
-        if (strcmp(key, "localRotation") == 0) {
-            PushQuaternion(L, &t->localRotation); return 1;
-        }
-        if (strcmp(key, "isDirty") == 0) {
-            lua_pushboolean(L, t->isDirty ? 1 : 0); return 1;
-        }
-        if (strcmp(key, "worldMatrix") == 0) {
-            // worldMatrix is a Matrix4x4 — push nil for now (or push an opaque table if desired)
-            lua_pushnil(L);
-            return 1;
-        }
-
+    if (compName.empty()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Proxy has no component name stored for userdata");
         lua_pushnil(L);
         return 1;
     }
 
-    // reflect into struct to find member (existing path)
-    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(ci.typeDesc);
-    if (!ts) { lua_pushnil(L); return 1; }
+    ComponentRegistry::ComponentInfo ci;
+    // try cached typedesc first (avoids registry lookup cost)
+    TypeDescriptor* cachedTd = GetCachedTypeDescriptor(L, 1);
+
+    if (!ComponentRegistry::Instance().Get(compName, ci)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] ComponentRegistry.Get failed for comp='", compName, "' (entity=", p->ent, ")");
+        lua_pushnil(L);
+        return 1;
+    }
+
+    void* compPtr = nullptr;
+    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
+    if (!compPtr) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Getter returned null for comp='", compName, "' entity=", p->ent);
+        lua_pushnil(L);
+        return 1;
+    }
+
+    // Use TypeDescriptor from cache if present, otherwise from registry entry
+    TypeDescriptor* td = cachedTd ? cachedTd : ci.typeDesc;
+    if (!td) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Missing TypeDescriptor for comp='", compName, "'; cannot reflect members");
+        lua_pushnil(L);
+        return 1;
+    }
+
+    // reflect into struct to find member
+    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(td);
+    if (!ts) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] TypeDescriptor for comp='", compName, "' is not a struct");
+        lua_pushnil(L);
+        return 1;
+    }
 
     auto members = ts->GetMembers();
     for (const auto& m : members) {
@@ -316,46 +304,12 @@ static int comp_index(lua_State* L) {
         }
     }
 
-    // fallback: not found
+    // member not found
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ComponentProxy] Member '", key, "' not found on component '", compName, "'");
     lua_pushnil(L);
     return 1;
 }
 
-//static int comp_newindex(lua_State* L) {
-//    // args: userdata, key, value
-//    if (!lua_isuserdata(L, 1)) return 0;
-//    ComponentProxy* p = (ComponentProxy*)lua_touserdata(L, 1);
-//    if (!p || !p->ecs) return 0;
-//
-//    const char* key = nullptr;
-//    if (lua_type(L, 2) == LUA_TSTRING) key = lua_tostring(L, 2);
-//    if (!key) return 0;
-//
-//    ComponentRegistry::ComponentInfo ci;
-//    std::string compName = GetProxyCompName(L, 1);
-//    if (compName.empty() || !ComponentRegistry::Instance().Get(compName, ci)) return 0;
-//
-//    void* compPtr = nullptr;
-//    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
-//    if (!compPtr) return 0;
-//
-//    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(ci.typeDesc);
-//    if (!ts) return 0;
-//
-//    auto members = ts->GetMembers();
-//    for (const auto& m : members) {
-//        if (std::strcmp(m.name, key) == 0) {
-//            void* memberPtr = m.get_ptr(compPtr);
-//            // attempt to write Lua value into member memory (value at index 3)
-//            if (!ReadLuaToDescriptor(L, 3, m.type, memberPtr)) {
-//                // unsupported write: ignore or consider logging
-//            }
-//            return 0;
-//        }
-//    }
-//
-//    return 0;
-//}
 static int comp_newindex(lua_State* L) {
     // args: userdata, key, value
     if (!lua_isuserdata(L, 1)) return 0;
@@ -366,69 +320,39 @@ static int comp_newindex(lua_State* L) {
     if (lua_type(L, 2) == LUA_TSTRING) key = lua_tostring(L, 2);
     if (!key) return 0;
 
-    ComponentRegistry::ComponentInfo ci;
     std::string compName = GetProxyCompName(L, 1);
-    if (!ComponentRegistry::Instance().Get(compName, ci)) return 0;
-
-    void* compPtr = nullptr;
-    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
-    if (!compPtr) return 0;
-
-    // --- Special-case: manual Transform writes when no TypeDescriptor is available ---
-    if (!ci.typeDesc && compName == "Transform") {
-        Transform* t = reinterpret_cast<Transform*>(compPtr);
-        if (!t) return 0;
-
-        // value is at index 3
-        if (strcmp(key, "overrideFromPrefab") == 0) {
-            if (lua_isboolean(L, 3) || lua_isnumber(L, 3)) {
-                t->overrideFromPrefab = (lua_toboolean(L, 3) != 0);
-            }
-            return 0;
-        }
-
-        if (strcmp(key, "localPosition") == 0) {
-            if (lua_istable(L, 3)) {
-                lua_getfield(L, 3, "x"); if (lua_isnumber(L, -1)) t->localPosition.x = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "y"); if (lua_isnumber(L, -1)) t->localPosition.y = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "z"); if (lua_isnumber(L, -1)) t->localPosition.z = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-            }
-            return 0;
-        }
-
-        if (strcmp(key, "localScale") == 0) {
-            if (lua_istable(L, 3)) {
-                lua_getfield(L, 3, "x"); if (lua_isnumber(L, -1)) t->localScale.x = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "y"); if (lua_isnumber(L, -1)) t->localScale.y = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "z"); if (lua_isnumber(L, -1)) t->localScale.z = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-            }
-            return 0;
-        }
-
-        if (strcmp(key, "localRotation") == 0) {
-            if (lua_istable(L, 3)) {
-                lua_getfield(L, 3, "w"); if (lua_isnumber(L, -1)) t->localRotation.w = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "x"); if (lua_isnumber(L, -1)) t->localRotation.x = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "y"); if (lua_isnumber(L, -1)) t->localRotation.y = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-                lua_getfield(L, 3, "z"); if (lua_isnumber(L, -1)) t->localRotation.z = (float)lua_tonumber(L, -1); lua_pop(L, 1);
-            }
-            return 0;
-        }
-
-        if (strcmp(key, "isDirty") == 0) {
-            if (lua_isboolean(L, 3) || lua_isnumber(L, 3)) {
-                t->isDirty = (lua_toboolean(L, 3) != 0);
-            }
-            return 0;
-        }
-
-        // worldMatrix write is ignored for now
+    if (compName.empty()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Proxy has no component name stored for userdata when writing");
         return 0;
     }
 
-    // Reflective path (existing)
-    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(ci.typeDesc);
-    if (!ts) return 0;
+    ComponentRegistry::ComponentInfo ci;
+    if (!ComponentRegistry::Instance().Get(compName, ci)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] ComponentRegistry.Get failed for comp='", compName, "' on write (entity=", p->ent, ")");
+        return 0;
+    }
+
+    void* compPtr = nullptr;
+    if (ci.getter) compPtr = ci.getter(p->ecs, p->ent);
+    if (!compPtr) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Getter returned null for comp='", compName, "' on write entity=", p->ent);
+        return 0;
+    }
+
+    // Use cached typedesc if present
+    TypeDescriptor* td = GetCachedTypeDescriptor(L, 1);
+    if (!td) td = ci.typeDesc;
+    if (!td) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] Missing TypeDescriptor for comp='", compName, "'; cannot write members");
+        return 0;
+    }
+
+    // Reflective path
+    TypeDescriptor_Struct* ts = dynamic_cast<TypeDescriptor_Struct*>(td);
+    if (!ts) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ComponentProxy] TypeDescriptor for comp='", compName, "' is not a struct (write)");
+        return 0;
+    }
 
     auto members = ts->GetMembers();
     for (const auto& m : members) {
@@ -437,12 +361,13 @@ static int comp_newindex(lua_State* L) {
             // attempt to write Lua value into member memory
             // value is at index 3
             if (!ReadLuaToDescriptor(L, 3, m.type, memberPtr)) {
-                // unsupported write: ignore or log
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ComponentProxy] Unsupported write for member '", key, "' on component '", compName, "'");
             }
             return 0;
         }
     }
 
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ComponentProxy] Attempted write to unknown member '", key, "' on component '", compName, "'");
     return 0;
 }
 
@@ -489,6 +414,12 @@ int PushComponentProxy(lua_State* L, ECSManager* ecs, Entity ent, const std::str
 
     // store component name in userdata uservalue table
     SetProxyCompName(L, -1, compName);
+
+    // cache TypeDescriptor* (if available) in uservalue for fast access
+    ComponentRegistry::ComponentInfo ci;
+    if (ComponentRegistry::Instance().Get(compName, ci) && ci.typeDesc) {
+        CacheTypeDescriptorInUservalue(L, -1, ci.typeDesc);
+    }
 
     // leave userdata on stack
     return 1;

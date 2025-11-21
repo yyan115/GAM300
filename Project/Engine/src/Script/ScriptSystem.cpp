@@ -4,9 +4,11 @@
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "Script/LuaBindableComponents.hpp"
+#include "Script/LuaBindableSystems.hpp"
 #include <lua.hpp>
 #include <LuaBridge.h>
 #include "Logging.hpp"
+#include <TimeManager.hpp>
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
@@ -68,7 +70,10 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         // Perform bindings once per process/module
         if (!g_luaBindingsDone)
         {
-            // ---- 1) First pass: LuaBridge type registrations + register getters + pushers ----
+            // ============================================================================
+            // COMPONENT BINDINGS (existing code)
+            // ============================================================================
+
             #define BEGIN_COMPONENT(CppType, LuaName) \
             { \
                 const char* _compName = LuaName; \
@@ -76,47 +81,76 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 RegisterCompPusher<CppType>(_compName); \
                 luabridge::getGlobalNamespace(L).beginClass<CppType>(_compName)
 
-                #define PROPERTY(LuaFieldName, MemberPtr) \
+            #define PROPERTY(LuaFieldName, MemberPtr) \
                 .addProperty(LuaFieldName, MemberPtr, MemberPtr)
 
-                #define END_COMPONENT() \
+            #define END_COMPONENT() \
                 .endClass(); \
                 g_luaRegisteredComponents_global.insert(_compName); \
             }
 
-            // Include the single edit file (your editable component/property list)
-            #include "LuaComponentBindings.inc"
-
+            #include "Script/LuaComponentBindings.inc"
+            
             #undef BEGIN_COMPONENT
             #undef PROPERTY
             #undef END_COMPONENT
 
-            // ---- 2) Second pass: Build the global Components metadata table in Lua ----
-            lua_newtable(L); // Components table
+            // ---- Second pass: Components metadata table ----
+            lua_newtable(L);
 
             #define BEGIN_COMPONENT(CppType, LuaName) \
             { \
                 const char* _compName = LuaName; \
-                lua_pushstring(L, _compName); /* key */ \
-                lua_newtable(L); /* value: metadata table for this component */
+                lua_pushstring(L, _compName); \
+                lua_newtable(L);
 
-                #define PROPERTY(LuaFieldName, MemberPtr) \
+            #define PROPERTY(LuaFieldName, MemberPtr) \
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
 
-                #define END_COMPONENT() \
-                lua_settable(L, -3); /* Components[_compName] = metadata_table */ \
+            #define END_COMPONENT() \
+                lua_settable(L, -3); \
             }
 
-            #include "LuaComponentBindings.inc"
-#include <Asset Manager/AssetManager.hpp>
+            #include "Script/LuaComponentBindings.inc"
+            #include <Asset Manager/AssetManager.hpp>
 
             #undef BEGIN_COMPONENT
             #undef PROPERTY
             #undef END_COMPONENT
 
-            // Set global Components = { ... }
             lua_setglobal(L, "Components");
+
+            // ============================================================================
+            // SYSTEM BINDINGS
+            // ============================================================================
+
+            #define BEGIN_SYSTEM(Name) \
+                luabridge::getGlobalNamespace(L).beginNamespace(Name)
+
+            #define BEGIN_CONSTANTS(Name) \
+                .beginNamespace(Name)
+
+            #define CONSTANT(LuaName, CppValue) \
+                .addVariable(LuaName, static_cast<int>(CppValue))
+
+            #define END_CONSTANTS() \
+                .endNamespace()
+
+            #define FUNCTION(LuaName, CppFunc) \
+                .addFunction(LuaName, CppFunc)
+
+            #define END_SYSTEM() \
+                .endNamespace();
+
+            #include "Script/LuaSystemBindings.inc"
+
+            #undef BEGIN_SYSTEM
+            #undef BEGIN_CONSTANTS
+            #undef CONSTANT
+            #undef END_CONSTANTS
+            #undef FUNCTION
+            #undef END_SYSTEM
 
             g_luaBindingsDone = true;
         }
@@ -172,7 +206,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing component proxy for ", compName);
             PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), compName);
             return true;
-            });
+        });
 
         // Only set a disk fallback reader if nobody registered a FS callback earlier.
         static bool s_fsRegistered = false;
@@ -185,11 +219,14 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 ss << ifs.rdbuf();
                 out = ss.str();
                 return true;
-                });
+            });
             s_fsRegistered = true;
         }
 
-        // Initialize the scripts' paths from the GUID.
+        // mark that we need at least one reconcile on the first Update after Initialise / Play
+        m_needsReconcile = true;
+
+        // Initialize the scripts' paths from the GUID. NOT DONE BY ME(DOUBLE CHECK IF NEEDED)
         for (const auto& entity : entities) {
             auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
             for (auto& script : scriptComp.scripts) {
@@ -202,19 +239,26 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
 }
-
-void ScriptSystem::Update(float dt, ECSManager& ecsManager)
+void ScriptSystem::Update()
 {
+    // one-shot reconcile on first update after initialise/play
+    if (m_needsReconcile && m_ecs)
+    {
+        m_needsReconcile = false;
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] One-shot reconcile: reloading all script instances");
+        ReloadAllInstances();
+    }
+
     // advance coroutines & runtime tick if runtime initialized
-    if (Scripting::GetLuaState()) Scripting::Tick(dt);
+    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
     {
-        ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
+        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
 
-        if (!EnsureInstanceForEntity(e, ecsManager)) continue;
+        if (!EnsureInstanceForEntity(e, *m_ecs)) continue;
 
         // call Update(dt) on all script instances for this entity
         {
@@ -226,7 +270,7 @@ void ScriptSystem::Update(float dt, ECSManager& ecsManager)
                 {
                     if (scriptInst)
                     {
-                        scriptInst->Update(dt);
+                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
                     }
                 }
             }
@@ -283,7 +327,8 @@ void ScriptSystem::Shutdown()
         }
     }
 
-    Scripting::Shutdown();
+    Scripting::Shutdown(); 
+    g_luaBindingsDone = false;
 
     ENGINE_PRINT("[ScriptSystem] Shutdown complete\n");
 }
@@ -548,6 +593,41 @@ bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECS
 
     return anySuccess;
 }
+
+void ScriptSystem::ReloadSystem()
+{
+    Shutdown();
+    Initialise(*m_ecs);
+}
+
+void ScriptSystem::ReloadAllInstances()
+{
+    // collect entity list snapshot under lock to avoid iterator invalidation
+    std::vector<Entity> entitySnapshot;
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        entitySnapshot.assign(entities.begin(), entities.end());
+    }
+
+    if (!m_ecs) return;
+
+    for (Entity e : entitySnapshot)
+    {
+        // If the entity still has a ScriptComponentData, reload it; otherwise destroy any runtime instances
+        ScriptComponentData* sc = GetScriptComponent(e, *m_ecs);
+        if (sc)
+        {
+            // This will serialize/preserve state for preserveKeys and recreate instances
+            ReloadScriptForEntity(e, *m_ecs);
+        }
+        else
+        {
+            // If the entity lost its script component, ensure runtime is cleared
+            DestroyInstanceForEntity(e);
+        }
+    }
+}
+
 
 ScriptComponentData* ScriptSystem::GetScriptComponent(Entity e, ECSManager& ecsManager)
 {
