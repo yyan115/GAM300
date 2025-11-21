@@ -68,7 +68,10 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         // Perform bindings once per process/module
         if (!g_luaBindingsDone)
         {
-            // ---- 1) First pass: LuaBridge type registrations + register getters + pushers ----
+            // ============================================================================
+            // COMPONENT BINDINGS (existing code)
+            // ============================================================================
+
             #define BEGIN_COMPONENT(CppType, LuaName) \
             { \
                 const char* _compName = LuaName; \
@@ -84,28 +87,27 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 g_luaRegisteredComponents_global.insert(_compName); \
             }
 
-            // Include the single edit file (your editable component/property list)
             #include "LuaComponentBindings.inc"
-
+            
             #undef BEGIN_COMPONENT
             #undef PROPERTY
             #undef END_COMPONENT
 
-            // ---- 2) Second pass: Build the global Components metadata table in Lua ----
-            lua_newtable(L); // Components table
+            // ---- Second pass: Components metadata table ----
+            lua_newtable(L);
 
             #define BEGIN_COMPONENT(CppType, LuaName) \
             { \
                 const char* _compName = LuaName; \
-                lua_pushstring(L, _compName); /* key */ \
-                lua_newtable(L); /* value: metadata table for this component */
+                lua_pushstring(L, _compName); \
+                lua_newtable(L);
 
                 #define PROPERTY(LuaFieldName, MemberPtr) \
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
 
                 #define END_COMPONENT() \
-                lua_settable(L, -3); /* Components[_compName] = metadata_table */ \
+                lua_settable(L, -3); \
             }
 
             #include "LuaComponentBindings.inc"
@@ -114,8 +116,71 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #undef PROPERTY
             #undef END_COMPONENT
 
-            // Set global Components = { ... }
             lua_setglobal(L, "Components");
+
+            // ============================================================================
+            // SYSTEM BINDINGS (generic system framework)
+            // ============================================================================
+            
+            // ---- Pass 1: Register all enums ----
+            #define BEGIN_SYSTEM_NAMESPACE(Name) \
+            { \
+                auto _ns = luabridge::getGlobalNamespace(L).beginNamespace(Name);
+
+                #define BEGIN_ENUM(EnumName) \
+                _ns = _ns.beginNamespace(EnumName);
+                
+                #define ENUM_VALUE(LuaName, CppValue) \
+                _ns = _ns.addVariable(LuaName, &CppValue, false);
+                
+                #define END_ENUM() \
+                _ns = _ns.endNamespace();
+                
+                #define SYSTEM_FUNCTION(LuaName, CppFunction) \
+                /* Skip functions in first pass */
+                
+                #define END_SYSTEM_NAMESPACE() \
+                _ns.endNamespace(); \
+            }
+
+            #include "LuaSystemBindings.inc"
+
+            #undef BEGIN_SYSTEM_NAMESPACE
+            #undef BEGIN_ENUM
+            #undef ENUM_VALUE
+            #undef END_ENUM
+            #undef SYSTEM_FUNCTION
+            #undef END_SYSTEM_NAMESPACE
+
+            // ---- Pass 2: Register all functions ----
+            #define BEGIN_SYSTEM_NAMESPACE(Name) \
+            { \
+                auto _ns = luabridge::getGlobalNamespace(L).beginNamespace(Name);
+            
+                #define BEGIN_ENUM(EnumName) \
+                /* Skip enums in second pass */
+            
+                #define ENUM_VALUE(LuaName, CppValue) \
+                /* Skip enum values in second pass */
+            
+                #define END_ENUM() \
+                /* Skip enum end in second pass */
+            
+                #define SYSTEM_FUNCTION(LuaName, CppFunction) \
+                _ns = _ns.addFunction(LuaName, &CppFunction);
+            
+                #define END_SYSTEM_NAMESPACE() \
+                _ns.endNamespace(); \
+            }
+            
+            #include "LuaSystemBindings.inc"
+            
+            #undef BEGIN_SYSTEM_NAMESPACE
+            #undef BEGIN_ENUM
+            #undef ENUM_VALUE
+            #undef END_ENUM
+            #undef SYSTEM_FUNCTION
+            #undef END_SYSTEM_NAMESPACE
 
             g_luaBindingsDone = true;
         }
