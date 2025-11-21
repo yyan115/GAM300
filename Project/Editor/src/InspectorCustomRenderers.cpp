@@ -11,6 +11,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #include "pch.h"
+#include <filesystem>
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Transform/TransformSystem.hpp"
@@ -2106,13 +2107,60 @@ void RegisterInspectorCustomRenderers()
             // Double-click to open
             if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                std::filesystem::path absolutePath = std::filesystem::absolute(scriptData.scriptPath);
+                // Current working directory is C:\Users\growt\Desktop\GAM300\Project\Build\EditorRelease
+                // We need to go up 2 levels to get to Project folder
+                std::filesystem::path currentPath = std::filesystem::current_path();
+                std::filesystem::path projectRoot;
+
+                // Check if we're in a Build subfolder (EditorRelease, Debug, etc.)
+                if (currentPath.filename() == "EditorRelease" ||
+                    currentPath.filename() == "EditorDebug" ||
+                    currentPath.filename() == "Release" ||
+                    currentPath.filename() == "Debug") {
+                    // Go up to Build folder, then up to Project folder
+                    projectRoot = currentPath.parent_path().parent_path();
+                } else if (currentPath.filename() == "Build") {
+                    // We're in Build folder, go up one to Project
+                    projectRoot = currentPath.parent_path();
+                } else {
+                    // Try to find Project folder by looking for specific markers
+                    projectRoot = currentPath;
+                    while (projectRoot.has_parent_path()) {
+                        // Check if this directory has the expected project structure
+                        if (std::filesystem::exists(projectRoot / "Build") &&
+                            std::filesystem::exists(projectRoot / "Resources") &&
+                            std::filesystem::exists(projectRoot / "Engine")) {
+                            break;
+                        }
+                        projectRoot = projectRoot.parent_path();
+                    }
+                }
+
+                // Construct the correct path to the script file
+                std::filesystem::path scriptFullPath;
+                if (scriptData.scriptPath.find("Resources/scripts/") == 0) {
+                    // Path already includes full Resources/scripts/ prefix
+                    scriptFullPath = projectRoot / scriptData.scriptPath;
+                } else if (scriptData.scriptPath.find("scripts/") == 0) {
+                    // Path includes scripts/ prefix
+                    scriptFullPath = projectRoot / "Resources" / scriptData.scriptPath;
+                } else {
+                    // Just the script filename
+                    scriptFullPath = projectRoot / "Resources" / "scripts" / scriptData.scriptPath;
+                }
+
+                // Verify the file exists, if not try to create the directory structure
+                if (!std::filesystem::exists(scriptFullPath)) {
+                    // Create directories if they don't exist
+                    std::filesystem::create_directories(scriptFullPath.parent_path());
+                }
+
                 #ifdef _WIN32
-                    std::string command = "code \"" + absolutePath.string() + "\"";
+                    std::string command = "code \"" + scriptFullPath.string() + "\"";
                 #elif __linux__
-                    std::string command = "code \"" + absolutePath.string() + "\" &";
+                    std::string command = "code \"" + scriptFullPath.string() + "\" &";
                 #elif __APPLE__
-                    std::string command = "code \"" + absolutePath.string() + "\"";
+                    std::string command = "code \"" + scriptFullPath.string() + "\"";
                 #endif
                 system(command.c_str());
             }
