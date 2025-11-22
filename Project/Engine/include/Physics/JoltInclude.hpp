@@ -25,7 +25,7 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Physics/Collision/BroadPhase/ObjectVsBroadPhaseLayerFilterTable.h>
 #include <Jolt/Physics/Collision/ObjectLayerPairFilterTable.h>
-
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 
 //Shapes
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>

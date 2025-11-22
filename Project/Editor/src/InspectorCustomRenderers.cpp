@@ -27,6 +27,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
+#include "Physics/Kinematics/CharacterControllerComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -533,7 +534,7 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== RIGIDBODY COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
-    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
+    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)  
     {
         ecs;
         auto &rigidBody = ecs.GetComponent<RigidBodyComponent>(entity);
@@ -634,6 +635,31 @@ void RegisterInspectorCustomRenderers()
         ImGui::PopID();
         return true; // skip default reflection
     });
+
+    ReflectionRenderer::RegisterComponentRenderer("CharacterControllerComponent",
+        [](void*, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs)
+        {
+            auto& controller = ecs.GetComponent<CharacterControllerComponent>(entity);
+
+            ImGui::PushID("CharacterControllerComponent");
+
+            // Enabled
+            UndoableWidgets::Checkbox("Enabled", &controller.enabled);
+
+            // Speed
+            UndoableWidgets::DragFloat("Speed", &controller.speed, 0.1f, 0.0f, FLT_MAX, "%.2f");
+
+            // Jump Height
+            UndoableWidgets::DragFloat("Jump Height", &controller.jumpHeight, 0.1f, 0.0f, FLT_MAX, "%.2f");
+
+            ImGui::PopID();
+            return true; // skip default reflection
+        });
+
+
+
+
+
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties

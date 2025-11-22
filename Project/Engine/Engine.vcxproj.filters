@@ -114,6 +114,9 @@
     <ClCompile Include="src\Script\ScriptComponentData.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteAnimationComponent.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteAnimationSystem.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterController.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerComponent.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
@@ -289,6 +292,9 @@
     <ClInclude Include="include\Graphics\Sprite\SpriteAnimationComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteAnimationSystem.hpp" />
     <ClInclude Include="include\Script\LuaBindableSystems.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterController.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerComponent.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

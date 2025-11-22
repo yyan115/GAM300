@@ -91,6 +91,9 @@
     <ClInclude Include="include\Physics\CollisionFilters.hpp" />
     <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterController.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerComponent.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerSystem.hpp" />
     <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
     <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
@@ -202,6 +205,9 @@
   <ItemGroup>
     <ClCompile Include="src\Graphics\Sprite\SpriteAnimationComponent.cpp" />
     <ClCompile Include="src\Graphics\Sprite\SpriteAnimationSystem.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterController.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerComponent.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerSystem.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Script\ScriptComponentData.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />

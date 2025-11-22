@@ -23,6 +23,8 @@
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
@@ -49,6 +51,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
+	RegisterComponent<CharacterControllerComponent>();
 	RegisterComponent<LightComponent>();
 	RegisterComponent<DirectionalLightComponent>();
 	RegisterComponent<PointLightComponent>();
@@ -103,10 +106,20 @@ void ECSManager::Initialize() {
 	{
 		Signature signature;
 		//signature.set(GetComponentID<Transform>());
+		//signature.set(GetComponentID<CharacterControllerComponent>());		//fix this, causing error, create new system or no..
 		signature.set(GetComponentID<ColliderComponent>());
 		signature.set(GetComponentID<RigidBodyComponent>());
 		SetSystemSignature<PhysicsSystem>(signature);
 	}
+
+	characterControllerSystem = RegisterSystem<CharacterControllerSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<CharacterControllerComponent>());
+		signature.set(GetComponentID<ColliderComponent>()); // must have collider to work
+		SetSystemSignature<CharacterControllerSystem>(signature);
+	}
+
 
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
