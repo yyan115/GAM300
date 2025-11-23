@@ -82,6 +82,7 @@ public:
     // Asset management
     void ENGINE_API SetClip(const GUID_128& guid);
     void SetClip(std::shared_ptr<Audio> clip);
+    void ENGINE_API SetClipFromString(const std::string& guidStr);
     bool HasValidClip() const;
     
     // For ECS AudioSystem integration
