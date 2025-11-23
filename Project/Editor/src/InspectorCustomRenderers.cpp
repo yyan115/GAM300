@@ -11,6 +11,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 */
 /* End Header **************************************************************************/
 #include "pch.h"
+#include <filesystem>
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Transform/TransformSystem.hpp"
@@ -21,9 +22,12 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Math/Vector3D.hpp"
 #include <glm/glm.hpp>
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
+#include "Graphics/Sprite/SpriteAnimationComponent.hpp"
+#include "Panels/SpriteAnimationEditorWindow.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
+#include "Physics/Kinematics/CharacterControllerComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -42,12 +46,24 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include "Script/ScriptComponentData.hpp"
+#include "Scripting.h"
+#include "ScriptInspector.h"
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+}
 #include "imgui.h"
 #include "EditorComponents.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include "UndoableWidgets.hpp"
 #include <glm/glm.hpp>
 #include <cfloat>
+#include <fstream>
+#include <cctype>
+#include <algorithm>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 // External drag-drop state
 extern GUID_128 DraggedModelGuid;
@@ -61,6 +77,9 @@ extern std::string DraggedFontPath;
 extern GUID_128 DraggedScriptGuid;
 extern std::string DraggedScriptPath;
 
+// Forward declaration for sprite animation inspector
+void RegisterSpriteAnimationInspector();
+
 void RegisterInspectorCustomRenderers()
 {
     // ==================== CUSTOM TYPE RENDERERS ====================
@@ -70,6 +89,7 @@ void RegisterInspectorCustomRenderers()
     [](const char *name, void *ptr, Entity, ECSManager &)
     {
         glm::vec3 *vec = static_cast<glm::vec3 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Convert field name from camelCase to "Proper Case"
         std::string displayName = name;
@@ -87,7 +107,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("%s", displayName.c_str());
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         float values[3] = {vec->x, vec->y, vec->z};
@@ -116,7 +136,6 @@ void RegisterInspectorCustomRenderers()
         ecs;
         NameComponent &nameComp = *static_cast<NameComponent *>(componentPtr);
 
-        // Unity-style checkbox on the left (from ActiveComponent)
         if (ecs.HasComponent<ActiveComponent>(entity))
         {
             auto &activeComp = ecs.GetComponent<ActiveComponent>(entity);
@@ -303,9 +322,11 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Position");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
@@ -325,9 +346,11 @@ void RegisterInspectorCustomRenderers()
         Quaternion *quat = static_cast<Quaternion *>(ptr);
         Vector3D euler = quat->ToEulerDegrees();
         float arr[3] = {euler.x, euler.y, euler.z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Rotation");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
@@ -346,9 +369,11 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *scale = static_cast<Vector3D *>(ptr);
         float arr[3] = {scale->x, scale->y, scale->z};
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Scale");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
         bool changed = UndoableWidgets::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f");
@@ -370,9 +395,10 @@ void RegisterInspectorCustomRenderers()
         ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
         auto &rc = ecs.GetComponent<ModelRenderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Shape Type");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder"};
         int currentShapeType = static_cast<int>(collider.shapeType);
@@ -398,7 +424,8 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Box:
         {
             ImGui::Text("Half Extents");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.boxHalfExtents = halfExtent;
             float halfExtents[3] = {collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z};
             if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f"))
@@ -411,7 +438,8 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Sphere:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.sphereRadius = radius;
             if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -422,14 +450,16 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Capsule:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
             }
             ImGui::Text("Half Height");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.capsuleHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -440,15 +470,17 @@ void RegisterInspectorCustomRenderers()
         case ColliderShapeType::Cylinder:
         {
             ImGui::Text("Radius");
-            ImGui::SameLine();
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
             }
             ImGui::Text("Half Height");
-            ImGui::SameLine();
-            collider.cylinderRadius = halfExtent.y;
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            collider.cylinderHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -470,9 +502,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Layer");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *layers[] = {"Non-Moving", "Moving", "Sensor", "Debris"};
         int currentLayer = static_cast<int>(collider.layer);
@@ -501,17 +534,18 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== RIGIDBODY COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
-    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
+    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)  
     {
         ecs;
         auto &rigidBody = ecs.GetComponent<RigidBodyComponent>(entity);
         auto &transform = ecs.GetComponent<Transform>(entity); // for info tab
 
         ImGui::PushID("RigidBodyComponent");
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // --- Motion Type dropdown ---
         ImGui::Text("Motion");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         const char *motionTypes[] = {"Static", "Kinematic", "Dynamic"};
@@ -526,6 +560,7 @@ void RegisterInspectorCustomRenderers()
         EditorComponents::PopComboColors();
 
         // --- Is Trigger checkbox ---
+        ImGui::AlignTextToFramePadding();
         UndoableWidgets::Checkbox("##IsTrigger", &rigidBody.isTrigger);
         ImGui::SameLine();
         ImGui::Text("Is Trigger");
@@ -533,6 +568,7 @@ void RegisterInspectorCustomRenderers()
         if (rigidBody.motion == Motion::Dynamic)
         {
             // --- CCD checkbox ---
+            ImGui::AlignTextToFramePadding();
             if (UndoableWidgets::Checkbox("##CCD", &rigidBody.ccd))
             {
                 rigidBody.motion_dirty = true;
@@ -543,18 +579,21 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
 
             // --- Linear & Angular Damping ---
-            UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Linear Damping");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
-            UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Angular Damping");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
             // --- Gravity Factor ---
-            UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
             ImGui::Text("Gravity Factor");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
         }
 
         // --- Info Section (Read-only) ---
@@ -563,28 +602,32 @@ void RegisterInspectorCustomRenderers()
             ImGui::BeginDisabled();
 
             // Position
+            ImGui::Text("Position");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float position[3] = {transform.localPosition.x, transform.localPosition.y, transform.localPosition.z};
             ImGui::DragFloat3("##Position", position, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
-            ImGui::SameLine();
-            ImGui::Text("Position");
 
             // Rotation
+            ImGui::Text("Rotation");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float rotation[3] = {transform.localRotation.x, transform.localRotation.y, transform.localRotation.z};
             ImGui::DragFloat3("##Rotation", rotation, 1.0f, -180.0f, 180.0f, "%.3f");
-            ImGui::SameLine();
-            ImGui::Text("Rotation");
 
             // Linear Velocity
+            ImGui::Text("Linear Velocity");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float linearVel[3] = {rigidBody.linearVel.x, rigidBody.linearVel.y, rigidBody.linearVel.z};
             ImGui::DragFloat3("##LinearVelocity", linearVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
-            ImGui::Text("Linear Velocity");
 
             // Angular Velocity
+            ImGui::Text("Angular Velocity");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
             float angularVel[3] = {rigidBody.angularVel.x, rigidBody.angularVel.y, rigidBody.angularVel.z};
             ImGui::DragFloat3("##AngularVelocity", angularVel, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-            ImGui::SameLine();
-            ImGui::Text("Angular Velocity");
 
             ImGui::EndDisabled();
         }
@@ -592,6 +635,31 @@ void RegisterInspectorCustomRenderers()
         ImGui::PopID();
         return true; // skip default reflection
     });
+
+    ReflectionRenderer::RegisterComponentRenderer("CharacterControllerComponent",
+        [](void*, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs)
+        {
+            auto& controller = ecs.GetComponent<CharacterControllerComponent>(entity);
+
+            ImGui::PushID("CharacterControllerComponent");
+
+            // Enabled
+            UndoableWidgets::Checkbox("Enabled", &controller.enabled);
+
+            // Speed
+            UndoableWidgets::DragFloat("Speed", &controller.speed, 0.1f, 0.0f, FLT_MAX, "%.2f");
+
+            // Jump Height
+            UndoableWidgets::DragFloat("Jump Height", &controller.jumpHeight, 0.1f, 0.0f, FLT_MAX, "%.2f");
+
+            ImGui::PopID();
+            return true; // skip default reflection
+        });
+
+
+
+
+
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
@@ -601,12 +669,13 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         CameraComponent &camera = *static_cast<CameraComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Manually render the non-reflected properties first
 
         // Projection Type dropdown - using UndoableWidgets
         ImGui::Text("Projection");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *projTypes[] = {"Perspective", "Orthographic"};
         int currentProj = static_cast<int>(camera.projectionType);
@@ -620,7 +689,7 @@ void RegisterInspectorCustomRenderers()
 
         // Target (glm::vec3)
         ImGui::Text("Target");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float target[3] = {camera.target.x, camera.target.y, camera.target.z};
         if (UndoableWidgets::DragFloat3("##Target", target, 0.1f))
@@ -630,7 +699,7 @@ void RegisterInspectorCustomRenderers()
 
         // Up (glm::vec3)
         ImGui::Text("Up");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float up[3] = {camera.up.x, camera.up.y, camera.up.z};
         if (UndoableWidgets::DragFloat3("##Up", up, 0.1f))
@@ -639,7 +708,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("Clear Flags");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char* clearFlagsOptions[] = {"Skybox", "Solid Color", "Depth Only", "Don't Clear"};
         int currentClearFlags = static_cast<int>(camera.clearFlags);
@@ -651,7 +720,7 @@ void RegisterInspectorCustomRenderers()
         EditorComponents::PopComboColors();
 
         ImGui::Text("Background");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float bgColor[3] = {camera.backgroundColor.r, camera.backgroundColor.g, camera.backgroundColor.b};
         if (UndoableWidgets::ColorEdit3("##Background", bgColor))
@@ -660,7 +729,7 @@ void RegisterInspectorCustomRenderers()
         }
 
         ImGui::Text("Ambient Intensity");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         if (ecs.lightingSystem) {
             float ambientIntensity = ecs.lightingSystem->ambientIntensity;
@@ -681,9 +750,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Model:");
-        ImGui::SameLine();
+        ImGui::Text("Model");
+        ImGui::SameLine(labelWidth);
 
         // Display current model path or "None"
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -772,9 +842,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Shader:");
-        ImGui::SameLine();
+        ImGui::Text("Shader");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -793,9 +864,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Material:");
-        ImGui::SameLine();
+        ImGui::Text("Material");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -827,9 +899,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Texture");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -889,15 +962,20 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Skybox Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Skybox Texture");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
         std::string displayText = texPath.empty() ? "None (Texture)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
-        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        bool hasTexture = (guid->high != 0 || guid->low != 0);
+        float availableWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = hasTexture ? availableWidth - 30.0f : availableWidth;
+
+        ImGui::SetNextItemWidth(buttonWidth);
         EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
         if (EditorComponents::BeginDragDropTarget())
@@ -907,7 +985,7 @@ void RegisterInspectorCustomRenderers()
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
             {
                 // Take snapshot before changing texture
-                SnapshotManager::GetInstance().TakeSnapshot("Assign Texture");
+                SnapshotManager::GetInstance().TakeSnapshot("Assign Skybox Texture");
 
                 const char *texturePath = (const char *)payload->Data;
                 std::string pathStr(texturePath, payload->DataSize);
@@ -928,6 +1006,45 @@ void RegisterInspectorCustomRenderers()
             EditorComponents::EndDragDropTarget();
         }
 
+        auto &cameraComp = ecs.GetComponent<CameraComponent>(entity);
+
+        if (guid->high != 0 || guid->low != 0)
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearSkybox"))
+            {
+                SnapshotManager::GetInstance().TakeSnapshot("Clear Skybox Texture");
+
+                *guid = GUID_128{0, 0};
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+
+                return true;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Clear skybox texture");
+            }
+
+            if (!cameraComp.skyboxTexture || cameraComp.skyboxTexturePath.empty())
+            {
+                std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+                if (!newTexturePath.empty())
+                {
+                    cameraComp.skyboxTexturePath = newTexturePath;
+                    cameraComp.skyboxTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(*guid, newTexturePath);
+                }
+            }
+        }
+        else
+        {
+            if (cameraComp.skyboxTexture != nullptr || !cameraComp.skyboxTexturePath.empty())
+            {
+                cameraComp.skyboxTexturePath.clear();
+                cameraComp.skyboxTexture = nullptr;
+            }
+        }
+
         return false;
     });
 
@@ -938,6 +1055,7 @@ void RegisterInspectorCustomRenderers()
         ecs;
         Vector3D *color = static_cast<Vector3D *>(ptr);
         auto &sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Convert to 0-255 range for display, combine with alpha
         float colorRGBA[4] = {
@@ -947,7 +1065,8 @@ void RegisterInspectorCustomRenderers()
             sprite.alpha};
 
         ImGui::Text("Color:");
-        ImGui::SameLine();
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
 
         if (UndoableWidgets::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8))
         {
@@ -971,9 +1090,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Texture:");
-        ImGui::SameLine();
+        ImGui::Text("Texture");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -1018,9 +1138,10 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        ImGui::Text("Font:");
-        ImGui::SameLine();
+        ImGui::Text("Font");
+        ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
@@ -1391,20 +1512,42 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         DirectionalLightComponent &light = *static_cast<DirectionalLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Basic properties with automatic undo/redo
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true; // Return true to skip default field rendering
     });
@@ -1416,24 +1559,58 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         PointLightComponent &light = *static_cast<PointLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
-        UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-        UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-        UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Constant");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+
+        ImGui::Text("Linear");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Quadratic");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true; // Return true to skip default field rendering
     });
@@ -1445,12 +1622,22 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         SpotLightComponent &light = *static_cast<SpotLightComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        UndoableWidgets::Checkbox("Enabled", &light.enabled);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Enabled");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
-        // Color and Intensity with automatic undo/redo
-        UndoableWidgets::ColorEdit3("Color", &light.color.x);
-        UndoableWidgets::DragFloat("Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
@@ -1460,26 +1647,57 @@ void RegisterInspectorCustomRenderers()
         float cutOffDegrees = glm::degrees(glm::acos(light.cutOff));
         float outerCutOffDegrees = glm::degrees(glm::acos(light.outerCutOff));
 
-        if (UndoableWidgets::DragFloat("Inner Cutoff (degrees)", &cutOffDegrees, 1.0f, 0.0f, 90.0f))
+        ImGui::Text("Inner Cutoff (degrees)");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::DragFloat("##InnerCutoff", &cutOffDegrees, 1.0f, 0.0f, 90.0f))
         {
             light.cutOff = glm::cos(glm::radians(cutOffDegrees));
         }
-        if (UndoableWidgets::DragFloat("Outer Cutoff (degrees)", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f))
+
+        ImGui::Text("Outer Cutoff (degrees)");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::DragFloat("##OuterCutoff", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f))
         {
             light.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
         }
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
-        UndoableWidgets::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-        UndoableWidgets::DragFloat("Linear", &light.linear, 0.01f, 0.0f, 1.0f);
-        UndoableWidgets::DragFloat("Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Constant");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+
+        ImGui::Text("Linear");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+
+        ImGui::Text("Quadratic");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
-        UndoableWidgets::ColorEdit3("Ambient", &light.ambient.x);
-        UndoableWidgets::ColorEdit3("Diffuse", &light.diffuse.x);
-        UndoableWidgets::ColorEdit3("Specular", &light.specular.x);
+
+        ImGui::Text("Ambient");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+
+        ImGui::Text("Diffuse");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+
+        ImGui::Text("Specular");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
         return true;
     });
@@ -1503,6 +1721,7 @@ void RegisterInspectorCustomRenderers()
             previewState[entity] = PreviewState::Stopped;
         }
 
+        // Inspector preview - uses separate editorPreviewTime (doesn't affect runtime)
         if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE)
         {
             if (previewState[entity] == PreviewState::Playing && animComp.enabled)
@@ -1510,7 +1729,45 @@ void RegisterInspectorCustomRenderers()
                 Animator *animator = animComp.GetAnimatorPtr();
                 if (animator && !animComp.GetClips().empty())
                 {
-                    animator->UpdateAnimation(ImGui::GetIO().DeltaTime * animComp.speed, animComp.isLoop);
+                    const auto& clips = animComp.GetClips();
+                    size_t activeClipIndex = animComp.GetActiveClipIndex();
+
+                    if (activeClipIndex < clips.size())
+                    {
+                        const Animation& clip = *clips[activeClipIndex];
+                        float tps = clip.GetTicksPerSecond();
+                        if (tps <= 0.0f) tps = 25.0f;
+
+                        // Update preview time
+                        animComp.editorPreviewTime += tps * ImGui::GetIO().DeltaTime * animComp.speed;
+
+                        // Handle looping
+                        float duration = clip.GetDuration();
+                        if (animComp.isLoop)
+                        {
+                            animComp.editorPreviewTime = fmod(animComp.editorPreviewTime, duration);
+                        }
+                        else
+                        {
+                            if (animComp.editorPreviewTime > duration)
+                            {
+                                animComp.editorPreviewTime = duration;
+                                previewState[entity] = PreviewState::Paused;
+                            }
+                        }
+
+                        // Set animator time for visualization (doesn't persist to runtime)
+                        animator->SetCurrentTime(animComp.editorPreviewTime);
+                    }
+                }
+            }
+            else if (previewState[entity] == PreviewState::Paused || previewState[entity] == PreviewState::Stopped)
+            {
+                // When paused or stopped, keep animator at preview time for visualization
+                Animator *animator = animComp.GetAnimatorPtr();
+                if (animator && !animComp.GetClips().empty())
+                {
+                    animator->SetCurrentTime(animComp.editorPreviewTime);
                 }
             }
         }
@@ -1563,7 +1820,17 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Load animation clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // CRITICAL: Link animator to model (same as AnimationSystem::Initialise)
+                            Animator* animator = animComp.EnsureAnimator();
+                            modelComp.SetAnimator(animator);
+
+                            // If clips were loaded successfully, set up the animator
+                            if (!animComp.GetClips().empty()) {
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            }
                         }
                     }
                 }
@@ -1584,7 +1851,18 @@ void RegisterInspectorCustomRenderers()
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model)
                         {
+                            // Reload clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // Update animator link
+                            if (!animComp.GetClips().empty()) {
+                                Animator* animator = animComp.EnsureAnimator();
+                                modelComp.SetAnimator(animator);
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            } else {
+                                // No clips left, unlink animator
+                                modelComp.SetAnimator(nullptr);
+                            }
                         }
                     }
                 }
@@ -1630,10 +1908,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth))
         {
             previewState[entity] = PreviewState::Playing;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            // Preview continues from current editorPreviewTime
         }
 
         ImGui::SameLine();
@@ -1646,10 +1921,7 @@ void RegisterInspectorCustomRenderers()
         if (EditorComponents::DrawStopButton())
         {
             previewState[entity] = PreviewState::Stopped;
-            if (animComp.GetAnimatorPtr() && !clips.empty())
-            {
-                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[activeClipIndex].get());
-            }
+            animComp.ResetPreview(); // Reset preview time to 0
         }
 
         ImGui::EndDisabled();
@@ -1681,16 +1953,22 @@ void RegisterInspectorCustomRenderers()
     {
             ecs;
         BrainComponent &brain = *static_cast<BrainComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Combo for Kind
+        ImGui::Text("Kind");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
         static const char *kKinds[] = {"None", "Grunt", "Boss"};
         int kindIdx = static_cast<int>(brain.kind);
-        if (ImGui::Combo("Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds)))
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds)))
         {
             brain.kind = static_cast<BrainKind>(kindIdx);
             brain.kindInt = kindIdx;
             // Mark as needing rebuild (optional UX)
         }
+        EditorComponents::PopComboColors();
 
         // Read-only current state
         ImGui::Text("Active State: %s", brain.activeState.empty() ? "None" : brain.activeState.c_str());
@@ -1725,96 +2003,12 @@ void RegisterInspectorCustomRenderers()
     });
 
     // ==================== SCRIPT COMPONENT ====================
-    // Custom renderer for ScriptComponentData scriptPath field with drag-drop support
+    // Old field renderers - no longer used (fields moved to scripts vector)
 
     ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "scriptPath",
-    [](const char *, void *ptr, Entity entity, ECSManager &ecs)
+    [](const char *, void *, Entity, ECSManager &)
     {
-        ecs;
-        std::string *scriptPath = static_cast<std::string *>(ptr);
-
-        ImGui::Text("Script:");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(-1);
-
-        // Display the script file name (or "None" if empty)
-        std::string displayText = scriptPath->empty() ? "None (Lua Script)" :
-                                  scriptPath->substr(scriptPath->find_last_of("/\\") + 1);
-
-        float buttonWidth = ImGui::GetContentRegionAvail().x;
-        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-        // Handle drag-drop from asset browser
-        if (ImGui::BeginDragDropTarget())
-        {
-            ImGui::SetTooltip("Drop .lua script here to assign");
-
-            // Accept both SCRIPT_PAYLOAD and direct path payload
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD"))
-            {
-                // Take snapshot before changing script
-                SnapshotManager::GetInstance().TakeSnapshot("Assign Script");
-
-                const char *droppedPath = (const char *)payload->Data;
-                std::string pathStr(droppedPath, payload->DataSize);
-                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-                *scriptPath = pathStr;
-
-                // Notify the ScriptSystem that the script has changed
-                // The system will handle reloading on next update
-                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
-                scriptData.instanceCreated = false;  // Force recreation
-                scriptData.instanceId = -1;
-
-                ImGui::EndDragDropTarget();
-                return true; // Field was modified
-            }
-            ImGui::EndDragDropTarget();
-        }
-
-        // Add a small "Clear" button next to the script field
-        if (!scriptPath->empty())
-        {
-            ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_XMARK "##ClearScript"))
-            {
-                SnapshotManager::GetInstance().TakeSnapshot("Clear Script");
-                scriptPath->clear();
-
-                auto &scriptData = ecs.GetComponent<ScriptComponentData>(entity);
-                scriptData.instanceCreated = false;
-                scriptData.instanceId = -1;
-
-                return true;
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Clear script");
-            }
-
-            // Add an "Open" button to edit the script in external editor
-            ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_PEN_TO_SQUARE "##EditScript"))
-            {
-                #ifdef _WIN32
-                    std::string command = "start \"\" \"" + *scriptPath + "\"";
-                    system(command.c_str());
-                #elif __linux__
-                    std::string command = "xdg-open \"" + *scriptPath + "\"";
-                    system(command.c_str());
-                #elif __APPLE__
-                    std::string command = "open \"" + *scriptPath + "\"";
-                    system(command.c_str());
-                #endif
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Open script in external editor");
-            }
-        }
-
-        return true; // Skip default rendering
+        return true; // Hidden - handled by component renderer
     });
 
     // Hide internal/runtime fields from inspector
@@ -1827,4 +2021,825 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "pendingInstanceState",
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
+
+    // ==================== SCRIPT COMPONENT - AUTOMATIC PROPERTY EXPOSURE ====================
+
+    ReflectionRenderer::RegisterComponentRenderer("ScriptComponentData",
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
+    {
+        ScriptComponentData &scriptComp = *static_cast<ScriptComponentData *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Get lua state
+        lua_State* L = Scripting::GetLuaState();
+        if (!L)
+        {
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Scripting runtime not initialized");
+            return true;
+        }
+
+        // Use static maps to store preview instances per entity+script index
+        static std::unordered_map<std::string, int> editorPreviewInstances; // key: "entity_scriptIndex"
+        static std::unordered_map<std::string, std::string> editorPreviewScriptPaths;
+
+        // Track state transitions to detect when we need to invalidate cached instances
+        static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
+        EditorState::State currentEditorState = EditorState::GetInstance().GetState();
+        bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
+                            currentEditorState == EditorState::State::PAUSED);
+
+        // Clear all cached preview instances when transitioning between modes
+        // This is necessary because scene deserialization creates new instances with new registry refs
+        if (lastEditorState != currentEditorState)
+        {
+            // Save the current state of all preview instances to preserve edited values
+            // This happens for ALL transitions to ensure values persist across multiple play/stop cycles
+            for (auto& [key, instanceRef] : editorPreviewInstances)
+            {
+                if (Scripting::IsValidInstance(instanceRef))
+                {
+                    // Parse the key to get entity and script index
+                    size_t underscorePos = key.find('_');
+                    if (underscorePos != std::string::npos)
+                    {
+                        Entity entity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
+                        size_t scriptIdx = std::stoi(key.substr(underscorePos + 1));
+
+                        // Get the script component and save the state
+                        if (ecs.HasComponent<ScriptComponentData>(entity))
+                        {
+                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(entity);
+                            if (scriptIdx < scriptCompToSave.scripts.size())
+                            {
+                                // Always preserve the current state - either from preview or runtime instance
+                                std::string currentState = Scripting::SerializeInstanceToJson(instanceRef);
+                                if (!currentState.empty())
+                                {
+                                    scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
+                                    ENGINE_PRINT("Preserved instance state for entity ", entity, " script ", scriptIdx,
+                                               " (transition: ", static_cast<int>(lastEditorState), " -> ",
+                                               static_cast<int>(currentEditorState), ")");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Destroy all cached preview instances as their references are now invalid
+            for (auto& [key, instanceRef] : editorPreviewInstances)
+            {
+                if (Scripting::IsValidInstance(instanceRef))
+                {
+                    Scripting::DestroyInstance(instanceRef);
+                }
+            }
+            editorPreviewInstances.clear();
+            editorPreviewScriptPaths.clear();
+        }
+        lastEditorState = currentEditorState;
+
+        // Render each script in the vector
+        int scriptIndexToRemove = -1;
+        for (size_t scriptIdx = 0; scriptIdx < scriptComp.scripts.size(); ++scriptIdx)
+        {
+            ScriptData& scriptData = scriptComp.scripts[scriptIdx];
+            std::string uniqueKey = std::to_string(entity) + "_" + std::to_string(scriptIdx);
+
+            ImGui::PushID(static_cast<int>(scriptIdx));
+
+            // Render script header with remove button
+            ImGui::Separator();
+            ImGui::Text("Script %zu", scriptIdx + 1);
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveScript"))
+            {
+                scriptIndexToRemove = static_cast<int>(scriptIdx);
+                ImGui::PopID();
+                continue;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Remove this script");
+            }
+
+            // Script path display
+            std::string displayText = scriptData.scriptPath.empty() ? "None (Lua Script)" :
+                                      scriptData.scriptPath.substr(scriptData.scriptPath.find_last_of("/\\") + 1);
+
+            ImGui::SetNextItemWidth(-1);
+            EditorComponents::DrawDragDropButton(displayText.c_str(), ImGui::GetContentRegionAvail().x);
+
+            // Double-click to open
+            if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                // Current working directory is C:\Users\growt\Desktop\GAM300\Project\Build\EditorRelease
+                // We need to go up 2 levels to get to Project folder
+                std::filesystem::path currentPath = std::filesystem::current_path();
+                std::filesystem::path projectRoot;
+
+                // Check if we're in a Build subfolder (EditorRelease, Debug, etc.)
+                if (currentPath.filename() == "EditorRelease" ||
+                    currentPath.filename() == "EditorDebug" ||
+                    currentPath.filename() == "Release" ||
+                    currentPath.filename() == "Debug") {
+                    // Go up to Build folder, then up to Project folder
+                    projectRoot = currentPath.parent_path().parent_path();
+                } else if (currentPath.filename() == "Build") {
+                    // We're in Build folder, go up one to Project
+                    projectRoot = currentPath.parent_path();
+                } else {
+                    // Try to find Project folder by looking for specific markers
+                    projectRoot = currentPath;
+                    while (projectRoot.has_parent_path()) {
+                        // Check if this directory has the expected project structure
+                        if (std::filesystem::exists(projectRoot / "Build") &&
+                            std::filesystem::exists(projectRoot / "Resources") &&
+                            std::filesystem::exists(projectRoot / "Engine")) {
+                            break;
+                        }
+                        projectRoot = projectRoot.parent_path();
+                    }
+                }
+
+                // Construct the correct path to the script file
+                std::filesystem::path scriptFullPath;
+                if (scriptData.scriptPath.find("Resources/scripts/") == 0) {
+                    // Path already includes full Resources/scripts/ prefix
+                    scriptFullPath = projectRoot / scriptData.scriptPath;
+                } else if (scriptData.scriptPath.find("scripts/") == 0) {
+                    // Path includes scripts/ prefix
+                    scriptFullPath = projectRoot / "Resources" / scriptData.scriptPath;
+                } else {
+                    // Just the script filename
+                    scriptFullPath = projectRoot / "Resources" / "scripts" / scriptData.scriptPath;
+                }
+
+                // Verify the file exists, if not try to create the directory structure
+                if (!std::filesystem::exists(scriptFullPath)) {
+                    // Create directories if they don't exist
+                    std::filesystem::create_directories(scriptFullPath.parent_path());
+                }
+
+                #ifdef _WIN32
+                    std::string command = "code \"" + scriptFullPath.string() + "\"";
+                #elif __linux__
+                    std::string command = "code \"" + scriptFullPath.string() + "\" &";
+                #elif __APPLE__
+                    std::string command = "code \"" + scriptFullPath.string() + "\"";
+                #endif
+                system(command.c_str());
+            }
+
+            if (ImGui::IsItemHovered() && !scriptData.scriptPath.empty())
+            {
+                ImGui::SetTooltip("Double-click to open in VS Code");
+            }
+
+            // Drag-drop support
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Script");
+                    const char *droppedPath = (const char *)payload->Data;
+                    std::string pathStr(droppedPath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    scriptData.scriptGuid = DraggedScriptGuid;
+                    scriptData.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(scriptData.scriptGuid);
+                    scriptData.scriptPath = pathStr;
+                    scriptData.instanceCreated = false;
+                    scriptData.instanceId = -1;
+
+                    // Clear preview instance for this script
+                    editorPreviewInstances.erase(uniqueKey);
+                    editorPreviewScriptPaths.erase(uniqueKey);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // If no script assigned, skip field rendering
+            if (scriptData.scriptPath.empty())
+            {
+                ImGui::PopID();
+                continue;
+            }
+
+            // Handle instance selection based on editor state
+            int instanceToInspect = -1;
+            bool usingPreviewInstance = false;
+
+            // Try to use runtime instance first if available and valid
+            if (scriptData.instanceCreated && scriptData.instanceId != -1 &&
+                Scripting::IsValidInstance(scriptData.instanceId))
+            {
+                // Validate the runtime instance is still a proper Lua table
+                lua_State* validateL = Scripting::GetLuaState();
+                bool isRuntimeValid = false;
+                if (validateL)
+                {
+                    lua_rawgeti(validateL, LUA_REGISTRYINDEX, scriptData.instanceId);
+                    isRuntimeValid = lua_istable(validateL, -1);
+                    lua_pop(validateL, 1);
+                }
+
+                if (isRuntimeValid)
+                {
+                    // Use the valid runtime instance
+                    instanceToInspect = scriptData.instanceId;
+                    usingPreviewInstance = false;
+
+                    // Sync pendingInstanceState with runtime state to preserve any runtime changes
+                    std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
+                    if (!runtimeState.empty())
+                    {
+                        scriptData.pendingInstanceState = runtimeState;
+                    }
+                }
+                else
+                {
+                    // Runtime instance is invalid, fall through to create preview
+                    scriptData.instanceCreated = false;
+                    scriptData.instanceId = -1;
+                }
+            }
+
+            // If no valid runtime instance, create or use preview instance
+            if (instanceToInspect == -1)
+            {
+                // Check if the script path changed
+                auto pathIt = editorPreviewScriptPaths.find(uniqueKey);
+                if (pathIt != editorPreviewScriptPaths.end() && pathIt->second != scriptData.scriptPath)
+                {
+                    editorPreviewInstances.erase(uniqueKey);
+                    editorPreviewScriptPaths.erase(uniqueKey);
+                }
+
+                // Check if we already have a preview instance and validate it
+                auto it = editorPreviewInstances.find(uniqueKey);
+                if (it != editorPreviewInstances.end())
+                {
+                    // Validate the instance is still a proper Lua table
+                    lua_State* validateL = Scripting::GetLuaState();
+                    bool isValid = false;
+                    if (validateL && Scripting::IsValidInstance(it->second))
+                    {
+                        lua_rawgeti(validateL, LUA_REGISTRYINDEX, it->second);
+                        isValid = lua_istable(validateL, -1);
+                        lua_pop(validateL, 1);
+                    }
+
+                    if (isValid)
+                    {
+                        instanceToInspect = it->second;
+                        usingPreviewInstance = true;
+                    }
+                    else
+                    {
+                        // Instance is invalid, remove it and create a new one
+                        if (Scripting::IsValidInstance(it->second))
+                        {
+                            Scripting::DestroyInstance(it->second);
+                        }
+                        editorPreviewInstances.erase(uniqueKey);
+                        editorPreviewScriptPaths.erase(uniqueKey);
+                    }
+                }
+
+                if (instanceToInspect == -1)
+                {
+                    // Create new preview instance
+                    int previewInstance = Scripting::CreateInstanceFromFile(scriptData.scriptPath);
+                    if (Scripting::IsValidInstance(previewInstance))
+                    {
+                        editorPreviewInstances[uniqueKey] = previewInstance;
+                        editorPreviewScriptPaths[uniqueKey] = scriptData.scriptPath;
+                        instanceToInspect = previewInstance;
+                        usingPreviewInstance = true;
+
+                        // ALWAYS restore pending state to preserve edited values
+                        // This is critical for Unity-like behavior where inspector edits persist
+                        if (!scriptData.pendingInstanceState.empty())
+                        {
+                            bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
+                            if (restored)
+                            {
+                                ENGINE_PRINT("Restored pendingInstanceState for ", scriptData.scriptPath.c_str());
+                            }
+                            else
+                            {
+                                ENGINE_PRINT("Failed to restore pendingInstanceState for ", scriptData.scriptPath.c_str());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Failed to load script for preview");
+                        ImGui::Text("Path: %s", scriptData.scriptPath.c_str());
+                        ImGui::PopID();
+                        continue;
+                    }
+                }
+            }
+
+            if (!Scripting::IsValidInstance(instanceToInspect))
+            {
+                // If using a preview instance that's no longer valid, clean it up
+                if (usingPreviewInstance)
+                {
+                    editorPreviewInstances.erase(uniqueKey);
+                    editorPreviewScriptPaths.erase(uniqueKey);
+                }
+                ImGui::PopID();
+                continue;
+            }
+
+            // Use ScriptInspector to get fields
+            static Scripting::ScriptInspector inspector;
+            std::vector<Scripting::FieldInfo> fields;
+
+        try {
+            fields = inspector.InspectInstance(L, instanceToInspect, scriptData.scriptPath, 1.0);
+        } catch (const std::exception& e) {
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Failed to inspect script: %s", e.what());
+            // Clean up the invalid preview instance
+            if (usingPreviewInstance)
+            {
+                editorPreviewInstances.erase(uniqueKey);
+                editorPreviewScriptPaths.erase(uniqueKey);
+            }
+            ImGui::PopID();
+            continue;
+        }
+
+        // If InspectInstance returned empty fields and we're using a preview instance,
+        // it might be invalid, so clean it up
+        if (fields.empty() && usingPreviewInstance)
+        {
+            editorPreviewInstances.erase(uniqueKey);
+            editorPreviewScriptPaths.erase(uniqueKey);
+        }
+
+        // Helper lambda: Parse Lua script file to extract field declaration order
+        auto extractFieldOrder = [](const std::string& scriptPath) -> std::vector<std::string> {
+            std::vector<std::string> fieldOrder;
+
+            // Handle both relative and absolute paths
+            std::string fullPath = scriptPath;
+            if (scriptPath.find("Resources/") == 0 || scriptPath.find("resources/") == 0) {
+                // Relative path - don't modify, it should work from current directory
+            } else if (scriptPath[0] != '/' && scriptPath.find(":/") == std::string::npos) {
+                // Relative path without Resources prefix
+                fullPath = "Resources/" + scriptPath;
+            }
+
+            std::ifstream file(fullPath);
+            if (!file.is_open()) {
+                // Try alternative path
+                file.open(scriptPath);
+                if (!file.is_open()) return fieldOrder;
+            }
+
+            std::string line;
+            bool inFieldsTable = false;
+            int braceDepth = 0;
+
+            while (std::getline(file, line)) {
+                // Remove leading/trailing whitespace
+                size_t start = line.find_first_not_of(" \t\r\n");
+                if (start == std::string::npos) continue;
+                line = line.substr(start);
+
+                // Look for "fields = {"
+                if (line.find("fields") == 0 && line.find("=") != std::string::npos) {
+                    inFieldsTable = true;
+                    if (line.find("{") != std::string::npos) braceDepth++;
+                    continue;
+                }
+
+                if (inFieldsTable) {
+                    // Count braces
+                    for (char c : line) {
+                        if (c == '{') braceDepth++;
+                        else if (c == '}') braceDepth--;
+                    }
+
+                    // Extract field name (pattern: "fieldName = value" or "fieldName=value")
+                    size_t commentPos = line.find("--");
+                    size_t eqPos = line.find("=");
+
+                    // Only process lines with '=' that don't start with a comment
+                    if (eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
+                        std::string fieldName = line.substr(0, eqPos);
+
+                        // Trim whitespace and commas
+                        size_t nameStart = fieldName.find_first_not_of(" \t\r\n");
+                        size_t nameEnd = fieldName.find_last_not_of(" \t\r\n,");
+
+                        if (nameStart != std::string::npos && nameEnd != std::string::npos && nameEnd >= nameStart) {
+                            fieldName = fieldName.substr(nameStart, nameEnd - nameStart + 1);
+
+                            // Check if valid identifier (starts with letter or underscore)
+                            if (!fieldName.empty() && (std::isalpha(static_cast<unsigned char>(fieldName[0])) || fieldName[0] == '_')) {
+                                fieldOrder.push_back(fieldName);
+                            }
+                        }
+                    }
+
+                    // Exit fields table when braces close
+                    if (braceDepth == 0) break;
+                }
+            }
+            return fieldOrder;
+        };
+
+        // Filter fields to show only editable fields from the 'fields' table
+        // This implements Unity-like behavior where only serialized fields are shown
+        std::vector<Scripting::FieldInfo> filteredFields;
+        bool hasFieldsTable = false;
+        std::vector<std::string> fieldOrder;
+
+        // Build a map for quick lookup of FieldInfo by name
+        std::unordered_map<std::string, Scripting::FieldInfo> fieldMap;
+        for (const auto& field : fields)
+        {
+            fieldMap[field.name] = field;
+        }
+
+        // Parse the Lua script file to get field declaration order
+        fieldOrder = extractFieldOrder(scriptData.scriptPath);
+
+        // Debug output (only once per entity to avoid spam)
+        static std::unordered_set<Entity> debuggedEntities;
+        bool isFirstTimeForEntity = (debuggedEntities.find(entity) == debuggedEntities.end());
+        if (isFirstTimeForEntity) {
+            debuggedEntities.insert(entity);
+
+            if (!fieldOrder.empty()) {
+                std::string debugMsg = "Parsed field order: ";
+                for (const auto& fname : fieldOrder) {
+                    debugMsg += fname + ", ";
+                }
+                ENGINE_PRINT(debugMsg.c_str());
+
+                // Also show what fields ScriptInspector found
+                debugMsg = "ScriptInspector fields: ";
+                for (const auto& pair : fieldMap) {
+                    debugMsg += pair.first + ", ";
+                }
+                ENGINE_PRINT(debugMsg.c_str());
+            } else {
+                ENGINE_PRINT("WARNING: Failed to parse field order from ", scriptData.scriptPath.c_str());
+            }
+        }
+
+        // Check if we successfully parsed field order from the script file
+        // (Don't check the instance for a fields table, because Component mixin flattens them)
+        hasFieldsTable = !fieldOrder.empty();
+
+        // Build filtered fields in declaration order
+        if (hasFieldsTable)
+        {
+            // DEBUG
+            if (isFirstTimeForEntity) {
+                ENGINE_PRINT("Using parsed field order (hasFieldsTable=", hasFieldsTable, ", fieldOrder.size=", fieldOrder.size(), ")");
+            }
+
+            // Use the parsed field order from the script file
+            for (const auto& fieldName : fieldOrder)
+            {
+                auto it = fieldMap.find(fieldName);
+                if (it != fieldMap.end())
+                {
+                    const auto& field = it->second;
+
+                    // Skip functions (Start, Update, etc.)
+                    if (field.type == Scripting::FieldType::Function) {
+                        if (isFirstTimeForEntity) {
+                            ENGINE_PRINT("  Skipping function: ", field.name.c_str());
+                        }
+                        continue;
+                    }
+
+                    // Skip private fields
+                    if (!field.name.empty() && field.name[0] == '_')
+                        continue;
+
+                    // Add field in declaration order from file
+                    filteredFields.push_back(field);
+
+                    // DEBUG
+                    if (isFirstTimeForEntity) {
+                        ENGINE_PRINT("  Added field: ", field.name.c_str(), " (type=", static_cast<int>(field.type), ")");
+                    }
+                }
+                else {
+                    // DEBUG
+                    if (isFirstTimeForEntity) {
+                        ENGINE_PRINT("  Field not found in map: ", fieldName.c_str());
+                    }
+                }
+            }
+        }
+        else if (hasFieldsTable && fieldOrder.empty())
+        {
+            // DEBUG
+            if (isFirstTimeForEntity) {
+                ENGINE_PRINT("Using alphabetical fallback (hasFieldsTable=", hasFieldsTable, ", fieldOrder.empty=true)");
+            }
+
+            // File parsing failed, fallback to sorting alphabetically for consistency
+            for (const auto& field : fields)
+            {
+                // Skip functions, private fields, special tables
+                if (field.type == Scripting::FieldType::Function)
+                    continue;
+                if (!field.name.empty() && field.name[0] == '_')
+                    continue;
+                if (field.name == "__editor" || field.name == "mixins" || field.name == "fields")
+                    continue;
+
+                // Check if field exists in fields table
+                auto it = fieldMap.find(field.name);
+                if (it != fieldMap.end())
+                {
+                    filteredFields.push_back(field);
+                }
+            }
+
+            // Sort alphabetically as fallback for consistent ordering
+            std::sort(filteredFields.begin(), filteredFields.end(),
+                [](const Scripting::FieldInfo& a, const Scripting::FieldInfo& b) {
+                    return a.name < b.name;
+                });
+        }
+        else if (!hasFieldsTable)
+        {
+            // DEBUG
+            if (isFirstTimeForEntity) {
+                ENGINE_PRINT("No fields table found (hasFieldsTable=false), using basic filtering");
+            }
+
+            for (const auto& field : fields)
+            {
+                // Skip functions (Start, Update, etc.)
+                if (field.type == Scripting::FieldType::Function)
+                    continue;
+
+                // Skip private fields (starting with underscore)
+                if (!field.name.empty() && field.name[0] == '_')
+                    continue;
+
+                // Skip special tables
+                if (field.name == "__editor" || field.name == "mixins" || field.name == "fields")
+                    continue;
+
+                // Include all other fields
+                filteredFields.push_back(field);
+            }
+        }
+
+        // If no fields found after filtering, nothing to show
+        if (filteredFields.empty())
+        {
+            ImGui::PopID();
+            continue; // Skip to next script
+        }
+
+        // Render each field
+        bool anyModified = false;
+        for (const auto& field : filteredFields)
+        {
+
+            // Create display name (use metadata if available, otherwise use field name)
+            std::string displayName = field.meta.displayName.empty() ? field.name : field.meta.displayName;
+
+            // Convert field name from camelCase to "Proper Case" if no display name
+            if (field.meta.displayName.empty() && !displayName.empty())
+            {
+                displayName[0] = static_cast<char>(std::toupper(displayName[0]));
+                for (size_t i = 1; i < displayName.size(); ++i)
+                {
+                    if (std::isupper(displayName[i]) && i > 0 && std::islower(displayName[i - 1]))
+                    {
+                        displayName.insert(i, " ");
+                        i++;
+                    }
+                }
+            }
+
+            ImGui::PushID(field.name.c_str());
+
+            bool fieldModified = false;
+            std::string newValue;
+
+            // Render appropriate widget based on field type
+            switch (field.type)
+            {
+                case Scripting::FieldType::Number:
+                {
+                    float value = std::stof(field.defaultValueSerialized);
+                    ImGui::Text("%s", displayName.c_str());
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+
+                    if (ImGui::DragFloat(("##" + field.name).c_str(), &value, 0.1f))
+                    {
+                        newValue = std::to_string(value);
+                        fieldModified = true;
+                    }
+                    break;
+                }
+
+                case Scripting::FieldType::Boolean:
+                {
+                    bool value = (field.defaultValueSerialized == "true" || field.defaultValueSerialized == "1");
+                    ImGui::Text("%s", displayName.c_str());
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+
+                    if (ImGui::Checkbox(("##" + field.name).c_str(), &value))
+                    {
+                        newValue = value ? "true" : "false";
+                        fieldModified = true;
+                    }
+                    break;
+                }
+
+                case Scripting::FieldType::String:
+                {
+                    static std::unordered_map<std::string, std::vector<char>> stringBuffers;
+                    auto& buffer = stringBuffers[field.name];
+                    if (buffer.size() < 256) buffer.resize(256);
+
+                    // Copy current value to buffer
+                    std::string currentValue = field.defaultValueSerialized;
+                    if (currentValue.size() > 1 && currentValue.front() == '"' && currentValue.back() == '"')
+                    {
+                        currentValue = currentValue.substr(1, currentValue.size() - 2);
+                    }
+
+                    size_t copyLen = std::min(currentValue.size(), size_t(255));
+                    std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
+                    buffer[copyLen] = '\0';
+
+                    ImGui::Text("%s", displayName.c_str());
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+
+                    if (ImGui::InputText(("##" + field.name).c_str(), buffer.data(), 256))
+                    {
+                        newValue = std::string("\"") + buffer.data() + "\"";
+                        fieldModified = true;
+                    }
+                    break;
+                }
+
+                case Scripting::FieldType::Table:
+                {
+                    // Try to parse as vector3 (table with x, y, z fields)
+                    bool isVector3 = false;
+                    float vec3[3] = {0.0f, 0.0f, 0.0f};
+
+                    try {
+                        rapidjson::Document doc;
+                        doc.Parse(field.defaultValueSerialized.c_str());
+
+                        if (doc.IsObject() && doc.HasMember("x") && doc.HasMember("y") && doc.HasMember("z"))
+                        {
+                            if (doc["x"].IsNumber() && doc["y"].IsNumber() && doc["z"].IsNumber())
+                            {
+                                vec3[0] = static_cast<float>(doc["x"].GetDouble());
+                                vec3[1] = static_cast<float>(doc["y"].GetDouble());
+                                vec3[2] = static_cast<float>(doc["z"].GetDouble());
+                                isVector3 = true;
+                            }
+                        }
+                    } catch (...) {
+                        isVector3 = false;
+                    }
+
+                    if (isVector3)
+                    {
+                        // Render as vector3
+                        ImGui::Text("%s", displayName.c_str());
+                        ImGui::SameLine(labelWidth);
+                        ImGui::SetNextItemWidth(-1);
+
+                        if (ImGui::DragFloat3(("##" + field.name).c_str(), vec3, 0.1f))
+                        {
+                            // Reconstruct JSON
+                            rapidjson::Document doc;
+                            doc.SetObject();
+                            auto& alloc = doc.GetAllocator();
+                            doc.AddMember("x", vec3[0], alloc);
+                            doc.AddMember("y", vec3[1], alloc);
+                            doc.AddMember("z", vec3[2], alloc);
+
+                            rapidjson::StringBuffer buffer;
+                            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                            doc.Accept(writer);
+
+                            newValue = buffer.GetString();
+                            fieldModified = true;
+                        }
+                    }
+                    else
+                    {
+                        // Not a vector3, show as generic table
+                        ImGui::Text("%s: [Table]", displayName.c_str());
+                        if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                        {
+                            ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                        }
+                    }
+                    break;
+                }
+
+                default:
+                {
+                    ImGui::Text("%s: %s", displayName.c_str(), field.defaultValueSerialized.c_str());
+                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                    {
+                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                    }
+                    break;
+                }
+            }
+
+            // Show tooltip if available
+            if (!field.meta.tooltip.empty() && !fieldModified &&
+                (field.type != Scripting::FieldType::Table) && ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+            }
+
+            // If field was modified, update the Lua instance
+            if (fieldModified && !newValue.empty())
+            {
+                if (inspector.SetFieldFromString(L, instanceToInspect, field, newValue))
+                {
+                    anyModified = true;
+
+                    // Always save state to pendingInstanceState for persistence across mode transitions
+                    // This ensures edited values persist when entering play mode (like Unity)
+                    scriptData.pendingInstanceState = Scripting::SerializeInstanceToJson(instanceToInspect);
+                    ENGINE_PRINT("SAVE DEBUG: Updated pendingInstanceState for field '", field.name.c_str(), "' to: ", newValue.c_str());
+                    ENGINE_PRINT("  pendingInstanceState.size = ", scriptData.pendingInstanceState.size());
+
+                    // Take snapshot for undo
+                    SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
+                }
+            }
+
+            ImGui::PopID();
+        } // End of for loop over FIELDS
+
+        ImGui::PopID(); // Pop script index ID
+        } // End of for loop over scripts
+
+        // Handle script removal (do this after the loop to avoid iterator invalidation)
+        if (scriptIndexToRemove >= 0 && scriptIndexToRemove < static_cast<int>(scriptComp.scripts.size()))
+        {
+            SnapshotManager::GetInstance().TakeSnapshot("Remove Script");
+
+            // Clean up preview instance for the removed script
+            std::string uniqueKey = std::to_string(entity) + "_" + std::to_string(scriptIndexToRemove);
+            editorPreviewInstances.erase(uniqueKey);
+            editorPreviewScriptPaths.erase(uniqueKey);
+
+            // Remove the script
+            scriptComp.scripts.erase(scriptComp.scripts.begin() + scriptIndexToRemove);
+        }
+
+        return true; // Skip default rendering
+    });
+
+    // Hide the "scripts" field - we render it ourselves in the component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "scripts",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; }); // Hidden
+
+    // Hide internal fields from old structure (for safety, though they no longer exist)
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "enabled",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "preserveKeys",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "entryFunction",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "autoInvokeEntry",
+                                              [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    // ==================== SPRITE ANIMATION COMPONENT ====================
+    // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)
+    RegisterSpriteAnimationInspector();
 }

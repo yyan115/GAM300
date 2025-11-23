@@ -18,6 +18,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "UndoableWidgets.hpp"
+#include "EditorComponents.hpp"
 #include <sstream>
 #include <iomanip>
 #include <cctype>
@@ -199,33 +200,23 @@ bool ReflectionRenderer::RenderPrimitive(const char* fieldName, void* fieldPtr,
                                          const std::string& typeName) {
     std::string displayName = CamelCaseToProperCase(fieldName);
     std::string id = MakeFieldID(fieldName, fieldPtr);
+    const float labelWidth = EditorComponents::GetLabelWidth();
 
     if (typeName == "bool") {
         bool* value = static_cast<bool*>(fieldPtr);
 
-        // Booleans get their own line with label (Unity-style)
+        // Align text to frame padding for consistent alignment
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("%s", displayName.c_str());
-        ImGui::SameLine();
-
-        // Style the checkbox to match the entity checkbox (smaller with white checkmark)
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // White checkmark
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Dark gray background
-        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
-        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Even lighter when clicking
+        ImGui::SameLine(labelWidth);
 
         // Use UndoableWidgets wrapper for automatic undo/redo
-        bool changed = UndoableWidgets::Checkbox(id.c_str(), value);
-
-        ImGui::PopStyleColor(4); // Pop all 4 colors
-        ImGui::PopStyleVar();
-
-        return changed;
+        return UndoableWidgets::Checkbox(id.c_str(), value);
     }
 
-    // All other primitives: Label on left, widget on right (full width)
+    // All other primitives: Label on left, widget on right
     ImGui::Text("%s", displayName.c_str());
-    ImGui::SameLine();
+    ImGui::SameLine(labelWidth);
     ImGui::SetNextItemWidth(-1);
 
     // Use UndoableWidgets wrappers for automatic undo/redo
@@ -281,8 +272,9 @@ bool ReflectionRenderer::RenderVector3D(const char* fieldName, void* fieldPtr) {
     Vector3D* vec = static_cast<Vector3D*>(fieldPtr);
 
     std::string displayName = CamelCaseToProperCase(fieldName);
+    const float labelWidth = EditorComponents::GetLabelWidth();
     ImGui::Text("%s", displayName.c_str());
-    ImGui::SameLine();
+    ImGui::SameLine(labelWidth);
     ImGui::SetNextItemWidth(-1);
 
     float values[3] = { vec->x, vec->y, vec->z };
@@ -305,8 +297,9 @@ bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr)
     Vector3D euler = quat->ToEulerDegrees();
 
     std::string displayName = CamelCaseToProperCase(fieldName);
+    const float labelWidth = EditorComponents::GetLabelWidth();
     ImGui::Text("%s (Euler)", displayName.c_str());
-    ImGui::SameLine();
+    ImGui::SameLine(labelWidth);
     ImGui::SetNextItemWidth(-1);
 
     float values[3] = { euler.x, euler.y, euler.z };
@@ -325,8 +318,9 @@ bool ReflectionRenderer::RenderGUID(const char* fieldName, void* fieldPtr,
     GUID_128* guid = static_cast<GUID_128*>(fieldPtr);
 
     std::string displayName = CamelCaseToProperCase(fieldName);
+    const float labelWidth = EditorComponents::GetLabelWidth();
     ImGui::Text("%s", displayName.c_str());
-    ImGui::SameLine();
+    ImGui::SameLine(labelWidth);
 
     // Display GUID as hex string (read-only for now)
     std::stringstream ss;
@@ -350,8 +344,9 @@ bool ReflectionRenderer::RenderString(const char* fieldName, void* fieldPtr) {
     std::string* str = static_cast<std::string*>(fieldPtr);
 
     std::string displayName = CamelCaseToProperCase(fieldName);
+    const float labelWidth = EditorComponents::GetLabelWidth();
     ImGui::Text("%s", displayName.c_str());
-    ImGui::SameLine();
+    ImGui::SameLine(labelWidth);
     ImGui::SetNextItemWidth(-1);
 
     // Create buffer for ImGui (strings need char buffer)

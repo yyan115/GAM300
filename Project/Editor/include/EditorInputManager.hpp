@@ -6,7 +6,7 @@
 /**
  * @brief Editor-specific input manager that works alongside ImGui.
  *
- * This manager provides Unity-style editor input handling without
+ * This manager provides editor input handling without
  * interfering with the engine's InputManager or ImGui's input system.
  *
  * Features:

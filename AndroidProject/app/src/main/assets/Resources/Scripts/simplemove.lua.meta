@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "004e67fcaea54316-00034a6d7e000001",
-        "source": "../../Resources/Scripts/simplemove.lua",
-        "compiled": "../../Resources/Scripts/simplemove.lua",
-        "android_compiled": "Resources/Scripts/simplemove.lua"
-    }
-}

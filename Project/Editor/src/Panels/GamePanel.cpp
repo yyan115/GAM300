@@ -74,10 +74,6 @@ void GamePanel::OnImGuiRender() {
             unfocusedFrameCounter = 0;
         }
 
-        // Always render at a fixed base resolution (e.g., 1920x1080 for 16:9)
-        const int baseRenderWidth = 1920;
-        const int baseRenderHeight = 1080;
-
         // Calculate display viewport dimensions with aspect ratio preservation
         int displayWidth, displayHeight;
         float offsetX, offsetY;
@@ -88,11 +84,13 @@ void GamePanel::OnImGuiRender() {
         displayWidth = (int)((float)displayWidth * viewportScale);
         displayHeight = (int)((float)displayHeight * viewportScale);
 
+        // Use display dimensions for rendering (actual panel size)
+        int renderWidth = displayWidth;
+        int renderHeight = displayHeight;
+
         // Recalculate offsets for centering after scaling
         offsetX = (availableWidth - displayWidth) * 0.5f;
         offsetY = (availableHeight - displayHeight) * 0.5f;
-
-        //EditorState& editorState = EditorState::GetInstance();
 
         // Set cursor position to center the viewport
         ImVec2 startPos = ImGui::GetCursorPos();
@@ -100,9 +98,15 @@ void GamePanel::OnImGuiRender() {
 
         // Only render if we should (optimization for unfocused panels)
         if (shouldRender) {
-            GraphicsManager::GetInstance().SetViewportSize(baseRenderWidth, baseRenderHeight);
+            auto& gfx = GraphicsManager::GetInstance();
 
-            SceneRenderer::BeginGameRender(baseRenderWidth, baseRenderHeight);
+            // Set viewport to actual render dimensions
+            gfx.SetViewportSize(renderWidth, renderHeight);
+
+            SceneRenderer::BeginGameRender(renderWidth, renderHeight);
+
+            // Update frustum with Game Panel's viewport BEFORE rendering
+            gfx.UpdateFrustum();
 
             if (Engine::ShouldRunGameLogic() || Engine::IsPaused()) {
                 // Render 3D scene with game logic running
@@ -138,39 +142,14 @@ void GamePanel::OnImGuiRender() {
         // Get the texture from Game framebuffer (not Scene framebuffer)
         unsigned int sceneTexture = SceneRenderer::GetGameTexture();
         if (sceneTexture != 0) {
-            // Calculate crop UV coordinates based on target aspect ratio
-            float targetAspectRatio;
-            if (freeAspect) {
-                targetAspectRatio = (float)displayWidth / (float)displayHeight;
-            } else if (useCustomAspectRatio) {
-                targetAspectRatio = customAspectRatio;
-            } else {
-                const auto& res = resolutions[selectedResolutionIndex];
-                targetAspectRatio = (float)res.width / (float)res.height;
-            }
-
-            float baseAspectRatio = (float)baseRenderWidth / (float)baseRenderHeight;
-
-            // Calculate UV coordinates for cropping
-            ImVec2 uv0, uv1;
-            if (targetAspectRatio > baseAspectRatio) {
-                // Target is wider - crop top/bottom
-                float cropHeight = baseAspectRatio / targetAspectRatio;
-                float cropOffset = (1.0f - cropHeight) * 0.5f;
-                uv0 = ImVec2(0, 1.0f - cropOffset);        // Bottom-left
-                uv1 = ImVec2(1, cropOffset);               // Top-right
-            } else {
-                // Target is taller - crop left/right
-                float cropWidth = targetAspectRatio / baseAspectRatio;
-                float cropOffset = (1.0f - cropWidth) * 0.5f;
-                uv0 = ImVec2(cropOffset, 1);               // Bottom-left
-                uv1 = ImVec2(1.0f - cropOffset, 0);        // Top-right
-            }
+            // Render texture matches display size exactly - no cropping needed
+            ImVec2 uv0 = ImVec2(0, 1);  // Bottom-left
+            ImVec2 uv1 = ImVec2(1, 0);  // Top-right
 
             ImGui::Image(
                 (void*)(intptr_t)sceneTexture,
                 ImVec2((float)displayWidth, (float)displayHeight),
-                uv0, uv1  // Use calculated crop coordinates
+                uv0, uv1
             );
 
             // Auto-focus on interaction (any mouse click)
@@ -273,7 +252,7 @@ void GamePanel::RenderResolutionPanel() {
             ImGui::DragFloat("##AspectRatio", &customAspectRatio, 0.01f, 0.1f, 10.0f, "%.2f:1");
         }
 
-        // Display current resolution info (Unity-style, on same line)
+        // Display current resolution info
         if (!freeAspect && !useCustomAspectRatio) {
             const auto& res = resolutions[selectedResolutionIndex];
             ImGui::SameLine();

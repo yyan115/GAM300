@@ -216,6 +216,18 @@ BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
     PROPERTY("collider_seen_version", &RigidBodyComponent::collider_seen_version)
 END_COMPONENT()
 
+
+// ============================================================================
+// CharacterController Components
+// ============================================================================
+BEGIN_COMPONENT(CharacterControllerComponent, "CharacterControllerComponent")
+    PROPERTY("enabled", &CharacterControllerComponent::enabled)
+    PROPERTY("speed", &CharacterControllerComponent::speed)
+    PROPERTY("jumpHeight", &CharacterControllerComponent::jumpHeight)
+END_COMPONENT()
+
+
+
 // ============================================================================
 // Audio Components
 // ============================================================================

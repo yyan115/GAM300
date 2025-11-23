@@ -19,6 +19,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Sound/AudioComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
+#include <Animation/AnimationComponent.hpp>
 #include "EditorState.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
@@ -49,6 +50,17 @@ void SceneHierarchyPanel::OnImGuiRender() {
             if (selectedEntity != static_cast<Entity>(-1)) {
                 renamingEntity = selectedEntity;
                 startRenaming = true;
+            }
+        }
+
+        // Handle Ctrl+D for duplicating selected entity
+        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_D) && ImGui::GetIO().KeyCtrl) {
+            Entity selectedEntity = GUIManager::GetSelectedEntity();
+            if (selectedEntity != static_cast<Entity>(-1)) {
+                Entity duplicatedEntity = DuplicateEntity(selectedEntity);
+                if (duplicatedEntity != static_cast<Entity>(-1)) {
+                    GUIManager::SetSelectedEntity(duplicatedEntity);
+                }
             }
         }
 
@@ -386,11 +398,25 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     if (ImGui::BeginPopupContextItem())
     {
-        if (ImGui::MenuItem("Delete"))   { /* TODO */ }
-        if (ImGui::MenuItem("Duplicate")){ /* TODO */ }
+        if (ImGui::MenuItem("Duplicate", "Ctrl+D")) {
+            Entity duplicatedEntity = DuplicateEntity(entityId);
+            if (duplicatedEntity != static_cast<Entity>(-1)) {
+                GUIManager::SetSelectedEntity(duplicatedEntity);
+            }
+        }
         if (ImGui::MenuItem("Rename", "F2")) {
             renamingEntity = entityId;
             startRenaming  = true;
+        }
+        if (ImGui::MenuItem("Delete", "Del")) {
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
+
+                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
+                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+                ecsManager.DestroyEntity(entityId);
+            } catch (...) {}
         }
         ImGui::EndPopup();
     }
@@ -642,6 +668,127 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
         return cameraEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create camera entity: " << e.what() << std::endl;
+        return static_cast<Entity>(-1);
+    }
+}
+
+Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Get source entity name
+        std::string sourceName = "Entity";
+        if (ecsManager.HasComponent<NameComponent>(sourceEntity)) {
+            sourceName = ecsManager.GetComponent<NameComponent>(sourceEntity).name;
+        }
+
+        // Generate unique name (Entity (1), Entity (2), etc.)
+        std::string newName = sourceName;
+        int counter = 1;
+        bool nameExists = true;
+        while (nameExists) {
+            newName = sourceName + " (" + std::to_string(counter) + ")";
+            nameExists = false;
+            // Check if name already exists
+            for (const auto& entity : ecsManager.GetActiveEntities()) {
+                if (ecsManager.HasComponent<NameComponent>(entity)) {
+                    if (ecsManager.GetComponent<NameComponent>(entity).name == newName) {
+                        nameExists = true;
+                        counter++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Create new entity
+        Entity newEntity = ecsManager.CreateEntity();
+        std::cout << "[SceneHierarchy] Duplicating entity '" << sourceName << "' -> '" << newName << "'" << std::endl;
+
+        // Set name
+        if (ecsManager.HasComponent<NameComponent>(newEntity)) {
+            ecsManager.GetComponent<NameComponent>(newEntity).name = newName;
+        }
+
+        // Copy Transform
+        if (ecsManager.HasComponent<Transform>(sourceEntity)) {
+            Transform sourceTransform = ecsManager.GetComponent<Transform>(sourceEntity);
+            if (ecsManager.HasComponent<Transform>(newEntity)) {
+                ecsManager.GetComponent<Transform>(newEntity) = sourceTransform;
+            } else {
+                ecsManager.AddComponent<Transform>(newEntity, sourceTransform);
+            }
+        }
+
+        // Copy ActiveComponent
+        if (ecsManager.HasComponent<ActiveComponent>(sourceEntity)) {
+            ActiveComponent sourceActive = ecsManager.GetComponent<ActiveComponent>(sourceEntity);
+            ecsManager.AddComponent<ActiveComponent>(newEntity, sourceActive);
+        }
+
+        // Copy ModelRenderComponent
+        if (ecsManager.HasComponent<ModelRenderComponent>(sourceEntity)) {
+            ModelRenderComponent sourceModel = ecsManager.GetComponent<ModelRenderComponent>(sourceEntity);
+            ecsManager.AddComponent<ModelRenderComponent>(newEntity, sourceModel);
+        }
+
+        // Copy SpriteRenderComponent
+        if (ecsManager.HasComponent<SpriteRenderComponent>(sourceEntity)) {
+            SpriteRenderComponent sourceSprite = ecsManager.GetComponent<SpriteRenderComponent>(sourceEntity);
+            ecsManager.AddComponent<SpriteRenderComponent>(newEntity, sourceSprite);
+        }
+
+        // Copy TextRenderComponent
+        if (ecsManager.HasComponent<TextRenderComponent>(sourceEntity)) {
+            TextRenderComponent sourceText = ecsManager.GetComponent<TextRenderComponent>(sourceEntity);
+            ecsManager.AddComponent<TextRenderComponent>(newEntity, sourceText);
+        }
+
+        // Copy LightComponent
+        if (ecsManager.HasComponent<LightComponent>(sourceEntity)) {
+            LightComponent sourceLight = ecsManager.GetComponent<LightComponent>(sourceEntity);
+            ecsManager.AddComponent<LightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy CameraComponent
+        if (ecsManager.HasComponent<CameraComponent>(sourceEntity)) {
+            CameraComponent sourceCam = ecsManager.GetComponent<CameraComponent>(sourceEntity);
+            // Don't copy active status for cameras (Unity-like)
+            sourceCam.isActive = false;
+            ecsManager.AddComponent<CameraComponent>(newEntity, sourceCam);
+        }
+
+        // Copy AudioComponent
+        if (ecsManager.HasComponent<AudioComponent>(sourceEntity)) {
+            AudioComponent sourceAudio = ecsManager.GetComponent<AudioComponent>(sourceEntity);
+            ecsManager.AddComponent<AudioComponent>(newEntity, sourceAudio);
+        }
+
+        // Copy AnimationComponent
+        if (ecsManager.HasComponent<AnimationComponent>(sourceEntity)) {
+            AnimationComponent sourceAnim = ecsManager.GetComponent<AnimationComponent>(sourceEntity);
+            ecsManager.AddComponent<AnimationComponent>(newEntity, sourceAnim);
+
+            // Re-link animator to model if both exist
+            if (ecsManager.HasComponent<ModelRenderComponent>(newEntity)) {
+                auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(newEntity);
+                auto& animComp = ecsManager.GetComponent<AnimationComponent>(newEntity);
+                if (modelComp.model && !animComp.clipPaths.empty()) {
+                    Animator* animator = animComp.EnsureAnimator();
+                    modelComp.SetAnimator(animator);
+                    animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                }
+            }
+        }
+
+        // Take snapshot after duplication (for undo)
+        SnapshotManager::GetInstance().TakeSnapshot("Duplicate Entity: " + sourceName);
+
+        std::cout << "[SceneHierarchy] Successfully duplicated entity (ID: " << newEntity << ")" << std::endl;
+        return newEntity;
+
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Failed to duplicate entity: " << e.what() << std::endl;
         return static_cast<Entity>(-1);
     }
 }

@@ -2,7 +2,7 @@
     "entities": [
         {
             "id": 0,
-            "guid": "c80b909bcf60280e-fec89f37d79a60d7",
+            "guid": "000158e88eea7cc9-00035732c4000001",
             "components": {
                 "NameComponent": {
                     "name": "Main Camera"
@@ -155,7 +155,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "int",
@@ -183,11 +183,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 100
+                            "data": 1000
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 5
                         },
                         {
                             "type": "float",
@@ -207,7 +207,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 5
+                            "data": 0
                         },
                         {
                             "type": "float",
@@ -253,10 +253,10 @@
         },
         {
             "id": 1,
-            "guid": "0036317790fb6f7b-00034cc69c000003",
+            "guid": "000158e894522591-00035732d0000003",
             "components": {
                 "NameComponent": {
-                    "name": "Cube"
+                    "name": "test sprite"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -276,7 +276,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.554505
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -289,15 +289,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 1
                                 }
                             ]
                         },
@@ -331,7 +331,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -351,15 +351,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.554505
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -371,7 +363,15 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -397,128 +397,29 @@
                         }
                     ]
                 },
-                "ModelRenderComponent": {
-                    "type": "ModelRenderComponent",
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
                     "data": [
-                        "00374a2100cab2d8-000331fc58000037",
-                        "0060f444e1e8808c-000337e664000011",
-                        "0000000000000000-0000000000000000",
                         {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
+                            "type": "bool",
+                            "data": true
                         },
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2,
-            "guid": "00363177905afc16-00034cc6a2000005",
-            "components": {
-                "NameComponent": {
-                    "name": "Light"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
+                        "00374a214bc0f2cc-000331fc82000073",
+                        "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.288889
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.0612
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.681863
+                                    "data": 0
                                 }
                             ]
                         },
@@ -527,117 +428,22 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 6.2
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.907918
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.213675
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.0588061
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.355767
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.739943
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.671145
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.28058
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.288889
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.620884
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.655546
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -2.66502
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1.0612
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.258819
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.346156
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 5.59097
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.681863
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
                                     "data": 1
                                 }
                             ]
-                        }
-                    ]
-                },
-                "DirectionalLightComponent": {
-                    "type": "DirectionalLightComponent",
-                    "data": [
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
                         {
                             "type": "Vector3D",
                             "data": [
@@ -657,81 +463,81 @@
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 1
                         },
                         {
                             "type": "bool",
                             "data": true
                         },
                         {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": -0.2
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.3
-                                }
-                            ]
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
                         },
                         {
                             "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.4
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.4
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.4
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.5
+                                    "data": 0
                                 }
                             ]
                         }
                     ]
+                },
+                "SpriteAnimationComponent": {
+                    "clips": [
+                        {
+                            "name": "animation 1",
+                            "loop": true,
+                            "frames": [
+                                {
+                                    "textureGUID": "00374a214bc0f2cc-000331fc82000073",
+                                    "texturePath": "../../Resources/Textures/awesomeface.png",
+                                    "uvOffset": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "uvScale": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "duration": 0.9200000166893005
+                                },
+                                {
+                                    "textureGUID": "000b223361a69ae4-0003529da2000001",
+                                    "texturePath": "../../Resources/Textures/idle_1.png",
+                                    "uvOffset": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "uvScale": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "duration": 1.1100000143051147
+                                }
+                            ]
+                        }
+                    ],
+                    "currentClipIndex": 0,
+                    "currentFrameIndex": 0,
+                    "timeInCurrentFrame": 0.0,
+                    "playbackSpeed": 1.0,
+                    "playing": false,
+                    "enabled": true,
+                    "autoPlay": true
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",

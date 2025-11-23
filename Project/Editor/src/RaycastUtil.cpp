@@ -320,26 +320,114 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             newMatrix.m.m20 = matrix[2];  newMatrix.m.m21 = matrix[6];  newMatrix.m.m22 = matrix[10];  newMatrix.m.m23 = matrix[14];
             newMatrix.m.m30 = matrix[3];  newMatrix.m.m31 = matrix[7];  newMatrix.m.m32 = matrix[11];  newMatrix.m.m33 = matrix[15];
 
-            // Extract transform components properly using glm decomposition
+            // Manual robust matrix decomposition (glm::decompose fails with very small scales)
+            // Check for NaN/Inf in input matrix first
+            bool hasInvalidValues = false;
+            for (int i = 0; i < 16; ++i) {
+                if (!std::isfinite(matrix[i])) {
+                    hasInvalidValues = true;
+                    ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Invalid matrix value detected at index ", i, ": ", matrix[i], "\n");
+                    break;
+                }
+            }
+
+            if (hasInvalidValues) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Rejecting invalid transform matrix\n");
+                return false;
+            }
+
+            // Manually extract transform components (more robust than glm::decompose for small scales)
             glm::mat4 glmMatrix = glm::make_mat4(matrix);
 
-            glm::vec3 position;
+            // Extract position (translation) - last column
+            glm::vec3 position(glmMatrix[3][0], glmMatrix[3][1], glmMatrix[3][2]);
+
+            // Extract scale - length of basis vectors
             glm::vec3 scale;
-            glm::quat rotation;
-            glm::vec3 skew;
-            glm::vec4 perspective;
-            glm::decompose(glmMatrix, scale, rotation, position, skew, perspective);
+            glm::vec3 col0(glmMatrix[0][0], glmMatrix[0][1], glmMatrix[0][2]);
+            glm::vec3 col1(glmMatrix[1][0], glmMatrix[1][1], glmMatrix[1][2]);
+            glm::vec3 col2(glmMatrix[2][0], glmMatrix[2][1], glmMatrix[2][2]);
+
+            scale.x = glm::length(col0);
+            scale.y = glm::length(col1);
+            scale.z = glm::length(col2);
+
+            // Check for zero or near-zero scale (would cause division by zero)
+            const float EPSILON = 1e-8f;
+            if (scale.x < EPSILON || scale.y < EPSILON || scale.z < EPSILON) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Scale too small for rotation extraction: (",
+                    scale.x, ", ", scale.y, ", ", scale.z, ")\n");
+                return false;
+            }
+
+            // Extract rotation by normalizing the basis vectors
+            glm::mat3 rotMat;
+            rotMat[0] = col0 / scale.x;
+            rotMat[1] = col1 / scale.y;
+            rotMat[2] = col2 / scale.z;
+
+            // Check for NaN/Inf in extracted values
+            if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z) ||
+                !std::isfinite(scale.x) || !std::isfinite(scale.y) || !std::isfinite(scale.z)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Extraction produced NaN/Inf values. Position: (",
+                    position.x, ", ", position.y, ", ", position.z, ") Scale: (", scale.x, ", ", scale.y, ", ", scale.z, ")\n");
+                return false;
+            }
+
+            // Clamp scales to prevent precision issues and extreme values
+            const float MIN_SCALE = 0.00001f;  // Minimum to prevent division by zero
+            const float MAX_SCALE = 10000.0f;   // Maximum to prevent extremely large objects
+
+            auto clampScale = [](float s, float minS, float maxS) -> float {
+                float absS = std::abs(s);
+                if (absS < minS) {
+                    ENGINE_PRINT("[RaycastUtil] Scale too small (", s, "), clamping to ", minS, "\n");
+                    return minS * (s < 0 ? -1.0f : 1.0f);
+                }
+                if (absS > maxS) {
+                    ENGINE_PRINT("[RaycastUtil] Scale too large (", s, "), clamping to ", maxS, "\n");
+                    return maxS * (s < 0 ? -1.0f : 1.0f);
+                }
+                return s;
+            };
+
+            scale.x = clampScale(scale.x, MIN_SCALE, MAX_SCALE);
+            scale.y = clampScale(scale.y, MIN_SCALE, MAX_SCALE);
+            scale.z = clampScale(scale.z, MIN_SCALE, MAX_SCALE);
 
             // Convert glm vectors to Vector3D
             Vector3D newPosition(position.x, position.y, position.z);
             Vector3D newScale(scale.x, scale.y, scale.z);
 
-            // Convert quaternion to Euler angles (in radians, then to degrees)
-            glm::vec3 eulerRadians = glm::eulerAngles(rotation);
+            // Convert rotation matrix to Euler angles using robust extraction (ZYX order to match engine)
+            // Extract euler angles from rotation matrix (ZYX order: Rz * Ry * Rx)
+            // https://www.learnopencv.com/rotation-matrix-to-euler-angles/
+            float sy = sqrtf(rotMat[0][0] * rotMat[0][0] + rotMat[1][0] * rotMat[1][0]);
+
+            bool singular = sy < 1e-6f; // Check for gimbal lock
+
+            float x, y, z;
+            if (!singular) {
+                x = atan2f(rotMat[2][1], rotMat[2][2]);
+                y = atan2f(-rotMat[2][0], sy);
+                z = atan2f(rotMat[1][0], rotMat[0][0]);
+            } else {
+                // Gimbal lock case
+                x = atan2f(-rotMat[1][2], rotMat[1][1]);
+                y = atan2f(-rotMat[2][0], sy);
+                z = 0;
+            }
+
+            // Check for NaN in extracted angles
+            if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Euler angle extraction produced NaN/Inf\n");
+                return false;
+            }
+
             Vector3D newRotation(
-                glm::degrees(eulerRadians.x),
-                glm::degrees(eulerRadians.y),
-                glm::degrees(eulerRadians.z)
+                glm::degrees(x),
+                glm::degrees(y),
+                glm::degrees(z)
             );
 
             // Update all components to stay in sync
@@ -375,22 +463,63 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             const float* matrixPtr = matrix;
             transformMatrix = glm::make_mat4(matrixPtr);
 
+            // Check for invalid values in matrix
+            bool hasInvalidValues = false;
+            for (int i = 0; i < 16; ++i) {
+                if (!std::isfinite(matrix[i])) {
+                    hasInvalidValues = true;
+                    ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Invalid sprite matrix value at index ", i, "\n");
+                    break;
+                }
+            }
+
+            if (hasInvalidValues) {
+                return false;
+            }
+
             // Decompose the matrix to get position, rotation, and scale
             glm::vec3 position;
             glm::vec3 scale;
             glm::quat rotation;
             glm::vec3 skew;
             glm::vec4 perspective;
-            glm::decompose(transformMatrix, scale, rotation, position, skew, perspective);
 
-            // Convert quaternion to Euler angles (in radians)
-            glm::vec3 eulerAngles = glm::eulerAngles(rotation);
+            bool decomposeSuccess = glm::decompose(transformMatrix, scale, rotation, position, skew, perspective);
+
+            if (!decomposeSuccess) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Sprite matrix decomposition failed\n");
+                return false;
+            }
+
+            // Check for NaN/Inf in decomposed values
+            if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z) ||
+                !std::isfinite(scale.x) || !std::isfinite(scale.y) || !std::isfinite(scale.z)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Sprite decomposition produced NaN/Inf\n");
+                return false;
+            }
+
+            // Clamp sprite scale to reasonable values
+            const float MIN_SCALE = 0.00001f;
+            const float MAX_SCALE = 10000.0f;
+            scale.x = std::clamp(std::abs(scale.x), MIN_SCALE, MAX_SCALE) * (scale.x < 0 ? -1.0f : 1.0f);
+            scale.y = std::clamp(std::abs(scale.y), MIN_SCALE, MAX_SCALE) * (scale.y < 0 ? -1.0f : 1.0f);
+            scale.z = std::clamp(std::abs(scale.z), MIN_SCALE, MAX_SCALE) * (scale.z < 0 ? -1.0f : 1.0f);
+
+            // Extract Z rotation robustly for 2D sprites
+            glm::mat4 rotMat = glm::mat4_cast(rotation);
+            float zRotationRadians = atan2f(rotMat[1][0], rotMat[0][0]);
+
+            // Check for NaN in rotation
+            if (!std::isfinite(zRotationRadians)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Sprite rotation extraction produced NaN\n");
+                return false;
+            }
 
             // For 3D sprites, position is already the center (no conversion needed)
             // Update sprite properties directly
             sprite.position = Vector3D::ConvertGLMToVector3D(position);
             sprite.scale = Vector3D::ConvertGLMToVector3D(scale);
-            sprite.rotation = glm::degrees(eulerAngles.z); // Convert back to degrees and use Z rotation
+            sprite.rotation = glm::degrees(zRotationRadians); // Convert back to degrees
 
             return true;
         }

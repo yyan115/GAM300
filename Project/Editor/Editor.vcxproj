@@ -41,6 +41,8 @@
     <ClCompile Include="src\EditorCamera.cpp" />
     <ClCompile Include="src\EditorInputManager.cpp" />
     <ClCompile Include="src\InspectorCustomRenderers.cpp" />
+    <ClCompile Include="src\SpriteAnimationInspector.cpp" />
+    <ClCompile Include="src\Panels\SpriteAnimationEditorWindow.cpp" />
     <ClCompile Include="src\Panels\AssetBrowserPanel.cpp" />
     <ClCompile Include="src\Panels\AssetInspector.cpp" />
     <ClCompile Include="src\Panels\MaterialInspector.cpp" />
@@ -79,6 +81,7 @@
     <ClInclude Include="include\Panels\GamePanel.hpp" />
     <ClInclude Include="include\Panels\ScenePanel.hpp" />
     <ClInclude Include="include\Panels\InspectorPanel.hpp" />
+    <ClInclude Include="include\Panels\SpriteAnimationEditorWindow.hpp" />
     <ClInclude Include="include\Panels\PanelManager.hpp" />
     <ClInclude Include="include\Panels\SceneHierarchyPanel.hpp" />
     <ClInclude Include="include\Panels\PlayControlPanel.hpp" />
@@ -91,6 +94,9 @@
     </ProjectReference>
     <ProjectReference Include="..\Game\Game.vcxproj">
       <Project>{bea8f13d-ac63-471b-a3fa-171f00c98e39}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Scripting\Scripting.vcxproj">
+      <Project>{fd001d39-c7c6-4f03-81ea-6ac6115ecbe4}</Project>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">

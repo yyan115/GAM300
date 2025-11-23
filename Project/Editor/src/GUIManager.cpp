@@ -36,6 +36,7 @@
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "Panels/TagsLayersPanel.hpp"
+#include "Panels/SpriteAnimationEditorWindow.hpp"
 
 
 // Static member definitions
@@ -200,6 +201,10 @@ void GUIManager::SetupDefaultPanels() {
 	assert(tagsLayersPanel != nullptr && "Failed to create TagsLayersPanel");
 	panelManager->RegisterPanel(tagsLayersPanel);
 
+	// Register the sprite animation editor window
+	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor());
+	panelManager->RegisterPanel(spriteAnimEditor);
+
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
 }
 
@@ -291,9 +296,11 @@ void GUIManager::CreateDockspace() {
 void GUIManager::RenderMenuBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			// if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
-			//     // TODO: New scene functionality
-			// }
+			if (ImGui::MenuItem(ICON_FA_FILE_CIRCLE_PLUS " New Scene", "Ctrl+N")) {
+				std::filesystem::path scenesDir = std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / "Scenes";
+				SceneManager::GetInstance().CreateNewScene(scenesDir.generic_string(), true);
+				ShowNotification("New Scene Created!", 2.0f);
+			}
 			if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+O")) {
 				std::string filepath = OpenSceneFileDialog();
 				if (!filepath.empty()) {
@@ -430,26 +437,26 @@ void GUIManager::CreateEditorTheme() {
 	colors[ImGuiCol_Border] = ImVec4(0.28f, 0.28f, 0.28f, 1.0f);       // Medium gray border
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.10f, 0.10f, 0.10f, 0.5f); // Subtle shadow
 
-	// Text - Unity-style brighter white
+	// Text - brighter white
 	colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);         // Brighter white text like Unity
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.0f); // Gray text for disabled items
 
-	// Headers - Unity-style grey-blue selection (for combo boxes, selectables, etc.)
+	// Headers - grey-blue selection (for combo boxes, selectables, etc.)
 	colors[ImGuiCol_Header] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);         // Unity grey-blue selection
 	colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);  // Subtle grey hover
 	colors[ImGuiCol_HeaderActive] = ImVec4(0.22f, 0.37f, 0.56f, 1.0f);   // Match selected
 
-	// Buttons - Unity-style
+	// Buttons
 	colors[ImGuiCol_Button] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);       // Button background
 	colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Hovered button
 	colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.0f); // Active button
 
-	// Frame (for input fields, combo boxes, etc.) - Unity-style
+	// Frame (for input fields, combo boxes, etc.)
 	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);        // Frame background
 	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f); // Hovered frame
 	colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);  // Active frame
 
-	// Tabs - Unity-style: active tabs are LIGHTER, inactive are DARKER
+	// Tabs - active tabs are LIGHTER, inactive are DARKER
 	colors[ImGuiCol_Tab] = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);          // Inactive tab (darker)
 	colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.26f, 0.26f, 1.0f);   // Hovered tab
 	colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.0f);    // Active tab (lighter - matches window bg)

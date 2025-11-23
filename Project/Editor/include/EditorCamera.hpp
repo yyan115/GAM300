@@ -4,7 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 /**
- * @brief Unity-style editor camera for scene editing.
+ * @brief editor camera for scene editing.
  * 
  * Features:
  * - Alt+LMB: Rotate camera around target
@@ -69,7 +69,7 @@ public:
     glm::mat4 GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const;
 
     /**
-     * @brief Process Unity-style editor input
+     * @brief Process editor input
      * @param deltaTime Time since last frame
      * @param isWindowHovered Whether the scene panel is hovered
      * @param isAltPressed Whether Alt key is pressed

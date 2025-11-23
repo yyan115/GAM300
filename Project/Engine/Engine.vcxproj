@@ -65,6 +65,8 @@
     <ClInclude Include="include\Graphics\PostProcessing\HDR\HDREffect.hpp" />
     <ClInclude Include="include\Graphics\PostProcessing\PostProcessEffect.hpp" />
     <ClInclude Include="include\Graphics\PostProcessing\PostProcessingManager.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationComponent.hpp" />
+    <ClInclude Include="include\Graphics\Sprite\SpriteAnimationSystem.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteRenderComponent.hpp" />
     <ClInclude Include="include\Graphics\Sprite\SpriteSystem.hpp" />
     <ClInclude Include="include\Graphics\DebugDraw\DebugDrawComponent.hpp" />
@@ -89,6 +91,9 @@
     <ClInclude Include="include\Physics\CollisionFilters.hpp" />
     <ClInclude Include="include\Physics\CollisionLayers.hpp" />
     <ClInclude Include="include\Physics\JoltInclude.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterController.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerComponent.hpp" />
+    <ClInclude Include="include\Physics\Kinematics\CharacterControllerSystem.hpp" />
     <ClInclude Include="include\Physics\PhysicsContactListener.hpp" />
     <ClInclude Include="include\Physics\PhysicsSystem.hpp" />
     <ClInclude Include="include\Prefab.hpp" />
@@ -98,6 +103,7 @@
     <ClInclude Include="include\RunTimeVar.hpp" />
     <ClInclude Include="include\Reflection\Base64.hpp" />
     <ClInclude Include="include\Reflection\ReflectionBase.hpp" />
+    <ClInclude Include="include\Script\LuaBindableSystems.hpp" />
     <ClInclude Include="include\Scene\Scene.hpp" />
     <ClInclude Include="include\Scene\SceneManager.hpp" />
     <ClInclude Include="include\Script\ComponentProxy.h" />
@@ -197,6 +203,11 @@
     <ClInclude Include="src\TextRendering\TextUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationComponent.cpp" />
+    <ClCompile Include="src\Graphics\Sprite\SpriteAnimationSystem.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterController.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerComponent.cpp" />
+    <ClCompile Include="src\Physics\Kinematics\CharacterControllerSystem.cpp" />
     <ClCompile Include="src\Script\ComponentProxy.cpp" />
     <ClCompile Include="src\Script\ScriptComponentData.cpp" />
     <ClCompile Include="src\Script\ScriptSystem.cpp" />
@@ -323,7 +334,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="src\Script\LuaComponentBindings.inc" />
+    <None Include="include\Script\LuaSystemBindings.inc" />
+    <None Include="include\Script\LuaComponentBindings.inc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scripting\Scripting.vcxproj">
