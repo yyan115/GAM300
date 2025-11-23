@@ -232,8 +232,10 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
             for (auto& script : scriptComp.scripts) {
                 std::string scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
-                script.scriptPath = scriptPath.substr(scriptPath.find("Resources"));
-                ENGINE_LOG_DEBUG("[ScriptSystem] Current script path: " + script.scriptPath);
+                if (!scriptPath.empty()) {
+                    script.scriptPath = scriptPath.substr(scriptPath.find("Resources"));
+                    ENGINE_LOG_DEBUG("[ScriptSystem] Current script path: " + script.scriptPath);
+                }
             }
         }
 
