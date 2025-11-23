@@ -77,7 +77,20 @@ void EBO::Unbind()
 
 void EBO::Delete()
 {
-	glDeleteBuffers(1, &ID);
-	ID = 0;
-	isSetup = false;
+#ifdef ANDROID
+		// Check if we have an active OpenGL context before deleting
+		EGLDisplay display = eglGetCurrentDisplay();
+		EGLContext context = eglGetCurrentContext();
+		if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
+			return; // Context not current, skip deletion
+		}
+#else
+		// On desktop (Windows/Linux), check if GLFW context is current
+		if (glfwGetCurrentContext() == NULL) {
+			return; // Context not current, skip deletion
+		}
+#endif
+		glDeleteBuffers(1, &ID);
+		ID = 0;
+		isSetup = false;
 }
