@@ -85,6 +85,36 @@ BEGIN_SYSTEM("Input")
 
 END_SYSTEM()
 
+
+// ============================================================================
+// CHARACTER CONTROLLER SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("CharacterController")
+
+    // Constructor
+    FUNCTION("new", CharacterControllerWrappers::Create)
+
+    // Methods
+    FUNCTION("Move", CharacterControllerWrappers::Move)
+    FUNCTION("Jump", CharacterControllerWrappers::Jump)
+    FUNCTION("Update", CharacterControllerWrappers::Update)
+    FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
+    FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+
+END_SYSTEM()
+
+
+BEGIN_SYSTEM("PhysicsSystem")
+    FUNCTION("GetSystem", PhysicsSystemWrappers::GetSystem)
+END_SYSTEM()
+
+
+
+
+
+
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================
