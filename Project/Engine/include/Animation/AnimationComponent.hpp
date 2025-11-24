@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Animation/Animator.hpp"
 #include "Animation/AnimationSystem.hpp"
+#include "Animation/AnimationStateMachine.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include "Utilities/GUID.hpp"
 
@@ -72,11 +73,29 @@ public:
     void ResetForPlay();  // Reset animator to 0 for fresh game start
     void ResetPreview();  // Reset preview time to 0
 
+
+	// StateMachine
+    AnimationStateMachine*          GetStateMachine()       { return stateMachine.get(); }
+    const AnimationStateMachine*    GetStateMachine() const { return stateMachine.get(); }
+
+    // Helper to lazily allocate FSM:
+    AnimationStateMachine* EnsureStateMachine()
+    {
+        if (!stateMachine)
+        {
+            stateMachine = std::make_unique<AnimationStateMachine>();
+            stateMachine->SetOwner(this);
+        }
+        return stateMachine.get();
+    }
+
 private:
     std::vector<std::unique_ptr<Animation>> clips;
     size_t activeClip = 0;
 
     std::unique_ptr<Animator> animator;
+
+	std::unique_ptr<AnimationStateMachine> stateMachine;
 
     void SyncAnimatorToActiveClip();
     std::unique_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
