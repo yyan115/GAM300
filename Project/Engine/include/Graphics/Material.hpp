@@ -27,21 +27,21 @@ public:
 		ROUGHNESS = 16,
 	};
 
-	ENGINE_API Material();
+	Material();
 	Material(const std::string& name);
-	ENGINE_API Material(std::shared_ptr<AssetMeta> metaData);
+	Material(std::shared_ptr<AssetMeta> metaData);
 	~Material() = default;
 
 	Material(const Material&) = delete;
 	Material& operator=(const Material&) = delete;
 
 	// Basic Material Properties
-	void ENGINE_API SetAmbient(const glm::vec3 ambient);
-	void ENGINE_API SetDiffuse(const glm::vec3& diffuse);
-	void ENGINE_API SetSpecular(const glm::vec3& specular);
+	void SetAmbient(const glm::vec3 ambient);
+	void SetDiffuse(const glm::vec3& diffuse);
+	void SetSpecular(const glm::vec3& specular);
 	void SetEmissive(const glm::vec3& emissive);
-	void ENGINE_API SetShininess(float shininess);
-	void ENGINE_API SetOpacity(float opacity);
+	void SetShininess(float shininess);
+	void SetOpacity(float opacity);
 
 	const glm::vec3& GetAmbient() const { return m_ambient; }
 	const glm::vec3& GetDiffuse() const { return m_diffuse; }
@@ -60,15 +60,15 @@ public:
 	const float& GetAO() const { return m_ao; }
 
 	// Texture Managment
-	void ENGINE_API SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo);
-	ENGINE_API std::optional<std::reference_wrapper<TextureInfo>>  GetTextureInfo(TextureType type) const;
-	ENGINE_API const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>&  GetAllTextureInfo();
+	void SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo);
+	std::optional<std::reference_wrapper<TextureInfo>>  GetTextureInfo(TextureType type) const;
+	const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>&  GetAllTextureInfo();
 	bool HasTexture(TextureType type) const;
-	void ENGINE_API RemoveTexture(TextureType type);
+	void RemoveTexture(TextureType type);
 
 	// Utility methods
-	void ENGINE_API SetName(const std::string& name);
-	ENGINE_API const std::string&  GetName() const;
+	void SetName(const std::string& name);
+	const std::string&  GetName() const;
 
 	// Apply material to shader
 	void ApplyToShader(Shader& shader) const;
@@ -76,13 +76,13 @@ public:
 	// IAsset interface
 	bool GetMaterialPropertiesFromAsset(const std::string& assetPath);
 	std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
-	ENGINE_API std::string CompileUpdatedAssetToResource(const std::string& assetPath, bool forAndroid = false);
+	std::string CompileUpdatedAssetToResource(const std::string& assetPath, bool forAndroid = false);
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 
 	// Static factory methods for common materials
-	ENGINE_API static std::shared_ptr<Material> CreateDefault();
+	static std::shared_ptr<Material> CreateDefault();
 	static std::shared_ptr<Material> CreateMetal(const glm::vec3& color);
 	static std::shared_ptr<Material> CreatePlastic(const glm::vec3& color);
 	static std::shared_ptr<Material> CreateWood();

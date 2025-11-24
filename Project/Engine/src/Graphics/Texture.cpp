@@ -9,11 +9,8 @@
 
 #include "Graphics/Texture.h"
 
-// On Android, we need our own STB implementation
-// On Desktop (Windows/Linux), assimp provides it via vcpkg
-#ifdef __ANDROID__
-    #define STB_IMAGE_IMPLEMENTATION
-#endif
+// STB Image implementation - header-only library needs implementation defined once
+#define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
 
 #ifdef ANDROID

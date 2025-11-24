@@ -34,6 +34,16 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
+echo [2.5/4] Checking out pinned vcpkg version (2d6a6cf3ac - Nov 13, 2025)...
+cd vcpkg
+git checkout 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
+if !errorlevel! neq 0 (
+    echo ERROR: Failed to checkout vcpkg baseline commit
+    pause
+    exit /b 1
+)
+cd ..
+
 echo [3/4] Bootstrapping vcpkg...
 cd vcpkg
 call bootstrap-vcpkg.bat

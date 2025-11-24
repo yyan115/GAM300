@@ -69,9 +69,9 @@ public:
     std::string modelPath;
     std::shared_ptr<ModelMeta> metaData;
 
-	ENGINE_API Model();
+	Model();
     Model(const Model& other) = default;
-    ENGINE_API Model(std::shared_ptr<AssetMeta> modelMeta);
+    Model(std::shared_ptr<AssetMeta> modelMeta);
 	virtual ~Model() = default;
 	//Model(const std::string& filePath);
     std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;

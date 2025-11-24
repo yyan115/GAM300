@@ -45,10 +45,14 @@ if(ANDROID)
     message(STATUS "Excluded glad.c for Android")
 endif()
 
+# Exclude deprecated/unused files from all platforms
+list(REMOVE_ITEM ENGINE_SOURCES
+    "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
+)
+
 # Exclude Windows-specific files on non-Windows platforms
 if(NOT WIN32)
     list(REMOVE_ITEM ENGINE_SOURCES
-        "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
         "${CMAKE_SOURCE_DIR}/Scripting/src/ScriptFileSystem_win.cpp"
     )
     message(STATUS "Excluded Windows-specific Scripting files for non-Windows platform")
@@ -75,6 +79,11 @@ add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
+
+# Define EDITOR for Editor builds (EditorDebug, EditorRelease)
+if(CMAKE_BUILD_TYPE MATCHES "Editor")
+    target_compile_definitions(Engine PRIVATE EDITOR)
+endif()
 
 # Jolt Physics compile definitions:
 # For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
@@ -156,6 +165,7 @@ else()
     find_package(spdlog CONFIG REQUIRED)
     find_package(RapidJSON CONFIG REQUIRED)
     find_package(gli CONFIG REQUIRED)
+    find_package(meshoptimizer CONFIG REQUIRED)
 endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
@@ -167,6 +177,8 @@ target_include_directories(Engine
         $<INSTALL_INTERFACE:include>
         # Scripting library headers - PUBLIC because used in Engine's public headers
         ${CMAKE_SOURCE_DIR}/Scripting/include
+        # Lua headers - PUBLIC because Scripting headers include lua.h
+        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
         # hfsm2 library - PUBLIC because used in Engine's public headers
         ${CMAKE_SOURCE_DIR}/Libraries/hfsm2
     PRIVATE
@@ -174,9 +186,8 @@ target_include_directories(Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
+        # Keep manual libraries: ImGui (docking), FMOD (commercial)
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
-        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
 )
 
 # Add Compressonator include directory for Editor builds
@@ -248,6 +259,7 @@ else()
             Freetype::Freetype
             spdlog::spdlog
             gli
+            meshoptimizer::meshoptimizer
     )
 
     # Platform-specific FMOD and system libraries
@@ -277,10 +289,16 @@ else()
     # Link Compressonator for Editor builds
     if(CMAKE_BUILD_TYPE MATCHES "Editor")
         if(WIN32)
-            # Windows: Link prebuilt Compressonator library
-            target_link_libraries(Engine PRIVATE
-                ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD_DLL.lib
-            )
+            # Windows: Link prebuilt Compressonator static library (no DLL needed)
+            if(CMAKE_BUILD_TYPE MATCHES "Debug" OR CMAKE_BUILD_TYPE MATCHES "EditorDebug")
+                target_link_libraries(Engine PRIVATE
+                    ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MDd.lib
+                )
+            else()
+                target_link_libraries(Engine PRIVATE
+                    ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD.lib
+                )
+            endif()
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             # Linux: Link FetchContent built Compressonator
             if(TARGET Compressonator)

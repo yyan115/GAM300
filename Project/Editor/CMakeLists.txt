@@ -72,11 +72,15 @@ target_include_directories(Editor
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
 )
 
+# Find GLFW for ImGui backend
+find_package(glfw3 CONFIG REQUIRED)
+
 # Link to Engine (shared lib) and Game (static lib)
 target_link_libraries(Editor
     PRIVATE
         Engine  # shared library
         Game    # static library
+        glfw    # for ImGui GLFW backend
 )
 
 # --- Link Lua to Editor (works for local add_subdirectory or vcpkg config package) ---
@@ -104,15 +108,18 @@ add_custom_command(TARGET Editor POST_BUILD
 )
 
 # Platform-specific: Copy required libraries for Editor
+# With x64-windows triplet, vcpkg libs are DLLs and need to be copied
 if(WIN32)
+    # Copy FMOD
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
+    # Copy all vcpkg DLLs (debug or release based on config)
     add_custom_command(TARGET Editor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/fmod.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin>"
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")

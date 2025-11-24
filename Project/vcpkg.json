@@ -18,7 +18,8 @@
     "glm",
     "spdlog",
     "rapidjson",
-    "gli"
+    "gli",
+    "meshoptimizer"
   ],
   "overrides": [
     {
