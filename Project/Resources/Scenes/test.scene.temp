@@ -5692,6 +5692,23 @@
                         }
                     ]
                 },
+                "CharacterControllerComponent": {
+                    "type": "CharacterControllerComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2
+                        }
+                    ]
+                },
                 "ColliderComponent": {
                     "type": "ColliderComponent",
                     "data": [

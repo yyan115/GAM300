@@ -16,14 +16,18 @@ return Component {
         end
         print("[LUA] CharacterController created successfully!")
 
-        --GET THE COMPONENTS FOR INITIALISATION
+        -- Get the components for initialisation
         local collider = self:GetComponent("ColliderComponent")
         local transform = self:GetComponent("Transform")
 
+        -- Initialise CharacterController
         CharacterController.Initialise(self.controller, collider, transform)
+    end,  
 
+    Update = function(self, dt)
+        if not self.controller then return end
         
-
-
-    end  -- Close the Awake function
-    }
+        CharacterController.Move(self.controller, 0, 0, 1)
+        CharacterController.Update(self.controller, dt)
+    end
+}

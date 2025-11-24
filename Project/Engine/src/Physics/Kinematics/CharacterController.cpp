@@ -14,9 +14,7 @@
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
     : mPhysicsSystem(physicsSystem)
     , mCharacter(nullptr)
-{
-    std::cout << "i hope u can see this?" << std::endl;
-}
+{}
 
 
 CharacterController::~CharacterController()
@@ -62,7 +60,6 @@ void CharacterController::Move(float x, float y, float z)
 {
     // Set the desired velocity
     mVelocity = JPH::Vec3(x, y, z);
-    
 }
 
 void CharacterController::Jump(float height)

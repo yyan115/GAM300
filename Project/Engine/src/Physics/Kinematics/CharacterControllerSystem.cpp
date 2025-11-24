@@ -60,8 +60,6 @@ void CharacterControllerSystem::Update(float dt, ECSManager& ecs)
         //// Option 1: If runtimeController exists, call Move()
         if (cc.runtimeController)
         {
-            cc.runtimeController->Move(0, 0, moveZ);        //here for testing only
-
             cc.runtimeController->Update(dt);
 
             //SYNC ECS TRANSFORM WITH RUNTIME
