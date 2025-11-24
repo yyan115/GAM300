@@ -14,7 +14,9 @@
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
     : mPhysicsSystem(physicsSystem)
     , mCharacter(nullptr)
-{}
+{
+    std::cout << "i hope u can see this?" << std::endl;
+}
 
 
 CharacterController::~CharacterController()
@@ -33,7 +35,7 @@ CharacterController::~CharacterController()
 //Cylinder
 
 
-void CharacterController::Initialise(CharacterControllerComponent& character, ColliderComponent& collider, Transform& transform)
+void CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
     //SHAPE TYPE HAS TO BE A CAPSULE..
     collider.shapeType = ColliderShapeType::Capsule;

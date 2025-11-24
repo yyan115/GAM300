@@ -23,11 +23,44 @@ namespace InputWrappers {
 }
 
 
-namespace CharacterControllerWrappers {
+#include "Physics/PhysicsSystem.hpp"
+#include "ECS/ECSRegistry.hpp"
 
+namespace PhysicsSystemWrappers {
+    inline PhysicsSystem* g_PhysicsSystem = nullptr;
+
+    inline JPH::PhysicsSystem* GetSystem() {
+        if (!g_PhysicsSystem) {
+            std::cerr << "[ERROR] PhysicsSystem not initialized in wrappers!" << std::endl;
+            return nullptr;
+        }
+        return &g_PhysicsSystem->GetJoltSystem();
+    }
+}
+
+
+#include "Physics/Kinematics/CharacterController.hpp"
+#include "Physics/ColliderComponent.hpp"
+#include "Transform/TransformComponent.hpp"
+namespace CharacterControllerWrappers {
     // Constructor wrapper
-    inline CharacterController* Create(JPH::PhysicsSystem* physicsSystem) {
+    inline CharacterController* Create() {
+        JPH::PhysicsSystem* physicsSystem = PhysicsSystemWrappers::GetSystem();
+
+        if (!physicsSystem) {
+            std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
+            return nullptr;
+        }
         return new CharacterController(physicsSystem);
+    }
+
+    inline void Initialise(CharacterController* controller,
+        ColliderComponent* collider,
+        Transform* transform) {
+
+        if (controller && collider && transform) {
+            controller->Initialise(*collider, *transform);
+        }
     }
 
     // Movement wrappers
@@ -59,19 +92,4 @@ namespace CharacterControllerWrappers {
         return controller ? controller->GetVelocity() : JPH::Vec3::sZero();
     }
 
-}
-
-#include "Physics/PhysicsSystem.hpp"
-#include "ECS/ECSRegistry.hpp"
-
-namespace PhysicsSystemWrappers {
-    inline JPH::PhysicsSystem* GetSystem() {
-        // Get active ECSManager as reference, then take address of physicsSystem
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
-        if (!ecsManager.physicsSystem)
-            return nullptr;
-
-        return &ecsManager.physicsSystem->GetJoltSystem();
-    }
 }

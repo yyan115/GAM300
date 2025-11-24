@@ -19,7 +19,7 @@ public:
     // Destructor
     ~CharacterController();
 
-    void Initialise(CharacterControllerComponent &character, ColliderComponent &collider, Transform &transform);
+    void Initialise(ColliderComponent &collider, Transform &transform);
 
     // Movement functions
     void Move(float x, float y, float z);   // Set linear velocity

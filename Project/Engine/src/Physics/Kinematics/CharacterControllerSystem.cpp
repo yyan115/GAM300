@@ -27,7 +27,7 @@ void CharacterControllerSystem::Initialise(ECSManager& ecs, PhysicsSystem* physi
         {
             // Create the runtime controller for this entity
             cc.runtimeController = new CharacterController(&physicsSystem->GetJoltSystem());
-            cc.runtimeController->Initialise(cc, collider, transform);
+            cc.runtimeController->Initialise(collider, transform);
         }
     }
 }

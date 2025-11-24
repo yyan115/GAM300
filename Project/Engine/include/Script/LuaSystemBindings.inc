@@ -90,10 +90,18 @@ END_SYSTEM()
 // CHARACTER CONTROLLER SYSTEM
 // ============================================================================
 
+// Register CharacterController as a class type first
+luabridge::getGlobalNamespace(L)
+    .beginClass<CharacterController>("CharacterControllerClass")
+    .endClass();
+
+
 BEGIN_SYSTEM("CharacterController")
 
     // Constructor
     FUNCTION("new", CharacterControllerWrappers::Create)
+    //Initialise
+    FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
 
     // Methods
     FUNCTION("Move", CharacterControllerWrappers::Move)

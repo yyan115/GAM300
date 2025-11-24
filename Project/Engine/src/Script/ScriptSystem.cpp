@@ -62,6 +62,9 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
     m_ecs = &ecsManager;
     Scripting::Init();
 
+    //PHYSICSSYSTEM REFERENCE (TEMPORARY?)
+    PhysicsSystemWrappers::g_PhysicsSystem = ecsManager.physicsSystem.get();
+
     // --- LuaBridge registration ---
     lua_State* L = Scripting::GetLuaState();
     if (L) {
