@@ -1,4 +1,5 @@
 #pragma once
+#include "Math/Vector3D.hpp"
 
 #include "Input/Keys.h"
 #include "Input/InputManager.hpp"
@@ -79,8 +80,8 @@ namespace CharacterControllerWrappers {
             controller->Update(deltaTime);
     }
 
-    inline JPH::Vec3 GetPosition(CharacterController* controller) {
-        return controller ? controller->GetPosition() : JPH::Vec3::sZero();
+    inline Vector3D GetPosition(CharacterController* controller) {
+        return controller->GetPosition();
     }
 
     inline void SetVelocity(CharacterController* controller, const JPH::Vec3& vel) {
@@ -90,6 +91,12 @@ namespace CharacterControllerWrappers {
 
     inline JPH::Vec3 GetVelocity(CharacterController* controller) {
         return controller ? controller->GetVelocity() : JPH::Vec3::sZero();
+    }
+
+    inline void Destroy(CharacterController* controller)
+    {
+        if (controller)
+            delete controller;
     }
 
 }

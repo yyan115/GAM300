@@ -110,6 +110,7 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
     FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
 
 END_SYSTEM()
 

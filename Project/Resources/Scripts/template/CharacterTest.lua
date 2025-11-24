@@ -1,5 +1,10 @@
 local Component = require("mono_helper")
+local TransformMixin = require("extension.transform_mixin")
+
 return Component {
+
+    mixins = {TransformMixin},
+
     fields = {
         name = "CharacterControllerTest",
     },
@@ -15,11 +20,24 @@ return Component {
             return
         end
         print("[LUA] CharacterController created successfully!")
+    end,
 
+    Start = function(self)
         -- Get the components for initialisation
         local collider = self:GetComponent("ColliderComponent")
         local transform = self:GetComponent("Transform")
 
+        if not collider then
+            print("Collider is not getting")
+        else
+            print("Collider is getting")
+        end
+
+        if not transform then
+            print("transform is not getting")
+        else
+            print("transform is getting")
+        end
         -- Initialise CharacterController
         CharacterController.Initialise(self.controller, collider, transform)
     end,  
@@ -29,5 +47,18 @@ return Component {
         
         CharacterController.Move(self.controller, 0, 0, 1)
         CharacterController.Update(self.controller, dt)
+
+        local position = CharacterController.GetPosition(self.controller)
+        if not position then
+            print("position is screwed")
+        else
+            self:SetPosition(position.x, position.y, position.z)
+            print("I HOPE THIS CAN BE SEEN")
+        end
+    end,
+
+    OnDestroy = function(self)
+        CharacterController.Destroy(self.controller)
     end
+
 }

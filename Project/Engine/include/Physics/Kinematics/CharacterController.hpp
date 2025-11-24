@@ -29,7 +29,7 @@ public:
     void Update(float deltaTime);
 
     // Get current position
-    JPH::Vec3 GetPosition() const;
+    Vector3D GetPosition() const;
 
     // Set/Get velocity
     void SetVelocity(const JPH::Vec3& velocity);

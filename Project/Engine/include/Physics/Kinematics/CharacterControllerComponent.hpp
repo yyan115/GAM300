@@ -16,7 +16,7 @@ public:
 
     void Move(float x, float y, float z) { if (runtimeController) runtimeController->Move(x, y, z); }
     void Jump() { if (runtimeController) runtimeController->Jump(jumpHeight); }
-    JPH::Vec3 GetPosition() const { return runtimeController ? runtimeController->GetPosition() : JPH::Vec3::sZero(); }
+    //JPH::Vec3 GetPosition() const { return runtimeController ? runtimeController->GetPosition() : JPH::Vec3::sZero(); }
 
 
 };

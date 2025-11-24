@@ -7,6 +7,7 @@
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/Kinematics/CharacterControllerComponent.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Math/Vector3D.hpp"
 
 
 
@@ -121,13 +122,14 @@ void CharacterController::Update(float deltaTime)
     mCharacter->SetLinearVelocity(mVelocity);
 }
 
-JPH::Vec3 CharacterController::GetPosition() const
+Vector3D CharacterController::GetPosition() const
 {
     if (mCharacter)
     {
-        return JPH::Vec3(mCharacter->GetPosition());
+        JPH::Vec3 position = mCharacter->GetPosition();
+        return FromJoltVec3(position);
     }
-    return JPH::Vec3::sZero();
+    return { 0,0,0 };
 }
 
 void CharacterController::SetVelocity(const JPH::Vec3& velocity)

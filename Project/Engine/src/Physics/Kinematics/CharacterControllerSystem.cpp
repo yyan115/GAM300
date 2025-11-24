@@ -63,8 +63,8 @@ void CharacterControllerSystem::Update(float dt, ECSManager& ecs)
             cc.runtimeController->Update(dt);
 
             //SYNC ECS TRANSFORM WITH RUNTIME
-            JPH::Vec3 pos = cc.runtimeController->GetPosition();
-            tr.localPosition = Vector3D(pos.GetX(), pos.GetY(), pos.GetZ());
+            //JPH::Vec3 pos = cc.runtimeController->GetPosition();
+            //tr.localPosition = Vector3D(pos.GetX(), pos.GetY(), pos.GetZ());
 
         }
     }
