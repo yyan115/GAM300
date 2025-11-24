@@ -49,6 +49,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Script/ScriptComponentData.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
+#include "Panels/TagsLayersPanel.hpp"
+#include "GUIManager.hpp"
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -344,7 +346,11 @@ void RegisterInspectorCustomRenderers()
         }
         else if (currentTag == static_cast<int>(availableTags.size()))
         {
-        // "Add Tag..." was selected - could open Tags & Layers window here
+        // "Add Tag..." was selected - open Tags & Layers window
+        auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+        if (tagsLayersPanel) {
+            tagsLayersPanel->SetOpen(true);
+        }
         // Reset selection to current tag
         currentTag = tagComp.tagIndex;
         }
@@ -429,6 +435,24 @@ void RegisterInspectorCustomRenderers()
                 if (selectedIndex != -1)
                 {
                     layerComp.layerIndex = selectedIndex;
+                }
+                else
+                {
+                    // "Add Layer..." was selected - open Tags & Layers window
+                    auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                    if (tagsLayersPanel) {
+                        tagsLayersPanel->SetOpen(true);
+                    }
+                    // Reset selection to current layer
+                    currentSelection = -1; // or find the current
+                    for (size_t i = 0; i < layerIndices.size(); ++i)
+                    {
+                        if (layerIndices[i] == layerComp.layerIndex)
+                        {
+                            currentSelection = static_cast<int>(i);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -2253,7 +2277,8 @@ void RegisterInspectorCustomRenderers()
                                       scriptData.scriptPath.substr(scriptData.scriptPath.find_last_of("/\\") + 1);
 
             ImGui::SetNextItemWidth(-1);
-            EditorComponents::DrawDragDropButton(displayText.c_str(), ImGui::GetContentRegionAvail().x);
+            float dragDropWidth = ImGui::GetContentRegionAvail().x - 40.0f; // Leave space for reload button
+            EditorComponents::DrawDragDropButton(displayText.c_str(), dragDropWidth);
 
             // Double-click to open
             if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -2342,6 +2367,13 @@ void RegisterInspectorCustomRenderers()
                     editorPreviewScriptPaths.erase(uniqueKey);
                 }
                 ImGui::EndDragDropTarget();
+            }
+
+            // Add reload button beside the drag-drop field
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_ROTATE_RIGHT "##ReloadScripts")) {
+                Scripting::RequestReloadNow();
+                ENGINE_PRINT("Requested script reload from inspector for script: ", scriptData.scriptPath.c_str());
             }
 
             // If no script assigned, skip field rendering
