@@ -115,7 +115,7 @@ bool IsValidGUID(const std::string& str) {
 }
 
 // Helper function to render asset drag-drop for a single GUID
-bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType) {
+bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType, float width = -1.0f) {
     bool modified = false;
     std::string displayText;
     
@@ -160,7 +160,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             return false;
     }
     
-    EditorComponents::DrawDragDropButton(displayText.c_str(), -1);
+    EditorComponents::DrawDragDropButton(displayText.c_str(), width);
     
     // Handle drag-drop
     if (ImGui::BeginDragDropTarget()) {
@@ -2963,15 +2963,14 @@ void RegisterInspectorCustomRenderers()
                                         ImGui::SameLine();
                                         
                                         std::string tempGuid = guidStr;
-                                        if (RenderAssetField(field.name, tempGuid, assetType))
+                                        if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                         {
                                             guidStr = tempGuid;
                                             arrayModified = true;
                                         }
 
                                         ImGui::SameLine();
-                                        std::string removeButtonId = "X##remove" + std::to_string(i);
-                                        if (ImGui::SmallButton(removeButtonId.c_str()))
+                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                         {
                                             // Skip this element (remove it)
                                             arrayModified = true;
@@ -2989,8 +2988,7 @@ void RegisterInspectorCustomRenderers()
                                 }
 
                                 // Add new element button
-                                std::string addButtonText = "Add " + displayName;
-                                if (ImGui::Button(addButtonText.c_str()))
+                                if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                 {
                                     newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                     arrayModified = true;
@@ -3071,15 +3069,14 @@ void RegisterInspectorCustomRenderers()
                                             ImGui::SameLine();
                                             
                                             std::string tempGuid = guidStr;
-                                            if (RenderAssetField(field.name, tempGuid, assetType))
+                                            if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                             {
                                                 guidStr = tempGuid;
                                                 arrayModified = true;
                                             }
 
                                             ImGui::SameLine();
-                                            std::string removeButtonId = "X##remove" + std::to_string(i);
-                                            if (ImGui::SmallButton(removeButtonId.c_str()))
+                                            if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                             {
                                                 // Skip this element (remove it)
                                                 arrayModified = true;
@@ -3097,8 +3094,7 @@ void RegisterInspectorCustomRenderers()
                                     }
 
                                     // Add new element button
-                                    std::string addButtonText = "Add " + displayName;
-                                    if (ImGui::Button(addButtonText.c_str()))
+                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                     {
                                         newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                         arrayModified = true;
