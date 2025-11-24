@@ -46,6 +46,8 @@ void AnimationSystem::Update()
 		return;
 	}
 
+	float dt = static_cast<float>(TimeManager::GetDeltaTime());
+
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities)
 	{
@@ -63,6 +65,11 @@ void AnimationSystem::Update()
 			continue;
 		}
 
-		animComp.Update(static_cast<float>(TimeManager::GetDeltaTime()));
+		if(auto* fsm = animComp.GetStateMachine())
+		{
+			fsm->Update(dt);
+		}
+
+		animComp.Update(dt);
 	}
 }
