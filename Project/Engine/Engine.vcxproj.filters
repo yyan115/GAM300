@@ -295,6 +295,8 @@
     <ClInclude Include="include\Physics\Kinematics\CharacterController.hpp" />
     <ClInclude Include="include\Physics\Kinematics\CharacterControllerComponent.hpp" />
     <ClInclude Include="include\Physics\Kinematics\CharacterControllerSystem.hpp" />
+    <ClInclude Include="include\Animation\AnimationParam.hpp" />
+    <ClInclude Include="include\Animation\AnimationStateMachine.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />

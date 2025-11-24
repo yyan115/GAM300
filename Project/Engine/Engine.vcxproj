@@ -37,6 +37,8 @@
   <ItemGroup>
     <ClInclude Include="include\Animation\Animation.hpp" />
     <ClInclude Include="include\Animation\AnimationComponent.hpp" />
+    <ClInclude Include="include\Animation\AnimationParam.hpp" />
+    <ClInclude Include="include\Animation\AnimationStateMachine.hpp" />
     <ClInclude Include="include\Animation\AnimationSystem.hpp" />
     <ClInclude Include="include\Animation\Animator.hpp" />
     <ClInclude Include="include\Asset Manager\AssetMeta.hpp" />
