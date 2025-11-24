@@ -69,11 +69,14 @@ elseif(MSVC)
     set(CMAKE_C_FLAGS_EDITORRELEASE "/O2 /DNDEBUG")
 endif()
 
-# Output directories - exe/dll go directly in build folder to match old VS structure
-# This allows ../../Resources path to work correctly for Editor builds
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+# Output directories - separate clean output from intermediate files
+# OUTPUT_DIR is set by presets, defaults to CMAKE_BINARY_DIR if not set
+if(NOT OUTPUT_DIR)
+    set(OUTPUT_DIR ${CMAKE_BINARY_DIR})
+endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})  # .lib files stay in intermediate
 
 # Platform-specific dependencies
 if(ANDROID)
