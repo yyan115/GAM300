@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c2664631482-0003602bc400003b",
+        "source": "../../Resources/Textures/Small Stairs.jpeg",
+        "compiled": "../../Resources/Textures/Small Stairs.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
