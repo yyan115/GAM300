@@ -4,8 +4,7 @@
         "guid": "007b3b033397cd28-000332383e00003b",
         "source": "../../Resources/Textures/SideWall2.png",
         "compiled": "../../Resources/Textures/SideWall2.dds",
-        "android_compiled": "Resources/Textures/SideWall2_android.ktx",
-        "last_compiled": "2025-11-09 14:18:00.5804903"
+        "android_compiled": "Resources/Textures/SideWall2_android.ktx"
     },
     "TextureMetaData": {
         "type": "diffuse",

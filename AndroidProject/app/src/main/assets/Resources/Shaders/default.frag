@@ -79,6 +79,12 @@ struct Spotlight{
 uniform Spotlight spotLights[NR_SPOT_LIGHTS];
 uniform int numSpotLights;
 
+uniform int ambientMode;
+uniform vec3 ambientSky;
+uniform vec3 ambientEquator;
+uniform vec3 ambientGround;
+uniform float ambientIntensity;
+
 out vec4 FragColor;
 in vec3 Normal;
 in vec3 Tangent;
@@ -104,6 +110,25 @@ vec3 getMaterialSpecular() {
 // Helper function to get material ambient color
 vec3 getMaterialAmbient() {
     return material.ambient;
+}
+
+vec3 calculateAmbient(vec3 normal) {
+    vec3 ambient;
+
+    if (ambientMode == 0) {
+        ambient = ambientSky;
+    } else if (ambientMode == 1) {
+        float t = normal.y * 0.5 + 0.5;
+        if (t < 0.5) {
+            ambient = mix(ambientGround, ambientEquator, t * 2.0);
+        } else {
+            ambient = mix(ambientEquator, ambientSky, (t - 0.5) * 2.0);
+        }
+    } else {
+        ambient = ambientSky;
+    }
+
+    return ambient * ambientIntensity;
 }
 
 vec3 getNormalFromMap()
@@ -211,9 +236,11 @@ void main()
     
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
-    
-    // Calculate lighting
-    vec3 result = calculateDirectionLight(dirLight, norm, viewDir);
+
+    vec3 materialColor = getMaterialDiffuse();
+    vec3 result = calculateAmbient(norm) * materialColor;
+
+    result += calculateDirectionLight(dirLight, norm, viewDir);
     
     // Point lights loop
     for(int i = 0; i < numPointLights; i++)

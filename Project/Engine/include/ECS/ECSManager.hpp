@@ -17,9 +17,11 @@
 #include <Sound/AudioSystem.hpp>
 #include "Graphics/Camera/CameraSystem.hpp"
 #include <Animation/AnimationSystem.hpp>
+#include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
+class CharacterControllerSystem;
 class ECSManager {
 public:
 	ECSManager() { Initialize(); };
@@ -74,6 +76,13 @@ public:
 		systemManager->OnEntitySignatureChanged(entity, signature);
 	}
 
+	// return a shared_ptr to the requested system (or nullptr if not registered)
+	template <typename T>
+	std::shared_ptr<T> GetSystem() const {
+		if (!systemManager) return nullptr;
+		return systemManager->GetSystem<T>();
+	}
+
 	template <typename T>
 	T& GetComponent(Entity entity) {
 		return componentManager->GetComponent<T>(entity);
@@ -119,6 +128,7 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<PhysicsSystem> physicsSystem;
+	std::shared_ptr<CharacterControllerSystem> characterControllerSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;
@@ -126,6 +136,8 @@ public:
 	std::shared_ptr<AnimationSystem> animationSystem;
 	std::shared_ptr<CameraSystem> cameraSystem;
 	std::shared_ptr<ScriptSystem> scriptSystem;
+	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
+
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

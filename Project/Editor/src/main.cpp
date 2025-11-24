@@ -8,6 +8,7 @@
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Logging.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "Scripting.h"
 
 int main()
 {
@@ -20,6 +21,17 @@ int main()
 
     Engine::Initialize();
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
+
+    // Initialize Scripting subsystem for Lua support
+    ENGINE_PRINT("Initializing Scripting runtime...");
+    if (Scripting::Init())
+    {
+        ENGINE_PRINT("Scripting runtime initialized successfully");
+    }
+    else
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize Scripting runtime!");
+    }
 
     GLFWwindow* window = WindowManager::getWindow();
     if (!window) {
@@ -58,8 +70,16 @@ int main()
 
 	GUIManager::Exit();
     GameManager::Shutdown();
+
+    // Shutdown Scripting runtime
+    ENGINE_PRINT("Shutting down Scripting runtime...");
+    Scripting::Shutdown();
+
     Engine::Shutdown();
     MetaFilesManager::CleanupUnusedMetaFiles();
+
+    // Add window cleanup before exit
+    WindowManager::Exit();
 
     ENGINE_PRINT("=== Editor ended ===\n");
     return 0;

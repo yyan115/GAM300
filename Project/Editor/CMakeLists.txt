@@ -63,6 +63,7 @@ target_include_directories(Editor
         ${EDITOR_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/Engine/include
         ${CMAKE_SOURCE_DIR}/Game/include
+        ${CMAKE_SOURCE_DIR}/Scripting/include
         # Manual libraries for Editor-specific features (more troublesome to set up in vcpkg)
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui/backends
@@ -75,12 +76,13 @@ target_include_directories(Editor
 # Find GLFW for ImGui backend
 find_package(glfw3 CONFIG REQUIRED)
 
-# Link to Engine (shared lib) and Game (static lib)
+# Link to Engine (shared lib), Game (static lib), and Scripting
 target_link_libraries(Editor
     PRIVATE
-        Engine  # shared library
-        Game    # static library
-        glfw    # for ImGui GLFW backend
+        Engine     # shared library
+        Game       # static library
+        Scripting  # scripting library for Lua integration
+        glfw       # for ImGui GLFW backend
 )
 
 # --- Link Lua to Editor (works for local add_subdirectory or vcpkg config package) ---

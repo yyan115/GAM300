@@ -2,81 +2,116 @@
 #include "Sound/AudioSystem.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "Sound/AudioReverbZoneComponent.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 void AudioSystem::Update(float deltaTime) {
-	PROFILE_FUNCTION();
-	(void)deltaTime; // Unused for now
+    PROFILE_FUNCTION();
+    (void)deltaTime; // Unused for now
     // First, update the AudioManager's internal FMOD system
     AudioManager::GetInstance().Update();
-    
-    // Then update all AudioComponents
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    
-    // Iterate through all entities managed by this system
-    for (const auto& entity : entities) {
-        if (!ecsManager.HasComponent<AudioComponent>(entity)) continue;
 
-        // Skip inactive entities (Unity-like behavior)
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                // Stop audio for inactive entities
-                auto& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+    // Then update all audio-related components in a single pass
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    for (const auto& entity : ecsManager.GetActiveEntities()) {
+        // Update AudioListener components
+        if (ecsManager.HasComponent<AudioListenerComponent>(entity)) {
+            AudioListenerComponent& listenerComp = ecsManager.GetComponent<AudioListenerComponent>(entity);
+            if (!listenerComp.enabled) continue;
+
+            Vector3D newPosition = listenerComp.GetPosition();
+            Vector3D newForward = Vector3D(0.0f, 0.0f, 1.0f); // Default forward
+            Vector3D newUp = Vector3D(0.0f, 1.0f, 0.0f); // Default up
+
+            if (ecsManager.HasComponent<Transform>(entity)) {
+                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
+                newPosition = transform.localPosition;
+            }
+
+            if (ecsManager.HasComponent<CameraComponent>(entity)) {
+                const CameraComponent& camera = ecsManager.GetComponent<CameraComponent>(entity);
+                float yaw_rad = camera.yaw * (M_PI / 180.0f);
+                float pitch_rad = camera.pitch * (M_PI / 180.0f);
+                newForward.x = cos(yaw_rad) * cos(pitch_rad);
+                newForward.y = sin(pitch_rad);
+                newForward.z = sin(yaw_rad) * cos(pitch_rad);
+                newForward.Normalize();
+                Vector3D world_up(0.0f, 1.0f, 0.0f);
+                Vector3D right = newForward.Cross(world_up);
+                right.Normalize();
+                right = -right;  // Negate right to fix left/right inversion
+                newUp = right.Cross(newForward);
+                newUp.Normalize();
+            }
+
+            listenerComp.OnTransformChanged(newPosition, newForward, newUp);
+        }
+
+        // Update AudioReverbZone components
+        if (ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) {
+            // Skip inactive entities
+            if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+                auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+                if (!activeComp.isActive) continue;
+            }
+
+            AudioReverbZoneComponent& reverbZoneComp = ecsManager.GetComponent<AudioReverbZoneComponent>(entity);
+
+            // Update position from Transform
+            if (ecsManager.HasComponent<Transform>(entity)) {
+                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
+                reverbZoneComp.OnTransformChanged(transform.localPosition);
+            }
+
+            // Update the reverb zone
+            reverbZoneComp.UpdateComponent();
+        }
+
+        // Update AudioComponent entities
+        if (ecsManager.HasComponent<AudioComponent>(entity)) {
+            // Skip inactive entities (Unity-like behavior)
+            if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+                auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+                if (!activeComp.isActive) {
+                    // Stop audio for inactive entities
+                    auto& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+                    if (audioComp.IsPlaying) {
+                        audioComp.Stop();
+                    }
+                    continue;
+                }
+            }
+
+            AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+
+            // Skip disabled components (component-level enable/disable)
+            if (!audioComp.enabled) {
+                // Stop audio for disabled components
                 if (audioComp.IsPlaying) {
                     audioComp.Stop();
                 }
                 continue;
             }
-        }
 
-        AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+            audioComp.UpdateComponent();
 
-        // Skip disabled components (component-level enable/disable)
-        if (!audioComp.enabled) {
-            // Stop audio for disabled components
-            if (audioComp.IsPlaying) {
-                audioComp.Stop();
+            // Update spatial audio position from Transform if applicable
+            if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
+                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
+                audioComp.OnTransformChanged(transform.localPosition);
             }
-            continue;
         }
-
-        audioComp.UpdateComponent();
-
-        // Update spatial audio position from Transform if applicable
-        if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
-            const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-            audioComp.OnTransformChanged(transform.localPosition);
-        }
-    }
-
-    for (const auto& entity : ecsManager.GetActiveEntities()) {
-        if (!ecsManager.HasComponent<AudioListenerComponent>(entity)) continue;
-
-        AudioListenerComponent& listenerComp = ecsManager.GetComponent<AudioListenerComponent>(entity);
-        if (!listenerComp.enabled) continue;
-
-        // Compute new values from Transform (if available)
-        Vector3D newPosition = listenerComp.GetPosition(); // Fallback to internal via getter
-        Vector3D newForward = listenerComp.GetForward();
-        Vector3D newUp = listenerComp.GetUp();
-
-        if (ecsManager.HasComponent<Transform>(entity)) {
-            const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-            newPosition = transform.localPosition;
-            // Compute forward/up from rotation (assuming Transform has localRotation as glm::quat or similar)
-            // Use Vector3D math only; if rotation helpers exist in Math, use them. Otherwise, assume defaults or add simple rotation.
-            // For simplicity, if no rotation support, keep defaults. Adjust if Transform provides forward/up directly.
-            newForward = Vector3D(0.0f, 0.0f, 1.0f); // Placeholder; replace with actual rotation if available
-            newUp = Vector3D(0.0f, 1.0f, 0.0f);
-        }
-
-        // Pass to component; it handles change detection and only updates FMOD if changed
-        listenerComp.OnTransformChanged(newPosition, newForward, newUp);
     }
 }
 

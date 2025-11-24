@@ -1,7 +1,5 @@
 #pragma once
 #include "Engine.h"
-#include <string>
-#include <memory>
 #include "Sound/AudioManager.hpp"
 #include "Math/Vector3D.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -56,7 +54,7 @@ public:
     // Unity-like API
     void ENGINE_API Play();
     void PlayDelayed(float delay);        // Unity: Play with delay
-    void PlayOneShot(std::shared_ptr<Audio> clip = nullptr); // Unity: One-shot playback
+    void ENGINE_API PlayOneShot(std::string guidStr = ""); // Unity: One-shot playback
     void PlayScheduled(double time);      // Unity: Scheduled playback (placeholder)
     void ENGINE_API Stop();
     void ENGINE_API Pause();
@@ -84,6 +82,7 @@ public:
     // Asset management
     void ENGINE_API SetClip(const GUID_128& guid);
     void SetClip(std::shared_ptr<Audio> clip);
+    void ENGINE_API SetClipFromString(const std::string& guidStr);
     bool HasValidClip() const;
     
     // For ECS AudioSystem integration

@@ -23,6 +23,8 @@
 #include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
 #include <FileWatch.hpp>
+#include <random>
+#include <iomanip>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 DraggedMaterialGuid = {0, 0};
@@ -39,6 +41,10 @@ std::string DraggedAudioPath;
 // Global drag-drop state for cross-window font dragging
 GUID_128 DraggedFontGuid = {0, 0};
 std::string DraggedFontPath;
+
+// Global drag-drop state for cross-window script dragging
+GUID_128 DraggedScriptGuid = {0, 0};
+std::string DraggedScriptPath;
 
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
@@ -661,10 +667,18 @@ void AssetBrowserPanel::RenderAssetGrid()
                     ImGui::SetDragDropPayload("AUDIO_DRAG", nullptr, 0);
                     ImGui::Text("Dragging Audio: %s", asset.fileName.c_str());
                 } else if (isFont) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedFontGuid = asset.guid;
+                    DraggedFontPath = asset.filePath;
+
                     // Send font path directly
                     ImGui::SetDragDropPayload("FONT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Font: %s", asset.fileName.c_str());
                 } else if (isScript) {
+                    // Store drag data globally for cross-window transfer
+                    DraggedScriptGuid = asset.guid;
+                    DraggedScriptPath = asset.filePath;
+
                     // Send script path directly
                     ImGui::SetDragDropPayload("SCRIPT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Script: %s", asset.fileName.c_str());
@@ -701,6 +715,26 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Open the prefab editor
                     PrefabEditor::Open(asset.filePath);
                     // Early return so the rest of this frame doesn't re-use selection state
+                    ImGui::PopID();
+                    ImGui::EndGroup();
+                    break;
+                }
+                else if (lowerExt == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
+
                     ImGui::PopID();
                     ImGui::EndGroup();
                     break;
@@ -881,9 +915,25 @@ void AssetBrowserPanel::RenderAssetGrid()
                 ENGINE_PRINT("[AssetBrowserPanel] Opening asset: GUID(high=", asset.guid.high, ", low=", asset.guid.low, ")\n");
                 std::filesystem::path p(asset.fileName);
 
-                // Open scene confirmation dialogue.
                 if (p.extension() == ".scene") {
                     OpenScene(asset);
+                    ImGui::OpenPopup("Open Scene?");
+                }
+                else if (p.extension() == ".lua") {
+                    std::filesystem::path absolutePath = std::filesystem::absolute(asset.filePath);
+                    std::string command;
+                    #ifdef _WIN32
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #elif __linux__
+                        command = "code \"" + absolutePath.string() + "\" &";
+                    #elif __APPLE__
+                        command = "code \"" + absolutePath.string() + "\"";
+                    #endif
+
+                    int result = system(command.c_str());
+                    if (result != 0) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
                 }
             }
         }
@@ -1215,7 +1265,8 @@ void AssetBrowserPanel::ShowCreateAssetMenu() {
         }
 
         if (ImGui::MenuItem(ICON_FA_GLOBE " Scene")) {
-            CreateNewScene(currentDirectory);
+            SceneManager::GetInstance().CreateNewScene(currentDirectory);
+            RefreshAssets();
         }
 
         ImGui::EndMenu();
@@ -1331,29 +1382,9 @@ void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& n
 }
 
 
-void AssetBrowserPanel::CreateNewScene(const std::string& directory) {
-    std::string newSceneName = "New Scene.scene";
-    std::filesystem::path directoryPath(directory);
-    std::filesystem::path newSceneNamePath(newSceneName);
-    std::filesystem::path newScenePathFull = (directoryPath / newSceneName);
-    std::string stem = newSceneNamePath.stem().generic_string();
-    std::string extension = newSceneNamePath.extension().generic_string();
-
-    int counter = 1;
-    while (std::filesystem::exists(newScenePathFull)) {
-        newScenePathFull = (directoryPath / (stem + std::to_string(counter++) + extension));
-    }
-
-    std::ofstream file(newScenePathFull.generic_string());
-    file.close();
-
-    RefreshAssets();
-}
-
 void AssetBrowserPanel::OpenScene(const AssetInfo& _selectedScene) {
-    isOpeningScene = true;
-    selectedScene = _selectedScene;
-    ImGui::OpenPopup("Open Scene?");
+	selectedScene = _selectedScene;
+	// TODO: Implement scene opening
 }
 
 void AssetBrowserPanel::ShowOpenSceneConfirmation() {
@@ -1621,6 +1652,9 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     }
     else if (lowerExt == ".scene") {
         return ICON_FA_EARTH_AMERICAS;
+    }
+    else if (lowerExt == ".lua") {
+        return ICON_FA_FILE_CODE;
     }
 
     return ICON_FA_FILE; // Default file icon

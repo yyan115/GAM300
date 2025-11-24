@@ -2,7 +2,9 @@
 #include "ScriptComponent.h"
 #include "ScriptSerializer.h" // concrete serializer
 #include "Logging.hpp"        // ENGINE_PRINT / logging levels
-
+#include <Asset Manager/AssetManager.hpp>
+#include "Platform/IPlatform.h"
+#include "WindowManager.hpp"
 #include <cassert>
 
 extern "C" {
@@ -22,16 +24,11 @@ namespace Scripting {
         MessageHandlerGuard& operator=(const MessageHandlerGuard&) = delete;
         ~MessageHandlerGuard() {
             if (!L || !active) return;
-            // remove the message handler if it still exists
-            // Use lua_absindex to convert current index (in case stack mutated)
-            // If msgh_abs_index is > 0 and <= current top, remove
+            // After pcall, msgh should be at the bottom of the current stack
+            // Remove the element at position 1 (or the stored absolute index if still valid)
             int top = lua_gettop(L);
-            // If msgh_abs_index refers outside stack now, compute nearest absolute index (best-effort)
-            if (msgh_abs_index >= 1 && msgh_abs_index <= top) {
-                lua_remove(L, msgh_abs_index);
-            }
-            else {
-                // best-effort: ignore — shouldn't happen in normal flow
+            if (top >= 1) {
+                lua_remove(L, 1);  // Remove the bottommost element (the msgh)
             }
         }
         void dismiss() { active = false; }
@@ -85,81 +82,223 @@ namespace Scripting {
         if (m_fnOnDisableRef != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, m_fnOnDisableRef); m_fnOnDisableRef = LUA_NOREF; }
     }
 
+    // ScriptComponent.cpp  (replace existing CaptureFunctionRef)
     int ScriptComponent::CaptureFunctionRef(lua_State* L, int tableIndex, const char* fieldName) const {
         if (!L) return LUA_NOREF;
 
-        // Normalize and validate the provided index
-        int absIndex = lua_absindex(L, tableIndex);
-        int t = lua_type(L, absIndex);
-        if (t != LUA_TTABLE && t != LUA_TUSERDATA) {
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::CaptureFunctionRef: expected table/userdata at index ", absIndex, " but got type=", lua_typename(L, t));
+        // preserve stack top and ensure some stack space
+        int baseTop = lua_gettop(L);
+        if (!lua_checkstack(L, 32)) {
+            SC_LOG(EngineLogging::LogLevel::Warn, "CaptureFunctionRef: lua_checkstack failed");
             return LUA_NOREF;
         }
 
-        // push the field value (value or nil)
-        lua_getfield(L, absIndex, fieldName); // pushes value or nil
-        int valType = lua_type(L, -1);
-
-        // direct function?
-        if (valType == LUA_TFUNCTION) {
-            int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops function
-            return ref;
+        int absIndex = lua_absindex(L, tableIndex);
+        int t = lua_type(L, absIndex);
+        if (t != LUA_TTABLE && t != LUA_TUSERDATA) {
+            SC_LOG(EngineLogging::LogLevel::Warn,
+                "CaptureFunctionRef: expected table/userdata at index ", absIndex,
+                " but got type=", lua_typename(L, t));
+            lua_settop(L, baseTop);
+            return LUA_NOREF;
         }
 
-        // callable object? check metatable.__call
-        if (valType == LUA_TTABLE || valType == LUA_TUSERDATA) {
-            // getmetatable pushes the metatable (if present)
-            if (lua_getmetatable(L, -1)) {
-                // metatable now on top, get __call field from it
-                lua_getfield(L, -1, "__call"); // pushes metatable.__call or nil
-                if (lua_isfunction(L, -1)) {
-                    // We will keep a reference to the original object (callable),
-                    // so pop __call and metatable and then ref the object.
-                    lua_pop(L, 2); // pop __call and metatable
-                    int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops the object
+        // Create a registry tmp-ref for the object to avoid any index fragility
+        lua_pushvalue(L, absIndex);                 // push copy
+        int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pop copy, keep ref
+
+        // push owned copy from registry
+        lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // +1 -> object
+
+        // Helper lambda for function/callable detection on the object currently at top-1
+        auto try_field_on_top_object = [&](const char* key) -> int {
+            // stack: ... , object (at -1)
+            lua_getfield(L, -1, key); // push candidate (or nil)
+            int candType = lua_type(L, -1);
+            if (candType == LUA_TFUNCTION) {
+                int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops function
+                return ref;
+            }
+            if (candType == LUA_TTABLE || candType == LUA_TUSERDATA) {
+                // check metatable.__call on the candidate
+                if (lua_getmetatable(L, -1)) {             // push metatable
+                    lua_getfield(L, -1, "__call");        // push __call
+                    if (lua_isfunction(L, -1)) {
+                        // candidate is callable: ref candidate (not __call)
+                        lua_pop(L, 1); // pop __call
+                        lua_pop(L, 1); // pop metatable
+                        int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pop candidate, ref it
+                        return ref;
+                    }
+                    lua_pop(L, 1); // pop __call
+                    lua_pop(L, 1); // pop metatable
+                }
+            }
+            // not a function/callable: pop candidate and continue
+            lua_pop(L, 1);
+            return LUA_NOREF;
+            };
+
+        // 1) Try direct field on the instance: instance[fieldName]
+        int foundRef = try_field_on_top_object(fieldName);
+        if (foundRef != LUA_NOREF) {
+            // cleanup object and tmpRef
+            lua_pop(L, 1); // pop object
+            luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+            lua_settop(L, baseTop);
+            return foundRef;
+        }
+
+        // 2) Try instance._returned (some loaders wrap non-table returns there)
+        lua_getfield(L, -1, "_returned"); // push instance._returned or nil
+        if (lua_istable(L, -1) || lua_isuserdata(L, -1)) {
+            // move this table to replace object slot so our helper sees it as "object"
+            lua_remove(L, -2); // remove the original instance, leaving _returned at top
+            // try field on _returned
+            foundRef = try_field_on_top_object(fieldName);
+            if (foundRef != LUA_NOREF) {
+                // cleanup and return
+                // stack currently has _returned at top
+                lua_pop(L, 1); // pop _returned
+                luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+                lua_settop(L, baseTop);
+                return foundRef;
+            }
+            // not found on _returned: pop it and re-push original instance for next checks
+            lua_pop(L, 1); // pop _returned
+            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // re-push object
+        }
+        else {
+            // instance._returned not present (pop nil)
+            lua_pop(L, 1);
+        }
+
+        // 3) Inspect object's metatable.__index if present and it is a table
+        if (lua_getmetatable(L, -1)) { // push metatable
+            lua_getfield(L, -1, "__index"); // push __index
+            if (lua_istable(L, -1)) {
+                // __index[fieldName] may be the function or callable object
+                lua_getfield(L, -1, fieldName); // push candidate
+                int candType = lua_type(L, -1);
+                if (candType == LUA_TFUNCTION) {
+                    int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pop function and ref it
+                    // cleanup: pop __index and metatable and object
+                    lua_pop(L, 2); // pop __index and metatable
+                    lua_pop(L, 1); // pop object
+                    luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+                    lua_settop(L, baseTop);
                     return ref;
                 }
-                // __call not a function, pop it and the metatable
-                lua_pop(L, 1); // pop __call
-                lua_pop(L, 1); // pop metatable
+                if (candType == LUA_TTABLE || candType == LUA_TUSERDATA) {
+                    // candidate might be callable via its metatable.__call
+                    if (lua_getmetatable(L, -1)) {
+                        lua_getfield(L, -1, "__call");
+                        if (lua_isfunction(L, -1)) {
+                            // candidate is callable -> ref candidate itself
+                            lua_pop(L, 1); // pop __call
+                            lua_pop(L, 1); // pop inner metatable
+                            int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops candidate
+                            lua_pop(L, 2); // pop __index and metatable
+                            lua_pop(L, 1); // pop object
+                            luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+                            lua_settop(L, baseTop);
+                            return ref;
+                        }
+                        lua_pop(L, 1); // pop __call
+                        lua_pop(L, 1); // pop inner metatable
+                    }
+                }
+                // candidate not usable -> pop it
+                lua_pop(L, 1);
             }
-            else {
-                // no metatable: just pop the value below and return NOREF
+            // cleanup __index and metatable
+            lua_pop(L, 1); // pop __index (or non-table)
+            lua_pop(L, 1); // pop metatable
+        }
+
+        // Not found anywhere: dump diagnostic info (instance keys/types) to help debugging
+        {
+            // stack top currently: object
+            // We'll call a small diagnostic helper (below) to list keys and their types
+            SC_LOG(EngineLogging::LogLevel::Debug, "CaptureFunctionRef: method '", fieldName, "' not found on instance. Dumping keys:");
+            // call helper (defined below) - use absolute index of object
+            int objIndex = lua_gettop(L);
+            // call debugging routine inline
+            lua_pushnil(L); // for lua_next
+            while (lua_next(L, objIndex) != 0) {
+                const char* k = nullptr;
+                if (lua_type(L, -2) == LUA_TSTRING) k = lua_tostring(L, -2);
+                const char* vtype = luaL_typename(L, -1);
+                if (k) SC_LOG(EngineLogging::LogLevel::Debug, "  key=", k, " type=", vtype);
+                else SC_LOG(EngineLogging::LogLevel::Debug, "  <non-string-key> type=", vtype);
+                lua_pop(L, 1); // pop value, leave key for next
             }
         }
 
-        // not a function nor callable — pop the value and return NOREF
-        lua_pop(L, 1);
+        // cleanup and return NOREF
+        luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
+        lua_settop(L, baseTop);
         return LUA_NOREF;
     }
 
-
     bool ScriptComponent::AttachScript(const std::string& scriptPath) {
+        SC_LOG(EngineLogging::LogLevel::Info, "AttachScript: loading '", scriptPath.c_str(), "'");
         lua_State* L = GetMainState();
+
         if (!L) {
             SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript: no Lua state available");
             return false;
         }
-
         // detach current script (safe even if none)
         DetachScript();
+
 
         m_scriptPath = scriptPath;
         m_awakeCalled = false;
         m_startCalled = false;
 
-        // load script chunk
-        int loadStatus = luaL_loadfile(L, scriptPath.c_str());
-        if (loadStatus != LUA_OK) {
-            const char* msg = lua_tostring(L, -1);
-            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: ", msg ? msg : "(no msg)");
-            lua_pop(L, 1);
-            return false;
-        }
-
         // protected call with message handler for traceback
         int msgh = PushMessageHandler(L);
         MessageHandlerGuard guard(L, msgh);
+#ifdef ANDROID
+        // Read file using Android AssetManager
+        // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform) {
+            ENGINE_LOG_DEBUG("[ScriptComponent] ERROR: Platform not available for asset discovery!");
+            return false;
+        }
+        if (!platform->FileExists(scriptPath)) {
+            ENGINE_LOG_DEBUG("[ScriptComponent]: Script file not found: " + scriptPath);
+            return false;
+        }
+
+        std::vector<uint8_t> scriptData = platform->ReadAsset(scriptPath);
+        if (scriptData.empty()) {
+            SC_LOG(EngineLogging::LogLevel::Error, "Failed to read Android asset: ", scriptPath.c_str());
+            return false;
+        }
+
+        // Use luaL_loadbuffer with explicit size
+        int loadStatus = luaL_loadbuffer(
+            L,
+            reinterpret_cast<const char*>(scriptData.data()),
+            scriptData.size(),
+            scriptPath.c_str()   // chunk name for error messages
+        );
+
+#else
+        int loadStatus = luaL_loadfile(L, scriptPath.c_str());
+#endif
+        if (loadStatus != LUA_OK) {
+            const char* msg = lua_tostring(L, -1);
+            SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - load error: ", msg ? msg : "(no msg)");
+            SC_LOG(EngineLogging::LogLevel::Error, "  Attempted path: ",
+                scriptPath.c_str()
+            );
+            lua_pop(L, 1);
+            return false;
+        }
         int pcallStatus = lua_pcall(L, 0, 1, msgh);
         if (pcallStatus != LUA_OK) {
             const char* msg = lua_tostring(L, -1);
@@ -176,19 +315,22 @@ namespace Scripting {
 
         // ensure returned value is a table; if not, wrap into { _returned = <value> }
         if (!lua_istable(L, -1)) {
-            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript - script did not return a table. Wrapping into table. (script=", scriptPath.c_str(),")");
+            SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::AttachScript - script did not return a table. Wrapping into table. (script=", m_scriptPath.c_str(), ")");
             // create a temporary registry ref for the returned value to avoid stack-index fragility
             lua_pushvalue(L, -1); // copy returned value
             int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops copy, original still on stack
 
-            lua_newtable(L);                       // new table
-            lua_pushliteral(L, "_returned");       // key
-            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push the copied value
-            lua_settable(L, -3);                   // new_table["_returned"] = copied value
+            lua_newtable(L);                       // new table  (stack: ... , origReturned, newTable)
+            lua_pushliteral(L, "_returned");       // key        (stack: ..., origReturned, newTable, "_returned")
+            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push the copied value (stack: ..., origReturned, newTable, "_returned", value)
+            lua_settable(L, -3);                   // newTable["_returned"] = value; pops key+value (stack: ..., origReturned, newTable)
+
             luaL_unref(L, LUA_REGISTRYINDEX, tmpRef);
 
-            lua_pop(L, 1); // pop original returned value
-            // new table is now on top
+            // REMOVE the original returned value (which sits at -2), leaving newTable at top.
+            // Using lua_remove(L, -2) removes the original while keeping newTable on top.
+            lua_remove(L, -2); // <- CORRECT: remove original returned value, not the new table
+            // now new table is on top
         }
 
         // create persistent registry ref for instance table
@@ -197,17 +339,44 @@ namespace Scripting {
             SC_LOG(EngineLogging::LogLevel::Error, "ScriptComponent::AttachScript - failed to create registry ref for instance");
             return false;
         }
+        if (m_instanceRef == LUA_NOREF) {
+            SC_LOG(EngineLogging::LogLevel::Error, "AttachScript: failed to create instance ref for ", scriptPath.c_str());
+        }
+        else {
+            SC_LOG(EngineLogging::LogLevel::Info, "AttachScript: created instanceRef=", m_instanceRef);
+        }
 
         // capture lifecycle functions (Awake/Start/Update/OnDisable)
-        lua_rawgeti(L, LUA_REGISTRYINDEX, m_instanceRef); // push table
-        int tableIndex = lua_gettop(L);
+        // push instance table from registry for inspection (we have a ref)
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_instanceRef); // push instance
+        int tableIndex = lua_gettop(L); // absolute index of instance on stack
+
+
+        // Inspect instance._returned safely (use absolute index)
+        lua_getfield(L, tableIndex, "_returned"); // pushes instance._returned or nil
+        if (!lua_isnil(L, -1)) {
+            if (lua_isstring(L, -1)) {
+                const char* s = lua_tostring(L, -1);
+                SC_LOG(EngineLogging::LogLevel::Info, "AttachScript: instance._returned (string) = '", s ? s : "(null)", "'");
+            }
+            else {
+                // Dump its type / shape
+                SC_LOG(EngineLogging::LogLevel::Info, "AttachScript: instance._returned type = ", luaL_typename(L, -1));
+            }
+        }
+        // pop the _returned value we pushed
+        lua_pop(L, 1);
+
+        // Now capture lifecycle refs (table still at tableIndex)
         m_fnAwakeRef = CaptureFunctionRef(L, tableIndex, "Awake");
         m_fnStartRef = CaptureFunctionRef(L, tableIndex, "Start");
         m_fnUpdateRef = CaptureFunctionRef(L, tableIndex, "Update");
         m_fnOnDisableRef = CaptureFunctionRef(L, tableIndex, "OnDisable");
-        lua_pop(L, 1); // pop table
 
-        SC_LOG(EngineLogging::LogLevel::Info, "ScriptComponent attached script '", m_scriptPath.c_str(),"'");
+        // pop the instance table
+        lua_pop(L, 1);
+        SC_LOG(EngineLogging::LogLevel::Info, "ScriptComponent attached script '", m_scriptPath.c_str(), "'");
+
         return true;
     }
 
@@ -427,6 +596,25 @@ namespace Scripting {
             // set instance.fields = registry[tmpRef]
             lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push populated table
             lua_setfield(L, -2, "fields"); // set on instance; pops table
+            
+            //|| Claude code addition:
+            // Additionally, flatten the fields onto the instance table
+            // This ensures that self.fieldName works in Lua scripts
+            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push fields table again
+            // Iterate over the fields table and set each field on the instance
+            lua_pushnil(L); // first key
+            while (lua_next(L, -2) != 0) {
+                // key at -2, value at -1
+                if (lua_type(L, -2) == LUA_TSTRING) {
+                    // Duplicate key and value for setting on instance
+                    lua_pushvalue(L, -2); // duplicate key
+                    lua_pushvalue(L, -2); // duplicate value
+                    lua_settable(L, -6); // set on instance table (at -6: instance, fields, key, value)
+                }
+                lua_pop(L, 1); // pop value, keep key for next iteration
+            }
+            lua_pop(L, 1); // pop fields table
+            //|| Claude code addition end
         }
         else {
             // leave instance.fields as-is (we created a temp table; no assignment)

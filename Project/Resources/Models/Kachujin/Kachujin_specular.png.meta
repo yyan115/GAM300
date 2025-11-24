@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0060f444faecba59-000337e644000007",
         "source": "../../Resources/Models/Kachujin/Kachujin_specular.png",
-        "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds",
-        "last_compiled": "2025-11-09 14:18:07.6374740"
+        "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds"
     },
     "TextureMetaData": {
         "type": "specular",

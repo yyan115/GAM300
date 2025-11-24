@@ -3,7 +3,6 @@
         "version": 7,
         "guid": "007fa85ba52a26c9-00032d3fc8000005",
         "source": "../../Resources/Scripts/extension/safe_require.lua",
-        "compiled": "../../Resources/Scripts/extension/safe_require.lua",
-        "last_compiled": "2025-11-09 14:20:46.4930849"
+        "compiled": "../../Resources/Scripts/extension/safe_require.lua"
     }
 }

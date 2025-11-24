@@ -19,6 +19,7 @@
 #include "Script/Script.hpp"
 #include <future>
 
+
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
 #define ENGINE_API __declspec(dllexport)
@@ -137,6 +138,8 @@ public:
 
 	bool ENGINE_API HandleMetaFileDeletion(const std::string& metaFilePath);
 	bool ENGINE_API HandleResourceFileDeletion(const std::string& resourcePath);
+
+	bool ReadTextFile(const std::string& path, std::string& outContent);
 
 	std::string ENGINE_API GetAssetPathFromGUID(const GUID_128 guid);
 	std::vector<std::string> ENGINE_API CompileAllAssetsForAndroid();

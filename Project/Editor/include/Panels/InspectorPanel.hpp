@@ -11,6 +11,7 @@
 #include "../GUIManager.hpp"
 #include <Graphics/Material.hpp>
 #include "MaterialInspector.hpp"
+#include <FileWatch.hpp>
 
 /**
  * @brief Inspector panel for viewing and editing properties of selected objects.
@@ -52,6 +53,16 @@ private:
     void DrawAddComponentButton(Entity entity);
     void AddComponent(Entity entity, const std::string& componentType);
 
+    // File watcher callback
+    void OnScriptFileChanged(const std::string& path, const filewatch::Event& event);
+
+    // Search state for add component
+    char componentSearchBuffer[256] = "";
+    bool componentSearchActive = false;
+
+    // Tree reset state for add component popup
+    bool resetComponentTrees = false;
+
     // Lock functionality
     bool inspectorLocked = false;
     Entity lockedEntity = static_cast<Entity>(-1);
@@ -64,4 +75,10 @@ private:
     std::shared_ptr<Material> cachedMaterial;
     std::string cachedMaterialPath;
     GUID_128 cachedMaterialGuid = {0, 0};
+
+    // File watcher for scripts
+    std::unique_ptr<filewatch::FileWatch<std::string>> scriptFileWatcher;
+
+    // Script cache
+    std::vector<std::string> cachedScripts;
 };

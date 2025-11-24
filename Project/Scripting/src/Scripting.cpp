@@ -60,27 +60,43 @@ namespace {
         }
 
         // Read entire file contents. Prefer engine callback; fall back to host FS.
-        bool ReadAllText(const std::string& path, std::string& out) override {
+    bool ReadAllText(const std::string& path, std::string& out) override {
+            ENGINE_LOG_INFO("Scripting: Reading file: " + path);
+
 #ifdef ANDROID
             auto sp = m_src.load();
 #else
             auto sp = m_src.load(std::memory_order_acquire);
 #endif
+
             if (sp && *sp) {
                 try {
                     if ((*sp)(path, out)) return true;
                 }
                 catch (...) {
-                    // swallow and fallback to host FS
+                    ENGINE_LOG_INFO("Custom loader failed, falling back to filesystem");
                 }
             }
 
             // Fallback: try reading from host filesystem
             std::ifstream ifs(path, std::ios::binary);
-            if (!ifs.good()) return false;
-            std::ostringstream ss;
-            ss << ifs.rdbuf();
-            out = ss.str();
+            if (!ifs) {
+                ENGINE_LOG_INFO("Failed to open file: " + path);
+                return false;
+            }
+
+            // More efficient reading for both platforms
+            ifs.seekg(0, std::ios::end);
+            std::streamsize size = ifs.tellg();
+            if (size < 0) return false;
+
+            ifs.seekg(0, std::ios::beg);
+            out.resize(static_cast<size_t>(size));
+
+            if (size > 0 && !ifs.read(&out[0], size)) {
+                return false;
+            }
+
             return true;
         }
 
@@ -146,7 +162,6 @@ namespace {
 
     // runtime + module loader singletons used by the glue adapter
     static std::unique_ptr<ScriptingRuntime> g_runtime;
-    static std::unique_ptr<ModuleLoader> g_moduleLoader;
     static std::shared_ptr<ReadAllTextAdapter> g_fsAdapter;
 
     // atomics to store engine-provided callbacks (same pattern as previous glue)
@@ -191,26 +206,22 @@ namespace {
 bool Scripting::Init(const InitOptions& opts) {
     if (g_runtime) return true;
 
-    // create adapter that forwards to the ReadAllTextFn atomic
     g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
 
-    // build config
     Scripting::ScriptingConfig cfg;
     cfg.createNewVM = opts.createNewVM;
     cfg.openLibs = opts.openLibs;
-    // cfg.mainScriptPath left empty by default; caller can pass main script via other means
 
     g_runtime = std::make_unique<ScriptingRuntime>();
 
-    // initialize runtime with the adapter
-    if (!g_runtime->Initialize(cfg, std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter), /*logger*/ nullptr)) 
+    if (!g_runtime->Initialize(cfg, std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter), nullptr))
     {
         g_runtime.reset();
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Scripting::Init - ScriptingRuntime initialization failed");
         return false;
     }
 
-    // forward host logger if already provided by engine
+    // Forward host logger if already provided
 #ifdef ANDROID
     auto hostSp = g_hostLoggerPtr.load();
 #else
@@ -223,32 +234,37 @@ bool Scripting::Init(const InitOptions& opts) {
             });
     }
 
-    // create module loader and install it into the runtime's lua_State
-    g_moduleLoader = std::make_unique<ModuleLoader>();
-    g_moduleLoader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
-    // sensible defaults (you can add more via engine config)
-    g_moduleLoader->AddSearchPath("Resources/Scripts/?.lua");
-    g_moduleLoader->AddSearchPath("Resources/Scripts/?/init.lua");
-    g_moduleLoader->AddSearchPath("Resources/extensions/?.lua");
-    // install into the runtime lua state. Must be done after runtime created and libs opened.
-    lua_State* L = g_runtime->GetLuaState();
-    if (L) {
-        g_moduleLoader->InstallLuaSearcher(L, -1);
+    // Configure module loader search paths (runtime owns the module loader)
+    if (auto* loader = g_runtime->GetModuleLoader()) {
+        loader->AddSearchPath("Resources/Scripts/?.lua");
+        loader->AddSearchPath("Resources/Scripts/?/init.lua");
+        loader->AddSearchPath("Resources/Scripts/extension/?.lua");
     }
 
-    ENGINE_PRINT(EngineLogging::LogLevel::Info, "Scripting::Init (via ScriptingRuntime) - done");
+    // Redirect Lua print
+    lua_State* L = g_runtime->GetLuaState();
+    if (L) {
+        lua_pushcfunction(L, [](lua_State* L) -> int {
+            int n = lua_gettop(L);
+            std::string msg;
+            for (int i = 1; i <= n; i++) {
+                if (i > 1) msg += "\t";
+                const char* s = lua_tostring(L, i);
+                msg += (s ? s : "(non-string)");
+            }
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[LUA] ", msg);
+            return 0;
+            });
+        lua_setglobal(L, "print");
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, "Scripting::Init complete");
     return true;
 }
 
 void Scripting::Shutdown() {
-    if (g_moduleLoader) {
-        // flush modules from current state before we destroy runtime
-        if (g_runtime) {
-            lua_State* L = g_runtime->GetLuaState();
-            if (L) g_moduleLoader->FlushAll(L);
-        }
-        g_moduleLoader.reset();
-    }
+    // REMOVED: Don't flush g_moduleLoader since we deleted it
+    // The runtime will handle its own ModuleLoader cleanup
 
     if (g_runtime) {
         g_runtime->Shutdown();
@@ -266,6 +282,38 @@ void Scripting::Shutdown() {
 #endif
 
     ENGINE_PRINT(EngineLogging::LogLevel::Info, "Scripting::Shutdown - done");
+}
+
+void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
+    auto sp = std::make_shared<ReadAllTextFn>(std::move(fn));
+#ifdef ANDROID
+    g_fileReaderPtr.store(sp);
+#else
+    g_fileReaderPtr.store(sp, std::memory_order_release);
+#endif
+
+    // (re)create adapter and hand to ModuleLoader and Runtime if present
+    g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
+
+    if (g_runtime) {
+        // Update module loader to use the new adapter
+        if (auto* loader = g_runtime->GetModuleLoader()) {
+            try {
+                loader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
+            }
+            catch (...) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Scripting::SetFileSystemReadAllText: ModuleLoader::Initialize threw");
+            }
+        }
+
+        // Also inform the runtime itself so it can update its m_fsShared/m_fs and reinstall searcher
+        try {
+            g_runtime->SetFileSystem(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
+        }
+        catch (...) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "Scripting::SetFileSystemReadAllText: g_runtime->SetFileSystem threw");
+        }
+    }
 }
 
 void Scripting::SetLuaState(lua_State* L) {
@@ -491,34 +539,6 @@ void Scripting::SetHostLogHandler(HostLogFn fn) {
             catch (...) {}
             });
     }
-}
-
-void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
-    auto sp = std::make_shared<ReadAllTextFn>(std::move(fn));
-#ifdef ANDROID
-    g_fileReaderPtr.store(sp);
-#else
-    g_fileReaderPtr.store(sp, std::memory_order_release);
-#endif
-
-    // (re)create adapter and hand to ModuleLoader and Runtime if present
-    g_fsAdapter = std::make_shared<ReadAllTextAdapter>(g_fileReaderPtr);
-    if (g_moduleLoader) {
-        g_moduleLoader->Initialize(std::static_pointer_cast<IScriptFileSystem>(g_fsAdapter));
-        
-    }
-    // Also update runtime's FS pointer if runtime exists (so runtime and module loader share ownership)
-    if (g_runtime) 
-    {
-        // reinitialize runtime's stored FS to new adapter (keep lua state)
-        // simplest: store shared ptr into runtime (if you expose a method), or re-call Initialize with same VM.
-        // For now: assume FS changes before initialization; if you support runtime FS swap at runtime,
-        // implement a runtime->SetFileSystem(std::shared_ptr<IScriptFileSystem>) function.
-      
-    }
-    // The runtime already took g_fsAdapter at Initialize. If you change FS at runtime,
-    // you may want to re-init ModuleLoader and/or re-install searcher. ModuleLoader::Initialize
-    // above sets the m_fs pointer so new lookups will use the new reader.
 }
 
 void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {

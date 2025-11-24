@@ -126,7 +126,6 @@ private:
     void CreateNewFolder();
 
     // Scene operations
-    void CreateNewScene(const std::string& directory);
     void OpenScene(const AssetInfo& selectedScene);
     void ShowOpenSceneConfirmation();
 

@@ -43,8 +43,10 @@ namespace Scripting {
 
         // Reload a module: flush, then call require(name). Returns true on success.
         bool ReloadModule(lua_State* L, const std::string& modulename);
-
     private:
+#ifdef ANDROID
+        friend int AndroidAssetSearcher_CFunc(lua_State* L);
+#endif
         // The C function used as a Lua loader/searcher, bound per lua_State.
         static int LuaLoader_CFunc(lua_State* L);
 

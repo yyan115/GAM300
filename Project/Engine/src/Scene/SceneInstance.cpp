@@ -14,11 +14,13 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -32,13 +34,14 @@
 
 Entity fpsText;
 
-void SceneInstance::Initialize() {
+void SceneInstance::Initialize()
+{
 	// Initialize GraphicsManager first
-	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-	//gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
+	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
+	// gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// Get the ECS manager for this scene
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager &ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (!PostProcessingManager::GetInstance().Initialize())
 	{
@@ -47,8 +50,8 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
-	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
-	if (hdrEffect) 
+	auto *hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
 		hdrEffect->SetExposure(1.f);
@@ -57,8 +60,50 @@ void SceneInstance::Initialize() {
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	CreateHDRTestScene(ecsManager);
-	
+	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
+
+	// Sprite Animation Entity for testing
+	// Entity sAnim = ecsManager.CreateEntity();
+	// ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
+	// ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
+	// ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+
+	// std::string idlePath[3] = {
+	//	"Resources/Textures/idle_1.png",
+	//	"Resources/Textures/idle_2.png",
+	//	"Resources/Textures/idle_3.png"
+	// };
+
+	// GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
+	// GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
+	// GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
+
+	//// Setting Current Sprite
+	// auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	// sprite.is3D = true;
+
+	// auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
+
+	// SpriteAnimationClip idleClip;
+	// idleClip.name = "Idle";
+	// idleClip.loop = true;
+
+	// for(int i = 0; i < 3; ++i) {
+	//	SpriteFrame frame;
+	//	frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
+	//	frame.texturePath = idlePath[i];
+	//	frame.uvOffset = glm::vec2(0.0f, 0.0f);
+	//	frame.uvScale = glm::vec2(1.0f, 1.0f);
+	//	frame.duration = 1.0f; // 0.2 seconds per frame
+
+	//	idleClip.frames.push_back(frame);
+	//}
+
+	// anim.clips.push_back(idleClip);
+	// anim.Play("Idle");
+
+	// End of Sprite Animation Entity for testing
+
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -66,11 +111,13 @@ void SceneInstance::Initialize() {
 	ecsManager.cameraSystem->Initialise();
 	// Set camera if one exists in the scene
 	Entity activeCam = ecsManager.cameraSystem->GetActiveCameraEntity();
-	if (activeCam != UINT32_MAX && ecsManager.cameraSystem->GetActiveCamera()) {
+	if (activeCam != UINT32_MAX && ecsManager.cameraSystem->GetActiveCamera())
+	{
 		gfxManager.SetCamera(ecsManager.cameraSystem->GetActiveCamera());
 		ENGINE_LOG_INFO("[SceneInstance] Camera set to GraphicsManager, active camera entity: " + std::to_string(activeCam));
 	}
-	else {
+	else
+	{
 		ENGINE_LOG_WARN("[SceneInstance] No active camera found! Game panel will not render. Please add a camera to your scene.");
 	}
 	ecsManager.modelSystem->Initialise();
@@ -85,13 +132,16 @@ void SceneInstance::Initialize() {
 	ENGINE_LOG_INFO("Particle system initialized");
 	ecsManager.animationSystem->Initialise();
 	ENGINE_LOG_INFO("Animation system initialized");
-	InitializePhysics(); //can we all do like this?
+	InitializePhysics(); // can we all do like this?
 	ecsManager.scriptSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Script system initialized");
+	ecsManager.spriteAnimationSystem->Initialise();
+	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.characterControllerSystem->Initialise(ecsManager, ecsManager.physicsSystem.get());
 
-	//glEnable(GL_DEBUG_OUTPUT);
-	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	//glDebugMessageCallback(
+	// glEnable(GL_DEBUG_OUTPUT);
+	// glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	// glDebugMessageCallback(
 	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
 	//		fprintf(stderr, "GL: %s\n", msg);
 	//	},
@@ -100,51 +150,59 @@ void SceneInstance::Initialize() {
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
-void SceneInstance::InitializeJoltPhysics() {
-	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+void SceneInstance::InitializeJoltPhysics()
+{
+	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->InitialiseJolt();
 }
 
-void SceneInstance::InitializePhysics() {
-	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+void SceneInstance::InitializePhysics()
+{
+	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Physics system initialized");
 }
 
-void SceneInstance::Update(double dt) {
+void SceneInstance::Update(double dt)
+{
 	dt;
 
 	// Update logic for the test scene
-	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	//TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
-	//fpsTextComponent.text = std::to_string(TimeManager::GetFps());
-	//TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
+	// TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
+	// fpsTextComponent.text = std::to_string(TimeManager::GetFps());
+	// TextUtils::SetText(fpsTextComponent, std::to_string(TimeManager::GetFps()));
 
 	processInput((float)TimeManager::GetDeltaTime());
 
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	//mainECS.physicsSystem->physicsSyncBack(mainECS);
+	// mainECS.physicsSystem->physicsSyncBack(mainECS);
+	mainECS.characterControllerSystem->Update((float)dt,mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
 
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update(0.1f,mainECS); //i will need change this to remove dt
+	mainECS.scriptSystem->Update();
+
+	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
-	if (mainECS.audioSystem) {
+	if (mainECS.audioSystem)
+	{
 		mainECS.audioSystem->Update((float)dt);
 	}
 }
 
-void SceneInstance::Draw() {
+void SceneInstance::Draw()
+{
 
-	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
-	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
 
 	// Set to false so game view shows ALL sprites (not filtered by 2D/3D mode)
 	gfxManager.SetRenderingForEditor(false);
@@ -156,6 +214,17 @@ void SceneInstance::Draw() {
 	// Begin HDR rendering to floating-point framebuffer (this also clears the buffer)
 	PostProcessingManager::GetInstance().BeginHDRRender(RunTimeVar::window.width, RunTimeVar::window.height);
 	gfxManager.BeginFrame();
+
+	Entity activeCam = mainECS.cameraSystem ? mainECS.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+	if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam))
+	{
+		auto &camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+		gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+	}
+	else
+	{
+		gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
+	}
 
 	// Update transforms before camera (camera needs up-to-date transform matrices)
 	mainECS.transformSystem->Update();
@@ -175,52 +244,53 @@ void SceneInstance::Draw() {
 	}
 	if (mainECS.textSystem)
 	{
-//#ifdef ANDROID
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
-//#endif
+		// #ifdef ANDROID
+		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
+		// #endif
 		mainECS.textSystem->Update();
-//#ifdef ANDROID
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
-//#endif
+		// #ifdef ANDROID
+		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
+		// #endif
 	}
 
-//#ifdef ANDROID
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
-//#endif
-	if (mainECS.spriteSystem) {
+	// #ifdef ANDROID
+	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
+	// #endif
+	if (mainECS.spriteSystem)
+	{
 		mainECS.spriteSystem->Update();
 	}
-//#ifdef ANDROID
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
-//#endif
-//#ifdef ANDROID
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
-//#endif
+	// #ifdef ANDROID
+	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
+	// #endif
+	// #ifdef ANDROID
+	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
+	// #endif
 	if (mainECS.particleSystem)
 	{
 		mainECS.particleSystem->Update();
 	}
-//#ifdef ANDROID
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
-//#endif
-	// Test debug drawing
-	//DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
-	//DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
-	//DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
-	//auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
-	//DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
+	// #ifdef ANDROID
+	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
+	// #endif
+	//  Test debug drawing
+	// DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
+	// DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
+	// DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
+	// auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
+	// DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
 
 	// Update debug draw system to submit to graphics manager
-//#ifdef ANDROID
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
-//#endif
+	// #ifdef ANDROID
+	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
+	// #endif
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();
 	}
-//#ifdef ANDROID
+// #ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
-//#endif
+// #endif
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.Render()");
 #endif
@@ -233,8 +303,6 @@ void SceneInstance::Draw() {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "DrawLightCubes() completed");
 #endif
 
-
-
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call gfxManager.EndFrame()");
 #endif
@@ -246,21 +314,23 @@ void SceneInstance::Draw() {
 
 	// End HDR rendering and apply tone-mapping to default framebuffer (screen)
 	PostProcessingManager::GetInstance().EndHDRRender(0, RunTimeVar::window.width, RunTimeVar::window.height);
-
 }
 
-void SceneInstance::Exit() {
+void SceneInstance::Exit()
+{
 	// Exit systems.
-	//ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-	//ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
+	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown(ECSRegistry::GetInstance().GetECSManager(scenePath));
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
-void SceneInstance::ShutDownPhysics() {
+void SceneInstance::ShutDownPhysics()
+{
 	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
 }
 
@@ -269,60 +339,67 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKeyDown(Input::Key::ESC))
 		WindowManager::SetWindowShouldClose();
 
-	ECSManager& mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 	Entity activeCam = mainECS.cameraSystem->GetActiveCameraEntity();
 
-	if (activeCam == UINT32_MAX) return;
+	if (activeCam == UINT32_MAX)
+		return;
 
-	auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+	auto &camComp = mainECS.GetComponent<CameraComponent>(activeCam);
 
 	// Only process input if using free rotation (gameplay camera)
-	if (!camComp.useFreeRotation) return;
+	if (!camComp.useFreeRotation)
+		return;
 
-	Camera* camera = mainECS.cameraSystem->GetActiveCamera();
+	Camera *camera = mainECS.cameraSystem->GetActiveCamera();
 
-	//float cameraSpeed = 2.5f * deltaTime;
-	//if (InputManager::GetKey(Input::Key::W))
-	//if (InputManager::GetKey(Input::Key::S))
-	//if (InputManager::GetKey(Input::Key::A))
-	//if (InputManager::GetKey(Input::Key::D))
+	// float cameraSpeed = 2.5f * deltaTime;
+	// if (InputManager::GetKey(Input::Key::W))
+	// if (InputManager::GetKey(Input::Key::S))
+	// if (InputManager::GetKey(Input::Key::A))
+	// if (InputManager::GetKey(Input::Key::D))
 
 	// temp
 	Entity player{};
-	const auto& all = mainECS.GetAllEntities();
-	for (Entity e : all) {
+	const auto &all = mainECS.GetAllEntities();
+	for (Entity e : all)
+	{
 		std::string enttName = mainECS.GetComponent<NameComponent>(e).name;
-		if (enttName == "Kachujin") {
+		if (enttName == "Kachujin")
+		{
 			player = e;
 		}
 	}
 
-	//Temp player controls for playable level
-	// Backwards = +z
+	// Temp player controls for playable level
+	//  Backwards = +z
 
-
-	if (InputManager::GetKey(Input::Key::W)) {
+	if (InputManager::GetKey(Input::Key::W))
+	{
 		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z - 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 180, 0));
 		camera->ProcessKeyboard(FORWARD, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::S)) {
+	if (InputManager::GetKey(Input::Key::S))
+	{
 		ENGINE_LOG_DEBUG("[ProcessInput] S Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x, playerPos.localPosition.y, playerPos.localPosition.z + 0.01f));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 0, 0));
 		camera->ProcessKeyboard(BACKWARD, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::A)) {
+	if (InputManager::GetKey(Input::Key::A))
+	{
 		ENGINE_LOG_DEBUG("[ProcessInput] A Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x - 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, -90, 0));
 		camera->ProcessKeyboard(LEFT, 0.004f);
 	}
-	if (InputManager::GetKey(Input::Key::D)) {
+	if (InputManager::GetKey(Input::Key::D))
+	{
 		ENGINE_LOG_DEBUG("[ProcessInput] D Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
@@ -332,7 +409,7 @@ void SceneInstance::processInput(float deltaTime)
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))
-		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime);  // Zoom out
+		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
 	if (InputManager::GetKey(Input::Key::M))
 		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
 
@@ -385,8 +462,9 @@ void SceneInstance::processInput(float deltaTime)
 		firstMouse = true;
 	}
 
-	if (InputManager::GetKeyDown(Input::Key::H)) {
-		auto* hdr = PostProcessingManager::GetInstance().GetHDREffect();
+	if (InputManager::GetKeyDown(Input::Key::H))
+	{
+		auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
 		hdr->SetEnabled(!hdr->IsEnabled());
 		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
 	}
@@ -398,7 +476,8 @@ void SceneInstance::processInput(float deltaTime)
 	mainECS.transformSystem->SetLocalPosition(activeCam, newPos);
 }
 
-void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
+void SceneInstance::CreateHDRTestScene(ECSManager &ecsManager)
+{
 	ENGINE_PRINT("[HDR Test] Creating test scene with bright objects...\n");
 
 	// Get your cube model GUID (adjust path to your actual cube model)
@@ -410,7 +489,8 @@ void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
 	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(shaderPath);
 
 	// Create 5 cubes with increasing brightness
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; i++)
+	{
 		Entity cube = ecsManager.CreateEntity();
 
 		// Set name
@@ -453,7 +533,7 @@ void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
 	// Use PointLightComponent instead of LightComponent
 	PointLightComponent lightComp;
 	lightComp.color = Vector3D(1.0f, 0.95f, 0.9f); // Warm white
-	lightComp.intensity = 1.0f; // VERY bright for HDR testing!
+	lightComp.intensity = 1.0f;					   // VERY bright for HDR testing!
 	lightComp.constant = 1.0f;
 	lightComp.linear = 0.09f;
 	lightComp.quadratic = 0.032f;
@@ -468,4 +548,33 @@ void SceneInstance::CreateHDRTestScene(ECSManager& ecsManager) {
 	ENGINE_PRINT("[HDR Test] Expected result:\n");
 	ENGINE_PRINT("[HDR Test] - WITHOUT HDR: All bright cubes would look similar (white)\n");
 	ENGINE_PRINT("[HDR Test] - WITH HDR: Each cube should have distinct brightness levels\n");
+}
+
+void SceneInstance::CreateDefaultCamera(ECSManager &ecsManager)
+{
+	ENGINE_PRINT("[SceneInstance] Creating default main camera...\n");
+
+	// Create camera entity
+	Entity cameraEntity = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(cameraEntity).name = "Main Camera";
+
+	// Set transform - position camera back a bit so it can see objects at origin
+	ecsManager.transformSystem->SetLocalPosition(cameraEntity, Vector3D(0.0f, 0.0f, 5.0f));
+
+	// Add camera component with default settings
+	CameraComponent camComp;
+	camComp.isActive = true;
+	camComp.fov = 45.0f;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 1000.0f;
+	camComp.movementSpeed = 2.5f;
+	camComp.mouseSensitivity = 0.1f;
+	camComp.yaw = -90.0f; // Looking forward (-Z)
+	camComp.pitch = 0.0f; // Level horizon
+	camComp.minZoom = 1.0f;
+	camComp.maxZoom = 90.0f;
+
+	ecsManager.AddComponent<CameraComponent>(cameraEntity, camComp);
+
+	ENGINE_PRINT("[SceneInstance] Default camera created successfully (Entity ID: ", cameraEntity, ")\n");
 }

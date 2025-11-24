@@ -9,8 +9,7 @@
 #include <ECS/NameComponent.hpp>
 #include "rapidjson/prettywriter.h"
 #include <Serialization/Serializer.hpp>
-#include "Logging.hpp"
-#include <Utilities/FileUtilities.hpp>
+#include "Utilities/GUID.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -66,9 +65,6 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 
 	// Deserialize the new scene data.
 	Serializer::DeserializeScene(scenePath);
-
-    // TO BE DELETED: create an entity with mono_behavior script for testing
-
     
 	// Initialize the new scene.
 	currentScene->Initialize();
@@ -406,8 +402,8 @@ void SceneManager::ReloadTempScene() {
 		Serializer::ReloadScene(tempScenePath, currentScenePath);
 	}
 	else {
-		// Handle the case where the temp file doesn't exist
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist: ", tempScenePath, "\n");
+		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist, skipping reload: ", tempScenePath, "\n");
 		return; // Early exit if needed
 	}
 }
@@ -467,4 +463,117 @@ std::string SceneManager::LoadLastOpenedScenePath() {
 
 	// Return default scene if no saved path or file doesn't exist
 	return "";
+}
+
+void SceneManager::CreateNewScene(const std::string& directory, bool loadAfterCreate) {
+    static int sceneCounter = 0;
+    std::string newSceneName = "New Scene.scene";
+    std::filesystem::path directoryPath(directory);
+    std::filesystem::path newSceneNamePath(newSceneName);
+    std::string stem = newSceneNamePath.stem().generic_string();
+    std::string extension = newSceneNamePath.extension().generic_string();
+
+    // Generate unique name, checking for existing files (similar to AssetBrowserPanel pattern)
+    std::string uniqueName;
+    std::filesystem::path newScenePathFull;
+    do {
+        std::string suffix = (sceneCounter > 0) ? "_" + std::to_string(sceneCounter) : "";
+        uniqueName = stem + suffix + extension;
+        newScenePathFull = directoryPath / uniqueName;
+        sceneCounter++;
+    } while (std::filesystem::exists(newScenePathFull));
+
+    std::string scenePath = newScenePathFull.generic_string();
+
+    // Ensure the directory exists
+    std::filesystem::path parentDir = newScenePathFull.parent_path();
+    std::filesystem::create_directories(parentDir);
+
+    // Generate GUID for the camera entity
+    std::string guidStr = GUIDUtilities::GenerateGUIDString();
+
+    // Write a minimal scene JSON with a default Main Camera entity
+    std::ofstream file(scenePath);
+    if (file.is_open()) {
+        // Write minimal scene JSON with Main Camera
+        file << R"({
+    "entities": [
+        {
+            "id": 0,
+            "guid": ")" << guidStr << R"(",
+            "components": {
+                "NameComponent": {
+                    "name": "Main Camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 5 }
+                        ]},
+                        { "type": "Vector3D", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 1 }
+                        ]},
+                        { "type": "Quaternion", "data": [
+                            { "type": "float", "data": 1 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 },
+                            { "type": "float", "data": 0 }
+                        ]},
+                        { "type": "bool", "data": false },
+                        { "type": "Matrix4x4", "data": [] }
+                    ]
+                },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        { "type": "bool", "data": true },
+                        { "type": "bool", "data": true },
+                        { "type": "int", "data": 0 },
+                        { "type": "float", "data": -90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "bool", "data": true },
+                        { "type": "float", "data": 45 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1000 },
+                        { "type": "float", "data": 5 },
+                        { "type": "float", "data": 2.5 },
+                        { "type": "float", "data": 0.1 },
+                        { "type": "float", "data": 1 },
+                        { "type": "float", "data": 90 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
+                        "0000000000000000-0000000000000000"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        { "type": "bool", "data": true }
+                    ]
+                }
+            }
+        }
+    ]
+})";
+        file.close();
+        ENGINE_LOG_INFO("[SceneManager] Created new scene with default camera: " + scenePath);
+        if (loadAfterCreate) {
+            LoadScene(scenePath);
+        }
+    }
+    else {
+        ENGINE_LOG_ERROR("[SceneManager] Failed to create scene file: " + scenePath);
+    }
 }

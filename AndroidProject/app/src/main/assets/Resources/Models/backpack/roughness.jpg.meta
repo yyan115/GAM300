@@ -4,8 +4,7 @@
         "guid": "00374a21026550e7-000331fc4e000033",
         "source": "../../Resources/Models/backpack/roughness.jpg",
         "compiled": "../../Resources/Models/backpack/roughness.dds",
-        "android_compiled": "Resources/Models/backpack/roughness_android.ktx",
-        "last_compiled": "2025-11-09 14:17:28.9673509"
+        "android_compiled": "Resources/Models/backpack/roughness_android.ktx"
     },
     "TextureMetaData": {
         "type": "diffuse",

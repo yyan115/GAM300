@@ -188,6 +188,7 @@ target_include_directories(Engine
         ${ENGINE_INCLUDE_DIRS}
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
+        ${CMAKE_SOURCE_DIR}/Libraries/luabridge3/source
 )
 
 # Add Compressonator include directory for Editor builds

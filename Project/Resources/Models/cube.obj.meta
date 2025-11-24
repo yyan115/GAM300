@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "00374a2100cab2d8-000331fc58000037",
         "source": "../../Resources/Models/cube.obj",
-        "compiled": "../../Resources/Models/cube.mesh",
-        "last_compiled": "2025-11-09 14:17:11.9275236"
+        "compiled": "../../Resources/Models/cube.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

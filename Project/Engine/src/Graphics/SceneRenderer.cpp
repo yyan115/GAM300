@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/SceneRenderer.hpp"
 #include "Graphics/Camera/Camera.h"
+#include "Graphics/Camera/CameraComponent.hpp"
 #include "Engine.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -181,7 +182,14 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
         // Begin frame and clear (without input processing)
         gfxManager.BeginFrame();
-        gfxManager.Clear(0.0f, 0.0f, 0.0f, 1.0f);
+
+        Entity activeCam = mainECS.cameraSystem ? mainECS.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam)) {
+            auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
+            gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+        } else {
+            gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
+        }
 
         // Update model system for rendering (without input-based updates)
         if (mainECS.modelSystem) 

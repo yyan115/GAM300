@@ -2,7 +2,7 @@
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 
 bool EditorComponents::DrawDragDropButton(const char* label, float width) {
-    // Push Unity-style appearance
+    // Push appearance
     ImGui::PushStyleColor(ImGuiCol_Button, DRAG_DROP_BUTTON_BG);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, DRAG_DROP_BUTTON_HOVER);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, DRAG_DROP_BUTTON_ACTIVE);
@@ -156,7 +156,7 @@ bool EditorComponents::DrawStopButton(float buttonWidth) {
 
 float EditorComponents::GetLabelWidth() {
     const float charWidth = ImGui::CalcTextSize("A").x;
-    return charWidth * 18.0f;  // Approximate width for 18 characters (adjust as needed)
+    return charWidth * 16.0f;  // Approximate width for 16 characters (adjust as needed)
 }
 
 bool EditorComponents::DrawSliderWithInput(const char* label, void* valuePtr, float min, float max, bool isInt, float labelWidth) {

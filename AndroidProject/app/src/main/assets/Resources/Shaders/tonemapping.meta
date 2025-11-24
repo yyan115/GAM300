@@ -4,7 +4,6 @@
         "guid": "0060f4448fa65466-000337e664000015",
         "source": "../../Resources/Shaders/tonemapping",
         "compiled": "../../Resources/Shaders/tonemapping.shader",
-        "android_compiled": "Resources/Shaders/tonemapping.shader",
-        "last_compiled": "2025-11-09 14:18:08.4042166"
+        "android_compiled": "Resources/Shaders/tonemapping.shader"
     }
 }

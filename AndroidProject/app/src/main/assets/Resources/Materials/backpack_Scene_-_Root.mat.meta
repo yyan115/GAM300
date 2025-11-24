@@ -4,7 +4,6 @@
         "guid": "0060f444e5676fdd-000337e630000003",
         "source": "../../Resources/Materials/backpack_Scene_-_Root.mat",
         "compiled": "../../Resources/Materials/backpack_Scene_-_Root.mat",
-        "android_compiled": "Resources/Materials/backpack_Scene_-_Root_android.mat",
-        "last_compiled": "2025-11-09 14:17:29.1877504"
+        "android_compiled": "Resources/Materials/backpack_Scene_-_Root_android.mat"
     }
 }

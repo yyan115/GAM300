@@ -8,6 +8,7 @@
 #include "Sound/AudioManager.hpp"
 #include "Scene/SceneManager.hpp"
 #include "Physics/PhysicsSystem.hpp"
+#include "Animation/AnimationComponent.hpp"
 
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
@@ -51,11 +52,19 @@ void EditorState::Play() {
 
         SetState(State::PLAY_MODE);
 
+        // Reset all animations to start fresh (ignore inspector preview state)
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<AnimationComponent>(ent)) {
+                AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
+                animComp.ResetForPlay(); // Reset animator to time 0 for fresh start
+            }
+        }
+
         // Ensure FMOD global paused flag cleared so audio can play
         AudioManager::GetInstance().SetGlobalPaused(false);
 
         // Iterate all entities in the active ECS manager and trigger PlayOnAwake
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<AudioComponent>(ent)) {
                 AudioComponent& ac = ecs.GetComponent<AudioComponent>(ent);
@@ -114,6 +123,14 @@ void EditorState::Stop() {
 
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();
+
+    // Reset all animation preview states to 0 (fresh editor state)
+    for (auto ent : ecs.GetActiveEntities()) {
+        if (ecs.HasComponent<AnimationComponent>(ent)) {
+            AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
+            animComp.ResetPreview(); // Reset preview time to 0
+        }
+    }
 
     SetState(State::EDIT_MODE);
 }

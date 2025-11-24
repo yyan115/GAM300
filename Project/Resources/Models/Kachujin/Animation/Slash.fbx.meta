@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "0060f444ec0909f1-000337e65000000d",
         "source": "../../Resources/Models/Kachujin/Animation/Slash.fbx",
-        "compiled": "../../Resources/Models/Kachujin/Animation/Slash.fbx",
-        "last_compiled": "2025-11-09 14:54:54.4562705"
+        "compiled": "../../Resources/Models/Kachujin/Animation/Slash.fbx"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

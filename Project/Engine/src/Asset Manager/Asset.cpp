@@ -51,7 +51,7 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 #else
 	std::string timestamp = std::format("{:%Y-%m-%d %H:%M:%S}", tp);
 #endif
-	assetMetaData.AddMember("last_compiled", rapidjson::Value().SetString(timestamp.c_str(), allocator), allocator);
+	//assetMetaData.AddMember("last_compiled", rapidjson::Value().SetString(timestamp.c_str(), allocator), allocator);
 
 	doc.AddMember("AssetMetaData", assetMetaData, allocator);
 

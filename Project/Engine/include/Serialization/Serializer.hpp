@@ -7,6 +7,7 @@
 #include "ECS/LayerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
@@ -20,6 +21,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
@@ -39,6 +41,7 @@ public:
 	static void DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t);
 	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
+	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);
 	static void DeserializeParticleComponent(ParticleComponent& particleComp, const rapidjson::Value& particleJSON);
 	static void DeserializeDirLightComponent(DirectionalLightComponent& dirLightComp, const rapidjson::Value& dirLightJSON);
@@ -47,6 +50,7 @@ public:
 	static void DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON);
 	static void DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON);
 	static void DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& audioReverbZoneComp, const rapidjson::Value& audioReverbZoneJSON);
+	static void DeserializeCharacterControllerComponent(CharacterControllerComponent& ccComp, const rapidjson::Value& ccJSON);
 	static void DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON);
 	static void DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON);
 	static void DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON);

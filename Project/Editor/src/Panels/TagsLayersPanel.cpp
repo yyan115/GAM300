@@ -37,21 +37,28 @@ void TagsLayersPanel::RenderTagsSection() {
     ImGui::Text("Current Tags:");
     ImGui::BeginChild("TagsList", ImVec2(0, 150), true);
 
-    const auto& tags = TagManager::GetInstance().GetAllTags();
-    for (size_t i = 0; i < tags.size(); ++i) {
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::Text("%s", tags[i].c_str());
+    if (ImGui::BeginTable("TagsTable", 2, ImGuiTableFlags_SizingStretchProp)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 60.0f);
 
-        // Remove button (don't allow removing the default "Untagged" tag at index 0)
-        ImGui::SameLine(ImGui::GetWindowWidth() - 60);
-        if (i > 0) {
-            if (ImGui::Button("Remove")) {
-                selectedTagForRemoval = static_cast<int>(i);
+        const auto& tags = TagManager::GetInstance().GetAllTags();
+        for (size_t i = 0; i < tags.size(); ++i) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", tags[i].c_str());
+
+            ImGui::TableNextColumn();
+            // Remove button (don't allow removing the default "Untagged" tag at index 0)
+            if (i > 0) {
+                if (ImGui::Button("Remove")) {
+                    selectedTagForRemoval = static_cast<int>(i);
+                }
+            } else {
+                ImGui::TextDisabled("Default");
             }
-        } else {
-            ImGui::TextDisabled("Default");
         }
-        ImGui::PopID();
+
+        ImGui::EndTable();
     }
 
     ImGui::EndChild();
@@ -83,21 +90,28 @@ void TagsLayersPanel::RenderLayersSection() {
     ImGui::Text("Current Layers:");
     ImGui::BeginChild("LayersList", ImVec2(0, 150), true);
 
-    const auto& layers = LayerManager::GetInstance().GetAllLayers();
-    for (size_t i = 0; i < layers.size(); ++i) {
-        ImGui::PushID(static_cast<int>(i + 1000)); // Offset to avoid ID conflicts with tags
-        ImGui::Text("%s", layers[i].c_str());
+    if (ImGui::BeginTable("LayersTable", 2, ImGuiTableFlags_SizingStretchProp)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 60.0f);
 
-        // Remove button (don't allow removing the default "Default" layer at index 0)
-        ImGui::SameLine(ImGui::GetWindowWidth() - 60);
-        if (i > 0) {
-            if (ImGui::Button("Remove")) {
-                selectedLayerForRemoval = static_cast<int>(i);
+        const auto& layers = LayerManager::GetInstance().GetAllLayers();
+        for (size_t i = 0; i < layers.size(); ++i) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", layers[i].c_str());
+
+            ImGui::TableNextColumn();
+            // Remove button (don't allow removing the default "Default" layer at index 0)
+            if (i > 0) {
+                if (ImGui::Button("Remove")) {
+                    selectedLayerForRemoval = static_cast<int>(i);
+                }
+            } else {
+                ImGui::TextDisabled("Default");
             }
-        } else {
-            ImGui::TextDisabled("Default");
         }
-        ImGui::PopID();
+
+        ImGui::EndTable();
     }
 
     ImGui::EndChild();

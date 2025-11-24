@@ -2,6 +2,11 @@
 #include "ScriptFileSystem.h" // for IScriptFileSystem
 #include "Logging.hpp"
 
+#ifdef ANDROID
+#include "WindowManager.hpp" // for WindowManager::GetPlatform()
+#include "Platform/AndroidPlatform.h"
+#endif
+
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -13,6 +18,14 @@ extern "C" {
 #include <cstring>
 #include <iostream>
 #include <fstream>
+
+static inline int lua_table_len_compat(lua_State* L, int idx) {
+#if LUA_VERSION_NUM >= 502
+    return (int)lua_rawlen(L, idx);
+#else
+    return (int)lua_objlen(L, idx);
+#endif
+}
 
 namespace Scripting {
 
@@ -33,6 +46,7 @@ namespace Scripting {
         }
         if (m_searchPaths.empty()) {
             m_searchPaths.push_back("Resources/Scripts/?.lua");
+            m_searchPaths.push_back("Resources/Scripts/extension/?.lua");
             m_searchPaths.push_back("Resources/Scripts/?/init.lua");
         }
     }
@@ -42,9 +56,91 @@ namespace Scripting {
         m_searchPaths.push_back(pattern);
     }
 
+#ifdef ANDROID
+    // Forward declare the friend function
+    int AndroidAssetSearcher_CFunc(lua_State* L);
+
+    // Android asset searcher - handles module loading from APK assets
+    // This is a free function (not a member) that's declared as friend in the header
+    int AndroidAssetSearcher_CFunc(lua_State* L) {
+        // upvalue 1 is the ModuleLoader* (lightuserdata)
+        void* ud = lua_touserdata(L, lua_upvalueindex(1));
+        ModuleLoader* loader = static_cast<ModuleLoader*>(ud);
+        if (!loader) {
+            lua_pushstring(L, "\n\tAndroidAssetSearcher: ModuleLoader missing in upvalue");
+            return 1;
+        }
+
+        const char* moduleName = luaL_checkstring(L, 1);
+        if (!moduleName) {
+            lua_pushstring(L, "\n\tmodule name is nil");
+            return 1;
+        }
+
+        // Convert module name to path (e.g., "extension.engine_bootstrap" -> "extension/engine_bootstrap")
+        std::string modulePath = moduleName;
+        std::replace(modulePath.begin(), modulePath.end(), '.', '/');
+
+        // Build search paths based on configured patterns
+        std::vector<std::string> searchPaths;
+        {
+            std::lock_guard<std::mutex> lk(loader->m_mutex);
+            for (const auto& pattern : loader->m_searchPaths) {
+                size_t pos = pattern.find('?');
+                if (pos != std::string::npos) {
+                    searchPaths.push_back(pattern.substr(0, pos) + modulePath + pattern.substr(pos + 1));
+                }
+            }
+        }
+
+        // Get platform interface for asset access
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform) {
+            std::string err = std::string("\n\tno module '") + moduleName +
+                "' in Android assets (platform unavailable)";
+            lua_pushstring(L, err.c_str());
+            return 1;
+        }
+
+        // Try each search path
+        for (const auto& path : searchPaths) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+                "AndroidAssetSearcher trying: ", path.c_str());
+
+            if (platform->FileExists(path)) {
+                std::vector<uint8_t> scriptData = platform->ReadAsset(path);
+                if (!scriptData.empty()) {
+                    // Load the module
+                    int loadStatus = luaL_loadbuffer(L,
+                        reinterpret_cast<const char*>(scriptData.data()),
+                        scriptData.size(),
+                        path.c_str());
+
+                    if (loadStatus == LUA_OK) {
+                        ENGINE_PRINT(EngineLogging::LogLevel::Info,
+                            "AndroidAssetSearcher loaded: ", path.c_str());
+                        return 1; // Return the loaded chunk
+                    }
+                    else {
+                        // Load error - error message is already on stack
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        // Not found - return error message
+        std::string err = std::string("\n\tno module '") + moduleName +
+            "' in Android assets";
+        lua_pushstring(L, err.c_str());
+        return 1;
+    }
+#endif
+
     void ModuleLoader::InstallLuaSearcher(lua_State* L, int pos) {
         if (!L) return;
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::InstallLuaSearcher called (pos=", pos,")");
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::InstallLuaSearcher called (pos=", pos, ")");
+
         // get package.searchers (Lua 5.2+ uses package.searchers, older uses package.loaders)
         lua_getglobal(L, "package");
 #if LUA_VERSION_NUM >= 502
@@ -58,19 +154,28 @@ namespace Scripting {
             return;
         }
 
-        // push our C function with a lightuserdata pointing to this ModuleLoader instance
+#ifdef ANDROID
+        // On Android, install the AndroidAssetSearcher instead of the regular loader
         lua_pushlightuserdata(L, this);
-        lua_pushcclosure(L, &ModuleLoader::LuaLoader_CFunc, 1); // closure with 1 upvalue (this)
+        lua_pushcclosure(L, &AndroidAssetSearcher_CFunc, 1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader: Installing AndroidAssetSearcher");
+#else
+        // On other platforms, use the regular ModuleLoader
+        lua_pushlightuserdata(L, this);
+        lua_pushcclosure(L, &ModuleLoader::LuaLoader_CFunc, 1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader: Installing regular searcher");
+#endif
+
         // Insert it into the searchers table at pos (1-based). If pos == -1 append.
         int insertPos = pos;
         if (insertPos == -1) {
             // append: get length + 1
-            int len = (int)lua_rawlen(L, -2); // package.searchers is below closure we just pushed
+            int len = lua_table_len_compat(L, -2); // package.searchers is below closure we just pushed
             lua_rawseti(L, -2, len + 1); // pops our function and sets at len+1
         }
         else {
             // shift elements to make room: simple method - move elements up
-            int len = (int)lua_rawlen(L, -2);
+            int len = lua_table_len_compat(L, -2);
             for (int i = len; i >= insertPos; --i) {
                 lua_rawgeti(L, -2, i);
                 lua_rawseti(L, -2, i + 1);
@@ -94,9 +199,13 @@ namespace Scripting {
         std::replace(qname.begin(), qname.end(), '.', '/');
 
         std::lock_guard<std::mutex> lk(m_mutex);
+        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::ResolveModuleName called for '", modulename.c_str(),
+            "' (this=", (void*)this, ", m_fs=", (void*)m_fs, ")");
+
         for (const auto& pat : m_searchPaths) {
             std::string candidate;
             candidate.reserve(pat.size() + qname.size());
+
             // replace single '?' with qname (simple policy)
             size_t p = pat.find('?');
             if (p != std::string::npos) {
@@ -105,60 +214,37 @@ namespace Scripting {
             else {
                 candidate = pat;
             }
-            // ask FS if it exists / readable
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader::ResolveModuleName called for '",modulename.c_str(),"' (this=", (void*)this,", m_fs=", (void*)m_fs,")");
 
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader trying candidate: ", candidate.c_str());
+
+            // ask FS if it exists / readable
             if (m_fs) {
                 std::string content;
                 if (m_fs->ReadAllText(candidate, content)) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file via FS at: ", candidate.c_str());
                     m_resolveCache.emplace(modulename, candidate);
                     return candidate;
+                }
+                else {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: FS couldn't read: ", candidate.c_str());
                 }
             }
             else {
                 // fallback: check file exists on host FS
                 std::ifstream ifs(candidate, std::ios::binary);
                 if (ifs.good()) {
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file on host FS at: ", candidate.c_str());
                     m_resolveCache.emplace(modulename, candidate);
                     return candidate;
                 }
-            }
-
-            for (const auto& pat : m_searchPaths) {
-                // ... build candidate ...
-                ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader trying candidate: ", candidate.c_str());
-                if (m_fs) {
-                    std::string content;
-                    if (m_fs->ReadAllText(candidate, content)) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file via FS at: ", candidate.c_str());
-                        m_resolveCache.emplace(modulename, candidate);
-                        return candidate;
-                    }
-                    else {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: FS couldn't read: ", candidate.c_str());
-                    }
-                }
                 else {
-                    std::ifstream ifs(candidate, std::ios::binary);
-                    if (ifs.good()) {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader found file on host FS at: ", candidate.c_str());
-                        m_resolveCache.emplace(modulename, candidate);
-                        return candidate;
-                    }
-                    else {
-                        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: no file at: ", candidate.c_str());
-                    }
+                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "ModuleLoader: no file at: ", candidate.c_str());
                 }
             }
-
         }
+
         // not found: cache empty result to avoid repeated attempts
-        {
-            std::lock_guard<std::mutex> lk2(m_mutex);
-            m_resolveCache.emplace(modulename, std::string());
-        }
-
-
+        m_resolveCache.emplace(modulename, std::string());
         return std::string();
     }
 

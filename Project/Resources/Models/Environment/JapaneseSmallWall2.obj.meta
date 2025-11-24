@@ -3,8 +3,7 @@
         "version": 7,
         "guid": "001296e6f531c3ca-0003315b18000017",
         "source": "../../Resources/Models/Environment/JapaneseSmallWall2.obj",
-        "compiled": "../../Resources/Models/Environment/JapaneseSmallWall2.mesh",
-        "last_compiled": "2025-11-09 14:17:12.0388515"
+        "compiled": "../../Resources/Models/Environment/JapaneseSmallWall2.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

@@ -75,6 +75,7 @@ namespace Scripting {
         void SetHostLogHandler(std::function<void(const std::string&)> handler);
         // Called by Scripting::SetHostGetComponentHandler — runtime will store the handler and register C function.
         void SetHostGetComponentHandler(std::function<bool(lua_State*, uint32_t, const std::string&)> handler);
+        void SetFileSystem(std::shared_ptr<IScriptFileSystem> fs);
     private:
         bool create_lua_state(lua_State*& out);
         void close_lua_state(lua_State* L);
@@ -111,6 +112,11 @@ namespace Scripting {
         std::unique_ptr<ModuleLoader> m_moduleLoader;
 
         std::function<void(const std::string&)> m_hostLogHandler;
+    public:
+        ModuleLoader* GetModuleLoader() {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            return m_moduleLoader.get();
+        }
     };
 
 } // namespace Scripting

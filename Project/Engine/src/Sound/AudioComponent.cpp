@@ -35,15 +35,17 @@ AudioComponent::~AudioComponent() {
 }
 
 void AudioComponent::Play() {
+    ENGINE_PRINT("[AudioComponent] Play() called. Mute=", Mute, " Volume=", Volume, " CurrentChannel=", CurrentChannel);
     if (Mute) return;
     if (GetIsPlaying()) return;
-    
+
     StopInternal();
     CurrentChannel = PlayInternal();
     if (CurrentChannel != 0) {
         IsPlaying = true;
         IsPaused = false;
         WasPlayingBeforePause = false;
+        ENGINE_PRINT("[AudioComponent] Started playback. Channel=", CurrentChannel, " Volume=", Volume);
     }
 }
 
@@ -53,10 +55,21 @@ void AudioComponent::PlayDelayed(float delay) {
     Play();
 }
 
-void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
+void AudioComponent::PlayOneShot(std::string guidStr) {
     if (Mute) return;
     
-    std::shared_ptr<Audio> clipToPlay = clip ? clip : CachedAudioAsset;
+    std::shared_ptr<Audio> clipToPlay = CachedAudioAsset;
+    
+    if (!guidStr.empty()) {
+        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        std::string assetPath = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+        clipToPlay = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
+        if (!clipToPlay) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayOneShot: Failed to load audio from GUID: ", guidStr, "\n");
+            return;
+        }
+    }
+    
     if (!clipToPlay && !EnsureAssetLoaded()) return;
     if (!clipToPlay) clipToPlay = CachedAudioAsset;
     
@@ -125,9 +138,12 @@ AudioSourceState AudioComponent::GetState() const {
 }
 
 void AudioComponent::SetVolume(float newVolume) {
-    Volume = std::clamp(newVolume, 0.0f, 1.0f);
+    float clamped = std::clamp(newVolume, 0.0f, 1.0f);
+    ENGINE_PRINT("[AudioComponent] SetVolume called. newVolume=", newVolume, " clamped=", clamped, " CurrentChannel=", CurrentChannel);
+    Volume = clamped;
     if (CurrentChannel != 0) {
         AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
+        ENGINE_PRINT("[AudioComponent] Queued channel volume update. Channel=", CurrentChannel, " Volume=", Volume);
     }
 }
 
@@ -216,6 +232,11 @@ void AudioComponent::SetClip(std::shared_ptr<Audio> clip) {
     PlayOnAwakeTriggered = false;
 }
 
+void AudioComponent::SetClipFromString(const std::string& guidStr) {
+    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+    SetClip(guid);
+}
+
 bool AudioComponent::HasValidClip() const {
     return CachedAudioAsset != nullptr && AssetLoaded;
 }
@@ -226,6 +247,11 @@ void AudioComponent::UpdateComponent() {
     }
 
     UpdatePlaybackState();
+
+    // Update channel properties if playing (batched for efficiency)
+    if (CurrentChannel != 0 && IsPlaying) {
+        UpdateChannelProperties();
+    }
 
     if (PlayOnAwake) {
         if (!PlayOnAwakeTriggered && !GetIsPlaying() && HasValidClip() && !IsPlaying) {
@@ -263,6 +289,17 @@ void AudioComponent::UpdateChannelProperties() {
     audioMgr.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
     audioMgr.SetChannelPitch(CurrentChannel, Pitch);
     audioMgr.SetChannelLoop(CurrentChannel, Loop);
+    
+    // Apply reverb zone mix
+    audioMgr.SetChannelReverbMix(CurrentChannel, bypassListenerEffects ? 0.0f : reverbZoneMix);
+    
+    // New optimized batched properties
+    audioMgr.SetChannelPriority(CurrentChannel, Priority);
+    if (!(Spatialize && SpatialBlend > 0.0f)) {
+        audioMgr.SetChannelStereoPan(CurrentChannel, StereoPan);
+    }
+    audioMgr.SetChannelDopplerLevel(CurrentChannel, DopplerLevel);
+    
     if (Spatialize && SpatialBlend > 0.0f) {
         audioMgr.UpdateChannelPosition(CurrentChannel, Position);
         audioMgr.SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
@@ -284,6 +321,7 @@ void AudioComponent::UpdatePlaybackState() {
         IsPlaying = false;
         IsPaused = false;
         WasPlayingBeforePause = false;
+        PlayOnAwakeTriggered = false;  // Reset for next play mode
     } else {
         IsPlaying = (actualState == AudioSourceState::Playing);
         IsPaused = (actualState == AudioSourceState::Paused);
@@ -295,6 +333,7 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     
     AudioManager& audioMgr = AudioManager::GetInstance();
     ChannelHandle channel = 0;
+    ENGINE_PRINT("[AudioComponent] PlayInternal called. Volume=", Volume, " Loop=", Loop, " OutputBus=", OutputAudioMixerGroup.c_str());
     
     if (Spatialize && SpatialBlend > 0.0f) {
         channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);
@@ -306,6 +345,12 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     
     if (channel != 0) {
         audioMgr.SetChannelPitch(channel, Pitch);
+        audioMgr.SetChannelReverbMix(channel, bypassListenerEffects ? 0.0f : reverbZoneMix);
+        audioMgr.SetChannelPriority(channel, Priority);
+        if (!(Spatialize && SpatialBlend > 0.0f)) {
+            audioMgr.SetChannelStereoPan(channel, StereoPan);
+        }
+        audioMgr.SetChannelDopplerLevel(channel, DopplerLevel);
         if (Mute) {
             audioMgr.SetChannelVolume(channel, 0.0f);
         }
