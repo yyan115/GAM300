@@ -35,6 +35,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "SnapshotManager.hpp"
 #include "Sound/AudioListenerComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
+#include "Utilities/GUID.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "EditorState.hpp"
@@ -48,6 +49,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Script/ScriptComponentData.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
+#include "Panels/TagsLayersPanel.hpp"
+#include "GUIManager.hpp"
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -76,6 +79,130 @@ extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
 extern GUID_128 DraggedScriptGuid;
 extern std::string DraggedScriptPath;
+
+// Helper function to determine asset type from field name
+enum class AssetType { None, Audio, Model, Texture, Material, Font, Script };
+AssetType GetAssetTypeFromFieldName(const std::string& fieldName) {
+    std::string lowerName = fieldName;
+    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+    
+    if (lowerName.find("audio") != std::string::npos || lowerName.find("sfx") != std::string::npos || lowerName.find("sound") != std::string::npos) {
+        return AssetType::Audio;
+    }
+    if (lowerName.find("model") != std::string::npos) {
+        return AssetType::Model;
+    }
+    if (lowerName.find("texture") != std::string::npos || lowerName.find("sprite") != std::string::npos) {
+        return AssetType::Texture;
+    }
+    if (lowerName.find("material") != std::string::npos) {
+        return AssetType::Material;
+    }
+    if (lowerName.find("font") != std::string::npos) {
+        return AssetType::Font;
+    }
+    if (lowerName.find("script") != std::string::npos) {
+        return AssetType::Script;
+    }
+    return AssetType::None;
+}
+
+// Helper function to check if a string is a valid GUID
+bool IsValidGUID(const std::string& str) {
+    if (str.length() != 36) return false;
+    // Basic GUID format check: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+    return str[8] == '-' && str[13] == '-' && str[18] == '-' && str[23] == '-';
+}
+
+// Helper function to render asset drag-drop for a single GUID
+bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType) {
+    bool modified = false;
+    std::string displayText;
+    
+    switch (assetType) {
+        case AssetType::Audio: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Audio File)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        case AssetType::Model: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Model)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        case AssetType::Texture: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Texture)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        case AssetType::Material: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Material)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        case AssetType::Font: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Font)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        case AssetType::Script: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Script)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
+        default:
+            return false;
+    }
+    
+    EditorComponents::DrawDragDropButton(displayText.c_str(), -1);
+    
+    // Handle drag-drop
+    if (ImGui::BeginDragDropTarget()) {
+        const ImGuiPayload* payload = nullptr;
+        const char* payloadType = nullptr;
+        switch (assetType) {
+            case AssetType::Audio: payloadType = "AUDIO_DRAG"; break;
+            case AssetType::Model: payloadType = "MODEL_DRAG"; break;
+            case AssetType::Texture: payloadType = "TEXTURE_PAYLOAD"; break;
+            case AssetType::Material: payloadType = "MATERIAL_DRAG"; break;
+            case AssetType::Font: payloadType = "FONT_DRAG"; break;
+            case AssetType::Script: payloadType = "SCRIPT_PAYLOAD"; break;
+            default: break;
+        }
+        
+        if (payloadType && (payload = ImGui::AcceptDragDropPayload(payloadType))) {
+            GUID_128 newGuid;
+            if (assetType == AssetType::Texture) {
+                // For texture, get path from payload data
+                const char *texturePath = (const char *)payload->Data;
+                std::string pathStr(texturePath, payload->DataSize);
+                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                newGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+            } else {
+                // For others, use the extern variables
+                switch (assetType) {
+                    case AssetType::Audio: newGuid = DraggedAudioGuid; break;
+                    case AssetType::Model: newGuid = DraggedModelGuid; break;
+                    case AssetType::Material: newGuid = DraggedMaterialGuid; break;
+                    case AssetType::Font: newGuid = DraggedFontGuid; break;
+                    case AssetType::Script: newGuid = DraggedScriptGuid; break;
+                    default: break;
+                }
+            }
+            guidStr = GUIDUtilities::ConvertGUID128ToString(newGuid);
+            modified = true;
+        }
+        ImGui::EndDragDropTarget();
+    }
+    
+    return modified;
+}
 
 // Forward declaration for sprite animation inspector
 void RegisterSpriteAnimationInspector();
@@ -219,7 +346,11 @@ void RegisterInspectorCustomRenderers()
         }
         else if (currentTag == static_cast<int>(availableTags.size()))
         {
-        // "Add Tag..." was selected - could open Tags & Layers window here
+        // "Add Tag..." was selected - open Tags & Layers window
+        auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+        if (tagsLayersPanel) {
+            tagsLayersPanel->SetOpen(true);
+        }
         // Reset selection to current tag
         currentTag = tagComp.tagIndex;
         }
@@ -304,6 +435,24 @@ void RegisterInspectorCustomRenderers()
                 if (selectedIndex != -1)
                 {
                     layerComp.layerIndex = selectedIndex;
+                }
+                else
+                {
+                    // "Add Layer..." was selected - open Tags & Layers window
+                    auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                    if (tagsLayersPanel) {
+                        tagsLayersPanel->SetOpen(true);
+                    }
+                    // Reset selection to current layer
+                    currentSelection = -1; // or find the current
+                    for (size_t i = 0; i < layerIndices.size(); ++i)
+                    {
+                        if (layerIndices[i] == layerComp.layerIndex)
+                        {
+                            currentSelection = static_cast<int>(i);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -2128,7 +2277,8 @@ void RegisterInspectorCustomRenderers()
                                       scriptData.scriptPath.substr(scriptData.scriptPath.find_last_of("/\\") + 1);
 
             ImGui::SetNextItemWidth(-1);
-            EditorComponents::DrawDragDropButton(displayText.c_str(), ImGui::GetContentRegionAvail().x);
+            float dragDropWidth = ImGui::GetContentRegionAvail().x - 40.0f; // Leave space for reload button
+            EditorComponents::DrawDragDropButton(displayText.c_str(), dragDropWidth);
 
             // Double-click to open
             if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -2164,10 +2314,10 @@ void RegisterInspectorCustomRenderers()
 
                 // Construct the correct path to the script file
                 std::filesystem::path scriptFullPath;
-                if (scriptData.scriptPath.find("Resources/scripts/") == 0) {
-                    // Path already includes full Resources/scripts/ prefix
+                if (scriptData.scriptPath.find("Resources/") == 0) {
+                    // Path includes Resources/ prefix
                     scriptFullPath = projectRoot / scriptData.scriptPath;
-                } else if (scriptData.scriptPath.find("scripts/") == 0) {
+                } else if (scriptData.scriptPath.find("scripts/") == 0 || scriptData.scriptPath.find("Scripts/") == 0) {
                     // Path includes scripts/ prefix
                     scriptFullPath = projectRoot / "Resources" / scriptData.scriptPath;
                 } else {
@@ -2217,6 +2367,13 @@ void RegisterInspectorCustomRenderers()
                     editorPreviewScriptPaths.erase(uniqueKey);
                 }
                 ImGui::EndDragDropTarget();
+            }
+
+            // Add reload button beside the drag-drop field
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_ROTATE_RIGHT "##ReloadScripts")) {
+                Scripting::RequestReloadNow();
+                ENGINE_PRINT("Requested script reload from inspector for script: ", scriptData.scriptPath.c_str());
             }
 
             // If no script assigned, skip field rendering
@@ -2636,8 +2793,9 @@ void RegisterInspectorCustomRenderers()
             std::string newValue;
 
             // Render appropriate widget based on field type
-            switch (field.type)
-            {
+            try {
+                switch (field.type)
+                {
                 case Scripting::FieldType::Number:
                 {
                     float value = std::stof(field.defaultValueSerialized);
@@ -2670,29 +2828,48 @@ void RegisterInspectorCustomRenderers()
 
                 case Scripting::FieldType::String:
                 {
-                    static std::unordered_map<std::string, std::vector<char>> stringBuffers;
-                    auto& buffer = stringBuffers[field.name];
-                    if (buffer.size() < 256) buffer.resize(256);
-
-                    // Copy current value to buffer
                     std::string currentValue = field.defaultValueSerialized;
                     if (currentValue.size() > 1 && currentValue.front() == '"' && currentValue.back() == '"')
                     {
                         currentValue = currentValue.substr(1, currentValue.size() - 2);
                     }
 
-                    size_t copyLen = std::min(currentValue.size(), size_t(255));
-                    std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
-                    buffer[copyLen] = '\0';
-
-                    ImGui::Text("%s", displayName.c_str());
-                    ImGui::SameLine(labelWidth);
-                    ImGui::SetNextItemWidth(-1);
-
-                    if (ImGui::InputText(("##" + field.name).c_str(), buffer.data(), 256))
+                    // Check if this is an asset GUID field
+                    AssetType assetType = GetAssetTypeFromFieldName(field.name);
+                    if (assetType != AssetType::None && IsValidGUID(currentValue))
                     {
-                        newValue = std::string("\"") + buffer.data() + "\"";
-                        fieldModified = true;
+                        // Render as asset drag-drop
+                        ImGui::Text("%s", displayName.c_str());
+                        ImGui::SameLine(labelWidth);
+                        ImGui::SetNextItemWidth(-1);
+
+                        std::string guidStr = currentValue;
+                        if (RenderAssetField(field.name, guidStr, assetType))
+                        {
+                            newValue = "\"" + guidStr + "\"";
+                            fieldModified = true;
+                        }
+                    }
+                    else
+                    {
+                        // Render as regular text input
+                        static std::unordered_map<std::string, std::vector<char>> stringBuffers;
+                        auto& buffer = stringBuffers[field.name];
+                        if (buffer.size() < 256) buffer.resize(256);
+
+                        size_t copyLen = std::min(currentValue.size(), size_t(255));
+                        std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
+                        buffer[copyLen] = '\0';
+
+                        ImGui::Text("%s", displayName.c_str());
+                        ImGui::SameLine(labelWidth);
+                        ImGui::SetNextItemWidth(-1);
+
+                        if (ImGui::InputText(("##" + field.name).c_str(), buffer.data(), 256))
+                        {
+                            newValue = std::string("\"") + buffer.data() + "\"";
+                            fieldModified = true;
+                        }
                     }
                     break;
                 }
@@ -2717,7 +2894,7 @@ void RegisterInspectorCustomRenderers()
                                 isVector3 = true;
                             }
                         }
-                    } catch (...) {
+                    } catch (std::exception e) {
                         isVector3 = false;
                     }
 
@@ -2748,11 +2925,216 @@ void RegisterInspectorCustomRenderers()
                     }
                     else
                     {
-                        // Not a vector3, show as generic table
-                        ImGui::Text("%s: [Table]", displayName.c_str());
-                        if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                        // Check if it's an array (JSON array)
+                        rapidjson::Document doc;
+                        doc.Parse(field.defaultValueSerialized.c_str());
+                        if (doc.HasParseError())
                         {
-                            ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                            ImGui::Text("%s: [Invalid JSON data]", displayName.c_str());
+                        }
+                        else if (doc.IsArray())
+                        {
+                            // Determine asset type for array elements
+                            AssetType assetType = GetAssetTypeFromFieldName(field.name);
+                            
+                            if (assetType != AssetType::None)
+                            {
+                                // Render as array of assets
+                                ImGui::Text("%s", displayName.c_str());
+                                bool arrayModified = false;
+                                rapidjson::Document newDoc;
+                                newDoc.SetArray();
+                                auto& alloc = newDoc.GetAllocator();
+
+                                for (size_t i = 0; i < doc.Size(); ++i)
+                                {
+                                    ImGui::PushID(static_cast<int>(i));
+
+                                    try {
+                                        std::string guidStr;
+                                        if (doc[i].IsString())
+                                        {
+                                            guidStr = doc[i].GetString();
+                                        }
+                                        else
+                                        {
+                                            guidStr = "00000000-0000-0000-0000-000000000000"; // Empty GUID
+                                        }
+
+                                        ImGui::Text("[%zu]", i + 1);
+                                        ImGui::SameLine();
+                                        
+                                        std::string tempGuid = guidStr;
+                                        if (RenderAssetField(field.name, tempGuid, assetType))
+                                        {
+                                            guidStr = tempGuid;
+                                            arrayModified = true;
+                                        }
+
+                                        ImGui::SameLine();
+                                        std::string removeButtonId = "X##remove" + std::to_string(i);
+                                        if (ImGui::SmallButton(removeButtonId.c_str()))
+                                        {
+                                            // Skip this element (remove it)
+                                            arrayModified = true;
+                                        }
+                                        else
+                                        {
+                                            // Add to new array
+                                            newDoc.PushBack(rapidjson::Value(guidStr.c_str(), alloc), alloc);
+                                        }
+                                    } catch (std::exception e) {
+                                        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering array element %zu", i);
+                                    }
+
+                                    ImGui::PopID();
+                                }
+
+                                // Add new element button
+                                std::string addButtonText = "Add " + displayName;
+                                if (ImGui::Button(addButtonText.c_str()))
+                                {
+                                    newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
+                                    arrayModified = true;
+                                }
+
+                                if (arrayModified)
+                                {
+                                    // Serialize new array
+                                    rapidjson::StringBuffer buffer;
+                                    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                    newDoc.Accept(writer);
+                                    newValue = buffer.GetString();
+                                    fieldModified = true;
+                                }
+                            }
+                            else
+                            {
+                                // Generic array - show as text for now
+                                ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.Size());
+                                if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                                {
+                                    ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Check if it's an array-like table (JSON object with numeric string keys)
+                            bool isArrayLike = false;
+                            if (doc.IsObject())
+                            {
+                                isArrayLike = true;
+                                size_t expectedIndex = 1;
+                                for (auto& m : doc.GetObject())
+                                {
+                                    if (!m.name.IsString()) { isArrayLike = false; break; }
+                                    std::string key = m.name.GetString();
+                                    if (key != std::to_string(expectedIndex)) { isArrayLike = false; break; }
+                                    expectedIndex++;
+                                }
+                            }
+
+                            if (isArrayLike)
+                            {
+                                // Render as array of assets (same as JSON array case)
+                                AssetType assetType = GetAssetTypeFromFieldName(field.name);
+                                
+                                if (assetType != AssetType::None)
+                                {
+                                    // Render as array of assets
+                                    ImGui::Text("%s", displayName.c_str());
+                                    bool arrayModified = false;
+                                    rapidjson::Document newDoc;
+                                    newDoc.SetArray();
+                                    auto& alloc = newDoc.GetAllocator();
+
+                                    size_t arraySize = doc.GetObject().MemberCount();
+                                    for (size_t i = 0; i < arraySize; ++i)
+                                    {
+                                        std::string key = std::to_string(i + 1);
+                                        auto it = doc.FindMember(key.c_str());
+                                        if (it == doc.MemberEnd()) continue;
+
+                                        ImGui::PushID(static_cast<int>(i));
+
+                                        try {
+                                            std::string guidStr;
+                                            if (it->value.IsString())
+                                            {
+                                                guidStr = it->value.GetString();
+                                            }
+                                            else
+                                            {
+                                                guidStr = "00000000-0000-0000-0000-000000000000"; // Empty GUID
+                                            }
+
+                                            ImGui::Text("[%zu]", i + 1);
+                                            ImGui::SameLine();
+                                            
+                                            std::string tempGuid = guidStr;
+                                            if (RenderAssetField(field.name, tempGuid, assetType))
+                                            {
+                                                guidStr = tempGuid;
+                                                arrayModified = true;
+                                            }
+
+                                            ImGui::SameLine();
+                                            std::string removeButtonId = "X##remove" + std::to_string(i);
+                                            if (ImGui::SmallButton(removeButtonId.c_str()))
+                                            {
+                                                // Skip this element (remove it)
+                                                arrayModified = true;
+                                            }
+                                            else
+                                            {
+                                                // Add to new array
+                                                newDoc.PushBack(rapidjson::Value(guidStr.c_str(), alloc), alloc);
+                                            }
+                                        } catch (std::exception e) {
+                                            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering array element %zu", i);
+                                        }
+
+                                        ImGui::PopID();
+                                    }
+
+                                    // Add new element button
+                                    std::string addButtonText = "Add " + displayName;
+                                    if (ImGui::Button(addButtonText.c_str()))
+                                    {
+                                        newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
+                                        arrayModified = true;
+                                    }
+
+                                    if (arrayModified)
+                                    {
+                                        // Serialize new array
+                                        rapidjson::StringBuffer buffer;
+                                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                        newDoc.Accept(writer);
+                                        newValue = buffer.GetString();
+                                        fieldModified = true;
+                                    }
+                                }
+                                else
+                                {
+                                    // Generic array-like table - show as text for now
+                                    ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
+                                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                                    {
+                                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Generic table
+                                ImGui::Text("%s: [Table]", displayName.c_str());
+                                if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                                {
+                                    ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                }
+                            }
                         }
                     }
                     break;
@@ -2767,6 +3149,10 @@ void RegisterInspectorCustomRenderers()
                     }
                     break;
                 }
+            }
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering field %s", field.name.c_str());
             }
 
             // Show tooltip if available

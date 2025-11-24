@@ -84,6 +84,9 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #define PROPERTY(LuaFieldName, MemberPtr) \
                 .addProperty(LuaFieldName, MemberPtr, MemberPtr)
 
+            #define METHOD(LuaName, CppMethod) \
+                .addFunction(LuaName, CppMethod)
+
             #define END_COMPONENT() \
                 .endClass(); \
                 g_luaRegisteredComponents_global.insert(_compName); \
@@ -107,6 +110,8 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #define PROPERTY(LuaFieldName, MemberPtr) \
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
+
+            #define METHOD(...)
 
             #define END_COMPONENT() \
                 lua_settable(L, -3); \

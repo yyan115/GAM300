@@ -173,7 +173,8 @@ void ScenePanel::HandleKeyboardInput() {
     // But don't process gizmo shortcuts when right-click is held (rotating)
     bool isRightClickHeld = ImGui::IsMouseDown(ImGuiMouseButton_Right);
     
-    if (!isRightClickHeld) {
+    // Only process gizmo shortcuts when the ScenePanel window is focused
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !isRightClickHeld) {
         if (EditorInputManager::IsGizmoShortcutPressed(0)) {
             // Q key - Toggle pan mode
             if (playControlPanel->HasToolSelected() && playControlPanel->IsNormalPanMode()) {
