@@ -97,6 +97,7 @@ void EBO::Delete()
 	}
 #endif
 	if (ID != 0) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind before deleting to avoid potential issues
 		glDeleteBuffers(1, &ID);
 		ID = 0;
 		isSetup = false;
