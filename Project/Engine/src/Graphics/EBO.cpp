@@ -96,10 +96,9 @@ void EBO::Delete()
 		return; // Context not current, skip deletion
 	}
 #endif
-	if (ID != 0) {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind before deleting to avoid potential issues
+	if (ID != 0 && glIsBuffer(ID)) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glDeleteBuffers(1, &ID);
-		ID = 0;
-		isSetup = false;
+		ID = 0;  // Prevent future invalid deletions
 	}
 }
