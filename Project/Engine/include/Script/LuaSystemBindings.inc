@@ -85,6 +85,11 @@ BEGIN_SYSTEM("Input")
 
 END_SYSTEM()
 
+// ENGINE HELPERS
+BEGIN_SYSTEM("Engine")
+    FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+END_SYSTEM()
+
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================
