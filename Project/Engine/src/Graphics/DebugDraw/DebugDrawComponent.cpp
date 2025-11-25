@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Graphics\DebugDraw\DebugDrawComponent.hpp"
+#include "Graphics/DebugDraw/DebugDrawComponent.hpp"
 
 #pragma region Reflection
 REFL_REGISTER_START(DebugDrawData)

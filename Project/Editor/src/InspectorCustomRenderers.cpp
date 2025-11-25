@@ -49,6 +49,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Script/ScriptComponentData.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
+#include "Panels/TagsLayersPanel.hpp"
+#include "GUIManager.hpp"
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -113,7 +115,7 @@ bool IsValidGUID(const std::string& str) {
 }
 
 // Helper function to render asset drag-drop for a single GUID
-bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType) {
+bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType, float width = -1.0f) {
     bool modified = false;
     std::string displayText;
     
@@ -158,7 +160,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             return false;
     }
     
-    EditorComponents::DrawDragDropButton(displayText.c_str(), -1);
+    EditorComponents::DrawDragDropButton(displayText.c_str(), width);
     
     // Handle drag-drop
     if (ImGui::BeginDragDropTarget()) {
@@ -344,7 +346,11 @@ void RegisterInspectorCustomRenderers()
         }
         else if (currentTag == static_cast<int>(availableTags.size()))
         {
-        // "Add Tag..." was selected - could open Tags & Layers window here
+        // "Add Tag..." was selected - open Tags & Layers window
+        auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+        if (tagsLayersPanel) {
+            tagsLayersPanel->SetOpen(true);
+        }
         // Reset selection to current tag
         currentTag = tagComp.tagIndex;
         }
@@ -429,6 +435,24 @@ void RegisterInspectorCustomRenderers()
                 if (selectedIndex != -1)
                 {
                     layerComp.layerIndex = selectedIndex;
+                }
+                else
+                {
+                    // "Add Layer..." was selected - open Tags & Layers window
+                    auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                    if (tagsLayersPanel) {
+                        tagsLayersPanel->SetOpen(true);
+                    }
+                    // Reset selection to current layer
+                    currentSelection = -1; // or find the current
+                    for (size_t i = 0; i < layerIndices.size(); ++i)
+                    {
+                        if (layerIndices[i] == layerComp.layerIndex)
+                        {
+                            currentSelection = static_cast<int>(i);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -2253,57 +2277,56 @@ void RegisterInspectorCustomRenderers()
                                       scriptData.scriptPath.substr(scriptData.scriptPath.find_last_of("/\\") + 1);
 
             ImGui::SetNextItemWidth(-1);
-            EditorComponents::DrawDragDropButton(displayText.c_str(), ImGui::GetContentRegionAvail().x);
+            float dragDropWidth = ImGui::GetContentRegionAvail().x - 40.0f; // Leave space for reload button
+            EditorComponents::DrawDragDropButton(displayText.c_str(), dragDropWidth);
 
             // Double-click to open
             if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                // Current working directory is C:\Users\growt\Desktop\GAM300\Project\Build\EditorRelease
-                // We need to go up 2 levels to get to Project folder
-                std::filesystem::path currentPath = std::filesystem::current_path();
-                std::filesystem::path projectRoot;
+                // Cache project root to avoid repeated filesystem operations
+                static std::filesystem::path cachedProjectRoot;
+                static bool projectRootCached = false;
 
-                // Check if we're in a Build subfolder (EditorRelease, Debug, etc.)
-                if (currentPath.filename() == "EditorRelease" ||
-                    currentPath.filename() == "EditorDebug" ||
-                    currentPath.filename() == "Release" ||
-                    currentPath.filename() == "Debug") {
-                    // Go up to Build folder, then up to Project folder
-                    projectRoot = currentPath.parent_path().parent_path();
-                } else if (currentPath.filename() == "Build") {
-                    // We're in Build folder, go up one to Project
-                    projectRoot = currentPath.parent_path();
-                } else {
-                    // Try to find Project folder by looking for specific markers
-                    projectRoot = currentPath;
-                    while (projectRoot.has_parent_path()) {
+                if (!projectRootCached) {
+                    std::filesystem::path currentPath = std::filesystem::current_path();
+
+                    // Find the project root by looking for the expected project structure
+                    // This works regardless of which build subfolder we're in
+                    cachedProjectRoot = currentPath;
+                    while (cachedProjectRoot.has_parent_path()) {
                         // Check if this directory has the expected project structure
-                        if (std::filesystem::exists(projectRoot / "Build") &&
-                            std::filesystem::exists(projectRoot / "Resources") &&
-                            std::filesystem::exists(projectRoot / "Engine")) {
+                        if (std::filesystem::exists(cachedProjectRoot / "Build") &&
+                            std::filesystem::exists(cachedProjectRoot / "Resources") &&
+                            std::filesystem::exists(cachedProjectRoot / "Engine")) {
                             break;
                         }
-                        projectRoot = projectRoot.parent_path();
+                        cachedProjectRoot = cachedProjectRoot.parent_path();
                     }
+                    projectRootCached = true;
                 }
 
                 // Construct the correct path to the script file
                 std::filesystem::path scriptFullPath;
                 if (scriptData.scriptPath.find("Resources/") == 0) {
                     // Path includes Resources/ prefix
-                    scriptFullPath = projectRoot / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / scriptData.scriptPath;
                 } else if (scriptData.scriptPath.find("scripts/") == 0 || scriptData.scriptPath.find("Scripts/") == 0) {
                     // Path includes scripts/ prefix
-                    scriptFullPath = projectRoot / "Resources" / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / "Resources" / scriptData.scriptPath;
                 } else {
                     // Just the script filename
-                    scriptFullPath = projectRoot / "Resources" / "scripts" / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / "Resources" / "scripts" / scriptData.scriptPath;
                 }
 
-                // Verify the file exists, if not try to create the directory structure
+                // Ensure the parent directory exists, create if necessary
+                std::filesystem::path parentDir = scriptFullPath.parent_path();
+                if (!std::filesystem::exists(parentDir)) {
+                    std::filesystem::create_directories(parentDir);
+                }
+
+                // Check if file exists, but still proceed with opening (VS Code can create new files)
                 if (!std::filesystem::exists(scriptFullPath)) {
-                    // Create directories if they don't exist
-                    std::filesystem::create_directories(scriptFullPath.parent_path());
+                    ENGINE_PRINT("Warning: Script file does not exist, VS Code will create it: ", scriptFullPath.string().c_str());
                 }
 
                 #ifdef _WIN32
@@ -2342,6 +2365,13 @@ void RegisterInspectorCustomRenderers()
                     editorPreviewScriptPaths.erase(uniqueKey);
                 }
                 ImGui::EndDragDropTarget();
+            }
+
+            // Add reload button beside the drag-drop field
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_ROTATE_RIGHT "##ReloadScripts")) {
+                Scripting::RequestReloadNow();
+                ENGINE_PRINT("Requested script reload from inspector for script: ", scriptData.scriptPath.c_str());
             }
 
             // If no script assigned, skip field rendering
@@ -2933,15 +2963,14 @@ void RegisterInspectorCustomRenderers()
                                         ImGui::SameLine();
                                         
                                         std::string tempGuid = guidStr;
-                                        if (RenderAssetField(field.name, tempGuid, assetType))
+                                        if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                         {
                                             guidStr = tempGuid;
                                             arrayModified = true;
                                         }
 
                                         ImGui::SameLine();
-                                        std::string removeButtonId = "X##remove" + std::to_string(i);
-                                        if (ImGui::SmallButton(removeButtonId.c_str()))
+                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                         {
                                             // Skip this element (remove it)
                                             arrayModified = true;
@@ -2959,8 +2988,7 @@ void RegisterInspectorCustomRenderers()
                                 }
 
                                 // Add new element button
-                                std::string addButtonText = "Add " + displayName;
-                                if (ImGui::Button(addButtonText.c_str()))
+                                if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                 {
                                     newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                     arrayModified = true;
@@ -3041,15 +3069,14 @@ void RegisterInspectorCustomRenderers()
                                             ImGui::SameLine();
                                             
                                             std::string tempGuid = guidStr;
-                                            if (RenderAssetField(field.name, tempGuid, assetType))
+                                            if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                             {
                                                 guidStr = tempGuid;
                                                 arrayModified = true;
                                             }
 
                                             ImGui::SameLine();
-                                            std::string removeButtonId = "X##remove" + std::to_string(i);
-                                            if (ImGui::SmallButton(removeButtonId.c_str()))
+                                            if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                             {
                                                 // Skip this element (remove it)
                                                 arrayModified = true;
@@ -3067,8 +3094,7 @@ void RegisterInspectorCustomRenderers()
                                     }
 
                                     // Add new element button
-                                    std::string addButtonText = "Add " + displayName;
-                                    if (ImGui::Button(addButtonText.c_str()))
+                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                     {
                                         newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                         arrayModified = true;

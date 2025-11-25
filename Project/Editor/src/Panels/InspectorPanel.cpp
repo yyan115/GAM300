@@ -36,6 +36,7 @@
 #include <thread>
 #include <chrono>
 #include <glm/glm.hpp>
+#include <FileWatch.hpp>
 
 // Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
@@ -96,6 +97,17 @@ InspectorPanel::InspectorPanel()
 	if (!renderersRegistered) {
 		RegisterInspectorCustomRenderers();
 		renderersRegistered = true;
+	}
+
+	// Initialize file watcher for scripts
+	try {
+		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		scriptFileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(scriptsFolder, [this](const std::string& path, const filewatch::Event& event) {
+			OnScriptFileChanged(path, event);
+		});
+	}
+	catch (const std::exception& e) {
+		std::cerr << "[InspectorPanel] Failed to initialize script file watcher: " << e.what() << std::endl;
 	}
 }
 
@@ -860,11 +872,13 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 		ImGui::OpenPopup("AddComponentPopup");
 		componentSearchActive = true;
 		memset(componentSearchBuffer, 0, sizeof(componentSearchBuffer));
+		resetComponentTrees = true;
 	}
 
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, ImGui::GetContentRegionAvail().y), ImGuiCond_Appearing);
+
 	if (ImGui::BeginPopup("AddComponentPopup")) {
-		try {
-			ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 			struct ComponentEntry {
 				std::string displayName;
@@ -872,6 +886,20 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				std::string category;
 				bool isScript = false;
 				std::string scriptPath;
+			};
+
+			// Static category icons
+			static const std::unordered_map<std::string, std::string> categoryIcons = {
+				{"Rendering", ICON_FA_CUBE},
+				{"Audio", ICON_FA_HEADPHONES},
+				{"Lighting", ICON_FA_LIGHTBULB},
+				{"Camera", ICON_FA_CAMERA},
+				{"Physics", ICON_FA_CUBES},
+				{"Animation", ICON_FA_PLAY},
+				{"AI", ICON_FA_BRAIN},
+				{"Scripting", ICON_FA_CODE},
+				{"General", ICON_FA_TAG},
+				{"Scripts", ICON_FA_FILE_CODE}
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -938,19 +966,21 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				allComponents.push_back({ "Layer", "LayerComponent", "General" });
 			}
 
-			std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		// Cache scripts to avoid filesystem scanning every frame
+		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		if (cachedScripts.empty()) {
+			cachedScripts.clear();
 			if (std::filesystem::exists(scriptsFolder)) {
 				for (const auto& entry : std::filesystem::recursive_directory_iterator(scriptsFolder)) {
 					if (entry.is_regular_file() && entry.path().extension() == ".lua") {
-						std::string scriptPath = entry.path().generic_string();
-						std::string scriptName = entry.path().stem().string();
-
-						allComponents.push_back({ scriptName, "", "Scripts", true, scriptPath });
+						cachedScripts.push_back(entry.path().generic_string());
 					}
 				}
 			}
-
-			ImGui::SetNextItemWidth(-1);
+		}		for (const auto& scriptPath : cachedScripts) {
+			std::string scriptName = std::filesystem::path(scriptPath).stem().string();
+			allComponents.push_back(ComponentEntry{scriptName, "", "Scripts", true, scriptPath});
+		}			ImGui::SetNextItemWidth(-1);
 			if (componentSearchActive) {
 				ImGui::SetKeyboardFocusHere();
 				componentSearchActive = false;
@@ -958,6 +988,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			ImGui::InputTextWithHint("##ComponentSearch", "Search", componentSearchBuffer, sizeof(componentSearchBuffer));
 
 			ImGui::Separator();
+
+			ImGui::BeginChild("ComponentList", ImVec2(0, 300), true);
 
 			std::string searchStr = componentSearchBuffer;
 			std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
@@ -989,7 +1021,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				if (hasScriptResults && searchStr.length() >= 2) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
-					if (ImGui::Selectable("New script")) {
+					if (ImGui::Selectable((std::string(ICON_FA_PLUS) + " New script").c_str())) {
 						ImGui::PopStyleColor();
 						ImGui::CloseCurrentPopup();
 					}
@@ -1003,7 +1035,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				}
 				else {
 					for (const auto& comp : filteredComponents) {
-						if (ImGui::Selectable(comp.displayName.c_str())) {
+						std::string icon = categoryIcons.at(comp.category);
+						if (ImGui::Selectable((icon + " " + comp.displayName).c_str())) {
 							if (comp.isScript) {
 								if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
 									AddComponent(entity, "ScriptComponentData");
@@ -1047,56 +1080,56 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						continue;
 					}
 
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
-					ImGui::TextUnformatted(category.c_str());
-					ImGui::PopStyleColor();
-					ImGui::Spacing();
-
-					for (const auto& comp : it->second) {
-						ImGui::Indent(10.0f);
-						if (ImGui::Selectable(comp.displayName.c_str())) {
-							if (comp.isScript) {
-								if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
-									AddComponent(entity, "ScriptComponentData");
-								}
-
-								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
-
-								// Add new script to the scripts vector (Unity-like behavior)
-								ScriptData newScript{};
-								newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
-								newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
-								newScript.scriptPath = comp.scriptPath;
-								newScript.instanceCreated = false;
-								newScript.instanceId = -1;
-								scriptComp.scripts.push_back(newScript);
-
-								SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
-							} else {
-								AddComponent(entity, comp.componentType);
-							}
-
-							ImGui::CloseCurrentPopup();
-						}
-						ImGui::Unindent(10.0f);
+					if (resetComponentTrees) {
+						ImGui::SetNextItemOpen(false);
 					}
 
-					ImGui::Spacing();
+					std::string catIcon = categoryIcons.at(category);
+					if (ImGui::TreeNode((catIcon + " " + category).c_str())) {
+						for (const auto& comp : it->second) {
+							std::string compIcon = categoryIcons.at(comp.category);
+							if (ImGui::Selectable((compIcon + " " + comp.displayName).c_str())) {
+								if (comp.isScript) {
+									if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
+										AddComponent(entity, "ScriptComponentData");
+									}
+
+									auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+
+									// Add new script to the scripts vector (Unity-like behavior)
+									ScriptData newScript{};
+									newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
+									newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
+									newScript.scriptPath = comp.scriptPath;
+									newScript.instanceCreated = false;
+									newScript.instanceId = -1;
+									scriptComp.scripts.push_back(newScript);
+
+									SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
+								} else {
+									AddComponent(entity, comp.componentType);
+								}
+
+								ImGui::CloseCurrentPopup();
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+
+				if (resetComponentTrees) {
+					resetComponentTrees = false;
 				}
 			}
 
-		}
-		catch (const std::exception& e) {
-			ImGui::Text("Error: %s", e.what());
-		}
+			ImGui::EndChild();
 
 		ImGui::EndPopup();
 	}
 }
 
 void InspectorPanel::AddComponent(Entity entity, const std::string& componentType) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 		if (componentType == "ModelRenderComponent") {
 			ModelRenderComponent component; // Use default constructor
@@ -1472,12 +1505,16 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
 
-		// Take snapshot after adding component (for undo)
-		SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
+	// Take snapshot after adding component (for undo)
+	SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
+}
 
-	}
-	catch (const std::exception& e) {
-		std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
+void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatch::Event& event) {
+	// Invalidate script cache on any change
+	if (event == filewatch::Event::added || event == filewatch::Event::removed ||
+		event == filewatch::Event::renamed_old || event == filewatch::Event::renamed_new ||
+		event == filewatch::Event::modified) {
+		cachedScripts.clear();
 	}
 }
 

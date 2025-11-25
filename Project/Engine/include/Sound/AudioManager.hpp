@@ -152,10 +152,6 @@ private:
     std::unordered_map<ChannelHandle, ChannelData> ChannelMap;
     std::atomic<ChannelHandle> NextChannelHandle{ 1 };
 
-    // Channel reuse pool
-    std::vector<FMOD_CHANNEL*> ChannelPool;
-    static constexpr size_t MAX_POOL_SIZE = 32;
-
     // Pending batch updates
     std::unordered_map<ChannelHandle, ChannelUpdate> PendingUpdates;
 

@@ -148,6 +148,7 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
+Resources/Models/SideWall2.mesh
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -174,6 +175,8 @@ Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
 Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/ai_patrol.lua.meta
+Resources/Scripts/template/CharacterTest.lua
+Resources/Scripts/template/CharacterTest.lua.meta
 Resources/Scripts/template/data_chest.lua
 Resources/Scripts/template/data_chest.lua.meta
 Resources/Scripts/template/input.lua
@@ -194,6 +197,8 @@ Resources/Scripts/template/test.lua
 Resources/Scripts/template/test.lua.meta
 Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
+Resources/Scripts/test_audio.lua
+Resources/Scripts/test_audio.lua.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader
