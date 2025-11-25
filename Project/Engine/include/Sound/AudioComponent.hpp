@@ -54,7 +54,7 @@ public:
     // Unity-like API
     void ENGINE_API Play();
     void PlayDelayed(float delay);        // Unity: Play with delay
-    void PlayOneShot(std::shared_ptr<Audio> clip = nullptr); // Unity: One-shot playback
+    void ENGINE_API PlayOneShot(std::string guidStr = ""); // Unity: One-shot playback
     void PlayScheduled(double time);      // Unity: Scheduled playback (placeholder)
     void ENGINE_API Stop();
     void ENGINE_API Pause();
