@@ -108,10 +108,6 @@ add_subdirectory(Engine)
 # Always build Game (executable or static lib depending on config)
 add_subdirectory(Game)
 
-# Only build Editor for Editor configurations
-if(CMAKE_BUILD_TYPE MATCHES "Editor")
-    add_subdirectory(Editor)
-    message(STATUS "Building Editor for ${CMAKE_BUILD_TYPE}")
-else()
-    message(STATUS "Skipping Editor for ${CMAKE_BUILD_TYPE}")
-endif()
+# Always add Editor subdirectory for multi-config generators (Visual Studio)
+# The actual build config determines what gets built, not CMake configure time
+add_subdirectory(Editor)
