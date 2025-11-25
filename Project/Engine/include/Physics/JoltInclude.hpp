@@ -1,17 +1,10 @@
 #pragma once
 
-// Desktop: Must match vcpkg's Jolt build (prebuilt library)
-#ifndef __ANDROID__
-#undef JPH_OBJECT_STREAM
-#undef JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
-#undef JPH_PROFILE_ENABLED
-#define JPH_OBJECT_STREAM 0
-#define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED 0
-#define JPH_PROFILE_ENABLED 0
-#endif
+// Desktop (Linux/Windows): vcpkg's Jolt prebuilt library has defines baked in at compile time.
+// DO NOT override them here - the Jolt headers from vcpkg will use the correct values.
 
-// Android: Defines come from CMake (Engine/CMakeLists.txt) to match FetchContent build
-// DO NOT define them here for Android or there will be errors
+// Android: Uses FetchContent to build Jolt from source.
+// Defines come from CMake (Engine/CMakeLists.txt + ImportDependencies.cmake) to match our build.
 
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>

@@ -36,6 +36,7 @@
 #include <thread>
 #include <chrono>
 #include <glm/glm.hpp>
+#include <FileWatch.hpp>
 
 // Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
@@ -96,6 +97,17 @@ InspectorPanel::InspectorPanel()
 	if (!renderersRegistered) {
 		RegisterInspectorCustomRenderers();
 		renderersRegistered = true;
+	}
+
+	// Initialize file watcher for scripts
+	try {
+		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		scriptFileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(scriptsFolder, [this](const std::string& path, const filewatch::Event& event) {
+			OnScriptFileChanged(path, event);
+		});
+	}
+	catch (const std::exception& e) {
+		std::cerr << "[InspectorPanel] Failed to initialize script file watcher: " << e.what() << std::endl;
 	}
 }
 
@@ -449,6 +461,7 @@ void InspectorPanel::OnImGuiRender() {
 
 	// Process any pending component removals after ImGui rendering is complete
 	ProcessPendingComponentRemovals();
+	ProcessPendingComponentResets();
 
 	ImGui::End();
 
@@ -860,11 +873,13 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 		ImGui::OpenPopup("AddComponentPopup");
 		componentSearchActive = true;
 		memset(componentSearchBuffer, 0, sizeof(componentSearchBuffer));
+		resetComponentTrees = true;
 	}
 
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, ImGui::GetContentRegionAvail().y), ImGuiCond_Appearing);
+
 	if (ImGui::BeginPopup("AddComponentPopup")) {
-		try {
-			ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 			struct ComponentEntry {
 				std::string displayName;
@@ -872,6 +887,20 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				std::string category;
 				bool isScript = false;
 				std::string scriptPath;
+			};
+
+			// Static category icons
+			static const std::unordered_map<std::string, std::string> categoryIcons = {
+				{"Rendering", ICON_FA_CUBE},
+				{"Audio", ICON_FA_HEADPHONES},
+				{"Lighting", ICON_FA_LIGHTBULB},
+				{"Camera", ICON_FA_CAMERA},
+				{"Physics", ICON_FA_CUBES},
+				{"Animation", ICON_FA_PLAY},
+				{"AI", ICON_FA_BRAIN},
+				{"Scripting", ICON_FA_CODE},
+				{"General", ICON_FA_TAG},
+				{"Scripts", ICON_FA_FILE_CODE}
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -938,19 +967,21 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				allComponents.push_back({ "Layer", "LayerComponent", "General" });
 			}
 
-			std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		// Cache scripts to avoid filesystem scanning every frame
+		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		if (cachedScripts.empty()) {
+			cachedScripts.clear();
 			if (std::filesystem::exists(scriptsFolder)) {
 				for (const auto& entry : std::filesystem::recursive_directory_iterator(scriptsFolder)) {
 					if (entry.is_regular_file() && entry.path().extension() == ".lua") {
-						std::string scriptPath = entry.path().generic_string();
-						std::string scriptName = entry.path().stem().string();
-
-						allComponents.push_back({ scriptName, "", "Scripts", true, scriptPath });
+						cachedScripts.push_back(entry.path().generic_string());
 					}
 				}
 			}
-
-			ImGui::SetNextItemWidth(-1);
+		}		for (const auto& scriptPath : cachedScripts) {
+			std::string scriptName = std::filesystem::path(scriptPath).stem().string();
+			allComponents.push_back(ComponentEntry{scriptName, "", "Scripts", true, scriptPath});
+		}			ImGui::SetNextItemWidth(-1);
 			if (componentSearchActive) {
 				ImGui::SetKeyboardFocusHere();
 				componentSearchActive = false;
@@ -958,6 +989,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			ImGui::InputTextWithHint("##ComponentSearch", "Search", componentSearchBuffer, sizeof(componentSearchBuffer));
 
 			ImGui::Separator();
+
+			ImGui::BeginChild("ComponentList", ImVec2(0, 300), true);
 
 			std::string searchStr = componentSearchBuffer;
 			std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
@@ -989,7 +1022,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				if (hasScriptResults && searchStr.length() >= 2) {
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
-					if (ImGui::Selectable("New script")) {
+					if (ImGui::Selectable((std::string(ICON_FA_PLUS) + " New script").c_str())) {
 						ImGui::PopStyleColor();
 						ImGui::CloseCurrentPopup();
 					}
@@ -1003,7 +1036,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				}
 				else {
 					for (const auto& comp : filteredComponents) {
-						if (ImGui::Selectable(comp.displayName.c_str())) {
+						std::string icon = categoryIcons.at(comp.category);
+						if (ImGui::Selectable((icon + " " + comp.displayName).c_str())) {
 							if (comp.isScript) {
 								if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
 									AddComponent(entity, "ScriptComponentData");
@@ -1047,56 +1081,56 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 						continue;
 					}
 
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
-					ImGui::TextUnformatted(category.c_str());
-					ImGui::PopStyleColor();
-					ImGui::Spacing();
-
-					for (const auto& comp : it->second) {
-						ImGui::Indent(10.0f);
-						if (ImGui::Selectable(comp.displayName.c_str())) {
-							if (comp.isScript) {
-								if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
-									AddComponent(entity, "ScriptComponentData");
-								}
-
-								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
-
-								// Add new script to the scripts vector (Unity-like behavior)
-								ScriptData newScript{};
-								newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
-								newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
-								newScript.scriptPath = comp.scriptPath;
-								newScript.instanceCreated = false;
-								newScript.instanceId = -1;
-								scriptComp.scripts.push_back(newScript);
-
-								SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
-							} else {
-								AddComponent(entity, comp.componentType);
-							}
-
-							ImGui::CloseCurrentPopup();
-						}
-						ImGui::Unindent(10.0f);
+					if (resetComponentTrees) {
+						ImGui::SetNextItemOpen(false);
 					}
 
-					ImGui::Spacing();
+					std::string catIcon = categoryIcons.at(category);
+					if (ImGui::TreeNode((catIcon + " " + category).c_str())) {
+						for (const auto& comp : it->second) {
+							std::string compIcon = categoryIcons.at(comp.category);
+							if (ImGui::Selectable((compIcon + " " + comp.displayName).c_str())) {
+								if (comp.isScript) {
+									if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
+										AddComponent(entity, "ScriptComponentData");
+									}
+
+									auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+
+									// Add new script to the scripts vector (Unity-like behavior)
+									ScriptData newScript{};
+									newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
+									newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
+									newScript.scriptPath = comp.scriptPath;
+									newScript.instanceCreated = false;
+									newScript.instanceId = -1;
+									scriptComp.scripts.push_back(newScript);
+
+									SnapshotManager::GetInstance().TakeSnapshot("Add Script: " + comp.displayName);
+								} else {
+									AddComponent(entity, comp.componentType);
+								}
+
+								ImGui::CloseCurrentPopup();
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+
+				if (resetComponentTrees) {
+					resetComponentTrees = false;
 				}
 			}
 
-		}
-		catch (const std::exception& e) {
-			ImGui::Text("Error: %s", e.what());
-		}
+			ImGui::EndChild();
 
 		ImGui::EndPopup();
 	}
 }
 
 void InspectorPanel::AddComponent(Entity entity, const std::string& componentType) {
-	try {
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 		if (componentType == "ModelRenderComponent") {
 			ModelRenderComponent component; // Use default constructor
@@ -1472,12 +1506,16 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
 
-		// Take snapshot after adding component (for undo)
-		SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
+	// Take snapshot after adding component (for undo)
+	SnapshotManager::GetInstance().TakeSnapshot("Add Component: " + componentType);
+}
 
-	}
-	catch (const std::exception& e) {
-		std::cerr << "[Inspector] Failed to add component " << componentType << " to entity " << entity << ": " << e.what() << std::endl;
+void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatch::Event& event) {
+	// Invalidate script cache on any change
+	if (event == filewatch::Event::added || event == filewatch::Event::removed ||
+		event == filewatch::Event::renamed_old || event == filewatch::Event::renamed_new ||
+		event == filewatch::Event::modified) {
+		cachedScripts.clear();
 	}
 }
 
@@ -1611,9 +1649,10 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({ entity, componentType });
 		}
-		//if (ImGui::MenuItem("Reset")) {
-		//	// TODO: Implement reset functionality
-		//}
+		if (ImGui::MenuItem("Reset Component")) {
+			// Queue the component reset for processing after ImGui rendering is complete
+			pendingComponentResets.push_back({ entity, componentType });
+		}
 		//if (ImGui::MenuItem("Copy Component")) {
 		//	// TODO: Implement copy functionality
 		//}
@@ -1721,6 +1760,94 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 
 	// Clear the queue after processing
 	pendingComponentRemovals.clear();
+}
+
+void InspectorPanel::ProcessPendingComponentResets() {
+	for (const auto& request : pendingComponentResets) {
+		try {
+			ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+			// Reset the component based on type by assigning default-constructed value
+			if (request.componentType == "DirectionalLightComponent") {
+				ecsManager.GetComponent<DirectionalLightComponent>(request.entity) = DirectionalLightComponent{};
+				std::cout << "[Inspector] Reset DirectionalLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "PointLightComponent") {
+				ecsManager.GetComponent<PointLightComponent>(request.entity) = PointLightComponent{};
+				std::cout << "[Inspector] Reset PointLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SpotLightComponent") {
+				ecsManager.GetComponent<SpotLightComponent>(request.entity) = SpotLightComponent{};
+				std::cout << "[Inspector] Reset SpotLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ModelRenderComponent") {
+				ecsManager.GetComponent<ModelRenderComponent>(request.entity) = ModelRenderComponent{};
+				std::cout << "[Inspector] Reset ModelRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SpriteRenderComponent") {
+				ecsManager.GetComponent<SpriteRenderComponent>(request.entity) = SpriteRenderComponent{};
+				std::cout << "[Inspector] Reset SpriteRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "TextRenderComponent") {
+				ecsManager.GetComponent<TextRenderComponent>(request.entity) = TextRenderComponent{};
+				std::cout << "[Inspector] Reset TextRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ParticleComponent") {
+				ecsManager.GetComponent<ParticleComponent>(request.entity) = ParticleComponent{};
+				std::cout << "[Inspector] Reset ParticleComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioComponent") {
+				ecsManager.GetComponent<AudioComponent>(request.entity) = AudioComponent{};
+				std::cout << "[Inspector] Reset AudioComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioListenerComponent") {
+				ecsManager.GetComponent<AudioListenerComponent>(request.entity) = AudioListenerComponent{};
+				std::cout << "[Inspector] Reset AudioListenerComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioReverbZoneComponent") {
+				ecsManager.GetComponent<AudioReverbZoneComponent>(request.entity) = AudioReverbZoneComponent{};
+				std::cout << "[Inspector] Reset AudioReverbZoneComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ColliderComponent") {
+				ecsManager.GetComponent<ColliderComponent>(request.entity) = ColliderComponent{};
+				std::cout << "[Inspector] Reset ColliderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "RigidBodyComponent") {
+				ecsManager.GetComponent<RigidBodyComponent>(request.entity) = RigidBodyComponent{};
+				std::cout << "[Inspector] Reset RigidBodyComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CharacterControllerComponent") {
+				ecsManager.GetComponent<CharacterControllerComponent>(request.entity) = CharacterControllerComponent{};
+				std::cout << "[Inspector] Reset CharacterControllerComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CameraComponent") {
+				ecsManager.GetComponent<CameraComponent>(request.entity) = CameraComponent{};
+				std::cout << "[Inspector] Reset CameraComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "BrainComponent") {
+				ecsManager.GetComponent<BrainComponent>(request.entity) = BrainComponent{};
+				std::cout << "[Inspector] Reset BrainComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ScriptComponentData") {
+				ecsManager.GetComponent<ScriptComponentData>(request.entity) = ScriptComponentData{};
+				std::cout << "[Inspector] Reset ScriptComponentData on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "Transform") {
+				// Reset transform to default values
+				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
+				std::cout << "[Inspector] Reset Transform on entity " << request.entity << std::endl;
+			}
+			else {
+				std::cerr << "[Inspector] Unknown component type for reset: " << request.componentType << std::endl;
+			}
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[Inspector] Failed to reset component " << request.componentType << " on entity " << request.entity << ": " << e.what() << std::endl;
+		}
+	}
+
+	// Clear the queue after processing
+	pendingComponentResets.clear();
 }
 
 void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath) {

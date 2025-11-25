@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <functional>
+#include <memory>
 
 extern "C" { struct lua_State; }
 
@@ -42,6 +43,8 @@ namespace Scripting {
 
         // Reload a module: flush, then call require(name). Returns true on success.
         bool ReloadModule(lua_State* L, const std::string& modulename);
+
+        void ClearSearchPaths();
     private:
 #ifdef ANDROID
         friend int AndroidAssetSearcher_CFunc(lua_State* L);

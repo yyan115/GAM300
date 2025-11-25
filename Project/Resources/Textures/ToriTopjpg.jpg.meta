@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c2665e871f0-00036031ea000051",
+        "source": "../../Resources/Textures/ToriTopjpg.jpg",
+        "compiled": "../../Resources/Textures/ToriTopjpg.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

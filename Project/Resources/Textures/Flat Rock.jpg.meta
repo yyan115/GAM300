@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006762e0b89c7c1b-000361a606000005",
+        "source": "../../Resources/Textures/Flat Rock.jpg",
+        "compiled": "../../Resources/Textures/Flat Rock.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

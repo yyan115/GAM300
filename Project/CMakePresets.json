@@ -1,92 +1,70 @@
 {
     "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
     "configurePresets": [
         {
+            "name": "base",
+            "hidden": true,
+            "description": "Base configuration with vcpkg integration",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "VCPKG_TARGET_TRIPLET": "x64-windows"
+            }
+        },
+        {
+            "name": "ninja-base",
+            "hidden": true,
+            "inherits": "base",
+            "description": "Ninja generator for fast parallel builds (recommended for all platforms)",
+            "generator": "Ninja"
+        },
+        {
             "name": "debug",
-            "displayName": "Debug (Game Only)",
-            "description": "Build game executable in debug mode",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/Build/debug",
+            "displayName": "Build Game (Debug)",
+            "description": "Game executable - Debug build",
+            "inherits": "ninja-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/Debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "OUTPUT_DIR": "${sourceDir}/Build/Debug"
             }
         },
         {
             "name": "release",
-            "displayName": "Release (Game Only)",
-            "description": "Build game executable in release mode",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/Build/release",
+            "displayName": "Build Game (Release)",
+            "description": "Game executable - Release build",
+            "inherits": "ninja-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/Release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "OUTPUT_DIR": "${sourceDir}/Build/Release"
             }
         },
         {
             "name": "editor-debug",
-            "displayName": "Editor Debug",
-            "description": "Build editor executable in debug mode",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/Build/editor-debug",
+            "displayName": "Build Editor (Debug)",
+            "description": "Editor executable - Debug build",
+            "inherits": "ninja-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/EditorDebug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "EditorDebug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                "OUTPUT_DIR": "${sourceDir}/Build/EditorDebug"
             }
         },
         {
             "name": "editor-release",
-            "displayName": "Editor Release",
-            "description": "Build editor executable in release mode",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/Build/editor-release",
+            "displayName": "Build Editor (Release)",
+            "description": "Editor executable - Release build",
+            "inherits": "ninja-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/EditorRelease",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "EditorRelease",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            }
-        },
-        {
-            "name": "android-debug",
-            "displayName": "Android Debug", 
-            "description": "Build for Android devices in debug mode (pure CMake)",
-            "binaryDir": "${sourceDir}/Build/android-debug",
-            "environment": {
-                "ANDROID_NDK": "$env{ANDROID_NDK_HOME}"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_SYSTEM_NAME": "Android",
-                "CMAKE_SYSTEM_VERSION": "33",
-                "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
-                "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
-                "CMAKE_ANDROID_STL_TYPE": "c++_shared",
-                "ANDROID_PLATFORM": "android-33",
-                "ANDROID_ABI": "arm64-v8a"
-            }
-        },
-        {
-            "name": "android-release",
-            "displayName": "Android Release",
-            "description": "Build for Android devices in release mode (pure CMake)", 
-            "binaryDir": "${sourceDir}/Build/android-release",
-            "environment": {
-                "ANDROID_NDK": "$env{ANDROID_NDK_HOME}"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_SYSTEM_NAME": "Android",
-                "CMAKE_SYSTEM_VERSION": "33",
-                "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
-                "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
-                "CMAKE_ANDROID_STL_TYPE": "c++_shared",
-                "ANDROID_PLATFORM": "android-33",
-                "ANDROID_ABI": "arm64-v8a"
+                "OUTPUT_DIR": "${sourceDir}/Build/EditorRelease"
             }
         }
     ],
@@ -94,32 +72,22 @@
         {
             "name": "debug",
             "configurePreset": "debug",
-            "displayName": "Build Debug"
+            "displayName": "Build Game (Debug)",
         },
         {
-            "name": "release", 
+            "name": "release",
             "configurePreset": "release",
-            "displayName": "Build Release"
+            "displayName": "Build Game (Release)",
         },
         {
             "name": "editor-debug",
-            "configurePreset": "editor-debug", 
-            "displayName": "Build Editor Debug"
+            "configurePreset": "editor-debug",
+            "displayName": "Build Editor (Debug)",
         },
         {
             "name": "editor-release",
             "configurePreset": "editor-release",
-            "displayName": "Build Editor Release"
-        },
-        {
-            "name": "android-debug",
-            "configurePreset": "android-debug",
-            "displayName": "Build Android Debug"
-        },
-        {
-            "name": "android-release", 
-            "configurePreset": "android-release",
-            "displayName": "Build Android Release"
+            "displayName": "Build Editor (Release)",
         }
     ]
 }

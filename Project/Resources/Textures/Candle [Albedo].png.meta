@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002f74137d17d142-000361c9ce00001f",
+        "source": "../../Resources/Textures/Candle [Albedo].png",
+        "compiled": "../../Resources/Textures/Candle [Albedo].dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

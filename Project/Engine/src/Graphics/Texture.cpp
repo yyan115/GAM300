@@ -9,6 +9,7 @@
 
 #include "Graphics/Texture.h"
 
+// STB Image implementation - header-only library needs implementation defined once
 #define STB_IMAGE_IMPLEMENTATION
 #include "Graphics/stb_image.h"
 
