@@ -87,7 +87,8 @@ target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
 # Define EDITOR for Editor builds (EditorDebug, EditorRelease)
 # Uses generator expression for multi-config generators (Visual Studio)
-target_compile_definitions(Engine PRIVATE
+# PUBLIC because header templates need this define when compiled by consuming targets
+target_compile_definitions(Engine PUBLIC
     $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
 )
 
