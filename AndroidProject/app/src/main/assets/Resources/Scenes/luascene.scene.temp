@@ -248,45 +248,69 @@
                             "entryFunction": "Start",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "center": {
-                                    "y": 0.0,
-                                    "x": 0.0,
-                                    "z": 0.0
-                                },
+                                "Subscribe": null,
+                                "phiSpeed": 0.0,
+                                "centerX": 0.0,
+                                "_transform_fetched": false,
+                                "Unsubscribe": null,
+                                "After": null,
+                                "AwakeSafe": null,
+                                "SetPosition": null,
+                                "initialPhi": 1.0,
+                                "StartSafe": null,
                                 "__field_list": {
-                                    "centerY": 0.0,
-                                    "centerZ": 0.0,
                                     "centerOnStart": true,
+                                    "phiEpsilon": 0.01,
                                     "phiSpeed": 0.0,
                                     "centerX": 0.0,
-                                    "initialTheta": 0.0,
-                                    "phiEpsilon": 0.01,
-                                    "radius": 2.0,
+                                    "centerZ": 0.0,
                                     "thetaSpeed": 1.0,
+                                    "radius": 2.0,
+                                    "initialTheta": 0.0,
+                                    "centerY": 0.0,
                                     "initialPhi": 1.0
                                 },
-                                "phiEpsilon": 0.01,
-                                "thetaSpeed": 1.0,
-                                "phi": 1.0,
-                                "centerY": 0.0,
-                                "centerZ": 0.0,
-                                "centerOnStart": true,
-                                "phiSpeed": 0.0,
                                 "_subscriptions": {},
-                                "initialTheta": 0.0,
-                                "_private": {},
                                 "__created_at": 1763454384.0,
-                                "_transform_fetched": false,
-                                "theta": 0.0,
                                 "__meta": {},
-                                "radius": 5.0,
-                                "centerX": 0.0,
+                                "radius": 2.0,
+                                "SetRotation": null,
+                                "phiEpsilon": 0.01,
                                 "_prevPos": {
                                     "y": 1.0806046117362795,
-                                    "x": 1.682941969615793,
-                                    "z": 0.0
+                                    "z": 0.0,
+                                    "x": 1.682941969615793
                                 },
-                                "initialPhi": 1.0
+                                "phi": 1.0,
+                                "theta": 0.0,
+                                "GetRotation": null,
+                                "Start": null,
+                                "Update": null,
+                                "_private": {},
+                                "Destroy": null,
+                                "center": {
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "x": 0.0
+                                },
+                                "DeserializeFields": null,
+                                "DebugTransform": null,
+                                "centerOnStart": true,
+                                "GetPosition": null,
+                                "Move": null,
+                                "_safeGetPosition": null,
+                                "DisableSafe": null,
+                                "SetScale": null,
+                                "centerZ": 0.0,
+                                "UpdateSafe": null,
+                                "_call_lifecycle": null,
+                                "SerializeFields": null,
+                                "Every": null,
+                                "GetTransform": null,
+                                "initialTheta": 0.0,
+                                "GetScale": null,
+                                "centerY": 0.0,
+                                "thetaSpeed": 1.0
                             }
                         }
                     ]
@@ -4739,10 +4763,10 @@
         },
         {
             "id": 19,
-            "guid": "0058ef7b413df82e-0003573de8000001",
+            "guid": "00293d999313f8c4-00035bd664000001",
             "components": {
                 "NameComponent": {
-                    "name": "Entity_19"
+                    "name": "audiotest"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -4883,69 +4907,45 @@
                         }
                     ]
                 },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
+                "AudioComponent": {
+                    "type": "AudioComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
                         },
-                        "000b223361a69ae4-0003529da2000001",
-                        "00374a216e66dbbc-000331fc80000069",
+                        "0060f4448365372c-000337e62e000001",
                         {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
+                            "type": "bool",
+                            "data": false
                         },
                         {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "float",
                             "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
                         },
                         {
                             "type": "float",
@@ -4953,32 +4953,23 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
+                            "type": "float",
                             "data": 0
                         },
                         {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
                         }
                     ]
                 },
@@ -4988,6 +4979,36 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "002dcbfdcd8ac9ce-00035a92b2000001",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "enemyHurtSFXClips": [
+                                    "00374a211e39d67f-000331fc3a00000b",
+                                    "00374a216cc07ebd-000331fc3a000011"
+                                ],
+                                "_private": {},
+                                "__meta": {},
+                                "__created_at": 1763864757.0,
+                                "__field_list": {
+                                    "playOnStart": true,
+                                    "testClip": "",
+                                    "enemyHurtSFXClips": {},
+                                    "volume": 1.0
+                                },
+                                "playOnStart": false,
+                                "testClip": "",
+                                "volume": 0.3,
+                                "_subscriptions": {}
+                            }
                         }
                     ]
                 }
