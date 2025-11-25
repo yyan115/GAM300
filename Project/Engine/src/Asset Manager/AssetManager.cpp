@@ -96,7 +96,7 @@ int AssetManager::GetAssetMetaMapSize() {
 	return static_cast<int>(assetMetaMap.size());
 }
 
-void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
+std::shared_ptr<AssetMeta> AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
@@ -115,15 +115,16 @@ void AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
 		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
 	}
 
-#ifndef ANDROID
-	// Check if the compiled resource file exists. If not, we need to recompile the asset.
-	if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
-		std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
-		CompileAsset(assetPath);
-	}
-#endif
+//#ifndef ANDROID
+//	// Check if the compiled resource file exists. If not, we need to recompile the asset.
+//	if (!std::filesystem::exists(assetMeta->compiledFilePath)) {
+//		std::cout << "[AssetManager] WARNING: Compiled resource file missing for asset: " << assetPath << ". Recompiling..." << std::endl;
+//		CompileAsset(assetPath);
+//	}
+//#endif
 
 	assetMetaMap[assetMeta->guid] = assetMeta;
+	return assetMeta;
 }
 
 bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompile, bool forAndroid) {

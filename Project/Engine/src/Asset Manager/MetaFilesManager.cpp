@@ -161,7 +161,15 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
 #ifdef EDITOR
 		ENGINE_PRINT("[MetaFilesManager] Editor recompiling ", assetPath, "...", "\n");
-		AssetManager::GetInstance().CompileAsset(assetPath);
+		if (MetaFileExists(assetPath)) {
+			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+				assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+			}
+			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+			AddGUID128Mapping(assetPath, guid128);
+			auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+			AssetManager::GetInstance().CompileAsset(assetMeta, true);
+		}
 //#if !defined(EDITOR) && !defined(ANDROID) 
 //			if (!MetaFileExists(assetPath)) {
 //				ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
