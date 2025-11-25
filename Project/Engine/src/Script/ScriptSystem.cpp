@@ -12,6 +12,7 @@
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
+#include "Transform/TransformComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include <fstream>
 #include <sstream>
@@ -27,6 +28,7 @@ ScriptSystem::~ScriptSystem() = default;
 static std::unordered_map<std::string, std::function<void(lua_State*, void*)>> g_componentPushers;
 static std::set<std::string> g_luaRegisteredComponents_global;
 static bool g_luaBindingsDone = false;
+static ECSManager* g_ecsManager = nullptr;
 
 // Template to register component getters into the existing ComponentRegistry.
 // This is idempotent per component type.
@@ -57,9 +59,41 @@ static void RegisterCompPusher(const char* compName) {
     s_registered[compName] = true;
 }
 
+static Transform* Lua_FindTransformByName(const std::string& name)
+{
+    if (!g_ecsManager) return nullptr;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            // Found the entity with matching name, now ensure it has a Transform
+            if (ecs.HasComponent<Transform>(e))
+            {
+                return &ecs.GetComponent<Transform>(e);
+            }
+
+            // Name matched but no Transform; stop searching if names are unique
+            break;
+        }
+    }
+
+    return nullptr;
+}
+
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
     m_ecs = &ecsManager;
+	g_ecsManager = &ecsManager;
+
     Scripting::Init();
 
     //PHYSICSSYSTEM REFERENCE (TEMPORARY?)
@@ -310,6 +344,8 @@ void ScriptSystem::Update()
 void ScriptSystem::Shutdown()
 {
     std::lock_guard<std::mutex> lk(m_mutex);
+
+	g_ecsManager = nullptr;
 
     // best-effort: call OnDisable and release runtime objects
     for (auto& p : m_runtimeMap) {
