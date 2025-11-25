@@ -1,6 +1,12 @@
 // hotload.cpp
 #include "Scripting.h"
 
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
+
 #include <iostream>
 #include <string>
 #include <thread>

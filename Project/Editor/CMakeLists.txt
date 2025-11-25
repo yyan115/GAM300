@@ -68,16 +68,21 @@ target_include_directories(Editor
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui
         ${CMAKE_SOURCE_DIR}/Libraries/ImGui/backends
         ${CMAKE_SOURCE_DIR}/Libraries/FileWatch
+        ${CMAKE_SOURCE_DIR}/Libraries/IconFontCppHeaders
         # FMOD headers needed by Engine dependencies
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/inc
 )
 
-# Link to Engine (shared lib), Game (static lib), and Scripting
+# Find GLFW for ImGui backend
+find_package(glfw3 CONFIG REQUIRED)
+
+# Link to Engine (shared lib) and Game (static lib)
+# Note: Scripting is compiled into Engine, not a separate library
 target_link_libraries(Editor
     PRIVATE
-        Engine     # shared library
+        Engine     # shared library (includes Scripting)
         Game       # static library
-        Scripting  # scripting library for Lua integration
+        glfw       # for ImGui GLFW backend
 )
 
 # --- Link Lua to Editor (works for local add_subdirectory or vcpkg config package) ---
@@ -105,21 +110,24 @@ add_custom_command(TARGET Editor POST_BUILD
 )
 
 # Platform-specific: Copy required libraries for Editor
+# With x64-windows triplet, vcpkg libs are DLLs and need to be copied
 if(WIN32)
+    # Copy FMOD
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/assimp/bin/x64/assimp-vc143-mt.dll
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
+    # Copy all vcpkg DLLs (debug or release based on config)
     add_custom_command(TARGET Editor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/fmod.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:EditorDebug>>,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin>"
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/lib/x64/libfmod.so.14.9
+        ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/libfmod.so.14.9
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

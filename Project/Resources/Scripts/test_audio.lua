@@ -20,7 +20,7 @@ return Component {
     -- Called when the script starts (after Awake)
     Start = function(self)
         -- Get the AudioComponent attached to this entity
-        self.audio = self:getComponent("AudioComponent")
+        self.audio = self:GetComponent("AudioComponent")
         
         if self.audio then
             self.audio.enabled = true
@@ -41,14 +41,20 @@ return Component {
         else
             print("Warning: No AudioComponent found on entity")
         end
+
+        -- Initialize timer for sound playback
+        self.soundTimer = 0
     end,
 
     -- Called every frame
     Update = function(self, dt)
-        -- Example: Press space to play a random hurt sound
-        if self.audio and #self.enemyHurtSFXClips > 0 then
-            -- Note: This is just an example - in a real game you'd check input
-            -- For testing, you can call PlayRandomHurtSound() from another script
+        -- Update timer
+        self.soundTimer = self.soundTimer + dt
+        
+        -- Play a random hurt sound every 2 seconds for testing
+        if self.audio and #self.enemyHurtSFXClips > 0 and self.soundTimer >= 2.0 then
+            self:PlayRandomHurtSound()
+            self.soundTimer = 0  -- Reset timer
         end
     end,
 
@@ -56,14 +62,8 @@ return Component {
     PlayRandomHurtSound = function(self)
         if self.audio and #self.enemyHurtSFXClips > 0 then
             local index = math.random(1, #self.enemyHurtSFXClips)
-            local clipGuid = self.enemyHurtSFXClips[index]
-            
-            if clipGuid ~= "" then
-                self.audio:setClip(clipGuid)
-                self.audio:setVolume(self.volume)
-                self.audio:play()
-                print("Playing random hurt sound: " .. tostring(index))
-            end
+            self.audio:playOneShot(self.enemyHurtSFXClips[index])
+            print("Playing random hurt sound: " .. tostring(index) .. " (every 2 seconds)")
         else
             print("No audio component or no hurt clips available")
         end
