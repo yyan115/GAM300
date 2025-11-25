@@ -3,9 +3,7 @@
 #include "Physics/Kinematics/CharacterController.hpp"
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
-#include "Physics/Kinematics/CharacterController.hpp"
 #include "Physics/ColliderComponent.hpp"
-#include "Physics/Kinematics/CharacterControllerComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Math/Vector3D.hpp"
 
@@ -13,8 +11,9 @@
 
 //Separate initialise with ctor -> cannot guaranteed exist before that e.g components like rigidbody + collider
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
-    : mPhysicsSystem(physicsSystem)
-    , mCharacter(nullptr)
+    : mPhysicsSystem(physicsSystem),
+      mCharacter(nullptr),
+      mVelocity(JPH::Vec3::sZero())
 {}
 
 
@@ -78,49 +77,41 @@ void CharacterController::Jump(float height)
     }
 }
 
-void CharacterController::Update(float deltaTime)
-{
+void CharacterController::Update(float deltaTime) {
     if (!mCharacter || !mPhysicsSystem)
         return;
 
-    // Apply gravity
     JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
 
-    // Only apply gravity if not on ground or moving upward
-    if (mCharacter->GetGroundState() != JPH::CharacterVirtual::EGroundState::OnGround ||
-        mVelocity.GetY() > 0.0f)
-    {
-        mVelocity += gravity * deltaTime;  
-    }
-    else
-    {
-        // On ground, cancel out vertical velocity
-        mVelocity.SetY(0.0f);
-    }
+    // Set velocity BEFORE update 
+    mCharacter->SetLinearVelocity(mVelocity);
 
-    // Create extended update settings
+
+
+    // Extended update settings
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
-    updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.5f, 0); // Step down distance
-    updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0); // Max step up height
+    updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.5f, 0);
+    updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0);
 
-    // Temp allocator for collision checks
     JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
 
-    // Update character position
+    // ExtendedUpdate handles:
+    // - Applying gravity
+    // - Ground detection
+    // - Collision resolution
+    // - Velocity updates
     mCharacter->ExtendedUpdate(
         deltaTime,
-        gravity,
+        gravity,  // Jolt applies this internally
         updateSettings,
-        //Change "0" later on.. currently placeholder
         mPhysicsSystem->GetDefaultBroadPhaseLayerFilter(0),
         mPhysicsSystem->GetDefaultLayerFilter(0),
         {},
         {},
         temp_allocator
     );
-    // Apply velocity
-    mCharacter->SetLinearVelocity(mVelocity);
 }
+
 
 Vector3D CharacterController::GetPosition() const
 {
@@ -132,16 +123,16 @@ Vector3D CharacterController::GetPosition() const
     return { 0,0,0 };
 }
 
-void CharacterController::SetVelocity(const JPH::Vec3& velocity)
+void CharacterController::SetVelocity(const Vector3D vel)
 {
-    mVelocity = velocity;
+    JPH::Vec3 velocity = ToJoltVec3(vel);
     if (mCharacter)
     {
         mCharacter->SetLinearVelocity(velocity);
     }
 }
 
-JPH::Vec3 CharacterController::GetVelocity() const
+Vector3D CharacterController::GetVelocity() const
 {
-    return mVelocity;
+    return FromJoltVec3(mVelocity);
 }

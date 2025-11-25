@@ -84,13 +84,12 @@ namespace CharacterControllerWrappers {
         return controller->GetPosition();
     }
 
-    inline void SetVelocity(CharacterController* controller, const JPH::Vec3& vel) {
-        if (controller)
-            controller->SetVelocity(vel);
+    inline void SetVelocity(CharacterController* controller, Vector3D& vel) {
+        return controller->SetVelocity(vel);
     }
 
-    inline JPH::Vec3 GetVelocity(CharacterController* controller) {
-        return controller ? controller->GetVelocity() : JPH::Vec3::sZero();
+    inline Vector3D GetVelocity(CharacterController* controller) {
+        return controller->GetVelocity();
     }
 
     inline void Destroy(CharacterController* controller)

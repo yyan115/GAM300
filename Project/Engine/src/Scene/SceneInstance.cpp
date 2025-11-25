@@ -14,7 +14,6 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -93,8 +92,6 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
-	ecsManager.characterControllerSystem->Initialise(ecsManager, ecsManager.physicsSystem.get());
-
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
@@ -129,7 +126,6 @@ void SceneInstance::Update(double dt)
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	// mainECS.physicsSystem->physicsSyncBack(mainECS);
-	mainECS.characterControllerSystem->Update((float)dt,mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
@@ -272,7 +268,6 @@ void SceneInstance::Exit()
 	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown(ECSRegistry::GetInstance().GetECSManager(scenePath));
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();

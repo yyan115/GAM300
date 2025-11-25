@@ -27,17 +27,6 @@ return Component {
         local collider = self:GetComponent("ColliderComponent")
         local transform = self:GetComponent("Transform")
 
-        -- if not collider then
-        --     print("Collider is not getting")
-        -- else
-        --     print("Collider is getting")
-        -- end
-
-        -- if not transform then
-        --     print("transform is not getting")
-        -- else
-        --     print("transform is getting")
-        -- end
         -- Initialise CharacterController
         CharacterController.Initialise(self.controller, collider, transform)
     end,  
@@ -45,18 +34,15 @@ return Component {
     Update = function(self, dt)
         if not self.controller then return end
         
-        CharacterController.Move(self.controller, 0, 0, 1)
+        CharacterController.Move(self.controller, 0, -1, 0)
+        --update the internal jolt
         CharacterController.Update(self.controller, dt)
 
+        --get Position from Jolt and pass it to ECS
         local position = CharacterController.GetPosition(self.controller)
-        if not position then
-            print("position is screwed")
-        else
-            self:SetPosition(position.x, position.y, position.z)
-        end
+        self:SetPosition(position.x, position.y, position.z)
     end,
 
-    -- Try ALL possible cleanup methods
     OnDisable = function(self)
         print("[LUA] OnDisable called - cleaning up controller")
         if self.controller then
