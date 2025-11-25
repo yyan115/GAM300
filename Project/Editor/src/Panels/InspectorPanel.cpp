@@ -461,6 +461,7 @@ void InspectorPanel::OnImGuiRender() {
 
 	// Process any pending component removals after ImGui rendering is complete
 	ProcessPendingComponentRemovals();
+	ProcessPendingComponentResets();
 
 	ImGui::End();
 
@@ -1648,9 +1649,10 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component removal for processing after ImGui rendering is complete
 			pendingComponentRemovals.push_back({ entity, componentType });
 		}
-		//if (ImGui::MenuItem("Reset")) {
-		//	// TODO: Implement reset functionality
-		//}
+		if (ImGui::MenuItem("Reset Component")) {
+			// Queue the component reset for processing after ImGui rendering is complete
+			pendingComponentResets.push_back({ entity, componentType });
+		}
 		//if (ImGui::MenuItem("Copy Component")) {
 		//	// TODO: Implement copy functionality
 		//}
@@ -1758,6 +1760,94 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 
 	// Clear the queue after processing
 	pendingComponentRemovals.clear();
+}
+
+void InspectorPanel::ProcessPendingComponentResets() {
+	for (const auto& request : pendingComponentResets) {
+		try {
+			ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+			// Reset the component based on type by assigning default-constructed value
+			if (request.componentType == "DirectionalLightComponent") {
+				ecsManager.GetComponent<DirectionalLightComponent>(request.entity) = DirectionalLightComponent{};
+				std::cout << "[Inspector] Reset DirectionalLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "PointLightComponent") {
+				ecsManager.GetComponent<PointLightComponent>(request.entity) = PointLightComponent{};
+				std::cout << "[Inspector] Reset PointLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SpotLightComponent") {
+				ecsManager.GetComponent<SpotLightComponent>(request.entity) = SpotLightComponent{};
+				std::cout << "[Inspector] Reset SpotLightComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ModelRenderComponent") {
+				ecsManager.GetComponent<ModelRenderComponent>(request.entity) = ModelRenderComponent{};
+				std::cout << "[Inspector] Reset ModelRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SpriteRenderComponent") {
+				ecsManager.GetComponent<SpriteRenderComponent>(request.entity) = SpriteRenderComponent{};
+				std::cout << "[Inspector] Reset SpriteRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "TextRenderComponent") {
+				ecsManager.GetComponent<TextRenderComponent>(request.entity) = TextRenderComponent{};
+				std::cout << "[Inspector] Reset TextRenderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ParticleComponent") {
+				ecsManager.GetComponent<ParticleComponent>(request.entity) = ParticleComponent{};
+				std::cout << "[Inspector] Reset ParticleComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioComponent") {
+				ecsManager.GetComponent<AudioComponent>(request.entity) = AudioComponent{};
+				std::cout << "[Inspector] Reset AudioComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioListenerComponent") {
+				ecsManager.GetComponent<AudioListenerComponent>(request.entity) = AudioListenerComponent{};
+				std::cout << "[Inspector] Reset AudioListenerComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AudioReverbZoneComponent") {
+				ecsManager.GetComponent<AudioReverbZoneComponent>(request.entity) = AudioReverbZoneComponent{};
+				std::cout << "[Inspector] Reset AudioReverbZoneComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ColliderComponent") {
+				ecsManager.GetComponent<ColliderComponent>(request.entity) = ColliderComponent{};
+				std::cout << "[Inspector] Reset ColliderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "RigidBodyComponent") {
+				ecsManager.GetComponent<RigidBodyComponent>(request.entity) = RigidBodyComponent{};
+				std::cout << "[Inspector] Reset RigidBodyComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CharacterControllerComponent") {
+				ecsManager.GetComponent<CharacterControllerComponent>(request.entity) = CharacterControllerComponent{};
+				std::cout << "[Inspector] Reset CharacterControllerComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "CameraComponent") {
+				ecsManager.GetComponent<CameraComponent>(request.entity) = CameraComponent{};
+				std::cout << "[Inspector] Reset CameraComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "BrainComponent") {
+				ecsManager.GetComponent<BrainComponent>(request.entity) = BrainComponent{};
+				std::cout << "[Inspector] Reset BrainComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ScriptComponentData") {
+				ecsManager.GetComponent<ScriptComponentData>(request.entity) = ScriptComponentData{};
+				std::cout << "[Inspector] Reset ScriptComponentData on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "Transform") {
+				// Reset transform to default values
+				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
+				std::cout << "[Inspector] Reset Transform on entity " << request.entity << std::endl;
+			}
+			else {
+				std::cerr << "[Inspector] Unknown component type for reset: " << request.componentType << std::endl;
+			}
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[Inspector] Failed to reset component " << request.componentType << " on entity " << request.entity << ": " << e.what() << std::endl;
+		}
+	}
+
+	// Clear the queue after processing
+	pendingComponentResets.clear();
 }
 
 void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath) {
