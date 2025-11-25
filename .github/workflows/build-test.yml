@@ -2,330 +2,41 @@ name: Build GAM300 Engine
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, cmake-port-m3 ]
   pull_request:
     branches: [ main ]
 
 jobs:
   build:
     runs-on: windows-2022
-    
+
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Debug, Release, EditorDebug, EditorRelease]
-        
+        preset: [debug, release, editor-debug, editor-release]
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-      with:
-        vs-version: latest
-    
-    - name: Setup Windows SDK
-      uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
-      with:
-        sdk-version: 22621
 
     - name: Setup vcpkg
       run: |
-        Write-Host "Setting up vcpkg..." -ForegroundColor Cyan
-        cd Project
-
-        # Remove existing vcpkg if it exists (clean slate)
-        if (Test-Path "vcpkg") {
-          Write-Host "Removing existing vcpkg directory..." -ForegroundColor Yellow
-          Remove-Item -Recurse -Force vcpkg
-        }
-
-        Write-Host "Cloning vcpkg..." -ForegroundColor Cyan
         git clone https://github.com/Microsoft/vcpkg.git
-
         cd vcpkg
+        git checkout 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
+        .\bootstrap-vcpkg.bat -disableMetrics
 
-        Write-Host "Bootstrapping vcpkg..." -ForegroundColor Cyan
-        .\bootstrap-vcpkg.bat
+    - name: Configure CMake
+      run: cmake --preset ${{ matrix.preset }}
+      working-directory: Project
 
-        Write-Host "vcpkg setup complete!" -ForegroundColor Green
+    - name: Build
+      run: cmake --build --preset ${{ matrix.preset }}
+      working-directory: Project
 
-    - name: Install vcpkg Dependencies
-      run: |
-        Write-Host "Installing vcpkg dependencies..." -ForegroundColor Cyan
-        cd Project
-
-        # Copy vcpkg.json to Engine directory for proper vcpkg manifest mode
-        Write-Host "Copying vcpkg.json to Engine directory..." -ForegroundColor Cyan
-        Copy-Item "vcpkg.json" "Engine\vcpkg.json" -Force
-
-        # Install dependencies from Engine directory so vcpkg_installed goes to the right place
-        Write-Host "Installing dependencies from vcpkg.json..." -ForegroundColor Cyan
-        cd Engine
-        ..\vcpkg\vcpkg install --triplet=x64-windows
-
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "vcpkg install failed!"
-          exit 1
-        }
-
-        Write-Host "vcpkg dependencies installed successfully!" -ForegroundColor Green
-
-    - name: Verify vcpkg Installation Structure
-      run: |
-        Write-Host "Checking vcpkg installation structure..." -ForegroundColor Cyan
-        cd Project\Engine
-
-        if (Test-Path "vcpkg_installed") {
-          Write-Host "vcpkg_installed directory exists!" -ForegroundColor Green
-          Write-Host "Contents of vcpkg_installed:" -ForegroundColor Cyan
-          Get-ChildItem -Path "vcpkg_installed" -Recurse -Depth 3 | Select-Object FullName | Format-List
-
-          # Check for Jolt headers specifically
-          if (Test-Path "vcpkg_installed\x64-windows\include\Jolt") {
-            Write-Host "Found Jolt headers at: vcpkg_installed\x64-windows\include\Jolt" -ForegroundColor Green
-          } else {
-            Write-Warning "Jolt headers not found at expected path!"
-          }
-        } else {
-          Write-Error "vcpkg_installed directory not found!"
-          exit 1
-        }
-
-    - name: Verify Library Structure
-      run: |
-        Write-Host "Verifying Libraries folder structure..." -ForegroundColor Cyan
-        cd Project
-        
-        $requiredPaths = @(
-            "Libraries/Assimp/include",
-            "Libraries/Assimp/lib/x64", 
-            "Libraries/Assimp/bin/x64",
-            "Libraries/freetype/include",
-            "Libraries/freetype/release_dll/win64",
-            "Libraries/glad/include/glad",
-            "Libraries/glad/include/KHR",
-            "Libraries/glfw/include/GLFW",
-            "Libraries/glfw/lib-vc2022",
-            "Libraries/glm/glm",
-            "Libraries/ImGui"
-        )
-        
-        $missing = @()
-        foreach ($path in $requiredPaths) {
-            if (!(Test-Path $path)) {
-                $missing += $path
-                Write-Warning "Missing: $path"
-            } else {
-                Write-Host "Found: $path" -ForegroundColor Green
-            }
-        }
-        
-        if ($missing.Count -gt 0) {
-            Write-Error "Missing required library paths: $($missing -join ', ')"
-            exit 1
-        }
-        
-        Write-Host "Library verification complete!" -ForegroundColor Green
-    
-    - name: Cache Build Artifacts
-      uses: actions/cache@v4
-      with:
-        path: |
-          Project/Build/
-          Project/Engine/Build/
-          Project/Game/Build/
-          Project/Editor/Build/
-        key: ${{ runner.os }}-gam300-${{ matrix.configuration }}-${{ hashFiles('Project/**/*.vcxproj', 'Project/**/*.cpp', 'Project/**/*.h') }}
-        restore-keys: |
-          ${{ runner.os }}-gam300-${{ matrix.configuration }}-
-          ${{ runner.os }}-gam300-
-    
-    - name: Build Solution
-      run: |
-        Write-Host "Building GAM300.sln with configuration: ${{ matrix.configuration }}" -ForegroundColor Cyan
-        cd Project
-
-        # Build entire solution - vcpkg integration is automatic via manifest mode
-        msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:minimal /p:WarningLevel=3 /p:VcpkgEnableManifest=true
-
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Build failed for configuration ${{ matrix.configuration }}!"
-
-            # Show more detailed error info
-            Write-Host "Re-running with detailed verbosity..." -ForegroundColor Yellow
-            msbuild GAM300.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /v:detailed /p:VcpkgEnableManifest=true
-            exit 1
-        }
-
-        Write-Host "Build successful for ${{ matrix.configuration }}!" -ForegroundColor Green
-    
-    - name: List Build Directory Contents
-      run: |
-        Write-Host "Build directory structure:" -ForegroundColor Cyan
-        cd Project
-        if (Test-Path "Build") {
-            Get-ChildItem -Path "Build" -Recurse | Select-Object FullName | Format-Table -AutoSize
-        } else {
-            Write-Host "Build directory not found"
-        }
-    
-    - name: Verify Build Outputs - Game Configuration
-      if: matrix.configuration == 'Debug' || matrix.configuration == 'Release'
-      run: |
-        Write-Host "Verifying Game build outputs for ${{ matrix.configuration }}..." -ForegroundColor Cyan
-        cd Project
-        
-        $expectedFiles = @(
-            "Build/${{ matrix.configuration }}/Game.exe",
-            "Build/${{ matrix.configuration }}/Engine.dll"
-        )
-        
-        $missing = @()
-        foreach ($file in $expectedFiles) {
-            if (!(Test-Path $file)) {
-                $missing += $file
-                Write-Error "Missing output file: $file"
-            } else {
-                $size = [math]::Round((Get-Item $file).Length / 1MB, 2)
-                Write-Host "Found: $file ($size MB)" -ForegroundColor Green
-            }
-        }
-        
-        if ($missing.Count -gt 0) {
-            Write-Error "Missing build outputs: $($missing -join ', ')"
-            exit 1
-        }
-    
-    - name: Verify Build Outputs - Editor Configuration
-      if: matrix.configuration == 'EditorDebug' || matrix.configuration == 'EditorRelease'
-      run: |
-        Write-Host "Verifying Editor build outputs for ${{ matrix.configuration }}..." -ForegroundColor Cyan
-        cd Project
-        
-        $expectedFiles = @(
-            "Build/${{ matrix.configuration }}/Editor.exe"
-        )
-        
-        # In editor builds, Engine and Game might be static libraries
-        $expectedLibs = @(
-            "Build/${{ matrix.configuration }}/Engine.lib",
-            "Build/${{ matrix.configuration }}/Game.lib"
-        )
-        
-        foreach ($file in $expectedFiles) {
-            if (!(Test-Path $file)) {
-                Write-Error "Missing executable: $file"
-                exit 1
-            } else {
-                $size = [math]::Round((Get-Item $file).Length / 1MB, 2)  
-                Write-Host "Found executable: $file ($size MB)" -ForegroundColor Green
-            }
-        }
-        
-        foreach ($lib in $expectedLibs) {
-            if (Test-Path $lib) {
-                $size = [math]::Round((Get-Item $lib).Length / 1MB, 2)
-                Write-Host "Found library: $lib ($size MB)" -ForegroundColor Green
-            } else {
-                Write-Warning "Library not found (may be linked differently): $lib"
-            }
-        }
-    
-    - name: Copy Required DLLs - Game Configuration
-      if: matrix.configuration == 'Debug' || matrix.configuration == 'Release'
-      run: |
-        Write-Host "Copying required DLLs for Game..." -ForegroundColor Cyan
-        cd Project
-        
-        # Copy Assimp DLL if Game uses it
-        if (Test-Path "Libraries/Assimp/bin/x64/assimp-vc143-mt.dll") {
-            Copy-Item "Libraries/Assimp/bin/x64/assimp-vc143-mt.dll" "Build/${{ matrix.configuration }}/" -Force
-            Write-Host "Copied Assimp DLL" -ForegroundColor Green
-        }
-        
-        # Copy GLFW DLL if using dynamic linking
-        if (Test-Path "Libraries/glfw/lib-vc2022/glfw3.dll") {
-            Copy-Item "Libraries/glfw/lib-vc2022/glfw3.dll" "Build/${{ matrix.configuration }}/" -Force  
-            Write-Host "Copied GLFW DLL" -ForegroundColor Green
-        }
-        
-        # Copy FreeType DLL if used
-        if (Test-Path "Libraries/freetype/release_dll/win64/freetype.dll") {
-            Copy-Item "Libraries/freetype/release_dll/win64/freetype.dll" "Build/${{ matrix.configuration }}/" -Force
-            Write-Host "Copied FreeType DLL" -ForegroundColor Green
-        }
-    
-    - name: Quick Smoke Test - Game
-      if: matrix.configuration == 'Release'
-      run: |
-        Write-Host "Running Game smoke test..." -ForegroundColor Cyan
-        cd Project/Build/Release
-        
-        # Test if Game.exe can start without crashing immediately
-        $process = Start-Process -FilePath ".\Game.exe" -PassThru -WindowStyle Hidden
-        Start-Sleep -Seconds 3
-        
-        if (!$process.HasExited) {
-            Write-Host "Game started successfully and is running!" -ForegroundColor Green
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-        } elseif ($process.ExitCode -eq 0) {
-            Write-Host "Game ran and exited cleanly" -ForegroundColor Green
-        } else {
-            Write-Warning "Game may have crashed. Exit code: $($process.ExitCode)"
-            # Don't fail the build for this - it might be expected behavior
-        }
-    
-    - name: Upload Game Build Artifacts
-      if: matrix.configuration == 'Debug' || matrix.configuration == 'Release'
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: GameBuild-${{ matrix.configuration }}
-        path: |
-          Project/Build/${{ matrix.configuration }}/Game.exe
-          Project/Build/${{ matrix.configuration }}/Engine.dll
-          Project/Build/${{ matrix.configuration }}/*.dll
-          Project/Build/${{ matrix.configuration }}/*.pdb
+        name: Build-${{ matrix.preset }}
+        path: Project/Build/${{ matrix.preset }}/*.exe
         retention-days: 7
-        if-no-files-found: error
-    
-    - name: Upload Editor Build Artifacts  
-      if: matrix.configuration == 'EditorDebug' || matrix.configuration == 'EditorRelease'
-      uses: actions/upload-artifact@v4
-      with:
-        name: EditorBuild-${{ matrix.configuration }}
-        path: |
-          Project/Build/${{ matrix.configuration }}/Editor.exe
-          Project/Build/${{ matrix.configuration }}/*.lib
-          Project/Build/${{ matrix.configuration }}/*.pdb
-        retention-days: 7
-        if-no-files-found: error
-
-  # Build summary
-  build-summary:
-    runs-on: ubuntu-latest
-    needs: build
-    if: always()
-    
-    steps:
-    - name: Generate Build Summary
-      run: |
-        echo "# GAM300 Build Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Configuration | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|---------------|--------|" >> $GITHUB_STEP_SUMMARY
-        
-        if [[ "${{ needs.build.result }}" == "success" ]]; then
-          echo "| Debug | ✅ Success |" >> $GITHUB_STEP_SUMMARY
-          echo "| Release | ✅ Success |" >> $GITHUB_STEP_SUMMARY  
-          echo "| EditorDebug | ✅ Success |" >> $GITHUB_STEP_SUMMARY
-          echo "| EditorRelease | ✅ Success |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎉 All configurations built successfully!" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "| Build | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ Build failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
-        fi

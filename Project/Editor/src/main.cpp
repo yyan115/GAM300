@@ -78,6 +78,9 @@ int main()
     Engine::Shutdown();
     MetaFilesManager::CleanupUnusedMetaFiles();
 
+    // Add window cleanup before exit
+    WindowManager::Exit();
+
     ENGINE_PRINT("=== Editor ended ===\n");
     return 0;
 }

@@ -596,6 +596,25 @@ namespace Scripting {
             // set instance.fields = registry[tmpRef]
             lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push populated table
             lua_setfield(L, -2, "fields"); // set on instance; pops table
+            
+            //|| Claude code addition:
+            // Additionally, flatten the fields onto the instance table
+            // This ensures that self.fieldName works in Lua scripts
+            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push fields table again
+            // Iterate over the fields table and set each field on the instance
+            lua_pushnil(L); // first key
+            while (lua_next(L, -2) != 0) {
+                // key at -2, value at -1
+                if (lua_type(L, -2) == LUA_TSTRING) {
+                    // Duplicate key and value for setting on instance
+                    lua_pushvalue(L, -2); // duplicate key
+                    lua_pushvalue(L, -2); // duplicate value
+                    lua_settable(L, -6); // set on instance table (at -6: instance, fields, key, value)
+                }
+                lua_pop(L, 1); // pop value, keep key for next iteration
+            }
+            lua_pop(L, 1); // pop fields table
+            //|| Claude code addition end
         }
         else {
             // leave instance.fields as-is (we created a temp table; no assignment)

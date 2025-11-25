@@ -1,6 +1,9 @@
 # Ignore Visual Studio generated files
 .vs/
 
+# Ignore IDE settings
+.idea/
+
 # Ignore build folder
 Project/Build
 /Project/.claude
@@ -9,8 +12,7 @@ Project/Build
 .claude
 
 # vcpkg - ignore entire directory (clone fresh for each dev environment)
-Project/vcpkg/
-Project/vcpkg_installed/
+vcpkg/
 
 # Android Studio
 AndroidProject/.idea/
