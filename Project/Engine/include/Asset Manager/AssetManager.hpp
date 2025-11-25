@@ -186,7 +186,7 @@ private:
 
 	// Supported asset extensions
 	const std::unordered_set<std::string> textureExtensions = { ".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".bmp", ".BMP" };
-	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg" };
+	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg", ".mp3", ".flac"};
 	const std::unordered_set<std::string> fontExtensions = { ".ttf" };
 	const std::unordered_set<std::string> modelExtensions = { ".obj", ".fbx" };
 	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };

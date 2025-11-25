@@ -1174,7 +1174,7 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return AssetType::Shaders;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return AssetType::Audio;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1433,7 +1433,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".png", ".jpg", ".jpeg", ".bmp", ".tga",           // Textures
         ".obj", ".fbx", ".dae", ".3ds",                    // Models
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
-        ".wav", ".mp3", ".ogg",                            // Audio
+        ".wav", ".mp3", ".ogg", ".flac",                   // Audio
         ".ttf", ".otf",                                    // Fonts
         ".mat",                                            // Materials
         ".prefab",                                         // Prefabs
@@ -1638,7 +1638,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return ICON_FA_CODE;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return ICON_FA_VOLUME_HIGH;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1762,7 +1762,7 @@ void AssetBrowserPanel::OpenImportDialog() {
     ofn.hwndOwner = nullptr;  // Set to a valid window handle if available (e.g., from GLFW or Win32)
     ofn.lpstrFile = filename;
     ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
+    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.flac;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
     ofn.nFilterIndex = 1;
     ofn.lpstrInitialDir = currentDirectory.c_str();  // Start in the current directory
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_NOCHANGEDIR;  // Added OFN_NOCHANGEDIR
