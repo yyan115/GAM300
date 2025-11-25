@@ -140,18 +140,11 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Try to get a channel from the pool first
-    if (!ChannelPool.empty()) {
-        channel = ChannelPool.back();
-        ChannelPool.pop_back();
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool.\n");
-    } else {
-        // Play paused so we can configure the channel before it starts
-        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-        if (res != FMOD_OK) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
-            return 0;
-        }
+    // Play paused so we can configure the channel before it starts
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
+        return 0;
     }
 
     // Configure per-channel looping explicitly
@@ -168,7 +161,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_Channel_SetVolume(channel, finalVolume);
 
     // Unpause to start playback
-    FMOD_RESULT res = FMOD_Channel_SetPaused(channel, false);
+    res = FMOD_Channel_SetPaused(channel, false);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] Failed to unpause channel: %s\n", FMOD_ErrorString(res));
     }
@@ -194,18 +187,11 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Try to get a channel from the pool first
-    if (!ChannelPool.empty()) {
-        channel = ChannelPool.back();
-        ChannelPool.pop_back();
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool for 3D audio.\n");
-    } else {
-        // Play paused so we can configure the channel before it starts
-        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-        if (res != FMOD_OK) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
-            return 0;
-        }
+    // Play paused so we can configure the channel before it starts
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
+        return 0;
     }
 
     // Per-channel looping and 3D mode
@@ -220,7 +206,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
 
     // Set 3D min/max distance for distance attenuation
-    FMOD_RESULT res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
+    res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
     }
@@ -265,18 +251,11 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
 
     FMOD_CHANNEL* channel = nullptr;
 
-    // Try to get a channel from the pool first
-    if (!ChannelPool.empty()) {
-        channel = ChannelPool.back();
-        ChannelPool.pop_back();
-        ENGINE_PRINT(EngineLogging::LogLevel::Info, "[AudioManager] Reusing channel from pool for bus audio.\n");
-    } else {
-        // Play paused so we can configure the channel
-        FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
-        if (res != FMOD_OK) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
-            return 0;
-        }
+    // Play paused so we can configure the channel
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayOnBus failed: ", FMOD_ErrorString(res), "\n");
+        return 0;
     }
 
     // Attach to bus
@@ -590,7 +569,6 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 
 void AudioManager::CleanupStoppedChannels() {
     std::vector<ChannelHandle> toErase;
-    std::vector<FMOD_CHANNEL*> channelsToPool;
     
     for (auto& kv : ChannelMap) {
         if (kv.second.Channel) {
@@ -600,17 +578,6 @@ void AudioManager::CleanupStoppedChannels() {
             if (!playing && kv.second.State != AudioSourceState::Paused) {
                 kv.second.State = AudioSourceState::Stopped;
                 toErase.push_back(kv.first);
-                
-                // Return channel to pool if not full
-                if (ChannelPool.size() < MAX_POOL_SIZE) {
-                    // Stop the channel completely and reset it
-                    FMOD_Channel_Stop(kv.second.Channel);
-                    FMOD_Channel_SetUserData(kv.second.Channel, nullptr);
-                    channelsToPool.push_back(kv.second.Channel);
-                } else {
-                    // Pool is full, just stop and let FMOD manage it
-                    FMOD_Channel_Stop(kv.second.Channel);
-                }
             }
         }
     }
@@ -618,11 +585,6 @@ void AudioManager::CleanupStoppedChannels() {
     // Remove from map
     for (auto id : toErase) {
         ChannelMap.erase(id);
-    }
-    
-    // Add to pool
-    for (auto ch : channelsToPool) {
-        ChannelPool.push_back(ch);
     }
 }
 

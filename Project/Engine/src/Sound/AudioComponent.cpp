@@ -55,10 +55,21 @@ void AudioComponent::PlayDelayed(float delay) {
     Play();
 }
 
-void AudioComponent::PlayOneShot(std::shared_ptr<Audio> clip) {
+void AudioComponent::PlayOneShot(std::string guidStr) {
     if (Mute) return;
     
-    std::shared_ptr<Audio> clipToPlay = clip ? clip : CachedAudioAsset;
+    std::shared_ptr<Audio> clipToPlay = CachedAudioAsset;
+    
+    if (!guidStr.empty()) {
+        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        std::string assetPath = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+        clipToPlay = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
+        if (!clipToPlay) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayOneShot: Failed to load audio from GUID: ", guidStr, "\n");
+            return;
+        }
+    }
+    
     if (!clipToPlay && !EnsureAssetLoaded()) return;
     if (!clipToPlay) clipToPlay = CachedAudioAsset;
     

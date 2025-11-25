@@ -43,6 +43,11 @@ void EBO::Bind()
 			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Trying to setup EBO without active OpenGL context!");
 			return;
 		}
+#else
+		// On desktop (Windows/Linux), check if GLFW context is current
+		if (glfwGetCurrentContext() == NULL) {
+			return; // Context not current, skip setup
+		}
 #endif
 		glGenBuffers(1, &ID);
 #ifdef ANDROID
@@ -65,7 +70,8 @@ void EBO::Bind()
 		}
 #endif
 		isSetup = true;
-	} else if (ID != 0) {
+	}
+	else if (ID != 0) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
 	}
 }
@@ -78,19 +84,21 @@ void EBO::Unbind()
 void EBO::Delete()
 {
 #ifdef ANDROID
-		// Check if we have an active OpenGL context before deleting
-		EGLDisplay display = eglGetCurrentDisplay();
-		EGLContext context = eglGetCurrentContext();
-		if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
-			return; // Context not current, skip deletion
-		}
+	// Check if we have an active OpenGL context before deleting
+	EGLDisplay display = eglGetCurrentDisplay();
+	EGLContext context = eglGetCurrentContext();
+	if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
+		return; // Context not current, skip deletion
+	}
 #else
-		// On desktop (Windows/Linux), check if GLFW context is current
-		if (glfwGetCurrentContext() == NULL) {
-			return; // Context not current, skip deletion
-		}
+	// On desktop (Windows/Linux), check if GLFW context is current
+	if (glfwGetCurrentContext() == NULL) {
+		return; // Context not current, skip deletion
+	}
 #endif
+	if (ID != 0 && glIsBuffer(ID)) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glDeleteBuffers(1, &ID);
-		ID = 0;
-		isSetup = false;
+		ID = 0;  // Prevent future invalid deletions
+	}
 }

@@ -236,6 +236,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 
         //TODO add #if android to avoid bloating on editor
         // Initialize the scripts' paths from the GUID for android
+#ifdef ANDROID
         for (const auto& entity : entities) {
             auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
             for (auto& script : scriptComp.scripts) {
@@ -246,6 +247,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 }
             }
         }
+#endif
 
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }

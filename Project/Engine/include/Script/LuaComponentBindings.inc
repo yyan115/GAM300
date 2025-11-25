@@ -242,6 +242,7 @@ BEGIN_COMPONENT(AudioComponent, "AudioComponent")
     PROPERTY("Position", &AudioComponent::Position)
 
     METHOD("play", &AudioComponent::Play)
+    METHOD("playOneShot", &AudioComponent::PlayOneShot)
     METHOD("stop", &AudioComponent::Stop)
     METHOD("pause", &AudioComponent::Pause)
     METHOD("unPause", &AudioComponent::UnPause)

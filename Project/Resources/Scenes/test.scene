@@ -5742,7 +5742,7 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "001dd6dd68dabad1-00035422ce000001",
+                            "scriptGuidStr": "00071fa5da9b74a9-000362c976000001",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",

@@ -171,8 +171,7 @@ void SpriteAnimationSystem::Update()
 
                 // Verify texture was loaded
                 if (!sprite.texture) {
-                    ENGINE_LOG_ERROR("Failed to load texture for sprite animation frame: GUID={}, Path={}",
-                                     frame.textureGUID.str(), frame.texturePath);
+                    ENGINE_LOG_ERROR("Failed to load texture for sprite animation frame: GUID=" + GUIDUtilities::ConvertGUID128ToString(frame.textureGUID) + ", Path=" + frame.texturePath);
                 }
             }
 		}

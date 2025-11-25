@@ -5,7 +5,7 @@
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
 
-class Texture : public IAsset {
+class ENGINE_API Texture : public IAsset {
 public:
 
 	GLuint ID{};
@@ -16,7 +16,7 @@ public:
 	// Asset browser preview thumbnail (for normal maps)
 	GLuint previewID{};
 
-	ENGINE_API Texture();
+	Texture();
 	//Texture(const char* texType, GLint slot, bool flipUVs, bool generateMipmaps = true);
 	Texture(std::shared_ptr<TextureMeta> textureMeta);
 
@@ -36,7 +36,7 @@ public:
 	// Deletes a texture
 	void Delete();
 
-	ENGINE_API std::string GetType();
+	std::string GetType();
 
 	// Asset browser preview thumbnail (for normal maps)
 	void ReconstructBC5Preview(

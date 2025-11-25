@@ -5680,7 +5680,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "float",
@@ -5742,7 +5742,7 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "001dd6dd68dabad1-00035422ce000001",
+                            "scriptGuidStr": "00071fa5da9b74a9-000362c976000001",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -6476,7 +6476,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.919
+                                    "data": 3.84862
                                 },
                                 {
                                     "type": "float",
@@ -6518,7 +6518,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.919
+                                    "data": 3.84862
                                 },
                                 {
                                     "type": "float",
@@ -6802,11 +6802,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 30.8855
+                                    "data": 30.886
                                 },
                                 {
                                     "type": "float",
-                                    "data": 5.55769
+                                    "data": 5.55788
                                 },
                                 {
                                     "type": "float",
@@ -6819,7 +6819,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.91895
+                                    "data": 3.849
                                 },
                                 {
                                     "type": "float",
@@ -6861,7 +6861,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.91895
+                                    "data": 3.849
                                 },
                                 {
                                     "type": "float",
@@ -6873,7 +6873,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 30.8855
+                                    "data": 30.886
                                 },
                                 {
                                     "type": "float",
@@ -6889,7 +6889,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 5.55769
+                                    "data": 5.55788
                                 },
                                 {
                                     "type": "float",

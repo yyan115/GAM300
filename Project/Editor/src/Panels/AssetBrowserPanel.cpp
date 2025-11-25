@@ -1174,7 +1174,7 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return AssetType::Shaders;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return AssetType::Audio;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1433,7 +1433,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".png", ".jpg", ".jpeg", ".bmp", ".tga",           // Textures
         ".obj", ".fbx", ".dae", ".3ds",                    // Models
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
-        ".wav", ".mp3", ".ogg",                            // Audio
+        ".wav", ".mp3", ".ogg", ".flac",                   // Audio
         ".ttf", ".otf",                                    // Fonts
         ".mat",                                            // Materials
         ".prefab",                                         // Prefabs
@@ -1541,12 +1541,22 @@ void AssetBrowserPanel::StartRenameAsset(const GUID_128& guid) {
 
             // Set up the rename buffer with the current filename (without extension for files, full name for folders)
             if (asset.isDirectory) {
+#ifdef _WIN32
                 strncpy_s(renameBuffer, asset.fileName.c_str(), sizeof(renameBuffer) - 1);
+#else
+                strncpy(renameBuffer, asset.fileName.c_str(), sizeof(renameBuffer) - 1);
+                renameBuffer[sizeof(renameBuffer) - 1] = '\0';  // Ensure null termination
+#endif
             } else {
                 // For files, keep the extension but allow renaming the base name
                 std::filesystem::path path(asset.fileName);
                 std::string baseName = path.stem().string();
+#ifdef _WIN32
                 strncpy_s(renameBuffer, baseName.c_str(), sizeof(renameBuffer) - 1);
+#else
+                strncpy(renameBuffer, baseName.c_str(), sizeof(renameBuffer) - 1);
+                renameBuffer[sizeof(renameBuffer) - 1] = '\0';  // Ensure null termination
+#endif
             }
             break;
         }
@@ -1628,7 +1638,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return ICON_FA_CODE;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return ICON_FA_VOLUME_HIGH;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1738,6 +1748,7 @@ void AssetBrowserPanel::SyncTreeWithCurrentDirectory() {
 }
 
 void AssetBrowserPanel::OpenImportDialog() {
+#ifdef _WIN32
     // Store current working directory to restore it later (prevents dialog from changing it)
     std::filesystem::path originalWorkingDir = std::filesystem::current_path();
 
@@ -1751,7 +1762,7 @@ void AssetBrowserPanel::OpenImportDialog() {
     ofn.hwndOwner = nullptr;  // Set to a valid window handle if available (e.g., from GLFW or Win32)
     ofn.lpstrFile = filename;
     ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
+    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.flac;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
     ofn.nFilterIndex = 1;
     ofn.lpstrInitialDir = currentDirectory.c_str();  // Start in the current directory
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_NOCHANGEDIR;  // Added OFN_NOCHANGEDIR
@@ -1797,4 +1808,9 @@ void AssetBrowserPanel::OpenImportDialog() {
 
     // Restore the original working directory (prevents side effects from the dialog)
     std::filesystem::current_path(originalWorkingDir);
+#else
+    // Linux: File dialog not implemented yet - use command line or file manager
+    // TODO: Implement Linux file dialog using zenity, kdialog, or ImGuiFileDialog
+    ENGINE_LOG_WARN("AssetBrowserPanel::OpenImportDialog() not implemented on Linux yet");
+#endif
 }
