@@ -41,7 +41,7 @@ public:
 
 	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
 	bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
-	void AddAssetMetaToMap(const std::string& assetPath);
+	std::shared_ptr<AssetMeta> AddAssetMetaToMap(const std::string& assetPath);
 
 	/**
 	 * \brief Compiles an asset of type T from the specified file path into a resource.
