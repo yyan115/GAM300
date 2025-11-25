@@ -170,6 +170,9 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
 			AssetManager::GetInstance().CompileAsset(assetMeta, true);
 		}
+		else {
+			AssetManager::GetInstance().CompileAsset(assetPath, true);
+		}
 //#if !defined(EDITOR) && !defined(ANDROID) 
 //			if (!MetaFileExists(assetPath)) {
 //				ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
