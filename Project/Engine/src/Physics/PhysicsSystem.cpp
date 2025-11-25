@@ -166,7 +166,8 @@ bool PhysicsSystem::InitialiseJolt() {
 
     //auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     //for (const auto& entity : entities) {
-    //    auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+    //    auto& 
+    //  = ecs.GetComponent<ColliderComponent>(entity);
     //    switch (collider.shapeType)
     //    {
     //    case ColliderShapeType::Box:

@@ -60,6 +60,7 @@ public:
 private:
     JPH::PhysicsSystem* mPhysicsSystem = nullptr;
     JPH::CharacterVirtual* mCharacter = nullptr;
+    JPH::ObjectLayer mCharacterLayer;
 
     // Cache velocity
     JPH::Vec3 mVelocity = JPH::Vec3::sZero();

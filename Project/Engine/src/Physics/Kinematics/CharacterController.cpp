@@ -3,6 +3,8 @@
 #include "Physics/Kinematics/CharacterController.hpp"
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
+#include "Physics/CollisionFilters.hpp"
+#include "Physics/CollisionLayers.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Math/Vector3D.hpp"
@@ -13,7 +15,8 @@
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
     : mPhysicsSystem(physicsSystem),
       mCharacter(nullptr),
-      mVelocity(JPH::Vec3::sZero())
+      mVelocity(JPH::Vec3::sZero()),
+      mCharacterLayer(Layers::CHARACTER)
 {}
 
 
@@ -37,6 +40,7 @@ void CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 {
     //SHAPE TYPE HAS TO BE A CAPSULE..
     collider.shapeType = ColliderShapeType::Capsule;
+    collider.layer = Layers::CHARACTER;
     float height = collider.capsuleHalfHeight * 2.0f;
     float radius = collider.capsuleRadius;
 
@@ -104,8 +108,8 @@ void CharacterController::Update(float deltaTime) {
         deltaTime,
         gravity,  // Jolt applies this internally
         updateSettings,
-        mPhysicsSystem->GetDefaultBroadPhaseLayerFilter(0),
-        mPhysicsSystem->GetDefaultLayerFilter(0),
+        mPhysicsSystem->GetDefaultBroadPhaseLayerFilter(mCharacterLayer),
+        mPhysicsSystem->GetDefaultLayerFilter(mCharacterLayer),
         {},
         {},
         temp_allocator
