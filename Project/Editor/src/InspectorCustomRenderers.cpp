@@ -2371,6 +2371,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::SameLine();
             if (ImGui::SmallButton(ICON_FA_ROTATE_RIGHT "##ReloadScripts")) {
                 Scripting::RequestReloadNow();
+                if (Scripting::GetLuaState()) Scripting::Tick(0.0f);
                 ENGINE_PRINT("Requested script reload from inspector for script: ", scriptData.scriptPath.c_str());
             }
 
