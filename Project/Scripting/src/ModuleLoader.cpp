@@ -44,11 +44,6 @@ namespace Scripting {
             m_ownedFs.reset();
             m_fs = nullptr;
         }
-        if (m_searchPaths.empty()) {
-            m_searchPaths.push_back("Resources/Scripts/?.lua");
-            m_searchPaths.push_back("Resources/Scripts/extension/?.lua");
-            m_searchPaths.push_back("Resources/Scripts/?/init.lua");
-        }
     }
 
     void ModuleLoader::AddSearchPath(const std::string& pattern) {
@@ -362,6 +357,13 @@ namespace Scripting {
         // success: module table/function returned on stack; pop it
         lua_pop(L, 1);
         return true;
+    }
+
+    void ModuleLoader::ClearSearchPaths() 
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        m_searchPaths.clear();
+        m_resolveCache.clear(); // Also clear cache since paths changed
     }
 
 } // namespace Scripting
