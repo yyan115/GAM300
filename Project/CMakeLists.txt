@@ -67,6 +67,13 @@ elseif(MSVC)
     set(CMAKE_CXX_FLAGS_EDITORRELEASE "/O2 /DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "/O2 /DNDEBUG")
     set(CMAKE_C_FLAGS_EDITORRELEASE "/O2 /DNDEBUG")
+
+    # Linker flags for debug symbol generation (PDB files)
+    # /DEBUG:FULL generates complete PDB files for debugging
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS_EDITORDEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_SHARED_LINKER_FLAGS_EDITORDEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
 endif()
 
 # Output directories - separate clean output from intermediate files
