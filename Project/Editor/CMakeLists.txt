@@ -76,12 +76,12 @@ target_include_directories(Editor
 # Find GLFW for ImGui backend
 find_package(glfw3 CONFIG REQUIRED)
 
-# Link to Engine (shared lib), Game (static lib), and Scripting
+# Link to Engine (shared lib) and Game (static lib)
+# Note: Scripting is compiled into Engine, not a separate library
 target_link_libraries(Editor
     PRIVATE
-        Engine     # shared library
+        Engine     # shared library (includes Scripting)
         Game       # static library
-        Scripting  # scripting library for Lua integration
         glfw       # for ImGui GLFW backend
 )
 

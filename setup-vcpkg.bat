@@ -6,10 +6,10 @@ echo GAM300 vcpkg Setup Script (Windows)
 echo ========================================
 echo.
 
-:: Change to Project directory
-cd /d "%~dp0Project"
+:: Stay in GAM300 directory (where this script is)
+cd /d "%~dp0"
 if !errorlevel! neq 0 (
-    echo ERROR: Could not find Project directory
+    echo ERROR: Could not change to script directory
     pause
     exit /b 1
 )
@@ -44,19 +44,11 @@ if !errorlevel! neq 0 (
 )
 cd ..
 
-echo [3/4] Bootstrapping vcpkg...
+echo [3/3] Bootstrapping vcpkg...
 cd vcpkg
-call bootstrap-vcpkg.bat
+call bootstrap-vcpkg.bat -disableMetrics
 if !errorlevel! neq 0 (
     echo ERROR: Failed to bootstrap vcpkg
-    pause
-    exit /b 1
-)
-
-echo [4/4] Integrating vcpkg with Visual Studio...
-vcpkg.exe integrate install
-if !errorlevel! neq 0 (
-    echo ERROR: Failed to integrate vcpkg with Visual Studio
     pause
     exit /b 1
 )
@@ -65,9 +57,8 @@ echo.
 echo ========================================
 echo SUCCESS! vcpkg has been set up successfully.
 echo.
-echo vcpkg is now integrated with Visual Studio.
-echo When you open the solution in Visual Studio, it will
-echo automatically install dependencies from vcpkg.json
+echo CMake will automatically use vcpkg via the toolchain file.
+echo Open Project folder in Visual Studio to start building.
 echo ========================================
 echo.
 pause

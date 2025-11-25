@@ -77,6 +77,11 @@ message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 # Engine is ALWAYS a shared library
 add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
+# Enable precompiled headers for faster compilation (C++ only)
+target_precompile_headers(Engine PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h>"
+)
+
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 

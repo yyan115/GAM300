@@ -174,6 +174,8 @@ Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
 Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/ai_patrol.lua.meta
+Resources/Scripts/template/CharacterTest.lua
+Resources/Scripts/template/CharacterTest.lua.meta
 Resources/Scripts/template/data_chest.lua
 Resources/Scripts/template/data_chest.lua.meta
 Resources/Scripts/template/input.lua
@@ -194,6 +196,8 @@ Resources/Scripts/template/test.lua
 Resources/Scripts/template/test.lua.meta
 Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
+Resources/Scripts/test_audio.lua
+Resources/Scripts/test_audio.lua.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
 Resources/Shaders/debug.shader

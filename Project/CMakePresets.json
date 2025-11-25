@@ -11,7 +11,7 @@
             "hidden": true,
             "description": "Base configuration with vcpkg integration",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "VCPKG_TARGET_TRIPLET": "x64-windows"
             }

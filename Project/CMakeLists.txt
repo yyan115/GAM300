@@ -12,7 +12,7 @@ set(CMAKE_MAP_IMPORTED_CONFIG_EDITORDEBUG Debug)
 # vcpkg integration - for Linux and Windows builds
 # Only Android uses prebuilt libraries
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
 

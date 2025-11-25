@@ -1,6 +1,9 @@
 # Ignore Visual Studio generated files
 .vs/
 
+# Ignore IDE settings
+.idea/
+
 # Ignore build folder
 Project/Build
 /Project/.claude
