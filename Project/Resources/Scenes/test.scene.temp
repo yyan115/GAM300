@@ -5746,7 +5746,18 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_transform_fetched": false,
+                                "__created_at": 1764039620.0,
+                                "name": "CharacterControllerTest",
+                                "__field_list": {
+                                    "name": "CharacterControllerTest"
+                                },
+                                "__meta": {},
+                                "_subscriptions": {},
+                                "_private": {}
+                            }
                         }
                     ]
                 }

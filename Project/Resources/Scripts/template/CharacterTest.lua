@@ -56,12 +56,12 @@ return Component {
         end
     end,
 
-    OnDestroy = function(self)
-        print("Can this be seen?")  --THIS CANT BE SEEN?
+    -- Try ALL possible cleanup methods
+    OnDisable = function(self)
+        print("[LUA] OnDisable called - cleaning up controller")
         if self.controller then
             CharacterController.Destroy(self.controller)
             self.controller = nil
         end
     end
-
 }
