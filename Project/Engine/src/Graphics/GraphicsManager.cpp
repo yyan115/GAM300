@@ -28,9 +28,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	glDepthFunc(GL_LESS);
 
 	// Enable face culling (backface culling)
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);      // Cull back-facing triangles
-	glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);      // Cull back-facing triangles
+	//glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
 
 	// Initialize skybox
 	InitializeSkybox();

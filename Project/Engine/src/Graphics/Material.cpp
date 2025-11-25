@@ -348,104 +348,109 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 
 	std::vector<uint8_t> buffer = platform->ReadAsset(assetPath);
 	if (!buffer.empty()) {
-		size_t offset = 0;
-		// Read material properties from the file.
-		// Name
-		size_t nameLength;
-		std::memcpy(&nameLength, buffer.data() + offset, sizeof(nameLength));
-		offset += sizeof(nameLength);
-		std::string meshName(nameLength, '\0'); // Pre-size the string
-		std::memcpy(&meshName[0], buffer.data() + offset, nameLength);
-		offset += nameLength;
-		SetName(meshName);
-		// Ambient
-		glm::vec3 ambient;
-		std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
-		offset += sizeof(ambient);
-		SetAmbient(ambient);
-		// Diffuse
-		glm::vec3 diffuse;
-		std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
-		offset += sizeof(diffuse);
-		SetDiffuse(diffuse);
-		// Specular
-		glm::vec3 specular;
-		std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
-		offset += sizeof(specular);
-		SetSpecular(specular);
-		// Emissive
-		glm::vec3 emissive;
-		std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
-		offset += sizeof(emissive);
-		SetEmissive(emissive);
-		// Shininess
-		float shininess;
-		std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
-		offset += sizeof(shininess);
-		SetShininess(shininess);
-		// Opacity
-		float opacity;
-		std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
-		offset += sizeof(opacity);
-		SetOpacity(opacity);
-		// Metallic
-		float metallic;
-		std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
-		offset += sizeof(metallic);
-		SetMetallic(metallic);
-		// Roughness
-		float roughness;
-		std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
-		offset += sizeof(roughness);
-		SetRoughness(roughness);
-		// AO
-		float ao;
-		std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
-		offset += sizeof(ao);
-		SetAO(ao);
+		try {
+			size_t offset = 0;
+			// Read material properties from the file.
+			// Name
+			size_t nameLength;
+			std::memcpy(&nameLength, buffer.data() + offset, sizeof(nameLength));
+			offset += sizeof(nameLength);
+			std::string meshName(nameLength, '\0'); // Pre-size the string
+			std::memcpy(&meshName[0], buffer.data() + offset, nameLength);
+			offset += nameLength;
+			SetName(meshName);
+			// Ambient
+			glm::vec3 ambient;
+			std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
+			offset += sizeof(ambient);
+			SetAmbient(ambient);
+			// Diffuse
+			glm::vec3 diffuse;
+			std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
+			offset += sizeof(diffuse);
+			SetDiffuse(diffuse);
+			// Specular
+			glm::vec3 specular;
+			std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
+			offset += sizeof(specular);
+			SetSpecular(specular);
+			// Emissive
+			glm::vec3 emissive;
+			std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
+			offset += sizeof(emissive);
+			SetEmissive(emissive);
+			// Shininess
+			float shininess;
+			std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
+			offset += sizeof(shininess);
+			SetShininess(shininess);
+			// Opacity
+			float opacity;
+			std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
+			offset += sizeof(opacity);
+			SetOpacity(opacity);
+			// Metallic
+			float metallic;
+			std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
+			offset += sizeof(metallic);
+			SetMetallic(metallic);
+			// Roughness
+			float roughness;
+			std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
+			offset += sizeof(roughness);
+			SetRoughness(roughness);
+			// AO
+			float ao;
+			std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
+			offset += sizeof(ao);
+			SetAO(ao);
 
-		// Read texture paths from the file.
-		size_t textureCount;
-		std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
-		offset += sizeof(textureCount);
-		for (size_t j = 0; j < textureCount; ++j) {
-			Material::TextureType texType;
-			std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
-			offset += sizeof(texType);
-			size_t pathLength;
-			std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
-			offset += sizeof(pathLength);
-			std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
-			// strip trailing nulls
-			texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
-			offset += pathLength;
+			// Read texture paths from the file.
+			size_t textureCount;
+			std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
+			offset += sizeof(textureCount);
+			for (size_t j = 0; j < textureCount; ++j) {
+				Material::TextureType texType;
+				std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
+				offset += sizeof(texType);
+				size_t pathLength;
+				std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
+				offset += sizeof(pathLength);
+				std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
+				// strip trailing nulls
+				texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
+				offset += pathLength;
 
-			// Texture doesn't have to be loaded now, it will only be loaded when it is being rendered.
-			//std::shared_ptr<Texture> texture = std::make_shared<Texture>();
-			std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
-			SetTexture(texType, std::move(textureInfo));
+				// Texture doesn't have to be loaded now, it will only be loaded when it is being rendered.
+				//std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+				std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
+				SetTexture(texType, std::move(textureInfo));
 
-			//// Assign the texture type
-			//switch (texType) {
-			//case Material::TextureType::DIFFUSE:
-			//	texture->type = "diffuse";
-			//	break;
-			//case Material::TextureType::SPECULAR:
-			//	texture->type = "specular";
-			//	break;
-			//case Material::TextureType::NORMAL:
-			//	texture->type = "normal";
-			//	break;
-			//case Material::TextureType::EMISSIVE:
-			//	texture->type = "emissive";
-			//	break;
-			//	// Add other cases as needed
-			//default:
-			//	ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-			//	//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
-			//	texture->type = "unknown";
-			//	break;
-			//}
+				//// Assign the texture type
+				//switch (texType) {
+				//case Material::TextureType::DIFFUSE:
+				//	texture->type = "diffuse";
+				//	break;
+				//case Material::TextureType::SPECULAR:
+				//	texture->type = "specular";
+				//	break;
+				//case Material::TextureType::NORMAL:
+				//	texture->type = "normal";
+				//	break;
+				//case Material::TextureType::EMISSIVE:
+				//	texture->type = "emissive";
+				//	break;
+				//	// Add other cases as needed
+				//default:
+				//	ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
+				//	//std::cerr << "[MODEL] Warning: Unhandled texture type in model loading.\n";
+				//	texture->type = "unknown";
+				//	break;
+				//}
+			}
+		}
+		catch (const std::exception& e) {
+			ENGINE_LOG_ERROR("[Material] Failed to load material: " + std::string(e.what()));
 		}
 	}
 
