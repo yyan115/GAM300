@@ -1181,6 +1181,9 @@ void Serializer::DeserializeNameComponent(NameComponent& nameComp, const rapidjs
 
 void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t) {
     Vector3D pos{ 0.f,0.f,0.f }, rot{ 0.f,0.f,0.f }, scale{ 1.f,1.f,1.f };
+    Quaternion quat;
+    bool hasQuaternion = false;
+
     // legacy simple arrays
     if (t.HasMember("position") && t["position"].IsArray()) readVec3FromArray(t["position"], pos);
     else if (t.HasMember("localPosition") && t["localPosition"].IsArray()) readVec3FromArray(t["localPosition"], pos);
@@ -1204,7 +1207,9 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
         if (darr.Size() > 2) {
             double w = 1, x = 0, y = 0, z = 0;
             if (readQuatGeneric(darr[2], w, x, y, z)) { // index 2 -> quaternion
-                rot = quatToEulerDeg(w, x, y, z);
+                // Directly use quaternion instead of converting to Euler and back
+                quat = Quaternion(static_cast<float>(w), static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+                hasQuaternion = true;
             }
         }
     }
@@ -1212,12 +1217,28 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs.transformSystem) {
         ecs.transformSystem->SetLocalPosition(newEnt, pos);
-        ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees in your code
+
+        // Use quaternion directly if available, otherwise convert from Euler
+        if (hasQuaternion) {
+            // Directly set the quaternion to avoid conversion errors
+            if (ecs.HasComponent<Transform>(newEnt)) {
+                auto& transform = ecs.GetComponent<Transform>(newEnt);
+                transform.localRotation = quat;
+                transform.localRotation.Normalize(); // Ensure normalized
+            }
+        } else {
+            ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees
+        }
+
         ecs.transformSystem->SetLocalScale(newEnt, scale);
     }
     else
     {
-        Transform tf; tf.localPosition = pos; tf.localRotation = Quaternion::FromEulerDegrees(rot); tf.localScale = scale;
+        Transform tf;
+        tf.localPosition = pos;
+        tf.localRotation = hasQuaternion ? quat : Quaternion::FromEulerDegrees(rot);
+        tf.localRotation.Normalize();
+        tf.localScale = scale;
     }
 }
 
