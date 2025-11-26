@@ -470,6 +470,10 @@ namespace Scripting {
     }
 
     EnvironmentId ScriptingRuntime::CreateEnvironment(const std::string& name) {
+        // Commented out to fix warning C4100 - unreferenced parameter
+        // Remove this line when 'name' is used
+        (void)name;
+
         lua_State* snapshotL = nullptr;
         {
             std::lock_guard<std::mutex> lock(m_mutex);

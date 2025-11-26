@@ -115,6 +115,10 @@ bool IsValidGUID(const std::string& str) {
 
 // Helper function to render asset drag-drop for a single GUID
 bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType, float width = -1.0f) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'fieldName' is used
+    (void)fieldName;
+
     bool modified = false;
     std::string displayText;
     
@@ -467,7 +471,10 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localPosition",
     [](const char *name, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        // Commented out to fix warning C4100 - unreferenced parameters
+        // Remove these lines when 'name' and 'ecs' are used
+        (void)name;
+        (void)ecs;
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -3125,6 +3132,10 @@ void RegisterInspectorCustomRenderers()
             }
             }
             catch (const std::exception& e) {
+                // Commented out to fix warning C4101 - unreferenced local variable
+                // Remove this line when 'e' is used
+                (void)e;
+
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering field %s", field.name.c_str());
             }
 

@@ -1467,6 +1467,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 }
 
 void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatch::Event& event) {
+	// Commented out to fix warning C4100 - unreferenced parameter
+	// Remove this line when 'path' is used
+	(void)path;
+
 	// Invalidate script cache on any change
 	if (event == filewatch::Event::added || event == filewatch::Event::removed ||
 		event == filewatch::Event::renamed_old || event == filewatch::Event::renamed_new ||

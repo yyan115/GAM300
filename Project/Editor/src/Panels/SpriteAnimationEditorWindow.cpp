@@ -441,6 +441,10 @@ void SpriteAnimationEditorWindow::DrawFrameBlock(int frameIndex, float startTime
 }
 
 void SpriteAnimationEditorWindow::DrawTimelineCursor(float width, float height) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'width' is used
+    (void)width;
+
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 pos = ImGui::GetCursorScreenPos();
 
