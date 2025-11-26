@@ -4,6 +4,7 @@
 #include "rapidjson/prettywriter.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Utilities/GUID.hpp"
+#include "Asset Manager/AssetManager.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -437,10 +438,10 @@ void Serializer::SerializeScene(const std::string& scenePath) {
                 sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
                 scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
 
-                //// scriptPath
-                //rapidjson::Value sp;
-                //sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
-                //scriptDataObj.AddMember("scriptPath", sp, alloc);
+                // scriptPath
+                rapidjson::Value sp;
+                sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+                scriptDataObj.AddMember("scriptPath", sp, alloc);
 
                 // enabled
                 scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
@@ -1894,6 +1895,22 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
                 sd.scriptPath = scriptData["scriptPath"].GetString();
             }
+
+            // If scriptPath is empty, try to resolve it from GUID
+            if (sd.scriptPath.empty() && !sd.scriptGuidStr.empty()) {
+                std::string resolvedPath = AssetManager::GetInstance().GetAssetPathFromGUID(sd.scriptGuid);
+                if (!resolvedPath.empty()) {
+                    // Extract relative path starting from "Resources"
+                    size_t resPos = resolvedPath.find("Resources");
+                    if (resPos != std::string::npos) {
+                        sd.scriptPath = resolvedPath.substr(resPos);
+                    } else {
+                        sd.scriptPath = resolvedPath;
+                    }
+                    ENGINE_PRINT("LOAD DEBUG: Resolved scriptPath from GUID: ", sd.scriptPath.c_str(), "\n");
+                }
+            }
+
             if (scriptData.HasMember("enabled") && scriptData["enabled"].IsBool()) {
                 sd.enabled = scriptData["enabled"].GetBool();
             }
