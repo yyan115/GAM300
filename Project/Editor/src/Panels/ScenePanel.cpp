@@ -715,7 +715,8 @@ void ScenePanel::OnImGuiRender()
         }
 
         // Route input to camera/selection when not interacting with gizmos or dragging
-        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing() && !isDraggingModel;
+        const bool hasActiveDragPayload = ImGui::GetDragDropPayload() != nullptr;
+        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing() && !isDraggingModel && !hasActiveDragPayload;
         if (canHandleInput)
         {
             HandleCameraInput();
@@ -1165,6 +1166,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
         isDraggingModel = true;
         previewModelGUID = DraggedModelGuid;
         previewModelPath = DraggedModelPath;
+        lastDragMousePos = ImVec2(-1.0f, -1.0f); // Reset cache
 
         // Create preview entity
         try {
@@ -1205,8 +1207,16 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
         float relativeX = mousePos.x - (windowPos.x + contentMin.x);
         float relativeY = mousePos.y - (windowPos.y + contentMin.y);
 
-        // Perform raycast to find preview position
-        if (relativeX >= 0 && relativeX <= sceneWidth && relativeY >= 0 && relativeY <= sceneHeight) {
+        // Optimization: Only update if mouse moved significantly (more than 1 pixel)
+        float dx = relativeX - lastDragMousePos.x;
+        float dy = relativeY - lastDragMousePos.y;
+        bool mouseMoved = (dx * dx + dy * dy) > 1.0f;
+
+        if (mouseMoved || lastDragMousePos.x < 0) {
+            lastDragMousePos = ImVec2(relativeX, relativeY);
+
+            // Perform raycast to find preview position
+            if (relativeX >= 0 && relativeX <= sceneWidth && relativeY >= 0 && relativeY <= sceneHeight) {
             float aspectRatio = sceneWidth / sceneHeight;
             glm::mat4 glmViewMatrix = editorCamera.GetViewMatrix();
             glm::mat4 glmProjMatrix = editorCamera.GetProjectionMatrix(aspectRatio);
@@ -1259,6 +1269,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
                 ENGINE_PRINT("[ScenePanel] Failed to update preview position: ", e.what(), "\n");
             }
         }
+        }
 
         // Check if mouse released to spawn entity (only if over scene panel)
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && isHovering) {
@@ -1301,6 +1312,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             }
 
             isDraggingModel = false;
+            lastDragMousePos = ImVec2(-1.0f, -1.0f); // Reset cache
         }
     }
 
@@ -1320,6 +1332,7 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
         }
 
         isDraggingModel = false;
+        lastDragMousePos = ImVec2(-1.0f, -1.0f); // Reset cache
     }
 }
 

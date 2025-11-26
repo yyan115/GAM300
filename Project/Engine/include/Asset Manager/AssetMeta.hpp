@@ -17,7 +17,7 @@ public:
 	std::string sourceFilePath;
 	std::string compiledFilePath;
 	std::string androidCompiledFilePath;
-	std::chrono::system_clock::time_point lastCompileTime;
+	//std::chrono::system_clock::time_point lastCompileTime;
 	int version{};
 
 	void PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver, const std::string& _androidCompiledPath = "");
