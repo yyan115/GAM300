@@ -853,7 +853,8 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     auto selectedEntities = GUIManager::GetSelectedEntities();
     if (!selectedEntities.empty() && !isNormalPanMode) {
         // Check if entities should show gizmo based on 2D/3D mode
-        EditorState& editorState = EditorState::GetInstance();
+        // Commented out to fix warning C4456 - duplicate declaration (already declared on line 841)
+        // EditorState& editorState = EditorState::GetInstance();
         bool is2DMode = editorState.Is2DMode();
 
         // Check if all selected entities are compatible (all 2D or all 3D)

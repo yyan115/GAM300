@@ -354,8 +354,9 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             scale.z = glm::length(col2);
 
             // Check for zero or near-zero scale (would cause division by zero)
-            const float EPSILON = 1e-8f;
-            if (scale.x < EPSILON || scale.y < EPSILON || scale.z < EPSILON) {
+            // Renamed to fix warning C4458 - EPSILON hides class member
+            const float SCALE_EPSILON = 1e-8f;
+            if (scale.x < SCALE_EPSILON || scale.y < SCALE_EPSILON || scale.z < SCALE_EPSILON) {
                 ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Scale too small for rotation extraction: (",
                     scale.x, ", ", scale.y, ", ", scale.z, ")\n");
                 return false;

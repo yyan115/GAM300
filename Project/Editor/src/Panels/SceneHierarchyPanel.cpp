@@ -419,9 +419,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         if (ImGui::MenuItem("Delete", "Del")) {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
+                // Renamed to fix warning C4457 - entityName hides function parameter
+                std::string deleteEntityName = ecsManager.GetComponent<NameComponent>(entityId).name;
 
-                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
+                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + deleteEntityName);
                 GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                 DeleteEntityWithChildren(entityId);
             } catch (...) {}

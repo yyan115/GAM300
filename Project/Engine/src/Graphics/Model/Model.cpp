@@ -26,54 +26,56 @@
 #endif
 
 
-static void DebugPrintSkinningStats(
-    const std::vector<Vertex>& verts,
-    const std::map<std::string, BoneInfo>& boneMap,
-    const char* meshName)
-{
-    size_t hasAny = 0;
-    float minSum = 10.f, maxSum = -10.f;
-    int   maxBoneIdSeen = -1;
-
-    for (size_t i = 0; i < verts.size(); ++i) {
-        const auto& v = verts[i];
-
-        // Count non-empty influences and clamp-sum
-        int nonEmpty = 0;
-        float sum = 0.f;
-        for (int k = 0; k < MaxBoneInfluences; ++k) {
-            if (v.mBoneIDs[k] >= 0 && v.mWeights[k] > 0.f) {
-                ++nonEmpty;
-                sum += v.mWeights[k];
-                maxBoneIdSeen = std::max(maxBoneIdSeen, v.mBoneIDs[k]);
-            }
-        }
-
-        if (nonEmpty > 0) {
-            ++hasAny;
-            minSum = std::min(minSum, sum);
-            maxSum = std::max(maxSum, sum);
-
-            // Optional: print a few sample vertices
-            if (hasAny <= 5) {
-                std::cout << "[Skin] vtx " << i
-                    << " IDs=(" << v.mBoneIDs[0] << "," << v.mBoneIDs[1]
-                    << "," << v.mBoneIDs[2] << "," << v.mBoneIDs[3] << ")"
-                    << " W=(" << v.mWeights[0] << "," << v.mWeights[1]
-                    << "," << v.mWeights[2] << "," << v.mWeights[3] << ")"
-                    << " sum=" << sum << "\n";
-            }
-        }
-    }
-
-    std::cout << "[Skin] Mesh '" << (meshName ? meshName : "?")
-        << "': verts=" << verts.size()
-        << " boneMapSize=" << boneMap.size()
-        << " vertsWithInfluences=" << hasAny
-        << " weightSum(min..max)=" << minSum << ".." << maxSum
-        << " maxBoneIdSeen=" << maxBoneIdSeen
-        << "\n";
-}
+// Commented out to fix warning C4505 - unreferenced function
+// Remove comments when this function is used
+// static void DebugPrintSkinningStats(
+//     const std::vector<Vertex>& verts,
+//     const std::map<std::string, BoneInfo>& boneMap,
+//     const char* meshName)
+// {
+//     size_t hasAny = 0;
+//     float minSum = 10.f, maxSum = -10.f;
+//     int   maxBoneIdSeen = -1;
+//
+//     for (size_t i = 0; i < verts.size(); ++i) {
+//         const auto& v = verts[i];
+//
+//         // Count non-empty influences and clamp-sum
+//         int nonEmpty = 0;
+//         float sum = 0.f;
+//         for (int k = 0; k < MaxBoneInfluences; ++k) {
+//             if (v.mBoneIDs[k] >= 0 && v.mWeights[k] > 0.f) {
+//                 ++nonEmpty;
+//                 sum += v.mWeights[k];
+//                 maxBoneIdSeen = std::max(maxBoneIdSeen, v.mBoneIDs[k]);
+//             }
+//         }
+//
+//         if (nonEmpty > 0) {
+//             ++hasAny;
+//             minSum = std::min(minSum, sum);
+//             maxSum = std::max(maxSum, sum);
+//
+//             // Optional: print a few sample vertices
+//             if (hasAny <= 5) {
+//                 std::cout << "[Skin] vtx " << i
+//                     << " IDs=(" << v.mBoneIDs[0] << "," << v.mBoneIDs[1]
+//                     << "," << v.mBoneIDs[2] << "," << v.mBoneIDs[3] << ")"
+//                     << " W=(" << v.mWeights[0] << "," << v.mWeights[1]
+//                     << "," << v.mWeights[2] << "," << v.mWeights[3] << ")"
+//                     << " sum=" << sum << "\n";
+//             }
+//         }
+//     }
+//
+//     std::cout << "[Skin] Mesh '" << (meshName ? meshName : "?")
+//         << "': verts=" << verts.size()
+//         << " boneMapSize=" << boneMap.size()
+//         << " vertsWithInfluences=" << hasAny
+//         << " weightSum(min..max)=" << minSum << ".." << maxSum
+//         << " maxBoneIdSeen=" << maxBoneIdSeen
+//         << "\n";
+// }
 
 
 

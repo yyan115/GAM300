@@ -2196,13 +2196,14 @@ void RegisterInspectorCustomRenderers()
                     size_t underscorePos = key.find('_');
                     if (underscorePos != std::string::npos)
                     {
-                        Entity entity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
+                        // Renamed to fix warning C4457 - entity hides function parameter
+                        Entity parsedEntity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
                         size_t scriptIdx = std::stoi(key.substr(underscorePos + 1));
 
                         // Get the script component and save the state
-                        if (ecs.HasComponent<ScriptComponentData>(entity))
+                        if (ecs.HasComponent<ScriptComponentData>(parsedEntity))
                         {
-                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(entity);
+                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
                                 // Always preserve the current state - either from preview or runtime instance
@@ -2210,7 +2211,7 @@ void RegisterInspectorCustomRenderers()
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", entity, " script ", scriptIdx,
+                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
                                                " (transition: ", static_cast<int>(lastEditorState), " -> ",
                                                static_cast<int>(currentEditorState), ")");
                                 }
