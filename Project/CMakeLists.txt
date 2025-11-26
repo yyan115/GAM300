@@ -46,11 +46,6 @@ endif()
 # MSVC warning suppressions
 if(MSVC)
     add_compile_options(
-        # Disable MSVC Code Analysis (C26xxx, C6xxx, C28xxx, C33xxx warnings)
-        # Source: Third-party libraries (Jolt, rapidjson) and false positives
-        # Reason: These are static analysis warnings, not compiler warnings.
-        /analyze-
-
         # C4251: 'class X needs dll-interface to be used by clients of class Y'
         # Source: Engine headers with exported classes containing STL members
         # Reason: Safe when all code is built together with same compiler/runtime.
@@ -63,50 +58,34 @@ if(MSVC)
         #         Only a real issue when distributing DLLs to third parties.
         /wd4275
 
-        # C4244: 'conversion from X to Y, possible loss of data'
-        # Source: Lua, rapidjson, assimp, and other third-party headers
+        # Source: Warnings from third-party libraries (Lua, Jolt, RapidJSON, ImGuizmo, FileWatch, assimp).
         # Reason: Ignore third-party library warnings.
-        /wd4244
+        /wd4068   # C4068: 'unknown pragma'
+        /wd4244   # C4244: 'conversion from X to Y, possible loss of data'
+        /wd4245   # C4245: 'conversion from int to unsigned, signed/unsigned mismatch'
+        /wd4267   # C4267: 'conversion from size_t to int, possible loss of data'
+        /wd4310   # C4310: 'cast truncates constant value'
+        /wd4324   # C4324: 'structure was padded due to alignment specifier'
+        /wd4334   # C4334: 'result of 32-bit shift implicitly converted to 64 bits'
+        /wd4701   # C4701: 'potentially uninitialized local variable'
+        /wd4702   # C4702: 'unreachable code'
+        /wd6255   # C6255: '_alloca indicates failure by raising a stack overflow exception'
+        /wd6385   # C6385: 'reading invalid data from buffer'
+        /wd6386   # C6386: 'buffer overrun while writing'
+        /wd26439  # C26439: 'this kind of function should not throw, declare it noexcept'
+        /wd26495  # C26495: 'variable is uninitialized, always initialize a member variable'
+        /wd26827  # C26827: 'did you forget to initialize an enum constant'
+        /wd33010  # C33010: 'unchecked lower bound for enum used as index'
 
-        # C4267: 'conversion from size_t to int, possible loss of data'
-        # Source: Lua, rapidjson, assimp, and other third-party headers
-        # Reason: Ignore third-party library warnings.
-        /wd4267
+        # Disable MSVC Code Analysis (C26xxx, C6xxx, C28xxx, C33xxx warnings)
+        # Source: Third-party libraries (Jolt, rapidjson) and false positives
+        # Reason: These are static analysis warnings, not compiler warnings.
+        /analyze-
 
-        # C4334: 'result of 32-bit shift implicitly converted to 64 bits'
-        # Source: Lua source code (bit manipulation)
-        # Reason: Ignore third-party library warnings.
-        /wd4334
-
-        # C4702: 'unreachable code'
-        # Source: Lua source code
-        # Reason: Ignore third-party library warnings.
-        /wd4702
-
-        # C4068: 'unknown pragma'
-        # Source: FileWatch (uses #pragma mark from macOS)
-        # Reason: Ignore third-party library warnings.
-        /wd4068
-
-        # C4701: 'potentially uninitialized local variable'
-        # Source: Lua source code
-        # Reason: Ignore third-party library warnings.
-        /wd4701
-
-        # C4310: 'cast truncates constant value'
-        # Source: Lua source code
-        # Reason: Ignore third-party library warnings.
-        /wd4310
-
-        # C4245: 'conversion from int to unsigned, signed/unsigned mismatch'
-        # Source: ImGuizmo
-        # Reason: Ignore third-party library warnings.
-        /wd4245
-
-        # C4324: 'structure was padded due to alignment specifier'
-        # Source: Lua source code
-        # Reason: Ignore third-party library warnings.
-        /wd4324
+        # Exclude vcpkg external headers from static analysis
+        # This tells MSVC to treat these paths as "external" and not analyze them
+        /external:I "${VCPKG_INSTALLED_DIR}/x64-windows/include"
+        /external:W0
     )
 endif()
 
