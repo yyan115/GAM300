@@ -39,11 +39,17 @@ void SceneHierarchyPanel::MarkForRefresh() {
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
-    
+
     ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_HIERARCHY);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_HIERARCHY);
 
     if (ImGui::Begin(name.c_str(), &isOpen)) {
+        // behavior: Auto-expand parents when selection changes
+        Entity currentSelectedEntity = GUIManager::GetSelectedEntity();
+        if (currentSelectedEntity != lastSelectedEntity && currentSelectedEntity != static_cast<Entity>(-1)) {
+            ExpandParentsOfEntity(currentSelectedEntity);
+            lastSelectedEntity = currentSelectedEntity;
+        }
         // Handle F2 key for renaming selected entity
         if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2)) {
             Entity selectedEntity = GUIManager::GetSelectedEntity();
@@ -74,14 +80,11 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
                     std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
 
-                    // Take snapshot before deleting (for undo)
                     SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
 
-                    // Clear selection before deleting
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
 
-                    // Delete the entity
-                    ecsManager.DestroyEntity(selectedEntity);
+                    DeleteEntityWithChildren(selectedEntity);
 
                     std::cout << "[SceneHierarchy] Entity deleted successfully" << std::endl;
                 } catch (const std::exception& e) {
@@ -217,6 +220,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
+
+    // Force expand if this entity is in the forceExpandedEntities set
+    if (forceExpandedEntities.find(entityId) != forceExpandedEntities.end()) {
+        ImGui::SetNextItemOpen(true);
+    }
 
     bool opened = false;
 
@@ -415,7 +423,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
                 SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
                 GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                ecsManager.DestroyEntity(entityId);
+                DeleteEntityWithChildren(entityId);
             } catch (...) {}
         }
         ImGui::EndPopup();
@@ -631,7 +639,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-        // Find the highest priority among existing cameras and deactivate all cameras (Unity-like)
+        // Find the highest priority among existing cameras and deactivate all cameras
         int maxPriority = -1;
         std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
         for (const auto& entity : allEntities) {
@@ -648,7 +656,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
 
         // Add CameraComponent with default settings
         CameraComponent cameraComp;
-        cameraComp.isActive = true; // Activate new camera by default (Unity-like behavior)
+        cameraComp.isActive = true; // Activate new camera by default
         cameraComp.priority = maxPriority + 1; // Higher priority than existing cameras
         cameraComp.target = glm::vec3(0.0f, 0.0f, -1.0f);
         cameraComp.up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -753,7 +761,7 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
         // Copy CameraComponent
         if (ecsManager.HasComponent<CameraComponent>(sourceEntity)) {
             CameraComponent sourceCam = ecsManager.GetComponent<CameraComponent>(sourceEntity);
-            // Don't copy active status for cameras (Unity-like)
+            // Don't copy active status for cameras
             sourceCam.isActive = false;
             ecsManager.AddComponent<CameraComponent>(newEntity, sourceCam);
         }
@@ -790,5 +798,70 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to duplicate entity: " << e.what() << std::endl;
         return static_cast<Entity>(-1);
+    }
+}
+
+void SceneHierarchyPanel::ExpandParentsOfEntity(Entity entity) {
+    forceExpandedEntities.clear();
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+        Entity currentEntity = entity;
+        while (ecsManager.HasComponent<ParentComponent>(currentEntity)) {
+            ParentComponent& parentComp = ecsManager.GetComponent<ParentComponent>(currentEntity);
+            Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+
+            forceExpandedEntities.insert(parentEntity);
+
+            currentEntity = parentEntity;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Error expanding parents: " << e.what() << std::endl;
+    }
+}
+
+void SceneHierarchyPanel::DeleteEntityWithChildren(Entity entity, bool cleanupParentRef) {
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+        if (cleanupParentRef && ecsManager.HasComponent<ParentComponent>(entity)) {
+            ParentComponent& parentComp = ecsManager.GetComponent<ParentComponent>(entity);
+            Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+
+            if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+                ChildrenComponent& parentChildren = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
+                GUID_128 entityGUID = guidRegistry.GetGUIDByEntity(entity);
+
+                auto it = std::find(parentChildren.children.begin(), parentChildren.children.end(), entityGUID);
+                if (it != parentChildren.children.end()) {
+                    parentChildren.children.erase(it);
+                }
+
+                if (parentChildren.children.empty()) {
+                    ecsManager.RemoveComponent<ChildrenComponent>(parentEntity);
+                }
+            }
+        }
+
+        if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+            ChildrenComponent& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
+
+            std::vector<Entity> childrenToDelete;
+            for (const auto& childGUID : childrenComp.children) {
+                Entity child = guidRegistry.GetEntityByGUID(childGUID);
+                childrenToDelete.push_back(child);
+            }
+
+            for (Entity child : childrenToDelete) {
+                DeleteEntityWithChildren(child, false);
+            }
+        }
+
+        ecsManager.DestroyEntity(entity);
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Error deleting entity with children: " << e.what() << std::endl;
     }
 }

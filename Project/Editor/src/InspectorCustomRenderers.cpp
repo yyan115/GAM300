@@ -2452,7 +2452,7 @@ void RegisterInspectorCustomRenderers()
                         usingPreviewInstance = true;
 
                         // ALWAYS restore pending state to preserve edited values
-                        // This is critical for Unity-like behavior where inspector edits persist
+                        // This is critical for behavior where inspector edits persist
                         if (!scriptData.pendingInstanceState.empty())
                         {
                             bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
@@ -2589,7 +2589,7 @@ void RegisterInspectorCustomRenderers()
         };
 
         // Filter fields to show only editable fields from the 'fields' table
-        // This implements Unity-like behavior where only serialized fields are shown
+        // This implements behavior where only serialized fields are shown
         std::vector<Scripting::FieldInfo> filteredFields;
         bool hasFieldsTable = false;
         std::vector<std::string> fieldOrder;

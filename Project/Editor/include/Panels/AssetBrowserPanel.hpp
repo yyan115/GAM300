@@ -11,7 +11,7 @@
 #include "Utilities/GUID.hpp"
 
 /**
- * @brief Unity-like Asset Browser panel for managing and viewing project assets.
+ * @brief Asset Browser panel for managing and viewing project assets.
  */
 class AssetBrowserPanel : public EditorPanel {
 public:
@@ -145,7 +145,7 @@ private:
     // Icon retrieval
     std::string GetAssetIcon(const AssetInfo& asset) const;
 
-    // Thumbnail management (Unity-like)
+    // Thumbnail management
     uint32_t GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath);
     void ClearThumbnailCache();
     void RemoveThumbnailFromCache(const GUID_128& guid);

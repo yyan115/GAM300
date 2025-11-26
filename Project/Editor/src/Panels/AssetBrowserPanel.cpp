@@ -759,7 +759,7 @@ void AssetBrowserPanel::RenderAssetGrid()
                               lowerExt == ".tga" || lowerExt == ".dds");
         
         if (isTextureAsset && !asset.isDirectory) {
-            // Unity-like: Show actual texture thumbnail instead of icon
+            //Show actual texture thumbnail instead of icon
             uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
             
             if (textureId != 0) {
@@ -1661,7 +1661,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
 }
 
 // ============================================================================
-// Thumbnail Management (Unity-like)
+// Thumbnail Management
 // ============================================================================
 
 uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath) {

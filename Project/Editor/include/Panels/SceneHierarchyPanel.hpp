@@ -5,6 +5,7 @@
 #include <ECS/NameComponent.hpp>
 #include <ECS/Entity.hpp>
 #include "../GUIManager.hpp"
+#include <set>
 
 /**
  * @brief Scene Hierarchy panel showing the structure of objects in the current scene.
@@ -49,5 +50,15 @@ private:
 
     // Force refresh mechanism
     bool needsRefresh = false;
+
+    // Track expanded entities for Unity-like auto-expand behavior
+    std::set<Entity> forceExpandedEntities;
+    Entity lastSelectedEntity = static_cast<Entity>(-1);
+
+    // Helper to expand all parents of an entity
+    void ExpandParentsOfEntity(Entity entity);
+
+    // Helper to recursively delete an entity and all its children
+    void DeleteEntityWithChildren(Entity entity, bool cleanupParentRef = true);
 
 };

@@ -51,7 +51,7 @@ void AudioReverbZoneComponent::ApplyPreset(ReverbPreset preset) {
     reverbPresetIndex = static_cast<int>(preset);
     needsUpdate = true;
     
-    // Apply FMOD reverb preset parameters based on Unity-like presets
+    // Apply FMOD reverb preset parameters based on presets
     // These values are approximations based on typical reverb characteristics
     switch (preset) {
         case ReverbPreset::Off:

@@ -63,7 +63,7 @@ int LayerManager::GetLayerIndex(const std::string& name) const {
 }
 
 void LayerManager::InitializeDefaultLayers() {
-    // Unity-like default layers
+    // default layers
     SetLayerName(0, "Default");
     SetLayerName(1, "TransparentFX");
     SetLayerName(2, "Ignore Raycast");

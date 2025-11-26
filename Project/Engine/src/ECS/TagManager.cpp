@@ -63,7 +63,7 @@ const std::string& TagManager::GetTagName(int index) const {
 }
 
 void TagManager::InitializeDefaultTags() {
-    // Unity-like default tags
+    //default tags
     AddTag("Untagged");
     AddTag("Respawn");
     AddTag("Finish");

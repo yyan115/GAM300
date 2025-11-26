@@ -5,6 +5,8 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
+#include <algorithm>
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -952,6 +954,40 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];
 
+        std::string entityGuidStr;
+        if (entObj.HasMember("guid") && entObj["guid"].IsString()) {
+            entityGuidStr = entObj["guid"].GetString();
+        }
+
+        GUID_128 entityGuid = GUIDUtilities::ConvertStringToGUID128(entityGuidStr);
+        Entity existingEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(entityGuid);
+
+        bool entityExists = (existingEntity != static_cast<Entity>(-1)) &&
+                           std::find(ecs.GetAllEntities().begin(), ecs.GetAllEntities().end(), existingEntity) != ecs.GetAllEntities().end();
+
+        if (!entityExists) {
+            Entity newEnt = ecs.CreateEntityWithGUID(entityGuid);
+            currEnt = newEnt;
+
+            if (!ecs.HasComponent<NameComponent>(newEnt)) {
+                ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
+            }
+            if (!ecs.HasComponent<ActiveComponent>(newEnt)) {
+                ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+            }
+            if (!ecs.HasComponent<TagComponent>(newEnt)) {
+                ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
+            }
+            if (!ecs.HasComponent<LayerComponent>(newEnt)) {
+                ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
+            }
+            if (!ecs.HasComponent<Transform>(newEnt)) {
+                ecs.AddComponent<Transform>(newEnt, Transform{});
+            }
+        } else {
+            currEnt = existingEntity;
+        }
+
         // NameComponent
         if (comps.HasMember("NameComponent")) {
             const rapidjson::Value& nv = comps["NameComponent"];
@@ -982,6 +1018,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
+            if (!ecs.HasComponent<ModelRenderComponent>(currEnt)) {
+                ecs.AddComponent<ModelRenderComponent>(currEnt, ModelRenderComponent{});
+            }
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
             DeserializeModelComponent(modelComp, mv);
         }
@@ -989,6 +1028,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // SpriteRenderComponent
         if (comps.HasMember("SpriteRenderComponent")) {
             const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+            if (!ecs.HasComponent<SpriteRenderComponent>(currEnt)) {
+                ecs.AddComponent<SpriteRenderComponent>(currEnt, SpriteRenderComponent{});
+            }
             auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(currEnt);
             DeserializeSpriteComponent(spriteComp, mv);
         }
@@ -996,6 +1038,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // SpriteAnimationComponent
         if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
             const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+            if (!ecs.HasComponent<SpriteAnimationComponent>(currEnt)) {
+                ecs.AddComponent<SpriteAnimationComponent>(currEnt, SpriteAnimationComponent{});
+            }
             auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(currEnt);
             DeserializeSpriteAnimationComponent(animComp, mv);
         }
@@ -1003,6 +1048,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // TextRenderComponent
         if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["TextRenderComponent"];
+            if (!ecs.HasComponent<TextRenderComponent>(currEnt)) {
+                ecs.AddComponent<TextRenderComponent>(currEnt, TextRenderComponent{});
+            }
             auto& textComp = ecs.GetComponent<TextRenderComponent>(currEnt);
             DeserializeTextComponent(textComp, tv);
         }
@@ -1094,6 +1142,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ParentComponent
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
+                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
+            }
             auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
             DeserializeParentComponent(parentComp, parentCompJSON);
         }
@@ -1101,6 +1152,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ChildrenComponent
         if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
             const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
+                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
+            }
             auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
@@ -1297,6 +1351,26 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
             modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
             modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
             modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
+
+            // Load the actual resources from GUIDs
+            if (modelComp.modelGUID.high != 0 || modelComp.modelGUID.low != 0) {
+                std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
+                if (!modelPath.empty()) {
+                    modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+                }
+            }
+            if (modelComp.shaderGUID.high != 0 || modelComp.shaderGUID.low != 0) {
+                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+                if (!shaderPath.empty()) {
+                    modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+                }
+            }
+            if (modelComp.materialGUID.high != 0 || modelComp.materialGUID.low != 0) {
+                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
+                if (!materialPath.empty()) {
+                    modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
+                }
+            }
         }
     }
 }
@@ -1351,6 +1425,20 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             GUID_string shaderGUIDStr = extractGUIDString(d[startIdx + 1]);
             spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
             spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+
+            // Load the actual resources from GUIDs
+            if (spriteComp.textureGUID.high != 0 || spriteComp.textureGUID.low != 0) {
+                std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.textureGUID);
+                if (!texturePath.empty()) {
+                    spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
+                }
+            }
+            if (spriteComp.shaderGUID.high != 0 || spriteComp.shaderGUID.low != 0) {
+                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
+                if (!shaderPath.empty()) {
+                    spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
+                }
+            }
 
             // Sprite position and other fields
             readVec3Generic(d[startIdx + 2], spriteComp.position);

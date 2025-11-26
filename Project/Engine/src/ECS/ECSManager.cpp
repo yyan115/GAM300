@@ -214,6 +214,7 @@ void ECSManager::DestroyEntity(Entity entity) {
 		}
 	}
 
+	EntityGUIDRegistry::GetInstance().Unregister(entity);
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);
