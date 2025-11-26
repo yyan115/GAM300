@@ -40,6 +40,68 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# MSVC warning suppressions
+if(MSVC)
+    add_compile_options(
+        # C4251: 'class X needs dll-interface to be used by clients of class Y'
+        # Source: Engine headers with exported classes containing STL members
+        # Reason: Safe when all code is built together with same compiler/runtime.
+        #         Only a real issue when distributing DLLs to third parties.
+        /wd4251
+
+        # C4275: 'non dll-interface class X used as base for dll-interface class Y'
+        # Source: Engine headers with exported classes containing STL members
+        # Reason: Safe when all code is built together with same compiler/runtime.
+        #         Only a real issue when distributing DLLs to third parties.
+        /wd4275
+
+        # C4244: 'conversion from X to Y, possible loss of data'
+        # Source: Lua, rapidjson, assimp, and other third-party headers
+        # Reason: Ignore third-party library warnings.
+        /wd4244
+
+        # C4267: 'conversion from size_t to int, possible loss of data'
+        # Source: Lua, rapidjson, assimp, and other third-party headers
+        # Reason: Ignore third-party library warnings.
+        /wd4267
+
+        # C4334: 'result of 32-bit shift implicitly converted to 64 bits'
+        # Source: Lua source code (bit manipulation)
+        # Reason: Ignore third-party library warnings.
+        /wd4334
+
+        # C4702: 'unreachable code'
+        # Source: Lua source code
+        # Reason: Ignore third-party library warnings.
+        /wd4702
+
+        # C4068: 'unknown pragma'
+        # Source: FileWatch (uses #pragma mark from macOS)
+        # Reason: Ignore third-party library warnings.
+        /wd4068
+
+        # C4701: 'potentially uninitialized local variable'
+        # Source: Lua source code
+        # Reason: Ignore third-party library warnings.
+        /wd4701
+
+        # C4310: 'cast truncates constant value'
+        # Source: Lua source code
+        # Reason: Ignore third-party library warnings.
+        /wd4310
+
+        # C4245: 'conversion from int to unsigned, signed/unsigned mismatch'
+        # Source: ImGuizmo
+        # Reason: Ignore third-party library warnings.
+        /wd4245
+
+        # C4324: 'structure was padded due to alignment specifier'
+        # Source: Lua source code
+        # Reason: Ignore third-party library warnings.
+        /wd4324
+    )
+endif()
+
 # Platform-specific compiler flags
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
