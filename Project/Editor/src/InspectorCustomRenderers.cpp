@@ -1265,24 +1265,27 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Text("Font");
         ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
 
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-        std::string displayText = fontPath.empty() ? "None" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
+        std::string displayText = fontPath.empty() ? "None (Font)" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
 
-        ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+        // Use EditorComponents for better drag-drop visual feedback
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-        if (ImGui::BeginDragDropTarget())
+        // Drag-drop target with proper payload type
+        if (EditorComponents::BeginDragDropTarget())
         {
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("ASSET_FONT"))
+            ImGui::SetTooltip("Drop .ttf font here");
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD"))
             {
                 // Take snapshot before changing font
                 SnapshotManager::GetInstance().TakeSnapshot("Assign Font");
                 *guid = DraggedFontGuid;
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
                 return true;
             }
-            ImGui::EndDragDropTarget();
+            EditorComponents::EndDragDropTarget();
         }
 
         return false;
