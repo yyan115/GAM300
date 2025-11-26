@@ -5,7 +5,7 @@
 .idea/
 
 # Ignore build folder
-Project/Build
+Project/Build/
 /Project/.claude
 
 # Ignore claude

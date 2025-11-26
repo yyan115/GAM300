@@ -376,7 +376,8 @@ void SpriteAnimationEditorWindow::DrawTimelineRuler(float width, float height) {
 }
 
 void SpriteAnimationEditorWindow::DrawTimelineFrames(const SpriteAnimationClip& clip, float width, float height) {
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    // Commented out to fix warning C4189 - unused variable
+    // ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 pos = ImGui::GetCursorScreenPos();
 
     float pixelsPerSecond = 100.0f * m_EditorState.timelineZoom;
@@ -634,14 +635,16 @@ void SpriteAnimationEditorWindow::DrawOnionSkin() {
     int currentFrame = GetFrameAtTime(clip, m_EditorState.currentTime);
     if (currentFrame < 0) return;
 
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    // Commented out to fix warning C4189 - unused variable
+    // ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     // Draw previous frames
     for (int i = 1; i <= m_EditorState.onionSkinBefore; i++) {
         int frameIndex = currentFrame - i;
         if (frameIndex >= 0) {
+            // Commented out to fix warning C4189 - unused variable
             // Draw with decreasing alpha
-            float alpha = m_EditorState.onionSkinAlpha * (1.0f - (float)i / (m_EditorState.onionSkinBefore + 1));
+            // float alpha = m_EditorState.onionSkinAlpha * (1.0f - (float)i / (m_EditorState.onionSkinBefore + 1));
             // Similar drawing code as DrawPreviewSprite but with alpha
         }
     }
@@ -650,8 +653,9 @@ void SpriteAnimationEditorWindow::DrawOnionSkin() {
     for (int i = 1; i <= m_EditorState.onionSkinAfter; i++) {
         int frameIndex = currentFrame + i;
         if (frameIndex < (int)clip.frames.size()) {
+            // Commented out to fix warning C4189 - unused variable
             // Draw with decreasing alpha
-            float alpha = m_EditorState.onionSkinAlpha * (1.0f - (float)i / (m_EditorState.onionSkinAfter + 1));
+            // float alpha = m_EditorState.onionSkinAlpha * (1.0f - (float)i / (m_EditorState.onionSkinAfter + 1));
             // Similar drawing code as DrawPreviewSprite but with alpha
         }
     }

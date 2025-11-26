@@ -12,6 +12,9 @@ set(CMAKE_MAP_IMPORTED_CONFIG_EDITORDEBUG Debug)
 # vcpkg integration - for Linux and Windows builds
 # Only Android uses prebuilt libraries
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+    # Put vcpkg_installed in Project/Build/ instead of Build/Intermediate/
+    set(VCPKG_INSTALLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Build/vcpkg_installed"
+        CACHE PATH "Vcpkg installed directory")
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
@@ -43,6 +46,11 @@ endif()
 # MSVC warning suppressions
 if(MSVC)
     add_compile_options(
+        # Disable MSVC Code Analysis (C26xxx, C6xxx, C28xxx, C33xxx warnings)
+        # Source: Third-party libraries (Jolt, rapidjson) and false positives
+        # Reason: These are static analysis warnings, not compiler warnings.
+        /analyze-
+
         # C4251: 'class X needs dll-interface to be used by clients of class Y'
         # Source: Engine headers with exported classes containing STL members
         # Reason: Safe when all code is built together with same compiler/runtime.

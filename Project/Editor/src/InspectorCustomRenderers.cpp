@@ -2171,8 +2171,9 @@ void RegisterInspectorCustomRenderers()
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-                            currentEditorState == EditorState::State::PAUSED);
+        // Commented out to fix warning C4189 - unused variable
+        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
+        //                     currentEditorState == EditorState::State::PAUSED);
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs

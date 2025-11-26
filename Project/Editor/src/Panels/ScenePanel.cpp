@@ -921,7 +921,8 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             SnapshotManager::GetInstance().TakeSnapshot("Transform Entities");
             SnapshotManager::GetInstance().SetSnapshotEnabled(false);  // Disable Inspector snapshots
             gizmoSnapshotTaken = true;
-            Entity lastManipulatedEntity = selectedEntities[0];  // Use first for tracking
+            // Commented out to fix warning C4189 - unused variable
+            // Entity lastManipulatedEntity = selectedEntities[0];  // Use first for tracking
 
             // Store original matrices for all selected entities
             originalMatrices.clear();
@@ -1445,7 +1446,8 @@ void ScenePanel::DrawColliderGizmos() {
         ImVec2 windowSize = cachedWindowSize;
         if (windowSize.x == 0 || windowSize.y == 0) return;
 
-        float aspectRatio = windowSize.x / windowSize.y;
+        // Commented out to fix warning C4189 - unused variable
+        // float aspectRatio = windowSize.x / windowSize.y;
 
         // Project to screen space
         glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
@@ -1677,7 +1679,8 @@ void ScenePanel::DrawCameraGizmos() {
 
         // Get window and viewport info for editor camera
         ImVec2 windowSize = cachedWindowSize;
-        float editorAspectRatio = windowSize.x / windowSize.y;
+        // Commented out to fix warning C4189 - unused variable
+        // float editorAspectRatio = windowSize.x / windowSize.y;
 
         // Build editor view-projection matrix
         glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
@@ -1859,7 +1862,8 @@ void ScenePanel::DrawAudioGizmos() {
 
         // Get window and viewport info for editor camera
         ImVec2 windowSize = cachedWindowSize;
-        float editorAspectRatio = windowSize.x / windowSize.y;
+        // Commented out to fix warning C4189 - unused variable
+        // float editorAspectRatio = windowSize.x / windowSize.y;
 
         // Build editor view-projection matrix
         glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;

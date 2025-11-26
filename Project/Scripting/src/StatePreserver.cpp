@@ -104,7 +104,8 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
 
     // Create a temporary table that will be populated from json by ScriptSerializer.
     lua_newtable(L);
-    int tmpIdx = lua_gettop(L);
+    // Commented out to fix warning C4189 - unused variable
+    // int tmpIdx = lua_gettop(L);
     int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops table
 
     ScriptSerializer ss;
