@@ -22,7 +22,7 @@ extern "C" {
 namespace Scripting {
     namespace Error {
 
-        // Default SourceMapLookup simply returns "filename:line" — override in your project if desired.
+        // Default SourceMapLookup simply returns "filename:line" - override in your project if desired.
         std::string SourceMapLookup(const std::string& filename, int line) {
             // No source map by default; keep the filename as-is.
             (void)line;

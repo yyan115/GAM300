@@ -275,7 +275,7 @@ bool ScriptSerializer::JsonToLuaValue(lua_State* L, const void* valuePlaceholder
             const char* key = it->name.GetString();
             bool pushed = JsonToLuaValue(L, &it->value);
             if (!pushed) {
-                // JsonToLuaValue failed and did not push anything — push nil to keep contract.
+                // JsonToLuaValue failed and did not push anything - push nil to keep contract.
                 lua_pushnil(L);
             }
             lua_setfield(L, -2, key); // pops one value
@@ -399,7 +399,7 @@ bool ScriptSerializer::DeserializeReflectedUserdata(lua_State* L, const void* va
 
     // create/get metatable for this typeName
     int created = luaL_newmetatable(L, typeName); // pushes metatable
-    // if created==1, this metatable didn't exist previously — we should initialize fields.
+    // if created==1, this metatable didn't exist previously - we should initialize fields.
     if (created) {
         // __reflect_type
         lua_pushstring(L, "__reflect_type");

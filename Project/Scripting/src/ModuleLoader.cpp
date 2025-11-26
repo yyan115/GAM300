@@ -40,7 +40,7 @@ namespace Scripting {
             m_fs = m_ownedFs.get();
         }
         else {
-            // Leave m_ownedFs empty and m_fs null — callers may set search paths but loader can't read files.
+            // Leave m_ownedFs empty and m_fs null - callers may set search paths but loader can't read files.
             m_ownedFs.reset();
             m_fs = nullptr;
         }

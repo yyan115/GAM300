@@ -73,7 +73,7 @@ namespace Scripting {
         void CollectGarbageStep();
         void FullCollectGarbage();
         void SetHostLogHandler(std::function<void(const std::string&)> handler);
-        // Called by Scripting::SetHostGetComponentHandler — runtime will store the handler and register C function.
+        // Called by Scripting::SetHostGetComponentHandler - runtime will store the handler and register C function.
         void SetHostGetComponentHandler(std::function<bool(lua_State*, uint32_t, const std::string&)> handler);
         void SetFileSystem(std::shared_ptr<IScriptFileSystem> fs);
     private:
