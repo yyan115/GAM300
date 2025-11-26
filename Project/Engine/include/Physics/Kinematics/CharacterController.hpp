@@ -19,28 +19,48 @@ public:
     // Destructor
     ~CharacterController();
 
-    void Initialise(CharacterControllerComponent &character, ColliderComponent &collider, Transform &transform);
-
-    // Movement functions
-    void Move(float x, float y, float z);   // Set linear velocity
-    void Jump(float height);                // Jump
+    void Initialise(ColliderComponent &collider, Transform &transform);
 
     // Called each frame
     void Update(float deltaTime);
 
-    // Get current position
-    JPH::Vec3 GetPosition() const;
-
-    // Set/Get velocity
-    void SetVelocity(const JPH::Vec3& velocity);
-    JPH::Vec3 GetVelocity() const;
-
     // Expose raw character for internal use
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }
+
+
+    //GETTER FUNCTIONS
+    Vector3D GetPosition() const;
+    Vector3D GetVelocity() const;
+
+    // Set/Get velocity
+    void SetVelocity(const Vector3D vel);
+
+
+   // BASIC MOVEMENT FUNCTIONS 
+    void Move(float x, float y, float z);   // Set Move Velocity, Position updated in "Update", change name to clearer?
+    void Jump(float height);                // Jump
+
+
+
+    //TODO:
+    //void SetRotation(float yaw);            // Set facing direction (degrees)
+    //void GetRotation();            // Add to current rotation
+
+    //void SetGravity(float gravity);         // Adjust gravity (-9.81 default)
+    //float GetGravity() const;
+
+    //void SetMass(float mass);               // Character mass
+    //float GetMass() const;
+
+
+
+
+
 
 private:
     JPH::PhysicsSystem* mPhysicsSystem = nullptr;
     JPH::CharacterVirtual* mCharacter = nullptr;
+    JPH::ObjectLayer mCharacterLayer;
 
     // Cache velocity
     JPH::Vec3 mVelocity = JPH::Vec3::sZero();

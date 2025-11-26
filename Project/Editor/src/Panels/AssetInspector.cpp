@@ -52,7 +52,7 @@ void AssetInspector::DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, con
 	    ImGui::Text("Source Asset Path: %s", assetMeta->sourceFilePath.c_str());
 	    ImGui::Text("Compiled Resource Path: %s", assetMeta->compiledFilePath.c_str());
 	    ImGui::Text("Compiled Android Resource Path: %s", assetMeta->androidCompiledFilePath.c_str());
-	    ImGui::Text("Last Compile Time: %s", std::format("{:%Y-%m-%d %H:%M:%S}", assetMeta->lastCompileTime).c_str());
+	    //ImGui::Text("Last Compile Time: %s", std::format("{:%Y-%m-%d %H:%M:%S}", assetMeta->lastCompileTime).c_str());
     }
 
     ImGui::Separator();

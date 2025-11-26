@@ -15,6 +15,21 @@
 #include <memory>
 #include <mutex>
 
+// DLL export/import macro - Scripting is compiled into Engine.dll
+#ifdef _WIN32
+    #ifdef ENGINE_EXPORTS
+        #define SCRIPTING_API __declspec(dllexport)
+    #else
+        #define SCRIPTING_API __declspec(dllimport)
+    #endif
+#else
+    #ifdef ENGINE_EXPORTS
+        #define SCRIPTING_API __attribute__((visibility("default")))
+    #else
+        #define SCRIPTING_API
+    #endif
+#endif
+
 extern "C" { struct lua_State; }
 
 namespace Scripting {
@@ -47,7 +62,7 @@ namespace Scripting {
     };
 
     // Primary inspector API
-    class ScriptInspector {
+    class SCRIPTING_API ScriptInspector {
     public:
         ScriptInspector();
         ~ScriptInspector();

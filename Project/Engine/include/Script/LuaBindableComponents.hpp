@@ -45,13 +45,6 @@
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 
-
-// ============================================================================
-// CharacterController Components
-// ============================================================================
-#include "Physics/Kinematics/CharacterControllerComponent.hpp"
-
-
 // ============================================================================
 // Audio Components
 // ============================================================================

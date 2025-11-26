@@ -85,6 +85,50 @@ BEGIN_SYSTEM("Input")
 
 END_SYSTEM()
 
+
+// ============================================================================
+// CHARACTER CONTROLLER SYSTEM
+// ============================================================================
+
+// Register CharacterController as a class type first
+luabridge::getGlobalNamespace(L)
+    .beginClass<CharacterController>("CharacterControllerClass")
+    .endClass();
+
+
+BEGIN_SYSTEM("CharacterController")
+
+    // Constructor
+    FUNCTION("new", CharacterControllerWrappers::Create)
+    //Initialise
+    FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
+
+    // Methods
+    FUNCTION("Move", CharacterControllerWrappers::Move)
+    FUNCTION("Jump", CharacterControllerWrappers::Jump)
+    FUNCTION("Update", CharacterControllerWrappers::Update)
+    FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
+    FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
+
+END_SYSTEM()
+
+
+BEGIN_SYSTEM("PhysicsSystem")
+    FUNCTION("GetSystem", PhysicsSystemWrappers::GetSystem)
+END_SYSTEM()
+
+
+
+
+
+
+// ENGINE HELPERS
+BEGIN_SYSTEM("Engine")
+    FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+END_SYSTEM()
+
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================

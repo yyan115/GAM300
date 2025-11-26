@@ -234,12 +234,13 @@ bool Scripting::Init(const InitOptions& opts) {
             });
     }
 
-    // Configure module loader search paths (runtime owns the module loader)
-    if (auto* loader = g_runtime->GetModuleLoader()) {
-        loader->AddSearchPath("Resources/Scripts/?.lua");
-        loader->AddSearchPath("Resources/Scripts/?/init.lua");
-        loader->AddSearchPath("Resources/Scripts/extension/?.lua");
-    }
+    //OUTDATED DONE IN SCRIPTINGRUNTIME
+    //// Configure module loader search paths (runtime owns the module loader)
+    //if (auto* loader = g_runtime->GetModuleLoader()) {
+    //    loader->AddSearchPath("Resources/Scripts/?.lua");
+    //    loader->AddSearchPath("Resources/Scripts/?/init.lua");
+    //    loader->AddSearchPath("Resources/Scripts/extension/?.lua");
+    //}
 
     // Redirect Lua print
     lua_State* L = g_runtime->GetLuaState();

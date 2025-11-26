@@ -153,7 +153,7 @@ std::shared_ptr<AssetMeta> Script::ExtendMetaFile(const std::string& assetPath,
         // If compiled path missing, set it to compiled form of assetPath (no compilation step here).
         if (currentMetaData->compiledFilePath.empty()) {
             currentMetaData->compiledFilePath = CompileToResource(assetPath, forAndroid);
-            currentMetaData->lastCompileTime = std::chrono::system_clock::now();
+            //currentMetaData->lastCompileTime = std::chrono::system_clock::now();
         }
         return currentMetaData;
     }
@@ -164,7 +164,7 @@ std::shared_ptr<AssetMeta> Script::ExtendMetaFile(const std::string& assetPath,
     meta->compiledFilePath = CompileToResource(assetPath, forAndroid);
     meta->androidCompiledFilePath = forAndroid ? meta->compiledFilePath : std::string();
     meta->version = 0;
-    meta->lastCompileTime = std::chrono::system_clock::now();
+    //meta->lastCompileTime = std::chrono::system_clock::now();
 
     // Note: We do not invent a GUID here; if your pipeline needs real GUIDs,
     // call meta->PopulateAssetMeta(...) from the asset builder with a real GUID.

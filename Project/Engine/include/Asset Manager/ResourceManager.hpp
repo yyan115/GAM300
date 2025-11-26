@@ -225,7 +225,7 @@ public:
 private:
 	// Supported resource extensions
 	const std::unordered_set<std::string> textureExtensions = { ".dds"};
-	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg" };
+	const std::unordered_set<std::string> audioExtensions = { ".wav", ".ogg", ".mp3", ".flac"};
 	const std::unordered_set<std::string> fontExtensions = { ".font" };
 	const std::unordered_set<std::string> modelExtensions = { ".mesh" };
 	const std::unordered_set<std::string> shaderExtensions = { ".shader" };
