@@ -615,7 +615,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.capsuleHalfHeight = halfExtent.y;
+            //collider.capsuleHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
