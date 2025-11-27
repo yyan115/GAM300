@@ -8,24 +8,25 @@
 #include "../../Utilities/GUID.hpp"
 #include "Script/ScriptSystem.hpp"
 
-struct ButtonBinding 
+struct ButtonBinding
 {
     REFL_SERIALIZABLE
-    std::string targetEntityGuidStr;
+
+        std::string targetEntityGuidStr;
     std::string scriptGuidStr;     // matches ScriptData.scriptGuidStr
     std::string functionName;      // function to call, e.g. "OnPressed"
-    bool callWithSelf = true;      // prefer calling as method (instance:func) — editor toggle
+    bool callWithSelf = true;      // prefer calling as method (instance:func) - editor toggle
 };
 
-struct ButtonComponentData 
+struct ButtonComponentData
 {
     REFL_SERIALIZABLE
-    std::vector<ButtonBinding> bindings;
+        std::vector<ButtonBinding> bindings;
     bool interactable = true;
     // You can add stuff like transition, label, etc. if desired.
 };
 
-class ButtonComponent 
+class ButtonComponent
 {
 public:
     ButtonComponent(Entity owner);

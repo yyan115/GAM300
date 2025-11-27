@@ -793,22 +793,33 @@ void ScriptSystem::UnregisterInstancesChangedCallback(void* cbId)
 // ---------------------------
 void ScriptSystem::NotifyInstancesChanged(Entity e)
 {
+    // LOGIC IS DISABLED FIRST
     // Copy callbacks under lock, then call outside lock to avoid reentrancy / deadlocks.
-    std::vector<InstancesChangedCb> callbacks;
-    {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        callbacks.reserve(m_instancesChangedCbs.size());
-        for (const auto& p : m_instancesChangedCbs) callbacks.push_back(p.second);
-    }
+    //std::vector<InstancesChangedCb> callbacks;
+    //{
+    //    std::lock_guard<std::mutex> lk(m_mutex);
+    //    callbacks.reserve(m_instancesChangedCbs.size());
+    //    for (const auto& p : m_instancesChangedCbs) {
+    //        callbacks.push_back(p.second);
+    //    }
+    //}
 
-    for (auto& cb : callbacks)
-    {
-        try {
-            cb(e);
-        }
-        catch (...) {
-            // swallow exceptions to avoid breaking engine flow; log if you want
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] InstancesChanged callback threw for entity ", e);
-        }
-    }
+    //for (auto& cb : callbacks)
+    //{
+    //    try {
+    //        if (cb) {  // Check if callback is valid
+    //            cb(e);
+    //        }
+    //    }
+    //    catch (const std::system_error& se) {
+    //        // Mutex error - callback object was likely destroyed
+    //        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+    //            "[ScriptSystem] Mutex error in callback for entity ", e, " - callback may be stale");
+    //    }
+    //    catch (...) {
+    //        // swallow exceptions to avoid breaking engine flow
+    //        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+    //            "[ScriptSystem] InstancesChanged callback threw for entity ", e);
+    //    }
+    //}
 }

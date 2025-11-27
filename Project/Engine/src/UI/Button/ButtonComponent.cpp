@@ -36,10 +36,20 @@ ButtonComponent::ButtonComponent(Entity owner)
     size_t n = btnData ? btnData->bindings.size() : 0;
     m_cachedInstanceRef.assign(n, LUA_NOREF);
 }
-
 ButtonComponent::~ButtonComponent()
 {
-    OnDisable();
+    // CRITICAL: Unregister callback FIRST before any mutex operations
+    auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecs && ecs->scriptSystem && m_instancesCbId) {
+        ecs->scriptSystem->UnregisterInstancesChangedCallback(m_instancesCbId);
+        m_instancesCbId = nullptr;
+    }
+
+    // NOW safe to clear cache - no more callbacks can arrive
+    {
+        std::lock_guard<std::mutex> lk(m_cacheMutex);
+        m_cachedInstanceRef.clear();
+    }
 }
 
 void ButtonComponent::OnEnable()
@@ -60,25 +70,36 @@ void ButtonComponent::OnEnable()
 
 void ButtonComponent::OnDisable()
 {
+    // Unregister callback FIRST
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs && ecs->scriptSystem && m_instancesCbId) {
         ecs->scriptSystem->UnregisterInstancesChangedCallback(m_instancesCbId);
         m_instancesCbId = nullptr;
     }
 
-    // Clear cache
+    // Then clear cache
     std::lock_guard<std::mutex> lk(m_cacheMutex);
     m_cachedInstanceRef.clear();
 }
 
 void ButtonComponent::InstancesChangedCallback(Entity e)
 {
-    // On instance changes, invalidate entire cache (simple and cheap)
-    std::lock_guard<std::mutex> lk(m_cacheMutex);
+    // Add safety check - try to lock with timeout
+    std::unique_lock<std::mutex> lk(m_cacheMutex, std::defer_lock);
+
+    if (!lk.try_lock()) {
+        // Mutex is locked elsewhere (possibly being destroyed), bail out
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+            "[ButtonComponent] Could not acquire lock in callback - object may be destroying");
+        return;
+    }
+
+    // Safe to invalidate cache
     for (auto& r : m_cachedInstanceRef) {
         r = LUA_NOREF;
     }
 }
+
 
 void ButtonComponent::OnClick()
 {

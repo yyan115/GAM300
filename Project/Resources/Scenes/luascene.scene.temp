@@ -13,6 +13,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -21,15 +24,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -7.97401
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 8.64484
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1.20961
                                 }
                             ]
                         },
@@ -92,7 +95,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -7.97401
                                 },
                                 {
                                     "type": "float",
@@ -108,7 +111,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 8.64484
                                 },
                                 {
                                     "type": "float",
@@ -124,7 +127,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1.20961
                                 },
                                 {
                                     "type": "float",
@@ -240,6 +243,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "007fa85bbe97cc61-00032d3fca00001b",
+                            "scriptPath": "Resources/Scripts/template/test.lua",
                             "enabled": true,
                             "preserveKeys": [
                                 "position",
@@ -329,6 +333,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -557,50 +564,14 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "007c6153c7822121-00034a653e000003",
+                            "scriptPath": "Resources/Scripts/template/rotate.lua",
                             "enabled": true,
                             "preserveKeys": [
                                 "position",
                                 "health"
                             ],
                             "entryFunction": "Start",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "currentAngle": 0.0,
-                                "GetTransform": null,
-                                "Subscribe": null,
-                                "UpdateSafe": null,
-                                "DeserializeFields": null,
-                                "Unsubscribe": null,
-                                "DisableSafe": null,
-                                "_transform_fetched": false,
-                                "GetRotation": null,
-                                "Start": null,
-                                "Update": null,
-                                "_private": {},
-                                "Destroy": null,
-                                "SetPosition": null,
-                                "AwakeSafe": null,
-                                "DebugTransform": null,
-                                "StartSafe": null,
-                                "axis": "Y",
-                                "__field_list": {
-                                    "rotationSpeed": 45.0,
-                                    "axis": "Y"
-                                },
-                                "_subscriptions": {},
-                                "_call_lifecycle": null,
-                                "__created_at": 1763454384.0,
-                                "__meta": {},
-                                "SetScale": null,
-                                "After": null,
-                                "SerializeFields": null,
-                                "Every": null,
-                                "GetScale": null,
-                                "SetRotation": null,
-                                "Move": null,
-                                "rotationSpeed": 45.0,
-                                "GetPosition": null
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
@@ -618,6 +589,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -854,17 +828,6 @@
                             "data": true
                         }
                     ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0056d777f1cbc62d-00035f4bd2000001",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
-                        }
-                    ]
                 }
             }
         },
@@ -880,6 +843,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1119,6 +1085,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1356,6 +1325,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 5
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1595,6 +1567,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 6
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1833,6 +1808,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 7
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2070,6 +2048,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 8
                 },
                 "Transform": {
                     "type": "Transform",
@@ -2321,6 +2302,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 9
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2558,6 +2542,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -2797,6 +2784,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 11
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3034,6 +3024,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -3273,6 +3266,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 13
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3510,6 +3506,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
                 },
                 "Transform": {
                     "type": "Transform",
@@ -3760,6 +3759,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 15
                 },
                 "Transform": {
                     "type": "Transform",
@@ -4017,6 +4019,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 16
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4272,6 +4277,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 17
                 },
                 "Transform": {
                     "type": "Transform",
@@ -4529,6 +4537,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 18
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4785,6 +4796,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 19
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4997,29 +5011,11 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "002dcbfdcd8ac9ce-00035a92b2000001",
+                            "scriptPath": "Resources/Scripts/test_audio.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "enemyHurtSFXClips": [
-                                    "00374a211e39d67f-000331fc3a00000b",
-                                    "00374a216cc07ebd-000331fc3a000011"
-                                ],
-                                "_private": {},
-                                "__meta": {},
-                                "__created_at": 1763864757.0,
-                                "__field_list": {
-                                    "playOnStart": true,
-                                    "testClip": "",
-                                    "enemyHurtSFXClips": {},
-                                    "volume": 1.0
-                                },
-                                "playOnStart": false,
-                                "testClip": "",
-                                "volume": 0.3,
-                                "_subscriptions": {}
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
