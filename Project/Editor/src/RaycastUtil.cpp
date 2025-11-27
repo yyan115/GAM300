@@ -11,6 +11,7 @@
 // Include ECS system from Engine (using configured include paths)
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Transform/Quaternion.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -353,8 +354,9 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             scale.z = glm::length(col2);
 
             // Check for zero or near-zero scale (would cause division by zero)
-            const float EPSILON = 1e-8f;
-            if (scale.x < EPSILON || scale.y < EPSILON || scale.z < EPSILON) {
+            // Renamed to fix warning C4458 - EPSILON hides class member
+            const float SCALE_EPSILON = 1e-8f;
+            if (scale.x < SCALE_EPSILON || scale.y < SCALE_EPSILON || scale.z < SCALE_EPSILON) {
                 ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Scale too small for rotation extraction: (",
                     scale.x, ", ", scale.y, ", ", scale.z, ")\n");
                 return false;
@@ -399,41 +401,38 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             Vector3D newPosition(position.x, position.y, position.z);
             Vector3D newScale(scale.x, scale.y, scale.z);
 
-            // Convert rotation matrix to Euler angles using robust extraction (ZYX order to match engine)
-            // Extract euler angles from rotation matrix (ZYX order: Rz * Ry * Rx)
-            // https://www.learnopencv.com/rotation-matrix-to-euler-angles/
-            float sy = sqrtf(rotMat[0][0] * rotMat[0][0] + rotMat[1][0] * rotMat[1][0]);
+            // Convert rotation matrix directly to quaternion (avoids Euler angle gimbal lock and precision issues)
+            Matrix4x4 rotMatrix4x4;
+            rotMatrix4x4.m.m00 = rotMat[0][0]; rotMatrix4x4.m.m01 = rotMat[1][0]; rotMatrix4x4.m.m02 = rotMat[2][0]; rotMatrix4x4.m.m03 = 0.0f;
+            rotMatrix4x4.m.m10 = rotMat[0][1]; rotMatrix4x4.m.m11 = rotMat[1][1]; rotMatrix4x4.m.m12 = rotMat[2][1]; rotMatrix4x4.m.m13 = 0.0f;
+            rotMatrix4x4.m.m20 = rotMat[0][2]; rotMatrix4x4.m.m21 = rotMat[1][2]; rotMatrix4x4.m.m22 = rotMat[2][2]; rotMatrix4x4.m.m23 = 0.0f;
+            rotMatrix4x4.m.m30 = 0.0f;         rotMatrix4x4.m.m31 = 0.0f;         rotMatrix4x4.m.m32 = 0.0f;         rotMatrix4x4.m.m33 = 1.0f;
 
-            bool singular = sy < 1e-6f; // Check for gimbal lock
+            Quaternion newRotation = Quaternion::FromMatrix(rotMatrix4x4);
+            newRotation.Normalize();
 
-            float x, y, z;
-            if (!singular) {
-                x = atan2f(rotMat[2][1], rotMat[2][2]);
-                y = atan2f(-rotMat[2][0], sy);
-                z = atan2f(rotMat[1][0], rotMat[0][0]);
+            // Directly update Transform component to avoid multiple recalculations (prevents flickering)
+            if (ecsManager.HasComponent<Transform>(entity)) {
+                auto& transform = ecsManager.GetComponent<Transform>(entity);
+
+                // Set local transform components directly
+                transform.localPosition = newPosition;
+                transform.localScale = newScale;
+                transform.localRotation = newRotation;
+
+                // Update world matrix directly to avoid recalculation
+                transform.worldMatrix = newMatrix;
+
+                // Mark as dirty so TransformSystem knows to update children if needed
+                // (TransformSystem will detect the change on next update)
             } else {
-                // Gimbal lock case
-                x = atan2f(-rotMat[1][2], rotMat[1][1]);
-                y = atan2f(-rotMat[2][0], sy);
-                z = 0;
+                // Fallback: use TransformSystem methods (slower but safer)
+                ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+                ecsManager.transformSystem->SetWorldScale(entity, newScale);
+                // Convert quaternion to Euler for SetWorldRotation
+                Vector3D euler = newRotation.ToEulerDegrees();
+                ecsManager.transformSystem->SetWorldRotation(entity, euler);
             }
-
-            // Check for NaN in extracted angles
-            if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[RaycastUtil] Euler angle extraction produced NaN/Inf\n");
-                return false;
-            }
-
-            Vector3D newRotation(
-                glm::degrees(x),
-                glm::degrees(y),
-                glm::degrees(z)
-            );
-
-            // Update all components to stay in sync
-            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
-            ecsManager.transformSystem->SetWorldScale(entity, newScale);
-            ecsManager.transformSystem->SetWorldRotation(entity, newRotation);
 
             //transform.position = newPosition;
             //transform.scale = newScale;  // Make sure scale is updated too

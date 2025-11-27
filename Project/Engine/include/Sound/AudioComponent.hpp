@@ -11,7 +11,7 @@ class Audio;
 struct AudioComponent 
 {
     REFL_SERIALIZABLE
-    // Unity-like public properties (Inspector editable)
+    // public properties (Inspector editable)
     bool enabled{ true };        // Component enabled state (can be toggled in inspector)
     GUID_128 audioGUID{};          // Audio asset GUID
     bool Mute{ false };          // Mute the audio source
@@ -51,7 +51,6 @@ public:
     ENGINE_API AudioComponent();
     ENGINE_API ~AudioComponent();
 
-    // Unity-like API
     void ENGINE_API Play();
     void PlayDelayed(float delay);        // Unity: Play with delay
     void ENGINE_API PlayOneShot(std::string guidStr = ""); // Unity: One-shot playback

@@ -280,4 +280,16 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
     PROPERTY("Position", &AudioReverbZoneComponent::Position)
 END_COMPONENT()
 
+// ============================================================================
+// Tag and Layer Components
+// ============================================================================
+
+BEGIN_COMPONENT(TagComponent, "TagComponent")
+    PROPERTY("tagIndex", &TagComponent::tagIndex)
+END_COMPONENT()
+
+BEGIN_COMPONENT(LayerComponent, "LayerComponent")
+    PROPERTY("layerIndex", &LayerComponent::layerIndex)
+END_COMPONENT()
+
 // Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... END_COMPONENT() blocks here.

@@ -115,6 +115,10 @@ bool IsValidGUID(const std::string& str) {
 
 // Helper function to render asset drag-drop for a single GUID
 bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType, float width = -1.0f) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'fieldName' is used
+    (void)fieldName;
+
     bool modified = false;
     std::string displayText;
     
@@ -467,7 +471,10 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localPosition",
     [](const char *name, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        // Commented out to fix warning C4100 - unreferenced parameters
+        // Remove these lines when 'name' and 'ecs' are used
+        (void)name;
+        (void)ecs;
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -1265,24 +1272,27 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Text("Font");
         ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
 
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-        std::string displayText = fontPath.empty() ? "None" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
+        std::string displayText = fontPath.empty() ? "None (Font)" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
 
-        ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+        // Use EditorComponents for better drag-drop visual feedback
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-        if (ImGui::BeginDragDropTarget())
+        // Drag-drop target with proper payload type
+        if (EditorComponents::BeginDragDropTarget())
         {
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("ASSET_FONT"))
+            ImGui::SetTooltip("Drop .ttf font here");
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD"))
             {
                 // Take snapshot before changing font
                 SnapshotManager::GetInstance().TakeSnapshot("Assign Font");
                 *guid = DraggedFontGuid;
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
                 return true;
             }
-            ImGui::EndDragDropTarget();
+            EditorComponents::EndDragDropTarget();
         }
 
         return false;
@@ -2168,8 +2178,9 @@ void RegisterInspectorCustomRenderers()
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-                            currentEditorState == EditorState::State::PAUSED);
+        // Commented out to fix warning C4189 - unused variable
+        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
+        //                     currentEditorState == EditorState::State::PAUSED);
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs
@@ -2185,13 +2196,14 @@ void RegisterInspectorCustomRenderers()
                     size_t underscorePos = key.find('_');
                     if (underscorePos != std::string::npos)
                     {
-                        Entity entity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
+                        // Renamed to fix warning C4457 - entity hides function parameter
+                        Entity parsedEntity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
                         size_t scriptIdx = std::stoi(key.substr(underscorePos + 1));
 
                         // Get the script component and save the state
-                        if (ecs.HasComponent<ScriptComponentData>(entity))
+                        if (ecs.HasComponent<ScriptComponentData>(parsedEntity))
                         {
-                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(entity);
+                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
                                 // Always preserve the current state - either from preview or runtime instance
@@ -2199,7 +2211,7 @@ void RegisterInspectorCustomRenderers()
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", entity, " script ", scriptIdx,
+                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
                                                " (transition: ", static_cast<int>(lastEditorState), " -> ",
                                                static_cast<int>(currentEditorState), ")");
                                 }
@@ -2449,7 +2461,7 @@ void RegisterInspectorCustomRenderers()
                         usingPreviewInstance = true;
 
                         // ALWAYS restore pending state to preserve edited values
-                        // This is critical for Unity-like behavior where inspector edits persist
+                        // This is critical for behavior where inspector edits persist
                         if (!scriptData.pendingInstanceState.empty())
                         {
                             bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
@@ -2586,7 +2598,7 @@ void RegisterInspectorCustomRenderers()
         };
 
         // Filter fields to show only editable fields from the 'fields' table
-        // This implements Unity-like behavior where only serialized fields are shown
+        // This implements behavior where only serialized fields are shown
         std::vector<Scripting::FieldInfo> filteredFields;
         bool hasFieldsTable = false;
         std::vector<std::string> fieldOrder;
@@ -3121,6 +3133,10 @@ void RegisterInspectorCustomRenderers()
             }
             }
             catch (const std::exception& e) {
+                // Commented out to fix warning C4101 - unreferenced local variable
+                // Remove this line when 'e' is used
+                (void)e;
+
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering field %s", field.name.c_str());
             }
 

@@ -263,6 +263,10 @@ bool ScriptInspector::PushStringAsLuaValue(lua_State* L, const std::string& valu
 // Public conversion helper: read lua value to string (editor friendly)
 std::string ScriptInspector::LuaValueToString(lua_State* L, int idx, FieldType expectedType)
 {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'expectedType' is used
+    (void)expectedType;
+
     int t = lua_type(L, idx);
     if (t == LUA_TSTRING) {
         size_t len = 0; const char* s = lua_tolstring(L, idx, &len);

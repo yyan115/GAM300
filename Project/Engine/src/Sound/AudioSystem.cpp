@@ -80,7 +80,7 @@ void AudioSystem::Update(float deltaTime) {
 
         // Update AudioComponent entities
         if (ecsManager.HasComponent<AudioComponent>(entity)) {
-            // Skip inactive entities (Unity-like behavior)
+            // Skip inactive entities
             if (ecsManager.HasComponent<ActiveComponent>(entity)) {
                 auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
                 if (!activeComp.isActive) {

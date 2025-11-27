@@ -12,6 +12,7 @@
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
+#include "Transform/TransformComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include <fstream>
 #include <sstream>
@@ -27,6 +28,7 @@ ScriptSystem::~ScriptSystem() = default;
 static std::unordered_map<std::string, std::function<void(lua_State*, void*)>> g_componentPushers;
 static std::set<std::string> g_luaRegisteredComponents_global;
 static bool g_luaBindingsDone = false;
+static ECSManager* g_ecsManager = nullptr;
 
 // Template to register component getters into the existing ComponentRegistry.
 // This is idempotent per component type.
@@ -51,15 +53,49 @@ static void RegisterCompPusher(const char* compName) {
 
     g_componentPushers[compName] = [](lua_State* L, void* ptr) {
         CompT* typed = reinterpret_cast<CompT*>(ptr);
-        luabridge::push(L, typed);
+        // Cast to void to fix warning C4834 - discarding [[nodiscard]] return value
+        // luabridge::push(L, typed);
+        (void)luabridge::push(L, typed);
         };
 
     s_registered[compName] = true;
 }
 
+static Transform* Lua_FindTransformByName(const std::string& name)
+{
+    if (!g_ecsManager) return nullptr;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            // Found the entity with matching name, now ensure it has a Transform
+            if (ecs.HasComponent<Transform>(e))
+            {
+                return &ecs.GetComponent<Transform>(e);
+            }
+
+            // Name matched but no Transform; stop searching if names are unique
+            break;
+        }
+    }
+
+    return nullptr;
+}
+
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
     m_ecs = &ecsManager;
+	g_ecsManager = &ecsManager;
+
     Scripting::Init();
 
     //PHYSICSSYSTEM REFERENCE (TEMPORARY?)
@@ -114,6 +150,8 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
 
+            // Undef to fix warning C4005 - macro redefinition
+            #undef METHOD
             #define METHOD(...)
 
             #define END_COMPONENT() \
@@ -311,6 +349,8 @@ void ScriptSystem::Shutdown()
 {
     std::lock_guard<std::mutex> lk(m_mutex);
 
+	g_ecsManager = nullptr;
+
     // best-effort: call OnDisable and release runtime objects
     for (auto& p : m_runtimeMap) {
         auto& scriptVec = p.second;
@@ -438,7 +478,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending state for script ", scriptIdx, " entity ", e, "\n");
             }
             // DO NOT clear pendingInstanceState - we need it to persist across multiple play/stop cycles
-            // This ensures Unity-like behavior where inspector edits are preserved
+            // This ensures behavior where inspector edits are preserved
         }
 
         // Store in runtime map

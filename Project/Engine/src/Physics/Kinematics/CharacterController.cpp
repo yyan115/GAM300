@@ -28,13 +28,14 @@ CharacterController::~CharacterController()
         mCharacter = nullptr;
     }
 }
-void CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
+bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
     //SHAPE TYPE HAS TO BE A CAPSULE..
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
-    float height = collider.capsuleHalfHeight * 2.0f;
-    float radius = collider.capsuleRadius;
+    // Commented out to fix warning C4189 - unused variable
+    // float height = collider.capsuleHalfHeight * 2.0f;
+    // float radius = collider.capsuleRadius;
 
     JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(collider.capsuleHalfHeight, collider.capsuleRadius);
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
@@ -48,6 +49,13 @@ void CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         JPH::RVec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z),
         JPH:: Quat::sIdentity(),
         mPhysicsSystem);
+
+    if (!mCharacter)
+    {
+        std::cerr << "[CharacterController] Failed to create CharacterVirtual!" << std::endl;
+        return false;
+    }
+    return true;
 }
 
 void CharacterController::Update(float deltaTime) {

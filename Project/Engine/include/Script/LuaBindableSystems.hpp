@@ -55,12 +55,12 @@ namespace CharacterControllerWrappers {
         return new CharacterController(physicsSystem);
     }
 
-    inline void Initialise(CharacterController* controller,
+    inline bool Initialise(CharacterController* controller,
         ColliderComponent* collider,
         Transform* transform) {
 
         if (controller && collider && transform) {
-            controller->Initialise(*collider, *transform);
+            return controller->Initialise(*collider, *transform);
         }
     }
 
@@ -113,4 +113,72 @@ namespace CharacterControllerWrappers {
             delete controller;
     }
 
+}
+
+// ============================================================================
+// TAG SYSTEM WRAPPERS
+// ============================================================================
+#include "ECS/TagManager.hpp"
+#include "ECS/TagComponent.hpp"
+
+namespace TagWrappers {
+    // Get tag name by index
+    inline std::string GetTagName(int index) {
+        return TagManager::GetInstance().GetTagName(index);
+    }
+    
+    // Get tag index by name
+    inline int GetTagIndex(const std::string& name) {
+        return TagManager::GetInstance().GetTagIndex(name);
+    }
+    
+    // Get total number of tags
+    inline int GetTagCount() {
+        return TagManager::GetInstance().GetTagCount();
+    }
+    
+    // Compare tag by name (for entity.tag == "Player" style comparisons)
+    inline bool CompareTag(int tagIndex, const std::string& tagName) {
+        int targetIndex = TagManager::GetInstance().GetTagIndex(tagName);
+        return tagIndex == targetIndex && targetIndex != -1;
+    }
+    
+    // Compare two tag names
+    inline bool CompareTagNames(const std::string& tag1, const std::string& tag2) {
+        return tag1 == tag2;
+    }
+}
+
+// ============================================================================
+// LAYER SYSTEM WRAPPERS
+// ============================================================================
+#include "ECS/LayerManager.hpp"
+#include "ECS/LayerComponent.hpp"
+
+namespace LayerWrappers {
+    // Get layer name by index
+    inline std::string GetLayerName(int index) {
+        return LayerManager::GetInstance().GetLayerName(index);
+    }
+    
+    // Get layer index by name (returns -1 if not found)
+    inline int GetLayerIndex(const std::string& name) {
+        return LayerManager::GetInstance().GetLayerIndex(name);
+    }
+    
+    // Check if entity is in a specific layer by name
+    inline bool IsInLayer(int layerIndex, const std::string& layerName) {
+        int targetIndex = LayerManager::GetInstance().GetLayerIndex(layerName);
+        return layerIndex == targetIndex && targetIndex != -1;
+    }
+    
+    // Get layer mask from layer index
+    inline int GetLayerMask(int layerIndex) {
+        return 1 << layerIndex;
+    }
+    
+    // Check if two layer masks intersect
+    inline bool LayerMasksIntersect(int mask1, int mask2) {
+        return (mask1 & mask2) != 0;
+    }
 }

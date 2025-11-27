@@ -31,6 +31,7 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
+#include <ECS/SiblingIndexComponent.hpp>
 
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 
@@ -65,6 +66,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
 	RegisterComponent<LayerComponent>();
+	RegisterComponent<SiblingIndexComponent>();
 	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
 	RegisterComponent<SpriteAnimationComponent>();
@@ -214,6 +216,7 @@ void ECSManager::DestroyEntity(Entity entity) {
 		}
 	}
 
+	EntityGUIDRegistry::GetInstance().Unregister(entity);
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);

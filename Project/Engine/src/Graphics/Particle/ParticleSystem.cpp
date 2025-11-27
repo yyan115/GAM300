@@ -243,7 +243,7 @@ void ParticleSystem::Update()
 
     for (const auto& entity : entities)
     {
-        // Skip inactive entities (Unity-like behavior)
+        // Skip inactive entities
         if (ecsManager.HasComponent<ActiveComponent>(entity)) {
             auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
             if (!activeComp.isActive) {

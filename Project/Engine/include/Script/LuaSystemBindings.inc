@@ -124,9 +124,35 @@ BEGIN_SYSTEM("PhysicsSystem")
 END_SYSTEM()
 
 
+// ============================================================================
+// TAG SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Tag")
+    FUNCTION("GetName", TagWrappers::GetTagName)
+    FUNCTION("GetIndex", TagWrappers::GetTagIndex)
+    FUNCTION("GetCount", TagWrappers::GetTagCount)
+    FUNCTION("Compare", TagWrappers::CompareTag)
+    FUNCTION("CompareNames", TagWrappers::CompareTagNames)
+END_SYSTEM()
+
+// ============================================================================
+// LAYER SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Layer")
+    FUNCTION("GetName", LayerWrappers::GetLayerName)
+    FUNCTION("GetIndex", LayerWrappers::GetLayerIndex)
+    FUNCTION("IsInLayer", LayerWrappers::IsInLayer)
+    FUNCTION("GetMask", LayerWrappers::GetLayerMask)
+    FUNCTION("MasksIntersect", LayerWrappers::LayerMasksIntersect)
+END_SYSTEM()
 
 
-
+// ENGINE HELPERS
+BEGIN_SYSTEM("Engine")
+    FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+END_SYSTEM()
 
 // ============================================================================
 // FUTURE SYSTEMS (Examples)

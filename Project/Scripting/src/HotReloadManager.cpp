@@ -89,7 +89,7 @@ namespace Scripting {
             if (workerThread.joinable()) {
                 BOOL canceled = CancelSynchronousIo(workerThread.native_handle());
                 if (!canceled) {
-                    // Not fatal — just log; worker thread may still wake on events or timeouts.
+                    // Not fatal - just log; worker thread may still wake on events or timeouts.
                     ENGINE_PRINT(EngineLogging::LogLevel::Warn, "HotReloadManager: CancelSynchronousIo failed (err=", GetLastError(),"%u).");
                 }
             }

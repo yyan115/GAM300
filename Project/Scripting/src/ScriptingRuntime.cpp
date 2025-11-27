@@ -84,14 +84,16 @@ namespace Scripting {
             return 1;
         }
 
-        static bool ReadFileToString(const std::string& path, std::string& out) {
-            std::ifstream ifs(path, std::ios::binary);
-            if (!ifs) return false;
-            std::ostringstream ss;
-            ss << ifs.rdbuf();
-            out = ss.str();
-            return true;
-        }
+        // Commented out to fix warning C4505 - unreferenced function
+        // Remove comments when this function is used
+        // static bool ReadFileToString(const std::string& path, std::string& out) {
+        //     std::ifstream ifs(path, std::ios::binary);
+        //     if (!ifs) return false;
+        //     std::ostringstream ss;
+        //     ss << ifs.rdbuf();
+        //     out = ss.str();
+        //     return true;
+        // }
 
         // Compatibility wrapper for obtaining table length across Lua versions
         inline int lua_table_len(lua_State * L, int idx) {
@@ -470,6 +472,10 @@ namespace Scripting {
     }
 
     EnvironmentId ScriptingRuntime::CreateEnvironment(const std::string& name) {
+        // Commented out to fix warning C4100 - unreferenced parameter
+        // Remove this line when 'name' is used
+        (void)name;
+
         lua_State* snapshotL = nullptr;
         {
             std::lock_guard<std::mutex> lock(m_mutex);

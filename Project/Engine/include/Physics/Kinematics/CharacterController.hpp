@@ -19,7 +19,7 @@ public:
     // Destructor
     ~CharacterController();
 
-    void Initialise(ColliderComponent &collider, Transform &transform);
+    bool Initialise(ColliderComponent &collider, Transform &transform);
 
     // Called each frame
     void Update(float deltaTime);
