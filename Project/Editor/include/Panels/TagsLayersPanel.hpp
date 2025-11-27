@@ -45,6 +45,11 @@ private:
     void RenderLayersSection();
 
     /**
+     * @brief Render the sorting layers management section.
+     */
+    void RenderSortingLayersSection();
+
+    /**
      * @brief Add a new tag.
      * @param tagName The name of the tag to add.
      */
@@ -71,6 +76,8 @@ private:
     // UI state
     char newTagBuffer[64] = {0};
     char newLayerBuffer[64] = {0};
+    char newSortingLayerBuffer[64] = {0};
     int selectedTagForRemoval = -1;
     int selectedLayerForRemoval = -1;
+    int selectedSortingLayerForRemoval = -1;
 };

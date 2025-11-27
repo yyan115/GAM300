@@ -141,17 +141,35 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                     entitiesWithComponent++;
                     ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with SpriteRenderComponent (is3D=", sprite.is3D, ")\n");
 
-                    // Get sprite position from Transform if it exists, otherwise use sprite's position
+                    // Get sprite position and scale from Transform if it exists
                     glm::vec3 spritePosition = sprite.position.ConvertToGLM();
+                    glm::vec3 spriteScale = sprite.scale.ConvertToGLM();
+
                     if (ecsManager.HasComponent<Transform>(entity)) {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
+
+                        // Get position from world matrix
                         spritePosition = glm::vec3(transform.worldMatrix.m.m03,
                                                    transform.worldMatrix.m.m13,
                                                    transform.worldMatrix.m.m23);
+
+                        // For 3D sprites, get scale from Transform's world matrix (same as rendering)
+                        if (sprite.is3D) {
+                            float scaleX = sqrt(transform.worldMatrix.m.m00 * transform.worldMatrix.m.m00 +
+                                               transform.worldMatrix.m.m10 * transform.worldMatrix.m.m10 +
+                                               transform.worldMatrix.m.m20 * transform.worldMatrix.m.m20);
+                            float scaleY = sqrt(transform.worldMatrix.m.m01 * transform.worldMatrix.m.m01 +
+                                               transform.worldMatrix.m.m11 * transform.worldMatrix.m.m11 +
+                                               transform.worldMatrix.m.m21 * transform.worldMatrix.m.m21);
+                            float scaleZ = sqrt(transform.worldMatrix.m.m02 * transform.worldMatrix.m.m02 +
+                                               transform.worldMatrix.m.m12 * transform.worldMatrix.m.m12 +
+                                               transform.worldMatrix.m.m22 * transform.worldMatrix.m.m22);
+                            spriteScale = glm::vec3(scaleX, scaleY, scaleZ);
+                        }
                     }
 
                     // Create AABB from the sprite's position and scale
-                    entityAABB = CreateAABBFromSprite(spritePosition, sprite.scale.ConvertToGLM(), sprite.is3D);
+                    entityAABB = CreateAABBFromSprite(spritePosition, spriteScale, sprite.is3D);
                     hasValidAABB = true;
 
                     ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Sprite) AABB: min("

@@ -97,13 +97,38 @@ void ScenePanel::DrawGameViewportIndicator() {
     glm::vec3 worldBottomLeft(0.0f, 0.0f, 0.0f);
 
     // Convert world space to screen space using editor camera
-    auto worldToScreen = [this](const glm::vec3& worldPos) -> ImVec2 {
-        // For 2D orthographic: screen_x = (world_x - camera_target_x) / zoom + viewport_center
-        // EditorCamera orthographic projection centers around Target, not Position
+    // This must match the projection calculation in GraphicsManager::SetupMatrices
+    auto worldToScreen = [this, gameWidth, gameHeight](const glm::vec3& worldPos) -> ImVec2 {
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-        float screenX = ((worldPos.x - editorCamera.Target.x) / editorCamera.OrthoZoomLevel) + viewportSize.x * 0.5f;
-        float screenY = ((editorCamera.Target.y - worldPos.y) / editorCamera.OrthoZoomLevel) + viewportSize.y * 0.5f;
+        float gameAspect = (float)gameWidth / (float)gameHeight;
+        float viewportAspect = viewportSize.x / viewportSize.y;
+
+        // Calculate view dimensions that preserve game aspect ratio (same as SetupMatrices)
+        float viewWidth, viewHeight;
+        if (viewportAspect > gameAspect) {
+            // Viewport is wider than game - fit by height
+            viewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+            viewWidth = viewHeight * viewportAspect;
+        } else {
+            // Viewport is taller than game - fit by width
+            viewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+            viewHeight = viewWidth / viewportAspect;
+        }
+
+        // Calculate padding for centering
+        float gameViewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+        float gameViewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+        float paddingX = (viewWidth - gameViewWidth) * 0.5f;
+        float paddingY = (viewHeight - gameViewHeight) * 0.5f;
+
+        // Map world coordinates to screen coordinates
+        // The projection maps [left, right] to [0, viewportWidth] and [bottom, top] to [viewportHeight, 0]
+        float left = editorCamera.Position.x - paddingX;
+        float bottom = editorCamera.Position.y - paddingY;
+
+        float screenX = (worldPos.x - left) * viewportSize.x / viewWidth;
+        float screenY = viewportSize.y - (worldPos.y - bottom) * viewportSize.y / viewHeight;
 
         ImVec2 windowPos = ImGui::GetCursorScreenPos();
         return ImVec2(windowPos.x + screenX, windowPos.y + screenY);
@@ -456,6 +481,12 @@ void ScenePanel::HandleEntitySelection() {
                 }
             }
 
+            // Only perform raycast on actual click/release, not during drag
+            // Skip raycast while marquee dragging or during continuous drag
+            if (!isLeftClicked && !isDoubleClicked && !(isLeftReleased && !isMarqueeSelecting)) {
+                return; // Skip raycast during drag or other states
+            }
+
             // Perform proper raycasting for entity selection
             EditorState& editorState = EditorState::GetInstance();
             bool is2DMode = editorState.Is2DMode();
@@ -476,18 +507,8 @@ void ScenePanel::HandleEntitySelection() {
             }
 
             // Convert GLM matrices to Matrix4x4 for raycast
-            Matrix4x4 viewMatrix(
-                glmViewMatrix[0][0], glmViewMatrix[1][0], glmViewMatrix[2][0], glmViewMatrix[3][0],
-                glmViewMatrix[0][1], glmViewMatrix[1][1], glmViewMatrix[2][1], glmViewMatrix[3][1],
-                glmViewMatrix[0][2], glmViewMatrix[1][2], glmViewMatrix[2][2], glmViewMatrix[3][2],
-                glmViewMatrix[0][3], glmViewMatrix[1][3], glmViewMatrix[2][3], glmViewMatrix[3][3]
-            );
-            Matrix4x4 projMatrix(
-                glmProjMatrix[0][0], glmProjMatrix[1][0], glmProjMatrix[2][0], glmProjMatrix[3][0],
-                glmProjMatrix[0][1], glmProjMatrix[1][1], glmProjMatrix[2][1], glmProjMatrix[3][1],
-                glmProjMatrix[0][2], glmProjMatrix[1][2], glmProjMatrix[2][2], glmProjMatrix[3][2],
-                glmProjMatrix[0][3], glmProjMatrix[1][3], glmProjMatrix[2][3], glmProjMatrix[3][3]
-            );
+            Matrix4x4 viewMatrix = Matrix4x4::ConvertToMatrix4x4(glmViewMatrix);
+            Matrix4x4 projMatrix = Matrix4x4::ConvertToMatrix4x4(glmProjMatrix);
 
             // Cast ray from camera through mouse position
             RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(
@@ -689,10 +710,12 @@ void ScenePanel::OnImGuiRender()
             DrawAudioGizmos();
             DrawLightGizmos();
 
-            // Draw selection outline for selected entities
+            // Draw selection outline for selected entities (3D only)
             auto selectedEntities = GUIManager::GetSelectedEntities();
             for (auto entity : selectedEntities) {
-                DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
+                if (RaycastUtil::IsEntity3D(entity)) {
+                    DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
+                }
             }
 
             // View gizmo in the corner
@@ -775,6 +798,15 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
         auto& gfx = GraphicsManager::GetInstance();
+
+        // Set target game resolution for 2D rendering synchronization with Game Panel
+        auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+        if (gamePanel) {
+            int targetWidth, targetHeight;
+            gamePanel->GetTargetGameResolution(targetWidth, targetHeight);
+            gfx.SetTargetGameResolution(targetWidth, targetHeight);
+        }
 
         // Set viewport size for correct aspect ratio
         gfx.SetViewportSize(width, height);

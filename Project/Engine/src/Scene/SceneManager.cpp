@@ -10,6 +10,8 @@
 #include "rapidjson/prettywriter.h"
 #include <Serialization/Serializer.hpp>
 #include "Utilities/GUID.hpp"
+#include "Engine.h"
+#include "Sound/AudioManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -42,8 +44,17 @@ void SceneManager::LoadTestScene() {
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath) {
 #if 1
+	// Reset game state to edit mode when loading a new scene
+	// This ensures play/pause state is cleared
+	if (Engine::IsPlayMode() || Engine::IsPaused()) {
+		Engine::SetGameState(GameState::EDIT_MODE);
+	}
+
+	// Stop all audio when loading a new scene
+	AudioManager::GetInstance().StopAll();
+
 	// Exit and clean up the current scene if it exists.
-	if (currentScene) 
+	if (currentScene)
     {
 		currentScene->Exit();
 
@@ -425,12 +436,23 @@ void SceneManager::UpdateScenePath(const std::string& oldPath, const std::string
 }
 
 void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
+	namespace fs = std::filesystem;
 	try {
-		std::ofstream file("last_scene.txt");
+		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+		fs::path projectRoot = fs::current_path().parent_path().parent_path();
+		fs::path settingsDir = projectRoot / "ProjectSettings";
+
+		// Create ProjectSettings directory if it doesn't exist
+		if (!fs::exists(settingsDir)) {
+			fs::create_directories(settingsDir);
+		}
+
+		fs::path lastSceneFile = settingsDir / "last_scene.txt";
+		std::ofstream file(lastSceneFile);
 		if (file.is_open()) {
 			file << scenePath;
 			file.close();
-			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path: " + scenePath);
+			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path to: " + lastSceneFile.string());
 		}
 		else {
 			ENGINE_LOG_WARN("[SceneManager] Failed to save last opened scene path");
@@ -442,19 +464,28 @@ void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
 }
 
 std::string SceneManager::LoadLastOpenedScenePath() {
+	namespace fs = std::filesystem;
 	try {
-		std::ifstream file("last_scene.txt");
+		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+		fs::path projectRoot = fs::current_path().parent_path().parent_path();
+		fs::path settingsDir = projectRoot / "ProjectSettings";
+		fs::path lastSceneFile = settingsDir / "last_scene.txt";
+
+		std::ifstream file(lastSceneFile);
 		if (file.is_open()) {
 			std::string scenePath;
 			std::getline(file, scenePath);
 			file.close();
-			if (!scenePath.empty() && std::filesystem::exists(scenePath)) {
+			if (!scenePath.empty() && fs::exists(scenePath)) {
 				ENGINE_LOG_INFO("[SceneManager] Loaded last opened scene path: " + scenePath);
 				return scenePath;
 			}
 			else if (!scenePath.empty()) {
 				ENGINE_LOG_WARN("[SceneManager] Last opened scene no longer exists: " + scenePath);
 			}
+		}
+		else {
+			ENGINE_LOG_INFO("[SceneManager] No last scene file found at: " + lastSceneFile.string());
 		}
 	}
 	catch (const std::exception& ex) {
