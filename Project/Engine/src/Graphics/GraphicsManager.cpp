@@ -9,6 +9,7 @@
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include <ECS/SortingLayerManager.hpp>
 #include "Logging.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Camera/CameraSystem.hpp"
@@ -199,10 +200,76 @@ void GraphicsManager::Render()
 	// Render skybox first (before other objects)
 	RenderSkybox();
 
-	// Sort render queue by render order (lower numbers render first)
+	// Sort render queue - Unity-like sorting for 2D elements
+	// For 2D elements: sort by sortingLayer then sortingOrder (higher = on top = renders later)
+	// 3D objects render based on renderOrder
 	std::sort(renderQueue.begin(), renderQueue.end(),
 		[](const std::unique_ptr<IRenderComponent>& a, const std::unique_ptr<IRenderComponent>& b) {
-			return a->renderOrder < b->renderOrder;
+			// Helper to check if component is 2D
+			auto is2D = [](const IRenderComponent* comp) -> bool {
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					return !text->is3D;
+				}
+				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					return !sprite->is3D;
+				}
+				return false;
+			};
+
+			// Helper to get sortingLayer ORDER (for rendering priority)
+			auto getSortingLayer = [](const IRenderComponent* comp) -> int {
+				int layerID = 0;
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					layerID = text->sortingLayer;
+				}
+				else if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					layerID = sprite->sortingLayer;
+				}
+
+				// Get the order from the sorting layer manager
+				// Lower order = rendered first (behind), higher order = rendered last (on top)
+				int order = SortingLayerManager::GetInstance().GetLayerOrder(layerID);
+				if (order == -1) {
+					// Invalid layer ID, use default (0)
+					return 0;
+				}
+				return order;
+			};
+
+			// Helper to get sortingOrder
+			auto getSortingOrder = [](const IRenderComponent* comp) -> int {
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					return text->sortingOrder;
+				}
+				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					return sprite->sortingOrder;
+				}
+				return 0;
+			};
+
+			bool aIs2D = is2D(a.get());
+			bool bIs2D = is2D(b.get());
+
+			// If both are 2D or both are 3D, use appropriate sorting
+			if (aIs2D && bIs2D) {
+				// Both 2D - sort by sortingLayer then sortingOrder (Unity-like)
+				int layerA = getSortingLayer(a.get());
+				int layerB = getSortingLayer(b.get());
+				if (layerA != layerB) {
+					return layerA < layerB; // Higher layer = on top = renders later
+				}
+				int orderA = getSortingOrder(a.get());
+				int orderB = getSortingOrder(b.get());
+				return orderA < orderB; // Higher order = on top = renders later
+			}
+			else if (!aIs2D && !bIs2D) {
+				// Both 3D - sort by renderOrder
+				return a->renderOrder < b->renderOrder;
+			}
+			else {
+				// Mixed 2D and 3D - render 3D first, then 2D on top
+				return !aIs2D; // 3D (false) < 2D (true), so 3D renders first
+			}
 		});
 
 	// Render all items in the queue
@@ -368,9 +435,16 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		return;
 	}
 
-	// Enable depth testing for 3D text
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+	// Configure depth testing based on 2D/3D mode
+	if (item.is3D) {
+		// 3D text: enable depth testing
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+	}
+	else {
+		// 2D text: disable depth testing so render order determines what's on top (Unity-style)
+		glDisable(GL_DEPTH_TEST);
+	}
 
 	// Enable blending for text transparency
 	glEnable(GL_BLEND);
@@ -483,6 +557,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE); // Restore depth writing
+	glEnable(GL_DEPTH_TEST); // Restore depth testing for 3D objects
 }
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
@@ -664,6 +739,17 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		return;
 	}
 
+	// Configure depth testing based on 2D/3D mode
+	if (item.is3D) {
+		// 3D sprite: enable depth testing
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+	}
+	else {
+		// 2D sprite: disable depth testing so render order determines what's on top (Unity-style)
+		glDisable(GL_DEPTH_TEST);
+	}
+
 	// Enable blending for sprite transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -771,6 +857,9 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 	// Disable blending
 	glDisable(GL_BLEND);
+	// Restore depth testing for 3D objects
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 	//glEnable(GL_CULL_FACE);
 }
 

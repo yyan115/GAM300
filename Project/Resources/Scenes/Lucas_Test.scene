@@ -484,6 +484,10 @@
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -803,6 +807,10 @@
                         },
                         {
                             "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "int",
                             "data": 0
                         },
                         {
@@ -859,7 +867,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -876,11 +884,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.001
+                                    "data": 2.101
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2
+                                    "data": 3
                                 },
                                 {
                                     "type": "float",
@@ -918,7 +926,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.001
+                                    "data": 2.101
                                 },
                                 {
                                     "type": "float",
@@ -930,7 +938,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -938,7 +946,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2
+                                    "data": 3
                                 },
                                 {
                                     "type": "float",
@@ -1006,7 +1014,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -1031,13 +1039,21 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": -0.3
                                 }
                             ]
                         },
                         {
                             "type": "bool",
                             "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": -16
                         },
                         {
                             "type": "Matrix4x4",
@@ -1110,7 +1126,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 0
                         }
                     ]
                 },
@@ -1125,18 +1141,6 @@
                 }
             }
         }
-    ],
-    "tags": [
-        "Untagged",
-        "Respawn",
-        "Finish",
-        "EditorOnly",
-        "MainCamera",
-        "Player",
-        "GameController",
-        "Enemy",
-        "NPC",
-        "Collectible"
     ],
     "layers": [
         {

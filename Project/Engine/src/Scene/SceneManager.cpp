@@ -425,12 +425,23 @@ void SceneManager::UpdateScenePath(const std::string& oldPath, const std::string
 }
 
 void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
+	namespace fs = std::filesystem;
 	try {
-		std::ofstream file("last_scene.txt");
+		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+		fs::path projectRoot = fs::current_path().parent_path().parent_path();
+		fs::path settingsDir = projectRoot / "ProjectSettings";
+
+		// Create ProjectSettings directory if it doesn't exist
+		if (!fs::exists(settingsDir)) {
+			fs::create_directories(settingsDir);
+		}
+
+		fs::path lastSceneFile = settingsDir / "last_scene.txt";
+		std::ofstream file(lastSceneFile);
 		if (file.is_open()) {
 			file << scenePath;
 			file.close();
-			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path: " + scenePath);
+			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path to: " + lastSceneFile.string());
 		}
 		else {
 			ENGINE_LOG_WARN("[SceneManager] Failed to save last opened scene path");
@@ -442,19 +453,28 @@ void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
 }
 
 std::string SceneManager::LoadLastOpenedScenePath() {
+	namespace fs = std::filesystem;
 	try {
-		std::ifstream file("last_scene.txt");
+		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+		fs::path projectRoot = fs::current_path().parent_path().parent_path();
+		fs::path settingsDir = projectRoot / "ProjectSettings";
+		fs::path lastSceneFile = settingsDir / "last_scene.txt";
+
+		std::ifstream file(lastSceneFile);
 		if (file.is_open()) {
 			std::string scenePath;
 			std::getline(file, scenePath);
 			file.close();
-			if (!scenePath.empty() && std::filesystem::exists(scenePath)) {
+			if (!scenePath.empty() && fs::exists(scenePath)) {
 				ENGINE_LOG_INFO("[SceneManager] Loaded last opened scene path: " + scenePath);
 				return scenePath;
 			}
 			else if (!scenePath.empty()) {
 				ENGINE_LOG_WARN("[SceneManager] Last opened scene no longer exists: " + scenePath);
 			}
+		}
+		else {
+			ENGINE_LOG_INFO("[SceneManager] No last scene file found at: " + lastSceneFile.string());
 		}
 	}
 	catch (const std::exception& ex) {

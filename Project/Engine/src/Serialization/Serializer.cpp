@@ -543,17 +543,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 
     doc.AddMember("entities", entitiesArr, alloc);
 
-    // Serialize tags
-    rapidjson::Value tagsArr(rapidjson::kArrayType);
-    const auto& allTags = TagManager::GetInstance().GetAllTags();
-    for (const auto& tag : allTags) {
-        rapidjson::Value tagVal;
-        tagVal.SetString(tag.c_str(), static_cast<rapidjson::SizeType>(tag.size()), alloc);
-        tagsArr.PushBack(tagVal, alloc);
-    }
-    doc.AddMember("tags", tagsArr, alloc);
+    // NOTE: Tags, layers, and sorting layers are no longer saved per-scene.
+    // They are now saved in project-wide settings (TagsLayersSettings.hpp)
+    // This ensures consistency across all scenes in the project.
 
-    // Serialize layers
+    // Serialize layers (kept for backward compatibility but will be ignored on load)
     rapidjson::Value layersArr(rapidjson::kArrayType);
     const auto& allLayers = LayerManager::GetInstance().GetAllLayers();
     for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
@@ -638,27 +632,9 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         return;
     }
 
-    // Deserialize tags
-    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
-        const auto& tagsArr = doc["tags"];
-        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
-            std::string tag = tagsArr[i].GetString();
-            TagManager::GetInstance().AddTag(tag);
-        }
-    }
-
-    // Deserialize layers
-    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
-        const auto& layersArr = doc["layers"];
-        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
-            const auto& layerObj = layersArr[i];
-            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
-                int index = layerObj["index"].GetInt();
-                std::string name = layerObj["name"].GetString();
-                LayerManager::GetInstance().SetLayerName(index, name);
-            }
-        }
-    }
+    // NOTE: Tags, layers, and sorting layers are now loaded from project-wide settings
+    // (TagsLayersSettings.hpp) and are NOT loaded from scene files anymore.
+    // Old scene files may still contain these, but they will be ignored.
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
@@ -902,6 +878,19 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         }
     }
 
+    // Deserialize sorting layers
+    if (doc.HasMember("sortingLayers") && doc["sortingLayers"].IsArray()) {
+        SortingLayerManager::GetInstance().Clear(); // Clear and reload from file
+        const auto& sortingLayersArr = doc["sortingLayers"];
+        for (rapidjson::SizeType i = 0; i < sortingLayersArr.Size(); ++i) {
+            const auto& layerObj = sortingLayersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("name")) {
+                std::string name = layerObj["name"].GetString();
+                SortingLayerManager::GetInstance().AddLayer(name);
+            }
+        }
+    }
+
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }
 
@@ -931,27 +920,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + tempScenePath);
     }
 
-    // Deserialize tags
-    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
-        const auto& tagsArr = doc["tags"];
-        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
-            std::string tag = tagsArr[i].GetString();
-            TagManager::GetInstance().AddTag(tag);
-        }
-    }
-
-    // Deserialize layers
-    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
-        const auto& layersArr = doc["layers"];
-        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
-            const auto& layerObj = layersArr[i];
-            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
-                int index = layerObj["index"].GetInt();
-                std::string name = layerObj["name"].GetString();
-                LayerManager::GetInstance().SetLayerName(index, name);
-            }
-        }
-    }
+    // NOTE: Tags, layers, and sorting layers are now loaded from project-wide settings
+    // (TagsLayersSettings.hpp) and are NOT loaded from scene files anymore.
+    // Old scene files may still contain these, but they will be ignored.
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + tempScenePath);
@@ -1480,8 +1451,27 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             spriteComp.alpha = d[startIdx + 6]["data"].GetFloat();
             spriteComp.is3D = d[startIdx + 7]["data"].GetBool();
             spriteComp.enableBillboard = d[startIdx + 8]["data"].GetBool();
-            spriteComp.layer = d[startIdx + 9]["data"].GetInt();
-            readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
+
+            // Backward compatibility: old scenes have "layer", new scenes have "sortingLayer" and "sortingOrder"
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 9)) {
+                // Load old "layer" field into sortingLayer for backward compatibility
+                spriteComp.sortingLayer = d[startIdx + 9]["data"].GetInt();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10) &&
+                d[startIdx + 10].IsObject() && d[startIdx + 10].HasMember("type")) {
+                // Check if this is sortingOrder (int) or saved3DPosition (vector)
+                std::string fieldType = d[startIdx + 10]["type"].GetString();
+                if (fieldType == "int") {
+                    // New format with sortingOrder
+                    spriteComp.sortingOrder = d[startIdx + 10]["data"].GetInt();
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
+                        readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
+                    }
+                } else {
+                    // Old format - this is saved3DPosition
+                    readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
+                }
+            }
         }
     }
 }
@@ -1632,19 +1622,45 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
 
-        // Note: scale field removed - now controlled by Transform component
-        // Read and discard the old scale value to keep indices aligned with old save files
+        // Detect old vs new format by checking if index 6 is float (old scale) or bool (new is3D)
+        bool hasOldScaleField = false;
         if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
-            d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("data")) {
-            float oldScale = d[startIdx + 6]["data"].GetFloat(); // Read but don't use
+            d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("type") &&
+            d[startIdx + 6]["type"].GetString() == std::string("float")) {
+            // OLD format with scale field - read and discard it
+            hasOldScaleField = true;
+            float oldScale = d[startIdx + 6]["data"].GetFloat();
             (void)oldScale; // Suppress unused variable warning
         }
 
-        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
-            textComp.is3D = d[startIdx + 7]["data"].GetBool();
-        }
-        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 9)) {
-            textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[startIdx + 9]["data"].GetInt());
+        if (hasOldScaleField) {
+            // OLD format indices (with scale at 6)
+            // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
+                textComp.is3D = d[startIdx + 7]["data"].GetBool();
+            }
+            // sortingLayer and sortingOrder didn't exist in old format - use defaults
+            textComp.sortingLayer = 0;
+            textComp.sortingOrder = 0;
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
+                textComp.alignmentInt = d[startIdx + 8]["data"].GetInt();
+            }
+        } else {
+            // NEW format indices (without scale)
+            // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6)) {
+                textComp.is3D = d[startIdx + 6]["data"].GetBool();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
+                textComp.sortingLayer = d[startIdx + 7]["data"].GetInt();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
+                textComp.sortingOrder = d[startIdx + 8]["data"].GetInt();
+            }
+            // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10)) {
+                textComp.alignmentInt = d[startIdx + 10]["data"].GetInt();
+            }
         }
     }
 }

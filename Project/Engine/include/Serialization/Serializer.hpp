@@ -6,6 +6,7 @@
 #include "ECS/SiblingIndexComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
+#include "ECS/SortingLayerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>

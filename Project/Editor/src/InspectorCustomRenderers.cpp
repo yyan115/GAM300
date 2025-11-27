@@ -42,6 +42,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
+#include "ECS/SortingLayerManager.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
@@ -49,6 +50,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
+#include "Panels/PanelManager.hpp"
 #include "GUIManager.hpp"
 extern "C" {
 #include "lua.h"
@@ -1086,6 +1088,63 @@ void RegisterInspectorCustomRenderers()
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
 
+    // Sprite sorting layer dropdown
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "sortingLayer",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* sortingLayerID = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Sorting Layer");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        // Get all sorting layers from the manager
+        const auto& sortingLayers = SortingLayerManager::GetInstance().GetAllLayers();
+
+        // Find current layer name
+        std::string currentLayerName = SortingLayerManager::GetInstance().GetLayerName(*sortingLayerID);
+        if (currentLayerName.empty()) {
+            currentLayerName = "Default";
+            *sortingLayerID = 0; // Reset to default if invalid
+        }
+
+        EditorComponents::PushComboColors();
+        bool changed = false;
+        if (ImGui::BeginCombo("##SpriteSortingLayer", currentLayerName.c_str()))
+        {
+            // Show all existing sorting layers
+            for (const auto& layer : sortingLayers) {
+                bool isSelected = (*sortingLayerID == layer.id);
+                if (ImGui::Selectable(layer.name.c_str(), isSelected)) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Change Sorting Layer");
+                    *sortingLayerID = layer.id;
+                    changed = true;
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::Separator();
+
+            // "Add Sorting Layer..." option
+            if (ImGui::Selectable("Add Sorting Layer...")) {
+                // Open the Tags & Layers panel
+                auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                if (tagsLayersPanel) {
+                    tagsLayersPanel->SetOpen(true);
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        EditorComponents::PopComboColors();
+
+        return changed;
+    });
+
     // Camera skybox texture GUID
     ReflectionRenderer::RegisterFieldRenderer("CameraComponent", "skyboxTextureGUID",
     [](const char *, void *ptr, Entity entity, ECSManager &ecs)
@@ -1296,6 +1355,123 @@ void RegisterInspectorCustomRenderers()
         }
 
         return false;
+    });
+
+    // Text sorting layer dropdown
+    ReflectionRenderer::RegisterFieldRenderer("TextRenderComponent", "sortingLayer",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* sortingLayerID = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Sorting Layer");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        // Get all sorting layers from the manager
+        const auto& sortingLayers = SortingLayerManager::GetInstance().GetAllLayers();
+
+        // Find current layer name
+        std::string currentLayerName = SortingLayerManager::GetInstance().GetLayerName(*sortingLayerID);
+        if (currentLayerName.empty()) {
+            currentLayerName = "Default";
+            *sortingLayerID = 0; // Reset to default if invalid
+        }
+
+        EditorComponents::PushComboColors();
+        bool changed = false;
+        if (ImGui::BeginCombo("##SortingLayer", currentLayerName.c_str()))
+        {
+            // Show all existing sorting layers
+            for (const auto& layer : sortingLayers) {
+                bool isSelected = (*sortingLayerID == layer.id);
+                if (ImGui::Selectable(layer.name.c_str(), isSelected)) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Change Sorting Layer");
+                    *sortingLayerID = layer.id;
+                    changed = true;
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::Separator();
+
+            // "Add Sorting Layer..." option
+            if (ImGui::Selectable("Add Sorting Layer...")) {
+                // Open the Tags & Layers panel
+                auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                if (tagsLayersPanel) {
+                    tagsLayersPanel->SetOpen(true);
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        EditorComponents::PopComboColors();
+
+        return changed;
+    });
+
+    // Text alignment icon buttons
+    ReflectionRenderer::RegisterFieldRenderer("TextRenderComponent", "alignmentInt",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* alignmentInt = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Alignment");
+        ImGui::SameLine(labelWidth);
+
+        bool changed = false;
+
+        // Calculate button size for even distribution
+        float availWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = (availWidth - ImGui::GetStyle().ItemSpacing.x * 2) / 3.0f;
+
+        // Left align button
+        ImVec4 leftColor = (*alignmentInt == 0) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, leftColor);
+        if (ImGui::Button("Left", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 0) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 0;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+
+        // Center align button
+        ImVec4 centerColor = (*alignmentInt == 1) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, centerColor);
+        if (ImGui::Button("Center", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 1) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 1;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+
+        // Right align button
+        ImVec4 rightColor = (*alignmentInt == 2) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, rightColor);
+        if (ImGui::Button("Right", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 2) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 2;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        return changed;
     });
 
     // Audio GUID
