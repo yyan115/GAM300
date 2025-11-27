@@ -29,14 +29,6 @@ void ButtonSystem::UpdateButtonStates() {
 
         auto& buttonData = m_ecs->GetComponent<ButtonComponent>(e);
 
-        if (m_ecs->HasComponent<ScriptComponentData>(e)) {
-            auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
-
-            for (const auto& script : scriptComp.scripts) {
-                std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
-                std::cout << "Script Path: " << script.scriptPath << std::endl;
-            }
-        }
         // Example: Update any time-based state here
         // (cooldowns, animations, etc.)
 
@@ -114,3 +106,12 @@ void ButtonSystem::ProcessButtonClick(Entity buttonEntity) {
     ENGINE_PRINT(EngineLogging::LogLevel::Debug,
         "[ButtonSystem] Processed click for button ", buttonEntity);
 }
+
+//if (m_ecs->HasComponent<ScriptComponentData>(e)) {
+//    auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
+
+//    for (const auto& script : scriptComp.scripts) {
+//        std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
+//        std::cout << "Script Path: " << script.scriptPath << std::endl;
+//    }
+//}
