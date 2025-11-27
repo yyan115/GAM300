@@ -91,6 +91,18 @@ static Transform* Lua_FindTransformByName(const std::string& name)
     return nullptr;
 }
 
+static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
+{
+    if (!t)
+    {
+        // Return something reasonable; Lua will get three numbers
+        return std::make_tuple(0.0f, 0.0f, 0.0f);
+    }
+
+    const auto& p = t->localPosition; // or global/world position if you have it
+    return std::make_tuple(p.x, p.y, p.z);
+}
+
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
     m_ecs = &ecsManager;

@@ -152,6 +152,7 @@ END_SYSTEM()
 // ENGINE HELPERS
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+    FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
 END_SYSTEM()
 
 // ============================================================================

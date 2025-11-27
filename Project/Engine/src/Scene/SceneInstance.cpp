@@ -319,7 +319,7 @@ void SceneInstance::processInput(float deltaTime)
 	// Temp player controls for playable level
 	//  Backwards = +z
 
-	if (InputManager::GetKey(Input::Key::W))
+	/*if (InputManager::GetKey(Input::Key::W))
 	{
 		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
@@ -350,7 +350,7 @@ void SceneInstance::processInput(float deltaTime)
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
 		camera->ProcessKeyboard(RIGHT, 0.004f);
-	}
+	}*/
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))
