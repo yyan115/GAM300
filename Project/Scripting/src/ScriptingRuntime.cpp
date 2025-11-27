@@ -5,7 +5,7 @@
 #include "Logging.hpp"
 
 #include "ModuleLoader.h"
-
+#include <Asset Manager/AssetManager.hpp>
 #include <cassert>
 #include <chrono>
 #include <cstring>
@@ -84,14 +84,16 @@ namespace Scripting {
             return 1;
         }
 
-        static bool ReadFileToString(const std::string& path, std::string& out) {
-            std::ifstream ifs(path, std::ios::binary);
-            if (!ifs) return false;
-            std::ostringstream ss;
-            ss << ifs.rdbuf();
-            out = ss.str();
-            return true;
-        }
+        // Commented out to fix warning C4505 - unreferenced function
+        // Remove comments when this function is used
+        // static bool ReadFileToString(const std::string& path, std::string& out) {
+        //     std::ifstream ifs(path, std::ios::binary);
+        //     if (!ifs) return false;
+        //     std::ostringstream ss;
+        //     ss << ifs.rdbuf();
+        //     out = ss.str();
+        //     return true;
+        // }
 
         // Compatibility wrapper for obtaining table length across Lua versions
         inline int lua_table_len(lua_State * L, int idx) {
@@ -155,11 +157,18 @@ namespace Scripting {
             // create and initialize module loader (use the same fs)
             m_moduleLoader = std::make_unique<ModuleLoader>();
             m_moduleLoader->Initialize(m_fsShared);
-
+            m_moduleLoader->ClearSearchPaths();
             // ADD THESE SEARCH PATHS HERE:
+#ifdef _WIN32
+            std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            m_moduleLoader->AddSearchPath(rootDir + "/Scripts/?.lua");
+            m_moduleLoader->AddSearchPath(rootDir + "/Scripts/?/init.lua");
+            m_moduleLoader->AddSearchPath(rootDir + "/extensions/?.lua");
+#else
             m_moduleLoader->AddSearchPath("Resources/Scripts/?.lua");
             m_moduleLoader->AddSearchPath("Resources/Scripts/?/init.lua");
             m_moduleLoader->AddSearchPath("Resources/extensions/?.lua");
+#endif
 
             ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader search paths configured");
         }
@@ -286,10 +295,21 @@ namespace Scripting {
                 // Install module loader early so main script and bindings can require modules.
                 if (m_moduleLoader)
                 {
-                    // Re-add search paths (they're stored in ModuleLoader already, but verify)
-                    // Actually, search paths persist in ModuleLoader instance, so just install searcher
+                    m_moduleLoader->ClearSearchPaths();
+                    // Re-add search paths with correct root directory
+#ifdef _WIN32
+                    std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
+                    m_moduleLoader->AddSearchPath(rootDir + "/Scripts/?.lua");
+                    m_moduleLoader->AddSearchPath(rootDir + "/Scripts/?/init.lua");
+                    m_moduleLoader->AddSearchPath(rootDir + "/extensions/?.lua");
+#else
+                    m_moduleLoader->AddSearchPath("Resources/Scripts/?.lua");
+                    m_moduleLoader->AddSearchPath("Resources/Scripts/?/init.lua");
+                    m_moduleLoader->AddSearchPath("Resources/extensions/?.lua");
+#endif
+
                     m_moduleLoader->InstallLuaSearcher(newL, -1);
-                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader reinstalled for reload");
+                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader reinstalled for reload with root: ", rootDir.c_str());
                 }
 
                 g_runtime_for_cfuncs = this;
@@ -336,7 +356,7 @@ namespace Scripting {
                                 luaL_unref(old, LUA_REGISTRYINDEX, kv.second);
                             }
                         }
-
+                        
                         // Flush modules loaded by our ModuleLoader from the old state.
                         if (old && m_moduleLoader) 
                         {
@@ -350,7 +370,8 @@ namespace Scripting {
                     }
 
                     // close old state (and oldScheduler) outside lock (they go out of scope)
-                    if (m_logger) m_logger->Info("ScriptingRuntime: reload complete");
+                    if (m_logger) 
+                        m_logger->Info("ScriptingRuntime: reload complete");
                 }
                 else {
                     close_lua_state(newL);
@@ -451,6 +472,10 @@ namespace Scripting {
     }
 
     EnvironmentId ScriptingRuntime::CreateEnvironment(const std::string& name) {
+        // Commented out to fix warning C4100 - unreferenced parameter
+        // Remove this line when 'name' is used
+        (void)name;
+
         lua_State* snapshotL = nullptr;
         {
             std::lock_guard<std::mutex> lock(m_mutex);

@@ -547,6 +547,26 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "007fa85bdfb5ccbb-00032d3fc8000009",
+                            "scriptPath": "../../Resources/Scripts/extension/simple_fsm.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        },
+                        {
+                            "scriptGuidStr": "004e67fcaea54316-00034a6d7e000001",
+                            "scriptPath": "../../Resources/Scripts/template/simplemove.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         }

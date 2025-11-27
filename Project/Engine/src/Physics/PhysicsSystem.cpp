@@ -95,7 +95,11 @@ bool PhysicsSystem::InitialiseJolt() {
             0
 #endif
         );
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_LAYER_BITS=%d",
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_
+            
+            
+            
+            _BITS=%d",
 #ifdef JPH_OBJECT_LAYER_BITS
             JPH_OBJECT_LAYER_BITS
 #else
@@ -162,7 +166,8 @@ bool PhysicsSystem::InitialiseJolt() {
 
     //auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     //for (const auto& entity : entities) {
-    //    auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+    //    auto& 
+    //  = ecs.GetComponent<ColliderComponent>(entity);
     //    switch (collider.shapeType)
     //    {
     //    case ColliderShapeType::Box:

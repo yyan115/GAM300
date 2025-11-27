@@ -27,7 +27,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/Particle/ParticleComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
-#include "Physics/Kinematics/CharacterControllerComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
@@ -115,7 +114,11 @@ bool IsValidGUID(const std::string& str) {
 }
 
 // Helper function to render asset drag-drop for a single GUID
-bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType) {
+bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetType assetType, float width = -1.0f) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'fieldName' is used
+    (void)fieldName;
+
     bool modified = false;
     std::string displayText;
     
@@ -160,7 +163,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             return false;
     }
     
-    EditorComponents::DrawDragDropButton(displayText.c_str(), -1);
+    EditorComponents::DrawDragDropButton(displayText.c_str(), width);
     
     // Handle drag-drop
     if (ImGui::BeginDragDropTarget()) {
@@ -468,7 +471,10 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localPosition",
     [](const char *name, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        // Commented out to fix warning C4100 - unreferenced parameters
+        // Remove these lines when 'name' and 'ecs' are used
+        (void)name;
+        (void)ecs;
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -784,31 +790,6 @@ void RegisterInspectorCustomRenderers()
         ImGui::PopID();
         return true; // skip default reflection
     });
-
-    ReflectionRenderer::RegisterComponentRenderer("CharacterControllerComponent",
-        [](void*, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs)
-        {
-            auto& controller = ecs.GetComponent<CharacterControllerComponent>(entity);
-
-            ImGui::PushID("CharacterControllerComponent");
-
-            // Enabled
-            UndoableWidgets::Checkbox("Enabled", &controller.enabled);
-
-            // Speed
-            UndoableWidgets::DragFloat("Speed", &controller.speed, 0.1f, 0.0f, FLT_MAX, "%.2f");
-
-            // Jump Height
-            UndoableWidgets::DragFloat("Jump Height", &controller.jumpHeight, 0.1f, 0.0f, FLT_MAX, "%.2f");
-
-            ImGui::PopID();
-            return true; // skip default reflection
-        });
-
-
-
-
-
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
@@ -1291,24 +1272,27 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Text("Font");
         ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
 
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
-        std::string displayText = fontPath.empty() ? "None" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
+        std::string displayText = fontPath.empty() ? "None (Font)" : fontPath.substr(fontPath.find_last_of("/\\") + 1);
 
-        ImGui::Button(displayText.c_str(), ImVec2(-1, 0));
+        // Use EditorComponents for better drag-drop visual feedback
+        float buttonWidth = ImGui::GetContentRegionAvail().x;
+        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
 
-        if (ImGui::BeginDragDropTarget())
+        // Drag-drop target with proper payload type
+        if (EditorComponents::BeginDragDropTarget())
         {
-            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("ASSET_FONT"))
+            ImGui::SetTooltip("Drop .ttf font here");
+            if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("FONT_PAYLOAD"))
             {
                 // Take snapshot before changing font
                 SnapshotManager::GetInstance().TakeSnapshot("Assign Font");
                 *guid = DraggedFontGuid;
-                ImGui::EndDragDropTarget();
+                EditorComponents::EndDragDropTarget();
                 return true;
             }
-            ImGui::EndDragDropTarget();
+            EditorComponents::EndDragDropTarget();
         }
 
         return false;
@@ -2194,8 +2178,9 @@ void RegisterInspectorCustomRenderers()
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-                            currentEditorState == EditorState::State::PAUSED);
+        // Commented out to fix warning C4189 - unused variable
+        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
+        //                     currentEditorState == EditorState::State::PAUSED);
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs
@@ -2211,13 +2196,14 @@ void RegisterInspectorCustomRenderers()
                     size_t underscorePos = key.find('_');
                     if (underscorePos != std::string::npos)
                     {
-                        Entity entity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
+                        // Renamed to fix warning C4457 - entity hides function parameter
+                        Entity parsedEntity = static_cast<Entity>(std::stoi(key.substr(0, underscorePos)));
                         size_t scriptIdx = std::stoi(key.substr(underscorePos + 1));
 
                         // Get the script component and save the state
-                        if (ecs.HasComponent<ScriptComponentData>(entity))
+                        if (ecs.HasComponent<ScriptComponentData>(parsedEntity))
                         {
-                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(entity);
+                            auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
                                 // Always preserve the current state - either from preview or runtime instance
@@ -2225,7 +2211,7 @@ void RegisterInspectorCustomRenderers()
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", entity, " script ", scriptIdx,
+                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
                                                " (transition: ", static_cast<int>(lastEditorState), " -> ",
                                                static_cast<int>(currentEditorState), ")");
                                 }
@@ -2283,52 +2269,50 @@ void RegisterInspectorCustomRenderers()
             // Double-click to open
             if (!scriptData.scriptPath.empty() && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                // Current working directory is C:\Users\growt\Desktop\GAM300\Project\Build\EditorRelease
-                // We need to go up 2 levels to get to Project folder
-                std::filesystem::path currentPath = std::filesystem::current_path();
-                std::filesystem::path projectRoot;
+                // Cache project root to avoid repeated filesystem operations
+                static std::filesystem::path cachedProjectRoot;
+                static bool projectRootCached = false;
 
-                // Check if we're in a Build subfolder (EditorRelease, Debug, etc.)
-                if (currentPath.filename() == "EditorRelease" ||
-                    currentPath.filename() == "EditorDebug" ||
-                    currentPath.filename() == "Release" ||
-                    currentPath.filename() == "Debug") {
-                    // Go up to Build folder, then up to Project folder
-                    projectRoot = currentPath.parent_path().parent_path();
-                } else if (currentPath.filename() == "Build") {
-                    // We're in Build folder, go up one to Project
-                    projectRoot = currentPath.parent_path();
-                } else {
-                    // Try to find Project folder by looking for specific markers
-                    projectRoot = currentPath;
-                    while (projectRoot.has_parent_path()) {
+                if (!projectRootCached) {
+                    std::filesystem::path currentPath = std::filesystem::current_path();
+
+                    // Find the project root by looking for the expected project structure
+                    // This works regardless of which build subfolder we're in
+                    cachedProjectRoot = currentPath;
+                    while (cachedProjectRoot.has_parent_path()) {
                         // Check if this directory has the expected project structure
-                        if (std::filesystem::exists(projectRoot / "Build") &&
-                            std::filesystem::exists(projectRoot / "Resources") &&
-                            std::filesystem::exists(projectRoot / "Engine")) {
+                        if (std::filesystem::exists(cachedProjectRoot / "Build") &&
+                            std::filesystem::exists(cachedProjectRoot / "Resources") &&
+                            std::filesystem::exists(cachedProjectRoot / "Engine")) {
                             break;
                         }
-                        projectRoot = projectRoot.parent_path();
+                        cachedProjectRoot = cachedProjectRoot.parent_path();
                     }
+                    projectRootCached = true;
                 }
 
                 // Construct the correct path to the script file
                 std::filesystem::path scriptFullPath;
                 if (scriptData.scriptPath.find("Resources/") == 0) {
                     // Path includes Resources/ prefix
-                    scriptFullPath = projectRoot / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / scriptData.scriptPath;
                 } else if (scriptData.scriptPath.find("scripts/") == 0 || scriptData.scriptPath.find("Scripts/") == 0) {
                     // Path includes scripts/ prefix
-                    scriptFullPath = projectRoot / "Resources" / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / "Resources" / scriptData.scriptPath;
                 } else {
                     // Just the script filename
-                    scriptFullPath = projectRoot / "Resources" / "scripts" / scriptData.scriptPath;
+                    scriptFullPath = cachedProjectRoot / "Resources" / "scripts" / scriptData.scriptPath;
                 }
 
-                // Verify the file exists, if not try to create the directory structure
+                // Ensure the parent directory exists, create if necessary
+                std::filesystem::path parentDir = scriptFullPath.parent_path();
+                if (!std::filesystem::exists(parentDir)) {
+                    std::filesystem::create_directories(parentDir);
+                }
+
+                // Check if file exists, but still proceed with opening (VS Code can create new files)
                 if (!std::filesystem::exists(scriptFullPath)) {
-                    // Create directories if they don't exist
-                    std::filesystem::create_directories(scriptFullPath.parent_path());
+                    ENGINE_PRINT("Warning: Script file does not exist, VS Code will create it: ", scriptFullPath.string().c_str());
                 }
 
                 #ifdef _WIN32
@@ -2373,6 +2357,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::SameLine();
             if (ImGui::SmallButton(ICON_FA_ROTATE_RIGHT "##ReloadScripts")) {
                 Scripting::RequestReloadNow();
+                if (Scripting::GetLuaState()) Scripting::Tick(0.0f);
                 ENGINE_PRINT("Requested script reload from inspector for script: ", scriptData.scriptPath.c_str());
             }
 
@@ -2476,7 +2461,7 @@ void RegisterInspectorCustomRenderers()
                         usingPreviewInstance = true;
 
                         // ALWAYS restore pending state to preserve edited values
-                        // This is critical for Unity-like behavior where inspector edits persist
+                        // This is critical for behavior where inspector edits persist
                         if (!scriptData.pendingInstanceState.empty())
                         {
                             bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
@@ -2613,7 +2598,7 @@ void RegisterInspectorCustomRenderers()
         };
 
         // Filter fields to show only editable fields from the 'fields' table
-        // This implements Unity-like behavior where only serialized fields are shown
+        // This implements behavior where only serialized fields are shown
         std::vector<Scripting::FieldInfo> filteredFields;
         bool hasFieldsTable = false;
         std::vector<std::string> fieldOrder;
@@ -2965,15 +2950,14 @@ void RegisterInspectorCustomRenderers()
                                         ImGui::SameLine();
                                         
                                         std::string tempGuid = guidStr;
-                                        if (RenderAssetField(field.name, tempGuid, assetType))
+                                        if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                         {
                                             guidStr = tempGuid;
                                             arrayModified = true;
                                         }
 
                                         ImGui::SameLine();
-                                        std::string removeButtonId = "X##remove" + std::to_string(i);
-                                        if (ImGui::SmallButton(removeButtonId.c_str()))
+                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                         {
                                             // Skip this element (remove it)
                                             arrayModified = true;
@@ -2991,8 +2975,7 @@ void RegisterInspectorCustomRenderers()
                                 }
 
                                 // Add new element button
-                                std::string addButtonText = "Add " + displayName;
-                                if (ImGui::Button(addButtonText.c_str()))
+                                if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                 {
                                     newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                     arrayModified = true;
@@ -3073,15 +3056,14 @@ void RegisterInspectorCustomRenderers()
                                             ImGui::SameLine();
                                             
                                             std::string tempGuid = guidStr;
-                                            if (RenderAssetField(field.name, tempGuid, assetType))
+                                            if (RenderAssetField(field.name, tempGuid, assetType, ImGui::GetContentRegionAvail().x - 30.0f))
                                             {
                                                 guidStr = tempGuid;
                                                 arrayModified = true;
                                             }
 
                                             ImGui::SameLine();
-                                            std::string removeButtonId = "X##remove" + std::to_string(i);
-                                            if (ImGui::SmallButton(removeButtonId.c_str()))
+                                            if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
                                             {
                                                 // Skip this element (remove it)
                                                 arrayModified = true;
@@ -3099,8 +3081,7 @@ void RegisterInspectorCustomRenderers()
                                     }
 
                                     // Add new element button
-                                    std::string addButtonText = "Add " + displayName;
-                                    if (ImGui::Button(addButtonText.c_str()))
+                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                     {
                                         newDoc.PushBack(rapidjson::Value("00000000-0000-0000-0000-000000000000", alloc), alloc);
                                         arrayModified = true;
@@ -3152,6 +3133,10 @@ void RegisterInspectorCustomRenderers()
             }
             }
             catch (const std::exception& e) {
+                // Commented out to fix warning C4101 - unreferenced local variable
+                // Remove this line when 'e' is used
+                (void)e;
+
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering field %s", field.name.c_str());
             }
 

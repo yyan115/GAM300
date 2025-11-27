@@ -66,6 +66,7 @@ private:
     glm::vec3 previewPosition = glm::vec3(0.0f);
     bool previewValidPlacement = true;
     Entity previewEntity = static_cast<Entity>(-1);
+    ImVec2 lastDragMousePos = ImVec2(-1.0f, -1.0f); // Cache for optimization
 
     // Marquee selection state
     bool isMarqueeSelecting = false;

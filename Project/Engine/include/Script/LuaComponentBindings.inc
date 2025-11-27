@@ -216,18 +216,6 @@ BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
     PROPERTY("collider_seen_version", &RigidBodyComponent::collider_seen_version)
 END_COMPONENT()
 
-
-// ============================================================================
-// CharacterController Components
-// ============================================================================
-BEGIN_COMPONENT(CharacterControllerComponent, "CharacterControllerComponent")
-    PROPERTY("enabled", &CharacterControllerComponent::enabled)
-    PROPERTY("speed", &CharacterControllerComponent::speed)
-    PROPERTY("jumpHeight", &CharacterControllerComponent::jumpHeight)
-END_COMPONENT()
-
-
-
 // ============================================================================
 // Audio Components
 // ============================================================================
@@ -254,6 +242,7 @@ BEGIN_COMPONENT(AudioComponent, "AudioComponent")
     PROPERTY("Position", &AudioComponent::Position)
 
     METHOD("play", &AudioComponent::Play)
+    METHOD("playOneShot", &AudioComponent::PlayOneShot)
     METHOD("stop", &AudioComponent::Stop)
     METHOD("pause", &AudioComponent::Pause)
     METHOD("unPause", &AudioComponent::UnPause)
@@ -289,6 +278,18 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
     PROPERTY("earlyLateMix", &AudioReverbZoneComponent::earlyLateMix)
     PROPERTY("wetLevel", &AudioReverbZoneComponent::wetLevel)
     PROPERTY("Position", &AudioReverbZoneComponent::Position)
+END_COMPONENT()
+
+// ============================================================================
+// Tag and Layer Components
+// ============================================================================
+
+BEGIN_COMPONENT(TagComponent, "TagComponent")
+    PROPERTY("tagIndex", &TagComponent::tagIndex)
+END_COMPONENT()
+
+BEGIN_COMPONENT(LayerComponent, "LayerComponent")
+    PROPERTY("layerIndex", &LayerComponent::layerIndex)
 END_COMPONENT()
 
 // Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... END_COMPONENT() blocks here.

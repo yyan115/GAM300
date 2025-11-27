@@ -104,7 +104,8 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
 
     // Create a temporary table that will be populated from json by ScriptSerializer.
     lua_newtable(L);
-    int tmpIdx = lua_gettop(L);
+    // Commented out to fix warning C4189 - unused variable
+    // int tmpIdx = lua_gettop(L);
     int tmpRef = luaL_ref(L, LUA_REGISTRYINDEX); // pops table
 
     ScriptSerializer ss;
@@ -124,7 +125,7 @@ bool StatePreserver::ReinjectState(lua_State* L, int targetInstanceRef, const st
         return false;
     }
     lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push temp
-    // stack: ..., target, temp — re-order so temp then target to match original loop expectations
+    // stack: ..., target, temp - re-order so temp then target to match original loop expectations
     // We'll compute absolute indices carefully.
     int absTemp = lua_absindex(L, lua_gettop(L)); // temp
     int absTarget = lua_absindex(L, lua_gettop(L) - 1); // target

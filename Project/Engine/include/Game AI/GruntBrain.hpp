@@ -32,7 +32,7 @@ namespace {
         a.Play();                  // your PlayOnce wraps this; using explicit path is fine
     }
 
-    // robust “is finished” check:
+    // robust "is finished" check:
     inline bool finished(const AnimationComponent& a) {
         if (a.clipCount < 1) return true;
         // Robust in both PLAY (AnimationSystem ticks) and EDIT (Inspector ticks).

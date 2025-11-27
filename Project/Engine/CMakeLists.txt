@@ -36,15 +36,26 @@ list(REMOVE_ITEM ENGINE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Mesh Optimizer/vfetchoptimizer.cpp"
 )
 
-# Android uses OpenGL ES, not desktop OpenGL - exclude GLAD (desktop OpenGL loader)
-# Also exclude Windows-specific Scripting files
+# Platform-specific source file exclusions
 if(ANDROID)
+    # Android uses OpenGL ES, not desktop OpenGL - exclude GLAD (desktop OpenGL loader)
     list(REMOVE_ITEM ENGINE_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/glad.c"
-        "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
+    )
+    message(STATUS "Excluded glad.c for Android")
+endif()
+
+# Exclude deprecated/unused files from all platforms
+list(REMOVE_ITEM ENGINE_SOURCES
+    "${CMAKE_SOURCE_DIR}/Scripting/src/hotload_deprecated.cpp"
+)
+
+# Exclude Windows-specific files on non-Windows platforms
+if(NOT WIN32)
+    list(REMOVE_ITEM ENGINE_SOURCES
         "${CMAKE_SOURCE_DIR}/Scripting/src/ScriptFileSystem_win.cpp"
     )
-    message(STATUS "Excluded glad.c and Windows-specific Scripting files for Android")
+    message(STATUS "Excluded Windows-specific Scripting files for non-Windows platform")
 endif()
 
 file(GLOB_RECURSE ENGINE_HEADERS
@@ -66,8 +77,20 @@ message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 # Engine is ALWAYS a shared library
 add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
+# Enable precompiled headers for faster compilation (C++ only)
+target_precompile_headers(Engine PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h>"
+)
+
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
+
+# Define EDITOR for Editor builds (EditorDebug, EditorRelease)
+# Uses generator expression for multi-config generators (Visual Studio)
+# PUBLIC because header templates need this define when compiled by consuming targets
+target_compile_definitions(Engine PUBLIC
+    $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
+)
 
 # Jolt Physics compile definitions:
 # For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
@@ -145,9 +168,11 @@ else()
     find_package(Freetype REQUIRED)
     find_package(glad CONFIG REQUIRED)
     find_package(glm CONFIG REQUIRED)
+    find_package(Jolt CONFIG REQUIRED)
     find_package(spdlog CONFIG REQUIRED)
     find_package(RapidJSON CONFIG REQUIRED)
     find_package(gli CONFIG REQUIRED)
+    find_package(meshoptimizer CONFIG REQUIRED)
 endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
@@ -157,18 +182,28 @@ target_include_directories(Engine
         # NOT subdirectories - those are internal implementation
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        # Scripting library headers - PUBLIC because used in Engine's public headers
+        ${CMAKE_SOURCE_DIR}/Scripting/include
+        # Lua headers - PUBLIC because Scripting headers include lua.h
+        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
+        # hfsm2 library - PUBLIC because used in Engine's public headers
+        ${CMAKE_SOURCE_DIR}/Libraries/hfsm2
     PRIVATE
         # Engine internals can see everything
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${ENGINE_INCLUDE_DIRS}
-        # Scripting library headers
-        ${CMAKE_SOURCE_DIR}/Scripting/include
-        # Keep manual libraries: ImGui (docking), FMOD (commercial), Lua
+        # Keep manual libraries: ImGui (docking), FMOD (commercial)
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
-        ${CMAKE_SOURCE_DIR}/Libraries/lua/src
         ${CMAKE_SOURCE_DIR}/Libraries/luabridge3/source
 )
+
+# Add Compressonator include directory for Editor builds (Windows only, Linux handled by target)
+if(WIN32)
+    target_include_directories(Engine PRIVATE
+        $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/include>
+    )
+endif()
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
 if(ANDROID)
@@ -213,18 +248,20 @@ else()
     target_link_libraries(Engine
         PUBLIC
             ${OPENGL_LIBRARIES}
-        PRIVATE
-            # All dependencies are PRIVATE - Game only sees Engine.h
+            # PUBLIC: These are used in Engine's public headers
+            glad::glad
+            RapidJSON
             glm::glm
-            Jolt
+        PRIVATE
+            # PRIVATE: These are only used internally by Engine
+            Jolt::Jolt
             lua
             assimp::assimp
             glfw
             Freetype::Freetype
-            glad::glad
             spdlog::spdlog
-            rapidjson
             gli
+            meshoptimizer::meshoptimizer
     )
 
     # Platform-specific FMOD and system libraries
@@ -245,9 +282,24 @@ else()
         else()
             message(FATAL_ERROR "FMOD library not found")
         endif()
+
+        # Linux: Link FetchContent built Compressonator for Editor builds
+        if(TARGET Compressonator)
+            target_link_libraries(Engine PRIVATE
+                $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:Compressonator>
+            )
+            message(STATUS "Linked Compressonator from FetchContent for Editor")
+        endif()
     elseif(WIN32)
         target_link_libraries(Engine PRIVATE
             ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
+        )
+
+        # Windows: Link prebuilt Compressonator static library for Editor builds
+        # Uses generator expression to select debug/release library at build time
+        target_link_libraries(Engine PRIVATE
+            $<$<CONFIG:EditorDebug>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MDd.lib>
+            $<$<CONFIG:EditorRelease>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD.lib>
         )
     endif()
 endif()

@@ -11,6 +11,7 @@
 #include "../GUIManager.hpp"
 #include <Graphics/Material.hpp>
 #include "MaterialInspector.hpp"
+#include <FileWatch.hpp>
 
 /**
  * @brief Inspector panel for viewing and editing properties of selected objects.
@@ -24,6 +25,11 @@ public:
     virtual ~InspectorPanel() = default;
 
     struct ComponentRemovalRequest {
+        Entity entity;
+        std::string componentType;
+    };
+
+    struct ComponentResetRequest {
         Entity entity;
         std::string componentType;
     };
@@ -47,14 +53,21 @@ private:
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
     bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags = 0);
     void ProcessPendingComponentRemovals();
+    void ProcessPendingComponentResets();
 
     // Component addition functionality
     void DrawAddComponentButton(Entity entity);
     void AddComponent(Entity entity, const std::string& componentType);
 
+    // File watcher callback
+    void OnScriptFileChanged(const std::string& path, const filewatch::Event& event);
+
     // Search state for add component
     char componentSearchBuffer[256] = "";
     bool componentSearchActive = false;
+
+    // Tree reset state for add component popup
+    bool resetComponentTrees = false;
 
     // Lock functionality
     bool inspectorLocked = false;
@@ -62,10 +75,17 @@ private:
 
     // Component removal queue (processed after ImGui rendering)
     std::vector<ComponentRemovalRequest> pendingComponentRemovals;
+    std::vector<ComponentResetRequest> pendingComponentResets;
     GUID_128 lockedAsset = {0, 0};
 
     // Cache for currently edited material to persist changes across frames
     std::shared_ptr<Material> cachedMaterial;
     std::string cachedMaterialPath;
     GUID_128 cachedMaterialGuid = {0, 0};
+
+    // File watcher for scripts
+    std::unique_ptr<filewatch::FileWatch<std::string>> scriptFileWatcher;
+
+    // Script cache
+    std::vector<std::string> cachedScripts;
 };

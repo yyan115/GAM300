@@ -1,0 +1,227 @@
+---@class Vector3D
+---@field x any
+---@field y any
+---@field z any
+
+---@class Quaternion
+---@field w any
+---@field x any
+---@field y any
+---@field z any
+
+---@class Transform
+---@field localPosition number
+---@field localScale number
+---@field localRotation any
+---@field isDirty boolean
+
+---@class NameComponent
+---@field name any
+
+---@class AnimationComponent
+---@field enabled boolean
+---@field isPlay boolean
+---@field isLoop boolean
+---@field speed any
+---@field clipCount any
+
+---@class BrainComponent
+---@field kindInt any
+---@field started any
+---@field activeState any
+---@field enabled boolean
+
+---@class CameraComponent
+---@field enabled boolean
+---@field isActive boolean
+---@field priority any
+---@field target any
+---@field up any
+---@field yaw any
+---@field pitch any
+---@field useFreeRotation any
+---@field fov any
+---@field nearPlane any
+---@field farPlane any
+---@field orthoSize number
+---@field movementSpeed any
+---@field mouseSensitivity any
+---@field minZoom any
+---@field maxZoom any
+---@field zoomSpeed any
+---@field isShaking boolean
+---@field shakeIntensity any
+---@field shakeDuration any
+---@field shakeTimer any
+---@field shakeFrequency any
+---@field shakeOffset any
+---@field skyboxTexturePath any
+
+---@class LightComponent
+---@field color any
+---@field intensity any
+---@field enabled boolean
+
+---@class DirectionalLightComponent
+---@field color any
+---@field intensity any
+---@field enabled boolean
+---@field direction any
+---@field ambient any
+---@field diffuse any
+---@field specular any
+
+---@class PointLightComponent
+---@field color any
+---@field intensity any
+---@field enabled boolean
+---@field constant any
+---@field linear any
+---@field quadratic any
+---@field ambient any
+---@field diffuse any
+---@field specular any
+
+---@class SpotLightComponent
+---@field color any
+---@field intensity any
+---@field enabled boolean
+---@field direction any
+---@field cutOff any
+---@field outerCutOff any
+---@field constant any
+---@field linear any
+---@field quadratic any
+---@field ambient any
+---@field diffuse any
+---@field specular any
+
+---@class ParticleComponent
+---@field emitterPosition number
+---@field emissionRate boolean
+---@field maxParticles any
+---@field particleLifetime any
+---@field startSize number
+---@field endSize number
+---@field startColor any
+---@field startColorAlpha any
+---@field endColor any
+---@field endColorAlpha any
+---@field gravity any
+---@field velocityRandomness any
+---@field initialVelocity any
+---@field texturePath any
+---@field timeSinceEmission boolean
+---@field isEmitting boolean
+---@field isPlayingInEditor boolean
+---@field isPausedInEditor boolean
+
+---@class SpriteRenderComponent
+---@field position number
+---@field scale number
+---@field rotation any
+---@field color any
+---@field alpha any
+---@field is3D boolean
+---@field enableBillboard any
+---@field layer any
+---@field saved3DPosition number
+---@field texturePath any
+---@field hasMigratedToTransform any
+
+---@class TextRenderComponent
+---@field text any
+---@field fontSize number
+---@field position number
+---@field color any
+---@field scale number
+---@field is3D boolean
+---@field alignmentInt any
+
+---@class ColliderComponent
+---@field enabled boolean
+---@field layerID any
+---@field version any
+---@field shapeTypeID any
+---@field boxHalfExtents any
+---@field sphereRadius any
+---@field capsuleRadius any
+---@field capsuleHalfHeight any
+---@field cylinderRadius any
+---@field cylinderHalfHeight any
+
+---@class RigidBodyComponent
+---@field enabled boolean
+---@field motionID any
+---@field ccd any
+---@field isTrigger boolean
+---@field gravityFactor any
+---@field angularVel any
+---@field linearVel any
+---@field linearDamping any
+---@field angularDamping any
+---@field transform_dirty any
+---@field motion_dirty any
+---@field collider_seen_version any
+
+---@class AudioComponent
+---@field enabled boolean
+---@field Mute any
+---@field bypassListenerEffects boolean
+---@field PlayOnAwake any
+---@field Loop any
+---@field Priority any
+---@field Volume number
+---@field Pitch any
+---@field StereoPan any
+---@field reverbZoneMix any
+---@field Spatialize any
+---@field SpatialBlend any
+---@field DopplerLevel any
+---@field MinDistance boolean
+---@field MaxDistance boolean
+---@field OutputAudioMixerGroup any
+---@field IsPlaying boolean
+---@field IsPaused boolean
+---@field Position number
+---@field play fun(self: AudioComponent, ...)
+---@field playOneShot fun(self: AudioComponent, ...)
+---@field stop fun(self: AudioComponent, ...)
+---@field pause fun(self: AudioComponent, ...)
+---@field unPause fun(self: AudioComponent, ...)
+---@field getIsPlaying fun(self: AudioComponent, ...)
+---@field getIsPaused fun(self: AudioComponent, ...)
+---@field setVolume fun(self: AudioComponent, ...)
+---@field setPitch fun(self: AudioComponent, ...)
+---@field setLoop fun(self: AudioComponent, ...)
+---@field setMute fun(self: AudioComponent, ...)
+---@field setClip fun(self: AudioComponent, ...)
+
+---@class AudioListenerComponent
+---@field enabled boolean
+
+---@class AudioReverbZoneComponent
+---@field enabled boolean
+---@field MinDistance boolean
+---@field MaxDistance boolean
+---@field reverbPresetIndex any
+---@field decayTime any
+---@field earlyDelay any
+---@field lateDelay any
+---@field hfReference any
+---@field hfDecayRatio any
+---@field diffusion any
+---@field density any
+---@field lowShelfFrequency any
+---@field lowShelfGain any
+---@field highCut any
+---@field earlyLateMix any
+---@field wetLevel any
+---@field Position number
+
+---@class TagComponent
+---@field tagIndex any
+
+---@class LayerComponent
+---@field layerIndex any
+

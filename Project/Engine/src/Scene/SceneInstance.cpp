@@ -14,7 +14,6 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -99,23 +98,15 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
-	ecsManager.characterControllerSystem->Initialise(ecsManager, ecsManager.physicsSystem.get());
-
-	// glEnable(GL_DEBUG_OUTPUT);
-	// glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	// glDebugMessageCallback(
-	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
-	//		fprintf(stderr, "GL: %s\n", msg);
-	//	},
-	//	nullptr);
-
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
 void SceneInstance::InitializeJoltPhysics()
 {
+	std::cout<<"=== InitializeJoltPhysics START ===";
 	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->InitialiseJolt();
+	ENGINE_LOG_INFO("=== InitializeJoltPhysics END ===");
 }
 
 void SceneInstance::InitializePhysics()
@@ -141,7 +132,6 @@ void SceneInstance::Update(double dt)
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	// mainECS.physicsSystem->physicsSyncBack(mainECS);
-	mainECS.characterControllerSystem->Update((float)dt,mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
@@ -284,7 +274,6 @@ void SceneInstance::Exit()
 	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown(ECSRegistry::GetInstance().GetECSManager(scenePath));
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
@@ -336,7 +325,7 @@ void SceneInstance::processInput(float deltaTime)
 	// Temp player controls for playable level
 	//  Backwards = +z
 
-	if (InputManager::GetKey(Input::Key::W))
+	/*if (InputManager::GetKey(Input::Key::W))
 	{
 		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
@@ -367,7 +356,7 @@ void SceneInstance::processInput(float deltaTime)
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
 		camera->ProcessKeyboard(RIGHT, 0.004f);
-	}
+	}*/
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))

@@ -21,11 +21,15 @@ bool SpriteSystem::Initialise()
     for (const auto& entity : entities) {
         auto& spriteComp = ecsManager.GetComponent<SpriteRenderComponent>(entity);
         std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.textureGUID);
-        spriteComp.texturePath = texturePath;
-        spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
+        if (!texturePath.empty()) {
+            spriteComp.texturePath = texturePath;
+            spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
+        }
 #ifndef ANDROID
         std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
-        spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
+        if (!shaderPath.empty()) {
+            spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
+        }
 #else
         std::string shaderPath = ResourceManager::GetPlatformShaderPath("sprite");
         spriteComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
@@ -62,7 +66,7 @@ void SpriteSystem::Update()
     // Submit all visible sprites to the graphics manager
     for (const auto& entity : entities)
     {
-        // Skip inactive entities (Unity-like behavior)
+        // Skip inactive entities
         if (ecsManager.HasComponent<ActiveComponent>(entity)) {
             auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
             if (!activeComp.isActive) {

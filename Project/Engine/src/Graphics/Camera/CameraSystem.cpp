@@ -65,7 +65,7 @@ void CameraSystem::Update()
 		activeCameraEntity = UINT32_MAX;
 	}
 
-	// Check if current active camera entity has become inactive (Unity-like behavior)
+	// Check if current active camera entity has become inactive
 	if (activeCameraEntity != UINT32_MAX && ecsManager.HasComponent<ActiveComponent>(activeCameraEntity))
 	{
 		auto& activeComp = ecsManager.GetComponent<ActiveComponent>(activeCameraEntity);
@@ -219,7 +219,7 @@ Entity CameraSystem::FindHighestPriorityCamera()
 		if (!ecsManager.HasComponent<CameraComponent>(entity))
 			continue;
 
-		// Skip cameras on inactive entities (Unity-like behavior)
+		// Skip cameras on inactive entities
 		if (ecsManager.HasComponent<ActiveComponent>(entity)) {
 			auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
 			if (!activeComp.isActive) {

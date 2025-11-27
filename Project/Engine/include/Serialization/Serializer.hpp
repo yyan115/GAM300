@@ -3,8 +3,9 @@
 #include <ECS/NameComponent.hpp>
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
+#include "ECS/SiblingIndexComponent.hpp"
 #include "ECS/TagManager.hpp"
-#include "ECS/layerManager.hpp"
+#include "ECS/LayerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteRenderComponent.hpp>
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
@@ -21,7 +22,6 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
 #include <ECS/ActiveComponent.hpp>
@@ -50,13 +50,13 @@ public:
 	static void DeserializeAudioComponent(AudioComponent& audioComp, const rapidjson::Value& audioJSON);
 	static void DeserializeAudioListenerComponent(AudioListenerComponent& audioListenerComp, const rapidjson::Value& audioListenerJSON);
 	static void DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& audioReverbZoneComp, const rapidjson::Value& audioReverbZoneJSON);
-	static void DeserializeCharacterControllerComponent(CharacterControllerComponent& ccComp, const rapidjson::Value& ccJSON);
 	static void DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON);
 	static void DeserializeColliderComponent(ColliderComponent& colliderComp, const rapidjson::Value& colliderJSON);
 	static void DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON);
 	static void DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON);
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
+	static void DeserializeSiblingIndexComponent(SiblingIndexComponent& siblingComp, const rapidjson::Value& siblingJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
 	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);

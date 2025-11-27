@@ -28,9 +28,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	glDepthFunc(GL_LESS);
 
 	// Enable face culling (backface culling)
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);      // Cull back-facing triangles
-	glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);      // Cull back-facing triangles
+	//glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
 
 	// Initialize skybox
 	InitializeSkybox();
@@ -574,7 +574,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 #endif
 }
 
@@ -650,7 +650,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
@@ -767,7 +767,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 	// Disable blending
 	glDisable(GL_BLEND);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
@@ -974,7 +974,7 @@ void GraphicsManager::RenderSkybox()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDepthMask(GL_TRUE);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
 }
 

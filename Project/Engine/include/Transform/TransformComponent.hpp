@@ -9,10 +9,10 @@ struct Transform {
 	//Vector3D worldRotation = { 0, 0, 0 };
 
 	bool overrideFromPrefab = false;
-	Vector3D localPosition;
-	Vector3D localScale;
+	Vector3D localPosition = {0.0f, 0.0f, 0.0f};
+	Vector3D localScale = {1.0f, 1.0f, 1.0f};
 	//Vector3D editorEuler;
-	Quaternion localRotation;
+	Quaternion localRotation = {};
 
 	//Vector3D lastPosition = { 0, 0, 0 };
 	//Vector3D lastScale = { 0, 0, 0 };

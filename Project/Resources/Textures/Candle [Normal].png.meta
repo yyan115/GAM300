@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002f74130d8b08a0-000361c9d0000021",
+        "source": "../../Resources/Textures/Candle [Normal].png",
+        "compiled": "../../Resources/Textures/Candle [Normal].dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
