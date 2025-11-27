@@ -148,6 +148,10 @@ else()
     endif()
 endif()
 
+if (WIN32)
+    set(APP_ICON_RESOURCE "${CMAKE_SOURCE_DIR}/app_icon.rc")
+endif()
+
 # Add Lua
 add_subdirectory("${CMAKE_SOURCE_DIR}/Libraries/lua")
 

@@ -66,8 +66,9 @@ if(CMAKE_BUILD_TYPE MATCHES "Editor" OR ANDROID)
 else()
     # Game configs: Game as executable
     message(STATUS "Building Game as executable")
-    add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS})
+    add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE} )
 endif()
+
 
 # Automatically include all subdirectories
 file(GLOB_RECURSE GAME_INCLUDE_SUBDIRS 
