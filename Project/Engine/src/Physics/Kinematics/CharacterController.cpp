@@ -28,14 +28,6 @@ CharacterController::~CharacterController()
         mCharacter = nullptr;
     }
 }
-
-
-//Box = 0,
-//Sphere,
-//Capsule,
-//Cylinder
-
-
 void CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
     //SHAPE TYPE HAS TO BE A CAPSULE..
@@ -47,38 +39,15 @@ void CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(collider.capsuleHalfHeight, collider.capsuleRadius);
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
     settings->mShape = capsule;
-    settings->mMass = 70.0f;    //EXPOSE MASS AS COMPONENT AND INTIIALISE?
-    settings->mMaxStrength = 100.0f;
+    settings->mMass = 70.0f;   
+     settings->mMaxStrength = 100.0f;
 
     //  CREATE VIRTUAL CHARACTER    
     mCharacter = new JPH::CharacterVirtual(
         settings,
         JPH::RVec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z),
-        JPH::Quat::sIdentity(),
+        JPH:: Quat::sIdentity(),
         mPhysicsSystem);
-}
-
-
-
-void CharacterController::Move(float x, float y, float z)
-{
-    // Set the desired velocity
-    mVelocity = JPH::Vec3(x, y, z);
-}
-
-void CharacterController::Jump(float height)
-{
-    // Only jump if on ground
-    if (mCharacter->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround)
-    {
-        // Calculate jump velocity needed to reach desired height
-        // Using: v = sqrt(2 * g * h)
-        float gravity = 9.81f;
-        float jumpVelocity = JPH::sqrt(2.0f * gravity * height);
-
-        // Set upward velocity
-        mVelocity.SetY(jumpVelocity);
-    }
 }
 
 void CharacterController::Update(float deltaTime) {
@@ -116,6 +85,22 @@ void CharacterController::Update(float deltaTime) {
     );
 }
 
+void CharacterController::Move(float x, float y, float z)
+{
+    // Set the desired velocity
+    mVelocity = JPH::Vec3(x, y, z);
+}
+
+void CharacterController::Jump(float height)
+{
+        // Calculate jump velocity needed to reach desired height
+        // Using: v = sqrt(2 * g * h)
+        float gravity = 9.81f;
+        float jumpVelocity = JPH::sqrt(2.0f * gravity * height);
+
+        // Set upward velocity
+        mVelocity.SetY(jumpVelocity);
+}
 
 Vector3D CharacterController::GetPosition() const
 {
@@ -140,3 +125,39 @@ Vector3D CharacterController::GetVelocity() const
 {
     return FromJoltVec3(mVelocity);
 }
+
+
+bool CharacterController::IsGrounded() const
+{
+    if (mCharacter == nullptr)
+    {
+        std::cerr << "[DBG] IsGrounded: mCharacter is NULL\n";
+        return false;
+    }
+
+    JPH::CharacterVirtual::EGroundState state = mCharacter->GetGroundState();
+    //try
+    //{
+    //    state = mCharacter->GetGroundState();
+    //}
+    //catch (...)
+    //{
+    //    std::cerr << "[DBG] IsGrounded: Exception calling GetGroundState()\n";
+    //    return false;
+    //}
+
+    return state == JPH::CharacterVirtual::EGroundState::OnGround;
+}
+
+
+Vector3D CharacterController::GetGravity() const
+{
+    JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
+    return FromJoltVec3(gravity);
+}
+
+void CharacterController::SetGravity(Vector3D gravity)
+{
+    mPhysicsSystem->SetGravity(ToJoltVec3(gravity));
+}
+

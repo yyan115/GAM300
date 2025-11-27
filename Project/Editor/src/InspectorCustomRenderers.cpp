@@ -596,7 +596,7 @@ void RegisterInspectorCustomRenderers()
             break;
         }
         case ColliderShapeType::Capsule:
-        {
+        {            
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);

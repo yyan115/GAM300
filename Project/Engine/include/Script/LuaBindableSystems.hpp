@@ -64,6 +64,12 @@ namespace CharacterControllerWrappers {
         }
     }
 
+    inline void Update(CharacterController* controller, float deltaTime) {
+        if (controller)
+            controller->Update(deltaTime);
+    }
+
+
     // Movement wrappers
     inline void Move(CharacterController* controller, float x, float y, float z) {
         if (controller)
@@ -75,23 +81,32 @@ namespace CharacterControllerWrappers {
             controller->Jump(height);
     }
 
-    inline void Update(CharacterController* controller, float deltaTime) {
-        if (controller)
-            controller->Update(deltaTime);
-    }
-
     inline Vector3D GetPosition(CharacterController* controller) {
         return controller->GetPosition();
     }
 
+
+    //DONT USE FOR NOW, CHECK HOW TO PASS VECTOR IN LUA
     inline void SetVelocity(CharacterController* controller, Vector3D& vel) {
         return controller->SetVelocity(vel);
-    }
+    }   
 
     inline Vector3D GetVelocity(CharacterController* controller) {
         return controller->GetVelocity();
     }
 
+    inline bool IsGrounded(CharacterController* controller) {
+        return controller->IsGrounded();
+    }
+
+    inline Vector3D GetGravity(CharacterController* controller){
+        return controller->GetGravity();
+    }
+    //DONT USE FOR NOW, CHECK HOW TO PASS VECTOR IN LUA
+    inline void SetGravity(CharacterController* controller, Vector3D gravity)
+    {
+        return controller->SetGravity(gravity);
+    }
     inline void Destroy(CharacterController* controller)
     {
         if (controller)

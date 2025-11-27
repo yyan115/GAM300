@@ -40,14 +40,15 @@ public:
     void Move(float x, float y, float z);   // Set Move Velocity, Position updated in "Update", change name to clearer?
     void Jump(float height);                // Jump
 
+    bool IsGrounded() const;
 
+    Vector3D GetGravity() const;
+
+    void SetGravity(Vector3D gravity);
 
     //TODO:
     //void SetRotation(float yaw);            // Set facing direction (degrees)
     //void GetRotation();            // Add to current rotation
-
-    //void SetGravity(float gravity);         // Adjust gravity (-9.81 default)
-    //float GetGravity() const;
 
     //void SetMass(float mass);               // Character mass
     //float GetMass() const;

@@ -115,6 +115,9 @@ public:
 
 		return radius;
 	}
+
+
+
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }
 
