@@ -41,8 +41,9 @@ void CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     //SHAPE TYPE HAS TO BE A CAPSULE..
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
-    float height = collider.capsuleHalfHeight * 2.0f;
-    float radius = collider.capsuleRadius;
+    // Commented out to fix warning C4189 - unused variable
+    // float height = collider.capsuleHalfHeight * 2.0f;
+    // float radius = collider.capsuleRadius;
 
     JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(collider.capsuleHalfHeight, collider.capsuleRadius);
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();

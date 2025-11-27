@@ -53,7 +53,9 @@ static void RegisterCompPusher(const char* compName) {
 
     g_componentPushers[compName] = [](lua_State* L, void* ptr) {
         CompT* typed = reinterpret_cast<CompT*>(ptr);
-        luabridge::push(L, typed);
+        // Cast to void to fix warning C4834 - discarding [[nodiscard]] return value
+        // luabridge::push(L, typed);
+        (void)luabridge::push(L, typed);
         };
 
     s_registered[compName] = true;
@@ -148,6 +150,8 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 lua_pushstring(L, LuaFieldName); \
                 lua_setfield(L, -2, LuaFieldName);
 
+            // Undef to fix warning C4005 - macro redefinition
+            #undef METHOD
             #define METHOD(...)
 
             #define END_COMPONENT() \
@@ -474,7 +478,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending state for script ", scriptIdx, " entity ", e, "\n");
             }
             // DO NOT clear pendingInstanceState - we need it to persist across multiple play/stop cycles
-            // This ensures Unity-like behavior where inspector edits are preserved
+            // This ensures behavior where inspector edits are preserved
         }
 
         // Store in runtime map

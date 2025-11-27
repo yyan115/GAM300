@@ -1,3 +1,16 @@
+/* Start Header ************************************************************************/
+/*!
+\file       AssetBrowserPanel.cpp
+\author     Muhammad Zikry
+\date       2025
+\brief      Panel for browsing and managing project assets.
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "imgui.h"
@@ -759,7 +772,7 @@ void AssetBrowserPanel::RenderAssetGrid()
                               lowerExt == ".tga" || lowerExt == ".dds");
         
         if (isTextureAsset && !asset.isDirectory) {
-            // Unity-like: Show actual texture thumbnail instead of icon
+            //Show actual texture thumbnail instead of icon
             uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
             
             if (textureId != 0) {
@@ -1661,7 +1674,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
 }
 
 // ============================================================================
-// Thumbnail Management (Unity-like)
+// Thumbnail Management
 // ============================================================================
 
 uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath) {

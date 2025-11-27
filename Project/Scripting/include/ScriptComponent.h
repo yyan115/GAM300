@@ -36,7 +36,7 @@ namespace Scripting {
         // Detach currently attached script and clear Lua refs. Safe to call when VM is alive or destroyed.
         void DetachScript();
 
-        // Lifecycle methods — to be called by the engine on the main thread at appropriate times.
+        // Lifecycle methods - to be called by the engine on the main thread at appropriate times.
         void Awake();
         void Start();
         void Update(float dt);

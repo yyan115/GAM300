@@ -1,3 +1,16 @@
+/* Start Header ************************************************************************/
+/*!
+\file       LayerComponent.cpp
+\author     Muhammad Zikry
+\date       2025
+\brief      Component representing an entity's layer within the ECS system.
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 #include "ECS/LayerComponent.hpp"
 #include "ECS/LayerManager.hpp"

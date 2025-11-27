@@ -114,7 +114,7 @@ private:
 
 	/**
 	 * @brief Create and configure the main editor dockspace.
-	 * Sets up a Unity-like layout with docked windows.
+	 * Sets up a layout with docked windows.
 	 */
 	static void CreateDockspace();
 

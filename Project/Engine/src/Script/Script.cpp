@@ -242,7 +242,7 @@ void Script::DestroyInstance() {
     // If scripting subsystem has no runtime / lua state, do not call into it.
     // Scripting::GetLuaState() returns nullptr if not initialized / already shutdown.
     if (!Scripting::GetLuaState()) {
-        // runtime gone — avoid calling into Scripting; just drop our reference and return.
+        // runtime gone - avoid calling into Scripting; just drop our reference and return.
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
             "Script::DestroyInstance: scripting runtime not available; dropping instance id=", m_instanceId);
         m_instanceId = -1;

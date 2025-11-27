@@ -318,6 +318,10 @@ void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
 }
 
 void Scripting::SetLuaState(lua_State* L) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'L' is used
+    (void)L;
+
     // If user provides a raw lua_State, hand it to runtime (runtime will not own it)
     if (!g_runtime) {
         g_runtime = std::make_unique<ScriptingRuntime>();

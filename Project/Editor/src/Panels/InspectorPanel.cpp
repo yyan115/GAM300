@@ -1034,7 +1034,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
 
-								// Add new script to the scripts vector (Unity-like behavior)
+								// Add new script to the scripts vector
 								ScriptData newScript{};
 								newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
 								newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
@@ -1086,7 +1086,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 									auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
 
-									// Add new script to the scripts vector (Unity-like behavior)
+									// Add new script to the scripts vector
 									ScriptData newScript{};
 									newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
 									newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
@@ -1467,6 +1467,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 }
 
 void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatch::Event& event) {
+	// Commented out to fix warning C4100 - unreferenced parameter
+	// Remove this line when 'path' is used
+	(void)path;
+
 	// Invalidate script cache on any change
 	if (event == filewatch::Event::added || event == filewatch::Event::removed ||
 		event == filewatch::Event::renamed_old || event == filewatch::Event::renamed_new ||

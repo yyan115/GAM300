@@ -30,5 +30,5 @@ set_target_properties(lua PROPERTIES
 
 # optional compile definitions for Windows
 if(MSVC)
-    target_compile_definitions(lua PRIVATE LUA_BUILD_AS_DLL=0) # adjust if needed
+    target_compile_definitions(lua PRIVATE LUA_BUILD_AS_DLL=0)
 endif()
