@@ -2395,16 +2395,18 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
         // Define local corners based on component type
         if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
-            glm::vec3 scale = sprite.scale.ConvertToGLM();
-            // For sprites, assume centered at origin in local space
-            localCorners[0] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[1] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[2] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[3] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ? -0.5f * scale.z : 0.0f);
-            localCorners[4] = glm::vec3(-0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[5] = glm::vec3( 0.5f * scale.x, -0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[6] = glm::vec3(-0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
-            localCorners[7] = glm::vec3( 0.5f * scale.x,  0.5f * scale.y, sprite.is3D ?  0.5f * scale.z : 0.0f);
+            // For sprites, use unit quad (-0.5 to 0.5) in local space
+            // The Transform's worldMatrix will apply the scale (extracted from worldMatrix in SpriteSystem)
+            // This prevents double-scaling: sprite.scale is already extracted from worldMatrix,
+            // so we shouldn't multiply by it again before applying worldMatrix transform
+            localCorners[0] = glm::vec3(-0.5f, -0.5f, sprite.is3D ? -0.5f : 0.0f);
+            localCorners[1] = glm::vec3( 0.5f, -0.5f, sprite.is3D ? -0.5f : 0.0f);
+            localCorners[2] = glm::vec3(-0.5f,  0.5f, sprite.is3D ? -0.5f : 0.0f);
+            localCorners[3] = glm::vec3( 0.5f,  0.5f, sprite.is3D ? -0.5f : 0.0f);
+            localCorners[4] = glm::vec3(-0.5f, -0.5f, sprite.is3D ?  0.5f : 0.0f);
+            localCorners[5] = glm::vec3( 0.5f, -0.5f, sprite.is3D ?  0.5f : 0.0f);
+            localCorners[6] = glm::vec3(-0.5f,  0.5f, sprite.is3D ?  0.5f : 0.0f);
+            localCorners[7] = glm::vec3( 0.5f,  0.5f, sprite.is3D ?  0.5f : 0.0f);
             hasValidBounds = true;
         } else if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
             auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
