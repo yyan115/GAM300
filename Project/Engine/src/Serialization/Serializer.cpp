@@ -536,6 +536,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("BrainComponent", v, alloc);
         }
+        if (ecs.HasComponent<ButtonComponent>(entity)) {
+            auto& c = ecs.GetComponent<ButtonComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ButtonComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -846,6 +851,13 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
             auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
+        }
+        // ButtonComponent
+        if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+            const auto& buttonCompJSON = comps["ButtonComponent"];
+            ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
+            auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
+            DeserializeButtonComponent(buttonComp, buttonCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -1169,6 +1181,14 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const auto& brainCompJSON = comps["BrainComponent"];
             auto& brainComp = ecs.GetComponent<BrainComponent>(currEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
+        }
+        // ButtonComponent
+        if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+            const auto& buttonCompJSON = comps["ButtonComponent"];
+            if (ecs.HasComponent<ButtonComponent>(currEnt)) {
+                auto& buttonComp = ecs.GetComponent<ButtonComponent>(currEnt);
+                DeserializeButtonComponent(buttonComp, buttonCompJSON);
+            }
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -2199,5 +2219,34 @@ void Serializer::DeserializeBrainComponent(BrainComponent& brainComp, const rapi
         brainComp.started = false;
         brainComp.activeState = d[1]["data"].GetString();
         brainComp.enabled = d[2]["data"].GetBool();
+    }
+}
+
+void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON) {
+    if (buttonJSON.HasMember("data") && buttonJSON["data"].IsArray()) {
+        const auto& d = buttonJSON["data"];
+        buttonComp.bindings.clear();
+
+        if (d.Size() > 0 && d[0].HasMember("data") && d[0]["data"].IsArray()) {
+            const auto& bindingsArr = d[0]["data"].GetArray();
+            for (const auto& bindingJSON : bindingsArr) {
+                ButtonBinding binding;
+                if (bindingJSON.HasMember("data") && bindingJSON["data"].IsArray()) {
+                    const auto& bd = bindingJSON["data"];
+                    if (bd.Size() > 0 && bd[0].HasMember("data"))
+                        binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                    if (bd.Size() > 1 && bd[1].HasMember("data"))
+                        binding.scriptGuidStr = bd[1]["data"].GetString();
+                    if (bd.Size() > 2 && bd[2].HasMember("data"))
+                        binding.functionName = bd[2]["data"].GetString();
+                    if (bd.Size() > 3 && bd[3].HasMember("data"))
+                        binding.callWithSelf = bd[3]["data"].GetBool();
+                }
+                buttonComp.bindings.push_back(binding);
+            }
+        }
+
+        if (d.Size() > 1 && d[1].HasMember("data"))
+            buttonComp.interactable = d[1]["data"].GetBool();
     }
 }

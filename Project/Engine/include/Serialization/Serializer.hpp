@@ -30,6 +30,7 @@
 #include <Scripting.h>
 #include "Engine.h"
 #include <Game AI/BrainComponent.hpp>
+#include <UI/Button/ButtonComponent.hpp>
 
 class Serializer {
 public:
@@ -62,6 +63,7 @@ public:
 	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
 	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
+	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
 
 private:
 	Serializer() = delete;

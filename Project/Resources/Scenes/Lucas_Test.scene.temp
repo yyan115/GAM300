@@ -867,7 +867,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -884,11 +884,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.001
+                                    "data": 2.101
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2
+                                    "data": 3
                                 },
                                 {
                                     "type": "float",
@@ -926,7 +926,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 2.001
+                                    "data": 2.101
                                 },
                                 {
                                     "type": "float",
@@ -938,7 +938,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -946,7 +946,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2
+                                    "data": 3
                                 },
                                 {
                                     "type": "float",
@@ -1014,7 +1014,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.7
                                 },
                                 {
                                     "type": "float",
@@ -1039,7 +1039,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": -0.3
                                 }
                             ]
                         },
@@ -1049,11 +1049,11 @@
                         },
                         {
                             "type": "int",
-                            "data": 12
+                            "data": 0
                         },
                         {
                             "type": "int",
-                            "data": 17
+                            "data": -16
                         },
                         {
                             "type": "Matrix4x4",
@@ -1138,21 +1138,229 @@
                             "data": true
                         }
                     ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": []
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 4,
+            "guid": "00149e57b1aa4cbb-0003684534000001",
+            "components": {
+                "NameComponent": {
+                    "name": "Entity_4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "123",
+                            "scriptPath": "../../Resources/Scripts/template/testbutton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "123"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClick"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
                 }
             }
         }
-    ],
-    "tags": [
-        "Untagged",
-        "Respawn",
-        "Finish",
-        "EditorOnly",
-        "MainCamera",
-        "Player",
-        "GameController",
-        "Enemy",
-        "NPC",
-        "Collectible"
     ],
     "layers": [
         {
@@ -1194,6 +1402,10 @@
         {
             "index": 9,
             "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
         }
     ]
 }

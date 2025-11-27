@@ -58,6 +58,7 @@ extern std::string DraggedFontPath;
 #include <algorithm>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "UI/Button/ButtonComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
 #include <Script/ScriptComponentData.hpp>
@@ -265,6 +266,12 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<ScriptComponentData>(entity) ?
 				(void*)&ecs.GetComponent<ScriptComponentData>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ScriptComponentData>(entity); }},
+
+		// UI components
+		{"Button", "ButtonComponent",
+			[&]() { return ecs.HasComponent<ButtonComponent>(entity) ?
+				(void*)&ecs.GetComponent<ButtonComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ButtonComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -893,7 +900,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				{"AI", ICON_FA_BRAIN},
 				{"Scripting", ICON_FA_CODE},
 				{"General", ICON_FA_TAG},
-				{"Scripts", ICON_FA_FILE_CODE}
+				{"Scripts", ICON_FA_FILE_CODE},
+				{"UI", ICON_FA_HAND_POINTER}
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -954,6 +962,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			}
 			if (!ecsManager.HasComponent<LayerComponent>(entity)) {
 				allComponents.push_back({ "Layer", "LayerComponent", "General" });
+			}
+			if (!ecsManager.HasComponent<ButtonComponent>(entity)) {
+				allComponents.push_back({ "Button", "ButtonComponent", "UI" });
 			}
 
 		// Cache scripts to avoid filesystem scanning every frame
@@ -1456,6 +1467,12 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			// scriptPath is empty, enabled is true, etc.
 			ecsManager.AddComponent<ScriptComponentData>(entity, component);
 			std::cout << "[Inspector] Added ScriptComponentData to entity " << entity << " (ready for script assignment)" << std::endl;
+		}
+		else if (componentType == "ButtonComponent") {
+			ButtonComponent component;
+			component.interactable = true;
+			ecsManager.AddComponent<ButtonComponent>(entity, component);
+			std::cout << "[Inspector] Added ButtonComponent to entity " << entity << std::endl;
 		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;

@@ -47,6 +47,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include "Script/ScriptComponentData.hpp"
+#include "UI/Button/ButtonComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -3384,6 +3385,202 @@ void RegisterInspectorCustomRenderers()
 
     ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "autoInvokeEntry",
                                               [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    // ==================== BUTTON COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("ButtonComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    {
+        ButtonComponent& buttonComp = *static_cast<ButtonComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Helper lambda: Parse Lua script to extract function names
+        auto extractLuaFunctions = [](const std::string& scriptPath) -> std::vector<std::string> {
+            std::vector<std::string> functions;
+
+            // Get full path to script
+            std::filesystem::path fullPath;
+            std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            if (scriptPath.find("Resources/") == 0 || scriptPath.find("scripts/") == 0) {
+                fullPath = std::filesystem::path(rootDir).parent_path() / scriptPath;
+            } else {
+                fullPath = std::filesystem::path(rootDir) / "Scripts" / scriptPath;
+            }
+
+            std::ifstream file(fullPath);
+            if (!file.is_open()) return functions;
+
+            std::string line;
+            while (std::getline(file, line)) {
+                // Look for function definitions
+                // Pattern: function ClassName:FunctionName() or function ClassName.FunctionName(
+                size_t funcPos = line.find("function ");
+                if (funcPos != std::string::npos) {
+                    size_t start = funcPos + 9; // After "function "
+                    size_t colonPos = line.find(':', start);
+                    size_t dotPos = line.find('.', start);
+                    size_t parenPos = line.find('(', start);
+
+                    if (parenPos != std::string::npos) {
+                        std::string funcName;
+                        if (colonPos != std::string::npos && colonPos < parenPos) {
+                            // ClassName:FunctionName pattern
+                            funcName = line.substr(colonPos + 1, parenPos - colonPos - 1);
+                        } else if (dotPos != std::string::npos && dotPos < parenPos) {
+                            // ClassName.FunctionName pattern
+                            funcName = line.substr(dotPos + 1, parenPos - dotPos - 1);
+                        } else {
+                            // Just FunctionName pattern
+                            funcName = line.substr(start, parenPos - start);
+                        }
+
+                        // Trim whitespace
+                        funcName.erase(0, funcName.find_first_not_of(" \t"));
+                        funcName.erase(funcName.find_last_not_of(" \t") + 1);
+
+                        // Skip internal/lifecycle functions
+                        if (!funcName.empty() &&
+                            funcName != "new" && funcName != "New" &&
+                            funcName != "Awake" && funcName != "Start" &&
+                            funcName != "Update" && funcName != "FixedUpdate" &&
+                            funcName != "OnDestroy" && funcName != "OnEnable" &&
+                            funcName != "OnDisable") {
+                            functions.push_back(funcName);
+                        }
+                    }
+                }
+            }
+            return functions;
+        };
+
+        // Cache for script functions
+        static std::unordered_map<std::string, std::vector<std::string>> scriptFunctionsCache;
+
+        // Interactable toggle
+        ImGui::Text("Interactable");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::Checkbox("##Interactable", &buttonComp.interactable);
+
+        ImGui::Separator();
+        ImGui::Text("On Click ()");
+
+        // Render existing bindings
+        int bindingToRemove = -1;
+        for (size_t i = 0; i < buttonComp.bindings.size(); ++i) {
+            ButtonBinding& binding = buttonComp.bindings[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Binding header with remove button
+            ImGui::BeginGroup();
+
+            // Script field with drag-drop
+            std::string scriptDisplayName = binding.scriptPath.empty() ? "None (Script)" :
+                std::filesystem::path(binding.scriptPath).stem().string();
+
+            ImGui::Text("Script");
+            ImGui::SameLine(labelWidth);
+            float fieldWidth = ImGui::GetContentRegionAvail().x - 25.0f;
+            EditorComponents::DrawDragDropButton(scriptDisplayName.c_str(), fieldWidth);
+
+            // Drag-drop target for scripts
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD")) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Button Script");
+                    const char* droppedPath = (const char*)payload->Data;
+                    std::string pathStr(droppedPath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    binding.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(DraggedScriptGuid);
+                    binding.scriptPath = pathStr;
+                    binding.functionName = ""; // Reset function when script changes
+
+                    // Invalidate cache for this script
+                    scriptFunctionsCache.erase(pathStr);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // Remove button
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveBinding")) {
+                bindingToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this binding");
+            }
+
+            // Function dropdown (only if script is assigned)
+            if (!binding.scriptPath.empty()) {
+                // Get or cache functions for this script
+                auto cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                if (cacheIt == scriptFunctionsCache.end()) {
+                    scriptFunctionsCache[binding.scriptPath] = extractLuaFunctions(binding.scriptPath);
+                    cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                }
+
+                const std::vector<std::string>& functions = cacheIt->second;
+
+                ImGui::Text("Function");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+
+                std::string previewFunc = binding.functionName.empty() ? "No Function" : binding.functionName;
+                EditorComponents::PushComboColors();
+                if (ImGui::BeginCombo("##Function", previewFunc.c_str())) {
+                    // "No Function" option
+                    if (ImGui::Selectable("No Function", binding.functionName.empty())) {
+                        binding.functionName = "";
+                    }
+
+                    // Available functions
+                    for (const auto& funcName : functions) {
+                        bool isSelected = (binding.functionName == funcName);
+                        if (ImGui::Selectable(funcName.c_str(), isSelected)) {
+                            SnapshotManager::GetInstance().TakeSnapshot("Set Button Function");
+                            binding.functionName = funcName;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    if (functions.empty()) {
+                        ImGui::TextDisabled("No functions found in script");
+                    }
+
+                    ImGui::EndCombo();
+                }
+                EditorComponents::PopComboColors();
+            }
+
+            ImGui::EndGroup();
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+
+        // Remove binding if requested
+        if (bindingToRemove >= 0 && bindingToRemove < static_cast<int>(buttonComp.bindings.size())) {
+            SnapshotManager::GetInstance().TakeSnapshot("Remove Button Binding");
+            buttonComp.bindings.erase(buttonComp.bindings.begin() + bindingToRemove);
+        }
+
+        // Add binding button
+        if (ImGui::Button(ICON_FA_PLUS " Add Binding", ImVec2(-1, 0))) {
+            SnapshotManager::GetInstance().TakeSnapshot("Add Button Binding");
+            ButtonBinding newBinding;
+            buttonComp.bindings.push_back(newBinding);
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide ButtonComponent fields from default rendering (we handle them in the custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("ButtonComponent", "bindings",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ButtonComponent", "interactable",
+                                              [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
     // ==================== SPRITE ANIMATION COMPONENT ====================
