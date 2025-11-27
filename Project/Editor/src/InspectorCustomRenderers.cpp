@@ -581,7 +581,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Extents");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.boxHalfExtents = halfExtent;
+            //collider.boxHalfExtents = halfExtent;
             float halfExtents[3] = {collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z};
             if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -595,7 +595,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.sphereRadius = radius;
+            //collider.sphereRadius = radius;
             if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -607,7 +607,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
+            //collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -627,7 +627,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
+            //collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -635,7 +635,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.cylinderHalfHeight = halfExtent.y;
+            //collider.cylinderHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;

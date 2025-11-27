@@ -117,6 +117,29 @@ public:
 	}
 
 
+	Vector3D CalculateCenter(const Model& _model)
+	{
+		Vector3D minPt(FLT_MAX, FLT_MAX, FLT_MAX);
+		Vector3D maxPt(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		for (const auto& mesh : _model.meshes) {
+			for (const auto& vertex : mesh.vertices) {
+				if (vertex.position.x < minPt.x) minPt.x = vertex.position.x;
+				if (vertex.position.y < minPt.y) minPt.y = vertex.position.y;
+				if (vertex.position.z < minPt.z) minPt.z = vertex.position.z;
+
+				if (vertex.position.x > maxPt.x) maxPt.x = vertex.position.x;
+				if (vertex.position.y > maxPt.y) maxPt.y = vertex.position.y;
+				if (vertex.position.z > maxPt.z) maxPt.z = vertex.position.z;
+			}
+		}
+		Vector3D center;
+		center.x = (minPt.x + maxPt.x) * 0.5f;
+		center.y = (minPt.y + maxPt.y) * 0.5f;
+		center.z = (minPt.z + maxPt.z) * 0.5f;
+		return center;
+	}
+
 
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }

@@ -1368,7 +1368,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			{
 				auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
 				if (rc.model)
+				{
 					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
+					component.center = rc.CalculateCenter(*rc.model);
+				}
 			}
 			component.layer = Layers::MOVING;
 			component.layerID = static_cast<int>(component.layer);

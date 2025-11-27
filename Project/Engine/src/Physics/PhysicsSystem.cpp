@@ -372,6 +372,8 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 
 void PhysicsSystem::Shutdown() {
     // 1. Remove and destroy all bodies
+
+    //entities.clear();
     auto& bi = physics.GetBodyInterface();
     for (auto e : entities) {
         auto& rb = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<RigidBodyComponent>(e);
@@ -388,8 +390,6 @@ void PhysicsSystem::Shutdown() {
         auto& col = ecs.GetComponent<ColliderComponent>(e);
         col.shape = nullptr;
     }
-    //entities.clear();
-
     // 3. Destroy PhysicsSystem *before* releasing job/temp allocators
     //physics.~PhysicsSystem();   // or wrap in unique_ptr and reset()
 

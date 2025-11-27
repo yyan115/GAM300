@@ -1443,6 +1443,11 @@ void ScenePanel::DrawColliderGizmos() {
         glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
         glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
 
+        glm::vec3 offset = { collider.center.x * worldScale.x, collider.center.y * worldScale.y, collider.center.z * worldScale.z };
+
+        worldPos += offset; //THIS IS FOR THOSE ORIGIN IS NOT IN THE MIDDLE, IF MIDDLE, OFFSET = 0
+
+
         // Get viewport dimensions from current ImGui window
         ImVec2 windowSize = cachedWindowSize;
         if (windowSize.x == 0 || windowSize.y == 0) return;
@@ -1463,6 +1468,7 @@ void ScenePanel::DrawColliderGizmos() {
         switch (collider.shapeType) {
             case ColliderShapeType::Box: {
                 // Draw wireframe box - apply transform scale to extents
+
                 glm::vec3 extents = glm::vec3(
                     collider.boxHalfExtents.x * worldScale.x,
                     collider.boxHalfExtents.y * worldScale.y,
