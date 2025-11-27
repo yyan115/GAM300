@@ -9,24 +9,25 @@ struct ButtonBinding
 {
     REFL_SERIALIZABLE
         std::string targetEntityGuidStr;
-    std::string scriptGuidStr;     // matches ScriptData.scriptGuidStr
-    std::string functionName;      // function to call, e.g. "OnPressed"
+    std::string scriptPath;
+    std::string scriptGuidStr;     // matches ScriptData.scriptGuidStr -> Supposed to use this to save on memory & data protection
+    std::string functionName;      // function to call, e.g. "OnClick"
     bool callWithSelf = true;      // prefer calling as method (instance:func) - editor toggle
 };
 
-struct ButtonComponentData
+struct ButtonComponent
 {
     REFL_SERIALIZABLE
         std::vector<ButtonBinding> bindings;
     bool interactable = true;
 };
 
-class ButtonComponent
+class ButtonController
 {
 public:
-    ButtonComponent() = default;  // Now truly default!
-    ButtonComponent(Entity owner);
-    ~ButtonComponent();
+    ButtonController() = default;  // Now truly default!
+    ButtonController(Entity owner);
+    ~ButtonController();
 
     void SetEntity(Entity owner);
     void OnEnable();

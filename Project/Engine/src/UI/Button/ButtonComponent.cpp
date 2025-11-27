@@ -12,29 +12,29 @@ REFL_REGISTER_PROPERTY(functionName)
 REFL_REGISTER_PROPERTY(callWithSelf)
 REFL_REGISTER_END
 
-REFL_REGISTER_START(ButtonComponentData)
+REFL_REGISTER_START(ButtonComponent)
 REFL_REGISTER_PROPERTY(bindings)
 REFL_REGISTER_PROPERTY(interactable)
 REFL_REGISTER_END
 
 #pragma endregion
 
-ButtonComponent::ButtonComponent(Entity owner)
+ButtonController::ButtonController(Entity owner)
     : m_entity(owner)
 {
-    // Initialize cache size from serialized ButtonComponentData if available
+    // Initialize cache size from serialized ButtonComponent if available
     ECSManager* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (!ecs) return;
 
-    auto* btnData = ecs->HasComponent<ButtonComponentData>(m_entity)
-        ? &ecs->GetComponent<ButtonComponentData>(m_entity)
+    auto* btnData = ecs->HasComponent<ButtonComponent>(m_entity)
+        ? &ecs->GetComponent<ButtonComponent>(m_entity)
         : nullptr;
 
     size_t n = btnData ? btnData->bindings.size() : 0;
     m_cachedInstanceRef.assign(n, LUA_NOREF);
 }
 
-ButtonComponent::~ButtonComponent()
+ButtonController::~ButtonController()
 {
     // Unregister callback - ScriptSystem handles thread-safety
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
@@ -47,7 +47,7 @@ ButtonComponent::~ButtonComponent()
     m_cachedInstanceRef.clear();
 }
 
-void ButtonComponent::SetEntity(Entity owner)
+void ButtonController::SetEntity(Entity owner)
 {
     m_entity = owner;
 
@@ -55,19 +55,19 @@ void ButtonComponent::SetEntity(Entity owner)
     ECSManager* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (!ecs) return;
 
-    auto* btnData = ecs->HasComponent<ButtonComponentData>(m_entity)
-        ? &ecs->GetComponent<ButtonComponentData>(m_entity)
+    auto* btnData = ecs->HasComponent<ButtonComponent>(m_entity)
+        ? &ecs->GetComponent<ButtonComponent>(m_entity)
         : nullptr;
 
     size_t n = btnData ? btnData->bindings.size() : 0;
     m_cachedInstanceRef.assign(n, LUA_NOREF);
 }
 
-void ButtonComponent::OnEnable()
+void ButtonController::OnEnable()
 {
     if (m_entity == 0) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[ButtonComponent] OnEnable called with invalid entity");
+            "[ButtonController] OnEnable called with invalid entity");
         return;
     }
 
@@ -85,7 +85,7 @@ void ButtonComponent::OnEnable()
     ecs->scriptSystem->RegisterInstancesChangedCallback(cb);
 }
 
-void ButtonComponent::OnDisable()
+void ButtonController::OnDisable()
 {
     // Unregister callback
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
@@ -98,7 +98,7 @@ void ButtonComponent::OnDisable()
     m_cachedInstanceRef.clear();
 }
 
-void ButtonComponent::InstancesChangedCallback(Entity e)
+void ButtonController::InstancesChangedCallback(Entity e)
 {
     // No mutex needed - simple invalidation
     // Worst case: we read stale cache during invalidation and get a cache miss
@@ -107,26 +107,26 @@ void ButtonComponent::InstancesChangedCallback(Entity e)
     }
 }
 
-void ButtonComponent::OnClick()
+void ButtonController::OnClick()
 {
     if (m_entity == 0) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[ButtonComponent] OnClick called with invalid entity");
+            "[ButtonController] OnClick called with invalid entity");
         return;
     }
 
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (!ecs) return;
 
-    if (!ecs->HasComponent<ButtonComponentData>(m_entity)) return;
+    if (!ecs->HasComponent<ButtonComponent>(m_entity)) return;
 
-    const auto& bc = ecs->GetComponent<ButtonComponentData>(m_entity);
+    const auto& bc = ecs->GetComponent<ButtonComponent>(m_entity);
     if (!bc.interactable) return;
 
     auto* scriptSystem = ecs->scriptSystem.get();
     if (!scriptSystem) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[ButtonComponent] ScriptSystem not available");
+            "[ButtonController] ScriptSystem not available");
         return;
     }
 
@@ -205,14 +205,14 @@ void ButtonComponent::OnClick()
 
         if (!callSucceeded) {
             ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-                "[ButtonComponent] Failed to invoke callback: target=",
+                "[ButtonController] Failed to invoke callback: target=",
                 binding.targetEntityGuidStr,
                 " script=", binding.scriptGuidStr,
                 " fn=", binding.functionName);
         }
         else {
             ENGINE_PRINT(EngineLogging::LogLevel::Debug,
-                "[ButtonComponent] Successfully called ", binding.functionName,
+                "[ButtonController] Successfully called ", binding.functionName,
                 " on script ", binding.scriptGuidStr);
         }
     }

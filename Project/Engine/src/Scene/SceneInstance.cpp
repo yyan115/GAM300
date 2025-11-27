@@ -37,11 +37,11 @@ Entity fpsText;
 void SceneInstance::Initialize()
 {
 	// Initialize GraphicsManager first
-	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
+	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	// gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// Get the ECS manager for this scene
-	ECSManager &ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (!PostProcessingManager::GetInstance().Initialize())
 	{
@@ -50,7 +50,7 @@ void SceneInstance::Initialize()
 	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
-	auto *hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
 	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
@@ -97,28 +97,39 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Button system initialized");
 	ENGINE_PRINT("Scene Initialized\n");
 
-	//Create Test Button
+	// Create Test Button entity
+	{
 	Entity buttonEntity = ecsManager.CreateEntity();
-	ButtonComponentData data;
-	ButtonBinding binding;
-	binding.targetEntityGuidStr = ""; // Empty = same entity as button
-	binding.scriptGuidStr = "002dcbfdcd8ac9ce-00035a92b2000001";  // GUID of the Lua script
-	/* If you dont like guid can switch to script path instead but please change logic accordingly
-		if (m_ecs->HasComponent<ScriptComponentData>(e)) {
-			auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
 
-			for (const auto& script : scriptComp.scripts) {
-				std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
-				std::cout << "Script Path: " << script.scriptPath << std::endl;
-			}
-		}
-	*/
-	binding.functionName = "OnClick";  // Function name in Lua script
+	// 1) Attach ScriptComponentData with ScriptData using the path directly
+	ScriptComponentData scriptComp;
+	ScriptData sd;
+
+	sd.scriptPath = "../../Resources/Scripts/template/testbutton.lua";
+	sd.scriptGuidStr = "123";       // optional: keep empty if not using GUID-based lookup
+	sd.enabled = true;
+	
+	scriptComp.scripts.push_back(sd);
+
+	// Attach ScriptComponentData
+	ecsManager.AddComponent<ScriptComponentData>(buttonEntity, scriptComp);
+
+	// 2) Attach ButtonComponent with binding that also uses the script path
+	ButtonComponent buttonData;
+
+	ButtonBinding binding;
+	binding.targetEntityGuidStr = "";    // empty = same entity
+	binding.scriptGuidStr = "123";     // not using GUID lookup
+	binding.functionName = "OnClick";
 	binding.callWithSelf = true;
-	data.bindings.push_back(binding);
-	data.interactable = true;
-	ecsManager.AddComponent<ButtonComponentData>(buttonEntity, data);
-	//ScriptComponentData script;
+
+	// Add binding
+	buttonData.bindings.push_back(binding);
+	buttonData.interactable = true;
+
+	// Attach button data
+	ecsManager.AddComponent<ButtonComponent>(buttonEntity, buttonData);
+	}
 }
 
 void SceneInstance::InitializeJoltPhysics()

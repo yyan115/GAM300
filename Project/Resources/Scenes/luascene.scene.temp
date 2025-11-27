@@ -5079,7 +5079,7 @@
         },
         {
             "id": 20,
-            "guid": "001031817cfd9500-000367a170000001",
+            "guid": "00451c9497d99a3d-000367b4bc000001",
             "components": {
                 "NameComponent": {
                     "name": "Entity_20"
@@ -5232,6 +5232,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "123",
+                            "scriptPath": "../../Resources/Scripts/template/testbutton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }

@@ -25,20 +25,18 @@ void ButtonSystem::UpdateButtonStates() {
 
     // Update cooldown timers or other runtime state if needed
     for (Entity e : m_ecs->GetActiveEntities()) {
-        //if (m_ecs->HasComponent<ScriptComponentData>(e)) {
-        //    auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
+        if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
 
-        //    for (const auto& script : scriptComp.scripts) {
-        //        std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
-        //        std::cout << "Script Path: " << script.scriptPath << std::endl;
-        //    }
-        //}
+        auto& buttonData = m_ecs->GetComponent<ButtonComponent>(e);
 
-        if (!m_ecs->HasComponent<ButtonComponentData>(e)) continue;
+        if (m_ecs->HasComponent<ScriptComponentData>(e)) {
+            auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
 
-        auto& buttonData = m_ecs->GetComponent<ButtonComponentData>(e);
-
-
+            for (const auto& script : scriptComp.scripts) {
+                std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
+                std::cout << "Script Path: " << script.scriptPath << std::endl;
+            }
+        }
         // Example: Update any time-based state here
         // (cooldowns, animations, etc.)
 
@@ -90,13 +88,13 @@ void ButtonSystem::TriggerButton(Entity buttonEntity) {
         return;
     }
 
-    if (!m_ecs->HasComponent<ButtonComponentData>(buttonEntity)) {
+    if (!m_ecs->HasComponent<ButtonComponent>(buttonEntity)) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[ButtonSystem] Entity ", buttonEntity, " has no ButtonComponentData");
+            "[ButtonSystem] Entity ", buttonEntity, " has no ButtonComponent");
         return;
     }
 
-    const auto& buttonData = m_ecs->GetComponent<ButtonComponentData>(buttonEntity);
+    const auto& buttonData = m_ecs->GetComponent<ButtonComponent>(buttonEntity);
 
     if (!buttonData.interactable) {
         ENGINE_PRINT(EngineLogging::LogLevel::Debug,
@@ -108,9 +106,9 @@ void ButtonSystem::TriggerButton(Entity buttonEntity) {
 }
 
 void ButtonSystem::ProcessButtonClick(Entity buttonEntity) {
-    // The actual work is delegated to ButtonComponent
-    // Create a temporary ButtonComponent to handle the click
-    ButtonComponent tempButton(buttonEntity);
+    // The actual work is delegated to ButtonController
+    // Create a temporary ButtonController to handle the click
+    ButtonController tempButton(buttonEntity);
     tempButton.OnClick();
 
     ENGINE_PRINT(EngineLogging::LogLevel::Debug,
