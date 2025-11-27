@@ -74,6 +74,10 @@ public:
     void SetRenderingForEditor(bool isEditor) { isRenderingForEditor = isEditor; }
     bool IsRenderingForEditor() const { return isRenderingForEditor; }
 
+    // Target game resolution for 2D rendering (used to sync Scene and Game panels)
+    void SetTargetGameResolution(int width, int height) { targetGameWidth = width; targetGameHeight = height; }
+    void GetTargetGameResolution(int& width, int& height) const { width = targetGameWidth; height = targetGameHeight; }
+
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
 
@@ -118,6 +122,10 @@ private:
 
     // Flag to indicate if currently rendering for editor (vs game)
     bool isRenderingForEditor = false;
+
+    // Target game resolution for 2D rendering synchronization
+    int targetGameWidth = 1920;
+    int targetGameHeight = 1080;
 
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);

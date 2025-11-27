@@ -179,10 +179,10 @@ void CameraSystem::UpdateCameraFromComponent(Entity entity)
 	glm::vec3 worldPos = glm::vec3(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
 
 	// Update Camera object
-	activeCamera->Position = worldPos; 
-	activeCamera->WorldUp = camComp.up; 
-	activeCamera->MovementSpeed = camComp.movementSpeed; 
-	activeCamera->MouseSensitivity = camComp.mouseSensitivity; 
+	activeCamera->Position = worldPos;
+	activeCamera->WorldUp = camComp.up;
+	activeCamera->MovementSpeed = camComp.movementSpeed;
+	activeCamera->MouseSensitivity = camComp.mouseSensitivity;
 	activeCamera->Zoom = camComp.fov;
 
 	if (camComp.useFreeRotation) 

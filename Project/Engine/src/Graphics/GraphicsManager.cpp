@@ -388,22 +388,40 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		glm::mat4 view;
 		glm::mat4 projection;
 
-		// In 2D editor mode, use orthographic projection with camera position as center
+		// In 2D editor mode, use orthographic projection with screen-space coordinates
 		if (IsRenderingForEditor() && Is2DMode()) {
 			// Use identity view matrix for 2D (camera doesn't rotate)
 			view = glm::mat4(1.0f);
 
-			// Create orthographic projection centered on camera's XY position
-			// The camera position represents the center of the view in pixel space
-			// Apply OrthoZoomLevel to the viewport size (1.0 = normal, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
-			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
-			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
-			float halfWidth = viewWidth * 0.5f;
-			float halfHeight = viewHeight * 0.5f;
-			float left = currentCamera->Position.x - halfWidth;
-			float right = currentCamera->Position.x + halfWidth;
-			float bottom = currentCamera->Position.y - halfHeight;
-			float top = currentCamera->Position.y + halfHeight;
+			// Use target game resolution for consistent 2D rendering between Scene and Game panels
+			float gameWidth = (float)targetGameWidth;
+			float gameHeight = (float)targetGameHeight;
+			float gameAspect = gameWidth / gameHeight;
+			float viewportAspect = (float)renderWidth / (float)renderHeight;
+
+			// Calculate view dimensions that preserve game aspect ratio within viewport
+			float viewWidth, viewHeight;
+			if (viewportAspect > gameAspect) {
+				// Viewport is wider than game - fit by height, add horizontal padding
+				viewHeight = gameHeight * currentCamera->OrthoZoomLevel;
+				viewWidth = viewHeight * viewportAspect;
+			} else {
+				// Viewport is taller than game - fit by width, add vertical padding
+				viewWidth = gameWidth * currentCamera->OrthoZoomLevel;
+				viewHeight = viewWidth / viewportAspect;
+			}
+
+			// Center the game view within the adjusted view dimensions
+			float gameViewWidth = gameWidth * currentCamera->OrthoZoomLevel;
+			float gameViewHeight = gameHeight * currentCamera->OrthoZoomLevel;
+			float paddingX = (viewWidth - gameViewWidth) * 0.5f;
+			float paddingY = (viewHeight - gameViewHeight) * 0.5f;
+
+			// Create projection that shows world from camera position with aspect ratio correction
+			float left = currentCamera->Position.x - paddingX;
+			float right = currentCamera->Position.x + viewWidth - paddingX;
+			float bottom = currentCamera->Position.y - paddingY;
+			float top = currentCamera->Position.y + viewHeight - paddingY;
 
 			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
 
@@ -562,7 +580,15 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
 {
-	glm::mat4 projection = glm::ortho(0.0f, (float)WindowManager::GetWindowWidth(), 0.0f, (float)WindowManager::GetWindowHeight());
+	// Use target game resolution for 2D projection
+	// This ensures Scene Panel and Game Panel show text at consistent positions
+	int gameWidth = targetGameWidth;
+	int gameHeight = targetGameHeight;
+
+	// Use screen-space projection where (0,0) is at bottom-left corner
+	// This matches traditional 2D game coordinate systems and is consistent with sprites
+	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
+
 	glm::mat4 view = glm::mat4(1.0f); // Identity matrix for 2D
 
 	glm::mat4 model = glm::mat4(1.0f);
@@ -865,13 +891,14 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
 {
+	// Use target game resolution for 2D projection
+	// This ensures Scene Panel and Game Panel show sprites at consistent positions
+	int gameWidth = targetGameWidth;
+	int gameHeight = targetGameHeight;
 
-	// Use orthographic projection for 2D sprites
-	// Use viewport dimensions (render target size) instead of window dimensions
-	GLint renderWidth = (RunTimeVar::window.viewportWidth > 0) ? RunTimeVar::window.viewportWidth : RunTimeVar::window.width;
-	GLint renderHeight = (RunTimeVar::window.viewportHeight > 0) ? RunTimeVar::window.viewportHeight : RunTimeVar::window.height;
-	glm::mat4 projection = glm::ortho(0.0f, (float)renderWidth,
-		0.0f, (float)renderHeight);
+	// Use screen-space projection where (0,0) is at bottom-left corner
+	// This matches traditional 2D game coordinate systems
+	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
 
 	// Create model matrix
 	glm::mat4 model = glm::mat4(1.0f);

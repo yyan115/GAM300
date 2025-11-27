@@ -97,13 +97,38 @@ void ScenePanel::DrawGameViewportIndicator() {
     glm::vec3 worldBottomLeft(0.0f, 0.0f, 0.0f);
 
     // Convert world space to screen space using editor camera
-    auto worldToScreen = [this](const glm::vec3& worldPos) -> ImVec2 {
-        // For 2D orthographic: screen_x = (world_x - camera_target_x) / zoom + viewport_center
-        // EditorCamera orthographic projection centers around Target, not Position
+    // This must match the projection calculation in GraphicsManager::SetupMatrices
+    auto worldToScreen = [this, gameWidth, gameHeight](const glm::vec3& worldPos) -> ImVec2 {
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-        float screenX = ((worldPos.x - editorCamera.Target.x) / editorCamera.OrthoZoomLevel) + viewportSize.x * 0.5f;
-        float screenY = ((editorCamera.Target.y - worldPos.y) / editorCamera.OrthoZoomLevel) + viewportSize.y * 0.5f;
+        float gameAspect = (float)gameWidth / (float)gameHeight;
+        float viewportAspect = viewportSize.x / viewportSize.y;
+
+        // Calculate view dimensions that preserve game aspect ratio (same as SetupMatrices)
+        float viewWidth, viewHeight;
+        if (viewportAspect > gameAspect) {
+            // Viewport is wider than game - fit by height
+            viewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+            viewWidth = viewHeight * viewportAspect;
+        } else {
+            // Viewport is taller than game - fit by width
+            viewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+            viewHeight = viewWidth / viewportAspect;
+        }
+
+        // Calculate padding for centering
+        float gameViewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+        float gameViewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+        float paddingX = (viewWidth - gameViewWidth) * 0.5f;
+        float paddingY = (viewHeight - gameViewHeight) * 0.5f;
+
+        // Map world coordinates to screen coordinates
+        // The projection maps [left, right] to [0, viewportWidth] and [bottom, top] to [viewportHeight, 0]
+        float left = editorCamera.Position.x - paddingX;
+        float bottom = editorCamera.Position.y - paddingY;
+
+        float screenX = (worldPos.x - left) * viewportSize.x / viewWidth;
+        float screenY = viewportSize.y - (worldPos.y - bottom) * viewportSize.y / viewHeight;
 
         ImVec2 windowPos = ImGui::GetCursorScreenPos();
         return ImVec2(windowPos.x + screenX, windowPos.y + screenY);
@@ -775,6 +800,15 @@ void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec
 void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
         auto& gfx = GraphicsManager::GetInstance();
+
+        // Set target game resolution for 2D rendering synchronization with Game Panel
+        auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+        if (gamePanel) {
+            int targetWidth, targetHeight;
+            gamePanel->GetTargetGameResolution(targetWidth, targetHeight);
+            gfx.SetTargetGameResolution(targetWidth, targetHeight);
+        }
 
         // Set viewport size for correct aspect ratio
         gfx.SetViewportSize(width, height);
