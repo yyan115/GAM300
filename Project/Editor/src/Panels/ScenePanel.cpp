@@ -1439,21 +1439,24 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
-        // Get world position and scale from transform
+        // Get world position, rotation and scale from transform
         glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+        glm::quat worldRot = glm::quat(transform.localRotation.w, transform.localRotation.x, transform.localRotation.y, transform.localRotation.z); // Convert custom Quaternion to glm::quat
         glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
 
-        glm::vec3 offset = { collider.center.x * worldScale.x, collider.center.y * worldScale.y, collider.center.z * worldScale.z };
+        // Build transformation matrix (TRS order: Translation * Rotation * Scale)
+        glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), worldPos)
+            * glm::mat4_cast(worldRot)
+            * glm::scale(glm::mat4(1.0f), worldScale);
 
-        worldPos += offset; //THIS IS FOR THOSE ORIGIN IS NOT IN THE MIDDLE, IF MIDDLE, OFFSET = 0
-
+        // Apply collider offset in local space
+        glm::vec3 localOffset = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+        glm::vec3 offset = glm::vec3(transformMatrix * glm::vec4(localOffset, 1.0f)) - worldPos;
+        worldPos += offset;
 
         // Get viewport dimensions from current ImGui window
         ImVec2 windowSize = cachedWindowSize;
         if (windowSize.x == 0 || windowSize.y == 0) return;
-
-        // Commented out to fix warning C4189 - unused variable
-        // float aspectRatio = windowSize.x / windowSize.y;
 
         // Project to screen space
         glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
@@ -1464,201 +1467,234 @@ void ScenePanel::DrawColliderGizmos() {
         // Green color for collider gizmos (like Unity)
         ImU32 gizmoColor = IM_COL32(0, 255, 0, 255);
 
+        // Helper lambda to transform a local point to world space
+        auto TransformPoint = [&](const glm::vec3& localPoint) -> glm::vec3 {
+            return glm::vec3(transformMatrix * glm::vec4(localPoint, 1.0f));
+            };
+
         // Draw based on shape type
         switch (collider.shapeType) {
-            case ColliderShapeType::Box: {
-                // Draw wireframe box - apply transform scale to extents
+        case ColliderShapeType::Box: {
+            // Draw wireframe box - define corners in LOCAL space
+            glm::vec3 extents = glm::vec3(
+                collider.boxHalfExtents.x,
+                collider.boxHalfExtents.y,
+                collider.boxHalfExtents.z
+            );
 
-                glm::vec3 extents = glm::vec3(
-                    collider.boxHalfExtents.x * worldScale.x,
-                    collider.boxHalfExtents.y * worldScale.y,
-                    collider.boxHalfExtents.z * worldScale.z
-                );
+            // 8 corners in LOCAL space (before transformation)
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+            glm::vec3 localCorners[8] = {
+                colliderCenter + glm::vec3(-extents.x, -extents.y, -extents.z),
+                colliderCenter + glm::vec3(extents.x, -extents.y, -extents.z),
+                colliderCenter + glm::vec3(extents.x,  extents.y, -extents.z),
+                colliderCenter + glm::vec3(-extents.x,  extents.y, -extents.z),
+                colliderCenter + glm::vec3(-extents.x, -extents.y,  extents.z),
+                colliderCenter + glm::vec3(extents.x, -extents.y,  extents.z),
+                colliderCenter + glm::vec3(extents.x,  extents.y,  extents.z),
+                colliderCenter + glm::vec3(-extents.x,  extents.y,  extents.z),
+            };
 
-                // 8 corners of the box
-                glm::vec3 corners[8] = {
-                    worldPos + glm::vec3(-extents.x, -extents.y, -extents.z),
-                    worldPos + glm::vec3( extents.x, -extents.y, -extents.z),
-                    worldPos + glm::vec3( extents.x,  extents.y, -extents.z),
-                    worldPos + glm::vec3(-extents.x,  extents.y, -extents.z),
-                    worldPos + glm::vec3(-extents.x, -extents.y,  extents.z),
-                    worldPos + glm::vec3( extents.x, -extents.y,  extents.z),
-                    worldPos + glm::vec3( extents.x,  extents.y,  extents.z),
-                    worldPos + glm::vec3(-extents.x,  extents.y,  extents.z),
-                };
-
-                // Project corners to screen with visibility check
-                ImVec2 screenCorners[8];
-                bool visible[8];
-                for (int i = 0; i < 8; i++) {
-                    screenCorners[i] = ProjectToScreen(corners[i], visible[i], vp, windowPos, windowSize);
-                }
-
-                // Draw 12 edges of the box - only draw if both endpoints are visible
-                int edges[12][2] = {
-                    {0,1}, {1,2}, {2,3}, {3,0}, // Bottom face
-                    {4,5}, {5,6}, {6,7}, {7,4}, // Top face
-                    {0,4}, {1,5}, {2,6}, {3,7}  // Vertical edges
-                };
-
-                for (int i = 0; i < 12; i++) {
-                    int idx0 = edges[i][0];
-                    int idx1 = edges[i][1];
-                    if (visible[idx0] && visible[idx1]) {
-                        drawList->AddLine(screenCorners[idx0], screenCorners[idx1], gizmoColor, 2.0f);
-                    }
-                }
-                break;
+            // Transform corners to world space, then project to screen
+            ImVec2 screenCorners[8];
+            bool visible[8];
+            for (int i = 0; i < 8; i++) {
+                glm::vec3 worldCorner = TransformPoint(localCorners[i]);
+                screenCorners[i] = ProjectToScreen(worldCorner, visible[i], vp, windowPos, windowSize);
             }
 
-            case ColliderShapeType::Sphere: {
-                // Draw wireframe sphere (3 orthogonal circles) - use max scale component
-                float maxScale = glm::max(glm::max(worldScale.x, worldScale.y), worldScale.z);
-                float radius = collider.sphereRadius * maxScale;
-                int segments = 32;
+            // Draw 12 edges of the box
+            int edges[12][2] = {
+                {0,1}, {1,2}, {2,3}, {3,0}, // Bottom face
+                {4,5}, {5,6}, {6,7}, {7,4}, // Top face
+                {0,4}, {1,5}, {2,6}, {3,7}  // Vertical edges
+            };
 
-                // XY plane circle
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
-                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
-
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
+            for (int i = 0; i < 12; i++) {
+                int idx0 = edges[i][0];
+                int idx1 = edges[i][1];
+                if (visible[idx0] && visible[idx1]) {
+                    drawList->AddLine(screenCorners[idx0], screenCorners[idx1], gizmoColor, 2.0f);
                 }
+            }
+            break;
+        }
 
-                // XZ plane circle
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+        case ColliderShapeType::Sphere: {
+            // Draw wireframe sphere (3 orthogonal circles)
+            float radius = collider.sphereRadius;
+            int segments = 32;
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
 
-                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+            // Define circles in LOCAL space, then transform each point
+            // XY plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
+                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
+
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 }
-
-                // YZ plane circle
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = worldPos + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
-                    glm::vec3 p2 = worldPos + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
-
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
-                }
-                break;
             }
 
-            case ColliderShapeType::Capsule: {
-                // Draw wireframe capsule - scale radius by XZ, height by Y
-                float radialScale = glm::max(worldScale.x, worldScale.z);
-                float radius = collider.capsuleRadius * radialScale;
-                float halfHeight = collider.capsuleHalfHeight * worldScale.y;
-                int segments = 16;
+            // XZ plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                // Draw cylinder body (vertical lines)
-                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
-                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
-                for (int i = 0; i < segments; i++) {
-                    float angle = (float)i / segments * 2.0f * 3.14159f;
-                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
 
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 }
-
-                // Top and bottom circles
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
-
-                    bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
-                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
-                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
-
-                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
-                }
-                break;
             }
 
-            case ColliderShapeType::Cylinder: {
-                // Draw wireframe cylinder - scale radius by XZ, height by Y
-                float radialScale = glm::max(worldScale.x, worldScale.z);
-                float radius = collider.cylinderRadius * radialScale;
-                float halfHeight = collider.cylinderHalfHeight * worldScale.y;
-                int segments = 16;
+            // YZ plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
-                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+                glm::vec3 localP1 = colliderCenter + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
 
-                // Vertical edges
-                for (int i = 0; i < segments; i++) {
-                    float angle = (float)i / segments * 2.0f * 3.14159f;
-                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
 
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 }
-
-                // Top and bottom circles
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
-
-                    bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
-                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
-                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
-
-                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
-                }
-                break;
             }
+            break;
+        }
+
+        case ColliderShapeType::Capsule: {
+            // Draw wireframe capsule
+            float radius = collider.capsuleRadius;
+            float halfHeight = collider.capsuleHalfHeight;
+            int segments = 16;
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+
+            // Define top and bottom centers in LOCAL space
+            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
+
+            // Draw cylinder body (vertical lines)
+            for (int i = 0; i < segments; i++) {
+                float angle = (float)i / segments * 2.0f * 3.14159f;
+                glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                glm::vec3 p1 = TransformPoint(localTop + localOffset);
+                glm::vec3 p2 = TransformPoint(localBottom + localOffset);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+
+            // Top and bottom circles
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                glm::vec3 topP1 = TransformPoint(localTop + localP1);
+                glm::vec3 topP2 = TransformPoint(localTop + localP2);
+                glm::vec3 botP1 = TransformPoint(localBottom + localP1);
+                glm::vec3 botP2 = TransformPoint(localBottom + localP2);
+
+                bool vis1, vis2, vis3, vis4;
+                ImVec2 s1 = ProjectToScreen(topP1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(topP2, vis2, vp, windowPos, windowSize);
+                ImVec2 s3 = ProjectToScreen(botP1, vis3, vp, windowPos, windowSize);
+                ImVec2 s4 = ProjectToScreen(botP2, vis4, vp, windowPos, windowSize);
+
+                if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
+            }
+            break;
+        }
+
+        case ColliderShapeType::Cylinder: {
+            // Draw wireframe cylinder
+            float radius = collider.cylinderRadius;
+            float halfHeight = collider.cylinderHalfHeight;
+            int segments = 16;
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+
+            // Define top and bottom centers in LOCAL space
+            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
+
+            // Vertical edges
+            for (int i = 0; i < segments; i++) {
+                float angle = (float)i / segments * 2.0f * 3.14159f;
+                glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                glm::vec3 p1 = TransformPoint(localTop + localOffset);
+                glm::vec3 p2 = TransformPoint(localBottom + localOffset);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+
+            // Top and bottom circles
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                glm::vec3 topP1 = TransformPoint(localTop + localP1);
+                glm::vec3 topP2 = TransformPoint(localTop + localP2);
+                glm::vec3 botP1 = TransformPoint(localBottom + localP1);
+                glm::vec3 botP2 = TransformPoint(localBottom + localP2);
+
+                bool vis1, vis2, vis3, vis4;
+                ImVec2 s1 = ProjectToScreen(topP1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(topP2, vis2, vp, windowPos, windowSize);
+                ImVec2 s3 = ProjectToScreen(botP1, vis3, vp, windowPos, windowSize);
+                ImVec2 s4 = ProjectToScreen(botP2, vis4, vp, windowPos, windowSize);
+
+                if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
+            }
+            break;
+        }
         }
     }
     catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
     }
 }
-
 void ScenePanel::DrawCameraGizmos() {
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity == static_cast<Entity>(-1)) return;
