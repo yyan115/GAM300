@@ -19,9 +19,10 @@ public:
     GUID_128 shaderGUID{};
     Vector3D position{};
     Vector3D color{ 1.0f, 1.0f, 1.0f };
-    float scale = 1.0f;
     bool is3D = false; // false for screen space, true for world space
     Matrix4x4 transform; // Used for 3D text positioning
+    Vector3D transformScale{ 1.0f, 1.0f, 1.0f }; // Scale from Transform component (not serialized, runtime only)
+    GUID_128 lastLoadedFontGUID{}; // Track which font is currently loaded (not serialized, runtime only)
 
     std::shared_ptr<Font> font;
     std::shared_ptr<Shader> shader;
@@ -50,9 +51,10 @@ public:
         shaderGUID(other.shaderGUID),
         position(other.position),
         color(other.color),
-        scale(other.scale),
         is3D(other.is3D),
         transform(other.transform),
+        transformScale(other.transformScale),
+        lastLoadedFontGUID(other.lastLoadedFontGUID),
         alignment(other.alignment),
         alignmentInt(other.alignmentInt),
         font(other.font),
@@ -71,9 +73,10 @@ public:
             shader = other.shader;
             position = other.position;
             color = other.color;
-            scale = other.scale;
             is3D = other.is3D;
             transform = other.transform;
+            transformScale = other.transformScale;
+            lastLoadedFontGUID = other.lastLoadedFontGUID;
             alignment = other.alignment;
             alignmentInt = other.alignmentInt;
         }

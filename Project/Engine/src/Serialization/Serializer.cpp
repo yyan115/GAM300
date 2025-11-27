@@ -1631,9 +1631,21 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
-        textComp.scale = d[startIdx + 6]["data"].GetFloat();
-        textComp.is3D = d[startIdx + 7]["data"].GetBool();
-        textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[startIdx + 9]["data"].GetInt());
+
+        // Note: scale field removed - now controlled by Transform component
+        // Read and discard the old scale value to keep indices aligned with old save files
+        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
+            d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("data")) {
+            float oldScale = d[startIdx + 6]["data"].GetFloat(); // Read but don't use
+            (void)oldScale; // Suppress unused variable warning
+        }
+
+        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
+            textComp.is3D = d[startIdx + 7]["data"].GetBool();
+        }
+        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 9)) {
+            textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[startIdx + 9]["data"].GetInt());
+        }
     }
 }
 

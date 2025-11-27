@@ -1324,7 +1324,6 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			component.is3D = false;
 			component.isVisible = true;
 			component.position = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
-			component.scale = 1.0f;
 
 			// Load font and shader resources
 			if (std::filesystem::exists(defaultFontPath)) {

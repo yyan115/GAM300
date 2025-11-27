@@ -393,13 +393,14 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		// 2D screen space text rendering
 		if (IsRenderingForEditor() && Is2DMode()) {
 			// Use the editor camera's view/projection matrices
+			// Don't apply scale to model matrix - we'll apply it per-character for proper axis control
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
 			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
-			modelMatrix = glm::scale(modelMatrix, glm::vec3(item.scale, item.scale, 1.0f));
 			SetupMatrices(*item.shader, modelMatrix);
 		} else {
 			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
-			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+			// Don't apply scale to matrices - we'll apply it per-character for proper axis control
+			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), 1.0f, 1.0f);
 		}
 	}
 
@@ -421,19 +422,21 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	float y = 0.0f;
 
 	// For 3D text, scale down from pixels to world units (1 pixel = 0.01 units)
-	// 3D text uses Transform scale (already in model matrix), 2D text uses item.scale
+	// For 2D text, apply Transform scale per-axis for Unity-like behavior
+	// Note: fontSize controls the font resolution (glyphs are loaded at that size)
+	// Transform scale then scales those glyphs for final visual size
 	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
-	float finalScale = item.is3D ? worldScaleFactor : (item.scale * worldScaleFactor);
+	float scaleX = item.is3D ? worldScaleFactor : (item.transformScale.x * worldScaleFactor);
+	float scaleY = item.is3D ? worldScaleFactor : (item.transformScale.y * worldScaleFactor);
 
 	// Calculate starting position based on alignment
 	if (item.alignment == TextRenderComponent::Alignment::CENTER)
 	{
-		x = -item.font->GetTextWidth(item.text, finalScale) / 2.0f;
+		x = -item.font->GetTextWidth(item.text, scaleX) / 2.0f;
 	}
-
 	else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
 	{
-		x = -item.font->GetTextWidth(item.text, finalScale);
+		x = -item.font->GetTextWidth(item.text, scaleX);
 	}
 
 	// Iterate through all characters
@@ -445,11 +448,12 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 			continue;
 		}
 
-		float xpos = x + ch.bearing.x * finalScale;
-		float ypos = y - (ch.size.y - ch.bearing.y) * finalScale;
+		// Apply scaleX to horizontal metrics, scaleY to vertical metrics (Unity-like behavior)
+		float xpos = x + ch.bearing.x * scaleX;
+		float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
 
-		float w = ch.size.x * finalScale;
-		float h = ch.size.y * finalScale;
+		float w = ch.size.x * scaleX;
+		float h = ch.size.y * scaleY;
 
 		// Update VBO for each character
 		float vertices[6][4] = {
@@ -472,7 +476,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		x += (ch.advance >> 6) * finalScale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+		x += (ch.advance >> 6) * scaleX; // Bitshift by 6 to get value in pixels (2^6 = 64), use scaleX for horizontal spacing
 	}
 
 	fontVAO->Unbind();
@@ -481,14 +485,14 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	glDepthMask(GL_TRUE); // Restore depth writing
 }
 
-void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale)
+void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
 {
 	glm::mat4 projection = glm::ortho(0.0f, (float)WindowManager::GetWindowWidth(), 0.0f, (float)WindowManager::GetWindowHeight());
 	glm::mat4 view = glm::mat4(1.0f); // Identity matrix for 2D
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);  // Use position as-is
-	model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
+	model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.0f));
 
 	shader.setMat4("projection", projection);
 	shader.setMat4("view", view);

@@ -102,7 +102,7 @@ private:
 
     // Private text rendering methods
     void RenderText(const TextRenderComponent& item);
-    void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale);
+    void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY);
 
     std::vector<std::unique_ptr<IRenderComponent>> renderQueue;
     Camera* currentCamera = nullptr;
