@@ -421,6 +421,30 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             upVal.AddMember("data", upData, alloc);
             v.AddMember("up", upVal, alloc);
 
+            // Add custom serialization for backgroundColor (glm::vec3)
+            rapidjson::Value bgColorVal(rapidjson::kObjectType);
+            bgColorVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value bgColorData(rapidjson::kArrayType);
+            bgColorData.PushBack(c.backgroundColor.x, alloc);
+            bgColorData.PushBack(c.backgroundColor.y, alloc);
+            bgColorData.PushBack(c.backgroundColor.z, alloc);
+            bgColorVal.AddMember("data", bgColorData, alloc);
+            v.AddMember("backgroundColor", bgColorVal, alloc);
+
+            // Add custom serialization for clearFlags (enum as int)
+            v.AddMember("clearFlags", static_cast<int>(c.clearFlags), alloc);
+
+            // Add custom serialization for projectionType (enum as int)
+            v.AddMember("projectionType", static_cast<int>(c.projectionType), alloc);
+
+            // Add custom serialization for useSkybox
+            v.AddMember("useSkybox", c.useSkybox, alloc);
+
+            // Add custom serialization for skyboxTexturePath
+            rapidjson::Value skyboxPathVal;
+            skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
+            v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
             compsObj.AddMember("CameraComponent", v, alloc);
         }
         if (ecs.HasComponent<AnimationComponent>(entity)) {
@@ -1991,6 +2015,39 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
                 cameraComp.up.z = vec[2].GetFloat();
             }
         }
+    }
+
+    // Deserialize backgroundColor
+    if (cameraJSON.HasMember("backgroundColor") && cameraJSON["backgroundColor"].IsObject()) {
+        const auto& bgColorObj = cameraJSON["backgroundColor"];
+        if (bgColorObj.HasMember("type") && bgColorObj["type"].GetString() == std::string("glm::vec3")) {
+            if (bgColorObj.HasMember("data") && bgColorObj["data"].IsArray() && bgColorObj["data"].Size() >= 3) {
+                const auto& vec = bgColorObj["data"];
+                cameraComp.backgroundColor.x = vec[0].GetFloat();
+                cameraComp.backgroundColor.y = vec[1].GetFloat();
+                cameraComp.backgroundColor.z = vec[2].GetFloat();
+            }
+        }
+    }
+
+    // Deserialize clearFlags
+    if (cameraJSON.HasMember("clearFlags") && cameraJSON["clearFlags"].IsInt()) {
+        cameraComp.clearFlags = static_cast<CameraClearFlags>(cameraJSON["clearFlags"].GetInt());
+    }
+
+    // Deserialize projectionType
+    if (cameraJSON.HasMember("projectionType") && cameraJSON["projectionType"].IsInt()) {
+        cameraComp.projectionType = static_cast<ProjectionType>(cameraJSON["projectionType"].GetInt());
+    }
+
+    // Deserialize useSkybox
+    if (cameraJSON.HasMember("useSkybox") && cameraJSON["useSkybox"].IsBool()) {
+        cameraComp.useSkybox = cameraJSON["useSkybox"].GetBool();
+    }
+
+    // Deserialize skyboxTexturePath
+    if (cameraJSON.HasMember("skyboxTexturePath") && cameraJSON["skyboxTexturePath"].IsString()) {
+        cameraComp.skyboxTexturePath = cameraJSON["skyboxTexturePath"].GetString();
     }
 }
 
