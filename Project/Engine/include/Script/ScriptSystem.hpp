@@ -27,12 +27,29 @@ public:
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);
     void ReloadSystem();
     void ReloadAllInstances();
+
+    // Return LUA registry ref (instanceId) or LUA_NOREF if not available
+    int GetInstanceRefForScript(Entity e, const std::string& scriptGuidStr);
+
+    // Thread-safe call: calls a function on a specific instance (preferred)
+    bool CallInstanceFunctionByScriptGuid(Entity e, const std::string& scriptGuidStr, const std::string& funcName);
+
+    // An optional reload/invalidate callback (for caching clients) - TODO
+    using InstancesChangedCb = std::function<void(Entity)>;
+    void RegisterInstancesChangedCallback(InstancesChangedCb cb);
+    void UnregisterInstancesChangedCallback(void* cbId);
 private:
+    // Notify registered callbacks that instances for entity 'e' changed.
+    // Kept private: only ScriptSystem will call this when instances are created/destroyed/reloaded.
+    void NotifyInstancesChanged(Entity e);
+
     bool EnsureInstanceForEntity(Entity e, ECSManager& ecsManager);
     void DestroyInstanceForEntity(Entity e);
     ScriptComponentData* GetScriptComponent(Entity e, ECSManager& ecsManager);
     const ScriptComponentData* GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const;
 
+    // Callback storage
+    std::vector<std::pair<void*, InstancesChangedCb>> m_instancesChangedCbs;
     std::unordered_set<std::string> m_luaRegisteredComponents;
     std::unordered_map<Entity, std::vector<std::unique_ptr<Scripting::ScriptComponent>>> m_runtimeMap;
     ECSManager* m_ecs = nullptr;

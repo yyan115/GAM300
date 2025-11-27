@@ -1,20 +1,25 @@
 #pragma once
+// ButtonSystem.hpp
 #include "ECS/System.hpp"
-#include "UI/Button/ButtonComponent.hpp"
-#include "Math/Vector3D.hpp"
+
+class ECSManager;
+using Entity = unsigned int;
 
 class ButtonSystem : public System {
 public:
-	ButtonSystem() = default;
-	~ButtonSystem() = default;
+    ButtonSystem() = default;
+    ~ButtonSystem() = default;
 
-	void Initialise();
-	void Update();
-	void Shutdown();
+    void Initialise(ECSManager& ecsManager);
+    void Update();  // Only runs during play mode
+    void Shutdown();
 
-	void OnClickAddListener(ButtonComponent& button, lua_State* L, int funcIndex);
+    // Called when a button UI element is clicked (from input/UI system)
+    void TriggerButton(Entity buttonEntity);
 
 private:
-	void HandleMouseClick(Entity buttonEntity, Vector3D mousePos);
-	bool HitTest(Entity buttonEntity, Vector3D mousePos);
+    void ProcessButtonClick(Entity buttonEntity);
+    void UpdateButtonStates();
+
+    ECSManager* m_ecs = nullptr;
 };

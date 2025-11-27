@@ -1,55 +1,75 @@
+// ButtonSystem.cpp
 #include "pch.h"
 #include "UI/Button/ButtonSystem.hpp"
-#include <Performance/PerformanceProfiler.hpp>
-#include <ECS/ECSRegistry.hpp>
-#include <Graphics/GraphicsManager.hpp>
-#include <Input/InputManager.hpp>
+#include "UI/Button/ButtonComponent.hpp"
+#include "ECS/ECSManager.hpp"
+#include "Logging.hpp"
+#include "TimeManager.hpp"
 
-void ButtonSystem::Initialise() {
-	ENGINE_LOG_INFO("ButtonSystem Initialized");
+void ButtonSystem::Initialise(ECSManager& ecsManager) {
+    m_ecs = &ecsManager;
+
+    ENGINE_PRINT("[ButtonSystem] Initialised");
 }
 
 void ButtonSystem::Update() {
-	PROFILE_FUNCTION();
-	
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-
-	// Check if rendering for editor.
-	bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
-
-	if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT)) {
-		for (const auto& entity : entities) {
-			HandleMouseClick(entity, Vector3D(InputManager::GetMouseX(), InputManager::GetMouseY(), 0.0f));
-		}
-	}
+    // This only runs during play mode in editor
+    // Update any button-related state here
+    UpdateButtonStates();
 }
 
-void ButtonSystem::OnClickAddListener(ButtonComponent& button, lua_State* L, int funcIndex) {
-	button.onClick.AddListener(L, funcIndex);
+void ButtonSystem::UpdateButtonStates() {
+    if (!m_ecs) return;
+
+    float dt = static_cast<float>(TimeManager::GetDeltaTime());
+
+    // Update cooldown timers or other runtime state if needed
+    for (Entity e : entities) {
+        if (!m_ecs->HasComponent<ButtonComponentData>(e)) continue;
+
+        auto& buttonData = m_ecs->GetComponent<ButtonComponentData>(e);
+
+        // Example: Update any time-based state here
+        // (cooldowns, animations, etc.)
+    }
 }
 
-void ButtonSystem::HandleMouseClick(Entity buttonEntity, Vector3D mousePos) {
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	if (ecsManager.HasComponent<SpriteRenderComponent>(buttonEntity)) {
-		auto& spriteComponent = ecsManager.GetComponent<SpriteRenderComponent>(buttonEntity);
-		if (spriteComponent.is3D) {
-			// Ignore 3D buttons for now
-			ENGINE_LOG_WARN("[ButtonSystem] 3D buttons not supported yet.");
-			return;
-		}
+void ButtonSystem::Shutdown() {
+    m_ecs = nullptr;
 
-		auto& transform = ecsManager.GetComponent<Transform>(buttonEntity);
-		float halfExtentsX = transform.localScale.x / 2.0f;
-		float halfExtentsY = transform.localScale.y / 2.0f;
-		float minX = transform.localPosition.x - halfExtentsX;
-		float maxX = transform.localPosition.x + halfExtentsX;
-		float minY = transform.localPosition.y - halfExtentsY;
-		float maxY = transform.localPosition.y + halfExtentsY;
+    ENGINE_PRINT("[ButtonSystem] Shutdown complete");
+}
 
-		if (mousePos.x >= minX && mousePos.x <= maxX && mousePos.y >= minY && mousePos.y <= maxY) {
-			auto& buttonComponent = ecsManager.GetComponent<ButtonComponent>(buttonEntity);
-			buttonComponent.onClick.Invoke();
-		}
-	}
+void ButtonSystem::TriggerButton(Entity buttonEntity) {
+    if (!m_ecs) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ButtonSystem] Cannot trigger button: ECSManager not available");
+        return;
+    }
+
+    if (!m_ecs->HasComponent<ButtonComponentData>(buttonEntity)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ButtonSystem] Entity ", buttonEntity, " has no ButtonComponentData");
+        return;
+    }
+
+    const auto& buttonData = m_ecs->GetComponent<ButtonComponentData>(buttonEntity);
+
+    if (!buttonData.interactable) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+            "[ButtonSystem] Button ", buttonEntity, " is not interactable");
+        return;
+    }
+
+    ProcessButtonClick(buttonEntity);
+}
+
+void ButtonSystem::ProcessButtonClick(Entity buttonEntity) {
+    // The actual work is delegated to ButtonComponent
+    // Create a temporary ButtonComponent to handle the click
+    ButtonComponent tempButton(buttonEntity);
+    tempButton.OnClick();
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[ButtonSystem] Processed click for button ", buttonEntity);
 }
