@@ -1,5 +1,5 @@
 #include "Panels/SceneHierarchyPanel.hpp"
-#include "imgui.h"
+#include <imgui.h>
 #include "pch.h"
 #include "GUIManager.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
@@ -7,6 +7,7 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "ECS/SiblingIndexComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 #include <PrefabIO.hpp>
@@ -29,6 +30,7 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "SnapshotManager.hpp"
 #include "UndoableWidgets.hpp"
+#include <algorithm>
 
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
@@ -39,17 +41,11 @@ void SceneHierarchyPanel::MarkForRefresh() {
 }
 
 void SceneHierarchyPanel::OnImGuiRender() {
-
+    
     ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_HIERARCHY);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_HIERARCHY);
 
     if (ImGui::Begin(name.c_str(), &isOpen)) {
-        // behavior: Auto-expand parents when selection changes
-        Entity currentSelectedEntity = GUIManager::GetSelectedEntity();
-        if (currentSelectedEntity != lastSelectedEntity && currentSelectedEntity != static_cast<Entity>(-1)) {
-            ExpandParentsOfEntity(currentSelectedEntity);
-            lastSelectedEntity = currentSelectedEntity;
-        }
         // Handle F2 key for renaming selected entity
         if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2)) {
             Entity selectedEntity = GUIManager::GetSelectedEntity();
@@ -80,11 +76,14 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
                     std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
 
+                    // Take snapshot before deleting (for undo)
                     SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
 
+                    // Clear selection before deleting
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
 
-                    DeleteEntityWithChildren(selectedEntity);
+                    // Delete the entity
+                    ecsManager.DestroyEntity(selectedEntity);
 
                     std::cout << "[SceneHierarchy] Entity deleted successfully" << std::endl;
                 } catch (const std::exception& e) {
@@ -110,30 +109,63 @@ void SceneHierarchyPanel::OnImGuiRender() {
         // Add small spacing after scene header for visual clarity
         ImGui::Spacing();
 
+        // Handle auto-expand when entity is selected from ScenePanel
+        Entity currentSelected = GUIManager::GetSelectedEntity();
+        if (currentSelected != static_cast<Entity>(-1) && currentSelected != lastSelectedEntity) {
+            ExpandToEntity(currentSelected);
+            lastSelectedEntity = currentSelected;
+        } else if (currentSelected == static_cast<Entity>(-1)) {
+            lastSelectedEntity = static_cast<Entity>(-1);
+        }
+
         if (sceneExpanded) {
             try {
                 // Get the active ECS manager
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-                // Always get fresh entity list to ensure we see newly created entities
-                std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+                // Get sorted root entities (by sibling index)
+                std::vector<Entity> rootEntities = GetSortedRootEntities();
 
                 // Draw entity nodes starting from root entities, in a depth-first manner.
-                for (const auto& entity : allEntities) {
-                    // Only draw root entities (entities without a parent)
-                    if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
-                        // Check if entity has NameComponent before accessing it
-                        if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
-                            continue;
-                        }
-                        std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
+                for (const auto& entity : rootEntities) {
+                    // Check if entity has NameComponent before accessing it
+                    if (!ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                        continue;
+                    }
+                    std::string entityName = ecsManager.GetComponent<NameComponent>(entity).name;
 
-                        // Skip PREVIEW entities (used for drag-and-drop preview)
-                        if (entityName == "PREVIEW") {
-                            continue;
-                        }
+                    // Skip PREVIEW entities (used for drag-and-drop preview)
+                    if (entityName == "PREVIEW") {
+                        continue;
+                    }
 
-                        DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
+                    DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
+                }
+
+                // Draw drop zone AFTER the last entity (to allow dropping at the end of the list)
+                const ImGuiPayload* activePayload = ImGui::GetDragDropPayload();
+                bool isDraggingEntity = activePayload && activePayload->IsDataType("HIERARCHY_ENTITY");
+                
+                if (isDraggingEntity && !rootEntities.empty()) {
+                    Entity lastEntity = rootEntities.back();
+                    float dropZoneHeight = 4.0f;
+                    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+                    float contentWidth = ImGui::GetContentRegionAvail().x;
+                    
+                    ImGui::InvisibleButton("##dropAtEnd", ImVec2(contentWidth, dropZoneHeight + 8.0f));
+                    
+                    if (ImGui::BeginDragDropTarget()) {
+                        // Visual indicator - draw a line
+                        ImDrawList* drawList = ImGui::GetWindowDrawList();
+                        ImVec2 lineStart = ImVec2(cursorPos.x, cursorPos.y);
+                        ImVec2 lineEnd = ImVec2(cursorPos.x + contentWidth, cursorPos.y);
+                        drawList->AddLine(lineStart, lineEnd, IM_COL32(100, 150, 255, 255), 2.0f);
+                        
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                            Entity dragged = *(Entity*)payload->Data;
+                            ReorderEntity(dragged, lastEntity, true); // Insert after last entity
+                        }
+                        ImGui::EndDragDropTarget();
                     }
                 }
             } catch (const std::exception& e) {
@@ -217,13 +249,46 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     if (!renamingEntity)
         assert(!entityName.empty() && "Entity name cannot be empty");
 
+    // Check if this entity should be auto-expanded (has a selected descendant)
+    bool forceOpen = expandedEntities.count(entityId) > 0;
+
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
+    if (forceOpen && hasChildren) flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
-    // Force expand if this entity is in the forceExpandedEntities set
-    if (forceExpandedEntities.find(entityId) != forceExpandedEntities.end()) {
-        ImGui::SetNextItemOpen(true);
+    // Get item position for drop zone detection
+    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+    float itemHeight = ImGui::GetTextLineHeightWithSpacing();
+    float dropZoneHeight = 4.0f; // Height of the reorder drop zone
+
+    // Check for active drag payload
+    const ImGuiPayload* activePayload = ImGui::GetDragDropPayload();
+    bool isDraggingEntity = activePayload && activePayload->IsDataType("HIERARCHY_ENTITY");
+
+    // Draw reorder drop zone BEFORE this item (insert above)
+    if (isDraggingEntity) {
+        ImVec2 dropMin = ImVec2(cursorPos.x, cursorPos.y - dropZoneHeight * 0.5f);
+        ImVec2 dropMax = ImVec2(cursorPos.x + ImGui::GetContentRegionAvail().x, cursorPos.y + dropZoneHeight * 0.5f);
+        
+        ImGui::SetCursorScreenPos(dropMin);
+        ImGui::InvisibleButton(("##dropAbove" + std::to_string(entityId)).c_str(), ImVec2(dropMax.x - dropMin.x, dropZoneHeight));
+        
+        if (ImGui::BeginDragDropTarget()) {
+            // Visual indicator - draw a line
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            ImVec2 lineStart = ImVec2(dropMin.x, cursorPos.y);
+            ImVec2 lineEnd = ImVec2(dropMax.x, cursorPos.y);
+            drawList->AddLine(lineStart, lineEnd, IM_COL32(100, 150, 255, 255), 2.0f);
+            
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                Entity dragged = *(Entity*)payload->Data;
+                ReorderEntity(dragged, entityId, false); // Insert before
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
+        ImGui::SetCursorScreenPos(cursorPos);
     }
 
     bool opened = false;
@@ -277,6 +342,12 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         }
 
         std::string displayName = std::string(ICON_FA_CUBE) + " " + entityName;
+        
+        // Set open state if force expanding
+        if (forceOpen && hasChildren) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+        
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
 
         // Pop color if we pushed it
@@ -378,8 +449,6 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
     {
-        //ImGuiIO& io = ImGui::GetIO();
-
         // Start a drag from this row?
         if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
@@ -396,6 +465,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
     // -----------------------------------------------------------------
 
+    // Drop target on the item itself (for reparenting - making it a child)
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
             Entity dragged = *(Entity*)payload->Data;
@@ -419,12 +489,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         if (ImGui::MenuItem("Delete", "Del")) {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                // Renamed to fix warning C4457 - entityName hides function parameter
-                std::string deleteEntityName = ecsManager.GetComponent<NameComponent>(entityId).name;
+                std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
 
-                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + deleteEntityName);
+                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
                 GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                DeleteEntityWithChildren(entityId);
+                ecsManager.DestroyEntity(entityId);
             } catch (...) {}
         }
         ImGui::EndPopup();
@@ -508,6 +577,114 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
     ecsManager.transformSystem->SetWorldScale(draggedEntity, worldScale);
 }
 
+void SceneHierarchyPanel::ReorderEntity(Entity draggedEntity, Entity targetSibling, bool insertAfter) {
+    if (draggedEntity == targetSibling) return;
+    
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+    
+    // Check if both entities are root entities (no parent)
+    bool draggedIsRoot = !ecsManager.HasComponent<ParentComponent>(draggedEntity);
+    bool targetIsRoot = !ecsManager.HasComponent<ParentComponent>(targetSibling);
+    
+    // If both are root entities, use the specialized root reordering
+    if (draggedIsRoot && targetIsRoot) {
+        ReorderRootEntity(draggedEntity, targetSibling, insertAfter);
+        return;
+    }
+    
+    GUID_128 draggedGUID = guidRegistry.GetGUIDByEntity(draggedEntity);
+    GUID_128 targetGUID = guidRegistry.GetGUIDByEntity(targetSibling);
+    
+    // Prevent circular dependency
+    std::set<Entity> nestedChildren;
+    TraverseHierarchy(draggedEntity, nestedChildren, [&](Entity e, std::set<Entity>& nc) {
+        AddNestedChildren(e, nc);
+    });
+    if (nestedChildren.count(targetSibling) > 0) return;
+    
+    // Get the parent of the target sibling (this will be the new parent for dragged entity)
+    Entity targetParent = static_cast<Entity>(-1);
+    GUID_128 targetParentGUID;
+    
+    if (ecsManager.HasComponent<ParentComponent>(targetSibling)) {
+        targetParentGUID = ecsManager.GetComponent<ParentComponent>(targetSibling).parent;
+        targetParent = guidRegistry.GetEntityByGUID(targetParentGUID);
+    }
+    
+    // Save world transform before reparenting
+    Transform& draggedTransform = ecsManager.GetComponent<Transform>(draggedEntity);
+    Vector3D worldPos = Matrix4x4::ExtractTranslation(draggedTransform.worldMatrix);
+    Vector3D worldScale = Matrix4x4::ExtractScale(draggedTransform.worldMatrix);
+    Matrix4x4 noScale = Matrix4x4::RemoveScale(draggedTransform.worldMatrix);
+    Quaternion worldRot = Quaternion::FromMatrix(noScale);
+    
+    // Remove dragged entity from its current parent's children list
+    if (ecsManager.HasComponent<ParentComponent>(draggedEntity)) {
+        GUID_128 oldParentGUID = ecsManager.GetComponent<ParentComponent>(draggedEntity).parent;
+        Entity oldParent = guidRegistry.GetEntityByGUID(oldParentGUID);
+        
+        if (ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
+            auto& oldChildren = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
+            auto it = std::find(oldChildren.begin(), oldChildren.end(), draggedGUID);
+            if (it != oldChildren.end()) {
+                oldChildren.erase(it);
+            }
+            if (oldChildren.empty()) {
+                ecsManager.RemoveComponent<ChildrenComponent>(oldParent);
+            }
+        }
+        
+        if (targetParent == static_cast<Entity>(-1)) {
+            // Moving to root level
+            ecsManager.RemoveComponent<ParentComponent>(draggedEntity);
+        } else {
+            // Update parent to new parent
+            ecsManager.GetComponent<ParentComponent>(draggedEntity).parent = targetParentGUID;
+        }
+    } else if (targetParent != static_cast<Entity>(-1)) {
+        // Entity was at root, now needs a parent
+        ecsManager.AddComponent<ParentComponent>(draggedEntity, ParentComponent{targetParentGUID});
+    }
+    
+    // Insert dragged entity into the new position
+    if (targetParent != static_cast<Entity>(-1)) {
+        // Has a parent - insert into parent's children list
+        if (!ecsManager.HasComponent<ChildrenComponent>(targetParent)) {
+            ecsManager.AddComponent<ChildrenComponent>(targetParent, ChildrenComponent{});
+        }
+        
+        auto& children = ecsManager.GetComponent<ChildrenComponent>(targetParent).children;
+        auto targetIt = std::find(children.begin(), children.end(), targetGUID);
+        
+        if (targetIt != children.end()) {
+            if (insertAfter) {
+                children.insert(targetIt + 1, draggedGUID);
+            } else {
+                children.insert(targetIt, draggedGUID);
+            }
+        } else {
+            children.push_back(draggedGUID);
+        }
+        
+        // Restore world transform
+        ecsManager.transformSystem->SetWorldPosition(draggedEntity, worldPos);
+        ecsManager.transformSystem->SetWorldRotation(draggedEntity, worldRot.ToEulerDegrees());
+        ecsManager.transformSystem->SetWorldScale(draggedEntity, worldScale);
+    } else {
+        // No parent - this is at root level, use sibling index ordering
+        // First, find position relative to target sibling
+        EnsureSiblingIndex(draggedEntity);
+        EnsureSiblingIndex(targetSibling);
+        ReorderRootEntity(draggedEntity, targetSibling, insertAfter);
+        
+        // Restore local = world transform
+        ecsManager.transformSystem->SetLocalPosition(draggedEntity, worldPos);
+        ecsManager.transformSystem->SetLocalRotation(draggedEntity, worldRot.ToEulerDegrees());
+        ecsManager.transformSystem->SetLocalScale(draggedEntity, worldScale);
+    }
+}
+
 void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
@@ -537,6 +714,9 @@ void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
         ecsManager.transformSystem->SetLocalPosition(draggedEntity, worldPos);
         ecsManager.transformSystem->SetLocalRotation(draggedEntity, worldRot.ToEulerDegrees());
         ecsManager.transformSystem->SetLocalScale(draggedEntity, worldScale);
+        
+        // Assign a sibling index since this is now a root entity
+        EnsureSiblingIndex(draggedEntity);
     }
 }
 
@@ -561,6 +741,34 @@ void SceneHierarchyPanel::AddNestedChildren(Entity entity, std::set<Entity>& nes
     nestedChildren.insert(entity);
 }
 
+void SceneHierarchyPanel::CollectParentChain(Entity entity, std::vector<Entity>& chain) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+    
+    Entity current = entity;
+    while (ecsManager.HasComponent<ParentComponent>(current)) {
+        GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
+        Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+        if (parent == static_cast<Entity>(-1)) break;
+        chain.push_back(parent);
+        current = parent;
+    }
+}
+
+void SceneHierarchyPanel::ExpandToEntity(Entity entity) {
+    // Clear old expanded entities
+    expandedEntities.clear();
+    
+    // Collect all ancestors that need to be expanded
+    std::vector<Entity> parentChain;
+    CollectParentChain(entity, parentChain);
+    
+    // Add all parents to the expanded set
+    for (Entity parent : parentChain) {
+        expandedEntities.insert(parent);
+    }
+}
+
 Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -570,6 +778,10 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
         if (ecsManager.HasComponent<NameComponent>(newEntity)) {
             ecsManager.GetComponent<NameComponent>(newEntity).name = Pathname;
         }
+
+        // Assign sibling index for hierarchy ordering
+        int nextIndex = GetNextRootSiblingIndex();
+        ecsManager.AddComponent<SiblingIndexComponent>(newEntity, SiblingIndexComponent{ nextIndex });
 
         std::cout << "[SceneHierarchy] Created empty entity '" << Pathname << "' with ID " << newEntity << std::endl;
 
@@ -640,7 +852,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-        // Find the highest priority among existing cameras and deactivate all cameras
+        // Find the highest priority among existing cameras and deactivate all cameras (Unity-like)
         int maxPriority = -1;
         std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
         for (const auto& entity : allEntities) {
@@ -657,7 +869,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
 
         // Add CameraComponent with default settings
         CameraComponent cameraComp;
-        cameraComp.isActive = true; // Activate new camera by default
+        cameraComp.isActive = true; // Activate new camera by default (Unity-like behavior)
         cameraComp.priority = maxPriority + 1; // Higher priority than existing cameras
         cameraComp.target = glm::vec3(0.0f, 0.0f, -1.0f);
         cameraComp.up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -762,7 +974,7 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
         // Copy CameraComponent
         if (ecsManager.HasComponent<CameraComponent>(sourceEntity)) {
             CameraComponent sourceCam = ecsManager.GetComponent<CameraComponent>(sourceEntity);
-            // Don't copy active status for cameras
+            // Don't copy active status for cameras (Unity-like)
             sourceCam.isActive = false;
             ecsManager.AddComponent<CameraComponent>(newEntity, sourceCam);
         }
@@ -802,67 +1014,107 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
     }
 }
 
-void SceneHierarchyPanel::ExpandParentsOfEntity(Entity entity) {
-    forceExpandedEntities.clear();
+// ============================================================================
+// Sibling Index Management Functions
+// ============================================================================
 
-    try {
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-        EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-
-        Entity currentEntity = entity;
-        while (ecsManager.HasComponent<ParentComponent>(currentEntity)) {
-            ParentComponent& parentComp = ecsManager.GetComponent<ParentComponent>(currentEntity);
-            Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
-
-            forceExpandedEntities.insert(parentEntity);
-
-            currentEntity = parentEntity;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "[SceneHierarchy] Error expanding parents: " << e.what() << std::endl;
+void SceneHierarchyPanel::EnsureSiblingIndex(Entity entity) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (!ecsManager.HasComponent<SiblingIndexComponent>(entity)) {
+        int nextIndex = GetNextRootSiblingIndex();
+        ecsManager.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
     }
 }
 
-void SceneHierarchyPanel::DeleteEntityWithChildren(Entity entity, bool cleanupParentRef) {
-    try {
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-        EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-
-        if (cleanupParentRef && ecsManager.HasComponent<ParentComponent>(entity)) {
-            ParentComponent& parentComp = ecsManager.GetComponent<ParentComponent>(entity);
-            Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
-
-            if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
-                ChildrenComponent& parentChildren = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
-                GUID_128 entityGUID = guidRegistry.GetGUIDByEntity(entity);
-
-                auto it = std::find(parentChildren.children.begin(), parentChildren.children.end(), entityGUID);
-                if (it != parentChildren.children.end()) {
-                    parentChildren.children.erase(it);
-                }
-
-                if (parentChildren.children.empty()) {
-                    ecsManager.RemoveComponent<ChildrenComponent>(parentEntity);
-                }
-            }
+int SceneHierarchyPanel::GetNextRootSiblingIndex() {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+    int maxIndex = -1;
+    
+    for (Entity entity : allEntities) {
+        // Only consider root entities
+        if (ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) continue;
+        
+        if (ecsManager.HasComponent<SiblingIndexComponent>(entity)) {
+            int idx = ecsManager.GetComponent<SiblingIndexComponent>(entity).siblingIndex;
+            if (idx > maxIndex) maxIndex = idx;
         }
+    }
+    return maxIndex + 1;
+}
 
-        if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
-            ChildrenComponent& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
-
-            std::vector<Entity> childrenToDelete;
-            for (const auto& childGUID : childrenComp.children) {
-                Entity child = guidRegistry.GetEntityByGUID(childGUID);
-                childrenToDelete.push_back(child);
-            }
-
-            for (Entity child : childrenToDelete) {
-                DeleteEntityWithChildren(child, false);
-            }
+std::vector<Entity> SceneHierarchyPanel::GetSortedRootEntities() {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+    std::vector<Entity> rootEntities;
+    
+    // Collect root entities (no parent)
+    for (Entity entity : allEntities) {
+        if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+            // Ensure the entity has a sibling index
+            EnsureSiblingIndex(entity);
+            rootEntities.push_back(entity);
         }
+    }
+    
+    // Sort by sibling index
+    std::sort(rootEntities.begin(), rootEntities.end(), 
+        [&ecsManager](Entity a, Entity b) {
+            int idxA = ecsManager.HasComponent<SiblingIndexComponent>(a) 
+                       ? ecsManager.GetComponent<SiblingIndexComponent>(a).siblingIndex : 0;
+            int idxB = ecsManager.HasComponent<SiblingIndexComponent>(b) 
+                       ? ecsManager.GetComponent<SiblingIndexComponent>(b).siblingIndex : 0;
+            return idxA < idxB;
+        });
+    
+    return rootEntities;
+}
 
-        ecsManager.DestroyEntity(entity);
-    } catch (const std::exception& e) {
-        std::cerr << "[SceneHierarchy] Error deleting entity with children: " << e.what() << std::endl;
+void SceneHierarchyPanel::UpdateSiblingIndices() {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> sortedRoots = GetSortedRootEntities();
+    
+    // Reassign consecutive indices to compact the order
+    for (int i = 0; i < static_cast<int>(sortedRoots.size()); ++i) {
+        if (ecsManager.HasComponent<SiblingIndexComponent>(sortedRoots[i])) {
+            ecsManager.GetComponent<SiblingIndexComponent>(sortedRoots[i]).siblingIndex = i;
+        }
+    }
+}
+
+void SceneHierarchyPanel::ReorderRootEntity(Entity draggedEntity, Entity targetSibling, bool insertAfter) {
+    if (draggedEntity == targetSibling) return;
+    
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    
+    // Ensure both entities have sibling indices
+    EnsureSiblingIndex(draggedEntity);
+    EnsureSiblingIndex(targetSibling);
+    
+    int targetIndex = ecsManager.GetComponent<SiblingIndexComponent>(targetSibling).siblingIndex;
+    
+    // Get sorted list of root entities
+    std::vector<Entity> sortedRoots = GetSortedRootEntities();
+    
+    // Remove dragged entity from the list
+    sortedRoots.erase(std::remove(sortedRoots.begin(), sortedRoots.end(), draggedEntity), sortedRoots.end());
+    
+    // Find position to insert
+    auto targetIt = std::find(sortedRoots.begin(), sortedRoots.end(), targetSibling);
+    if (targetIt != sortedRoots.end()) {
+        if (insertAfter) {
+            sortedRoots.insert(targetIt + 1, draggedEntity);
+        } else {
+            sortedRoots.insert(targetIt, draggedEntity);
+        }
+    } else {
+        sortedRoots.push_back(draggedEntity);
+    }
+    
+    // Reassign sibling indices
+    for (int i = 0; i < static_cast<int>(sortedRoots.size()); ++i) {
+        if (ecsManager.HasComponent<SiblingIndexComponent>(sortedRoots[i])) {
+            ecsManager.GetComponent<SiblingIndexComponent>(sortedRoots[i]).siblingIndex = i;
+        }
     }
 }

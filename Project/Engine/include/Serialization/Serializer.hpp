@@ -3,6 +3,7 @@
 #include <ECS/NameComponent.hpp>
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
+#include "ECS/SiblingIndexComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
 #include <Graphics/Model/ModelRenderComponent.hpp>
@@ -55,6 +56,7 @@ public:
 	static void DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& childJSON);
 	static void DeserializeTagComponent(TagComponent& tagComp, const rapidjson::Value& tagJSON);
 	static void DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON);
+	static void DeserializeSiblingIndexComponent(SiblingIndexComponent& siblingComp, const rapidjson::Value& siblingJSON);
 	static void DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON);
 	static void DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON);
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);

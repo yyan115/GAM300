@@ -1,3 +1,16 @@
+/* Start Header ************************************************************************/
+/*!
+\file       AssetBrowserPanel.hpp
+\author     Muhammad Zikry
+\date       2025
+\brief      Panel for browsing and managing project assets.
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #pragma once
 #include "EditorPanel.hpp"
 #include <filesystem>

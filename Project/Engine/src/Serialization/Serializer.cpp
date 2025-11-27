@@ -251,6 +251,14 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
             compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
         }
+        if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
+            auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
+            rapidjson::Value siblingObj(rapidjson::kObjectType);
+            rapidjson::Value indexVal;
+            indexVal.SetInt(c.siblingIndex);
+            siblingObj.AddMember(rapidjson::Value("siblingIndex", alloc).Move(), indexVal, alloc);
+            compsObj.AddMember(rapidjson::Value("SiblingIndexComponent", alloc).Move(), siblingObj, alloc);
+        }
         if (ecs.HasComponent<Transform>(entity)) {
             auto& c = ecs.GetComponent<Transform>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -693,6 +701,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeLayerComponent(layerComp, lv);
         }
 
+        // SiblingIndexComponent
+        if (comps.HasMember("SiblingIndexComponent")) {
+            const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+            ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{});
+            auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(newEnt);
+            DeserializeSiblingIndexComponent(siblingComp, sv);
+        }
+
         // Transform
         if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
             const rapidjson::Value& t = comps["Transform"];
@@ -981,6 +997,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             if (!ecs.HasComponent<LayerComponent>(newEnt)) {
                 ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
             }
+            if (!ecs.HasComponent<SiblingIndexComponent>(newEnt)) {
+                ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{0});
+            }
             if (!ecs.HasComponent<Transform>(newEnt)) {
                 ecs.AddComponent<Transform>(newEnt, Transform{});
             }
@@ -1007,6 +1026,16 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& lv = comps["LayerComponent"];
             auto& layerComp = ecs.GetComponent<LayerComponent>(currEnt);
             DeserializeLayerComponent(layerComp, lv);
+        }
+
+        // SiblingIndexComponent
+        if (comps.HasMember("SiblingIndexComponent")) {
+            const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+            if (!ecs.HasComponent<SiblingIndexComponent>(currEnt)) {
+                ecs.AddComponent<SiblingIndexComponent>(currEnt, SiblingIndexComponent{});
+            }
+            auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(currEnt);
+            DeserializeSiblingIndexComponent(siblingComp, sv);
         }
 
         // Transform
@@ -1846,6 +1875,12 @@ void Serializer::DeserializeTagComponent(TagComponent& tagComp, const rapidjson:
 void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON) {
     if (layerJSON.HasMember("layerIndex") && layerJSON["layerIndex"].IsInt()) {
         layerComp.layerIndex = layerJSON["layerIndex"].GetInt();
+    }
+}
+
+void Serializer::DeserializeSiblingIndexComponent(SiblingIndexComponent& siblingComp, const rapidjson::Value& siblingJSON) {
+    if (siblingJSON.HasMember("siblingIndex") && siblingJSON["siblingIndex"].IsInt()) {
+        siblingComp.siblingIndex = siblingJSON["siblingIndex"].GetInt();
     }
 }
 

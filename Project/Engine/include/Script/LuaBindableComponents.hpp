@@ -11,6 +11,8 @@
 // ============================================================================
 #include "Transform/TransformComponent.hpp"
 #include "ECS/NameComponent.hpp"
+#include "ECS/TagComponent.hpp"
+#include "ECS/LayerComponent.hpp"
 
 // ============================================================================
 // Animation Components
