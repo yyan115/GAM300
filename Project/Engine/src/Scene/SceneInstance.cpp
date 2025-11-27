@@ -92,6 +92,8 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.buttonSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Button system initialized");
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
@@ -133,7 +135,7 @@ void SceneInstance::Update(double dt)
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
-
+	mainECS.buttonSystem->Update();
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

@@ -1,9 +1,6 @@
-// ButtonBinding.hpp
 #pragma once
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <mutex>
 #include "Reflection/ReflectionBase.hpp"
 #include "../../Utilities/GUID.hpp"
 #include "Script/ScriptSystem.hpp"
@@ -11,7 +8,6 @@
 struct ButtonBinding
 {
     REFL_SERIALIZABLE
-
         std::string targetEntityGuidStr;
     std::string scriptGuidStr;     // matches ScriptData.scriptGuidStr
     std::string functionName;      // function to call, e.g. "OnPressed"
@@ -23,34 +19,30 @@ struct ButtonComponentData
     REFL_SERIALIZABLE
         std::vector<ButtonBinding> bindings;
     bool interactable = true;
-    // You can add stuff like transition, label, etc. if desired.
 };
 
 class ButtonComponent
 {
 public:
+    ButtonComponent() = default;  // Now truly default!
     ButtonComponent(Entity owner);
     ~ButtonComponent();
 
-    void OnEnable();   // called when component becomes active
-    void OnDisable();  // called when disabled / destroyed
-    void OnClick();    // call all bound functions (safe to call from main thread)
+    void SetEntity(Entity owner);
+    void OnEnable();
+    void OnDisable();
+    void OnClick();
 
 private:
-    void InvalidateCacheForEntity(Entity e);
     void InstancesChangedCallback(Entity e);
 
 private:
-    Entity m_entity;
-    //ScriptSystem* m_scriptSystem; *USE ECSRegistry::GetInstance().GetActiveECSManager().scriptSystem->GetInstanceRefForScript(...)*
+    Entity m_entity = 0;
 
-    // cache: binding index -> instanceRef (LUA registry ref). We cache to avoid repeated map lookups.
-    // We store LUA_NOREF if unknown.
+    // Cache WITHOUT mutex protection - ScriptSystem handles thread-safety
+    // We accept potential race conditions on cache reads since worst case is a cache miss
     std::vector<int> m_cachedInstanceRef;
 
-    // simple lock to protect cache in multithreaded access (though calls to Lua should be on main thread).
-    std::mutex m_cacheMutex;
-
-    // registration id for instance-changed callbacks (we use pointer of lambda target as id, see ScriptSystem)
+    // Registration id for instance-changed callbacks
     void* m_instancesCbId = nullptr;
 };

@@ -32,7 +32,7 @@
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
 #include <ECS/SiblingIndexComponent.hpp>
-
+#include "UI/Button/ButtonComponent.hpp"
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 
 void ECSManager::Initialize() {
@@ -70,6 +70,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
 	RegisterComponent<SpriteAnimationComponent>();
+	RegisterComponent<ButtonComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -169,6 +170,14 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<SpriteAnimationComponent>());
 		SetSystemSignature<SpriteAnimationSystem>(signature);
 	}
+
+	buttonSystem = RegisterSystem<ButtonSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<ButtonComponent>());
+		SetSystemSignature<ButtonSystem>(signature);
+	}
+
 }
 
 Entity ECSManager::CreateEntity() {

@@ -1,4 +1,3 @@
-// ButtonComponent.cpp
 #include <pch.h>
 #include "UI/Button/ButtonComponent.hpp"
 #include "Logging.hpp"
@@ -6,18 +5,16 @@
 
 #pragma region Reflection
 
-// Register ButtonBinding
 REFL_REGISTER_START(ButtonBinding)
-    REFL_REGISTER_PROPERTY(targetEntityGuidStr)
-    REFL_REGISTER_PROPERTY(scriptGuidStr)
-    REFL_REGISTER_PROPERTY(functionName)
-    REFL_REGISTER_PROPERTY(callWithSelf)
+REFL_REGISTER_PROPERTY(targetEntityGuidStr)
+REFL_REGISTER_PROPERTY(scriptGuidStr)
+REFL_REGISTER_PROPERTY(functionName)
+REFL_REGISTER_PROPERTY(callWithSelf)
 REFL_REGISTER_END
 
-// Register ButtonComponentData
 REFL_REGISTER_START(ButtonComponentData)
-    REFL_REGISTER_PROPERTY(bindings)
-    REFL_REGISTER_PROPERTY(interactable)
+REFL_REGISTER_PROPERTY(bindings)
+REFL_REGISTER_PROPERTY(interactable)
 REFL_REGISTER_END
 
 #pragma endregion
@@ -36,32 +33,52 @@ ButtonComponent::ButtonComponent(Entity owner)
     size_t n = btnData ? btnData->bindings.size() : 0;
     m_cachedInstanceRef.assign(n, LUA_NOREF);
 }
+
 ButtonComponent::~ButtonComponent()
 {
-    // CRITICAL: Unregister callback FIRST before any mutex operations
+    // Unregister callback - ScriptSystem handles thread-safety
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs && ecs->scriptSystem && m_instancesCbId) {
         ecs->scriptSystem->UnregisterInstancesChangedCallback(m_instancesCbId);
         m_instancesCbId = nullptr;
     }
 
-    // NOW safe to clear cache - no more callbacks can arrive
-    {
-        std::lock_guard<std::mutex> lk(m_cacheMutex);
-        m_cachedInstanceRef.clear();
-    }
+    // Simple clear - no mutex needed
+    m_cachedInstanceRef.clear();
+}
+
+void ButtonComponent::SetEntity(Entity owner)
+{
+    m_entity = owner;
+
+    // Initialize cache size
+    ECSManager* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
+    if (!ecs) return;
+
+    auto* btnData = ecs->HasComponent<ButtonComponentData>(m_entity)
+        ? &ecs->GetComponent<ButtonComponentData>(m_entity)
+        : nullptr;
+
+    size_t n = btnData ? btnData->bindings.size() : 0;
+    m_cachedInstanceRef.assign(n, LUA_NOREF);
 }
 
 void ButtonComponent::OnEnable()
 {
-    // Register instances-changed callback to invalidate cache when ScriptSystem recreates instances
+    if (m_entity == 0) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ButtonComponent] OnEnable called with invalid entity");
+        return;
+    }
+
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (!ecs || !ecs->scriptSystem) return;
 
-    // Create a std::function (not just a lambda) so we can use .target<void>()
-    std::function<void(Entity)> cb = [this](Entity e) { this->InstancesChangedCallback(e); };
+    // Register callback
+    std::function<void(Entity)> cb = [this](Entity e) {
+        this->InstancesChangedCallback(e);
+        };
 
-    // Use cb.target<void>() as key for unregistering
     void* key = reinterpret_cast<void*>(cb.target<void()>());
     m_instancesCbId = key;
 
@@ -70,39 +87,34 @@ void ButtonComponent::OnEnable()
 
 void ButtonComponent::OnDisable()
 {
-    // Unregister callback FIRST
+    // Unregister callback
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs && ecs->scriptSystem && m_instancesCbId) {
         ecs->scriptSystem->UnregisterInstancesChangedCallback(m_instancesCbId);
         m_instancesCbId = nullptr;
     }
 
-    // Then clear cache
-    std::lock_guard<std::mutex> lk(m_cacheMutex);
+    // Clear cache
     m_cachedInstanceRef.clear();
 }
 
 void ButtonComponent::InstancesChangedCallback(Entity e)
 {
-    // Add safety check - try to lock with timeout
-    std::unique_lock<std::mutex> lk(m_cacheMutex, std::defer_lock);
-
-    if (!lk.try_lock()) {
-        // Mutex is locked elsewhere (possibly being destroyed), bail out
-        ENGINE_PRINT(EngineLogging::LogLevel::Debug,
-            "[ButtonComponent] Could not acquire lock in callback - object may be destroying");
-        return;
-    }
-
-    // Safe to invalidate cache
+    // No mutex needed - simple invalidation
+    // Worst case: we read stale cache during invalidation and get a cache miss
     for (auto& r : m_cachedInstanceRef) {
         r = LUA_NOREF;
     }
 }
 
-
 void ButtonComponent::OnClick()
 {
+    if (m_entity == 0) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ButtonComponent] OnClick called with invalid entity");
+        return;
+    }
+
     auto* ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
     if (!ecs) return;
 
@@ -123,32 +135,26 @@ void ButtonComponent::OnClick()
         const ButtonBinding& binding = bc.bindings[i];
 
         if (binding.scriptGuidStr.empty() || binding.functionName.empty()) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug,
-                "[ButtonComponent] Binding ", i, " has empty script GUID or function name");
             continue;
         }
 
-        // Determine target entity (if targetEntityGuidStr is empty, assume same entity as button)
+        // Determine target entity
         Entity targetEntity = m_entity;
         if (!binding.targetEntityGuidStr.empty()) {
             // TODO: Resolve targetEntityGuidStr to Entity
-            // For now, assume it's the same entity or implement GUID->Entity lookup
-            // Example: targetEntity = ecs->GetEntityByGUID(binding.targetEntityGuid);
         }
 
         bool callSucceeded = false;
 
-        // Try fast path: use cached instanceRef
+        // Try fast path: use cached instanceRef (no lock - accept race condition)
         int cachedRef = LUA_NOREF;
-        {
-            std::lock_guard<std::mutex> lk(m_cacheMutex);
-            if (i < m_cachedInstanceRef.size()) {
-                cachedRef = m_cachedInstanceRef[i];
-            }
+        if (i < m_cachedInstanceRef.size()) {
+            cachedRef = m_cachedInstanceRef[i];
         }
 
         if (cachedRef != LUA_NOREF) {
-            // Attempt to call using cached instance ref via ScriptSystem
+            // Attempt call with cached ref
+            // ScriptSystem's internal mutex protects the actual Lua call
             callSucceeded = scriptSystem->CallInstanceFunctionByScriptGuid(
                 targetEntity,
                 binding.scriptGuidStr,
@@ -157,7 +163,6 @@ void ButtonComponent::OnClick()
 
             if (!callSucceeded) {
                 // Cache is stale, invalidate it
-                std::lock_guard<std::mutex> lk(m_cacheMutex);
                 if (i < m_cachedInstanceRef.size()) {
                     m_cachedInstanceRef[i] = LUA_NOREF;
                 }
@@ -166,6 +171,7 @@ void ButtonComponent::OnClick()
 
         // Slow path: resolve and cache
         if (!callSucceeded) {
+            // ScriptSystem handles all thread-safety here
             callSucceeded = scriptSystem->CallInstanceFunctionByScriptGuid(
                 targetEntity,
                 binding.scriptGuidStr,
@@ -173,14 +179,13 @@ void ButtonComponent::OnClick()
             );
 
             if (callSucceeded) {
-                // Update cache for next time
+                // Update cache (no lock - worst case is redundant lookup next time)
                 int resolvedRef = scriptSystem->GetInstanceRefForScript(
                     targetEntity,
                     binding.scriptGuidStr
                 );
 
                 if (resolvedRef != LUA_NOREF) {
-                    std::lock_guard<std::mutex> lk(m_cacheMutex);
                     if (i >= m_cachedInstanceRef.size()) {
                         m_cachedInstanceRef.resize(i + 1, LUA_NOREF);
                     }
