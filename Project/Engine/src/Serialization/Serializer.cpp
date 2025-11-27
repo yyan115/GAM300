@@ -949,8 +949,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         GUID_128 entityGuid = GUIDUtilities::ConvertStringToGUID128(entityGuidStr);
         Entity existingEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(entityGuid);
 
+        auto entities = ecs.GetAllEntities(); // copy once
         bool entityExists = (existingEntity != static_cast<Entity>(-1)) &&
-                           std::find(ecs.GetAllEntities().begin(), ecs.GetAllEntities().end(), existingEntity) != ecs.GetAllEntities().end();
+                           std::find(entities.begin(), entities.end(), existingEntity) != entities.end();
 
         if (!entityExists) {
             Entity newEnt = ecs.CreateEntityWithGUID(entityGuid);
