@@ -4,6 +4,9 @@
 #include "rapidjson/prettywriter.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Utilities/GUID.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
+#include <algorithm>
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -248,6 +251,14 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
             compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
         }
+        if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
+            auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
+            rapidjson::Value siblingObj(rapidjson::kObjectType);
+            rapidjson::Value indexVal;
+            indexVal.SetInt(c.siblingIndex);
+            siblingObj.AddMember(rapidjson::Value("siblingIndex", alloc).Move(), indexVal, alloc);
+            compsObj.AddMember(rapidjson::Value("SiblingIndexComponent", alloc).Move(), siblingObj, alloc);
+        }
         if (ecs.HasComponent<Transform>(entity)) {
             auto& c = ecs.GetComponent<Transform>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -382,11 +393,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("RigidBodyComponent", v, alloc);
         }
-        if (ecs.HasComponent<CharacterControllerComponent>(entity)) {
-            auto& c = ecs.GetComponent<CharacterControllerComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c); // Make sure your serializer handles REFL_SERIALIZABLE structs
-            compsObj.AddMember("CharacterControllerComponent", v, alloc);
-        }
         if (ecs.HasComponent<ColliderComponent>(entity)) {
             auto& c = ecs.GetComponent<ColliderComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -442,10 +448,10 @@ void Serializer::SerializeScene(const std::string& scenePath) {
                 sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
                 scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
 
-                //// scriptPath
-                //rapidjson::Value sp;
-                //sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
-                //scriptDataObj.AddMember("scriptPath", sp, alloc);
+                // scriptPath
+                rapidjson::Value sp;
+                sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+                scriptDataObj.AddMember("scriptPath", sp, alloc);
 
                 // enabled
                 scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
@@ -695,6 +701,14 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeLayerComponent(layerComp, lv);
         }
 
+        // SiblingIndexComponent
+        if (comps.HasMember("SiblingIndexComponent")) {
+            const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+            ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{});
+            auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(newEnt);
+            DeserializeSiblingIndexComponent(siblingComp, sv);
+        }
+
         // Transform
         if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
             const rapidjson::Value& t = comps["Transform"];
@@ -797,16 +811,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
             DeserializeRigidBodyComponent(rbComp, tv);
         }
-
-        // CharacterControllerComponent
-        if (comps.HasMember("CharacterControllerComponent") && comps["CharacterControllerComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["CharacterControllerComponent"];
-            ecs.AddComponent<CharacterControllerComponent>(newEnt, CharacterControllerComponent{});
-            auto& ccComp = ecs.GetComponent<CharacterControllerComponent>(newEnt);
-            DeserializeCharacterControllerComponent(ccComp, tv);
-        }
-
-
         // ColliderComponent
         if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["ColliderComponent"];
@@ -966,6 +970,43 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
         const rapidjson::Value& comps = entObj["components"];
 
+        std::string entityGuidStr;
+        if (entObj.HasMember("guid") && entObj["guid"].IsString()) {
+            entityGuidStr = entObj["guid"].GetString();
+        }
+
+        GUID_128 entityGuid = GUIDUtilities::ConvertStringToGUID128(entityGuidStr);
+        Entity existingEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(entityGuid);
+
+        bool entityExists = (existingEntity != static_cast<Entity>(-1)) &&
+                           std::find(ecs.GetAllEntities().begin(), ecs.GetAllEntities().end(), existingEntity) != ecs.GetAllEntities().end();
+
+        if (!entityExists) {
+            Entity newEnt = ecs.CreateEntityWithGUID(entityGuid);
+            currEnt = newEnt;
+
+            if (!ecs.HasComponent<NameComponent>(newEnt)) {
+                ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
+            }
+            if (!ecs.HasComponent<ActiveComponent>(newEnt)) {
+                ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+            }
+            if (!ecs.HasComponent<TagComponent>(newEnt)) {
+                ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
+            }
+            if (!ecs.HasComponent<LayerComponent>(newEnt)) {
+                ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
+            }
+            if (!ecs.HasComponent<SiblingIndexComponent>(newEnt)) {
+                ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{0});
+            }
+            if (!ecs.HasComponent<Transform>(newEnt)) {
+                ecs.AddComponent<Transform>(newEnt, Transform{});
+            }
+        } else {
+            currEnt = existingEntity;
+        }
+
         // NameComponent
         if (comps.HasMember("NameComponent")) {
             const rapidjson::Value& nv = comps["NameComponent"];
@@ -987,6 +1028,16 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeLayerComponent(layerComp, lv);
         }
 
+        // SiblingIndexComponent
+        if (comps.HasMember("SiblingIndexComponent")) {
+            const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+            if (!ecs.HasComponent<SiblingIndexComponent>(currEnt)) {
+                ecs.AddComponent<SiblingIndexComponent>(currEnt, SiblingIndexComponent{});
+            }
+            auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(currEnt);
+            DeserializeSiblingIndexComponent(siblingComp, sv);
+        }
+
         // Transform
         if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
             const rapidjson::Value& t = comps["Transform"];
@@ -996,6 +1047,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
+            if (!ecs.HasComponent<ModelRenderComponent>(currEnt)) {
+                ecs.AddComponent<ModelRenderComponent>(currEnt, ModelRenderComponent{});
+            }
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
             DeserializeModelComponent(modelComp, mv);
         }
@@ -1003,6 +1057,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // SpriteRenderComponent
         if (comps.HasMember("SpriteRenderComponent")) {
             const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+            if (!ecs.HasComponent<SpriteRenderComponent>(currEnt)) {
+                ecs.AddComponent<SpriteRenderComponent>(currEnt, SpriteRenderComponent{});
+            }
             auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(currEnt);
             DeserializeSpriteComponent(spriteComp, mv);
         }
@@ -1010,6 +1067,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // SpriteAnimationComponent
         if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
             const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+            if (!ecs.HasComponent<SpriteAnimationComponent>(currEnt)) {
+                ecs.AddComponent<SpriteAnimationComponent>(currEnt, SpriteAnimationComponent{});
+            }
             auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(currEnt);
             DeserializeSpriteAnimationComponent(animComp, mv);
         }
@@ -1017,6 +1077,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // TextRenderComponent
         if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["TextRenderComponent"];
+            if (!ecs.HasComponent<TextRenderComponent>(currEnt)) {
+                ecs.AddComponent<TextRenderComponent>(currEnt, TextRenderComponent{});
+            }
             auto& textComp = ecs.GetComponent<TextRenderComponent>(currEnt);
             DeserializeTextComponent(textComp, tv);
         }
@@ -1108,6 +1171,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ParentComponent
         if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
             const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
+                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
+            }
             auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
             DeserializeParentComponent(parentComp, parentCompJSON);
         }
@@ -1115,6 +1181,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ChildrenComponent
         if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
             const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
+                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
+            }
             auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
             DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
@@ -1195,6 +1264,9 @@ void Serializer::DeserializeNameComponent(NameComponent& nameComp, const rapidjs
 
 void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t) {
     Vector3D pos{ 0.f,0.f,0.f }, rot{ 0.f,0.f,0.f }, scale{ 1.f,1.f,1.f };
+    Quaternion quat;
+    bool hasQuaternion = false;
+
     // legacy simple arrays
     if (t.HasMember("position") && t["position"].IsArray()) readVec3FromArray(t["position"], pos);
     else if (t.HasMember("localPosition") && t["localPosition"].IsArray()) readVec3FromArray(t["localPosition"], pos);
@@ -1218,7 +1290,9 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
         if (darr.Size() > 2) {
             double w = 1, x = 0, y = 0, z = 0;
             if (readQuatGeneric(darr[2], w, x, y, z)) { // index 2 -> quaternion
-                rot = quatToEulerDeg(w, x, y, z);
+                // Directly use quaternion instead of converting to Euler and back
+                quat = Quaternion(static_cast<float>(w), static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+                hasQuaternion = true;
             }
         }
     }
@@ -1226,12 +1300,28 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs.transformSystem) {
         ecs.transformSystem->SetLocalPosition(newEnt, pos);
-        ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees in your code
+
+        // Use quaternion directly if available, otherwise convert from Euler
+        if (hasQuaternion) {
+            // Directly set the quaternion to avoid conversion errors
+            if (ecs.HasComponent<Transform>(newEnt)) {
+                auto& transform = ecs.GetComponent<Transform>(newEnt);
+                transform.localRotation = quat;
+                transform.localRotation.Normalize(); // Ensure normalized
+            }
+        } else {
+            ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees
+        }
+
         ecs.transformSystem->SetLocalScale(newEnt, scale);
     }
     else
     {
-        Transform tf; tf.localPosition = pos; tf.localRotation = Quaternion::FromEulerDegrees(rot); tf.localScale = scale;
+        Transform tf;
+        tf.localPosition = pos;
+        tf.localRotation = hasQuaternion ? quat : Quaternion::FromEulerDegrees(rot);
+        tf.localRotation.Normalize();
+        tf.localScale = scale;
     }
 }
 
@@ -1290,6 +1380,26 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
             modelComp.modelGUID = GUIDUtilities::ConvertStringToGUID128(modelGUIDStr);
             modelComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
             modelComp.materialGUID = GUIDUtilities::ConvertStringToGUID128(materialGUIDStr);
+
+            // Load the actual resources from GUIDs
+            if (modelComp.modelGUID.high != 0 || modelComp.modelGUID.low != 0) {
+                std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
+                if (!modelPath.empty()) {
+                    modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+                }
+            }
+            if (modelComp.shaderGUID.high != 0 || modelComp.shaderGUID.low != 0) {
+                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+                if (!shaderPath.empty()) {
+                    modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+                }
+            }
+            if (modelComp.materialGUID.high != 0 || modelComp.materialGUID.low != 0) {
+                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
+                if (!materialPath.empty()) {
+                    modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
+                }
+            }
         }
     }
 }
@@ -1344,6 +1454,20 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             GUID_string shaderGUIDStr = extractGUIDString(d[startIdx + 1]);
             spriteComp.textureGUID = GUIDUtilities::ConvertStringToGUID128(textureGUIDStr);
             spriteComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
+
+            // Load the actual resources from GUIDs
+            if (spriteComp.textureGUID.high != 0 || spriteComp.textureGUID.low != 0) {
+                std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.textureGUID);
+                if (!texturePath.empty()) {
+                    spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(spriteComp.textureGUID, texturePath);
+                }
+            }
+            if (spriteComp.shaderGUID.high != 0 || spriteComp.shaderGUID.low != 0) {
+                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
+                if (!shaderPath.empty()) {
+                    spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
+                }
+            }
 
             // Sprite position and other fields
             readVec3Generic(d[startIdx + 2], spriteComp.position);
@@ -1687,19 +1811,6 @@ void Serializer::DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& a
     }
 }
 
-void Serializer::DeserializeCharacterControllerComponent(CharacterControllerComponent& ccComp, const rapidjson::Value& ccJSON) {
-    if (ccJSON.HasMember("data") && ccJSON["data"].IsArray()) {
-        const auto& d = ccJSON["data"];
-
-        // Match the order of your serialized array
-        // Example: d[0] = enabled, d[1] = speed, d[2] = jumpHeight
-        if (d.Size() > 0) ccComp.enabled = d[0]["data"].GetBool();
-        if (d.Size() > 1) ccComp.speed = d[1]["data"].GetFloat();
-        if (d.Size() > 2) ccComp.jumpHeight = d[2]["data"].GetFloat();
-    }
-}
-
-
 void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const rapidjson::Value& rbJSON) {
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
@@ -1764,6 +1875,12 @@ void Serializer::DeserializeTagComponent(TagComponent& tagComp, const rapidjson:
 void Serializer::DeserializeLayerComponent(LayerComponent& layerComp, const rapidjson::Value& layerJSON) {
     if (layerJSON.HasMember("layerIndex") && layerJSON["layerIndex"].IsInt()) {
         layerComp.layerIndex = layerJSON["layerIndex"].GetInt();
+    }
+}
+
+void Serializer::DeserializeSiblingIndexComponent(SiblingIndexComponent& siblingComp, const rapidjson::Value& siblingJSON) {
+    if (siblingJSON.HasMember("siblingIndex") && siblingJSON["siblingIndex"].IsInt()) {
+        siblingComp.siblingIndex = siblingJSON["siblingIndex"].GetInt();
     }
 }
 
@@ -1922,6 +2039,22 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
                 sd.scriptPath = scriptData["scriptPath"].GetString();
             }
+
+            // If scriptPath is empty, try to resolve it from GUID
+            if (sd.scriptPath.empty() && !sd.scriptGuidStr.empty()) {
+                std::string resolvedPath = AssetManager::GetInstance().GetAssetPathFromGUID(sd.scriptGuid);
+                if (!resolvedPath.empty()) {
+                    // Extract relative path starting from "Resources"
+                    size_t resPos = resolvedPath.find("Resources");
+                    if (resPos != std::string::npos) {
+                        sd.scriptPath = resolvedPath.substr(resPos);
+                    } else {
+                        sd.scriptPath = resolvedPath;
+                    }
+                    ENGINE_PRINT("LOAD DEBUG: Resolved scriptPath from GUID: ", sd.scriptPath.c_str(), "\n");
+                }
+            }
+
             if (scriptData.HasMember("enabled") && scriptData["enabled"].IsBool()) {
                 sd.enabled = scriptData["enabled"].GetBool();
             }

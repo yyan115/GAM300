@@ -12,6 +12,9 @@ set(CMAKE_MAP_IMPORTED_CONFIG_EDITORDEBUG Debug)
 # vcpkg integration - for Linux and Windows builds
 # Only Android uses prebuilt libraries
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
+    # Put vcpkg_installed in Project/Build/ instead of Build/Intermediate/
+    set(VCPKG_INSTALLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Build/vcpkg_installed"
+        CACHE PATH "Vcpkg installed directory")
     set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
@@ -38,6 +41,52 @@ importDependencies()
 # Build configurations
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# MSVC warning suppressions
+if(MSVC)
+    add_compile_options(
+        # C4251: 'class X needs dll-interface to be used by clients of class Y'
+        # Source: Engine headers with exported classes containing STL members
+        # Reason: Safe when all code is built together with same compiler/runtime.
+        #         Only a real issue when distributing DLLs to third parties.
+        /wd4251
+
+        # C4275: 'non dll-interface class X used as base for dll-interface class Y'
+        # Source: Engine headers with exported classes containing STL members
+        # Reason: Safe when all code is built together with same compiler/runtime.
+        #         Only a real issue when distributing DLLs to third parties.
+        /wd4275
+
+        # Source: Warnings from third-party libraries (Lua, Jolt, RapidJSON, ImGuizmo, FileWatch, assimp).
+        # Reason: Ignore third-party library warnings.
+        /wd4068   # C4068: 'unknown pragma'
+        /wd4244   # C4244: 'conversion from X to Y, possible loss of data'
+        /wd4245   # C4245: 'conversion from int to unsigned, signed/unsigned mismatch'
+        /wd4267   # C4267: 'conversion from size_t to int, possible loss of data'
+        /wd4310   # C4310: 'cast truncates constant value'
+        /wd4324   # C4324: 'structure was padded due to alignment specifier'
+        /wd4334   # C4334: 'result of 32-bit shift implicitly converted to 64 bits'
+        /wd4701   # C4701: 'potentially uninitialized local variable'
+        /wd4702   # C4702: 'unreachable code'
+        /wd6255   # C6255: '_alloca indicates failure by raising a stack overflow exception'
+        /wd6385   # C6385: 'reading invalid data from buffer'
+        /wd6386   # C6386: 'buffer overrun while writing'
+        /wd26439  # C26439: 'this kind of function should not throw, declare it noexcept'
+        /wd26495  # C26495: 'variable is uninitialized, always initialize a member variable'
+        /wd26827  # C26827: 'did you forget to initialize an enum constant'
+        /wd33010  # C33010: 'unchecked lower bound for enum used as index'
+
+        # Disable MSVC Code Analysis (C26xxx, C6xxx, C28xxx, C33xxx warnings)
+        # Source: Third-party libraries (Jolt, rapidjson) and false positives
+        # Reason: These are static analysis warnings, not compiler warnings.
+        /analyze-
+
+        # Exclude vcpkg external headers from static analysis
+        # This tells MSVC to treat these paths as "external" and not analyze them
+        /external:I "${VCPKG_INSTALLED_DIR}/x64-windows/include"
+        /external:W0
+    )
 endif()
 
 # Platform-specific compiler flags
@@ -67,6 +116,13 @@ elseif(MSVC)
     set(CMAKE_CXX_FLAGS_EDITORRELEASE "/O2 /DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "/O2 /DNDEBUG")
     set(CMAKE_C_FLAGS_EDITORRELEASE "/O2 /DNDEBUG")
+
+    # Linker flags for debug symbol generation (PDB files)
+    # /DEBUG:FULL generates complete PDB files for debugging
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS_EDITORDEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
+    set(CMAKE_SHARED_LINKER_FLAGS_EDITORDEBUG "/DEBUG:FULL" CACHE STRING "" FORCE)
 endif()
 
 # Output directories - separate clean output from intermediate files
@@ -101,10 +157,8 @@ add_subdirectory(Engine)
 # Always build Game (executable or static lib depending on config)
 add_subdirectory(Game)
 
-# Only build Editor for Editor configurations
+# Only add Editor for Editor configurations
+# (Single-config generators like Ninja know CMAKE_BUILD_TYPE at configure time)
 if(CMAKE_BUILD_TYPE MATCHES "Editor")
     add_subdirectory(Editor)
-    message(STATUS "Building Editor for ${CMAKE_BUILD_TYPE}")
-else()
-    message(STATUS "Skipping Editor for ${CMAKE_BUILD_TYPE}")
 endif()

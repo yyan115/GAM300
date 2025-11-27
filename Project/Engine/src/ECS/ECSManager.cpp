@@ -23,8 +23,6 @@
 
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
 #include <Physics/PhysicsSystem.hpp>
@@ -33,6 +31,7 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
+#include <ECS/SiblingIndexComponent.hpp>
 
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 
@@ -51,7 +50,6 @@ void ECSManager::Initialize() {
 	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
-	RegisterComponent<CharacterControllerComponent>();
 	RegisterComponent<LightComponent>();
 	RegisterComponent<DirectionalLightComponent>();
 	RegisterComponent<PointLightComponent>();
@@ -68,6 +66,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<TagComponent>();
 	RegisterComponent<LayerComponent>();
+	RegisterComponent<SiblingIndexComponent>();
 	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
 	RegisterComponent<SpriteAnimationComponent>();
@@ -111,15 +110,6 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<RigidBodyComponent>());
 		SetSystemSignature<PhysicsSystem>(signature);
 	}
-
-	characterControllerSystem = RegisterSystem<CharacterControllerSystem>();
-	{
-		Signature signature;
-		signature.set(GetComponentID<CharacterControllerComponent>());
-		signature.set(GetComponentID<ColliderComponent>()); // must have collider to work
-		SetSystemSignature<CharacterControllerSystem>(signature);
-	}
-
 
 	lightingSystem = RegisterSystem<LightingSystem>();
 	{
@@ -226,6 +216,7 @@ void ECSManager::DestroyEntity(Entity entity) {
 		}
 	}
 
+	EntityGUIDRegistry::GetInstance().Unregister(entity);
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
 	systemManager->EntityDestroyed(entity);

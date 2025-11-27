@@ -186,7 +186,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             ImGui::Text("%s:", name.c_str());
             ImGui::SameLine();
 
-            // Calculate sizes for Unity-like layout
+            // Calculate sizes for layout
             float availableWidth = ImGui::GetContentRegionAvail().x;
             float removeButtonWidth = 35.0f;
             float selectButtonWidth = 35.0f;

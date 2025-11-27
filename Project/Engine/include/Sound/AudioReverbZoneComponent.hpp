@@ -14,11 +14,11 @@ struct AudioReverbZoneComponent
     // Component enabled state
     bool enabled{ true };
     
-    // Zone properties (Unity-like)
+    // Zone properties 
     float MinDistance{ 10.0f };   // Distance at which reverb starts (inner radius)
     float MaxDistance{ 30.0f };   // Distance at which reverb is at full effect (outer radius)
     
-    // Reverb preset (Unity-like reverb types)
+    // Reverb preset
     enum class ReverbPreset {
         Off,
         Generic,

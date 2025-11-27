@@ -38,7 +38,7 @@ void TextRenderingSystem::Update()
     // Submit all visible text components to the graphics manager
     for (const auto& entity : entities)
     {
-        // Skip inactive entities (Unity-like behavior)
+        // Skip inactive entities
         if (ecsManager.HasComponent<ActiveComponent>(entity)) {
             auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
             if (!activeComp.isActive) {

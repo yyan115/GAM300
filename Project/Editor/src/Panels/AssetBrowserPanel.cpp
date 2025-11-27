@@ -1,3 +1,16 @@
+/* Start Header ************************************************************************/
+/*!
+\file       AssetBrowserPanel.cpp
+\author     Muhammad Zikry
+\date       2025
+\brief      Panel for browsing and managing project assets.
+
+Copyright (C) 2025 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the
+prior written consent of DigiPen Institute of Technology is prohibited.
+*/
+/* End Header **************************************************************************/
+
 #include "pch.h"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "imgui.h"
@@ -759,7 +772,7 @@ void AssetBrowserPanel::RenderAssetGrid()
                               lowerExt == ".tga" || lowerExt == ".dds");
         
         if (isTextureAsset && !asset.isDirectory) {
-            // Unity-like: Show actual texture thumbnail instead of icon
+            //Show actual texture thumbnail instead of icon
             uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
             
             if (textureId != 0) {
@@ -1174,7 +1187,7 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return AssetType::Shaders;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return AssetType::Audio;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1433,7 +1446,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".png", ".jpg", ".jpeg", ".bmp", ".tga",           // Textures
         ".obj", ".fbx", ".dae", ".3ds",                    // Models
         ".vert", ".frag", ".glsl", ".hlsl",                // Shaders
-        ".wav", ".mp3", ".ogg",                            // Audio
+        ".wav", ".mp3", ".ogg", ".flac",                   // Audio
         ".ttf", ".otf",                                    // Fonts
         ".mat",                                            // Materials
         ".prefab",                                         // Prefabs
@@ -1638,7 +1651,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     else if (lowerExt == ".vert" || lowerExt == ".frag" || lowerExt == ".glsl" || lowerExt == ".hlsl") {
         return ICON_FA_CODE;
     }
-    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg") {
+    else if (lowerExt == ".wav" || lowerExt == ".mp3" || lowerExt == ".ogg" || lowerExt == ".flac") {
         return ICON_FA_VOLUME_HIGH;
     }
     else if (lowerExt == ".ttf" || lowerExt == ".otf") {
@@ -1661,7 +1674,7 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
 }
 
 // ============================================================================
-// Thumbnail Management (Unity-like)
+// Thumbnail Management
 // ============================================================================
 
 uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath) {
@@ -1762,7 +1775,7 @@ void AssetBrowserPanel::OpenImportDialog() {
     ofn.hwndOwner = nullptr;  // Set to a valid window handle if available (e.g., from GLFW or Win32)
     ofn.lpstrFile = filename;
     ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
+    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.flac;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
     ofn.nFilterIndex = 1;
     ofn.lpstrInitialDir = currentDirectory.c_str();  // Start in the current directory
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_NOCHANGEDIR;  // Added OFN_NOCHANGEDIR

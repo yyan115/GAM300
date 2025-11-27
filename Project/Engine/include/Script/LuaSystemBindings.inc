@@ -85,6 +85,71 @@ BEGIN_SYSTEM("Input")
 
 END_SYSTEM()
 
+
+// ============================================================================
+// CHARACTER CONTROLLER SYSTEM
+// ============================================================================
+
+// Register CharacterController as a class type first
+luabridge::getGlobalNamespace(L)
+    .beginClass<CharacterController>("CharacterControllerClass")
+    .endClass();
+
+
+BEGIN_SYSTEM("CharacterController")
+
+    // Constructor
+    FUNCTION("new", CharacterControllerWrappers::Create)
+    //Initialise
+    FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
+
+    // Methods
+    FUNCTION("Move", CharacterControllerWrappers::Move)
+    FUNCTION("Jump", CharacterControllerWrappers::Jump)
+    FUNCTION("Update", CharacterControllerWrappers::Update)
+    FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
+    FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
+
+END_SYSTEM()
+
+
+BEGIN_SYSTEM("PhysicsSystem")
+    FUNCTION("GetSystem", PhysicsSystemWrappers::GetSystem)
+END_SYSTEM()
+
+
+// ============================================================================
+// TAG SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Tag")
+    FUNCTION("GetName", TagWrappers::GetTagName)
+    FUNCTION("GetIndex", TagWrappers::GetTagIndex)
+    FUNCTION("GetCount", TagWrappers::GetTagCount)
+    FUNCTION("Compare", TagWrappers::CompareTag)
+    FUNCTION("CompareNames", TagWrappers::CompareTagNames)
+END_SYSTEM()
+
+// ============================================================================
+// LAYER SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Layer")
+    FUNCTION("GetName", LayerWrappers::GetLayerName)
+    FUNCTION("GetIndex", LayerWrappers::GetLayerIndex)
+    FUNCTION("IsInLayer", LayerWrappers::IsInLayer)
+    FUNCTION("GetMask", LayerWrappers::GetLayerMask)
+    FUNCTION("MasksIntersect", LayerWrappers::LayerMasksIntersect)
+END_SYSTEM()
+
+
+// ENGINE HELPERS
+BEGIN_SYSTEM("Engine")
+    FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+END_SYSTEM()
+
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================

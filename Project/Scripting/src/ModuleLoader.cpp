@@ -40,14 +40,9 @@ namespace Scripting {
             m_fs = m_ownedFs.get();
         }
         else {
-            // Leave m_ownedFs empty and m_fs null — callers may set search paths but loader can't read files.
+            // Leave m_ownedFs empty and m_fs null - callers may set search paths but loader can't read files.
             m_ownedFs.reset();
             m_fs = nullptr;
-        }
-        if (m_searchPaths.empty()) {
-            m_searchPaths.push_back("Resources/Scripts/?.lua");
-            m_searchPaths.push_back("Resources/Scripts/extension/?.lua");
-            m_searchPaths.push_back("Resources/Scripts/?/init.lua");
         }
     }
 
@@ -362,6 +357,13 @@ namespace Scripting {
         // success: module table/function returned on stack; pop it
         lua_pop(L, 1);
         return true;
+    }
+
+    void ModuleLoader::ClearSearchPaths() 
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        m_searchPaths.clear();
+        m_resolveCache.clear(); // Also clear cache since paths changed
     }
 
 } // namespace Scripting

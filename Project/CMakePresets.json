@@ -73,25 +73,21 @@
             "name": "debug",
             "configurePreset": "debug",
             "displayName": "Build Game (Debug)",
-            "jobs": 4
         },
         {
             "name": "release",
             "configurePreset": "release",
             "displayName": "Build Game (Release)",
-            "jobs": 4
         },
         {
             "name": "editor-debug",
             "configurePreset": "editor-debug",
             "displayName": "Build Editor (Debug)",
-            "jobs": 4
         },
         {
             "name": "editor-release",
             "configurePreset": "editor-release",
             "displayName": "Build Editor (Release)",
-            "jobs": 4
         }
     ]
 }

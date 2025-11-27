@@ -153,7 +153,7 @@ std::shared_ptr<AssetMeta> Script::ExtendMetaFile(const std::string& assetPath,
         // If compiled path missing, set it to compiled form of assetPath (no compilation step here).
         if (currentMetaData->compiledFilePath.empty()) {
             currentMetaData->compiledFilePath = CompileToResource(assetPath, forAndroid);
-            currentMetaData->lastCompileTime = std::chrono::system_clock::now();
+            //currentMetaData->lastCompileTime = std::chrono::system_clock::now();
         }
         return currentMetaData;
     }
@@ -164,7 +164,7 @@ std::shared_ptr<AssetMeta> Script::ExtendMetaFile(const std::string& assetPath,
     meta->compiledFilePath = CompileToResource(assetPath, forAndroid);
     meta->androidCompiledFilePath = forAndroid ? meta->compiledFilePath : std::string();
     meta->version = 0;
-    meta->lastCompileTime = std::chrono::system_clock::now();
+    //meta->lastCompileTime = std::chrono::system_clock::now();
 
     // Note: We do not invent a GUID here; if your pipeline needs real GUIDs,
     // call meta->PopulateAssetMeta(...) from the asset builder with a real GUID.
@@ -242,7 +242,7 @@ void Script::DestroyInstance() {
     // If scripting subsystem has no runtime / lua state, do not call into it.
     // Scripting::GetLuaState() returns nullptr if not initialized / already shutdown.
     if (!Scripting::GetLuaState()) {
-        // runtime gone — avoid calling into Scripting; just drop our reference and return.
+        // runtime gone - avoid calling into Scripting; just drop our reference and return.
         ENGINE_PRINT(EngineLogging::LogLevel::Warn,
             "Script::DestroyInstance: scripting runtime not available; dropping instance id=", m_instanceId);
         m_instanceId = -1;

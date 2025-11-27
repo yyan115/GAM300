@@ -86,9 +86,11 @@ target_precompile_headers(Engine PRIVATE
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
 # Define EDITOR for Editor builds (EditorDebug, EditorRelease)
-if(CMAKE_BUILD_TYPE MATCHES "Editor")
-    target_compile_definitions(Engine PRIVATE EDITOR)
-endif()
+# Uses generator expression for multi-config generators (Visual Studio)
+# PUBLIC because header templates need this define when compiled by consuming targets
+target_compile_definitions(Engine PUBLIC
+    $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
+)
 
 # Jolt Physics compile definitions:
 # For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
@@ -196,17 +198,11 @@ target_include_directories(Engine
         ${CMAKE_SOURCE_DIR}/Libraries/luabridge3/source
 )
 
-# Add Compressonator include directory for Editor builds
-if(CMAKE_BUILD_TYPE MATCHES "Editor")
-    if(WIN32)
-        # Windows uses prebuilt binaries
-        target_include_directories(Engine PRIVATE
-            ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/include
-        )
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        # Linux builds from source - include directory handled by FetchContent target
-        # Will be added when we link against Compressonator target
-    endif()
+# Add Compressonator include directory for Editor builds (Windows only, Linux handled by target)
+if(WIN32)
+    target_include_directories(Engine PRIVATE
+        $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/include>
+    )
 endif()
 
 # Add Android-specific headers (vcpkg handles desktop headers automatically)
@@ -286,34 +282,25 @@ else()
         else()
             message(FATAL_ERROR "FMOD library not found")
         endif()
+
+        # Linux: Link FetchContent built Compressonator for Editor builds
+        if(TARGET Compressonator)
+            target_link_libraries(Engine PRIVATE
+                $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:Compressonator>
+            )
+            message(STATUS "Linked Compressonator from FetchContent for Editor")
+        endif()
     elseif(WIN32)
         target_link_libraries(Engine PRIVATE
             ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod_vc.lib
         )
-    endif()
 
-    # Link Compressonator for Editor builds
-    if(CMAKE_BUILD_TYPE MATCHES "Editor")
-        if(WIN32)
-            # Windows: Link prebuilt Compressonator static library (no DLL needed)
-            if(CMAKE_BUILD_TYPE MATCHES "Debug" OR CMAKE_BUILD_TYPE MATCHES "EditorDebug")
-                target_link_libraries(Engine PRIVATE
-                    ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MDd.lib
-                )
-            else()
-                target_link_libraries(Engine PRIVATE
-                    ${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD.lib
-                )
-            endif()
-        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-            # Linux: Link FetchContent built Compressonator
-            if(TARGET Compressonator)
-                target_link_libraries(Engine PRIVATE Compressonator)
-                message(STATUS "Linked Compressonator from FetchContent for Editor")
-            else()
-                message(WARNING "Compressonator target not available - Editor texture compression may fail")
-            endif()
-        endif()
+        # Windows: Link prebuilt Compressonator static library for Editor builds
+        # Uses generator expression to select debug/release library at build time
+        target_link_libraries(Engine PRIVATE
+            $<$<CONFIG:EditorDebug>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MDd.lib>
+            $<$<CONFIG:EditorRelease>:${CMAKE_SOURCE_DIR}/Libraries/Compressonator/lib/bin/x64/Compressonator_MD.lib>
+        )
     endif()
 endif()
 

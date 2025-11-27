@@ -20,7 +20,8 @@ void RegisterSpriteAnimationInspector() {
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
         SpriteAnimationComponent &anim = *static_cast<SpriteAnimationComponent *>(componentPtr);
-        const float labelWidth = EditorComponents::GetLabelWidth();
+        // Commented out to fix warning C4189 - unused variable
+        // const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Get the animation editor window
         auto* animEditor = GetSpriteAnimationEditor();

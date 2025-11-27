@@ -21,7 +21,7 @@ using ChannelHandle = uint64_t;
 // Forward declare Audio class from ResourceManager system
 class Audio;
 
-// Audio source states (Unity-like)
+// Audio source states
 enum class AudioSourceState {
     Stopped,
     Playing,
@@ -69,7 +69,7 @@ public:
     // Per-frame update - call from main loop
     void Update();
 
-    // Unity-like Play/Stop/Pause API
+    // Play/Stop/Pause API
     ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
     ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
     ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
@@ -116,7 +116,7 @@ public:
     FMOD_SOUND* CreateSoundFromMemory(const void* data, unsigned int length, const std::string& assetPath);
     void SetListenerAttributes(int listener, const Vector3D& position, const Vector3D& velocity, const Vector3D& forward, const Vector3D& up);
 
-    // Reverb Zone Management (Unity-like)
+    // Reverb Zone Management
     FMOD_REVERB3D* CreateReverbZone();
     void ReleaseReverbZone(FMOD_REVERB3D* reverb);
     void SetReverbZoneAttributes(FMOD_REVERB3D* reverb, const Vector3D& position, float minDistance, float maxDistance);

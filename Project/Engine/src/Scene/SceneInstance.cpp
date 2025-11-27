@@ -14,7 +14,6 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
-#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -60,50 +59,6 @@ void SceneInstance::Initialize()
 		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
 	}
 
-	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
-
-	// Sprite Animation Entity for testing
-	// Entity sAnim = ecsManager.CreateEntity();
-	// ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
-	// ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	// ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
-
-	// std::string idlePath[3] = {
-	//	"Resources/Textures/idle_1.png",
-	//	"Resources/Textures/idle_2.png",
-	//	"Resources/Textures/idle_3.png"
-	// };
-
-	// GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
-	// GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
-	// GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
-
-	//// Setting Current Sprite
-	// auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	// sprite.is3D = true;
-
-	// auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
-
-	// SpriteAnimationClip idleClip;
-	// idleClip.name = "Idle";
-	// idleClip.loop = true;
-
-	// for(int i = 0; i < 3; ++i) {
-	//	SpriteFrame frame;
-	//	frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
-	//	frame.texturePath = idlePath[i];
-	//	frame.uvOffset = glm::vec2(0.0f, 0.0f);
-	//	frame.uvScale = glm::vec2(1.0f, 1.0f);
-	//	frame.duration = 1.0f; // 0.2 seconds per frame
-
-	//	idleClip.frames.push_back(frame);
-	//}
-
-	// anim.clips.push_back(idleClip);
-	// anim.Play("Idle");
-
-	// End of Sprite Animation Entity for testing
-
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();
 	ENGINE_LOG_INFO("Transform system initialized");
@@ -137,23 +92,15 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
-	ecsManager.characterControllerSystem->Initialise(ecsManager, ecsManager.physicsSystem.get());
-
-	// glEnable(GL_DEBUG_OUTPUT);
-	// glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	// glDebugMessageCallback(
-	//	[](GLenum, GLenum, GLuint, GLenum, GLsizei, const GLchar* msg, const void*) {
-	//		fprintf(stderr, "GL: %s\n", msg);
-	//	},
-	//	nullptr);
-
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
 void SceneInstance::InitializeJoltPhysics()
 {
+	std::cout<<"=== InitializeJoltPhysics START ===";
 	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->InitialiseJolt();
+	ENGINE_LOG_INFO("=== InitializeJoltPhysics END ===");
 }
 
 void SceneInstance::InitializePhysics()
@@ -179,7 +126,6 @@ void SceneInstance::Update(double dt)
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	// mainECS.physicsSystem->physicsSyncBack(mainECS);
-	mainECS.characterControllerSystem->Update((float)dt,mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
@@ -322,7 +268,6 @@ void SceneInstance::Exit()
 	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
 	ShutDownPhysics();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown(ECSRegistry::GetInstance().GetECSManager(scenePath));
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();

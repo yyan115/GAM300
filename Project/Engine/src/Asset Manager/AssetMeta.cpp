@@ -15,7 +15,7 @@ void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath
 	compiledFilePath = _compiledPath;
 	androidCompiledFilePath = _androidCompiledPath;
 	version = _ver;
-	lastCompileTime = std::chrono::system_clock::now();
+	//lastCompileTime = std::chrono::system_clock::now();
 }
 
 void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
@@ -59,7 +59,7 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		androidCompiledFilePath = assetMetaData["android_compiled"].GetString();
 	}
 
-	lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
+	//lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 }
 
 void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps)

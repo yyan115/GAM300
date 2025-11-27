@@ -234,12 +234,13 @@ bool Scripting::Init(const InitOptions& opts) {
             });
     }
 
-    // Configure module loader search paths (runtime owns the module loader)
-    if (auto* loader = g_runtime->GetModuleLoader()) {
-        loader->AddSearchPath("Resources/Scripts/?.lua");
-        loader->AddSearchPath("Resources/Scripts/?/init.lua");
-        loader->AddSearchPath("Resources/Scripts/extension/?.lua");
-    }
+    //OUTDATED DONE IN SCRIPTINGRUNTIME
+    //// Configure module loader search paths (runtime owns the module loader)
+    //if (auto* loader = g_runtime->GetModuleLoader()) {
+    //    loader->AddSearchPath("Resources/Scripts/?.lua");
+    //    loader->AddSearchPath("Resources/Scripts/?/init.lua");
+    //    loader->AddSearchPath("Resources/Scripts/extension/?.lua");
+    //}
 
     // Redirect Lua print
     lua_State* L = g_runtime->GetLuaState();
@@ -317,6 +318,10 @@ void Scripting::SetFileSystemReadAllText(ReadAllTextFn fn) {
 }
 
 void Scripting::SetLuaState(lua_State* L) {
+    // Commented out to fix warning C4100 - unreferenced parameter
+    // Remove this line when 'L' is used
+    (void)L;
+
     // If user provides a raw lua_State, hand it to runtime (runtime will not own it)
     if (!g_runtime) {
         g_runtime = std::make_unique<ScriptingRuntime>();
