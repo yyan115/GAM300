@@ -30,6 +30,7 @@
 
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
+#include <UI/Button/ButtonComponent.hpp>
 
 Entity fpsText;
 
@@ -95,6 +96,29 @@ void SceneInstance::Initialize()
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
 	ENGINE_PRINT("Scene Initialized\n");
+
+	//Create Test Button
+	Entity buttonEntity = ecsManager.CreateEntity();
+	ButtonComponentData data;
+	ButtonBinding binding;
+	binding.targetEntityGuidStr = ""; // Empty = same entity as button
+	binding.scriptGuidStr = "002dcbfdcd8ac9ce-00035a92b2000001";  // GUID of the Lua script
+	/* If you dont like guid can switch to script path instead but please change logic accordingly
+		if (m_ecs->HasComponent<ScriptComponentData>(e)) {
+			auto& scriptComp = m_ecs->GetComponent<ScriptComponentData>(e);
+
+			for (const auto& script : scriptComp.scripts) {
+				std::cout << "Script GUID: " << script.scriptGuidStr << std::endl;
+				std::cout << "Script Path: " << script.scriptPath << std::endl;
+			}
+		}
+	*/
+	binding.functionName = "OnClick";  // Function name in Lua script
+	binding.callWithSelf = true;
+	data.bindings.push_back(binding);
+	data.interactable = true;
+	ecsManager.AddComponent<ButtonComponentData>(buttonEntity, data);
+	//ScriptComponentData script;
 }
 
 void SceneInstance::InitializeJoltPhysics()

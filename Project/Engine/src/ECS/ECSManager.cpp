@@ -70,7 +70,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ScriptComponentData>();
 	RegisterComponent<BrainComponent>();
 	RegisterComponent<SpriteAnimationComponent>();
-	RegisterComponent<ButtonComponent>();
+	RegisterComponent<ButtonComponentData>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -174,7 +174,7 @@ void ECSManager::Initialize() {
 	buttonSystem = RegisterSystem<ButtonSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<ButtonComponent>());
+		signature.set(GetComponentID<ButtonComponentData>());
 		SetSystemSignature<ButtonSystem>(signature);
 	}
 
