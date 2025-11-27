@@ -88,6 +88,7 @@ return Component {
         
         -- Jump when grounded
         if CharacterController.IsGrounded(self._controller) then
+            CharacterController.Move(self._controller, 0,0,0)
             CharacterController.Jump(self._controller, 2.0)
         end
         
