@@ -21,19 +21,20 @@ void ButtonSystem::Update() {
 void ButtonSystem::UpdateButtonStates() {
     if (!m_ecs) return;
 
-    //float dt = static_cast<float>(TimeManager::GewtDeltaTime());
+    if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT)) {
+        for (Entity e : m_ecs->GetActiveEntities()) {
+            if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
 
-    // Update cooldown timers or other runtime state if needed
-    for (Entity e : m_ecs->GetActiveEntities()) {
-        if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
+            auto& buttonData = m_ecs->GetComponent<ButtonComponent>(e);
 
-        auto& buttonData = m_ecs->GetComponent<ButtonComponent>(e);
+            // Example: Update any time-based state here
+            // (cooldowns, animations, etc.)
 
-        // Example: Update any time-based state here
-        // (cooldowns, animations, etc.)
-
-        // Check for collision
-        HandleMouseClick(e, Vector3D(InputManager::GetMouseX(), InputManager::GetMouseY(), 0.0f));
+            // Check for collision
+            ENGINE_LOG_INFO("Window height: " + std::to_string(WindowManager::GetWindowHeight()));
+            ENGINE_LOG_INFO("Viewport height: " + std::to_string(WindowManager::GetViewportHeight()));
+            HandleMouseClick(e, Vector3D(((double)WindowManager::GetWindowWidth() / (double)WindowManager::GetViewportWidth()) * InputManager::GetMouseX(), (double)WindowManager::GetViewportHeight() - InputManager::GetMouseY(), 0.0f));
+        }
     }
 }
 
@@ -49,6 +50,8 @@ The following functions can be subsumed into each other.
 
 void ButtonSystem::HandleMouseClick(Entity buttonEntity, Vector3D mousePos) 
 {
+    ENGINE_LOG_INFO("mousePos x: " + std::to_string(mousePos.x)+ " y: " + std::to_string(mousePos.y));
+
    if (m_ecs->HasComponent<SpriteRenderComponent>(buttonEntity)) {
         auto& spriteComponent = m_ecs->GetComponent<SpriteRenderComponent>(buttonEntity);
         if (spriteComponent.is3D) {
@@ -65,12 +68,12 @@ void ButtonSystem::HandleMouseClick(Entity buttonEntity, Vector3D mousePos)
         float minY = transform.localPosition.y - halfExtentsY;
         float maxY = transform.localPosition.y + halfExtentsY;
 
-        //if (mousePos.x >= minX && mousePos.x <= maxX && mousePos.y >= minY && mousePos.y <= maxY) {
+        if (mousePos.x >= minX && mousePos.x <= maxX && mousePos.y >= minY && mousePos.y <= maxY) {
             TriggerButton(buttonEntity);
-        //}
+        }
     }
    //I just place here because this demands spritecomponent otherwise
-   TriggerButton(buttonEntity);
+   //TriggerButton(buttonEntity);
 }
 
 void ButtonSystem::TriggerButton(Entity buttonEntity) {

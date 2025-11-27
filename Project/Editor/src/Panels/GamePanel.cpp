@@ -79,6 +79,8 @@ void GamePanel::OnImGuiRender() {
         float offsetX, offsetY;
         CalculateViewportDimensions(availableWidth, availableHeight,
                                   displayWidth, displayHeight, offsetX, offsetY);
+        RunTimeVar::window.gameViewportWidth = displayWidth;
+        RunTimeVar::window.gameViewportHeight = displayHeight;
 
         // Apply scale factor
         displayWidth = (int)((float)displayWidth * viewportScale);
@@ -184,6 +186,35 @@ void GamePanel::OnImGuiRender() {
                 draw_list->AddText(textPos1, IM_COL32(255, 255, 255, 255), msg1);
                 draw_list->AddText(textPos2, IM_COL32(180, 180, 180, 255), msg2);
             }
+
+            // Update the engine's InputManager mouse position relative to the game panel.
+            // Get absolute mouse position
+            ImVec2 mousePos = ImGui::GetMousePos();
+
+            // Panel bounds
+            ImVec2 panelMin = ImGui::GetItemRectMin();
+            ImVec2 panelMax = ImGui::GetItemRectMax();
+
+            // Relative position inside panel
+            float relX = mousePos.x - panelMin.x;
+            float relY = mousePos.y - panelMin.y;
+
+            // Clamp to panel bounds
+            bool insidePanel = (mousePos.x >= panelMin.x && mousePos.x <= panelMax.x &&
+                mousePos.y >= panelMin.y && mousePos.y <= panelMax.y);
+
+            if (insidePanel) {
+                // Scale relative coords to framebuffer resolution
+                float scaleX = (float)renderWidth / (panelMax.x - panelMin.x);
+                float scaleY = (float)renderHeight / (panelMax.y - panelMin.y);
+
+                float gameX = relX * scaleX;
+                float gameY = relY * scaleY;
+
+                // Feed into InputManager (game-space coordinates)
+                InputManager::SetGamePanelMousePos(gameX, gameY);
+            }
+
         }
         else {
             ImGui::TextColored(ImVec4(1, 0, 0, 1), "Game View - Framebuffer not ready");
@@ -218,6 +249,9 @@ void GamePanel::RenderResolutionPanel() {
         } else {
             previewText = resolutions[selectedResolutionIndex].name;
         }
+
+        RunTimeVar::window.gameResolutionWidth = resolutions[selectedResolutionIndex].width;
+        RunTimeVar::window.gameResolutionHeight = resolutions[selectedResolutionIndex].height;
 
         if (ImGui::BeginCombo("##Resolution", previewText.c_str())) {
             // Free aspect option
