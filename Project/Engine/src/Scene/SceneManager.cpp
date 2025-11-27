@@ -10,6 +10,8 @@
 #include "rapidjson/prettywriter.h"
 #include <Serialization/Serializer.hpp>
 #include "Utilities/GUID.hpp"
+#include "Engine.h"
+#include "Sound/AudioManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -42,8 +44,17 @@ void SceneManager::LoadTestScene() {
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath) {
 #if 1
+	// Reset game state to edit mode when loading a new scene
+	// This ensures play/pause state is cleared
+	if (Engine::IsPlayMode() || Engine::IsPaused()) {
+		Engine::SetGameState(GameState::EDIT_MODE);
+	}
+
+	// Stop all audio when loading a new scene
+	AudioManager::GetInstance().StopAll();
+
 	// Exit and clean up the current scene if it exists.
-	if (currentScene) 
+	if (currentScene)
     {
 		currentScene->Exit();
 
