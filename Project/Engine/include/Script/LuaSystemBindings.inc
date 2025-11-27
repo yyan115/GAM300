@@ -108,8 +108,12 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
     FUNCTION("Update", CharacterControllerWrappers::Update)
     FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("IsGrounded", CharacterControllerWrappers::IsGrounded)
     FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
+    FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
+
     FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
 
 END_SYSTEM()

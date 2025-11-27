@@ -343,6 +343,7 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     for (auto& e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
         if (rb.id.IsInvalid()) continue;
 
@@ -354,8 +355,18 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
             bi.GetPositionAndRotation(rb.id, p, r);
 
             // WRITE to ECS Transform (so renderer/other systems can see it)
+
+            //TEMP HACK
+            if (col.shapeType == ColliderShapeType::Capsule)
+            {
+                float offset = 1.0f;
+                tr.localPosition = tr.localPosition = Vector3D(p.GetX(), p.GetY() - offset, p.GetZ());
+            }
+            else
             tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
-            tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
+            //tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
+            tr.localRotation = Quaternion(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
+
             tr.isDirty = true;
 
 #ifdef __ANDROID__
@@ -400,3 +411,6 @@ void PhysicsSystem::Shutdown() {
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
 }
+
+
+//OFFSETCENTEROF MASS CAUSING THE DIFFERENCE BETWEEN USING CHARACTER AND NORMAL OBJECTS? GAP IN BETWEEN FLOOR AND ENTITY?
