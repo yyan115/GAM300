@@ -1370,7 +1370,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				if (rc.model)
 				{
 					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
-					component.center = rc.CalculateCenter(*rc.model);
+					//component.center = rc.CalculateCenter(*rc.model);
 				}
 			}
 			component.layer = Layers::MOVING;

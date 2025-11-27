@@ -1439,6 +1439,15 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
+        //check if entity has ModelRender
+        if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
+        {
+            ModelRenderComponent& rc = ecsManager.GetComponent<ModelRenderComponent>(selectedEntity);
+            collider.center = rc.CalculateCenter(*rc.model);
+        }
+
+
+
         // Get world position, rotation and scale from transform
         glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
         glm::quat worldRot = glm::quat(transform.localRotation.w, transform.localRotation.x, transform.localRotation.y, transform.localRotation.z); // Convert custom Quaternion to glm::quat
