@@ -29,11 +29,6 @@ void TextUtils::SetPosition(TextRenderComponent& comp, float x, float y, float z
     comp.is3D = false; // Setting 2D position
 }
 
-void TextUtils::SetScale(TextRenderComponent& comp, float newScale) 
-{
-    comp.scale = newScale;
-}
-
 void TextUtils::SetAlignment(TextRenderComponent& comp, TextRenderComponent::Alignment newAlignment)
 {
     comp.alignment = newAlignment;
@@ -57,11 +52,12 @@ void TextUtils::SetWorldPosition(TextRenderComponent& comp, float x, float y, fl
     SetWorldPosition(comp, Vector3D(x, y, z));
 }
 
-float TextUtils::GetEstimatedWidth(const TextRenderComponent& comp) 
+float TextUtils::GetEstimatedWidth(const TextRenderComponent& comp)
 {
-    if (comp.font) 
+    if (comp.font)
     {
-        return comp.font->GetTextWidth(comp.text, comp.scale);
+        // Use X scale for width (Unity-like behavior)
+        return comp.font->GetTextWidth(comp.text, comp.transformScale.x);
     }
     return 0.0f;
 }
@@ -69,7 +65,8 @@ float TextUtils::GetEstimatedWidth(const TextRenderComponent& comp)
 float TextUtils::GetEstimatedHeight(const TextRenderComponent& comp)
 {
     if (comp.font) {
-        return comp.font->GetTextHeight(comp.scale);
+        // Use Y scale for height (Unity-like behavior)
+        return comp.font->GetTextHeight(comp.transformScale.y);
     }
     return 0.0f;
 }

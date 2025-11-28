@@ -30,17 +30,18 @@
 
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
+#include <UI/Button/ButtonComponent.hpp>
 
 Entity fpsText;
 
 void SceneInstance::Initialize()
 {
 	// Initialize GraphicsManager first
-	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
+	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	// gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// Get the ECS manager for this scene
-	ECSManager &ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (!PostProcessingManager::GetInstance().Initialize())
 	{
@@ -49,7 +50,7 @@ void SceneInstance::Initialize()
 	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
-	auto *hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
 	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
@@ -92,7 +93,43 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.buttonSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Button system initialized");
 	ENGINE_PRINT("Scene Initialized\n");
+
+	// Create Test Button entity
+	{
+	Entity buttonEntity = ecsManager.CreateEntity();
+
+	// 1) Attach ScriptComponentData with ScriptData using the path directly
+	ScriptComponentData scriptComp;
+	ScriptData sd;
+
+	sd.scriptPath = "../../Resources/Scripts/template/testbutton.lua";
+	sd.scriptGuidStr = "123";       // optional: keep empty if not using GUID-based lookup
+	sd.enabled = true;
+	
+	scriptComp.scripts.push_back(sd);
+
+	// Attach ScriptComponentData
+	ecsManager.AddComponent<ScriptComponentData>(buttonEntity, scriptComp);
+
+	// 2) Attach ButtonComponent with binding that also uses the script path
+	ButtonComponent buttonData;
+
+	ButtonBinding binding;
+	binding.targetEntityGuidStr = "";    // empty = same entity
+	binding.scriptGuidStr = "123";     // not using GUID lookup
+	binding.functionName = "OnClick";
+	binding.callWithSelf = true;
+
+	// Add binding
+	buttonData.bindings.push_back(binding);
+	buttonData.interactable = true;
+
+	// Attach button data
+	ecsManager.AddComponent<ButtonComponent>(buttonEntity, buttonData);
+	}
 }
 
 void SceneInstance::InitializeJoltPhysics()
@@ -133,7 +170,7 @@ void SceneInstance::Update(double dt)
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
-
+	mainECS.buttonSystem->Update();
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
@@ -319,7 +356,7 @@ void SceneInstance::processInput(float deltaTime)
 	// Temp player controls for playable level
 	//  Backwards = +z
 
-	if (InputManager::GetKey(Input::Key::W))
+	/*if (InputManager::GetKey(Input::Key::W))
 	{
 		ENGINE_LOG_DEBUG("[ProcessInput] W Key Pressed");
 		Transform playerPos = mainECS.GetComponent<Transform>(player);
@@ -350,7 +387,7 @@ void SceneInstance::processInput(float deltaTime)
 		mainECS.transformSystem->SetLocalPosition(player, Vector3D(playerPos.localPosition.x + 0.01f, playerPos.localPosition.y, playerPos.localPosition.z));
 		mainECS.transformSystem->SetLocalRotation(player, Vector3D(0, 90, 0));
 		camera->ProcessKeyboard(RIGHT, 0.004f);
-	}
+	}*/
 
 	// Zoom with keys (N to zoom out, M to zoom in)
 	if (InputManager::GetKey(Input::Key::N))

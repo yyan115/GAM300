@@ -21,8 +21,7 @@ public:
     static void SetPosition(TextRenderComponent& comp, const Vector3D& newPosition);
     static void SetPosition(TextRenderComponent& comp, float x, float y, float z = 0.0f);
 
-    // Scale and alignment
-    static void SetScale(TextRenderComponent& comp, float newScale);
+    // Alignment (Note: Scale is now controlled via Transform component)
     static void SetAlignment(TextRenderComponent& comp, TextRenderComponent::Alignment newAlignment);
 
     // 3D world space positioning
