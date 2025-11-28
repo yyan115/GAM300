@@ -2074,7 +2074,7 @@ static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson)
                 }
                 else {
                     // Successfully deserialized, clear any pending state
-                    sd.pendingInstanceState.clear();
+                    sd.pendingInstanceState = instJson;
                 }
             }
 
