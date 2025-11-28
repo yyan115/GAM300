@@ -31,4 +31,7 @@ struct ColliderComponent {
 
 	ColliderComponent() = default;
 	~ColliderComponent() = default;
+
+	void SetEnabled(bool e) { enabled = e; }
+	bool IsEnabled() const { return enabled; }
 };

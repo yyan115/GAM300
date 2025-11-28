@@ -55,4 +55,7 @@ struct RigidBodyComponent {
 
 	RigidBodyComponent() = default;
 	~RigidBodyComponent() = default;
+
+	void SetEnabled(bool e) { enabled = e; }
+	bool IsEnabled() const { return enabled; }
 };

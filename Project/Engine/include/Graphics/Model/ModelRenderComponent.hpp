@@ -123,4 +123,6 @@ public:
 	bool HasAnimation() const { return animator != nullptr; }
 	void SetAnimator(Animator* anim) { animator = anim; }
 
+	void SetVisible(bool v) { isVisible = v; }
+	bool IsVisible() const { return isVisible; }
 };

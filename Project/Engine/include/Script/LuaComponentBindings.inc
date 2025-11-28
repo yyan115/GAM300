@@ -34,6 +34,11 @@ BEGIN_COMPONENT(NameComponent, "NameComponent")
     PROPERTY("name", &NameComponent::name)
 END_COMPONENT()
 
+BEGIN_COMPONENT(ModelRenderComponent, "ModelRenderComponent")
+    PROPERTY("isVisible", &ModelRenderComponent::isVisible)
+    METHOD("SetVisible", &ModelRenderComponent::SetVisible)
+END_COMPONENT()
+
 // ============================================================================
 // Animation Components
 // ============================================================================
@@ -199,6 +204,8 @@ BEGIN_COMPONENT(ColliderComponent, "ColliderComponent")
     PROPERTY("capsuleHalfHeight", &ColliderComponent::capsuleHalfHeight)
     PROPERTY("cylinderRadius", &ColliderComponent::cylinderRadius)
     PROPERTY("cylinderHalfHeight", &ColliderComponent::cylinderHalfHeight)
+    METHOD("SetEnabled", &ColliderComponent::SetEnabled)
+    METHOD("IsEnabled", &ColliderComponent::IsEnabled)
 END_COMPONENT()
 
 BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
@@ -214,6 +221,8 @@ BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
     PROPERTY("transform_dirty", &RigidBodyComponent::transform_dirty)
     PROPERTY("motion_dirty", &RigidBodyComponent::motion_dirty)
     PROPERTY("collider_seen_version", &RigidBodyComponent::collider_seen_version)
+    METHOD("SetEnabled", &RigidBodyComponent::SetEnabled)
+    METHOD("IsEnabled", &RigidBodyComponent::IsEnabled)
 END_COMPONENT()
 
 // ============================================================================

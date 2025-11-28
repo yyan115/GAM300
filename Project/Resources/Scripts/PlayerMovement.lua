@@ -94,16 +94,16 @@ return Component {
         local moveX, moveZ = 0.0, 0.0
 
         if Input.GetKey(Input.Key.W) then
-            moveZ = moveZ - 1.0   -- forward (-Z)
+            moveZ = moveZ + 1.0   -- forward (+Z)
         end
         if Input.GetKey(Input.Key.S) then
-            moveZ = moveZ + 1.0   -- backward (+Z)
+            moveZ = moveZ - 1.0   -- backward (-Z)
         end
         if Input.GetKey(Input.Key.A) then
-            moveX = moveX - 1.0   -- left
+            moveX = moveX + 1.0   -- left
         end
         if Input.GetKey(Input.Key.D) then
-            moveX = moveX + 1.0   -- right
+            moveX = moveX - 1.0   -- right
         end
 
         local len = math.sqrt(moveX * moveX + moveZ * moveZ)
