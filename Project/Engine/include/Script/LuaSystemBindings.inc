@@ -149,6 +149,30 @@ BEGIN_SYSTEM("Layer")
 END_SYSTEM()
 
 
+
+// ============================================================================
+// ANIMATION SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Animation")
+    FUNCTION("PlayClip",    AnimationWrappers::PlayClip)
+    FUNCTION("PlayOnce",    AnimationWrappers::PlayOnce)
+    FUNCTION("Pause",       AnimationWrappers::Pause)
+    FUNCTION("Stop",        AnimationWrappers::Stop)
+    FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
+    FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
+    FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
+
+END_SYSTEM()
+
+
+
+
+
+
+
+
+
 // ENGINE HELPERS
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
@@ -158,7 +182,6 @@ END_SYSTEM()
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================
-
 /*
 BEGIN_SYSTEM_NAMESPACE("Time")
     SYSTEM_FUNCTION("GetDeltaTime", TimeManager::GetDeltaTime)
