@@ -24,15 +24,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.69415
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 4.32242
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 2.00413
                                 }
                             ]
                         },
@@ -95,7 +95,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.69415
                                 },
                                 {
                                     "type": "float",
@@ -111,7 +111,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 4.32242
                                 },
                                 {
                                     "type": "float",
@@ -127,7 +127,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 2.00413
                                 },
                                 {
                                     "type": "float",
