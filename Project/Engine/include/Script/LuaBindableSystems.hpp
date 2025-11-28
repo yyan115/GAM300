@@ -352,7 +352,6 @@ namespace AudioManagerWrappers {
         AudioManager::GetInstance().SetGlobalPaused(paused);
     }
 }
-}
 
 #include "Animation/AnimationComponent.hpp"
 // ============================================================================
