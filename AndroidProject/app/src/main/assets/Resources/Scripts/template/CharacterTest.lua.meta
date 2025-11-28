@@ -1,7 +1,7 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001dd6dd68dabad1-00035422ce000001",
+        "guid": "0031b39e11372f4a-000367098e000001",
         "source": "../../Resources/Scripts/template/CharacterTest.lua",
         "compiled": "../../Resources/Scripts/template/CharacterTest.lua",
         "android_compiled": "Resources/Scripts/template/CharacterTest.lua"

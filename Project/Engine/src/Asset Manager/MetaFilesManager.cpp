@@ -17,7 +17,8 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 #ifndef ANDROID
 	//std::filesystem::path rootMetaFilePath(FileUtilities::GetSolutionRootDir() / assetPath);
 	std::string extension = metaFilePath.extension().string();
-	if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end()) {
+	if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end() ||
+		ResourceManager::GetInstance().IsExtensionShader(extension)) {
 		metaFilePath = (metaFilePath.parent_path() / metaFilePath.stem()).generic_string() + ".meta";
 		//rootMetaFilePath = (rootMetaFilePath.parent_path() / rootMetaFilePath.stem()).generic_string() + ".meta";
 	}

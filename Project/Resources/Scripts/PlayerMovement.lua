@@ -154,161 +154,87 @@ return Component {
         -- Cache ground level
         local pos = getWorldPosition(self)
         self._groundY = pos.y
-        
-        -- Initial position broadcast
+
+        -- initial broadcast
         if event_bus and event_bus.publish then
-            event_bus.publish("player_position", pos)
+            event_bus.publish("player_position", {
+                x = pos.x,
+                y = pos.y,
+                z = pos.z,
+            })
         end
     end,
 
     Update = function(self, dt)
-        -- Cache frequently accessed values
-        local audio = self._audio
-        local animator = self._animator
-        local isGrounded = self._isGrounded
-        
-        ----------------------------------------
-        -- 1) Input processing
-        ----------------------------------------
-        local moveX, moveZ = 0, 0
-        local currInput = 0
-        
-        if Input.GetKey(Input.Key.W) then moveZ = -1; currInput = currInput + 1 end
-        if Input.GetKey(Input.Key.S) then moveZ = moveZ + 1; currInput = currInput + 2 end
-        if Input.GetKey(Input.Key.A) then moveX = -1; currInput = currInput + 4 end
-        if Input.GetKey(Input.Key.D) then moveX = moveX + 1; currInput = currInput + 8 end
-        
-        -- Detect new key press
-        local prevInput = self._prevInput
-        local newPress = currInput > 0 and currInput ~= prevInput
-        self._prevInput = currInput
-        
-        -- Normalize movement
-        local lenSq = moveX * moveX + moveZ * moveZ
-        local hasInput = lenSq > 0.0001
-        if hasInput then
-            local invLen = 1.0 / sqrt(lenSq)
-            moveX, moveZ = moveX * invLen, moveZ * invLen
+        --------------------------------------
+        -- 1) Horizontal input (WASD)
+        --------------------------------------
+        local moveX, moveZ = 0.0, 0.0
+
+        if Input.GetKey(Input.Key.W) then
+            moveZ = moveZ + 1.0   -- forward (+Z)
         end
-        
-        local speed = self.moveSpeed
-        local dx, dz = moveX * speed * dt, moveZ * speed * dt
-        
-        ----------------------------------------
-        -- 2) Rotation (only when moving)
-        ----------------------------------------
-        if hasInput then
-            local tw, tx, ty, tz = directionToQuaternion(moveX, moveZ)
-            local cw, cx, cy, cz = self:GetRotation()
-            if cw then
-                local t = min(1.0, self.rotationSpeed * dt)
-                self:SetRotation(lerpQuaternion(cw, cx, cy, cz, tw, tx, ty, tz, t))
-            else
-                self:SetRotation(tw, tx, ty, tz)
-            end
+        if Input.GetKey(Input.Key.S) then
+            moveZ = moveZ - 1.0   -- backward (-Z)
         end
-        
-        ----------------------------------------
-        -- 3) Walking state & animation
-        ----------------------------------------
-        local isWalking = hasInput and isGrounded
-        local wasWalking = self._isWalking
-        local isAttacking = self._isAttacking
-        local isJumping = self._isJumping
-        
-        if not isAttacking and not isJumping then
-            if isWalking and not wasWalking then
-                if animator then animator:PlayClip(self._walkAnimationClip, true) end
-                self._footstepTimer = 0
-            elseif not isWalking and wasWalking then
-                if animator then animator:PlayClip(self._idleAnimationClip, true) end
-            end
+        if Input.GetKey(Input.Key.A) then
+            moveX = moveX + 1.0   -- left
         end
-        self._isWalking = isWalking
-        
-        ----------------------------------------
-        -- 4) Footstep SFX
-        ----------------------------------------
-        if isGrounded and audio then
-            if newPress and hasInput then
-                playRandomSFX(audio, self.footstepSFXClips)
-                self._footstepTimer = 0
-            elseif isWalking then
-                self._footstepTimer = self._footstepTimer + dt
-                if self._footstepTimer >= self.footstepInterval then
-                    playRandomSFX(audio, self.footstepSFXClips)
-                    self._footstepTimer = 0
-                end
-            end
+        if Input.GetKey(Input.Key.D) then
+            moveX = moveX - 1.0   -- right
         end
-        
-        ----------------------------------------
-        -- 5) Jump & Gravity
-        ----------------------------------------
+
+        local len = math.sqrt(moveX * moveX + moveZ * moveZ)
+        if len > 0.0001 then
+            moveX = moveX / len
+            moveZ = moveZ / len
+        end
+
+        local speed = self.moveSpeed or 5.0
+        local dx = moveX * speed * dt
+        local dz = moveZ * speed * dt
+
+        --------------------------------------
+        -- 2) Jump + simple gravity
+        --------------------------------------
         local pos = getWorldPosition(self)
-        
-        if isGrounded and Input.GetKeyDown(Input.Key.Space) then
-            self._velY = self.jumpSpeed
+
+        -- NOTE: if this errors with nil, try Input.Key.SPACE
+        if self._isGrounded and Input.GetKeyDown(Input.Key.Space) then
+            self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
-            self._isJumping = true
-            isGrounded = false
-            
-            if animator and not isAttacking then
-                animator:PlayOnce(self._jumpAnimationClip)
-            end
-            playRandomSFX(audio, self.jumpSFXClips)
+            print("[LUA][PlayerMovement] Jump!")
         end
-        
-        if not isGrounded then
-            self._velY = self._velY + self.gravity * dt
+
+        if not self._isGrounded then
+            self._velY = self._velY + (self.gravity or -20.0) * dt
         end
-        
-        local newY = pos.y + self._velY * dt
-        
-        -- Landing check
+
+        local dy    = self._velY * dt
+        local newY  = pos.y + dy
+
         if newY <= self._groundY then
-            newY = self._groundY
-            self._velY = 0
+            newY          = self._groundY
+            self._velY    = 0.0
             self._isGrounded = true
-            
-            if self._isJumping then
-                self._isJumping = false
-                playRandomSFX(audio, self.landingSFXClips)
-                
-                if not isAttacking and animator then
-                    animator:PlayClip(isWalking and self._walkAnimationClip or self._idleAnimationClip, true)
-                end
-            end
         end
-        
-        ----------------------------------------
-        -- 6) Attack
-        ----------------------------------------
-        if isAttacking then
-            self._attackTimer = self._attackTimer - dt
-            if self._attackTimer <= 0 then
-                self._isAttacking = false
-                if animator and self._isGrounded then
-                    animator:PlayClip(self._isWalking and self._walkAnimationClip or self._idleAnimationClip, true)
-                end
-            end
-        end
-        
-        if Input.GetMouseButtonDown(0) and not isAttacking then
-            self._isAttacking = true
-            self._attackTimer = self.attackDuration
-            if animator then animator:PlayOnce(self._attackAnimationClip) end
-            playRandomSFX(audio, self.attackSFXClips)
-        end
-        
-        ----------------------------------------
-        -- 7) Apply movement
-        ----------------------------------------
-        setWorldPosition(self, pos.x + dx, newY, pos.z + dz)
-        
-        -- Position broadcast
+
+        --------------------------------------
+        -- 3) Apply movement to Transform
+        --------------------------------------
+        local newX = pos.x + dx
+        local newZ = pos.z + dz
+
+        setWorldPosition(self, newX, newY, newZ)
+
+        -- broadcast player world position for the camera
         if event_bus and event_bus.publish then
-            event_bus.publish("player_position", getWorldPosition(self))
+            local p = getWorldPosition(self)
+            event_bus.publish("player_position", {
+                x = p.x,
+                y = p.y,
+                z = p.z,
+            })
         end
     end,
 

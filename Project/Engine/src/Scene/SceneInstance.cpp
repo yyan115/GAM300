@@ -358,50 +358,50 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKeyDown(Input::Key::SPACE))
 		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
-	// MADE IT so that you must drag to look around
-	//
-	// Only process mouse look when left mouse button is held down
-	static float lastX = 0.0f;
-	static float lastY = 0.0f;
-	static bool firstMouse = true;
+	//// MADE IT so that you must drag to look around
+	////
+	//// Only process mouse look when left mouse button is held down
+	//static float lastX = 0.0f;
+	//static float lastY = 0.0f;
+	//static bool firstMouse = true;
 
-	if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
-	{
-		float xpos = (float)InputManager::GetMouseX();
-		float ypos = (float)InputManager::GetMouseY();
+	//if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
+	//{
+	//	float xpos = (float)InputManager::GetMouseX();
+	//	float ypos = (float)InputManager::GetMouseY();
 
-		// Reset firstMouse when starting a new mouse drag (fixes touch jump on Android)
-		// Check for large jumps in mouse position which indicates a new touch
-		if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT) || firstMouse)
-		{
-			firstMouse = false;
-			lastX = xpos;
-			lastY = ypos;
-			return; // Skip this frame to prevent jump
-		}
+	//	// Reset firstMouse when starting a new mouse drag (fixes touch jump on Android)
+	//	// Check for large jumps in mouse position which indicates a new touch
+	//	if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT) || firstMouse)
+	//	{
+	//		firstMouse = false;
+	//		lastX = xpos;
+	//		lastY = ypos;
+	//		return; // Skip this frame to prevent jump
+	//	}
 
-		// Also check for large position jumps (indicates finger lifted and touched elsewhere) - fixed jumps on desktop also as a side effect (intended to be ifdef)
-		float positionJump = sqrt((xpos - lastX) * (xpos - lastX) + (ypos - lastY) * (ypos - lastY));
-		if (positionJump > 100.0f) // Threshold for detecting new touch
-		{
-			lastX = xpos;
-			lastY = ypos;
-			return; // Skip this frame to prevent jump
-		}
+	//	// Also check for large position jumps (indicates finger lifted and touched elsewhere) - fixed jumps on desktop also as a side effect (intended to be ifdef)
+	//	float positionJump = sqrt((xpos - lastX) * (xpos - lastX) + (ypos - lastY) * (ypos - lastY));
+	//	if (positionJump > 100.0f) // Threshold for detecting new touch
+	//	{
+	//		lastX = xpos;
+	//		lastY = ypos;
+	//		return; // Skip this frame to prevent jump
+	//	}
 
-		float xoffset = xpos - lastX;
-		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	//	float xoffset = xpos - lastX;
+	//	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-		lastX = xpos;
-		lastY = ypos;
+	//	lastX = xpos;
+	//	lastY = ypos;
 
-		camera->ProcessMouseMovement(xoffset, yoffset);
-	}
-	else
-	{
-		// When mouse button is released, reset for next touch
-		firstMouse = true;
-	}
+	//	camera->ProcessMouseMovement(xoffset, yoffset);
+	//}
+	//else
+	//{
+	//	// When mouse button is released, reset for next touch
+	//	firstMouse = true;
+	//}
 
 	if (InputManager::GetKeyDown(Input::Key::H))
 	{

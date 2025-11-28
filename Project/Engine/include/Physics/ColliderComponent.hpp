@@ -32,4 +32,7 @@ struct ColliderComponent {
 	Vector3D center = { 0,0,0 };									//Center of the model , calculated in InspectorCustomRender 
 	ColliderComponent() = default;
 	~ColliderComponent() = default;
+
+	void SetEnabled(bool e) { enabled = e; }
+	bool IsEnabled() const { return enabled; }
 };

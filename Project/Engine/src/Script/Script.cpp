@@ -80,7 +80,8 @@ std::string Script::CompileToResource(const std::string& assetPath, bool forAndr
         assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
 
         // Ensure parent directories exist
-        std::filesystem::path outputPath(assetPathAndroid);
+        std::filesystem::path outputPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(assetPathAndroid));
+        assetPathAndroid = outputPath.generic_string();
         std::filesystem::create_directories(outputPath.parent_path());
 
         try {

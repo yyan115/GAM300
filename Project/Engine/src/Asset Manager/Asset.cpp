@@ -20,6 +20,8 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	else {
 		std::string relativePath = assetPath.substr(assetPath.find("Resources"));
 		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / relativePath).generic_string() + ".meta";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(metaFilePath));
+		metaFilePath = newPath.generic_string();
 	}
 	GUID_string guidStr = GUIDUtilities::ConvertGUID128ToString(guid128);
 

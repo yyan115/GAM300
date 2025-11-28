@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c26273a9e35-00036021f6000015",
+        "source": "../../Resources/Models/Environment/_InUse/Pillar 2.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/Pillar 2.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/Pillar 2_android.mesh"
+    }
+}

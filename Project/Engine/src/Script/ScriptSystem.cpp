@@ -13,6 +13,7 @@
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
 #include "Transform/TransformComponent.hpp"
+#include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include <fstream>
 #include <sstream>

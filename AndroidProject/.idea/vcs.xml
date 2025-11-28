@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../Project/Build/android-debug/_deps/joltphysics-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../Project/vcpkg" vcs="Git" />
   </component>
 </project>
