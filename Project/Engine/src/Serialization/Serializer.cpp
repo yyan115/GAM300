@@ -1405,7 +1405,7 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                 }
             }
             if (modelComp.shaderGUID.high != 0 || modelComp.shaderGUID.low != 0) {
-                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+                std::string shaderPath = ResourceManager::GetInstance().GetPlatformShaderPath("default");
                 if (!shaderPath.empty()) {
                     modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
                 }
@@ -1479,7 +1479,7 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                 }
             }
             if (spriteComp.shaderGUID.high != 0 || spriteComp.shaderGUID.low != 0) {
-                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
+                std::string shaderPath = ResourceManager::GetInstance().GetPlatformShaderPath("sprite");
                 if (!shaderPath.empty()) {
                     spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
                 }

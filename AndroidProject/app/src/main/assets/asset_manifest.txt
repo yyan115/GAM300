@@ -32,9 +32,144 @@ Resources/Audio/sfx/Footsteps Cave_5.wav
 Resources/Audio/sfx/Footsteps Cave_5.wav.meta
 Resources/Audio/sfx/Footsteps Cave_6.wav
 Resources/Audio/sfx/Footsteps Cave_6.wav.meta
+Resources/Audio/InUse/CutScenes/CutSceneBGM.wav
+Resources/Audio/InUse/CutScenes/CutSceneBGM.wav.meta
+Resources/Audio/InUse/Loading/EncounterFlute.wav
+Resources/Audio/InUse/Loading/EncounterFlute.wav.meta
+Resources/Audio/InUse/M3_GameLevel/04.Snow_Day-Night_Cold_Wind_Loop.wav
+Resources/Audio/InUse/M3_GameLevel/04.Snow_Day-Night_Cold_Wind_Loop.wav.meta
+Resources/Audio/InUse/M3_GameLevel/10Suns_WalkAbout_BGM1_Loop.wav
+Resources/Audio/InUse/M3_GameLevel/10Suns_WalkAbout_BGM1_Loop.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack10.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack10.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack2.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack3.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack4.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack5.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack6.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack6.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack7.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack7.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack8.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack8.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack9.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack9.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry1.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry2.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry3.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap1.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap4.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap5.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyFlap5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage1.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage2.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage3.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage4.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/HeavyDamage4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage1.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage2.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage3.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage4.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage5.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle-81020.mp3
+Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle-81020.mp3.meta
+Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav
+Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart1.wav
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart2.wav
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainSwoosh1.wav
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainSwoosh1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/clang-4-87972.mp3
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/clang-4-87972.mp3.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/GroundSlam1.wav
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/GroundSlam1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clang-284809.mp3
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clang-284809.mp3.meta
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clink-415813.wav
+Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clink-415813.wav.meta
+Resources/Audio/InUse/M3_GameLevel/match-lighting-candle-81020.mp3
+Resources/Audio/InUse/M3_GameLevel/match-lighting-candle-81020.mp3.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Fight1.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Fight1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Fight2.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Fight2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_1.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_2.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_3.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_4.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_5.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_6.wav
+Resources/Audio/InUse/M3_GameLevel/Player/Footsteps Cave_6.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone1.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone2.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone3.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone4.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone5.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStone5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStoneWithVoice.wav
+Resources/Audio/InUse/M3_GameLevel/Player/JumpOnStoneWithVoice.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone1.wav
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone2.wav
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone3.wav
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone3.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone4.wav
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone4.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone5.wav
+Resources/Audio/InUse/M3_GameLevel/Player/LandOnStone5.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt1.wav
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt1.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt2.wav
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt2.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt3.wav
+Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt3.wav.meta
+Resources/Audio/InUse/MainMenu/MainMenuBGM.wav
+Resources/Audio/InUse/MainMenu/MainMenuBGM.wav.meta
+Resources/Audio/InUse/MainMenu/MouseClick1.mp3
+Resources/Audio/InUse/MainMenu/MouseClick1.mp3.meta
+Resources/Audio/InUse/MainMenu/MouseClick2.wav
+Resources/Audio/InUse/MainMenu/MouseClick2.wav.meta
 Resources/Fonts/fa-solid-900.font
 Resources/Fonts/fa-solid-900.ttf
 Resources/Fonts/fa-solid-900.ttf.meta
+Resources/Fonts/InknutAntiqua-Regular.font
+Resources/Fonts/InknutAntiqua-Regular.ttf
+Resources/Fonts/InknutAntiqua-Regular.ttf.meta
 Resources/Fonts/Kenney Mini.font
 Resources/Fonts/Kenney Mini.ttf
 Resources/Fonts/Kenney Mini.ttf.meta
@@ -43,6 +178,8 @@ Resources/Inter.ttf
 Resources/Inter.ttf.meta
 Resources/Materials/backpack_Scene_-_Root.mat
 Resources/Materials/backpack_Scene_-_Root.mat.meta
+Resources/Materials/Candle1_Candle1.mat
+Resources/Materials/Candle1_Candle1.mat.meta
 Resources/Materials/cube_backup_initialShadingGroup.mat
 Resources/Materials/cube_backup_initialShadingGroup.mat.meta
 Resources/Materials/cube_initialShadingGroup.mat
@@ -59,6 +196,10 @@ Resources/Materials/JapaneseSmallWall2_SideWall2.mat
 Resources/Materials/JapaneseSmallWall2_SideWall2.mat.meta
 Resources/Materials/JapaneseSmallWall_SideWall2.mat
 Resources/Materials/JapaneseSmallWall_SideWall2.mat.meta
+Resources/Materials/JapaneseToriBtm_M_Torii_Red_Base.mat
+Resources/Materials/JapaneseToriBtm_M_Torii_Red_Base.mat.meta
+Resources/Materials/JapaneseToriTop_M_Torii_Base2.mat
+Resources/Materials/JapaneseToriTop_M_Torii_Base2.mat.meta
 Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat
 Resources/Materials/Kachujin G Rosales_kachujin_MAT.mat.meta
 Resources/Materials/Kachujin G Rosales_kachujin_MAT_.mat
@@ -69,12 +210,25 @@ Resources/Materials/Kachujin_kachujin_MAT_.mat
 Resources/Materials/Kachujin_kachujin_MAT_.mat.meta
 Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat
 Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat.meta
+Resources/Materials/Pillar 2_Stone-Pillar-Ancient.mat
+Resources/Materials/Pillar 2_Stone-Pillar-Ancient.mat.meta
 Resources/Materials/road_C_Material.002.mat
 Resources/Materials/road_C_Material.002.mat.meta
+Resources/Materials/Rock Flat_stone.001.mat
+Resources/Materials/Rock Flat_stone.001.mat.meta
 Resources/Materials/Roof_Roof.001.mat
 Resources/Materials/Roof_Roof.001.mat.meta
 Resources/Materials/SideWall2_OldConcreto.mat
 Resources/Materials/SideWall2_OldConcreto.mat.meta
+Resources/Materials/Small Stairs.mat.meta
+Resources/Materials/Small Stairs_000000.002.mat
+Resources/Materials/Small Stairs_000000.002.mat.meta
+Resources/Materials/SquarePedestral_podsokl.mat
+Resources/Materials/SquarePedestral_podsokl.mat.meta
+Resources/Materials/Wall Pillar.mat
+Resources/Materials/Wall Pillar.mat.meta
+Resources/Materials/Wall Pillar_ruin_brick_pillar_1.mat
+Resources/Materials/Wall Pillar_ruin_brick_pillar_1.mat.meta
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -102,18 +256,12 @@ Resources/Models/cube.obj.meta
 Resources/Models/cube_backup.mesh
 Resources/Models/cube_backup.obj
 Resources/Models/cube_backup.obj.meta
-Resources/Models/Environment/JapaneseSmallWall.mesh
-Resources/Models/Environment/JapaneseSmallWall.obj
-Resources/Models/Environment/JapaneseSmallWall.obj.meta
 Resources/Models/Environment/JapaneseSmallWall2.mesh
 Resources/Models/Environment/JapaneseSmallWall2.obj
 Resources/Models/Environment/JapaneseSmallWall2.obj.meta
 Resources/Models/Environment/Kachujin G Rosales.fbx
 Resources/Models/Environment/Kachujin G Rosales.fbx.meta
 Resources/Models/Environment/Kachujin G Rosales.mesh
-Resources/Models/Environment/road_C.fbx
-Resources/Models/Environment/road_C.fbx.meta
-Resources/Models/Environment/road_C.mesh
 Resources/Models/Environment/Roof.fbx
 Resources/Models/Environment/Roof.fbx.meta
 Resources/Models/Environment/Roof.mesh
@@ -123,6 +271,36 @@ Resources/Models/Environment/SideWall2.fbx.meta
 Resources/Models/Environment/SideWall2.mesh
 Resources/Models/Environment/SideWall2.png
 Resources/Models/Environment/SideWall2.png.meta
+Resources/Models/Environment/InUse/Candle1.fbx
+Resources/Models/Environment/InUse/Candle1.fbx.meta
+Resources/Models/Environment/InUse/Candle1.mesh
+Resources/Models/Environment/InUse/JapaneseSmallWall.mesh
+Resources/Models/Environment/InUse/JapaneseSmallWall.obj
+Resources/Models/Environment/InUse/JapaneseSmallWall.obj.meta
+Resources/Models/Environment/InUse/JapaneseToriBtm.fbx
+Resources/Models/Environment/InUse/JapaneseToriBtm.fbx.meta
+Resources/Models/Environment/InUse/JapaneseToriBtm.mesh
+Resources/Models/Environment/InUse/JapaneseToriTop.fbx
+Resources/Models/Environment/InUse/JapaneseToriTop.fbx.meta
+Resources/Models/Environment/InUse/JapaneseToriTop.mesh
+Resources/Models/Environment/InUse/Pillar 2.fbx
+Resources/Models/Environment/InUse/Pillar 2.fbx.meta
+Resources/Models/Environment/InUse/Pillar 2.mesh
+Resources/Models/Environment/InUse/road_C.fbx
+Resources/Models/Environment/InUse/road_C.fbx.meta
+Resources/Models/Environment/InUse/road_C.mesh
+Resources/Models/Environment/InUse/Rock Flat.fbx
+Resources/Models/Environment/InUse/Rock Flat.fbx.meta
+Resources/Models/Environment/InUse/Rock Flat.mesh
+Resources/Models/Environment/InUse/Small Stairs.fbx
+Resources/Models/Environment/InUse/Small Stairs.fbx.meta
+Resources/Models/Environment/InUse/Small Stairs.mesh
+Resources/Models/Environment/InUse/SquarePedestral.fbx
+Resources/Models/Environment/InUse/SquarePedestral.fbx.meta
+Resources/Models/Environment/InUse/SquarePedestral.mesh
+Resources/Models/Environment/InUse/Wall Pillar.fbx
+Resources/Models/Environment/InUse/Wall Pillar.fbx.meta
+Resources/Models/Environment/InUse/Wall Pillar.mesh
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
@@ -148,7 +326,8 @@ Resources/Models/Kachujin/Kachujin_normal.png.meta
 Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
-Resources/Models/SideWall2.mesh
+Resources/Scripts/camera_follow.lua
+Resources/Scripts/camera_follow.lua.meta
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -173,6 +352,10 @@ Resources/Scripts/extension/transform_mixin.lua
 Resources/Scripts/extension/transform_mixin.lua.meta
 Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
+Resources/Scripts/PlayerMovement.lua
+Resources/Scripts/PlayerMovement.lua.meta
+Resources/Scripts/rigidbody__test.lua
+Resources/Scripts/rigidbody__test.lua.meta
 Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/ai_patrol.lua.meta
 Resources/Scripts/template/CharacterTest.lua
@@ -195,6 +378,8 @@ Resources/Scripts/template/simple_mover.lua
 Resources/Scripts/template/simple_mover.lua.meta
 Resources/Scripts/template/test.lua
 Resources/Scripts/template/test.lua.meta
+Resources/Scripts/template/testbutton.lua
+Resources/Scripts/template/testbutton.lua.meta
 Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
 Resources/Scripts/test_audio.lua
@@ -205,77 +390,76 @@ Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
 Resources/Shaders/debugandroid.frag
 Resources/Shaders/debugandroid.meta
-Resources/Shaders/debugandroid.shader
 Resources/Shaders/debugandroid.vert
 Resources/Shaders/default.frag
 Resources/Shaders/default.meta
-Resources/Shaders/default.shader
 Resources/Shaders/default.vert
 Resources/Shaders/defaultandroid.frag
 Resources/Shaders/defaultandroid.meta
-Resources/Shaders/defaultandroid.shader
 Resources/Shaders/defaultandroid.vert
 Resources/Shaders/light.frag
 Resources/Shaders/light.meta
-Resources/Shaders/light.shader
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
-Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.frag
 Resources/Shaders/particle.meta
-Resources/Shaders/particle.shader
 Resources/Shaders/particle.vert
 Resources/Shaders/particleandroid.frag
 Resources/Shaders/particleandroid.meta
-Resources/Shaders/particleandroid.shader
 Resources/Shaders/particleandroid.vert
 Resources/Shaders/skybox.frag
 Resources/Shaders/skybox.meta
-Resources/Shaders/skybox.shader
 Resources/Shaders/skybox.vert
 Resources/Shaders/skyboxandroid.frag
 Resources/Shaders/skyboxandroid.meta
-Resources/Shaders/skyboxandroid.shader
 Resources/Shaders/skyboxandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
-Resources/Shaders/sprite.shader
 Resources/Shaders/sprite.vert
 Resources/Shaders/spriteandroid.frag
 Resources/Shaders/spriteandroid.meta
-Resources/Shaders/spriteandroid.shader
 Resources/Shaders/spriteandroid.vert
 Resources/Shaders/text.frag
 Resources/Shaders/text.meta
-Resources/Shaders/text.shader
 Resources/Shaders/text.vert
 Resources/Shaders/textandroid.frag
 Resources/Shaders/textandroid.meta
-Resources/Shaders/textandroid.shader
 Resources/Shaders/textandroid.vert
 Resources/Shaders/tonemapping.frag
 Resources/Shaders/tonemapping.meta
-Resources/Shaders/tonemapping.shader
 Resources/Shaders/tonemapping.vert
 Resources/Shaders/tonemappingandroid.frag
 Resources/Shaders/tonemappingandroid.meta
-Resources/Shaders/tonemappingandroid.shader
 Resources/Shaders/tonemappingandroid.vert
 Resources/Shaders/virtualcontrolsandroid.frag
 Resources/Shaders/virtualcontrolsandroid.meta
-Resources/Shaders/virtualcontrolsandroid.shader
 Resources/Shaders/virtualcontrolsandroid.vert
 Resources/Textures/awesomeface.dds
 Resources/Textures/awesomeface.png
 Resources/Textures/awesomeface.png.meta
+Resources/Textures/Candle [Albedo].dds
+Resources/Textures/Candle [Albedo].png
+Resources/Textures/Candle [Albedo].png.meta
+Resources/Textures/Candle [Normal].dds
+Resources/Textures/Candle [Normal].png
+Resources/Textures/Candle [Normal].png.meta
+Resources/Textures/CandleFlame.dds
+Resources/Textures/CandleFlame.png
+Resources/Textures/CandleFlame.png.meta
+Resources/Textures/cobbleStoneRoadNormal.dds
+Resources/Textures/cobbleStoneRoadNormal.jpg
+Resources/Textures/cobbleStoneRoadNormal.jpg.meta
 Resources/Textures/container2.dds
 Resources/Textures/container2.png
 Resources/Textures/container2.png.meta
 Resources/Textures/container2_specular.dds
 Resources/Textures/container2_specular.png
 Resources/Textures/container2_specular.png.meta
+Resources/Textures/Flat Rock.dds
+Resources/Textures/Flat Rock.jpg
+Resources/Textures/Flat Rock.jpg.meta
 Resources/Textures/idle_1.dds
 Resources/Textures/idle_1.png
 Resources/Textures/idle_1.png.meta
@@ -285,9 +469,18 @@ Resources/Textures/idle_2.png.meta
 Resources/Textures/idle_3.dds
 Resources/Textures/idle_3.png
 Resources/Textures/idle_3.png.meta
+Resources/Textures/japaneseWallDiffuse.dds
+Resources/Textures/japaneseWallDiffuse.png
+Resources/Textures/japaneseWallDiffuse.png.meta
+Resources/Textures/japaneseWallNormal.dds
+Resources/Textures/japaneseWallNormal.png
+Resources/Textures/japaneseWallNormal.png.meta
 Resources/Textures/Nightshade_diffuse.dds
 Resources/Textures/Nightshade_diffuse.png
 Resources/Textures/Nightshade_diffuse.png.meta
+Resources/Textures/Pillar 2.dds
+Resources/Textures/Pillar 2.png
+Resources/Textures/Pillar 2.png.meta
 Resources/Textures/road_C_fix.dds
 Resources/Textures/road_C_fix.jpg
 Resources/Textures/road_C_fix.jpg.meta
@@ -297,6 +490,21 @@ Resources/Textures/Roof.jpg.meta
 Resources/Textures/SideWall2.dds
 Resources/Textures/SideWall2.png
 Resources/Textures/SideWall2.png.meta
+Resources/Textures/Small Stairs.dds
+Resources/Textures/Small Stairs.jpeg
+Resources/Textures/Small Stairs.jpeg.meta
+Resources/Textures/SquarePedestral.dds
+Resources/Textures/SquarePedestral.png
+Resources/Textures/SquarePedestral.png.meta
+Resources/Textures/ToriBottom.dds
+Resources/Textures/ToriBottom.jpg
+Resources/Textures/ToriBottom.jpg.meta
+Resources/Textures/ToriTopjpg.dds
+Resources/Textures/ToriTopjpg.jpg
+Resources/Textures/ToriTopjpg.jpg.meta
+Resources/Textures/Wall Pillar.dds
+Resources/Textures/Wall Pillar.jpg
+Resources/Textures/Wall Pillar.jpg.meta
 Resources/Textures/wooden_container.dds
 Resources/Textures/wooden_container.jpg
 Resources/Textures/wooden_container.jpg.meta

@@ -44,6 +44,7 @@ void SceneManager::LoadTestScene() {
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath) {
 #if 1
+#ifdef EDITOR
 	// Reset game state to edit mode when loading a new scene
 	// This ensures play/pause state is cleared
 	if (Engine::IsPlayMode() || Engine::IsPaused()) {
@@ -52,6 +53,7 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 
 	// Stop all audio when loading a new scene
 	AudioManager::GetInstance().StopAll();
+#endif
 
 	// Exit and clean up the current scene if it exists.
 	if (currentScene)
