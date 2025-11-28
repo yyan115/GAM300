@@ -31,6 +31,6 @@ return Component {
         local dz = self.directionZ * self.speed * dt
         
         -- Move the entity (handles all the complexity internally)
-        self:Move(1, 0, 0)
+        self:Move(dx, dy, dz)
     end
 }
