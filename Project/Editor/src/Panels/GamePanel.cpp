@@ -74,27 +74,11 @@ void GamePanel::OnImGuiRender() {
             unfocusedFrameCounter = 0;
         }
 
-        // Calculate display viewport dimensions
-        // For 2D mode: apply aspect ratio preservation (letterboxing)
-        // For 3D mode: use full available space without forcing aspect ratio
+        // Calculate display viewport dimensions with aspect ratio preservation
         int displayWidth, displayHeight;
         float offsetX, offsetY;
-
-        EditorState& editorState = EditorState::GetInstance();
-        bool is2DMode = editorState.Is2DMode();
-
-        if (is2DMode) {
-            // 2D mode: apply aspect ratio preservation for consistent rendering
-            CalculateViewportDimensions(availableWidth, availableHeight,
-                                      displayWidth, displayHeight, offsetX, offsetY);
-        } else {
-            // 3D mode: use full available space - no letterboxing
-            displayWidth = availableWidth;
-            displayHeight = availableHeight;
-            offsetX = 0.0f;
-            offsetY = 0.0f;
-        }
-
+        CalculateViewportDimensions(availableWidth, availableHeight,
+                                  displayWidth, displayHeight, offsetX, offsetY);
         RunTimeVar::window.gameViewportWidth = displayWidth;
         RunTimeVar::window.gameViewportHeight = displayHeight;
 
@@ -117,14 +101,6 @@ void GamePanel::OnImGuiRender() {
         // Only render if we should (optimization for unfocused panels)
         if (shouldRender) {
             auto& gfx = GraphicsManager::GetInstance();
-
-            // Set target game resolution only for 2D mode rendering synchronization
-            // For 3D mode, we use the viewport dimensions directly
-            if (is2DMode) {
-                int targetWidth, targetHeight;
-                GetTargetGameResolution(targetWidth, targetHeight);
-                gfx.SetTargetGameResolution(targetWidth, targetHeight);
-            }
 
             // Set viewport to actual render dimensions
             gfx.SetViewportSize(renderWidth, renderHeight);

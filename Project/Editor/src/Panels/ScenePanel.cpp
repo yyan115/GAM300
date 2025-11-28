@@ -710,12 +710,10 @@ void ScenePanel::OnImGuiRender()
             DrawAudioGizmos();
             DrawLightGizmos();
 
-            // Draw selection outline for selected entities (3D only)
+            // Draw selection outline for selected entities
             auto selectedEntities = GUIManager::GetSelectedEntities();
             for (auto entity : selectedEntities) {
-                if (RaycastUtil::IsEntity3D(entity)) {
-                    DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
-                }
+                DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
             }
 
             // View gizmo in the corner
