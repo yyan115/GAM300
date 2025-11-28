@@ -45,7 +45,7 @@ return Component {
 
     fields = {
         followDistance   = 5.0,
-        heightOffset     = 0.0,
+        heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,
         minPitch         = -30.0,

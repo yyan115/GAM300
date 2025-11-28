@@ -5,6 +5,7 @@ local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 local Input     = _G.Input
+_G.player_is_attacking = _G.player_is_attacking or false
 
 local function clamp(x, minv, maxv)
     if x < minv then return minv end
@@ -26,22 +27,22 @@ return Component {
 
         -- Combo config
         maxComboSteps   = 3,
-        comboResetTime  = 0.6, -- currently not heavily used but kept for tuning
+        comboResetTime  = 1.3, -- currently not heavily used but kept for tuning
 
         -- Step 1 timings
-        attack1Duration  = 0.40,
-        attack1HitStart  = 0.15,
-        attack1HitEnd    = 0.30,
+        attack1Duration  = 2.0,
+        attack1HitStart  = 1.1,
+        attack1HitEnd    = 1.4,
 
         -- Step 2 timings
-        attack2Duration  = 0.45,
-        attack2HitStart  = 0.18,
-        attack2HitEnd    = 0.35,
+        attack2Duration  = 2.0,
+        attack2HitStart  = 1.1,
+        attack2HitEnd    = 1.4,
 
         -- Step 3 timings
-        attack3Duration  = 0.55,
-        attack3HitStart  = 0.20,
-        attack3HitEnd    = 0.40,
+        attack3Duration  = 2.0,
+        attack3HitStart  = 1.1,
+        attack3HitEnd    = 1.4,
 
         -- Animation names (hook these to your anim system)
         animSlash1 = "Slash1",
@@ -68,6 +69,16 @@ return Component {
         -- Unique IDs so each swing only hits an enemy once
         self._hitEventIdCounter = 0
         self._currentHitEventId = nil
+
+        -- Cache AnimationComponent
+        if self.GetComponent then
+            self._anim = self:GetComponent("AnimationComponent")
+            if self._anim then
+                print("[LUA][PlayerAttack] Found AnimationComponent")
+            else
+                print("[LUA][PlayerAttack] No AnimationComponent on player")
+            end
+        end
     end,
 
     OnDisable = function(self)
@@ -75,6 +86,8 @@ return Component {
         self._hitboxActive      = false
         self._currentHitEventId = nil
         self._comboIndex        = 0
+
+        _G.player_is_attacking = false
     end,
 
     ----------------------------------------------------------------------
@@ -84,20 +97,18 @@ return Component {
         self._time = self._time + dt
 
         -- ---- Input handling ----
-        local leftDown   = false
+        local leftDown    = false
         local leftPressed = false
 
         if Input and Input.GetMouseButton then
             leftDown = Input.GetMouseButton(Input.MouseButton.Left)
         end
 
-        -- Always compute edge ourselves to avoid buggy GetMouseButtonDown
+        -- Edge detect: emulate GetMouseButtonDown
         leftPressed = (leftDown and not self._prevLeftDown)
 
         if leftPressed then
             self._lastClickTime = self._time
-            -- optional: debug
-            -- print("[LUA][PlayerAttack] leftPressed true at t=" .. string.format("%.3f", self._time))
         end
 
         self._prevLeftDown = leftDown
@@ -145,6 +156,8 @@ return Component {
                 self._queuedNextSwing   = false
                 self._hitboxActive      = false
                 self._currentHitEventId = nil
+
+                _G.player_is_attacking = false
             end
         end
     end,
@@ -160,6 +173,10 @@ return Component {
         self._currentHitEventId = self._hitEventIdCounter
 
         print("[LUA][PlayerAttack] Start attack step " .. tostring(stepIndex))
+
+        _G.player_is_attacking = true
+
+        -- 🔧 FIXED: use ':' not '->'
         self:_playSlashAnimation(stepIndex)
     end,
 
@@ -215,8 +232,6 @@ return Component {
             return
         end
 
-        -- While active, fire hitbox event every frame;
-        -- EnemyHealth.lua uses hitId so each enemy only takes damage once per swing.
         if not (self.GetPosition and self.GetRotation) then
             return
         end
@@ -224,7 +239,6 @@ return Component {
         local px, py, pz = self:GetPosition()
         local rx, ry, rz = self:GetRotation()  -- assumed Euler degrees (x, y, z)
 
-        -- Simple forward from yaw (Y axis)
         local yawRad   = math.rad(ry or 0.0)
         local forwardX = math.sin(yawRad)
         local forwardZ = math.cos(yawRad)
@@ -258,21 +272,32 @@ return Component {
     -- Animation hook
     ----------------------------------------------------------------------
     _playSlashAnimation = function(self, stepIndex)
-        local animName = nil
+        local animName  = nil
+        local clipIndex = nil
+
         if stepIndex == 1 then
-            animName = self.animSlash1
+            animName  = self.animSlash1 or "Slash1"
+            clipIndex = 1      -- <-- make sure this is your Slash clip index
         elseif stepIndex == 2 then
-            animName = self.animSlash2
+            animName  = self.animSlash2 or "Slash2"
+            clipIndex = 1      -- or 2 if you later split them
         elseif stepIndex == 3 then
-            animName = self.animSlash3
+            animName  = self.animSlash3 or "Slash3"
+            clipIndex = 1
         end
 
-        if animName and animName ~= "" then
+        if animName then
             print("[LUA][PlayerAttack] Play animation:\t" .. tostring(animName))
-            -- TODO: hook into your animation system here, e.g.:
-            -- if self.PlayAnimation then self:PlayAnimation(animName) end
         else
             print("[LUA][PlayerAttack] No animation name set for step " .. tostring(stepIndex))
+        end
+
+        if self._anim and clipIndex ~= nil then
+            -- Reset any previous state
+            Animation.Stop(self._anim)
+
+            -- Use PlayClip with loop = false instead of PlayOnce
+            Animation.PlayClip(self._anim, clipIndex, false)
         end
     end,
 }
