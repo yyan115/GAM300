@@ -13,9 +13,9 @@
 
 bool SpriteSystem::Initialise()
 {
-#ifndef ANDROID
+//#ifndef ANDROID
     InitializeSpriteQuad();
-#endif
+//#endif
 
     auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     for (const auto& entity : entities) {
@@ -44,9 +44,12 @@ bool SpriteSystem::Initialise()
 void SpriteSystem::Update()
 {
 	PROFILE_FUNCTION();
-#ifdef ANDROID
-    InitializeSpriteQuad(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
-#endif
+//#ifdef ANDROID
+//    if (!spriteQuadInitialized) {
+//        InitializeSpriteQuad(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
+//        return;
+//    }
+//#endif
 
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem::Update() called");

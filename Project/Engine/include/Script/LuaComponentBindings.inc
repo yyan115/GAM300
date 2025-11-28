@@ -1,5 +1,5 @@
 // LuaComponentBindings.inc
-// Only BEGIN_COMPONENT / PROPERTY / END_COMPONENT lines in this file.
+// Only BEGIN_COMPONENT / PROPERTY / METHOD / END_COMPONENT lines in this file.
 // Edit this file to add/remove properties. Nothing else.
 
 // ============================================================================
@@ -44,11 +44,42 @@ END_COMPONENT()
 // ============================================================================
 
 BEGIN_COMPONENT(AnimationComponent, "AnimationComponent")
+    // Properties
     PROPERTY("enabled", &AnimationComponent::enabled)
     PROPERTY("isPlay", &AnimationComponent::isPlay)
     PROPERTY("isLoop", &AnimationComponent::isLoop)
     PROPERTY("speed", &AnimationComponent::speed)
     PROPERTY("clipCount", &AnimationComponent::clipCount)
+    // Methods - Playback control
+    METHOD("Play", &AnimationComponent::Play)
+    METHOD("Pause", &AnimationComponent::Pause)
+    METHOD("Stop", &AnimationComponent::Stop)
+    METHOD("SetLooping", &AnimationComponent::SetLooping)
+    METHOD("SetSpeed", &AnimationComponent::SetSpeed)
+    METHOD("SetClip", &AnimationComponent::SetClip)
+    METHOD("GetActiveClipIndex", &AnimationComponent::GetActiveClipIndex)
+    METHOD("PlayClip", &AnimationComponent::PlayClip)
+    METHOD("PlayOnce", &AnimationComponent::PlayOnce)
+    METHOD("IsPlaying", &AnimationComponent::IsPlaying)
+    METHOD("ResetForPlay", &AnimationComponent::ResetForPlay)
+END_COMPONENT()
+
+// ============================================================================
+// Sprite Animation Component
+// ============================================================================
+
+BEGIN_COMPONENT(SpriteAnimationComponent, "SpriteAnimationComponent")
+    // Properties
+    PROPERTY("currentClipIndex", &SpriteAnimationComponent::currentClipIndex)
+    PROPERTY("currentFrameIndex", &SpriteAnimationComponent::currentFrameIndex)
+    PROPERTY("playbackSpeed", &SpriteAnimationComponent::playbackSpeed)
+    PROPERTY("playing", &SpriteAnimationComponent::playing)
+    PROPERTY("enabled", &SpriteAnimationComponent::enabled)
+    PROPERTY("autoPlay", &SpriteAnimationComponent::autoPlay)
+    // Methods
+    METHOD("Play", &SpriteAnimationComponent::Play)
+    METHOD("Stop", &SpriteAnimationComponent::Stop)
+    METHOD("Resume", &SpriteAnimationComponent::Resume)
 END_COMPONENT()
 
 // ============================================================================
@@ -67,30 +98,38 @@ END_COMPONENT()
 // ============================================================================
 
 BEGIN_COMPONENT(CameraComponent, "CameraComponent")
+    // Core properties
     PROPERTY("enabled", &CameraComponent::enabled)
     PROPERTY("isActive", &CameraComponent::isActive)
     PROPERTY("priority", &CameraComponent::priority)
+    // Orientation
     PROPERTY("target", &CameraComponent::target)
     PROPERTY("up", &CameraComponent::up)
     PROPERTY("yaw", &CameraComponent::yaw)
     PROPERTY("pitch", &CameraComponent::pitch)
     PROPERTY("useFreeRotation", &CameraComponent::useFreeRotation)
+    // Projection settings
     PROPERTY("fov", &CameraComponent::fov)
     PROPERTY("nearPlane", &CameraComponent::nearPlane)
     PROPERTY("farPlane", &CameraComponent::farPlane)
     PROPERTY("orthoSize", &CameraComponent::orthoSize)
+    // Movement
     PROPERTY("movementSpeed", &CameraComponent::movementSpeed)
     PROPERTY("mouseSensitivity", &CameraComponent::mouseSensitivity)
+    // Zoom
     PROPERTY("minZoom", &CameraComponent::minZoom)
     PROPERTY("maxZoom", &CameraComponent::maxZoom)
     PROPERTY("zoomSpeed", &CameraComponent::zoomSpeed)
+    // Camera shake
     PROPERTY("isShaking", &CameraComponent::isShaking)
     PROPERTY("shakeIntensity", &CameraComponent::shakeIntensity)
     PROPERTY("shakeDuration", &CameraComponent::shakeDuration)
     PROPERTY("shakeTimer", &CameraComponent::shakeTimer)
     PROPERTY("shakeFrequency", &CameraComponent::shakeFrequency)
     PROPERTY("shakeOffset", &CameraComponent::shakeOffset)
+    // Skybox
     PROPERTY("skyboxTexturePath", &CameraComponent::skyboxTexturePath)
+    PROPERTY("useSkybox", &CameraComponent::useSkybox)
 END_COMPONENT()
 
 // ============================================================================
@@ -145,9 +184,11 @@ END_COMPONENT()
 // ============================================================================
 
 BEGIN_COMPONENT(ParticleComponent, "ParticleComponent")
+    // Emitter settings
     PROPERTY("emitterPosition", &ParticleComponent::emitterPosition)
     PROPERTY("emissionRate", &ParticleComponent::emissionRate)
     PROPERTY("maxParticles", &ParticleComponent::maxParticles)
+    // Particle settings
     PROPERTY("particleLifetime", &ParticleComponent::particleLifetime)
     PROPERTY("startSize", &ParticleComponent::startSize)
     PROPERTY("endSize", &ParticleComponent::endSize)
@@ -155,26 +196,34 @@ BEGIN_COMPONENT(ParticleComponent, "ParticleComponent")
     PROPERTY("startColorAlpha", &ParticleComponent::startColorAlpha)
     PROPERTY("endColor", &ParticleComponent::endColor)
     PROPERTY("endColorAlpha", &ParticleComponent::endColorAlpha)
+    // Physics
     PROPERTY("gravity", &ParticleComponent::gravity)
     PROPERTY("velocityRandomness", &ParticleComponent::velocityRandomness)
     PROPERTY("initialVelocity", &ParticleComponent::initialVelocity)
-    PROPERTY("texturePath", &ParticleComponent::texturePath)
     PROPERTY("timeSinceEmission", &ParticleComponent::timeSinceEmission)
+    // Runtime control
     PROPERTY("isEmitting", &ParticleComponent::isEmitting)
+    PROPERTY("texturePath", &ParticleComponent::texturePath)
     PROPERTY("isPlayingInEditor", &ParticleComponent::isPlayingInEditor)
     PROPERTY("isPausedInEditor", &ParticleComponent::isPausedInEditor)
 END_COMPONENT()
 
 BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
+    // Transform
     PROPERTY("position", &SpriteRenderComponent::position)
     PROPERTY("scale", &SpriteRenderComponent::scale)
     PROPERTY("rotation", &SpriteRenderComponent::rotation)
+    // Appearance
     PROPERTY("color", &SpriteRenderComponent::color)
     PROPERTY("alpha", &SpriteRenderComponent::alpha)
+    // Rendering mode
     PROPERTY("is3D", &SpriteRenderComponent::is3D)
     PROPERTY("enableBillboard", &SpriteRenderComponent::enableBillboard)
-    PROPERTY("layer", &SpriteRenderComponent::layer)
+    // Sorting
+    PROPERTY("sortingLayer", &SpriteRenderComponent::sortingLayer)
+    PROPERTY("sortingOrder", &SpriteRenderComponent::sortingOrder)
     PROPERTY("saved3DPosition", &SpriteRenderComponent::saved3DPosition)
+    // Asset path (read-only for display)
     PROPERTY("texturePath", &SpriteRenderComponent::texturePath)
     PROPERTY("hasMigratedToTransform", &SpriteRenderComponent::hasMigratedToTransform)
 END_COMPONENT()
@@ -184,9 +233,14 @@ BEGIN_COMPONENT(TextRenderComponent, "TextRenderComponent")
     PROPERTY("fontSize", &TextRenderComponent::fontSize)
     PROPERTY("position", &TextRenderComponent::position)
     PROPERTY("color", &TextRenderComponent::color)
-    PROPERTY("scale", &TextRenderComponent::scale)
     PROPERTY("is3D", &TextRenderComponent::is3D)
+    PROPERTY("sortingLayer", &TextRenderComponent::sortingLayer)
+    PROPERTY("sortingOrder", &TextRenderComponent::sortingOrder)
     PROPERTY("alignmentInt", &TextRenderComponent::alignmentInt)
+END_COMPONENT()
+
+BEGIN_COMPONENT(ModelRenderComponent, "ModelRenderComponent")
+    PROPERTY("isVisible", &ModelRenderComponent::isVisible)
 END_COMPONENT()
 
 // ============================================================================
@@ -206,6 +260,7 @@ BEGIN_COMPONENT(ColliderComponent, "ColliderComponent")
     PROPERTY("cylinderHalfHeight", &ColliderComponent::cylinderHalfHeight)
     METHOD("SetEnabled", &ColliderComponent::SetEnabled)
     METHOD("IsEnabled", &ColliderComponent::IsEnabled)
+    PROPERTY("center", &ColliderComponent::center)
 END_COMPONENT()
 
 BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
@@ -230,7 +285,9 @@ END_COMPONENT()
 // ============================================================================
 
 BEGIN_COMPONENT(AudioComponent, "AudioComponent")
+    // Enable/disable
     PROPERTY("enabled", &AudioComponent::enabled)
+    // Audio settings
     PROPERTY("Mute", &AudioComponent::Mute)
     PROPERTY("bypassListenerEffects", &AudioComponent::bypassListenerEffects)
     PROPERTY("PlayOnAwake", &AudioComponent::PlayOnAwake)
@@ -240,29 +297,31 @@ BEGIN_COMPONENT(AudioComponent, "AudioComponent")
     PROPERTY("Pitch", &AudioComponent::Pitch)
     PROPERTY("StereoPan", &AudioComponent::StereoPan)
     PROPERTY("reverbZoneMix", &AudioComponent::reverbZoneMix)
+    PROPERTY("OutputAudioMixerGroup", &AudioComponent::OutputAudioMixerGroup)
+    // 3D Audio settings
     PROPERTY("Spatialize", &AudioComponent::Spatialize)
     PROPERTY("SpatialBlend", &AudioComponent::SpatialBlend)
     PROPERTY("DopplerLevel", &AudioComponent::DopplerLevel)
     PROPERTY("MinDistance", &AudioComponent::MinDistance)
     PROPERTY("MaxDistance", &AudioComponent::MaxDistance)
-    PROPERTY("OutputAudioMixerGroup", &AudioComponent::OutputAudioMixerGroup)
+    // State (read-only properties via methods)
     PROPERTY("IsPlaying", &AudioComponent::IsPlaying)
     PROPERTY("IsPaused", &AudioComponent::IsPaused)
     PROPERTY("Position", &AudioComponent::Position)
-
-    METHOD("play", &AudioComponent::Play)
-    METHOD("playOneShot", &AudioComponent::PlayOneShot)
-    METHOD("stop", &AudioComponent::Stop)
-    METHOD("pause", &AudioComponent::Pause)
-    METHOD("unPause", &AudioComponent::UnPause)
-    METHOD("getIsPlaying", &AudioComponent::GetIsPlaying)
-    METHOD("getIsPaused", &AudioComponent::GetIsPaused)
-    METHOD("setVolume", &AudioComponent::SetVolume)
-    METHOD("setPitch", &AudioComponent::SetPitch)
-    METHOD("setLoop", &AudioComponent::SetLoop)
-    METHOD("setMute", &AudioComponent::SetMute)
-    METHOD("setClip", &AudioComponent::SetClipFromString)
-
+    // Playback methods
+    METHOD("Play", &AudioComponent::Play)
+    METHOD("PlayOneShot", &AudioComponent::PlayOneShot)
+    METHOD("Stop", &AudioComponent::Stop)
+    METHOD("Pause", &AudioComponent::Pause)
+    METHOD("UnPause", &AudioComponent::UnPause)
+    METHOD("GetIsPlaying", &AudioComponent::GetIsPlaying)
+    METHOD("GetIsPaused", &AudioComponent::GetIsPaused)
+    // Settings methods
+    METHOD("SetVolume", &AudioComponent::SetVolume)
+    METHOD("SetPitch", &AudioComponent::SetPitch)
+    METHOD("SetLoop", &AudioComponent::SetLoop)
+    METHOD("SetMute", &AudioComponent::SetMute)
+    METHOD("SetClip", &AudioComponent::SetClipFromString)
 END_COMPONENT()
 
 BEGIN_COMPONENT(AudioListenerComponent, "AudioListenerComponent")
@@ -274,6 +333,7 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
     PROPERTY("MinDistance", &AudioReverbZoneComponent::MinDistance)
     PROPERTY("MaxDistance", &AudioReverbZoneComponent::MaxDistance)
     PROPERTY("reverbPresetIndex", &AudioReverbZoneComponent::reverbPresetIndex)
+    // Detailed reverb parameters
     PROPERTY("decayTime", &AudioReverbZoneComponent::decayTime)
     PROPERTY("earlyDelay", &AudioReverbZoneComponent::earlyDelay)
     PROPERTY("lateDelay", &AudioReverbZoneComponent::lateDelay)
@@ -295,10 +355,27 @@ END_COMPONENT()
 
 BEGIN_COMPONENT(TagComponent, "TagComponent")
     PROPERTY("tagIndex", &TagComponent::tagIndex)
+    // Methods
+    METHOD("SetTag", &TagComponent::SetTag)
+    METHOD("GetTagName", &TagComponent::GetTagName)
+    METHOD("HasTag", &TagComponent::HasTag)
 END_COMPONENT()
 
 BEGIN_COMPONENT(LayerComponent, "LayerComponent")
     PROPERTY("layerIndex", &LayerComponent::layerIndex)
+    // Methods
+    METHOD("SetLayer", &LayerComponent::SetLayer)
+    METHOD("GetLayerName", &LayerComponent::GetLayerName)
+    METHOD("IsInLayer", &LayerComponent::IsInLayer)
+    METHOD("GetLayerMask", &LayerComponent::GetLayerMask)
 END_COMPONENT()
 
-// Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... END_COMPONENT() blocks here.
+// ============================================================================
+// Hierarchy Components (read-only for Lua - managed by engine)
+// ============================================================================
+
+BEGIN_COMPONENT(SiblingIndexComponent, "SiblingIndexComponent")
+    PROPERTY("siblingIndex", &SiblingIndexComponent::siblingIndex)
+END_COMPONENT()
+
+// Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... METHOD(...) ... END_COMPONENT() blocks here.

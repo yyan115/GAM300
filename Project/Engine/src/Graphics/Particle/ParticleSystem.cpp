@@ -44,11 +44,11 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 bool ParticleSystem::Initialise() 
 {
     ENGINE_LOG_INFO("Particle System Initializing...");
-#ifndef ANDROID
+//#ifndef ANDROID
     return InitialiseParticles(); // Same as for SpriteSystem, Android must delay particle initialisation.
-#else
-    return true;
-#endif
+//#else
+//    return true;
+//#endif
 }
 
 bool ParticleSystem::InitialiseParticles()
@@ -211,31 +211,31 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
 void ParticleSystem::Update()
 {
 	PROFILE_FUNCTION();
-#ifdef ANDROID
-    // Ensure the EGL context is current
-    if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] Failed to make EGL context current in Update()");
-        return;
-    }
-
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLContext context = eglGetCurrentContext();
-    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
-
-    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL CONTEXT NOT CURRENT - skipping draw!");
-        return;
-    }
-
-    // Additional check: verify the surface is still valid
-    EGLint surfaceWidth, surfaceHeight;
-    if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
-        !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL surface is invalid - skipping draw!");
-        return;
-    }
-    InitialiseParticles(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
-#endif
+//#ifdef ANDROID
+//    // Ensure the EGL context is current
+//    if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
+//        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] Failed to make EGL context current in Update()");
+//        return;
+//    }
+//
+//    EGLDisplay display = eglGetCurrentDisplay();
+//    EGLContext context = eglGetCurrentContext();
+//    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+//
+//    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
+//        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL CONTEXT NOT CURRENT - skipping draw!");
+//        return;
+//    }
+//
+//    // Additional check: verify the surface is still valid
+//    EGLint surfaceWidth, surfaceHeight;
+//    if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
+//        !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
+//        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ParticleSystem] EGL surface is invalid - skipping draw!");
+//        return;
+//    }
+//    InitialiseParticles(); // For some reason Android's OpenGL context is not initialized yet, so have to put in Update.
+//#endif
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
@@ -262,9 +262,9 @@ void ParticleSystem::Update()
         if (!particleComp.isVisible) continue;
 
         // Only update particle physics if:
-        // 1. Game is running/paused, OR
-        // 2. Playing in editor AND not paused
-        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() || Engine::IsPaused() ||
+        // 1. Game is running (NOT paused), OR
+        // 2. Playing in editor AND not paused in editor
+        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() ||
                                     (particleComp.isPlayingInEditor && !particleComp.isPausedInEditor);
 
         if (!shouldUpdateParticles) {

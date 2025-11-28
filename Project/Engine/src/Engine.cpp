@@ -547,6 +547,7 @@ bool Engine::Initialize() {
 	ENGINE_LOG_INFO("Engine initialization completed successfully");
 	
 	// Add some test logging messages
+	ENGINE_LOG_DEBUG("This is a test debug message");
 	ENGINE_LOG_WARN("This is a test warning message");
 	ENGINE_LOG_ERROR("This is a test error message");
 	    

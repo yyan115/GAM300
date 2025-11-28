@@ -30,17 +30,42 @@
 
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
+#include <UI/Button/ButtonComponent.hpp>
+#include <Multi-threading/SequentialSystemOrchestrator.hpp>
+#include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
 Entity fpsText;
+
+SceneInstance::SceneInstance() {
+	if (!multithreadSystems)
+	{
+		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+	}
+	else
+	{
+		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+	}
+}
+
+SceneInstance::SceneInstance(const std::string& path) : IScene(path) {
+	if (!multithreadSystems)
+	{
+		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+	}
+	else
+	{
+		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+	}
+}
 
 void SceneInstance::Initialize()
 {
 	// Initialize GraphicsManager first
-	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
+	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	// gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// Get the ECS manager for this scene
-	ECSManager &ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (!PostProcessingManager::GetInstance().Initialize())
 	{
@@ -49,7 +74,7 @@ void SceneInstance::Initialize()
 	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
-	auto *hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
 	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
@@ -92,7 +117,43 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.buttonSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Button system initialized");
 	ENGINE_PRINT("Scene Initialized\n");
+
+	//// Create Test Button entity
+	//{
+	//Entity buttonEntity = ecsManager.CreateEntity();
+
+	//// 1) Attach ScriptComponentData with ScriptData using the path directly
+	//ScriptComponentData scriptComp;
+	//ScriptData sd;
+
+	//sd.scriptPath = "../../Resources/Scripts/template/testbutton.lua";
+	//sd.scriptGuidStr = "123";       // optional: keep empty if not using GUID-based lookup
+	//sd.enabled = true;
+	//
+	//scriptComp.scripts.push_back(sd);
+
+	//// Attach ScriptComponentData
+	//ecsManager.AddComponent<ScriptComponentData>(buttonEntity, scriptComp);
+
+	//// 2) Attach ButtonComponent with binding that also uses the script path
+	//ButtonComponent buttonData;
+
+	//ButtonBinding binding;
+	//binding.targetEntityGuidStr = "";    // empty = same entity
+	//binding.scriptGuidStr = "123";     // not using GUID lookup
+	//binding.functionName = "OnClick";
+	//binding.callWithSelf = true;
+
+	//// Add binding
+	//buttonData.bindings.push_back(binding);
+	//buttonData.interactable = true;
+
+	//// Attach button data
+	//ecsManager.AddComponent<ButtonComponent>(buttonEntity, buttonData);
+	//}
 }
 
 void SceneInstance::InitializeJoltPhysics()
@@ -123,24 +184,7 @@ void SceneInstance::Update(double dt)
 
 	processInput((float)TimeManager::GetDeltaTime());
 
-	// Update systems.
-	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	// mainECS.physicsSystem->physicsSyncBack(mainECS);
-	mainECS.transformSystem->Update();
-
-	mainECS.animationSystem->Update();
-
-	mainECS.cameraSystem->Update();
-	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update();
-
-	mainECS.spriteAnimationSystem->Update();
-
-	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
-	if (mainECS.audioSystem)
-	{
-		mainECS.audioSystem->Update((float)dt);
-	}
+	systemOrchestrator->Update();
 }
 
 void SceneInstance::Draw()
@@ -184,56 +228,8 @@ void SceneInstance::Draw()
 	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
 	gfxManager.UpdateFrustum();
 
-	if (mainECS.modelSystem)
-	{
-		mainECS.modelSystem->Update();
-	}
-	if (mainECS.textSystem)
-	{
-		// #ifdef ANDROID
-		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
-		// #endif
-		mainECS.textSystem->Update();
-		// #ifdef ANDROID
-		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
-		// #endif
-	}
+	systemOrchestrator->Draw();
 
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
-	// #endif
-	if (mainECS.spriteSystem)
-	{
-		mainECS.spriteSystem->Update();
-	}
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
-	// #endif
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
-	// #endif
-	if (mainECS.particleSystem)
-	{
-		mainECS.particleSystem->Update();
-	}
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
-	// #endif
-	//  Test debug drawing
-	// DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
-	// DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
-	// DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
-	// auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
-	// DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
-
-	// Update debug draw system to submit to graphics manager
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
-	// #endif
-	if (mainECS.debugDrawSystem)
-	{
-		mainECS.debugDrawSystem->Update();
-	}
 // #ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
 // #endif

@@ -89,3 +89,25 @@ bool FileUtilities::CopyFileW(const std::string& srcPath, const std::string& dst
 	return CopyFile(srcPath, dstPath);
 }
 
+std::filesystem::path FileUtilities::SanitizePathForAndroid(const std::filesystem::path& input) {
+	std::filesystem::path result;
+
+	for (const auto& part : input) {
+		std::string name = part.string();
+
+		// Only adjust directory names, not the root name or filename extension
+		if (!name.empty() && name.front() == '_') {
+			name.erase(0, 1); // remove leading underscore
+		}
+
+		for (char& c : name) {
+			if (static_cast<unsigned char>(c) > 127) {
+				c = '0'; // replace non-ASCII with 0
+			}
+		}
+		result /= name;
+	}
+
+	return result;
+}
+

@@ -48,7 +48,8 @@ std::string Audio::CompileToResource(const std::string& assetPathParam, bool for
     // For Android, we need to copy it to the Android assets folder
     if (forAndroid) {
         // Ensure parent directories exist
-        std::filesystem::path outputPath(outPath);
+        std::filesystem::path outputPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(outPath));
+        outPath = outputPath.generic_string();
         std::filesystem::create_directories(outputPath.parent_path());
 
         try {

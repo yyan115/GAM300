@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004fbd8ab80c5467-0003612c40000001",
+        "source": "../../Resources/Materials/Wall Pillar.mat",
+        "compiled": "../../Resources/Materials/Wall Pillar.mat",
+        "android_compiled": "Resources/Materials/Wall Pillar_android.mat"
+    }
+}

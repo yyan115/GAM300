@@ -169,23 +169,38 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 
 GLint WindowManager::GetWindowWidth()
 {
+#ifndef EDITOR
     return RunTimeVar::window.width;
+#else
+    return RunTimeVar::window.gameResolutionWidth;
+#endif;
 }
 
 GLint WindowManager::GetWindowHeight()
 {
+#ifndef EDITOR
     return RunTimeVar::window.height;
+#else
+    return RunTimeVar::window.gameResolutionHeight;
+#endif
 }
 
 GLint WindowManager::GetViewportWidth()
 {
-    //std::cout << "viewportW: " << viewportWidth << ", normalW: " << width << "\n";
+#ifndef EDITOR
     return RunTimeVar::window.viewportWidth;
+#else
+    return RunTimeVar::window.gameViewportWidth;
+#endif
 }
 
 GLint WindowManager::GetViewportHeight()
 {
+#ifndef EDITOR
     return RunTimeVar::window.viewportHeight;
+#else
+    return RunTimeVar::window.gameViewportHeight;
+#endif
 }
 
 void WindowManager::SetViewportDimensions(GLint width, GLint height)

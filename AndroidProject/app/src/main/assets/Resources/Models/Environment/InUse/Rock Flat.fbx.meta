@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006762e0f81546ee-000361a5b4000001",
+        "source": "../../Resources/Models/Environment/_InUse/Rock Flat.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/Rock Flat.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/Rock Flat_android.mesh"
+    }
+}

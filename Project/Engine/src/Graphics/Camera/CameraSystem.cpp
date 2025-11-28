@@ -215,6 +215,9 @@ void CameraSystem::UpdateCameraFromComponent(Entity entity)
 
 	// --- 3) Fill common camera parameters ---
 	activeCamera->Position = worldPos;
+	// Update Camera object
+	activeCamera->Position = worldPos;
+	activeCamera->WorldUp = camComp.up;
 	activeCamera->MovementSpeed = camComp.movementSpeed;
 	activeCamera->MouseSensitivity = camComp.mouseSensitivity;
 	activeCamera->Zoom = camComp.fov;

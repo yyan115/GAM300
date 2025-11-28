@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c2626dd0919-000360229e00001b",
+        "source": "../../Resources/Textures/Pillar 2.png",
+        "compiled": "../../Resources/Textures/Pillar 2.dds",
+        "android_compiled": "Resources/Textures/Pillar 2_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
