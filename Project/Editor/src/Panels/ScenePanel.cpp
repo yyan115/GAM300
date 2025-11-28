@@ -1596,17 +1596,17 @@ void ScenePanel::DrawColliderGizmos() {
         }
 
         case ColliderShapeType::Capsule: {
-            // Draw wireframe capsule
+            // Draw wireframe capsule with hemispheres
             float radius = collider.capsuleRadius;
             float halfHeight = collider.capsuleHalfHeight;
-            int segments = 16;
+            int segments = 16; // Horizontal segments around the capsule
             glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
 
             // Define top and bottom centers in LOCAL space
             glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
             glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
 
-            // Draw cylinder body (vertical lines)
+            // 1. Draw cylinder body (vertical lines connecting top and bottom circles)
             for (int i = 0; i < segments; i++) {
                 float angle = (float)i / segments * 2.0f * 3.14159f;
                 glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
@@ -1622,7 +1622,7 @@ void ScenePanel::DrawColliderGizmos() {
                 }
             }
 
-            // Top and bottom circles
+            // 2. Draw equator circles (where cylinder meets hemispheres)
             for (int i = 0; i < segments; i++) {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
@@ -1644,6 +1644,119 @@ void ScenePanel::DrawColliderGizmos() {
                 if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
             }
+
+            // 3. Draw TOP HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
+
+                // Draw arc from equator up to the top pole
+                for (int i = 0; i < segments / 2; i++) {
+                    float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
+                    float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
+
+                    // Arc in the vertical plane
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localTop + localP1);
+                    glm::vec3 p2 = TransformPoint(localTop + localP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
+            // 4. Draw BOTTOM HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
+
+                // Draw arc from equator down to the bottom pole
+                for (int i = 0; i < segments / 2; i++) {
+                    float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
+                    float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
+
+                    // Arc in the vertical plane (mirrored downward)
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        -radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        -radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localBottom + localP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + localP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
+            // 5. Draw horizontal latitude circles on both hemispheres for better visibility
+            int latitudeLines = 3; // Number of horizontal circles on each hemisphere
+            for (int lat = 1; lat <= latitudeLines; lat++) {
+                float angle = (float)lat / (latitudeLines + 1) * 3.14159f * 0.5f;
+                float latRadius = radius * sin(angle);
+                float latHeight = radius * cos(angle);
+
+                // Top hemisphere circle
+                for (int i = 0; i < segments; i++) {
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 topP1 = glm::vec3(latRadius * cos(theta1), latHeight, latRadius * sin(theta1));
+                    glm::vec3 topP2 = glm::vec3(latRadius * cos(theta2), latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localTop + topP1);
+                    glm::vec3 p2 = TransformPoint(localTop + topP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // Bottom hemisphere circle
+                for (int i = 0; i < segments; i++) {
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 botP1 = glm::vec3(latRadius * cos(theta1), -latHeight, latRadius * sin(theta1));
+                    glm::vec3 botP2 = glm::vec3(latRadius * cos(theta2), -latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localBottom + botP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + botP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
             break;
         }
 
