@@ -2290,20 +2290,41 @@ void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const r
                 ButtonBinding binding;
                 if (bindingJSON.HasMember("data") && bindingJSON["data"].IsArray()) {
                     const auto& bd = bindingJSON["data"];
-                    if (bd.Size() > 0 && bd[0].HasMember("data"))
-                        binding.targetEntityGuidStr = bd[0]["data"].GetString();
-                    if (bd.Size() > 1 && bd[1].HasMember("data"))
-                        binding.scriptGuidStr = bd[1]["data"].GetString();
-                    if (bd.Size() > 2 && bd[2].HasMember("data"))
-                        binding.functionName = bd[2]["data"].GetString();
-                    if (bd.Size() > 3 && bd[3].HasMember("data"))
-                        binding.callWithSelf = bd[3]["data"].GetBool();
+
+                    // Handle both old format (4 fields) and new format (5 fields with scriptPath)
+                    // New format: 0: targetEntityGuidStr, 1: scriptPath, 2: scriptGuidStr, 3: functionName, 4: callWithSelf
+                    // Old format: 0: targetEntityGuidStr, 1: scriptGuidStr, 2: functionName, 3: callWithSelf
+
+                    if (bd.Size() >= 5) {
+                        // New format with scriptPath
+                        if (bd[0].HasMember("data") && bd[0]["data"].IsString())
+                            binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString())
+                            binding.scriptPath = bd[1]["data"].GetString();
+                        if (bd[2].HasMember("data") && bd[2]["data"].IsString())
+                            binding.scriptGuidStr = bd[2]["data"].GetString();
+                        if (bd[3].HasMember("data") && bd[3]["data"].IsString())
+                            binding.functionName = bd[3]["data"].GetString();
+                        if (bd[4].HasMember("data") && bd[4]["data"].IsBool())
+                            binding.callWithSelf = bd[4]["data"].GetBool();
+                    } else if (bd.Size() >= 4) {
+                        // Old format without scriptPath - maintain backward compatibility
+                        if (bd[0].HasMember("data") && bd[0]["data"].IsString())
+                            binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString())
+                            binding.scriptGuidStr = bd[1]["data"].GetString();
+                        if (bd[2].HasMember("data") && bd[2]["data"].IsString())
+                            binding.functionName = bd[2]["data"].GetString();
+                        if (bd[3].HasMember("data") && bd[3]["data"].IsBool())
+                            binding.callWithSelf = bd[3]["data"].GetBool();
+                        // scriptPath will remain empty for old scenes
+                    }
                 }
                 buttonComp.bindings.push_back(binding);
             }
         }
 
-        if (d.Size() > 1 && d[1].HasMember("data"))
+        if (d.Size() > 1 && d[1].HasMember("data") && d[1]["data"].IsBool())
             buttonComp.interactable = d[1]["data"].GetBool();
     }
 }
