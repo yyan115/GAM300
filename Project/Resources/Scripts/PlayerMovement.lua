@@ -112,7 +112,7 @@ return Component {
         landingSFXClips  = {},
         
         -- SFX timing
-        footstepInterval = 0.35,
+        footstepInterval = 0.6,
         sfxVolume        = 0.5,
     },
 
@@ -361,7 +361,7 @@ return Component {
             
             -- Timer-based footsteps while holding key
             self._footstepTimer = self._footstepTimer + dt
-            if self._footstepTimer >= (self.footstepInterval or 0.35) then
+            if self._footstepTimer >= (self.footstepInterval or 0.8) then
                 playRandomSFX(audio, self.footstepSFXClips)
                 self._footstepTimer = 0
             end
