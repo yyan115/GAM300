@@ -868,11 +868,15 @@
                                         },
                                         {
                                             "type": "std::string",
+                                            "data": "../../Resources/Scripts/template/testbutton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
                                             "data": "006620d236b9d8b4-000367adc0000001"
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "OnClick"
                                         },
                                         {
                                             "type": "bool",

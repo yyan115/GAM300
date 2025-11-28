@@ -7,6 +7,7 @@
 
 REFL_REGISTER_START(ButtonBinding)
 REFL_REGISTER_PROPERTY(targetEntityGuidStr)
+REFL_REGISTER_PROPERTY(scriptPath)
 REFL_REGISTER_PROPERTY(scriptGuidStr)
 REFL_REGISTER_PROPERTY(functionName)
 REFL_REGISTER_PROPERTY(callWithSelf)
@@ -146,15 +147,13 @@ void ButtonController::OnClick()
 
         bool callSucceeded = false;
 
-        // Try fast path: use cached instanceRef (no lock - accept race condition)
+        // Method 1: Try calling via entity's ScriptComponent (if it has the script attached)
         int cachedRef = LUA_NOREF;
         if (i < m_cachedInstanceRef.size()) {
             cachedRef = m_cachedInstanceRef[i];
         }
 
         if (cachedRef != LUA_NOREF) {
-            // Attempt call with cached ref
-            // ScriptSystem's internal mutex protects the actual Lua call
             callSucceeded = scriptSystem->CallInstanceFunctionByScriptGuid(
                 targetEntity,
                 binding.scriptGuidStr,
@@ -162,16 +161,13 @@ void ButtonController::OnClick()
             );
 
             if (!callSucceeded) {
-                // Cache is stale, invalidate it
                 if (i < m_cachedInstanceRef.size()) {
                     m_cachedInstanceRef[i] = LUA_NOREF;
                 }
             }
         }
 
-        // Slow path: resolve and cache
         if (!callSucceeded) {
-            // ScriptSystem handles all thread-safety here
             callSucceeded = scriptSystem->CallInstanceFunctionByScriptGuid(
                 targetEntity,
                 binding.scriptGuidStr,
@@ -179,7 +175,6 @@ void ButtonController::OnClick()
             );
 
             if (callSucceeded) {
-                // Update cache (no lock - worst case is redundant lookup next time)
                 int resolvedRef = scriptSystem->GetInstanceRefForScript(
                     targetEntity,
                     binding.scriptGuidStr
@@ -194,7 +189,17 @@ void ButtonController::OnClick()
             }
         }
 
-        // Final fallback: try calling on any script that has this function
+        // Method 2: Try standalone script instance (ButtonComponent doesn't need ScriptComponent)
+        // This creates a script instance just for the button callback
+        if (!callSucceeded && !binding.scriptPath.empty()) {
+            callSucceeded = scriptSystem->CallStandaloneScriptFunction(
+                binding.scriptPath,
+                binding.scriptGuidStr,
+                binding.functionName
+            );
+        }
+
+        // Method 3: Fallback - try calling on any script attached to entity that has this function
         if (!callSucceeded) {
             callSucceeded = scriptSystem->CallEntityFunction(
                 targetEntity,
@@ -208,6 +213,7 @@ void ButtonController::OnClick()
                 "[ButtonController] Failed to invoke callback: target=",
                 binding.targetEntityGuidStr,
                 " script=", binding.scriptGuidStr,
+                " path=", binding.scriptPath,
                 " fn=", binding.functionName);
         }
         else {

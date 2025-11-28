@@ -375,6 +375,14 @@ void ScriptSystem::Shutdown()
     }
     m_runtimeMap.clear();
 
+    // Clean up standalone instances (used by ButtonComponent)
+    for (auto& p : m_standaloneInstances) {
+        if (p.second && Scripting::GetLuaState()) {
+            p.second->OnDisable();
+        }
+    }
+    m_standaloneInstances.clear();
+
     // clear engine POD runtime flags if any entities remain
     if (m_ecs)
     {
@@ -782,7 +790,7 @@ bool ScriptSystem::CallInstanceFunctionByScriptGuid(Entity e, const std::string&
 // ---------------------------
 // NOTE: this design uses the std::function target pointer as a simple key so clients can compute
 // the same key (as done in your ButtonComponent example). This works for plain function pointers.
-// If you register lambdas with captures, target<void>() may be null — see comment below.
+// If you register lambdas with captures, target<void>() may be null ï¿½ see comment below.
 void ScriptSystem::RegisterInstancesChangedCallback(InstancesChangedCb cb)
 {
     void* key = reinterpret_cast<void*>(cb.target<void>());
@@ -834,4 +842,72 @@ void ScriptSystem::NotifyInstancesChanged(Entity e)
     //            "[ScriptSystem] InstancesChanged callback threw for entity ", e);
     //    }
     //}
+}
+
+// ---------------------------
+// Standalone Script Instances (for ButtonComponent callbacks)
+// ---------------------------
+int ScriptSystem::GetOrCreateStandaloneInstance(const std::string& scriptPath, const std::string& scriptGuidStr)
+{
+    if (scriptPath.empty() || scriptGuidStr.empty()) {
+        return LUA_NOREF;
+    }
+
+    if (!Scripting::GetLuaState()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot create standalone instance: Lua runtime not available");
+        return LUA_NOREF;
+    }
+
+    std::lock_guard<std::mutex> lk(m_mutex);
+
+    // Check if we already have an instance for this script
+    auto it = m_standaloneInstances.find(scriptGuidStr);
+    if (it != m_standaloneInstances.end() && it->second) {
+        return it->second->GetInstanceRef();
+    }
+
+    // Create new instance
+    auto runtimeComp = std::make_unique<Scripting::ScriptComponent>();
+
+    if (!runtimeComp->AttachScript(scriptPath)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[ScriptSystem] Failed to attach standalone script: ", scriptPath.c_str());
+        return LUA_NOREF;
+    }
+
+    int instRef = runtimeComp->GetInstanceRef();
+
+    // Cache the instance
+    m_standaloneInstances[scriptGuidStr] = std::move(runtimeComp);
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[ScriptSystem] Created standalone script instance for: ", scriptPath.c_str(),
+        " (GUID: ", scriptGuidStr.c_str(), ")");
+
+    return instRef;
+}
+
+bool ScriptSystem::CallStandaloneScriptFunction(const std::string& scriptPath, const std::string& scriptGuidStr, const std::string& funcName)
+{
+    if (scriptPath.empty() || funcName.empty()) {
+        return false;
+    }
+
+    int instRef = GetOrCreateStandaloneInstance(scriptPath, scriptGuidStr);
+    if (instRef == LUA_NOREF) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot call standalone function: no instance for ", scriptPath.c_str());
+        return false;
+    }
+
+    bool success = Scripting::CallInstanceFunction(instRef, funcName);
+
+    if (success) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+            "[ScriptSystem] Successfully called standalone function: ", funcName.c_str(),
+            " on script ", scriptPath.c_str());
+    }
+
+    return success;
 }

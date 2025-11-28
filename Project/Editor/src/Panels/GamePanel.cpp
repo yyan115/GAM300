@@ -102,11 +102,6 @@ void GamePanel::OnImGuiRender() {
         if (shouldRender) {
             auto& gfx = GraphicsManager::GetInstance();
 
-            // Set target game resolution for 2D rendering synchronization
-            int targetWidth, targetHeight;
-            GetTargetGameResolution(targetWidth, targetHeight);
-            gfx.SetTargetGameResolution(targetWidth, targetHeight);
-
             // Set viewport to actual render dimensions
             gfx.SetViewportSize(renderWidth, renderHeight);
 

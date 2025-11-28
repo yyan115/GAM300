@@ -354,27 +354,30 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 
             // WRITE to ECS Transform (so renderer/other systems can see it)
 
-            //TEMP HACK
-            if (col.shapeType == ColliderShapeType::Capsule)
-            {
-                float offset = 1.0f;
-                tr.localPosition = tr.localPosition = Vector3D(p.GetX(), p.GetY() - offset, p.GetZ());
-            }
-            else
-            tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
-            //tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
-            tr.localRotation = Quaternion(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
+            ////TEMP HACK
+            //if (col.shapeType == ColliderShapeType::Capsule)
+            //{
+            //    float offset = 1.0f;
+            //    tr.localPosition = tr.localPosition = Vector3D(p.GetX(), p.GetY() - offset, p.GetZ());
+            //}
+            //else
+            //{
+                float offSetY = col.center.y * tr.localScale.y;
+                tr.localPosition = Vector3D(p.GetX(), p.GetY() - offSetY, p.GetZ());   //remove halfextent later, testing only
+                //tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
+                tr.localRotation = Quaternion(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
 
-            tr.isDirty = true;
+                tr.isDirty = true;
+            //}
 
 #ifdef __ANDROID__
             if (syncCount % 60 == 0) {
                 __android_log_print(ANDROID_LOG_INFO, "GAM300",
                     "[Physics] Dynamic body pos: (%f, %f, %f)",
                     p.GetX(), p.GetY(), p.GetZ());
-        }
+            }
 #endif
-    }
+        }
     }
 }
 

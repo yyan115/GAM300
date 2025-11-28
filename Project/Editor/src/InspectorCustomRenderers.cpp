@@ -12,6 +12,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include <filesystem>
+#include "Logging.hpp"
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Transform/TransformSystem.hpp"
@@ -3397,23 +3398,60 @@ void RegisterInspectorCustomRenderers()
         // Helper lambda: Parse Lua script to extract function names
         auto extractLuaFunctions = [](const std::string& scriptPath) -> std::vector<std::string> {
             std::vector<std::string> functions;
+            if (scriptPath.empty()) return functions;
 
-            // Get full path to script
+            // Normalize path separators for comparison
+            std::string normalizedPath = scriptPath;
+            std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+            // Convert to lowercase for case-insensitive comparison
+            std::string lowerPath = normalizedPath;
+            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+
+            // Get full path to script - try multiple strategies
             std::filesystem::path fullPath;
             std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
-            if (scriptPath.find("Resources/") == 0 || scriptPath.find("scripts/") == 0) {
-                fullPath = std::filesystem::path(rootDir).parent_path() / scriptPath;
-            } else {
-                fullPath = std::filesystem::path(rootDir) / "Scripts" / scriptPath;
+            std::filesystem::path projectRoot = std::filesystem::path(rootDir).parent_path();
+
+            // Strategy 1: Check if path is already absolute
+            if (std::filesystem::path(normalizedPath).is_absolute()) {
+                fullPath = normalizedPath;
+            }
+            // Strategy 2: Path starts with Resources/ or resources/
+            else if (lowerPath.find("resources/") == 0) {
+                fullPath = projectRoot / normalizedPath;
+            }
+            // Strategy 3: Path starts with scripts/ (without Resources prefix)
+            else if (lowerPath.find("scripts/") == 0) {
+                fullPath = projectRoot / "Resources" / normalizedPath;
+            }
+            // Strategy 4: Just the filename - try common locations
+            else {
+                // Try Resources/Scripts/
+                fullPath = projectRoot / "Resources" / "Scripts" / normalizedPath;
+                if (!std::filesystem::exists(fullPath)) {
+                    // Try rootDir (which is typically Resources)
+                    fullPath = std::filesystem::path(rootDir) / "Scripts" / normalizedPath;
+                }
+                if (!std::filesystem::exists(fullPath)) {
+                    // Try project root
+                    fullPath = projectRoot / normalizedPath;
+                }
             }
 
             std::ifstream file(fullPath);
-            if (!file.is_open()) return functions;
+            if (!file.is_open()) {
+                // Debug: Log the attempted path if file not found
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ButtonComponent] Could not open script file: ", fullPath.string().c_str());
+                return functions;
+            }
 
             std::string line;
             while (std::getline(file, line)) {
-                // Look for function definitions
-                // Pattern: function ClassName:FunctionName() or function ClassName.FunctionName(
+                std::string funcName;
+
+                // Pattern 1: Traditional function definition
+                // function ClassName:FunctionName() or function ClassName.FunctionName() or function FunctionName()
                 size_t funcPos = line.find("function ");
                 if (funcPos != std::string::npos) {
                     size_t start = funcPos + 9; // After "function "
@@ -3422,7 +3460,6 @@ void RegisterInspectorCustomRenderers()
                     size_t parenPos = line.find('(', start);
 
                     if (parenPos != std::string::npos) {
-                        std::string funcName;
                         if (colonPos != std::string::npos && colonPos < parenPos) {
                             // ClassName:FunctionName pattern
                             funcName = line.substr(colonPos + 1, parenPos - colonPos - 1);
@@ -3433,20 +3470,50 @@ void RegisterInspectorCustomRenderers()
                             // Just FunctionName pattern
                             funcName = line.substr(start, parenPos - start);
                         }
+                    }
+                }
 
-                        // Trim whitespace
-                        funcName.erase(0, funcName.find_first_not_of(" \t"));
-                        funcName.erase(funcName.find_last_not_of(" \t") + 1);
-
-                        // Skip internal/lifecycle functions
-                        if (!funcName.empty() &&
-                            funcName != "new" && funcName != "New" &&
-                            funcName != "Awake" && funcName != "Start" &&
-                            funcName != "Update" && funcName != "FixedUpdate" &&
-                            funcName != "OnDestroy" && funcName != "OnEnable" &&
-                            funcName != "OnDisable") {
-                            functions.push_back(funcName);
+                // Pattern 2: Anonymous function assignment (common in Lua table definitions)
+                // FunctionName = function( or FunctionName=function(
+                if (funcName.empty()) {
+                    size_t eqFuncPos = line.find("= function(");
+                    if (eqFuncPos == std::string::npos) {
+                        eqFuncPos = line.find("=function(");
+                    }
+                    if (eqFuncPos != std::string::npos) {
+                        // Extract the name before the '='
+                        size_t nameEnd = eqFuncPos;
+                        // Skip whitespace before '='
+                        while (nameEnd > 0 && (line[nameEnd - 1] == ' ' || line[nameEnd - 1] == '\t')) {
+                            nameEnd--;
                         }
+                        // Find the start of the name (scan backwards for non-identifier chars)
+                        size_t nameStart = nameEnd;
+                        while (nameStart > 0 && (std::isalnum(line[nameStart - 1]) || line[nameStart - 1] == '_')) {
+                            nameStart--;
+                        }
+                        if (nameStart < nameEnd) {
+                            funcName = line.substr(nameStart, nameEnd - nameStart);
+                        }
+                    }
+                }
+
+                // Process the extracted function name
+                if (!funcName.empty()) {
+                    // Trim whitespace
+                    funcName.erase(0, funcName.find_first_not_of(" \t"));
+                    if (!funcName.empty()) {
+                        funcName.erase(funcName.find_last_not_of(" \t") + 1);
+                    }
+
+                    // Skip internal/lifecycle functions
+                    if (!funcName.empty() &&
+                        funcName != "new" && funcName != "New" &&
+                        funcName != "Awake" && funcName != "Start" &&
+                        funcName != "Update" && funcName != "FixedUpdate" &&
+                        funcName != "OnDestroy" && funcName != "OnEnable" &&
+                        funcName != "OnDisable" && funcName != "fields") {
+                        functions.push_back(funcName);
                     }
                 }
             }
