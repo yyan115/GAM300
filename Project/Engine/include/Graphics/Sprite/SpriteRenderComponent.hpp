@@ -27,7 +27,8 @@ public:
     // Rendering properties
     bool is3D = false; // false = screen space, true = world space
     bool enableBillboard = true;
-    int layer = 0; // For sorting sprites
+    int sortingLayer = 0; // Sorting layer (higher = drawn on top)
+    int sortingOrder = 0; // Order within the sorting layer (higher = drawn on top)
 
     // Saved 3D position for mode switching
     Vector3D saved3DPosition = Vector3D{ 0.0f, 0.0f, 0.0f };

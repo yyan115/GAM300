@@ -262,9 +262,9 @@ void ParticleSystem::Update()
         if (!particleComp.isVisible) continue;
 
         // Only update particle physics if:
-        // 1. Game is running/paused, OR
-        // 2. Playing in editor AND not paused
-        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() || Engine::IsPaused() ||
+        // 1. Game is running (NOT paused), OR
+        // 2. Playing in editor AND not paused in editor
+        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() ||
                                     (particleComp.isPlayingInEditor && !particleComp.isPausedInEditor);
 
         if (!shouldUpdateParticles) {

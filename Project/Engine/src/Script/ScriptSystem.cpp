@@ -508,6 +508,8 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
             scriptVec[scriptIdx] = std::move(runtimeComp);
             script.instanceId = scPtr ? scPtr->GetInstanceRef() : LUA_NOREF;
             script.instanceCreated = (scPtr != nullptr);
+            // Notify listeners that instances for 'e' have been created/changed.
+            NotifyInstancesChanged(e);
         }
 
         // Call lifecycle methods
@@ -552,6 +554,7 @@ void ScriptSystem::DestroyInstanceForEntity(Entity e)
                 script.instanceId = -1;
             }
         }
+        NotifyInstancesChanged(e);
     }
 }
 
@@ -624,6 +627,8 @@ void ScriptSystem::ReloadScriptForEntity(Entity e, ECSManager& ecsManager)
             }
         }
     }
+    
+    NotifyInstancesChanged(e);
 }
 
 bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager)
@@ -714,4 +719,119 @@ const ScriptComponentData* ScriptSystem::GetScriptComponentConst(Entity e, const
     // this is safe here because GetScriptComponent does not mutate ScriptSystem state.
     ECSManager& nonConstEcs = const_cast<ECSManager&>(ecsManager);
     return const_cast<ScriptSystem*>(this)->GetScriptComponent(e, nonConstEcs);
+}
+
+/***********************************************************************************************************/
+// ---------------------------
+// GetInstanceRefForScript
+// ---------------------------
+int ScriptSystem::GetInstanceRefForScript(Entity e, const std::string& scriptGuidStr)
+{
+    // Fast path: check the POD ScriptComponentData for instanceId (this is kept in sync by EnsureInstanceForEntity)
+    ScriptComponentData* sc = GetScriptComponent(e, *m_ecs);
+    if (sc)
+    {
+        for (size_t i = 0; i < sc->scripts.size(); ++i)
+        {
+            const ScriptData& sd = sc->scripts[i];
+            if (sd.scriptGuidStr == scriptGuidStr)
+            {
+                if (sd.instanceCreated && sd.instanceId != -1) {
+                    return sd.instanceId;
+                }
+                break;
+            }
+        }
+    }
+
+    // Fallback: inspect runtime map under lock (runtimeMap contains ScriptComponent instances)
+    std::lock_guard<std::mutex> lk(m_mutex);
+    auto it = m_runtimeMap.find(e);
+    if (it == m_runtimeMap.end()) return LUA_NOREF;
+
+    // Need to find which index in the component's scripts has that GUID
+    if (!sc) return LUA_NOREF;
+    for (size_t i = 0; i < sc->scripts.size(); ++i)
+    {
+        if (sc->scripts[i].scriptGuidStr == scriptGuidStr)
+        {
+            if (i < it->second.size() && it->second[i]) {
+                return it->second[i]->GetInstanceRef();
+            }
+            return LUA_NOREF;
+        }
+    }
+    return LUA_NOREF;
+}
+
+// ---------------------------
+// CallInstanceFunctionByScriptGuid
+// ---------------------------
+bool ScriptSystem::CallInstanceFunctionByScriptGuid(Entity e, const std::string& scriptGuidStr, const std::string& funcName)
+{
+    if (!Scripting::GetLuaState()) return false;
+
+    int instRef = GetInstanceRefForScript(e, scriptGuidStr);
+    if (instRef == LUA_NOREF) return false;
+
+    return Scripting::CallInstanceFunction(instRef, funcName);
+}
+
+// ---------------------------
+// Register / Unregister callbacks
+// ---------------------------
+// NOTE: this design uses the std::function target pointer as a simple key so clients can compute
+// the same key (as done in your ButtonComponent example). This works for plain function pointers.
+// If you register lambdas with captures, target<void>() may be null — see comment below.
+void ScriptSystem::RegisterInstancesChangedCallback(InstancesChangedCb cb)
+{
+    void* key = reinterpret_cast<void*>(cb.target<void>());
+    // If target<void>() is null (e.g. capturing lambda), key will be nullptr.
+    // That is acceptable with your current design as long as the client computes the same key.
+    std::lock_guard<std::mutex> lk(m_mutex);
+    m_instancesChangedCbs.emplace_back(key, std::move(cb));
+}
+
+void ScriptSystem::UnregisterInstancesChangedCallback(void* cbId)
+{
+    std::lock_guard<std::mutex> lk(m_mutex);
+    m_instancesChangedCbs.erase(
+        std::remove_if(m_instancesChangedCbs.begin(), m_instancesChangedCbs.end(),
+            [cbId](const auto& p) { return p.first == cbId; }),
+        m_instancesChangedCbs.end());
+}
+// ---------------------------
+// Instances-change helper
+// ---------------------------
+void ScriptSystem::NotifyInstancesChanged(Entity e)
+{
+    // LOGIC IS DISABLED FIRST
+    // Copy callbacks under lock, then call outside lock to avoid reentrancy / deadlocks.
+    //std::vector<InstancesChangedCb> callbacks;
+    //{
+    //    std::lock_guard<std::mutex> lk(m_mutex);
+    //    callbacks.reserve(m_instancesChangedCbs.size());
+    //    for (const auto& p : m_instancesChangedCbs) {
+    //        callbacks.push_back(p.second);
+    //    }
+    //}
+
+    //for (auto& cb : callbacks)
+    //{
+    //    try {
+    //        if (cb) {  // Check if callback is valid
+    //            cb(e);
+    //        }
+    //    }
+    //    catch (const std::system_error& se) {
+    //        // Mutex error - callback object was likely destroyed
+    //        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+    //            "[ScriptSystem] Mutex error in callback for entity ", e, " - callback may be stale");
+    //    }
+    //    catch (...) {
+    //        // swallow exceptions to avoid breaking engine flow
+    //        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+    //            "[ScriptSystem] InstancesChanged callback threw for entity ", e);
+    //    }
+    //}
 }
