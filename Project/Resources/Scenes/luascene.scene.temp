@@ -24,15 +24,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.529648
+                                    "data": 2.61349
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2.16121
+                                    "data": 3.24181
                                 },
                                 {
                                     "type": "float",
-                                    "data": -2.01336
+                                    "data": -3.18767
                                 }
                             ]
                         },
@@ -95,7 +95,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.529648
+                                    "data": 2.61349
                                 },
                                 {
                                     "type": "float",
@@ -111,7 +111,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2.16121
+                                    "data": 3.24181
                                 },
                                 {
                                     "type": "float",
@@ -127,7 +127,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -2.01336
+                                    "data": -3.18767
                                 },
                                 {
                                     "type": "float",
@@ -818,7 +818,19 @@
                             1.0,
                             0.0
                         ]
-                    }
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.19200000166893005,
+                            0.3009999990463257,
+                            0.4749999940395355
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": ""
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -3989,6 +4001,10 @@
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -4242,6 +4258,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
                         },
                         {
                             "type": "int",
@@ -4507,6 +4527,10 @@
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -4760,6 +4784,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
                         },
                         {
                             "type": "int",
@@ -5548,18 +5576,6 @@
             }
         }
     ],
-    "tags": [
-        "Untagged",
-        "Respawn",
-        "Finish",
-        "EditorOnly",
-        "MainCamera",
-        "Player",
-        "GameController",
-        "Enemy",
-        "NPC",
-        "Collectible"
-    ],
     "layers": [
         {
             "index": 0,
@@ -5600,6 +5616,10 @@
         {
             "index": 9,
             "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
         }
     ]
 }
