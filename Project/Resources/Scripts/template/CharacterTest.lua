@@ -68,6 +68,22 @@ return Component {
             return
         end
         
+        -- Get the components for initialisation
+        local collider = self:GetComponent("ColliderComponent")
+        local transform = self:GetComponent("Transform")
+        
+        -- Validate components exist
+        if not collider then
+            print("[LUA ERROR] ColliderComponent not found!")
+            return
+        end
+        
+        if not transform then
+            print("[LUA ERROR] Transform not found!")
+            return
+        end
+
+        
         -- Update the internal jolt
         CharacterController.Update(self._controller, dt)
         

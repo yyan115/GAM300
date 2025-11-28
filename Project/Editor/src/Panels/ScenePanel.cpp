@@ -1793,7 +1793,6 @@ void ScenePanel::DrawColliderGizmos() {
 
             break;
         }
-
         case ColliderShapeType::Cylinder: {
             // Draw wireframe cylinder
             float radius = collider.cylinderRadius;

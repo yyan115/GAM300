@@ -352,3 +352,50 @@ namespace AudioManagerWrappers {
         AudioManager::GetInstance().SetGlobalPaused(paused);
     }
 }
+}
+
+#include "Animation/AnimationComponent.hpp"
+// ============================================================================
+// ANIMATION SYSTEM WRAPPERS
+// ============================================================================
+namespace AnimationWrappers {
+    inline void PlayClip(AnimationComponent& myAnim,std::size_t clipIndex, bool loop)
+    {
+        myAnim.PlayClip(clipIndex, loop);   //set the clip and loop flag
+        myAnim.Play();                      //start the Playback
+    }
+
+    inline void PlayOnce(AnimationComponent& myAnim, std::size_t clipIndex)
+    {
+        myAnim.PlayOnce(clipIndex);
+    }
+
+    inline void Pause(AnimationComponent& myAnim)
+    {
+        myAnim.Pause();
+    }
+
+    inline void Stop(AnimationComponent& myAnim)
+    {
+        myAnim.Stop();
+    }
+
+    inline void SetSpeed(AnimationComponent& myAnim, float speed)
+    {
+        myAnim.SetSpeed(speed);
+    }
+
+    inline void SetLooping(AnimationComponent& myAnim, bool loop)
+    {
+        myAnim.SetLooping(loop);
+    }
+
+    inline bool IsPlaying(AnimationComponent& myAnim)
+    {
+        return myAnim.IsPlaying();
+    }
+
+
+
+
+}
