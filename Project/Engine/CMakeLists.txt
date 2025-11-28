@@ -75,7 +75,7 @@ list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
 # Engine is ALWAYS a shared library
-add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp")
+add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp")
 
 # Enable precompiled headers for faster compilation (C++ only)
 target_precompile_headers(Engine PRIVATE
@@ -196,6 +196,8 @@ target_include_directories(Engine
         # Keep manual libraries: ImGui (docking), FMOD (commercial)
         ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/inc
         ${CMAKE_SOURCE_DIR}/Libraries/luabridge3/source
+	${CMAKE_SOURCE_DIR}/Libraries/xcontainer
+	${CMAKE_SOURCE_DIR}/Libraries/xscheduler
 )
 
 # Add Compressonator include directory for Editor builds (Windows only, Linux handled by target)
