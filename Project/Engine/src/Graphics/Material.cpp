@@ -656,7 +656,7 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 	}
 
 	ENGINE_LOG_INFO("[Material] Resolving project root");
-#ifndef ANDROID
+#ifdef EDITOR
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
 #endif
 	std::string finalResourcePath = resourcePathFS.generic_string();
