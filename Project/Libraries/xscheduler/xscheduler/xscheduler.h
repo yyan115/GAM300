@@ -38,9 +38,9 @@
 //
 // Dependencies
 //
-#include "../../dependencies/xcontainer/source/xcontainer_lockless_queue.h"
-#include "../../dependencies/xcontainer/source/xcontainer_lockless_pool.h"
-#include "../../dependencies/xcontainer/source/xcontainer_function.h"
+#include "xcontainer/xcontainer_lockless_queue.h"
+#include "xcontainer/xcontainer_lockless_pool.h"
+#include "xcontainer/xcontainer_function.h"
 
 //
 // Predifinitions

@@ -5,10 +5,12 @@
 #include <Scene/Scene.hpp>
 #include <Graphics/GraphicsManager.hpp>
 #include "ECS/ECSManager.hpp"
+#include <Multi-threading/SystemOrchestrator.hpp>
+
 class SceneInstance : public IScene {
 public:
-	SceneInstance() = default;
-	SceneInstance(const std::string& path) : IScene(path) {}
+	SceneInstance();
+	SceneInstance(const std::string& path);
 	~SceneInstance() override = default;
 
 	void Initialize() override;
@@ -37,7 +39,11 @@ public:
 	std::shared_ptr<Font> testFont;
 	std::shared_ptr<Shader> textShader;
 
+
 private:
 	void CreateHDRTestScene(ECSManager& ecsManager); // Testing
 	void CreateDefaultCamera(ECSManager& ecsManager); // Create default main camera for new scenes
+
+	bool multithreadSystems = true;
+	std::unique_ptr<SystemOrchestrator> systemOrchestrator;
 };

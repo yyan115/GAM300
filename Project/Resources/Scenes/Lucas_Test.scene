@@ -241,7 +241,19 @@
                             1.0,
                             0.0
                         ]
-                    }
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.19200000166893005,
+                            0.3009999990463257,
+                            0.4749999940395355
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": ""
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -604,7 +616,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 1000.1
                                 },
                                 {
                                     "type": "float",
@@ -621,11 +633,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -663,7 +675,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
@@ -675,7 +687,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 1000.1
                                 },
                                 {
                                     "type": "float",
@@ -683,7 +695,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -736,7 +748,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "007bb90af23ccae3-000361ddac00000d",
+                        "000b223325daff29-0003529da2000003",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -835,6 +847,41 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "006620d236b9d8b4-000367adc0000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
                         {
                             "type": "bool",
                             "data": true
@@ -1182,6 +1229,10 @@
         {
             "index": 9,
             "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
         }
     ]
 }
