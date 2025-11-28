@@ -151,4 +151,7 @@ private:
     unsigned int skyboxVBO = 0;
     std::shared_ptr<Shader> skyboxShader = nullptr;
     void InitializeSkybox();
+
+    // Multi-threading mutex
+    std::mutex renderQueueMutex;
 };

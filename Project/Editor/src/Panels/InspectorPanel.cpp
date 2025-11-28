@@ -1072,7 +1072,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				std::vector<std::string> categoryOrder = {
 					"Rendering", "Audio", "Lighting", "Camera", "Physics",
-					"Animation", "AI", "Scripting", "General", "Scripts"
+					"Animation", "AI", "Scripting", "General", "Scripts", "UI"
 				};
 
 				for (const auto& category : categoryOrder) {
@@ -1717,6 +1717,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<ScriptComponentData>(request.entity);
 				std::cout << "[Inspector] Removed ScriptComponentData from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "ButtonComponent") {
+				ecsManager.RemoveComponent<ButtonComponent>(request.entity);
+				std::cout << "[Inspector] Removed ButtonComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
 			}
@@ -1798,6 +1802,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "ScriptComponentData") {
 				ecsManager.GetComponent<ScriptComponentData>(request.entity) = ScriptComponentData{};
 				std::cout << "[Inspector] Reset ScriptComponentData on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ButtonComponent") {
+				ecsManager.GetComponent<ButtonComponent>(request.entity) = ButtonComponent{};
+				std::cout << "[Inspector] Reset ButtonComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values

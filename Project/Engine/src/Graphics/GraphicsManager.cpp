@@ -127,6 +127,7 @@ void GraphicsManager::GetViewportSize(int& width, int& height) const
 
 void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 {
+	std::lock_guard<std::mutex> lock(renderQueueMutex);
 	if (renderItem && renderItem->isVisible)
 	{
 		renderQueue.push_back(std::move(renderItem));

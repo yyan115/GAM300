@@ -799,13 +799,17 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
         auto& gfx = GraphicsManager::GetInstance();
 
-        // Set target game resolution for 2D rendering synchronization with Game Panel
-        auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
-        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
-        if (gamePanel) {
-            int targetWidth, targetHeight;
-            gamePanel->GetTargetGameResolution(targetWidth, targetHeight);
-            gfx.SetTargetGameResolution(targetWidth, targetHeight);
+        // Only set target game resolution in 2D mode (for 2D rendering synchronization)
+        // This prevents 2D resolution settings from affecting 3D rendering
+        EditorState& editorState = EditorState::GetInstance();
+        if (editorState.Is2DMode()) {
+            auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+            auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+            if (gamePanel) {
+                int targetWidth, targetHeight;
+                gamePanel->GetTargetGameResolution(targetWidth, targetHeight);
+                gfx.SetTargetGameResolution(targetWidth, targetHeight);
+            }
         }
 
         // Set viewport size for correct aspect ratio
