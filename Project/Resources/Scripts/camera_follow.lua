@@ -47,11 +47,11 @@ local function safeSetRotation(self, pitchDeg, yawDeg, rollDeg)
     end
 
     local ok = pcall(function()
-        self:SetRotation(pitchDeg, yawDeg, rollDeg or 0.0)
+        self:SetRotation(pitchDeg, yawDeg, 0.0)
     end)
     if not ok then
         pcall(function()
-            self:SetRotation({ x = pitchDeg, y = yawDeg, z = rollDeg or 0.0 })
+            self:SetRotation({ x = pitchDeg, y = yawDeg, z = 0.0 })
         end)
     end
 end
@@ -212,8 +212,16 @@ return Component {
             fy = fy / flen
             fz = fz / flen
 
+            -- IMPORTANT: match Quaternion::FromEulerDegrees + RotateVector((0,0,1))
+            -- front.x =  sin(yaw) * cos(pitch)
+            -- front.y = -sin(pitch)
+            -- front.z =  cos(yaw) * cos(pitch)
+            --
+            -- so the exact inverse is:
+            -- pitch = -asin(front.y)
+            -- yaw   = atan2(front.x, front.z)
+
             local pitchDeg = math.deg(math.asin(fy))
-            -- use our portable atan2 here
             local yawDeg   = math.deg(atan2(fx, fz))
 
             if not self._debuggedOnce then

@@ -43,6 +43,9 @@ public:
     // 2D orthographic zoom level (1.0 = normal size, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
     float OrthoZoomLevel;
 
+    bool UseExternalView = false;
+    glm::mat4 ExternalViewMatrix = glm::mat4(1.0f);
+
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM), OrthoZoomLevel(1.0f)
     {
