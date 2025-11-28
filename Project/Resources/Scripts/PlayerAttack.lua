@@ -41,12 +41,10 @@ return Component {
         -- Step 3 timings
         attack3Duration  = 0.55,
         attack3HitStart  = 0.20,
-        attack3HitEnd    = 0.40,
+        attack3HitEnd    = 0.40, 
 
-        -- Animation names (hook these to your anim system)
-        animSlash1 = "Slash1",
-        animSlash2 = "Slash2",
-        animSlash3 = "Slash3",
+        -- SFX clips (populate in editor)
+        attackSFXClips = {},
     },
 
     ----------------------------------------------------------------------
@@ -68,6 +66,20 @@ return Component {
         -- Unique IDs so each swing only hits an enemy once
         self._hitEventIdCounter = 0
         self._currentHitEventId = nil
+
+        -- Animation clip indices
+         self._attackAnimClip1 = 3
+         self._attackAnimClip2 = 4
+         self._attackAnimClip3 = 5
+
+        -- Cache components
+        self._animator = nil
+        self._audio    = nil
+    end,
+
+    Start = function(self)
+        self._animator = self:GetComponent("AnimationComponent")
+        self._audio    = self:GetComponent("AudioComponent")
     end,
 
     OnDisable = function(self)
@@ -161,6 +173,7 @@ return Component {
 
         print("[LUA][PlayerAttack] Start attack step " .. tostring(stepIndex))
         self:_playSlashAnimation(stepIndex)
+        self:_playAttackSFX()
     end,
 
     ----------------------------------------------------------------------
@@ -258,21 +271,31 @@ return Component {
     -- Animation hook
     ----------------------------------------------------------------------
     _playSlashAnimation = function(self, stepIndex)
-        local animName = nil
+        local animator = self._animator
+        if not animator then return end
+
+        local clipIndex = 3  -- default
         if stepIndex == 1 then
-            animName = self.animSlash1
+            clipIndex = self._attackAnimClip1 or 3
         elseif stepIndex == 2 then
-            animName = self.animSlash2
+            clipIndex = self._attackAnimClip2 or 4
         elseif stepIndex == 3 then
-            animName = self.animSlash3
+            clipIndex = self._attackAnimClip3 or 5
         end
 
-        if animName and animName ~= "" then
-            print("[LUA][PlayerAttack] Play animation:\t" .. tostring(animName))
-            -- TODO: hook into your animation system here, e.g.:
-            -- if self.PlayAnimation then self:PlayAnimation(animName) end
-        else
-            print("[LUA][PlayerAttack] No animation name set for step " .. tostring(stepIndex))
-        end
+        print("[LUA][PlayerAttack] Play animation clip " .. tostring(clipIndex))
+        animator:PlayClip(clipIndex, false)
+    end,
+
+    ----------------------------------------------------------------------
+    -- SFX hook
+    ----------------------------------------------------------------------
+    _playAttackSFX = function(self)
+        local audio = self._audio
+        local clips = self.attackSFXClips
+        if not audio or not clips or #clips == 0 then return end
+
+        local clipIndex = math.random(1, #clips)
+        audio:PlayOneShot(clips[clipIndex])
     end,
 }
