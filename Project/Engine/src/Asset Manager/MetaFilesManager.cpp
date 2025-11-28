@@ -261,6 +261,9 @@ std::string MetaFilesManager::GetResourceNameFromAssetFile(const std::string& as
 #else
 	if (assetMetaData.HasMember("compiled")) {
 		std::string resourcePath = assetMetaData["compiled"].GetString();
+#ifndef EDITOR
+		resourcePath = resourcePath.substr(resourcePath.find("Resources"));
+#endif
 		return resourcePath;
 	}
 #endif
