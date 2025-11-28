@@ -250,7 +250,19 @@
                             1.0,
                             0.0
                         ]
-                    }
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.19200000166893005,
+                            0.3009999990463257,
+                            0.4749999940395355
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": "../../Resources/Textures/awesomeface.png"
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -2533,7 +2545,19 @@
                             1.0,
                             0.0
                         ]
-                    }
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.19200000166893005,
+                            0.3009999990463257,
+                            0.4749999940395355
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": ""
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -7209,10 +7233,10 @@
             "guid": "0037f25cf9a370c7-000368116c000001",
             "components": {
                 "NameComponent": {
-                    "name": "Cube"
+                    "name": "PlayerPlaceholder"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 5
                 },
                 "LayerComponent": {
                     "layerIndex": 0
@@ -7232,11 +7256,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 20.3391
+                                    "data": 17.4337
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.91146
+                                    "data": -3.91144
                                 }
                             ]
                         },
@@ -7315,7 +7339,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 20.3391
+                                    "data": 17.4337
                                 },
                                 {
                                     "type": "float",
@@ -7331,7 +7355,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.91146
+                                    "data": -3.91144
                                 },
                                 {
                                     "type": "float",
@@ -7443,7 +7467,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -7514,7 +7538,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 309
+                            "data": 231
                         },
                         {
                             "type": "int",
@@ -7547,6 +7571,18 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "004e67fcaea54316-00034a6d7e000001",
+                            "scriptPath": "../../Resources/Scripts/template/simplemove.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         },
@@ -7558,7 +7594,7 @@
                     "name": "Enemy"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 7
                 },
                 "LayerComponent": {
                     "layerIndex": 0
@@ -7575,12 +7611,10 @@
                                 {
                                     "type": "float",
                                     "data": 32.2299
-                                    "data": 32.23
                                 },
                                 {
                                     "type": "float",
                                     "data": 18.6395
-                                    "data": 21.9385
                                 },
                                 {
                                     "type": "float",
@@ -7648,7 +7682,6 @@
                                 {
                                     "type": "float",
                                     "data": 32.2299
-                                    "data": 32.23
                                 },
                                 {
                                     "type": "float",
@@ -7665,7 +7698,6 @@
                                 {
                                     "type": "float",
                                     "data": 18.6395
-                                    "data": 21.9385
                                 },
                                 {
                                     "type": "float",
@@ -7808,15 +7840,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 2.43945e-9
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -5.09571e-11
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -6.98127e-11
                                 }
                             ]
                         },
@@ -7825,15 +7857,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 6.24975e-11
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -5.38551e-19
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 2.43993e-9
                                 }
                             ]
                         },
@@ -7962,6 +7994,23 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true
+                        }
+                    ]
+                },
+                "BrainComponent": {
+                    "type": "BrainComponent",
+                    "data": [
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "std::string",
+                            "data": ""
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -8768,18 +8817,6 @@
             }
         }
     ],
-    "tags": [
-        "Untagged",
-        "Respawn",
-        "Finish",
-        "EditorOnly",
-        "MainCamera",
-        "Player",
-        "GameController",
-        "Enemy",
-        "NPC",
-        "Collectible"
-    ],
     "layers": [
         {
             "index": 0,
@@ -8820,6 +8857,10 @@
         {
             "index": 9,
             "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
         }
     ]
 }
