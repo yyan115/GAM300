@@ -2,6 +2,11 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
+--CONFIGURATIONS
+local ENEMY_NAME = "GroundEnemy"  -- Change this to match your enemy's name
+local PLAYER_NAME = "Player"      -- Change this to match your player's name
+
+
 -- Animation States
 local ATTACK        = 1
 
@@ -33,7 +38,7 @@ return Component {
     
     Update = function(self, dt)
         -- Check if enemy is in attack animation
-        local clipIndex = Engine.GetClipIndexByName("GroundEnemy")
+        local clipIndex = Engine.GetClipIndexByName(ENEMY_NAME)
         
         if clipIndex == ATTACK then
             if not self.hasLaunched then
@@ -81,7 +86,7 @@ Launch = function(self)
     local offsetZ   = 0        
 
     -- Get enemy position and rotation
-    local enemyTr = Engine.FindTransformByName("GroundEnemy")
+    local enemyTr = Engine.FindTransformByName(ENEMY_NAME)
     local enemyPos = Engine.GetTransformPosition(enemyTr)
     local enemyRot = Engine.GetTransformRotation(enemyTr)  -- Get enemy rotation
     
@@ -95,7 +100,7 @@ Launch = function(self)
     local enemy_z = enemyPos[3]
     
     -- Get player position (target)
-    local playerTr = Engine.FindTransformByName("Player")
+    local playerTr = Engine.FindTransformByName(PLAYER_NAME)
     local playerPos = Engine.GetTransformPosition(playerTr)
     local player_x = playerPos[1]
     local player_y = playerPos[2] + 0.5

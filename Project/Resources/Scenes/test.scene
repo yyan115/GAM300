@@ -8840,11 +8840,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 32.2307
+                                    "data": 25.4683
                                 },
                                 {
                                     "type": "float",
-                                    "data": 22.9631
+                                    "data": 22.9632
                                 },
                                 {
                                     "type": "float",
@@ -8911,7 +8911,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 32.2307
+                                    "data": 25.4683
                                 },
                                 {
                                     "type": "float",
@@ -8927,7 +8927,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 22.9631
+                                    "data": 22.9632
                                 },
                                 {
                                     "type": "float",
@@ -10257,7 +10257,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
@@ -10265,7 +10265,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
@@ -10282,15 +10282,15 @@
                             "data": [
                                 {
                                     "type": "float",
+                                    "data": 8.74228e-10
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0.02
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -10298,7 +10298,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
@@ -10314,15 +10314,15 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.02
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.02
+                                    "data": 8.74228e-10
                                 },
                                 {
                                     "type": "float",
@@ -10598,15 +10598,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 0.02
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 0.02
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 0.02
                                 }
                             ]
                         },
@@ -10615,7 +10615,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
@@ -10623,7 +10623,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
@@ -10640,7 +10640,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 8.74228e-10
                                 },
                                 {
                                     "type": "float",
@@ -10648,7 +10648,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.02
                                 },
                                 {
                                     "type": "float",
@@ -10656,11 +10656,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 0.02
                                 },
                                 {
                                     "type": "float",
@@ -10672,15 +10672,15 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.02
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.1
+                                    "data": 8.74228e-10
                                 },
                                 {
                                     "type": "float",
@@ -10898,6 +10898,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00323d3e81a7eedc-00036ca94c000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingKnife.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }

@@ -2,22 +2,31 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
+--CONFIGURATIONS
+local ENEMY_NAME = "FlyingEnemy"  -- Change this to match your enemy's name
+local FLOOR_NAME = "TopWall"      -- Change this to match your floor's name
+local PLAYER_NAME = "Player"      -- Change this to match your player's name
+
+local DETECTION_RANGE = 7.0       -- How close player needs to be to trigger attack
+local FALL_SPEED = 0.05           -- How fast the enemy falls
+local FLOOR_OFFSET = 1.0          -- Offset above floor to trigger death
+
+
 -- Animation States
 local IDLE          = 0
 local PIERCED       = 1
 local TAKE_DAMAGE   = 2
-local DEATH         = 3
-local FALL          = 4
+local DEATH         = 3     --fall to ground
+local FALL          = 4     --free fall
 local ATTACK        = 5
-
-local yPosFloor = 15.963        --HARDCODE FOR NOW
 
 local playerNear = false
 local currentState = IDLE
+local enemyDead = false
 
 local function IsPlayerInRange()
 
-    local tr = Engine.FindTransformByName("Player")
+    local tr = Engine.FindTransformByName(PLAYER_NAME)
     local pos = Engine.GetTransformPosition(tr)  -- Get the table
 
     local player_x = pos[1]  -- First element
@@ -25,7 +34,7 @@ local function IsPlayerInRange()
     local player_z = pos[3]  -- Third element
 
     -- Get enemy position
-    local Flying_Enemytr = Engine.FindTransformByName("FlyingEnemy")
+    local Flying_Enemytr = Engine.FindTransformByName(ENEMY_NAME)
     local enemyPos = Engine.GetTransformPosition(Flying_Enemytr)
     local enemy_x = enemyPos[1]
     local enemy_y = enemyPos[2]
@@ -38,8 +47,7 @@ local function IsPlayerInRange()
     local distance = math.sqrt(dx*dx + dy*dy + dz*dz)
     
     -- Check if player is within range
-    local detectionRange = 7.0  -- Adjust this value as needed
-    return distance < detectionRange
+    return distance < DETECTION_RANGE
 end
 
 -- Helper function to create a rotation quaternion from Euler angles (degrees)
@@ -63,13 +71,13 @@ end
 
 local function RotateTowardsPlayer(self)
     -- Get player position
-    local playerTr = Engine.FindTransformByName("Player")
+    local playerTr = Engine.FindTransformByName(PLAYER_NAME)
     local playerPos = Engine.GetTransformPosition(playerTr)
     local player_x = playerPos[1]
     local player_z = playerPos[3]
     
     -- Get enemy position
-    local enemyTr = Engine.FindTransformByName("GroundEnemy")
+    local enemyTr = Engine.FindTransformByName(ENEMY_NAME)
     local enemyPos = Engine.GetTransformPosition(enemyTr)
     local enemy_x = enemyPos[1]
     local enemy_z = enemyPos[3]
@@ -125,9 +133,11 @@ return Component {
             newState = IDLE
         end
         
-        -- Apply state transition rules
-        if currentState == FALL then
-            newState = FALL  -- Death cannot be interrupted
+-- Apply state transition rules
+        if currentState == FALL and newState ~= DEATH then
+            newState = FALL  -- Stay in FALL unless transitioning to DEATH
+        elseif currentState == DEATH then
+            newState = DEATH  -- Death cannot be interrupted
         elseif currentState == TAKE_DAMAGE then
             if Animation.IsPlaying(self.animation) then
                 newState = TAKE_DAMAGE  -- Keep playing damage animation
@@ -137,7 +147,6 @@ return Component {
         elseif currentState == ATTACK and newState == IDLE then
             newState = ATTACK  -- Attack cannot be interrupted by idle
         end
-
         
         --HANDLE ROTATION
         if newState == ATTACK or newState == TAKE_DAMAGE and not self.hasRotated then 
@@ -153,12 +162,21 @@ return Component {
 
 
 
-        if currentState == FALL then            
-            self:Move(0,-0.05,0)
+        if currentState == FALL and enemyDead == false then            
+            self:Move(0,-FALL_SPEED,0)
             local current_pos = self:GetPosition()
-            -- if self.transform.y <= yPosFloor then
-            --     newState = Death
-            -- end
+            local Flying_Enemytr = Engine.FindTransformByName(ENEMY_NAME)
+            local enemyPos = Engine.GetTransformPosition(Flying_Enemytr)
+            local enemy_y = enemyPos[2] --Self YPos
+
+            local FloorTransform = Engine.FindTransformByName(FLOOR_NAME)
+            local Floor = Engine.GetTransformPosition(FloorTransform)
+            local floorY = Floor[2]
+
+            if enemy_y <= floorY + FLOOR_OFFSET then
+                 newState = DEATH
+                 enemyDead = true
+            end
         end
 
 
@@ -166,7 +184,7 @@ return Component {
         -- Update animation if state changed
         if newState ~= currentState then
             Animation.Pause(self.animation)
-            local loop = (newState ~= FALL and newState ~= TAKE_DAMAGE and newState ~= Death)
+            local loop = (newState ~= FALL and newState ~= TAKE_DAMAGE and newState ~= DEATH)
             Animation.PlayClip(self.animation, newState, loop)
             currentState = newState
         end

@@ -2,6 +2,13 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
+
+--CONFIGURATIONS
+local ENEMY_NAME = "GroundEnemy"  -- Change this to match your enemy's name
+local FLOOR_NAME = "TopWall"      -- Change this to match your floor's name
+local PLAYER_NAME = "Player"      -- Change this to match your player's name
+
+
 -- Animation States
 local IDLE          = 0
 local ATTACK        = 1
@@ -14,7 +21,7 @@ local currentState = IDLE
 -- Helper Functions
 local function IsPlayerInRange()
 
-    local tr = Engine.FindTransformByName("Player")
+    local tr = Engine.FindTransformByName(PLAYER_NAME)
     local pos = Engine.GetTransformPosition(tr)  -- Get the table
 
     local player_x = pos[1]  -- First element
@@ -22,7 +29,7 @@ local function IsPlayerInRange()
     local player_z = pos[3]  -- Third element
 
     -- Get enemy position
-    local Ground_Enemytr = Engine.FindTransformByName("GroundEnemy")
+    local Ground_Enemytr = Engine.FindTransformByName(ENEMY_NAME)
     local enemyPos = Engine.GetTransformPosition(Ground_Enemytr)
     local enemy_x = enemyPos[1]
     local enemy_y = enemyPos[2]
@@ -60,13 +67,13 @@ end
 
 local function RotateTowardsPlayer(self)
     -- Get player position
-    local playerTr = Engine.FindTransformByName("Player")
+    local playerTr = Engine.FindTransformByName(PLAYER_NAME)
     local playerPos = Engine.GetTransformPosition(playerTr)
     local player_x = playerPos[1]
     local player_z = playerPos[3]
     
     -- Get enemy position
-    local enemyTr = Engine.FindTransformByName("GroundEnemy")
+    local enemyTr = Engine.FindTransformByName(ENEMY_NAME)
     local enemyPos = Engine.GetTransformPosition(enemyTr)
     local enemy_x = enemyPos[1]
     local enemy_z = enemyPos[3]
