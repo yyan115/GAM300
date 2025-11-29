@@ -3,44 +3,44 @@ local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
 return Component {
-    Button = {
-    x = 250,
-    y = 620,
-    width = 10,
-    height = 10,
+    mixins = { TransformMixin },
 
-    isHovering = false,
+    fields = {
+        x = 250,
+        y = 620,
+        width = 10,
+        height = 10,
+    },
 
-    -- Replace with your engine's component toggle functions
-    EnableHoverComponent = function(self)
+    Awake = function(self)
+        self._isHovering = false
+    end,
+
+    _isMouseInside = function(self, mx, my)
+        return mx >= self.x and mx <= self.x + self.width and
+               my >= self.y and my <= self.y + self.height
+    end,
+
+    _enableHoverComponent = function(self)
         print("Hover ON")
     end,
 
-    DisableHoverComponent = function(self)
+    _disableHoverComponent = function(self)
         print("Hover OFF")
-    end
-}
-    
-function Button:IsMouseInside(mx, my)
-    return mx >= self.x and mx <= self.x + self.width and
-           my >= self.y and my <= self.y + self.height
-end
-           
-function Button:Update(dt)
-    -- Replace with engine API call
-    local mx, my = Input.GetMousePosition()      
+    end,
 
-    local currentlyHovering = self:IsMouseInside(mx, my)
+    Update = function(self, dt)
+        local mx = Input and Input.GetMouseX and Input.GetMouseX() or 0
+        local my = Input and Input.GetMouseY and Input.GetMouseY() or 0
 
-    if currentlyHovering and not self.isHovering then
-        -- Mouse just entered
-        self.isHovering = true
-        self:EnableHoverComponent()
+        local currentlyHovering = self:_isMouseInside(mx, my)
 
-    elseif not currentlyHovering and self.isHovering then
-        -- Mouse just exited
-        self.isHovering = false
-        self:DisableHoverComponent()
-    end
-end
+        if currentlyHovering and not self._isHovering then
+            self._isHovering = true
+            self:_enableHoverComponent()
+        elseif not currentlyHovering and self._isHovering then
+            self._isHovering = false
+            self:_disableHoverComponent()
+        end
+    end,
 }
