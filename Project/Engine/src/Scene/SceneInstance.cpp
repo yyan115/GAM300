@@ -277,8 +277,8 @@ void SceneInstance::ShutDownPhysics()
 
 void SceneInstance::processInput(float deltaTime)
 {
-	if (InputManager::GetKeyDown(Input::Key::ESC))
-		WindowManager::SetWindowShouldClose();
+	// ESC handling is now done in Lua (camera_follow.lua) for cursor lock toggle
+	// Game-specific pause menus should also be handled in Lua
 
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 	Entity activeCam = mainECS.cameraSystem->GetActiveCameraEntity();

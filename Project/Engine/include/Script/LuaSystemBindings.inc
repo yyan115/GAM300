@@ -131,6 +131,8 @@ BEGIN_SYSTEM("Screen")
     FUNCTION("IsMinimized", WindowWrappers::IsWindowMinimized)
     FUNCTION("SetTitle", WindowWrappers::SetWindowTitle)
     FUNCTION("RequestClose", WindowWrappers::RequestClose)
+    FUNCTION("SetCursorLocked", WindowWrappers::SetCursorLocked)
+    FUNCTION("IsCursorLocked", WindowWrappers::IsCursorLocked)
 END_SYSTEM()
 
 // ============================================================================

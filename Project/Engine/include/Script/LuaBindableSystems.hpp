@@ -260,33 +260,41 @@ namespace WindowWrappers {
     inline int GetWindowWidth() {
         return WindowManager::GetWindowWidth();
     }
-    
+
     inline int GetWindowHeight() {
         return WindowManager::GetWindowHeight();
     }
-    
+
     inline int GetViewportWidth() {
         return WindowManager::GetViewportWidth();
     }
-    
+
     inline int GetViewportHeight() {
         return WindowManager::GetViewportHeight();
     }
-    
+
     inline bool IsWindowFocused() {
         return WindowManager::IsWindowFocused();
     }
-    
+
     inline bool IsWindowMinimized() {
         return WindowManager::IsWindowMinimized();
     }
-    
+
     inline void SetWindowTitle(const std::string& title) {
         WindowManager::SetWindowTitle(title.c_str());
     }
-    
+
     inline void RequestClose() {
         WindowManager::SetWindowShouldClose();
+    }
+
+    inline void SetCursorLocked(bool locked) {
+        WindowManager::SetCursorLocked(locked);
+    }
+
+    inline bool IsCursorLocked() {
+        return WindowManager::IsCursorLocked();
     }
 }
 

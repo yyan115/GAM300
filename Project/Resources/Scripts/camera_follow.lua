@@ -44,7 +44,7 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        followDistance   = 5.0,
+        followDistance   = 2.0,
         heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,
@@ -73,12 +73,22 @@ return Component {
                 self._hasTarget = true
             end)
         end
+
+        -- Lock cursor when camera starts (game mode)
+        if Screen and Screen.SetCursorLocked then
+            Screen.SetCursorLocked(true)
+        end
     end,
 
     OnDisable = function(self)
         if event_bus and event_bus.unsubscribe and self._posSub then
             event_bus.unsubscribe(self._posSub)
             self._posSub = nil
+        end
+
+        -- Unlock cursor when camera is disabled
+        if Screen and Screen.SetCursorLocked then
+            Screen.SetCursorLocked(false)
         end
     end,
 
@@ -93,8 +103,8 @@ return Component {
         local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
         local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
         self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   - xoffset
-        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
+        self._yaw   = self._yaw   + xoffset
+        self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
     end,
 
@@ -102,7 +112,29 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
-        self:_updateMouseLook(dt)
+        -- Toggle cursor lock with Escape
+        if Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Escape) then
+            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                local isLocked = Screen.IsCursorLocked()
+                Screen.SetCursorLocked(not isLocked)
+                self._firstMouse = true  -- Reset mouse tracking to avoid camera jump
+            end
+        end
+
+        -- Re-lock cursor when clicking in game (if unlocked)
+        if Input and Input.GetMouseButtonDown and Input.GetMouseButtonDown(Input.MouseButton.Left) then
+            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                if not Screen.IsCursorLocked() then
+                    Screen.SetCursorLocked(true)
+                    self._firstMouse = true
+                end
+            end
+        end
+
+        -- Only update camera look when cursor is locked
+        if Screen and Screen.IsCursorLocked and Screen.IsCursorLocked() then
+            self:_updateMouseLook(dt)
+        end
 
         local tx, ty, tz = self._targetPos.x, self._targetPos.y, self._targetPos.z
         local radius   = self.followDistance or 5.0

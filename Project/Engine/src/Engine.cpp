@@ -720,7 +720,7 @@ void Engine::Draw() {
 #endif
 }
 
-void Engine::EndDraw() {    
+void Engine::EndDraw() {
 	WindowManager::SwapBuffers();
 
 	// Only process input if the game should be running (not paused)
@@ -729,6 +729,9 @@ void Engine::EndDraw() {
 	}
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
+
+	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
+	WindowManager::UpdateCursorState();
 }
 
 void Engine::Shutdown() {
@@ -751,7 +754,13 @@ bool Engine::IsRunning() {
 
 // Game state management functions
 void Engine::SetGameState(GameState state) {
+	GameState previousState = currentGameState;
 	currentGameState = state;
+
+	// When leaving play mode, force unlock cursor
+	if (previousState == GameState::PLAY_MODE && state != GameState::PLAY_MODE) {
+		WindowManager::ForceUnlockCursor();
+	}
 }
 
 GameState Engine::GetGameState() {

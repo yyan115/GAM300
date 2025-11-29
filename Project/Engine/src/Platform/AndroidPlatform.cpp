@@ -141,6 +141,16 @@ void AndroidPlatform::GetMousePosition(double* x, double* y) {
     if (y) *y = mouseY;
 }
 
+void AndroidPlatform::SetCursorLocked(bool locked) {
+    // No-op on Android - no cursor to lock
+    (void)locked;
+}
+
+bool AndroidPlatform::IsCursorLocked() {
+    // Android has no cursor, always return false
+    return false;
+}
+
 double AndroidPlatform::GetTime() {
     auto now = std::chrono::high_resolution_clock::now();
     auto duration = now.time_since_epoch();

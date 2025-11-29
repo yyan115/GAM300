@@ -234,6 +234,58 @@ bool WindowManager::IsWindowFocused() {
     return RunTimeVar::window.isFocused;
 }
 
+// ============================================================================
+// CURSOR MANAGEMENT - Robust system that works with ImGui
+// ============================================================================
+
+// Static state tracking
+static bool s_cursorLockRequested = false;   // What game code wants
+static bool s_cursorActuallyLocked = false;  // Current actual state
+
+void WindowManager::SetCursorLocked(bool locked) {
+    s_cursorLockRequested = locked;
+    // Actual locking happens in UpdateCursorState() each frame
+}
+
+bool WindowManager::IsCursorLocked() {
+    return s_cursorActuallyLocked;
+}
+
+void WindowManager::ForceUnlockCursor() {
+    s_cursorLockRequested = false;
+    s_cursorActuallyLocked = false;
+    if (platform) {
+        platform->SetCursorLocked(false);
+    }
+}
+
+void WindowManager::UpdateCursorState() {
+    if (!platform) return;
+
+    bool shouldLock = s_cursorLockRequested;
+
+#ifdef EDITOR
+    // In Editor, only actually lock cursor if game is playing
+    if (!Engine::ShouldRunGameLogic()) {
+        shouldLock = false;
+    }
+#endif
+
+    // Only change state if needed
+    if (shouldLock != s_cursorActuallyLocked) {
+        platform->SetCursorLocked(shouldLock);
+        s_cursorActuallyLocked = shouldLock;
+    }
+
+    // Re-enforce every frame in case ImGui or something else changed it
+    // This is the key to making it robust - we always re-apply our desired state
+    if (s_cursorActuallyLocked) {
+        platform->SetCursorLocked(true);
+    }
+}
+
+// ============================================================================
+
 // Platform abstraction methods
 void WindowManager::SwapBuffers() {
     if (platform) {

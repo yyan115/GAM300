@@ -60,6 +60,11 @@ public:
     static bool IsWindowFocused();
     static void window_focus_callback(PlatformWindow window, int focused);
 
+    // Cursor management - robust system that works with ImGui
+    static void SetCursorLocked(bool locked);  // Request cursor lock state
+    static bool IsCursorLocked();              // Check if cursor is currently locked
+    static void UpdateCursorState();           // Called each frame to enforce cursor state (after ImGui)
+    static void ForceUnlockCursor();           // Force unlock (called when game stops, etc.)
 
     // Platform access
     static class IPlatform* GetPlatform();
