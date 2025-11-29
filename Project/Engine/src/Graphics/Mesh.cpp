@@ -2,6 +2,7 @@
 
 #include "Graphics/Mesh.h"
 #include "WindowManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include <cassert>
 
 #ifdef ANDROID
@@ -148,7 +149,13 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WindowManager::GetViewportWidth() / (float)WindowManager::GetViewportHeight(), 0.1f, 100.0f);
+	// Use GraphicsManager's viewport dimensions for correct aspect ratio
+	// This ensures Scene Panel and Game Panel use their own viewport dimensions
+	int vpWidth, vpHeight;
+	GraphicsManager::GetInstance().GetViewportSize(vpWidth, vpHeight);
+	if (vpWidth <= 0) vpWidth = 1;
+	if (vpHeight <= 0) vpHeight = 1;
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)vpWidth / (float)vpHeight, 0.1f, 100.0f);
 	shader.setMat4("projection", projection);
 	shader.setVec3("cameraPos", camera.Position);
 

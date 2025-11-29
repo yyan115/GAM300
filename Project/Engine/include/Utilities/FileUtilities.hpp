@@ -24,6 +24,7 @@ public:
 	ENGINE_API static bool CopyFile(const std::string& srcPath, const std::string& dstPath);
 	// Windows compatibility alias - Windows.h macros map CopyFile to CopyFileW
 	ENGINE_API static bool CopyFileW(const std::string& srcPath, const std::string& dstPath);
+	static std::filesystem::path SanitizePathForAndroid(const std::filesystem::path& input);
 
 private:
 	static std::filesystem::path solutionRootDir;

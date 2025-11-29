@@ -95,24 +95,22 @@ bool PhysicsSystem::InitialiseJolt() {
             0
 #endif
         );
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_
+
             
             
-            
-            _BITS=%d",
 #ifdef JPH_OBJECT_LAYER_BITS
-            JPH_OBJECT_LAYER_BITS
+            //JPH_OBJECT_LAYER_BITS
 #else
             16  // default
 #endif
-        );
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
+        //);
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
 #ifdef JPH_ENABLE_ASSERTS
-            1
+            //1
 #else
             0
 #endif
-        );
+        //);
 #endif
         JPH::RegisterTypes();
 
@@ -343,6 +341,7 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     for (auto& e : entities) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
         if (rb.id.IsInvalid()) continue;
 
@@ -354,18 +353,23 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
             bi.GetPositionAndRotation(rb.id, p, r);
 
             // WRITE to ECS Transform (so renderer/other systems can see it)
-            tr.localPosition = Vector3D(p.GetX(), p.GetY(), p.GetZ());
-            tr.localRotation = Quaternion(r.GetX(), r.GetY(), r.GetZ(), r.GetW());
-            tr.isDirty = true;
+
+            float offsetY = col.center.y * tr.localScale.y;
+
+            tr.localPosition = Vector3D(p.GetX(), p.GetY() - offsetY, p.GetZ());
+            tr.localRotation = Quaternion(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
+
+                tr.isDirty = true;
+            //}
 
 #ifdef __ANDROID__
             if (syncCount % 60 == 0) {
                 __android_log_print(ANDROID_LOG_INFO, "GAM300",
                     "[Physics] Dynamic body pos: (%f, %f, %f)",
                     p.GetX(), p.GetY(), p.GetZ());
-        }
+            }
 #endif
-    }
+        }
     }
 }
 
@@ -400,3 +404,6 @@ void PhysicsSystem::Shutdown() {
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
 }
+
+
+//OFFSETCENTEROF MASS CAUSING THE DIFFERENCE BETWEEN USING CHARACTER AND NORMAL OBJECTS? GAP IN BETWEEN FLOOR AND ENTITY?

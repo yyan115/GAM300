@@ -29,6 +29,10 @@ struct ColliderComponent {
 	float cylinderHalfHeight = 0.5f;                        // For Cylinder
 	JPH::RefConst<JPH::Shape> shape;
 
+	Vector3D center = { 0,0,0 };									//Center of the model , calculated in InspectorCustomRender 
 	ColliderComponent() = default;
 	~ColliderComponent() = default;
+
+	void SetEnabled(bool e) { enabled = e; }
+	bool IsEnabled() const { return enabled; }
 };

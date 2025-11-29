@@ -9,6 +9,7 @@
 #include "Logging.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 #include "Scripting.h"
+#include "ECS/TagsLayersSettings.hpp"
 
 int main()
 {
@@ -20,6 +21,11 @@ int main()
     }
 
     Engine::Initialize();
+
+    // Load project-wide tags, layers, and sorting layers
+    ENGINE_PRINT("Loading project settings...");
+    TagsLayersSettings::GetInstance().LoadSettings();
+
     Engine::InitializeGraphicsResources(); // Load scenes and setup graphics
 
     // Initialize Scripting subsystem for Lua support

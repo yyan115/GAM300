@@ -6,7 +6,7 @@ set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
 set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-debug")
 
 # Correct jniLibs path for Android Studio (arm64 only here; keep same layout as before)
-set(JNILIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/arm64-v8a)
+set(JNILIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a)
 
 # Ensure jniLibs directory exists
 file(MAKE_DIRECTORY ${JNILIB_DIR})

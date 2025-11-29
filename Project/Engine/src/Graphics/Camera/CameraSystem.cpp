@@ -169,40 +169,80 @@ void CameraSystem::UpdateCameraFromComponent(Entity entity)
 {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-	// Safety check: ensure components still exist (entity might be in process of deletion)
-	if (!ecsManager.HasComponent<CameraComponent>(entity) || !ecsManager.HasComponent<Transform>(entity))
+	// Safety checks
+	if (!ecsManager.HasComponent<CameraComponent>(entity) ||
+		!ecsManager.HasComponent<Transform>(entity))
+	{
 		return;
+	}
 
 	auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
 	auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-	glm::vec3 worldPos = glm::vec3(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+	// --- 1) World-space position from your worldMatrix ---
+	glm::vec3 worldPos(
+		transform.worldMatrix.m.m03,
+		transform.worldMatrix.m.m13,
+		transform.worldMatrix.m.m23
+	);
 
-	// Update Camera object
-	activeCamera->Position = worldPos; 
-	activeCamera->WorldUp = camComp.up; 
-	activeCamera->MovementSpeed = camComp.movementSpeed; 
-	activeCamera->MouseSensitivity = camComp.mouseSensitivity; 
+	// --- 2) Extract basis vectors from worldMatrix ---
+	// Columns: X, Y, Z (Right, Up, Forward) in world space
+	glm::vec3 rightCol(
+		transform.worldMatrix.m.m00,
+		transform.worldMatrix.m.m10,
+		transform.worldMatrix.m.m20
+	);
+	glm::vec3 upCol(
+		transform.worldMatrix.m.m01,
+		transform.worldMatrix.m.m11,
+		transform.worldMatrix.m.m21
+	);
+	glm::vec3 fwdCol(
+		transform.worldMatrix.m.m02,
+		transform.worldMatrix.m.m12,
+		transform.worldMatrix.m.m22
+	);
+
+	// Use the Z column as forward
+	glm::vec3 forward = glm::length(fwdCol) > 0.0001f
+		? glm::normalize(fwdCol)
+		: glm::vec3(0.0f, 0.0f, 1.0f);
+
+	// If this makes the camera look *away* from the player,
+	// flip this once and test:
+	// forward = -forward;
+
+	// --- 3) Fill common camera parameters ---
+	activeCamera->Position = worldPos;
+	activeCamera->WorldUp = camComp.up;
+	activeCamera->MovementSpeed = camComp.movementSpeed;
+	activeCamera->MouseSensitivity = camComp.mouseSensitivity;
 	activeCamera->Zoom = camComp.fov;
 
-	if (camComp.useFreeRotation) 
+	// --- 4) Build a stable, upright basis for the camera ---
+	activeCamera->Front = forward;
+
+	// Force a "world up" to prevent upside-down roll
+	glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+
+	// If we're almost looking straight up/down, pick a different up axis
+	if (std::abs(glm::dot(forward, worldUp)) > 0.99f)
 	{
-		activeCamera->Yaw = camComp.yaw;
-		activeCamera->Pitch = camComp.pitch;
-		// Calculate front vector here instead
-		glm::vec3 front;
-		front.x = cos(glm::radians(camComp.yaw)) * cos(glm::radians(camComp.pitch));
-		front.y = sin(glm::radians(camComp.pitch));
-		front.z = sin(glm::radians(camComp.yaw)) * cos(glm::radians(camComp.pitch));
-		activeCamera->Front = glm::normalize(front);
-	}
-	else 
-	{
-		activeCamera->Front = glm::normalize(camComp.target);
+		worldUp = glm::vec3(0.0f, 0.0f, 1.0f);
 	}
 
-	activeCamera->Right = glm::normalize(glm::cross(activeCamera->Front, activeCamera->WorldUp)); 
-	activeCamera->Up = glm::normalize(glm::cross(activeCamera->Right, activeCamera->Front)); 
+	// Right-handed basis: Right = worldUp x Front, Up = Front x Right
+	activeCamera->Right = glm::normalize(glm::cross(worldUp, activeCamera->Front));
+	activeCamera->Up = glm::normalize(glm::cross(activeCamera->Front, activeCamera->Right));
+	activeCamera->WorldUp = activeCamera->Up;
+
+	// --- 5) (Optional) derive yaw/pitch for consistency/debug ---
+	float pitchRad = std::asin(glm::clamp(activeCamera->Front.y, -1.0f, 1.0f));
+	float yawRad = std::atan2(activeCamera->Front.z, activeCamera->Front.x);
+
+	activeCamera->Pitch = glm::degrees(pitchRad);
+	activeCamera->Yaw = glm::degrees(yawRad);
 }
 
 Entity CameraSystem::FindHighestPriorityCamera()

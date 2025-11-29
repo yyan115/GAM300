@@ -524,6 +524,8 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(materialPath));
+		materialPath = newPath.generic_string();
 	}
 
 	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
@@ -586,6 +588,8 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(materialPath));
+		materialPath = newPath.generic_string();
 	}
 
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
@@ -652,7 +656,7 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 	}
 
 	ENGINE_LOG_INFO("[Material] Resolving project root");
-#ifndef ANDROID
+#ifdef EDITOR
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
 #endif
 	std::string finalResourcePath = resourcePathFS.generic_string();

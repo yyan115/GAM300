@@ -56,6 +56,8 @@ std::string Font::CompileToResource(const std::string& assetPath, bool forAndroi
         std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
         assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
         outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.font";
+        std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(outPath));
+        outPath = newPath.generic_string();
     }
 
     // Ensure parent directories exist

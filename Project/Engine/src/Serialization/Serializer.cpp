@@ -421,6 +421,30 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             upVal.AddMember("data", upData, alloc);
             v.AddMember("up", upVal, alloc);
 
+            // Add custom serialization for backgroundColor (glm::vec3)
+            rapidjson::Value bgColorVal(rapidjson::kObjectType);
+            bgColorVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value bgColorData(rapidjson::kArrayType);
+            bgColorData.PushBack(c.backgroundColor.x, alloc);
+            bgColorData.PushBack(c.backgroundColor.y, alloc);
+            bgColorData.PushBack(c.backgroundColor.z, alloc);
+            bgColorVal.AddMember("data", bgColorData, alloc);
+            v.AddMember("backgroundColor", bgColorVal, alloc);
+
+            // Add custom serialization for clearFlags (enum as int)
+            v.AddMember("clearFlags", static_cast<int>(c.clearFlags), alloc);
+
+            // Add custom serialization for projectionType (enum as int)
+            v.AddMember("projectionType", static_cast<int>(c.projectionType), alloc);
+
+            // Add custom serialization for useSkybox
+            v.AddMember("useSkybox", c.useSkybox, alloc);
+
+            // Add custom serialization for skyboxTexturePath
+            rapidjson::Value skyboxPathVal;
+            skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
+            v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
             compsObj.AddMember("CameraComponent", v, alloc);
         }
         if (ecs.HasComponent<AnimationComponent>(entity)) {
@@ -536,6 +560,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("BrainComponent", v, alloc);
         }
+        if (ecs.HasComponent<ButtonComponent>(entity)) {
+            auto& c = ecs.GetComponent<ButtonComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("ButtonComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -543,17 +572,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 
     doc.AddMember("entities", entitiesArr, alloc);
 
-    // Serialize tags
-    rapidjson::Value tagsArr(rapidjson::kArrayType);
-    const auto& allTags = TagManager::GetInstance().GetAllTags();
-    for (const auto& tag : allTags) {
-        rapidjson::Value tagVal;
-        tagVal.SetString(tag.c_str(), static_cast<rapidjson::SizeType>(tag.size()), alloc);
-        tagsArr.PushBack(tagVal, alloc);
-    }
-    doc.AddMember("tags", tagsArr, alloc);
+    // NOTE: Tags, layers, and sorting layers are no longer saved per-scene.
+    // They are now saved in project-wide settings (TagsLayersSettings.hpp)
+    // This ensures consistency across all scenes in the project.
 
-    // Serialize layers
+    // Serialize layers (kept for backward compatibility but will be ignored on load)
     rapidjson::Value layersArr(rapidjson::kArrayType);
     const auto& allLayers = LayerManager::GetInstance().GetAllLayers();
     for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
@@ -638,27 +661,9 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         return;
     }
 
-    // Deserialize tags
-    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
-        const auto& tagsArr = doc["tags"];
-        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
-            std::string tag = tagsArr[i].GetString();
-            TagManager::GetInstance().AddTag(tag);
-        }
-    }
-
-    // Deserialize layers
-    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
-        const auto& layersArr = doc["layers"];
-        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
-            const auto& layerObj = layersArr[i];
-            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
-                int index = layerObj["index"].GetInt();
-                std::string name = layerObj["name"].GetString();
-                LayerManager::GetInstance().SetLayerName(index, name);
-            }
-        }
-    }
+    // NOTE: Tags, layers, and sorting layers are now loaded from project-wide settings
+    // (TagsLayersSettings.hpp) and are NOT loaded from scene files anymore.
+    // Old scene files may still contain these, but they will be ignored.
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + scenePath);
@@ -871,6 +876,13 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
         }
+        // ButtonComponent
+        if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+            const auto& buttonCompJSON = comps["ButtonComponent"];
+            ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
+            auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
+            DeserializeButtonComponent(buttonComp, buttonCompJSON);
+        }
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(newEnt)) {
@@ -899,6 +911,19 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             int index = layerObj["index"].GetInt();
             std::string name = layerObj["name"].GetString();
             LayerManager::GetInstance().SetLayerName(index, name);
+        }
+    }
+
+    // Deserialize sorting layers
+    if (doc.HasMember("sortingLayers") && doc["sortingLayers"].IsArray()) {
+        SortingLayerManager::GetInstance().Clear(); // Clear and reload from file
+        const auto& sortingLayersArr = doc["sortingLayers"];
+        for (rapidjson::SizeType i = 0; i < sortingLayersArr.Size(); ++i) {
+            const auto& layerObj = sortingLayersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("name")) {
+                std::string name = layerObj["name"].GetString();
+                SortingLayerManager::GetInstance().AddLayer(name);
+            }
         }
     }
 
@@ -931,27 +956,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         ENGINE_LOG_DEBUG("[Serializer]: Rapidjson parse error: " + tempScenePath);
     }
 
-    // Deserialize tags
-    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
-        const auto& tagsArr = doc["tags"];
-        for (rapidjson::SizeType i = 0; i < tagsArr.Size(); ++i) {
-            std::string tag = tagsArr[i].GetString();
-            TagManager::GetInstance().AddTag(tag);
-        }
-    }
-
-    // Deserialize layers
-    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
-        const auto& layersArr = doc["layers"];
-        for (rapidjson::SizeType i = 0; i < layersArr.Size(); ++i) {
-            const auto& layerObj = layersArr[i];
-            if (layerObj.IsObject() && layerObj.HasMember("index") && layerObj.HasMember("name")) {
-                int index = layerObj["index"].GetInt();
-                std::string name = layerObj["name"].GetString();
-                LayerManager::GetInstance().SetLayerName(index, name);
-            }
-        }
-    }
+    // NOTE: Tags, layers, and sorting layers are now loaded from project-wide settings
+    // (TagsLayersSettings.hpp) and are NOT loaded from scene files anymore.
+    // Old scene files may still contain these, but they will be ignored.
 
     if (!doc.HasMember("entities") || !doc["entities"].IsArray()) {
         ENGINE_LOG_WARN("[CreateEntitiesFromJson] no entities array in JSON: " + tempScenePath);
@@ -978,8 +985,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         GUID_128 entityGuid = GUIDUtilities::ConvertStringToGUID128(entityGuidStr);
         Entity existingEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(entityGuid);
 
+        auto entities = ecs.GetAllEntities(); // copy once
         bool entityExists = (existingEntity != static_cast<Entity>(-1)) &&
-                           std::find(ecs.GetAllEntities().begin(), ecs.GetAllEntities().end(), existingEntity) != ecs.GetAllEntities().end();
+                           std::find(entities.begin(), entities.end(), existingEntity) != entities.end();
 
         if (!entityExists) {
             Entity newEnt = ecs.CreateEntityWithGUID(entityGuid);
@@ -1198,6 +1206,14 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             auto& brainComp = ecs.GetComponent<BrainComponent>(currEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
         }
+        // ButtonComponent
+        if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+            const auto& buttonCompJSON = comps["ButtonComponent"];
+            if (ecs.HasComponent<ButtonComponent>(currEnt)) {
+                auto& buttonComp = ecs.GetComponent<ButtonComponent>(currEnt);
+                DeserializeButtonComponent(buttonComp, buttonCompJSON);
+            }
+        }
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(currEnt)) {
@@ -1389,7 +1405,7 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                 }
             }
             if (modelComp.shaderGUID.high != 0 || modelComp.shaderGUID.low != 0) {
-                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+                std::string shaderPath = ResourceManager::GetInstance().GetPlatformShaderPath("default");
                 if (!shaderPath.empty()) {
                     modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
                 }
@@ -1463,7 +1479,7 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                 }
             }
             if (spriteComp.shaderGUID.high != 0 || spriteComp.shaderGUID.low != 0) {
-                std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteComp.shaderGUID);
+                std::string shaderPath = ResourceManager::GetInstance().GetPlatformShaderPath("sprite");
                 if (!shaderPath.empty()) {
                     spriteComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteComp.shaderGUID, shaderPath);
                 }
@@ -1480,8 +1496,27 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             spriteComp.alpha = d[startIdx + 6]["data"].GetFloat();
             spriteComp.is3D = d[startIdx + 7]["data"].GetBool();
             spriteComp.enableBillboard = d[startIdx + 8]["data"].GetBool();
-            spriteComp.layer = d[startIdx + 9]["data"].GetInt();
-            readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
+
+            // Backward compatibility: old scenes have "layer", new scenes have "sortingLayer" and "sortingOrder"
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 9)) {
+                // Load old "layer" field into sortingLayer for backward compatibility
+                spriteComp.sortingLayer = d[startIdx + 9]["data"].GetInt();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10) &&
+                d[startIdx + 10].IsObject() && d[startIdx + 10].HasMember("type")) {
+                // Check if this is sortingOrder (int) or saved3DPosition (vector)
+                std::string fieldType = d[startIdx + 10]["type"].GetString();
+                if (fieldType == "int") {
+                    // New format with sortingOrder
+                    spriteComp.sortingOrder = d[startIdx + 10]["data"].GetInt();
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
+                        readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
+                    }
+                } else {
+                    // Old format - this is saved3DPosition
+                    readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
+                }
+            }
         }
     }
 }
@@ -1631,9 +1666,47 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         textComp.shaderGUID = GUIDUtilities::ConvertStringToGUID128(shaderGUIDStr);
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
-        textComp.scale = d[startIdx + 6]["data"].GetFloat();
-        textComp.is3D = d[startIdx + 7]["data"].GetBool();
-        textComp.alignment = static_cast<TextRenderComponent::Alignment>(d[startIdx + 9]["data"].GetInt());
+
+        // Detect old vs new format by checking if index 6 is float (old scale) or bool (new is3D)
+        bool hasOldScaleField = false;
+        if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
+            d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("type") &&
+            d[startIdx + 6]["type"].GetString() == std::string("float")) {
+            // OLD format with scale field - read and discard it
+            hasOldScaleField = true;
+            float oldScale = d[startIdx + 6]["data"].GetFloat();
+            (void)oldScale; // Suppress unused variable warning
+        }
+
+        if (hasOldScaleField) {
+            // OLD format indices (with scale at 6)
+            // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
+                textComp.is3D = d[startIdx + 7]["data"].GetBool();
+            }
+            // sortingLayer and sortingOrder didn't exist in old format - use defaults
+            textComp.sortingLayer = 0;
+            textComp.sortingOrder = 0;
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
+                textComp.alignmentInt = d[startIdx + 8]["data"].GetInt();
+            }
+        } else {
+            // NEW format indices (without scale)
+            // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6)) {
+                textComp.is3D = d[startIdx + 6]["data"].GetBool();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
+                textComp.sortingLayer = d[startIdx + 7]["data"].GetInt();
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
+                textComp.sortingOrder = d[startIdx + 8]["data"].GetInt();
+            }
+            // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10)) {
+                textComp.alignmentInt = d[startIdx + 10]["data"].GetInt();
+            }
+        }
     }
 }
 
@@ -1943,6 +2016,39 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
             }
         }
     }
+
+    // Deserialize backgroundColor
+    if (cameraJSON.HasMember("backgroundColor") && cameraJSON["backgroundColor"].IsObject()) {
+        const auto& bgColorObj = cameraJSON["backgroundColor"];
+        if (bgColorObj.HasMember("type") && bgColorObj["type"].GetString() == std::string("glm::vec3")) {
+            if (bgColorObj.HasMember("data") && bgColorObj["data"].IsArray() && bgColorObj["data"].Size() >= 3) {
+                const auto& vec = bgColorObj["data"];
+                cameraComp.backgroundColor.x = vec[0].GetFloat();
+                cameraComp.backgroundColor.y = vec[1].GetFloat();
+                cameraComp.backgroundColor.z = vec[2].GetFloat();
+            }
+        }
+    }
+
+    // Deserialize clearFlags
+    if (cameraJSON.HasMember("clearFlags") && cameraJSON["clearFlags"].IsInt()) {
+        cameraComp.clearFlags = static_cast<CameraClearFlags>(cameraJSON["clearFlags"].GetInt());
+    }
+
+    // Deserialize projectionType
+    if (cameraJSON.HasMember("projectionType") && cameraJSON["projectionType"].IsInt()) {
+        cameraComp.projectionType = static_cast<ProjectionType>(cameraJSON["projectionType"].GetInt());
+    }
+
+    // Deserialize useSkybox
+    if (cameraJSON.HasMember("useSkybox") && cameraJSON["useSkybox"].IsBool()) {
+        cameraComp.useSkybox = cameraJSON["useSkybox"].GetBool();
+    }
+
+    // Deserialize skyboxTexturePath
+    if (cameraJSON.HasMember("skyboxTexturePath") && cameraJSON["skyboxTexturePath"].IsString()) {
+        cameraComp.skyboxTexturePath = cameraJSON["skyboxTexturePath"].GetString();
+    }
 }
 
 // Helper function to deserialize a single script instance
@@ -1968,7 +2074,7 @@ static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson)
                 }
                 else {
                     // Successfully deserialized, clear any pending state
-                    sd.pendingInstanceState.clear();
+                    sd.pendingInstanceState = instJson;
                 }
             }
 
@@ -2038,6 +2144,12 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             }
             if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
                 sd.scriptPath = scriptData["scriptPath"].GetString();
+#ifndef EDITOR
+                // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+                if (sd.scriptPath.find("../../Resources") == 0) {
+                    sd.scriptPath = sd.scriptPath.substr(6); // Remove "../../" prefix
+                }
+#endif
             }
 
             // If scriptPath is empty, try to resolve it from GUID
@@ -2105,6 +2217,12 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
         // Read simple fields
         if (scriptJSON.HasMember("scriptPath") && scriptJSON["scriptPath"].IsString()) {
             sd.scriptPath = scriptJSON["scriptPath"].GetString();
+#ifndef EDITOR
+            // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+            if (sd.scriptPath.find("../../Resources") == 0) {
+                sd.scriptPath = sd.scriptPath.substr(6); // Remove "../../" prefix
+            }
+#endif
         }
         if (scriptJSON.HasMember("enabled") && scriptJSON["enabled"].IsBool()) {
             sd.enabled = scriptJSON["enabled"].GetBool();
@@ -2170,5 +2288,62 @@ void Serializer::DeserializeBrainComponent(BrainComponent& brainComp, const rapi
         brainComp.started = false;
         brainComp.activeState = d[1]["data"].GetString();
         brainComp.enabled = d[2]["data"].GetBool();
+    }
+}
+
+void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON) {
+    if (buttonJSON.HasMember("data") && buttonJSON["data"].IsArray()) {
+        const auto& d = buttonJSON["data"];
+        buttonComp.bindings.clear();
+
+        if (d.Size() > 0 && d[0].HasMember("data") && d[0]["data"].IsArray()) {
+            const auto& bindingsArr = d[0]["data"].GetArray();
+            for (const auto& bindingJSON : bindingsArr) {
+                ButtonBinding binding;
+                if (bindingJSON.HasMember("data") && bindingJSON["data"].IsArray()) {
+                    const auto& bd = bindingJSON["data"];
+
+                    // Handle both old format (4 fields) and new format (5 fields with scriptPath)
+                    // New format: 0: targetEntityGuidStr, 1: scriptPath, 2: scriptGuidStr, 3: functionName, 4: callWithSelf
+                    // Old format: 0: targetEntityGuidStr, 1: scriptGuidStr, 2: functionName, 3: callWithSelf
+
+                    if (bd.Size() >= 5) {
+                        // New format with scriptPath
+                        if (bd[0].HasMember("data") && bd[0]["data"].IsString())
+                            binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString()) {
+                            binding.scriptPath = bd[1]["data"].GetString();
+#ifndef EDITOR
+                            // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+                            if (binding.scriptPath.find("../../Resources") == 0) {
+                                binding.scriptPath = binding.scriptPath.substr(6); // Remove "../../" prefix
+                            }
+#endif
+                        }
+                        if (bd[2].HasMember("data") && bd[2]["data"].IsString())
+                            binding.scriptGuidStr = bd[2]["data"].GetString();
+                        if (bd[3].HasMember("data") && bd[3]["data"].IsString())
+                            binding.functionName = bd[3]["data"].GetString();
+                        if (bd[4].HasMember("data") && bd[4]["data"].IsBool())
+                            binding.callWithSelf = bd[4]["data"].GetBool();
+                    } else if (bd.Size() >= 4) {
+                        // Old format without scriptPath - maintain backward compatibility
+                        if (bd[0].HasMember("data") && bd[0]["data"].IsString())
+                            binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString())
+                            binding.scriptGuidStr = bd[1]["data"].GetString();
+                        if (bd[2].HasMember("data") && bd[2]["data"].IsString())
+                            binding.functionName = bd[2]["data"].GetString();
+                        if (bd[3].HasMember("data") && bd[3]["data"].IsBool())
+                            binding.callWithSelf = bd[3]["data"].GetBool();
+                        // scriptPath will remain empty for old scenes
+                    }
+                }
+                buttonComp.bindings.push_back(binding);
+            }
+        }
+
+        if (d.Size() > 1 && d[1].HasMember("data") && d[1]["data"].IsBool())
+            buttonComp.interactable = d[1]["data"].GetBool();
     }
 }

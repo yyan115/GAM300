@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007bcbfa58e79f63-00036284cc000009",
+        "source": "../../Resources/Audio/_InUse/MainMenu/MouseClick1.mp3",
+        "compiled": "../../Resources/Audio/_InUse/MainMenu/MouseClick1.mp3",
+        "android_compiled": "Resources/Audio/InUse/MainMenu/MouseClick1.mp3"
+    }
+}

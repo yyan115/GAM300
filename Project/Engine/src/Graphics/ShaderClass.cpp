@@ -345,8 +345,12 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 
 				std::string vertPath = assetPathAndroid + ".vert";
 				std::string androidVertPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / vertPath).generic_string();
+				std::filesystem::path newVertPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(androidVertPath));
+				androidVertPath = newVertPath.generic_string();
 				std::string fragPath = assetPathAndroid + ".frag";
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
+				std::filesystem::path newFragPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(androidFragPath));
+				androidFragPath = newFragPath.generic_string();
 				std::filesystem::copy_file(path + ".vert", androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
 				std::filesystem::copy_file(path + ".frag", androidFragPath,

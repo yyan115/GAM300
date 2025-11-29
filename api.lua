@@ -24,6 +24,28 @@
 ---@field isLoop boolean
 ---@field speed any
 ---@field clipCount any
+---@field Play fun(self: AnimationComponent, ...)
+---@field Pause fun(self: AnimationComponent, ...)
+---@field Stop fun(self: AnimationComponent, ...)
+---@field SetLooping fun(self: AnimationComponent, ...)
+---@field SetSpeed fun(self: AnimationComponent, ...)
+---@field SetClip fun(self: AnimationComponent, ...)
+---@field GetActiveClipIndex fun(self: AnimationComponent, ...)
+---@field PlayClip fun(self: AnimationComponent, ...)
+---@field PlayOnce fun(self: AnimationComponent, ...)
+---@field IsPlaying fun(self: AnimationComponent, ...)
+---@field ResetForPlay fun(self: AnimationComponent, ...)
+
+---@class SpriteAnimationComponent
+---@field currentClipIndex any
+---@field currentFrameIndex any
+---@field playbackSpeed any
+---@field playing any
+---@field enabled boolean
+---@field autoPlay any
+---@field Play fun(self: SpriteAnimationComponent, ...)
+---@field Stop fun(self: SpriteAnimationComponent, ...)
+---@field Resume fun(self: SpriteAnimationComponent, ...)
 
 ---@class BrainComponent
 ---@field kindInt any
@@ -56,6 +78,7 @@
 ---@field shakeFrequency any
 ---@field shakeOffset any
 ---@field skyboxTexturePath any
+---@field useSkybox any
 
 ---@class LightComponent
 ---@field color any
@@ -110,9 +133,9 @@
 ---@field gravity any
 ---@field velocityRandomness any
 ---@field initialVelocity any
----@field texturePath any
 ---@field timeSinceEmission boolean
 ---@field isEmitting boolean
+---@field texturePath any
 ---@field isPlayingInEditor boolean
 ---@field isPausedInEditor boolean
 
@@ -124,7 +147,8 @@
 ---@field alpha any
 ---@field is3D boolean
 ---@field enableBillboard any
----@field layer any
+---@field sortingLayer any
+---@field sortingOrder any
 ---@field saved3DPosition number
 ---@field texturePath any
 ---@field hasMigratedToTransform any
@@ -134,9 +158,13 @@
 ---@field fontSize number
 ---@field position number
 ---@field color any
----@field scale number
 ---@field is3D boolean
+---@field sortingLayer any
+---@field sortingOrder any
 ---@field alignmentInt any
+
+---@class ModelRenderComponent
+---@field isVisible boolean
 
 ---@class ColliderComponent
 ---@field enabled boolean
@@ -149,6 +177,7 @@
 ---@field capsuleHalfHeight any
 ---@field cylinderRadius any
 ---@field cylinderHalfHeight any
+---@field center any
 
 ---@class RigidBodyComponent
 ---@field enabled boolean
@@ -175,27 +204,27 @@
 ---@field Pitch any
 ---@field StereoPan any
 ---@field reverbZoneMix any
+---@field OutputAudioMixerGroup any
 ---@field Spatialize any
 ---@field SpatialBlend any
 ---@field DopplerLevel any
 ---@field MinDistance boolean
 ---@field MaxDistance boolean
----@field OutputAudioMixerGroup any
 ---@field IsPlaying boolean
 ---@field IsPaused boolean
 ---@field Position number
----@field play fun(self: AudioComponent, ...)
----@field playOneShot fun(self: AudioComponent, ...)
----@field stop fun(self: AudioComponent, ...)
----@field pause fun(self: AudioComponent, ...)
----@field unPause fun(self: AudioComponent, ...)
----@field getIsPlaying fun(self: AudioComponent, ...)
----@field getIsPaused fun(self: AudioComponent, ...)
----@field setVolume fun(self: AudioComponent, ...)
----@field setPitch fun(self: AudioComponent, ...)
----@field setLoop fun(self: AudioComponent, ...)
----@field setMute fun(self: AudioComponent, ...)
----@field setClip fun(self: AudioComponent, ...)
+---@field Play fun(self: AudioComponent, ...)
+---@field PlayOneShot fun(self: AudioComponent, ...)
+---@field Stop fun(self: AudioComponent, ...)
+---@field Pause fun(self: AudioComponent, ...)
+---@field UnPause fun(self: AudioComponent, ...)
+---@field GetIsPlaying fun(self: AudioComponent, ...)
+---@field GetIsPaused fun(self: AudioComponent, ...)
+---@field SetVolume fun(self: AudioComponent, ...)
+---@field SetPitch fun(self: AudioComponent, ...)
+---@field SetLoop fun(self: AudioComponent, ...)
+---@field SetMute fun(self: AudioComponent, ...)
+---@field SetClip fun(self: AudioComponent, ...)
 
 ---@class AudioListenerComponent
 ---@field enabled boolean
@@ -221,7 +250,161 @@
 
 ---@class TagComponent
 ---@field tagIndex any
+---@field SetTag fun(self: TagComponent, ...)
+---@field GetTagName fun(self: TagComponent, ...)
+---@field HasTag fun(self: TagComponent, ...)
 
 ---@class LayerComponent
 ---@field layerIndex any
+---@field SetLayer fun(self: LayerComponent, ...)
+---@field GetLayerName fun(self: LayerComponent, ...)
+---@field IsInLayer fun(self: LayerComponent, ...)
+---@field GetLayerMask fun(self: LayerComponent, ...)
+
+---@class SiblingIndexComponent
+---@field siblingIndex any
+
+---@class Input
+---@field GetKey fun(...)
+---@field GetKeyDown fun(...)
+---@field GetMouseButton fun(...)
+---@field GetMouseButtonDown fun(...)
+---@field GetMouseX fun(...)
+---@field GetMouseY fun(...)
+---@field GetAnyKeyDown fun(...)
+---@field GetAnyMouseButtonDown fun(...)
+---@field GetAnyInputDown fun(...)
+---@field A number
+---@field B number
+---@field C number
+---@field D number
+---@field E number
+---@field F number
+---@field G number
+---@field H number
+---@field I number
+---@field J number
+---@field K number
+---@field L number
+---@field M number
+---@field N number
+---@field O number
+---@field P number
+---@field Q number
+---@field R number
+---@field S number
+---@field T number
+---@field U number
+---@field V number
+---@field W number
+---@field X number
+---@field Y number
+---@field Z number
+---@field Num0 number
+---@field Num1 number
+---@field Num2 number
+---@field Num3 number
+---@field Num4 number
+---@field Num5 number
+---@field Num6 number
+---@field Num7 number
+---@field Num8 number
+---@field Num9 number
+---@field Space number
+---@field Enter number
+---@field Tab number
+---@field Backspace number
+---@field Escape number
+---@field Delete number
+---@field Left number
+---@field Right number
+---@field Up number
+---@field Down number
+---@field Shift number
+---@field Ctrl number
+---@field Alt number
+---@field F1 number
+---@field F2 number
+---@field F3 number
+---@field F4 number
+---@field F5 number
+---@field F6 number
+---@field F7 number
+---@field F8 number
+---@field F9 number
+---@field F10 number
+---@field F11 number
+---@field F12 number
+---@field Left number
+---@field Right number
+---@field Middle number
+
+---@class Time
+---@field GetDeltaTime fun(...)
+---@field GetFixedDeltaTime fun(...)
+---@field GetFPS fun(...)
+---@field GetTimeScale fun(...)
+---@field SetTimeScale fun(...)
+---@field GetScaledDeltaTime fun(...)
+
+---@class Scene
+---@field Load fun(...)
+---@field GetCurrentName fun(...)
+---@field GetCurrentPath fun(...)
+
+---@class Screen
+---@field GetWidth fun(...)
+---@field GetHeight fun(...)
+---@field GetViewportWidth fun(...)
+---@field GetViewportHeight fun(...)
+---@field IsFocused fun(...)
+---@field IsMinimized fun(...)
+---@field SetTitle fun(...)
+---@field RequestClose fun(...)
+
+---@class Debug
+---@field DrawLine fun(...)
+---@field DrawCube fun(...)
+---@field DrawSphere fun(...)
+
+---@class Audio
+---@field StopAll fun(...)
+---@field SetMasterVolume fun(...)
+---@field GetMasterVolume fun(...)
+---@field SetGlobalPaused fun(...)
+
+---@class CharacterController
+---@field new fun(...)
+---@field Initialise fun(...)
+---@field Move fun(...)
+---@field Jump fun(...)
+---@field Update fun(...)
+---@field GetPosition fun(...)
+---@field IsGrounded fun(...)
+---@field SetVelocity fun(...)
+---@field GetVelocity fun(...)
+---@field GetGravity fun(...)
+---@field SetGravity fun(...)
+---@field Destroy fun(...)
+
+---@class PhysicsSystem
+---@field GetSystem fun(...)
+
+---@class Tag
+---@field GetName fun(...)
+---@field GetIndex fun(...)
+---@field GetCount fun(...)
+---@field Compare fun(...)
+---@field CompareNames fun(...)
+
+---@class Layer
+---@field GetName fun(...)
+---@field GetIndex fun(...)
+---@field IsInLayer fun(...)
+---@field GetMask fun(...)
+---@field MasksIntersect fun(...)
+
+---@class Engine
+---@field FindTransformByName fun(...)
+---@field GetTransformPosition fun(...)
 

@@ -1,0 +1,87 @@
+{
+    "tags": [
+        "Untagged",
+        "Respawn",
+        "Finish",
+        "EditorOnly",
+        "MainCamera",
+        "Player",
+        "GameController",
+        "Enemy",
+        "NPC",
+        "Collectible"
+    ],
+    "layers": [
+        {
+            "index": 0,
+            "name": "Default"
+        },
+        {
+            "index": 1,
+            "name": "TransparentFX"
+        },
+        {
+            "index": 2,
+            "name": "Ignore Raycast"
+        },
+        {
+            "index": 3,
+            "name": "Water"
+        },
+        {
+            "index": 4,
+            "name": "UI"
+        },
+        {
+            "index": 5,
+            "name": "Player"
+        },
+        {
+            "index": 6,
+            "name": "Enemy"
+        },
+        {
+            "index": 7,
+            "name": "Ground"
+        },
+        {
+            "index": 8,
+            "name": "Obstacle"
+        },
+        {
+            "index": 9,
+            "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
+        }
+    ],
+    "sortingLayers": [
+        {
+            "id": 0,
+            "name": "Default",
+            "order": 0
+        },
+        {
+            "id": 1,
+            "name": "Background",
+            "order": 1
+        },
+        {
+            "id": 2,
+            "name": "Foreground",
+            "order": 2
+        },
+        {
+            "id": 3,
+            "name": "UI",
+            "order": 3
+        },
+        {
+            "id": 4,
+            "name": "test",
+            "order": 4
+        }
+    ]
+}
