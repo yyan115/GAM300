@@ -32,21 +32,30 @@ return Component {
 
         -- Step 1 timings
         attack1Duration  = 2.0,
-        attack1HitStart  = 1.1,
-        attack1HitEnd    = 1.4,
+        attack1HitStart  = 1.4,
+        attack1HitEnd    = 1.7,
 
         -- Step 2 timings
-        attack2Duration  = 2.0,
-        attack2HitStart  = 1.1,
-        attack2HitEnd    = 1.4,
+        attack2Duration  = 2.5,
+        attack2HitStart  = 1.7,
+        attack2HitEnd    = 2.0,
 
         -- Step 3 timings
-        attack3Duration  = 0.55,
-        attack3HitStart  = 0.20,
-        attack3HitEnd    = 0.40, 
+        attack3Duration  = 1.8,
+        attack3HitStart  = 1.0,
+        attack3HitEnd    = 1.3, 
 
         -- SFX clips (populate in editor)
         attackSFXClips = {},
+
+        -- Chain attack config (Right Mouse)
+        chainDuration     = 4.6,   -- total time for full chain cycle (throw + pull)
+        chainPullDelay    = 2.45,   -- time after throw before we pull back (your requirement)
+        chainCooldown     = 3.0,   -- separate cooldown for chain
+        chainRange        = 6.0,   -- how far the chain travels (for VFX / hit logic)
+        chainAnimThrowClip = 6,    -- animation index for throwing chain (set in editor)
+        chainAnimPullClip  = 7,    -- animation index for pulling chain back (set in editor)
+        chainSFXClips     = {},    -- optional: separate SFX for chain
     },
 
     ----------------------------------------------------------------------
@@ -65,6 +74,15 @@ return Component {
         self._queuedNextSwing  = false
         self._prevLeftDown     = false
         self._lastClickTime    = -999.0
+
+        -- Chain attack state (right-click)
+        self._isChainAttack      = false
+        self._chainState         = "idle"   -- "idle", "flying", "returning"
+        self._chainTimer         = 0.0
+        self._chainCooldownTimer = 0.0
+
+        self._prevRightDown      = false
+
 
         -- Unique IDs so each swing only hits an enemy once
         self._hitEventIdCounter = 0
@@ -98,29 +116,39 @@ return Component {
     ----------------------------------------------------------------------
     -- Main update
     ----------------------------------------------------------------------
-    Update = function(self, dt)
+        Update = function(self, dt)
         self._time = self._time + dt
 
         -- ---- Input handling ----
-        local leftDown    = false
-        local leftPressed = false
+        local leftDown,  leftPressed  = false, false
+        local rightDown, rightPressed = false, false
 
         if Input and Input.GetMouseButton then
-            leftDown = Input.GetMouseButton(Input.MouseButton.Left)
+            leftDown  = Input.GetMouseButton(Input.MouseButton.Left)
+            rightDown = Input.GetMouseButton(Input.MouseButton.Right)
         end
 
-        -- Edge detect: emulate GetMouseButtonDown
-        leftPressed = (leftDown and not self._prevLeftDown)
+        -- Edge detect: emulate GetMouseButtonDown for left
+        leftPressed  = (leftDown  and not self._prevLeftDown)
+        rightPressed = (rightDown and not self._prevRightDown)
 
         if leftPressed then
             self._lastClickTime = self._time
         end
 
-        self._prevLeftDown = leftDown
+        self._prevLeftDown  = leftDown
+        self._prevRightDown = rightDown
 
-        -- ---- Combo logic ----
-        self:_updateCombo(dt, leftPressed)
+        -- ---- Chain attack (right click) ----
+        self:_updateChainAttack(dt, rightPressed)
+
+        -- If chain is active, we don't allow normal combo attacks
+        if not self._isChainAttack then
+            -- ---- Combo logic (left click) ----
+            self:_updateCombo(dt, leftPressed)
+        end
     end,
+
 
 
     ----------------------------------------------------------------------
@@ -147,9 +175,16 @@ return Component {
         -- There is an active attack step
         self._attackTimer = self._attackTimer + dt
 
-        -- Only allow queuing the next swing during the first 0.3 seconds of the attack
-        -- This prevents spam clicking throughout the entire attack duration
-        local canQueueNext = (self._attackTimer <= 0.3 and not self._queuedNextSwing and self._comboIndex < self._maxComboSteps)
+        -- Only allow queuing the next swing while the hit is actually active
+        local hitStart, hitEnd = self:_getHitWindow(self._comboIndex)
+        local t = self._attackTimer
+
+        local canQueueNext =
+            (t >= hitStart) and
+            (t <= hitEnd) and
+            (not self._queuedNextSwing) and
+            (self._comboIndex < self._maxComboSteps)
+
         if leftPressed and canQueueNext then
             self._queuedNextSwing = true
             print("[LUA][PlayerAttack] Queued next swing (step " .. tostring(self._comboIndex + 1) .. ")")
@@ -177,6 +212,74 @@ return Component {
                 _G.player_is_attacking = false
             end
         end
+    end,
+
+    ----------------------------------------------------------------------
+    -- Chain attack (right-click): throw chain, then pull back after delay
+    ----------------------------------------------------------------------
+    _updateChainAttack = function(self, dt, rightPressed)
+        -- Update chain cooldown
+        if self._chainCooldownTimer and self._chainCooldownTimer > 0 then
+            self._chainCooldownTimer = self._chainCooldownTimer - dt
+            if self._chainCooldownTimer < 0 then
+                self._chainCooldownTimer = 0
+            end
+        end
+
+        -- If no chain attack currently active, check for starting one
+        if not self._isChainAttack then
+            -- Only start if:
+            --  - right click pressed
+            --  - chain cooldown ready
+            --  - normal melee combo not currently happening
+            if rightPressed
+                and (self._chainCooldownTimer or 0) <= 0
+                and self._comboIndex == 0
+            then
+                self:_startChainAttack()
+            end
+            return
+        end
+
+        -- Chain is active
+        self._chainTimer = self._chainTimer + dt
+
+        local pullDelay    = self.chainPullDelay or 2.0
+        local totalDuration = self.chainDuration or (pullDelay + 0.3)
+
+        -- After pullDelay seconds, start pulling the chain back
+        if self._chainState == "flying" and self._chainTimer >= pullDelay then
+            self._chainState = "returning"
+            self:_playChainAnimation("pull")
+            self:_fireChainPullEvent()
+            print("[LUA][PlayerAttack] Chain pull-back started")
+        end
+
+        -- End of chain attack
+        if self._chainTimer >= totalDuration then
+            print("[LUA][PlayerAttack] Chain attack finished")
+
+            self._isChainAttack      = false
+            self._chainState         = "idle"
+            self._chainTimer         = 0.0
+            self._chainCooldownTimer = self.chainCooldown or 3.0
+
+            _G.player_is_attacking = false
+        end
+    end,
+
+    _startChainAttack = function(self)
+        print("[LUA][PlayerAttack] Chain attack started")
+
+        self._isChainAttack = true
+        self._chainState    = "flying"
+        self._chainTimer    = 0.0
+
+        _G.player_is_attacking = true
+
+        self:_playChainAnimation("throw")
+        self:_playChainSFX()
+        self:_fireChainThrowEvent()
     end,
 
     _startAttackStep = function(self, stepIndex)
@@ -286,6 +389,34 @@ return Component {
         event_bus.publish("player_attack_hitbox", payload)
     end,
 
+        _fireChainThrowEvent = function(self)
+        if not (event_bus and event_bus.publish) then return end
+        if not (self.GetPosition and self.GetRotation) then return end
+
+        local px, py, pz = self:GetPosition()
+        local rx, ry, rz = self:GetRotation()  -- assume y is yaw in degrees
+        local yawRad     = math.rad(ry or 0.0)
+
+        local forwardX = math.sin(yawRad)
+        local forwardZ = math.cos(yawRad)
+
+        local payload = {
+            origin    = { x = px, y = py, z = pz },
+            direction = { x = forwardX, y = 0.0, z = forwardZ },
+            range     = self.chainRange or 6.0,
+        }
+
+        event_bus.publish("player_chain_throw", payload)
+    end,
+
+    _fireChainPullEvent = function(self)
+        if not (event_bus and event_bus.publish) then return end
+
+        -- You can expand this with more data if needed (e.g., hooked enemy info)
+        event_bus.publish("player_chain_pull", {})
+    end,
+
+
     ----------------------------------------------------------------------
     -- Animation hook
     ----------------------------------------------------------------------
@@ -317,4 +448,33 @@ return Component {
         local clipIndex = math.random(1, #clips)
         audio:PlayOneShot(clips[clipIndex])
     end,
+
+    _playChainAnimation = function(self, phase)
+        local animator = self._animator
+        if not animator then return end
+
+        local clipIndex = nil
+
+        if phase == "throw" then
+            clipIndex = self.chainAnimThrowClip
+        elseif phase == "pull" then
+            clipIndex = self.chainAnimPullClip
+        end
+
+        if not clipIndex then return end
+
+        print("[LUA][PlayerAttack] Play chain animation (" .. tostring(phase) ..
+              ") clip " .. tostring(clipIndex))
+        animator:PlayClip(clipIndex, false)
+    end,
+
+    _playChainSFX = function(self)
+        local audio = self._audio
+        local clips = self.chainSFXClips or self.attackSFXClips
+        if not audio or not clips or #clips == 0 then return end
+
+        local idx = math.random(1, #clips)
+        audio:PlayOneShot(clips[idx])
+    end,
+
 }

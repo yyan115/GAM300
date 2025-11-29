@@ -151,6 +151,25 @@ return Component {
         self._prevInputS = false
         self._prevInputA = false
         self._prevInputD = false
+
+        -- Camera basis (for camera-relative movement)
+        self._camForwardX = 0.0   -- default: world +Z
+        self._camForwardZ = 1.0
+        self._camBasisSub = nil
+
+        if event_bus and event_bus.subscribe then
+            self._camBasisSub = event_bus.subscribe("camera_basis", function(payload)
+                if not payload or not payload.forward then return end
+                local f = payload.forward
+                local fx = f.x or f[1] or 0.0
+                local fz = f.z or f[3] or 1.0
+                local len = math.sqrt(fx*fx + fz*fz)
+                if len > 0.0001 then
+                    self._camForwardX = fx / len
+                    self._camForwardZ = fz / len
+                end
+            end)
+        end
     end,
 
     ----------------------------------------------------------------------
@@ -195,6 +214,9 @@ return Component {
         -- Cache components locally for performance
         local animator = self._animator
         local audio    = self._audio
+
+        -- Read global attack state (set by PlayerAttack.lua)
+        local isAttacking = (_G.player_is_attacking == true)
         
         --------------------------------------
         -- 1) Read WASD Input
@@ -206,8 +228,8 @@ return Component {
         
         -- Raw input direction (before camera transformation)
         local rawMoveX, rawMoveZ = 0.0, 0.0
-        if inputW then rawMoveZ = rawMoveZ + 1.0 end  -- forward (+Z)
-        if inputS then rawMoveZ = rawMoveZ - 1.0 end  -- backward (-Z)
+        if inputW then rawMoveZ = rawMoveZ - 1.0 end  -- forward (-Z)
+        if inputS then rawMoveZ = rawMoveZ + 1.0 end  -- backward (+Z)
         if inputA then rawMoveX = rawMoveX + 1.0 end  -- left (+X)
         if inputD then rawMoveX = rawMoveX - 1.0 end  -- right (-X)
 
@@ -219,13 +241,39 @@ return Component {
         end
         
         local hasMovementInput = (len > 0.0001)
-        
-        -- Use raw movement direction (world-space WASD)
-        local moveX, moveZ = rawMoveX, rawMoveZ
+
+        --------------------------------------------------
+        -- Camera-relative movement (always reset per frame)
+        --------------------------------------------------
+        local moveX, moveZ = 0.0, 0.0   -- <-- IMPORTANT: local + zeroed every Update
+
+        if hasMovementInput then
+            -- camera forward (from camera_follow)
+            local fx = self._camForwardX or 0.0
+            local fz = self._camForwardZ or 1.0
+
+            -- right vector on XZ: (fz, -fx)
+            local rx = fz
+            local rz = -fx
+
+            -- rawMoveZ = "forward/back"
+            -- rawMoveX = "left/right"
+            -- Move = forward * rawMoveZ + left * rawMoveX
+            -- left = -right = (-rx, -rz)
+            moveX = fx * rawMoveZ - rx * rawMoveX
+            moveZ = fz * rawMoveZ - rz * rawMoveX
+        end
+
+        -- Lock horizontal movement while attacking
+        if isAttacking then
+            moveX, moveZ = 0.0, 0.0
+            hasMovementInput = false
+        end
 
         local speed = self.moveSpeed or 5.0
         local dx = moveX * speed * dt
         local dz = moveZ * speed * dt
+
 
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
@@ -233,9 +281,9 @@ return Component {
         -- 2) Detect Key Press for Footstep SFX
         --------------------------------------
         local keyJustPressed = (inputW and not self._prevInputW) or
-                               (inputS and not self._prevInputS) or
-                               (inputA and not self._prevInputA) or
-                               (inputD and not self._prevInputD)
+                            (inputS and not self._prevInputS) or
+                            (inputA and not self._prevInputA) or
+                            (inputD and not self._prevInputD)
         
         self._prevInputW = inputW
         self._prevInputS = inputS
@@ -249,9 +297,9 @@ return Component {
         local wasInAir = not self._isGrounded
         self._wasGrounded = self._isGrounded
 
-        -- Jump input (Space key)
+        -- Jump input (Space key) - disabled while attacking
         local jumpPressed = Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Space)
-        if self._isGrounded and jumpPressed then
+        if self._isGrounded and jumpPressed and not isAttacking then
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
             self._isJumping  = true
@@ -267,7 +315,7 @@ return Component {
             print("[LUA][PlayerMovement] Jump!")
         end
 
-        -- Apply gravity when in air
+        -- Apply gravity when in air (still allowed during attack)
         if not self._isGrounded then
             self._velY = self._velY + (self.gravity) * dt
         end
@@ -291,7 +339,7 @@ return Component {
                     print("[LUA][PlayerMovement] Landed!")
                     
                     -- Return to idle/walk animation after landing
-                    if animator then
+                    if animator and not isAttacking then
                         if hasMovementInput then
                             animator:PlayClip(self._walkAnimationClip or 1, true)
                         else
@@ -312,7 +360,7 @@ return Component {
         --------------------------------------
         -- 5) Rotation: Face Movement Direction
         --------------------------------------
-        if hasMovementInput and self.SetRotation then
+        if hasMovementInput and self.SetRotation and not isAttacking then
             -- Calculate target rotation quaternion (face the actual movement direction)
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
             
@@ -336,13 +384,13 @@ return Component {
         --------------------------------------
         -- 6) Walking Animation & Footstep SFX
         --------------------------------------
-        local isWalkingNow = hasMovementInput and self._isGrounded
+        local isWalkingNow = hasMovementInput and self._isGrounded and not isAttacking
 
-        -- Animation state change (only when grounded and not jumping)
+        -- Animation state change (only when grounded, not jumping, and not attacking)
         if isWalkingNow ~= self._isWalking and not self._isJumping then
             self._isWalking = isWalkingNow
             
-            if animator then
+            if animator and not isAttacking then
                 if isWalkingNow then
                     animator:PlayClip(self._walkAnimationClip or 1, true)
                     print("[LUA][PlayerMovement] Walking")
@@ -384,10 +432,16 @@ return Component {
         end
     end,
 
+
     ----------------------------------------------------------------------
     -- Lifecycle: OnDisable
     ----------------------------------------------------------------------
     OnDisable = function(self)
         print("[LUA][PlayerMovement] OnDisable")
+
+        if event_bus and event_bus.unsubscribe and self._camBasisSub then
+            event_bus.unsubscribe(self._camBasisSub)
+            self._camBasisSub = nil
+        end
     end,
 }

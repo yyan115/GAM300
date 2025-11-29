@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c26d9e4c169c5-00036d2b0e000003",
+        "source": "../../Resources/Animations/PlayerSlamChain.fbx",
+        "compiled": "../../Resources/Animations/PlayerSlamChain.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

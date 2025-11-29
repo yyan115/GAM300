@@ -103,7 +103,7 @@ return Component {
         local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
         local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
         self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   + xoffset
+        self._yaw   = self._yaw   - xoffset
         self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
     end,
@@ -140,6 +140,14 @@ return Component {
         local radius   = self.followDistance or 5.0
         local pitchRad = math.rad(self._pitch)
         local yawRad   = math.rad(self._yaw)
+
+        if event_bus and event_bus.publish then
+            local fx = math.sin(yawRad)  -- forward.x
+            local fz = math.cos(yawRad)  -- forward.z
+            event_bus.publish("camera_basis", {
+                forward = { x = fx, y = 0.0, z = fz },
+            })
+        end
 
         local horizontalRadius = radius * math.cos(pitchRad)
         local offsetX = horizontalRadius * math.sin(yawRad)
