@@ -80,13 +80,16 @@ return Component {
                 local z = payload.z or payload[3] or 0.0
                 -- Store raw position, height offset applied in Update based on zoom
                 self._targetPos.x, self._targetPos.y, self._targetPos.z = x, y, z
+
+                -- Lock cursor only when we first receive player position (entering gameplay)
+                -- This prevents cursor lock in menu scenes where there's no player
+                if not self._hasTarget then
+                    if Screen and Screen.SetCursorLocked then
+                        Screen.SetCursorLocked(true)
+                    end
+                end
                 self._hasTarget = true
             end)
-        end
-
-        -- Lock cursor when camera starts (game mode)
-        if Screen and Screen.SetCursorLocked then
-            Screen.SetCursorLocked(true)
         end
     end,
 

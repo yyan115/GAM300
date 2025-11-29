@@ -163,7 +163,8 @@ void GamePanel::OnImGuiRender() {
                 ImGui::SetWindowFocus();
 
                 // Capture cursor when clicking in game panel during play mode
-                if (Engine::ShouldRunGameLogic() && !cursorCaptured) {
+                // Only if game code has requested cursor lock (respects main menu wanting cursor free)
+                if (Engine::ShouldRunGameLogic() && !cursorCaptured && WindowManager::IsCursorLockRequested()) {
                     SetCursorCaptured(true);
                 }
             }
@@ -175,6 +176,11 @@ void GamePanel::OnImGuiRender() {
 
             // Release cursor when game stops
             if (cursorCaptured && !Engine::ShouldRunGameLogic()) {
+                SetCursorCaptured(false);
+            }
+
+            // Release cursor if game code explicitly unlocked it
+            if (cursorCaptured && !WindowManager::IsCursorLockRequested()) {
                 SetCursorCaptured(false);
             }
 

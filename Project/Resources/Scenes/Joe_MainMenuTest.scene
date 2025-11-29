@@ -263,292 +263,23 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "000e9c7824812820-00036d5a00000001",
+                            "scriptPath": "../../Resources/Scripts/main_menu.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         },
         {
             "id": 1,
-            "guid": "00328d6a1fcfe36b-000361147200000f",
-            "components": {
-                "NameComponent": {
-                    "name": "PlayerCharacter"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 1
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.75
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.340404
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.5
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.75
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.340404
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ModelRenderComponent": {
-                    "type": "ModelRenderComponent",
-                    "data": [
-                        "00374a21769ea003-000331fc5a000045",
-                        "0060f444e1e8808c-000337e664000011",
-                        "00374a214d8f53a1-000331fc6200004d",
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "AnimationComponent": {
-                    "type": "AnimationComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "std::vector<std::string>",
-                            "data": [
-                                {
-                                    "type": "std::string",
-                                    "data": "../../Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx"
-                                }
-                            ]
-                        },
-                        {
-                            "type": "std::vector<GUID_128>",
-                            "data": [
-                                "00736103a388472e-000366d5fc000003"
-                            ]
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2,
             "guid": "00328d6a6022c3f8-0003611d180000ab",
             "components": {
                 "NameComponent": {
@@ -882,7 +613,7 @@
             }
         },
         {
-            "id": 3,
+            "id": 2,
             "guid": "00328d6a095e2333-00036123ac0000af",
             "components": {
                 "NameComponent": {
@@ -1204,7 +935,7 @@
             }
         },
         {
-            "id": 4,
+            "id": 3,
             "guid": "00328d6a304cce5e-00036124660000b1",
             "components": {
                 "NameComponent": {
@@ -1526,7 +1257,7 @@
             }
         },
         {
-            "id": 5,
+            "id": 4,
             "guid": "00328d6a4de16bac-00036124de0000b3",
             "components": {
                 "NameComponent": {
@@ -1848,7 +1579,7 @@
             }
         },
         {
-            "id": 6,
+            "id": 5,
             "guid": "001186adb09aec65-00036c6d38000003",
             "components": {
                 "NameComponent": {
@@ -2111,7 +1842,7 @@
             }
         },
         {
-            "id": 7,
+            "id": 6,
             "guid": "001186ad929f76b3-00036c6dfc000005",
             "components": {
                 "NameComponent": {
@@ -2380,7 +2111,7 @@
             }
         },
         {
-            "id": 8,
+            "id": 7,
             "guid": "001186adc2edb969-00036c6ea6000007",
             "components": {
                 "NameComponent": {
@@ -2649,7 +2380,7 @@
             }
         },
         {
-            "id": 9,
+            "id": 8,
             "guid": "001186adf5042133-00036c6eae000009",
             "components": {
                 "NameComponent": {
@@ -2918,7 +2649,7 @@
             }
         },
         {
-            "id": 10,
+            "id": 9,
             "guid": "001186adebcc2cd9-00036c6eb600000b",
             "components": {
                 "NameComponent": {
@@ -3187,7 +2918,7 @@
             }
         },
         {
-            "id": 11,
+            "id": 10,
             "guid": "001186adc4597119-00036c921e00002d",
             "components": {
                 "NameComponent": {
@@ -3376,7 +3107,7 @@
             }
         },
         {
-            "id": 12,
+            "id": 11,
             "guid": "001186ade0f284e6-00036c9262000031",
             "components": {
                 "NameComponent": {
@@ -3623,7 +3354,7 @@
             }
         },
         {
-            "id": 13,
+            "id": 12,
             "guid": "001186adef8687cd-00036c9482000035",
             "components": {
                 "NameComponent": {
@@ -3870,7 +3601,7 @@
             }
         },
         {
-            "id": 14,
+            "id": 13,
             "guid": "001186adc9fd50ee-00036c95ca000037",
             "components": {
                 "NameComponent": {
@@ -4117,7 +3848,7 @@
             }
         },
         {
-            "id": 15,
+            "id": 14,
             "guid": "001186ad938e05de-00036c9708000039",
             "components": {
                 "NameComponent": {
@@ -4364,7 +4095,7 @@
             }
         },
         {
-            "id": 16,
+            "id": 15,
             "guid": "001186ada9f3d833-00036c974000003b",
             "components": {
                 "NameComponent": {
@@ -4611,7 +4342,7 @@
             }
         },
         {
-            "id": 17,
+            "id": 16,
             "guid": "001186adf6b1753f-00036c9d04000053",
             "components": {
                 "NameComponent": {
@@ -4858,7 +4589,7 @@
             }
         },
         {
-            "id": 18,
+            "id": 17,
             "guid": "001186adb3c1e3b6-00036cb5d8000057",
             "components": {
                 "NameComponent": {
@@ -5105,7 +4836,7 @@
             }
         },
         {
-            "id": 19,
+            "id": 18,
             "guid": "001186adc717bd6f-00036cb70c00005b",
             "components": {
                 "NameComponent": {
@@ -5363,7 +5094,7 @@
             }
         },
         {
-            "id": 20,
+            "id": 19,
             "guid": "001186add3358ae5-00036cb8e800005d",
             "components": {
                 "NameComponent": {
@@ -5621,7 +5352,7 @@
             }
         },
         {
-            "id": 21,
+            "id": 20,
             "guid": "001186adeb4d6f37-00036cb90000005f",
             "components": {
                 "NameComponent": {
@@ -5879,7 +5610,7 @@
             }
         },
         {
-            "id": 22,
+            "id": 21,
             "guid": "001186adb30c9ff8-00036cb91a000061",
             "components": {
                 "NameComponent": {
@@ -6137,7 +5868,7 @@
             }
         },
         {
-            "id": 23,
+            "id": 22,
             "guid": "001186ad9d4a3355-00036cc07c000067",
             "components": {
                 "NameComponent": {
@@ -6406,7 +6137,7 @@
             }
         },
         {
-            "id": 24,
+            "id": 23,
             "guid": "001186ad844dbf95-00036cc084000069",
             "components": {
                 "NameComponent": {
@@ -6675,7 +6406,7 @@
             }
         },
         {
-            "id": 25,
+            "id": 24,
             "guid": "001186adfe38f266-00036cc08a00006b",
             "components": {
                 "NameComponent": {
@@ -6944,7 +6675,7 @@
             }
         },
         {
-            "id": 26,
+            "id": 25,
             "guid": "001186adf0800ca5-00036cc1dc00006f",
             "components": {
                 "NameComponent": {
@@ -7191,7 +6922,7 @@
             }
         },
         {
-            "id": 27,
+            "id": 26,
             "guid": "001186adbe5e3c26-00036cc26e000073",
             "components": {
                 "NameComponent": {
@@ -7438,7 +7169,7 @@
             }
         },
         {
-            "id": 28,
+            "id": 27,
             "guid": "001186ade2544eda-00036cc296000077",
             "components": {
                 "NameComponent": {
@@ -7685,7 +7416,7 @@
             }
         },
         {
-            "id": 29,
+            "id": 28,
             "guid": "001186adb4f51807-00036cc35a000079",
             "components": {
                 "NameComponent": {
@@ -7932,7 +7663,7 @@
             }
         },
         {
-            "id": 30,
+            "id": 29,
             "guid": "001186ada9ab8d03-00036cd03a00007d",
             "components": {
                 "NameComponent": {
@@ -8190,7 +7921,7 @@
             }
         },
         {
-            "id": 31,
+            "id": 30,
             "guid": "001186ade192a9e1-00036cd190000081",
             "components": {
                 "NameComponent": {
@@ -8437,7 +8168,7 @@
             }
         },
         {
-            "id": 32,
+            "id": 31,
             "guid": "001186adfb163ced-00036cd3aa000083",
             "components": {
                 "NameComponent": {
@@ -8684,7 +8415,7 @@
             }
         },
         {
-            "id": 33,
+            "id": 32,
             "guid": "001186aded488a85-00036cd4f0000085",
             "components": {
                 "NameComponent": {
@@ -8931,7 +8662,7 @@
             }
         },
         {
-            "id": 34,
+            "id": 33,
             "guid": "001186adcb3bf15e-00036cd578000087",
             "components": {
                 "NameComponent": {
@@ -9200,7 +8931,7 @@
             }
         },
         {
-            "id": 35,
+            "id": 34,
             "guid": "001186adf060cdf0-00036cd7c2000089",
             "components": {
                 "NameComponent": {
@@ -9459,7 +9190,7 @@
             }
         },
         {
-            "id": 36,
+            "id": 35,
             "guid": "001186adae976d78-00036cd91200008b",
             "components": {
                 "NameComponent": {
@@ -9718,7 +9449,7 @@
             }
         },
         {
-            "id": 37,
+            "id": 36,
             "guid": "001186adb85daabc-00036cd93c00008d",
             "components": {
                 "NameComponent": {
@@ -9977,7 +9708,7 @@
             }
         },
         {
-            "id": 38,
+            "id": 37,
             "guid": "001186adb7c28df0-00036cd95800008f",
             "components": {
                 "NameComponent": {
@@ -10236,7 +9967,7 @@
             }
         },
         {
-            "id": 39,
+            "id": 38,
             "guid": "001186adb618b9d7-00036cdb6e000091",
             "components": {
                 "NameComponent": {
@@ -10495,7 +10226,7 @@
             }
         },
         {
-            "id": 40,
+            "id": 39,
             "guid": "001186adebb6f0a7-00036ced68000095",
             "components": {
                 "NameComponent": {
@@ -10670,7 +10401,7 @@
             }
         },
         {
-            "id": 41,
+            "id": 40,
             "guid": "001186adbb949e60-00036cee06000099",
             "components": {
                 "NameComponent": {
@@ -10917,7 +10648,7 @@
             }
         },
         {
-            "id": 42,
+            "id": 41,
             "guid": "00032e877a997c98-00036d2b58000001",
             "components": {
                 "NameComponent": {
@@ -11098,7 +10829,7 @@
             }
         },
         {
-            "id": 43,
+            "id": 42,
             "guid": "00032e87040a8084-00036d2b7e000003",
             "components": {
                 "NameComponent": {
@@ -11367,7 +11098,7 @@
             }
         },
         {
-            "id": 44,
+            "id": 43,
             "guid": "00032e873bc4dd38-00036d2d6600003b",
             "components": {
                 "NameComponent": {
@@ -11636,7 +11367,7 @@
             }
         },
         {
-            "id": 45,
+            "id": 44,
             "guid": "00032e8703076569-00036d2e3c00003d",
             "components": {
                 "NameComponent": {
@@ -11940,7 +11671,7 @@
             }
         },
         {
-            "id": 46,
+            "id": 45,
             "guid": "00032e8735acb420-00036d2e5400003f",
             "components": {
                 "NameComponent": {
@@ -12244,7 +11975,7 @@
             }
         },
         {
-            "id": 47,
+            "id": 46,
             "guid": "00032e872b34a611-00036d2e62000041",
             "components": {
                 "NameComponent": {
@@ -12548,7 +12279,7 @@
             }
         },
         {
-            "id": 48,
+            "id": 47,
             "guid": "00032e870a1853b1-00036d3022000043",
             "components": {
                 "NameComponent": {
@@ -12817,7 +12548,7 @@
             }
         },
         {
-            "id": 49,
+            "id": 48,
             "guid": "00032e875add228e-00036d30d8000045",
             "components": {
                 "NameComponent": {
@@ -13086,7 +12817,7 @@
             }
         },
         {
-            "id": 50,
+            "id": 49,
             "guid": "00032e870d444bd5-00036d30d8000047",
             "components": {
                 "NameComponent": {
@@ -13355,7 +13086,7 @@
             }
         },
         {
-            "id": 51,
+            "id": 50,
             "guid": "00032e87635f619f-00036d310c000049",
             "components": {
                 "NameComponent": {
@@ -13624,7 +13355,7 @@
             }
         },
         {
-            "id": 52,
+            "id": 51,
             "guid": "00032e8711fa1564-00036d318200004b",
             "components": {
                 "NameComponent": {
@@ -13893,7 +13624,7 @@
             }
         },
         {
-            "id": 53,
+            "id": 52,
             "guid": "00032e8708b1a6d1-00036d318400004d",
             "components": {
                 "NameComponent": {
@@ -14162,7 +13893,7 @@
             }
         },
         {
-            "id": 54,
+            "id": 53,
             "guid": "00032e87030a66d2-00036d320200004f",
             "components": {
                 "NameComponent": {
@@ -14431,7 +14162,7 @@
             }
         },
         {
-            "id": 55,
+            "id": 54,
             "guid": "00032e875dea49ca-00036d3204000051",
             "components": {
                 "NameComponent": {
@@ -14700,7 +14431,7 @@
             }
         },
         {
-            "id": 56,
+            "id": 55,
             "guid": "00032e8720beb774-00036d32c2000053",
             "components": {
                 "NameComponent": {
@@ -14873,7 +14604,7 @@
             }
         },
         {
-            "id": 57,
+            "id": 56,
             "guid": "00032e876ace1a85-00036d32de000055",
             "components": {
                 "NameComponent": {
