@@ -168,7 +168,10 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         rb.motion = static_cast<Motion>(rb.motionID);
 
         JPH::RVec3Arg pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-        JPH::QuatArg rot = JPH::Quat::sIdentity();
+        // Convert rotation from ECS to Jolt
+        JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
+            tr.localRotation.z, tr.localRotation.w);
+        rot = rot.Normalized();  // Safety normalization
         JPH_ASSERT(rot.IsNormalized());
 
         // --- Set proper collision layer ---
@@ -279,7 +282,9 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
             JPH::RVec3 pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-            JPH::Quat rot = JPH::Quat::sIdentity(); // Or convert tr.localRotation if needed
+            // Convert rotation from ECS to Jolt
+            JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
+                tr.localRotation.z, tr.localRotation.w);
 
             // IMPORTANT: Use fixedDt to enable continuous collision detection
             bi.MoveKinematic(rb.id, pos, rot, fixedDt);
