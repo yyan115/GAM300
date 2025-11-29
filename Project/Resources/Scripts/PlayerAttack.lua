@@ -28,6 +28,7 @@ return Component {
         -- Combo config
         maxComboSteps   = 3,
         comboResetTime  = 1.3, -- currently not heavily used but kept for tuning
+        attackCooldown  = 2.0, -- minimum time between attacks to prevent spam
 
         -- Step 1 timings
         attack1Duration  = 2.0,
@@ -56,8 +57,9 @@ return Component {
 
         self._time             = 0.0
         self._attackTimer      = 0.0
+        self._cooldownTimer    = 0.0  -- prevents spam clicking
         self._comboIndex       = 0         -- 0 = idle, 1..3 = which step
-        self._maxComboSteps    = self.maxComboSteps or 3
+        self._maxComboSteps    = self.maxComboSteps
 
         self._hitboxActive     = false
         self._queuedNextSwing  = false
@@ -88,6 +90,7 @@ return Component {
         self._hitboxActive      = false
         self._currentHitEventId = nil
         self._comboIndex        = 0
+        self._cooldownTimer     = 0.0
 
         _G.player_is_attacking = false
     end,
@@ -124,10 +127,18 @@ return Component {
     -- Combo state machine
     ----------------------------------------------------------------------
     _updateCombo = function(self, dt, leftPressed)
+        -- Update cooldown timer
+        if self._cooldownTimer > 0 then
+            self._cooldownTimer = self._cooldownTimer - dt
+            if self._cooldownTimer < 0 then
+                self._cooldownTimer = 0
+            end
+        end
+
         -- If no attack is active
         if self._comboIndex == 0 then
-            if leftPressed then
-                -- Start combo at step 1
+            -- Only start new attack if cooldown is over and player clicked
+            if leftPressed and self._cooldownTimer <= 0 then
                 self:_startAttackStep(1)
             end
             return
@@ -136,28 +147,32 @@ return Component {
         -- There is an active attack step
         self._attackTimer = self._attackTimer + dt
 
-        -- Queue next swing if player clicks during current step
-        if leftPressed then
+        -- Only allow queuing the next swing during the first 0.3 seconds of the attack
+        -- This prevents spam clicking throughout the entire attack duration
+        local canQueueNext = (self._attackTimer <= 0.3 and not self._queuedNextSwing and self._comboIndex < self._maxComboSteps)
+        if leftPressed and canQueueNext then
             self._queuedNextSwing = true
+            print("[LUA][PlayerAttack] Queued next swing (step " .. tostring(self._comboIndex + 1) .. ")")
         end
 
         -- Update hitbox for this frame
         self:_updateHitbox(dt)
 
-        -- Check if current step is finished
+        -- Check if current step is finished (animation duration completed)
         local duration = self:_getAttackDuration(self._comboIndex)
         if self._attackTimer >= duration then
             if self._queuedNextSwing and self._comboIndex < self._maxComboSteps then
-                -- Chain to next step
+                -- Chain to next step - only NOW play the next animation/SFX
                 self:_startAttackStep(self._comboIndex + 1)
             else
-                -- Combo fully finished
+                -- Combo fully finished - start cooldown to prevent spam
                 print("[LUA][PlayerAttack] Combo finished")
                 self._comboIndex        = 0
                 self._attackTimer       = 0.0
                 self._queuedNextSwing   = false
                 self._hitboxActive      = false
                 self._currentHitEventId = nil
+                self._cooldownTimer     = self.attackCooldown or 3.0
 
                 _G.player_is_attacking = false
             end

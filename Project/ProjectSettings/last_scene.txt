@@ -1,1 +1,1 @@
-../../Resources/Scenes/Joe_MainMenuTest.scene
+../../Resources/Scenes/test.scene
