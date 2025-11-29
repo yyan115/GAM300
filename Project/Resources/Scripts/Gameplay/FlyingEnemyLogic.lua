@@ -4,7 +4,7 @@ local TransformMixin = require("extension.transform_mixin")
 
 --CONFIGURATIONS
 local ENEMY_NAME = "FlyingEnemy"  -- Change this to match your enemy's name
-local FLOOR_NAME = "TopWall"      -- Change this to match your floor's name
+local FLOOR_NAME = "TempGround"      -- Change this to match your floor's name
 local PLAYER_NAME = "Player"      -- Change this to match your player's name
 
 local DETECTION_RANGE = 7.0       -- How close player needs to be to trigger attack
