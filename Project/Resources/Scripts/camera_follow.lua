@@ -50,6 +50,9 @@ return Component {
         mouseSensitivity = 0.15,
         minPitch         = -30.0,
         maxPitch         = 60.0,
+        minZoom          = 2.0,
+        maxZoom          = 15.0,
+        zoomSpeed        = 1.0,
     },
 
     Awake = function(self)
@@ -69,7 +72,8 @@ return Component {
                 local x = payload.x or payload[1] or 0.0
                 local y = payload.y or payload[2] or 0.0
                 local z = payload.z or payload[3] or 0.0
-                self._targetPos.x, self._targetPos.y, self._targetPos.z = x, y + 1, z
+                -- Store raw position, height offset applied in Update based on zoom
+                self._targetPos.x, self._targetPos.y, self._targetPos.z = x, y, z
                 self._hasTarget = true
             end)
         end
@@ -92,8 +96,25 @@ return Component {
         end
     end,
 
+    _updateScrollZoom = function(self)
+        if not (Input and Input.GetScrollY) then return end
+
+        local scrollY = Input.GetScrollY()
+        if scrollY ~= 0 then
+            local zoomSpeed = self.zoomSpeed or 1.0
+            self.followDistance = self.followDistance - scrollY * zoomSpeed
+            self.followDistance = clamp(self.followDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+
+            -- Consume scroll so it doesn't accumulate
+            if Input.ConsumeScroll then
+                Input.ConsumeScroll()
+            end
+        end
+    end,
+
     _updateMouseLook = function(self, dt)
-        if not (Input and Input.GetMouseButton and Input.GetMouseX and Input.GetMouseY) then return end
+        -- Process mouse look for camera rotation
+        if not (Input and Input.GetMouseX and Input.GetMouseY) then return end
         local xpos, ypos = Input.GetMouseX(), Input.GetMouseY()
         if self._firstMouse then
             self._firstMouse = false
@@ -103,9 +124,13 @@ return Component {
         local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
         local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
         self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   + xoffset
+        self._yaw   = self._yaw   - xoffset  -- Inverted for correct left/right panning
         self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
+        -- Broadcast camera yaw for camera-relative player movement
+        if event_bus and event_bus.publish then
+            event_bus.publish("camera_yaw", self._yaw)
+        end
     end,
 
     Update = function(self, dt)
@@ -136,15 +161,33 @@ return Component {
             self:_updateMouseLook(dt)
         end
 
-        local tx, ty, tz = self._targetPos.x, self._targetPos.y, self._targetPos.z
-        local radius   = self.followDistance or 5.0
+        -- Update scroll zoom
+        self:_updateScrollZoom()
+
+        local radius = self.followDistance or 5.0
         local pitchRad = math.rad(self._pitch)
-        local yawRad   = math.rad(self._yaw)
+        local yawRad = math.rad(self._yaw)
+
+        -- Scale height offset based on zoom distance (less offset when zoomed in)
+        local minZoom = self.minZoom or 2.0
+        local maxZoom = self.maxZoom or 15.0
+        local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)  -- 0 at min zoom, 1 at max zoom
+        zoomFactor = clamp(zoomFactor, 0.0, 1.0)
+
+        -- Target look-at point: scale from feet (0.5) at close zoom to chest (1.2) at far zoom
+        local lookAtHeight = 0.5 + zoomFactor * 0.7  -- 0.5 to 1.2
+        local tx = self._targetPos.x
+        local ty = self._targetPos.y + lookAtHeight
+        local tz = self._targetPos.z
+
+        -- Camera height offset also scales with zoom
+        local baseHeightOffset = self.heightOffset or 1.0
+        local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)  -- 30% to 100% of offset
 
         local horizontalRadius = radius * math.cos(pitchRad)
         local offsetX = horizontalRadius * math.sin(yawRad)
         local offsetZ = horizontalRadius * math.cos(yawRad)
-        local offsetY = radius * math.sin(pitchRad) + (self.heightOffset or 0.0)
+        local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
 
         local desiredX, desiredY, desiredZ = tx + offsetX, ty + offsetY, tz + offsetZ
 

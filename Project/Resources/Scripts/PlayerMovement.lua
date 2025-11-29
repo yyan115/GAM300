@@ -145,12 +145,25 @@ return Component {
         
         -- Timers
         self._footstepTimer = 0
-        
+
         -- Input tracking for key press detection
         self._prevInputW = false
         self._prevInputS = false
         self._prevInputA = false
         self._prevInputD = false
+
+        -- Camera yaw for camera-relative movement (default 180 to match camera initial yaw)
+        self._cameraYaw = 180.0
+        self._cameraYawSub = nil
+
+        -- Subscribe to camera yaw updates
+        if event_bus and event_bus.subscribe then
+            self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
+                if yaw then
+                    self._cameraYaw = yaw
+                end
+            end)
+        end
     end,
 
     ----------------------------------------------------------------------
@@ -219,9 +232,20 @@ return Component {
         end
         
         local hasMovementInput = (len > 0.0001)
-        
-        -- Use raw movement direction (world-space WASD)
-        local moveX, moveZ = rawMoveX, rawMoveZ
+
+        -- Transform movement to camera-relative direction
+        local moveX, moveZ = 0.0, 0.0
+        if hasMovementInput then
+            local yawRad = math.rad(self._cameraYaw or 180.0)
+            local sinYaw = math.sin(yawRad)
+            local cosYaw = math.cos(yawRad)
+
+            -- Camera forward is (-sinYaw, -cosYaw)
+            -- Note: rawMoveX sign is flipped to match original A=+X, D=-X mapping
+            -- rawMoveZ = forward/back, rawMoveX = strafe
+            moveX = rawMoveZ * (-sinYaw) - rawMoveX * cosYaw
+            moveZ = rawMoveZ * (-cosYaw) + rawMoveX * sinYaw
+        end
 
         local speed = self.moveSpeed or 5.0
         local dx = moveX * speed * dt
@@ -389,5 +413,11 @@ return Component {
     ----------------------------------------------------------------------
     OnDisable = function(self)
         print("[LUA][PlayerMovement] OnDisable")
+
+        -- Unsubscribe from camera yaw updates
+        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
+            event_bus.unsubscribe(self._cameraYawSub)
+            self._cameraYawSub = nil
+        end
     end,
 }
