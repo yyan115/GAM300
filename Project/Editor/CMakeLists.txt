@@ -102,13 +102,14 @@ else()
     endif()
 endif()
 
-# Editor uses ../../Resources directly (source of truth for editing)
-# No need to copy Resources to output directory
-# add_custom_command(TARGET Editor POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#     ${CMAKE_SOURCE_DIR}/Resources
-#     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
-# )
+# Copy resources to editor output directory
+# TODO: Ideally Editor should use ../../Resources directly (single source of truth for editing)
+# and not copy resources, but there's a bug currently requiring this workaround.
+add_custom_command(TARGET Editor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/Resources
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
+)
 
 # Platform-specific: Copy required libraries for Editor
 # With x64-windows triplet, vcpkg libs are DLLs and need to be copied
