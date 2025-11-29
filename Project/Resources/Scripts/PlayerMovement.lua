@@ -222,8 +222,8 @@ return Component {
         
         -- Raw input direction (before camera transformation)
         local rawMoveX, rawMoveZ = 0.0, 0.0
-        if inputW then rawMoveZ = rawMoveZ - 1.0 end  -- forward (-Z)
-        if inputS then rawMoveZ = rawMoveZ + 1.0 end  -- backward (+Z)
+        if inputW then rawMoveZ = rawMoveZ + 1.0 end  -- forward (+Z)
+        if inputS then rawMoveZ = rawMoveZ - 1.0 end  -- backward (-Z)
         if inputA then rawMoveX = rawMoveX + 1.0 end  -- left (+X)
         if inputD then rawMoveX = rawMoveX - 1.0 end  -- right (-X)
 
