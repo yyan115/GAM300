@@ -104,6 +104,61 @@ static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
     return std::make_tuple(p.x, p.y, p.z);
 }
 
+static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
+{
+    if (!t)
+    {
+        // Return something reasonable; Lua will get three numbers
+        return std::make_tuple(0.0f, 0.0f, 0.0f);
+    }
+
+    const auto& p = t->localRotation; // or global/world position if you have it
+    return std::make_tuple(p.x, p.y, p.z);
+}
+
+
+
+
+//TEMP FUNCTION TO BE CHANGED
+static size_t Lua_FindCurrentClipByName(const std::string& name)
+{
+    if (!g_ecsManager) return -1;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            // Found the entity with matching name, now ensure it has a Transform
+            if (ecs.HasComponent<AnimationComponent>(e))
+            {
+                auto& animation = ecs.GetComponent<AnimationComponent>(e);
+                return animation.GetActiveClipIndex();
+            }
+
+            // Name matched but no AnimationComponent; stop searching if names are unique
+            break;
+        }
+    }
+
+    return -1;
+}
+
+
+
+
+
+
+
+
+
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
     m_ecs = &ecsManager;

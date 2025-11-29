@@ -218,7 +218,7 @@ BEGIN_SYSTEM("Animation")
     FUNCTION("PlayClip",    AnimationWrappers::PlayClip)
     FUNCTION("PlayOnce",    AnimationWrappers::PlayOnce)
     FUNCTION("Pause",       AnimationWrappers::Pause)
-    FUNCTION("Stop",        AnimationWrappers::Stop)
+    FUNCTION("Stop",        AnimationWrappers::Stop) 
     FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
     FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
     FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
@@ -232,6 +232,8 @@ END_SYSTEM()
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
+    FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
+    FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
 END_SYSTEM()
 
 

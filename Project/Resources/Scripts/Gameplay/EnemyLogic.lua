@@ -21,17 +21,12 @@ local function IsPlayerInRange()
     local player_y = pos[2]  -- Second element
     local player_z = pos[3]  -- Third element
 
-    print("Player pos is ", player_x, player_y, player_z)
-
     -- Get enemy position
     local Ground_Enemytr = Engine.FindTransformByName("GroundEnemy")
     local enemyPos = Engine.GetTransformPosition(Ground_Enemytr)
     local enemy_x = enemyPos[1]
     local enemy_y = enemyPos[2]
     local enemy_z = enemyPos[3]
-    
-    print("enemyPos is ", enemy_x, enemy_y, enemy_z)
-
 
     -- Calculate distance
     local dx = player_x - enemy_x
@@ -40,17 +35,56 @@ local function IsPlayerInRange()
     local distance = math.sqrt(dx*dx + dy*dy + dz*dz)
     
     -- Check if player is within range
-    local detectionRange = 4.0  -- Adjust this value as needed
-
-    print("distance is ", distance)
+    local detectionRange = 8.0  -- Adjust this value as needed
     return distance < detectionRange
-
-
-    -- if Input.GetKeyDown(Input.Key.U) then
-    --     playerNear = true
-    -- end
-    -- return playerNear
 end
+
+-- Helper function to create a rotation quaternion from Euler angles (degrees)
+local function eulerToQuat(pitch, yaw, roll)
+    -- Convert degrees to radians
+    local p = math.rad(pitch or 0) * 0.5
+    local y = math.rad(yaw or 0) * 0.5
+    local r = math.rad(roll or 0) * 0.5
+    
+    local sinP, cosP = math.sin(p), math.cos(p)
+    local sinY, cosY = math.sin(y), math.cos(y)
+    local sinR, cosR = math.sin(r), math.cos(r)
+    
+    return {
+        w = cosP * cosY * cosR + sinP * sinY * sinR,
+        x = sinP * cosY * cosR - cosP * sinY * sinR,
+        y = cosP * sinY * cosR + sinP * cosY * sinR,
+        z = cosP * cosY * sinR - sinP * sinY * cosR
+    }
+end
+
+local function RotateTowardsPlayer(self)
+    -- Get player position
+    local playerTr = Engine.FindTransformByName("Player")
+    local playerPos = Engine.GetTransformPosition(playerTr)
+    local player_x = playerPos[1]
+    local player_z = playerPos[3]
+    
+    -- Get enemy position
+    local enemyTr = Engine.FindTransformByName("GroundEnemy")
+    local enemyPos = Engine.GetTransformPosition(enemyTr)
+    local enemy_x = enemyPos[1]
+    local enemy_z = enemyPos[3]
+    
+    -- Calculate direction to player (ignore Y for flat rotation)
+    local dx = player_x - enemy_x
+    local dz = player_z - enemy_z
+    
+    -- Calculate angle in degrees (using math.atan instead of math.atan2)
+    local angle = math.deg(math.atan(dx, dz))
+    
+    -- Create rotation quaternion (rotate around Y axis)
+    local quat = eulerToQuat(0, angle, 0)
+    
+    -- Apply rotation
+    self:SetRotation(quat.w, quat.x, quat.y, quat.z)
+end
+    
 
 local function TakeDamage(self)
     self.Health = self.Health - 1
@@ -70,7 +104,8 @@ return Component {
         self.animation = self:GetComponent("AnimationComponent") 
         self.collider = self:GetComponent("ColliderComponent")
         Animation.PlayClip(self.animation, IDLE, true)
-        currentState = IDLE
+        currentState = IDLE        self.hasRotated = false --TO TRACK ROTATION TO PLAYER
+
     end,
     
     Update = function(self, dt) 
@@ -101,6 +136,19 @@ return Component {
             newState = ATTACK  -- Attack cannot be interrupted by idle
         end
         
+
+        --HANDLE ROTATION
+        if newState == ATTACK or newState == TAKE_DAMAGE and not self.hasRotated then 
+            RotateTowardsPlayer(self)
+            self.hasRotated = true
+        end
+        -- Reset rotation flag when leaving ATTACK or TAKE_DAMAGE
+        if newState ~= ATTACK and newState ~= TAKE_DAMAGE then
+            self.hasRotated = false
+        end
+
+        --END OF ROTATION HANDLING
+
         -- Update animation if state changed
         if newState ~= currentState then
             Animation.Pause(self.animation)
