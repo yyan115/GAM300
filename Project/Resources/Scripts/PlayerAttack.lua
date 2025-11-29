@@ -40,14 +40,12 @@ return Component {
         attack2HitEnd    = 1.4,
 
         -- Step 3 timings
-        attack3Duration  = 2.0,
-        attack3HitStart  = 1.1,
-        attack3HitEnd    = 1.4,
+        attack3Duration  = 0.55,
+        attack3HitStart  = 0.20,
+        attack3HitEnd    = 0.40, 
 
-        -- Animation names (hook these to your anim system)
-        animSlash1 = "Slash1",
-        animSlash2 = "Slash2",
-        animSlash3 = "Slash3",
+        -- SFX clips (populate in editor)
+        attackSFXClips = {},
     },
 
     ----------------------------------------------------------------------
@@ -70,15 +68,19 @@ return Component {
         self._hitEventIdCounter = 0
         self._currentHitEventId = nil
 
-        -- Cache AnimationComponent
-        if self.GetComponent then
-            self._anim = self:GetComponent("AnimationComponent")
-            if self._anim then
-                print("[LUA][PlayerAttack] Found AnimationComponent")
-            else
-                print("[LUA][PlayerAttack] No AnimationComponent on player")
-            end
-        end
+        -- Animation clip indices
+         self._attackAnimClip1 = 3
+         self._attackAnimClip2 = 4
+         self._attackAnimClip3 = 5
+
+        -- Cache components
+        self._animator = nil
+        self._audio    = nil
+    end,
+
+    Start = function(self)
+        self._animator = self:GetComponent("AnimationComponent")
+        self._audio    = self:GetComponent("AudioComponent")
     end,
 
     OnDisable = function(self)
@@ -178,6 +180,7 @@ return Component {
 
         -- 🔧 FIXED: use ':' not '->'
         self:_playSlashAnimation(stepIndex)
+        self:_playAttackSFX()
     end,
 
     ----------------------------------------------------------------------
@@ -272,32 +275,31 @@ return Component {
     -- Animation hook
     ----------------------------------------------------------------------
     _playSlashAnimation = function(self, stepIndex)
-        local animName  = nil
-        local clipIndex = nil
+        local animator = self._animator
+        if not animator then return end
 
+        local clipIndex = 3  -- default
         if stepIndex == 1 then
-            animName  = self.animSlash1 or "Slash1"
-            clipIndex = 1      -- <-- make sure this is your Slash clip index
+            clipIndex = self._attackAnimClip1 or 3
         elseif stepIndex == 2 then
-            animName  = self.animSlash2 or "Slash2"
-            clipIndex = 1      -- or 2 if you later split them
+            clipIndex = self._attackAnimClip2 or 4
         elseif stepIndex == 3 then
-            animName  = self.animSlash3 or "Slash3"
-            clipIndex = 1
+            clipIndex = self._attackAnimClip3 or 5
         end
 
-        if animName then
-            print("[LUA][PlayerAttack] Play animation:\t" .. tostring(animName))
-        else
-            print("[LUA][PlayerAttack] No animation name set for step " .. tostring(stepIndex))
-        end
+        print("[LUA][PlayerAttack] Play animation clip " .. tostring(clipIndex))
+        animator:PlayClip(clipIndex, false)
+    end,
 
-        if self._anim and clipIndex ~= nil then
-            -- Reset any previous state
-            Animation.Stop(self._anim)
+    ----------------------------------------------------------------------
+    -- SFX hook
+    ----------------------------------------------------------------------
+    _playAttackSFX = function(self)
+        local audio = self._audio
+        local clips = self.attackSFXClips
+        if not audio or not clips or #clips == 0 then return end
 
-            -- Use PlayClip with loop = false instead of PlayOnce
-            Animation.PlayClip(self._anim, clipIndex, false)
-        end
+        local clipIndex = math.random(1, #clips)
+        audio:PlayOneShot(clips[clipIndex])
     end,
 }

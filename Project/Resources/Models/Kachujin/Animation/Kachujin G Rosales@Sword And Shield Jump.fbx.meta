@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e92dbddf51b33-00036a0aa4000005",
+        "source": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx",
+        "compiled": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

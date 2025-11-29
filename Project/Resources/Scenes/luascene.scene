@@ -24,15 +24,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.612338
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 12.9672
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.46136
                                 }
                             ]
                         },
@@ -95,7 +95,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.612338
                                 },
                                 {
                                     "type": "float",
@@ -111,7 +111,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 12.9672
                                 },
                                 {
                                     "type": "float",
@@ -127,7 +127,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.46136
                                 },
                                 {
                                     "type": "float",
@@ -723,6 +723,15 @@
                                     "data": 1
                                 }
                             ]
+                        }
+                    ]
+                },
+                "AudioListenerComponent": {
+                    "type": "AudioListenerComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },
@@ -5055,7 +5064,42 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "PlayRandomHurtSound": null,
+                                "AwakeSafe": null,
+                                "enemyHurtSFXClips": {},
+                                "__meta": {},
+                                "DeserializeFields": null,
+                                "Start": null,
+                                "__created_at": 1764328301.0,
+                                "Every": null,
+                                "_private": {},
+                                "TestAllClips": null,
+                                "Subscribe": null,
+                                "Destroy": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "_subscriptions": {},
+                                "UpdateSafe": null,
+                                "testAudioClip": "",
+                                "soundTimer": 0.0,
+                                "playOnStart": false,
+                                "volume": 0.5,
+                                "After": null,
+                                "__field_list": {
+                                    "volume": 0.5,
+                                    "enemyHurtSFXClips": {},
+                                    "testAudioClip": "",
+                                    "soundTimer": 0.0,
+                                    "playOnStart": true
+                                },
+                                "StartSafe": null,
+                                "Unsubscribe": null,
+                                "Update": null,
+                                "StopAudio": null,
+                                "_call_lifecycle": null
+                            }
                         }
                     ]
                 }
@@ -5291,16 +5335,49 @@
                         }
                     ]
                 },
-                "AnimationComponent": {
-                    "type": "AnimationComponent",
+                "AudioComponent": {
+                    "type": "AudioComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
                         },
+                        "0000000000000000-0000000000000000",
                         {
                             "type": "bool",
                             "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -5311,15 +5388,64 @@
                             "data": 1
                         },
                         {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 20
+                        }
+                    ]
+                },
+                "AnimationComponent": {
+                    "type": "AnimationComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
                             "type": "int",
-                            "data": 2
+                            "data": 6
                         },
                         {
                             "type": "std::vector<std::string>",
                             "data": [
                                 {
                                     "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx"
+                                },
+                                {
+                                    "type": "std::string",
                                     "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Attack.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Slash.fbx"
                                 },
                                 {
                                     "type": "std::string",
@@ -5330,7 +5456,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
+                                "004e92db961a1354-00036a0aa4000003",
                                 "0009550cc76b3c56-000336feaa0000ff",
+                                "004e92dbddf51b33-00036a0aa4000005",
+                                "004e92dbcbee3745-00036a0aa4000001",
+                                "0060f444ec0909f1-000337e65000000d",
                                 "0060f444ec0909f1-000337e65000000d"
                             ]
                         }
@@ -5353,7 +5483,73 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_footstepTimer": 0.0,
+                                "_currentRotZ": 0.0,
+                                "_transform_fetched": false,
+                                "_private": {},
+                                "_isWalking": false,
+                                "_prevInputD": false,
+                                "jumpSpeed": 5.0,
+                                "_prevInputS": false,
+                                "jumpSFXClips": [
+                                    "00300b82038ed2c4-00035fcbf2000019",
+                                    "00300b82016c91ec-00035fcbf200001b",
+                                    "00300b82417482af-00035fcbf200001d",
+                                    "00300b8221f1fecf-00035fcbf200001f",
+                                    "00300b820a3c376f-00035fcbf2000021"
+                                ],
+                                "footstepInterval": 0.7,
+                                "_subscriptions": {},
+                                "_isJumping": false,
+                                "_idleAnimationClip": 0.0,
+                                "_currentRotW": 1.0,
+                                "__created_at": 1764349951.0,
+                                "_currentRotY": 0.0,
+                                "_walkAnimationClip": 1.0,
+                                "footstepSFXClips": [
+                                    "00300b827de9c2cc-00035fcbf200000d",
+                                    "00300b820f30f21e-00035fcbf200000f",
+                                    "00300b827e3b8dee-00035fcbf2000011",
+                                    "00300b8264003235-00035fcbf2000013",
+                                    "00300b820282a972-00035fcbf2000015"
+                                ],
+                                "gravity": -9.8,
+                                "_prevInputW": false,
+                                "_isGrounded": true,
+                                "_groundY": 0.0,
+                                "_velY": 0.0,
+                                "_wasGrounded": true,
+                                "name": "PlayerMovement",
+                                "sfxVolume": 0.5,
+                                "_currentRotX": 0.0,
+                                "landingSFXClips": [
+                                    "00300b822d4682fa-00035fcbf2000025",
+                                    "00300b823d619b92-00035fcbf2000027",
+                                    "00300b824d645440-00035fcbf2000029",
+                                    "00300b826700c35f-00035fcbf200002b",
+                                    "00300b8279ba969d-00035fcbf200002d"
+                                ],
+                                "_prevInputA": false,
+                                "rotationSpeed": 10.0,
+                                "_jumpAnimationClip": 2.0,
+                                "__field_list": {
+                                    "footstepInterval": 0.35,
+                                    "name": "PlayerMovement",
+                                    "sfxVolume": 0.5,
+                                    "footstepSFXClips": {},
+                                    "gravity": -9.8,
+                                    "jumpSpeed": 5.0,
+                                    "landingSFXClips": {},
+                                    "moveSpeed": 2.0,
+                                    "rotationSpeed": 10.0,
+                                    "jumpSFXClips": {}
+                                },
+                                "moveSpeed": 2.0,
+                                "__meta": {},
+                                "_jumpAnimPlayed": false
+                            }
                         },
                         {
                             "scriptGuidStr": "002b71499146a215-000369868c000001",
@@ -5361,7 +5557,94 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "AwakeSafe": null,
+                                "__created_at": 1764349951.0,
+                                "Destroy": null,
+                                "hitboxRadius": 1.5,
+                                "GetPosition": null,
+                                "_call_lifecycle": null,
+                                "DisableSafe": null,
+                                "_queuedNextSwing": false,
+                                "maxComboSteps": 3.0,
+                                "attack2Duration": 0.45,
+                                "SetPosition": null,
+                                "_lastClickTime": -999.0,
+                                "_playSlashAnimation": null,
+                                "Awake": null,
+                                "DebugTransform": null,
+                                "_updateHitbox": null,
+                                "attack3HitStart": 0.2,
+                                "_startAttackStep": null,
+                                "_transform_fetched": false,
+                                "StartSafe": null,
+                                "_private": {},
+                                "attack1HitEnd": 0.3,
+                                "attack1HitStart": 0.15,
+                                "_attackAnimClip1": 3.0,
+                                "_maxComboSteps": 3.0,
+                                "Update": null,
+                                "GetRotation": null,
+                                "Start": null,
+                                "attack2HitEnd": 0.35,
+                                "Move": null,
+                                "attack3HitEnd": 0.4,
+                                "_hitEventIdCounter": 0.0,
+                                "Subscribe": null,
+                                "_getHitWindow": null,
+                                "__meta": {},
+                                "attack3Duration": 0.55,
+                                "Unsubscribe": null,
+                                "GetScale": null,
+                                "_time": 0.0,
+                                "_prevLeftDown": false,
+                                "attack1Duration": 0.4,
+                                "After": null,
+                                "OnDisable": null,
+                                "UpdateSafe": null,
+                                "__field_list": {
+                                    "attack1HitEnd": 0.3,
+                                    "attack1HitStart": 0.15,
+                                    "attackSFXClips": {},
+                                    "hitboxForward": 1.5,
+                                    "maxComboSteps": 3.0,
+                                    "attack2Duration": 0.45,
+                                    "damage": 10.0,
+                                    "attack1Duration": 0.4,
+                                    "attack2HitStart": 0.18,
+                                    "attack3HitEnd": 0.4,
+                                    "attack3HitStart": 0.2,
+                                    "attack2HitEnd": 0.35,
+                                    "comboResetTime": 0.6,
+                                    "hitboxRadius": 1.5,
+                                    "attack3Duration": 0.55
+                                },
+                                "_updateCombo": null,
+                                "damage": 10.0,
+                                "_subscriptions": {},
+                                "_attackTimer": 0.0,
+                                "_hitboxActive": false,
+                                "_attackAnimClip3": 5.0,
+                                "_attackAnimClip2": 4.0,
+                                "_getAttackDuration": null,
+                                "_comboIndex": 0.0,
+                                "DeserializeFields": null,
+                                "attack2HitStart": 0.18,
+                                "_fireHitboxEvent": null,
+                                "SerializeFields": null,
+                                "Every": null,
+                                "GetTransform": null,
+                                "SetRotation": null,
+                                "attackSFXClips": [
+                                    "00300b821b8a6db1-00035fcbf2000009",
+                                    "00300b82119ee2f8-00035fcbf200000b"
+                                ],
+                                "SetScale": null,
+                                "comboResetTime": 0.6,
+                                "hitboxForward": 1.5,
+                                "_playAttackSFX": null
+                            }
                         }
                     ]
                 }
