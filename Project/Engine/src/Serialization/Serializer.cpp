@@ -6,6 +6,7 @@
 #include "Utilities/GUID.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Graphics/Lights/LightingSystem.hpp"
 #include <algorithm>
 
 // ---------- helpers ----------
@@ -592,6 +593,40 @@ void Serializer::SerializeScene(const std::string& scenePath) {
     }
     doc.AddMember("layers", layersArr, alloc);
 
+    // Serialize LightingSystem properties (scene-level lighting settings)
+    if (ecs.lightingSystem) {
+        rapidjson::Value lightingObj(rapidjson::kObjectType);
+
+        // Ambient mode (enum as int)
+        lightingObj.AddMember("ambientMode", static_cast<int>(ecs.lightingSystem->ambientMode), alloc);
+
+        // Ambient intensity
+        lightingObj.AddMember("ambientIntensity", ecs.lightingSystem->ambientIntensity, alloc);
+
+        // Ambient sky color
+        rapidjson::Value ambientSkyArr(rapidjson::kArrayType);
+        ambientSkyArr.PushBack(ecs.lightingSystem->ambientSky.x, alloc);
+        ambientSkyArr.PushBack(ecs.lightingSystem->ambientSky.y, alloc);
+        ambientSkyArr.PushBack(ecs.lightingSystem->ambientSky.z, alloc);
+        lightingObj.AddMember("ambientSky", ambientSkyArr, alloc);
+
+        // Ambient equator color
+        rapidjson::Value ambientEquatorArr(rapidjson::kArrayType);
+        ambientEquatorArr.PushBack(ecs.lightingSystem->ambientEquator.x, alloc);
+        ambientEquatorArr.PushBack(ecs.lightingSystem->ambientEquator.y, alloc);
+        ambientEquatorArr.PushBack(ecs.lightingSystem->ambientEquator.z, alloc);
+        lightingObj.AddMember("ambientEquator", ambientEquatorArr, alloc);
+
+        // Ambient ground color
+        rapidjson::Value ambientGroundArr(rapidjson::kArrayType);
+        ambientGroundArr.PushBack(ecs.lightingSystem->ambientGround.x, alloc);
+        ambientGroundArr.PushBack(ecs.lightingSystem->ambientGround.y, alloc);
+        ambientGroundArr.PushBack(ecs.lightingSystem->ambientGround.z, alloc);
+        lightingObj.AddMember("ambientGround", ambientGroundArr, alloc);
+
+        doc.AddMember("lightingSystem", lightingObj, alloc);
+    }
+
     // Write to file (ensure parent directory exists; fallback to current directory if creation fails)
     {
         fs::path outPathP(scenePath);
@@ -924,6 +959,45 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
                 std::string name = layerObj["name"].GetString();
                 SortingLayerManager::GetInstance().AddLayer(name);
             }
+        }
+    }
+
+    // Deserialize LightingSystem properties (scene-level lighting settings)
+    if (doc.HasMember("lightingSystem") && doc["lightingSystem"].IsObject() && ecs.lightingSystem) {
+        const auto& lightingObj = doc["lightingSystem"];
+
+        // Ambient mode
+        if (lightingObj.HasMember("ambientMode") && lightingObj["ambientMode"].IsInt()) {
+            ecs.lightingSystem->ambientMode = static_cast<LightingSystem::AmbientMode>(lightingObj["ambientMode"].GetInt());
+        }
+
+        // Ambient intensity
+        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsNumber()) {
+            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
+        }
+
+        // Ambient sky color
+        if (lightingObj.HasMember("ambientSky") && lightingObj["ambientSky"].IsArray() && lightingObj["ambientSky"].Size() >= 3) {
+            const auto& arr = lightingObj["ambientSky"];
+            ecs.lightingSystem->ambientSky.x = arr[0].GetFloat();
+            ecs.lightingSystem->ambientSky.y = arr[1].GetFloat();
+            ecs.lightingSystem->ambientSky.z = arr[2].GetFloat();
+        }
+
+        // Ambient equator color
+        if (lightingObj.HasMember("ambientEquator") && lightingObj["ambientEquator"].IsArray() && lightingObj["ambientEquator"].Size() >= 3) {
+            const auto& arr = lightingObj["ambientEquator"];
+            ecs.lightingSystem->ambientEquator.x = arr[0].GetFloat();
+            ecs.lightingSystem->ambientEquator.y = arr[1].GetFloat();
+            ecs.lightingSystem->ambientEquator.z = arr[2].GetFloat();
+        }
+
+        // Ambient ground color
+        if (lightingObj.HasMember("ambientGround") && lightingObj["ambientGround"].IsArray() && lightingObj["ambientGround"].Size() >= 3) {
+            const auto& arr = lightingObj["ambientGround"];
+            ecs.lightingSystem->ambientGround.x = arr[0].GetFloat();
+            ecs.lightingSystem->ambientGround.y = arr[1].GetFloat();
+            ecs.lightingSystem->ambientGround.z = arr[2].GetFloat();
         }
     }
 

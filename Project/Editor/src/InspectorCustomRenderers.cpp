@@ -868,7 +868,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         if (ecs.lightingSystem) {
             float ambientIntensity = ecs.lightingSystem->ambientIntensity;
-            if (UndoableWidgets::SliderFloat("##AmbientIntensity", &ambientIntensity, 0.0f, 5.0f))
+            if (UndoableWidgets::DragFloat("##AmbientIntensity", &ambientIntensity, 0.01f, 0.0f, 1.0f, "%.2f"))
             {
                 ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
             }
