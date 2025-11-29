@@ -5,6 +5,7 @@ local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 local Input     = _G.Input
+_G.player_is_attacking = _G.player_is_attacking or false
 
 local function clamp(x, minv, maxv)
     if x < minv then return minv end
@@ -26,27 +27,26 @@ return Component {
 
         -- Combo config
         maxComboSteps   = 3,
-        comboResetTime  = 0.6, -- currently not heavily used but kept for tuning
+        comboResetTime  = 1.3, -- currently not heavily used but kept for tuning
+        attackCooldown  = 2.0, -- minimum time between attacks to prevent spam
 
         -- Step 1 timings
-        attack1Duration  = 0.40,
-        attack1HitStart  = 0.15,
-        attack1HitEnd    = 0.30,
+        attack1Duration  = 2.0,
+        attack1HitStart  = 1.1,
+        attack1HitEnd    = 1.4,
 
         -- Step 2 timings
-        attack2Duration  = 0.45,
-        attack2HitStart  = 0.18,
-        attack2HitEnd    = 0.35,
+        attack2Duration  = 2.0,
+        attack2HitStart  = 1.1,
+        attack2HitEnd    = 1.4,
 
         -- Step 3 timings
         attack3Duration  = 0.55,
         attack3HitStart  = 0.20,
-        attack3HitEnd    = 0.40,
+        attack3HitEnd    = 0.40, 
 
-        -- Animation names (hook these to your anim system)
-        animSlash1 = "Slash1",
-        animSlash2 = "Slash2",
-        animSlash3 = "Slash3",
+        -- SFX clips (populate in editor)
+        attackSFXClips = {},
     },
 
     ----------------------------------------------------------------------
@@ -57,8 +57,9 @@ return Component {
 
         self._time             = 0.0
         self._attackTimer      = 0.0
+        self._cooldownTimer    = 0.0  -- prevents spam clicking
         self._comboIndex       = 0         -- 0 = idle, 1..3 = which step
-        self._maxComboSteps    = self.maxComboSteps or 3
+        self._maxComboSteps    = self.maxComboSteps
 
         self._hitboxActive     = false
         self._queuedNextSwing  = false
@@ -68,6 +69,20 @@ return Component {
         -- Unique IDs so each swing only hits an enemy once
         self._hitEventIdCounter = 0
         self._currentHitEventId = nil
+
+        -- Animation clip indices
+         self._attackAnimClip1 = 3
+         self._attackAnimClip2 = 4
+         self._attackAnimClip3 = 5
+
+        -- Cache components
+        self._animator = nil
+        self._audio    = nil
+    end,
+
+    Start = function(self)
+        self._animator = self:GetComponent("AnimationComponent")
+        self._audio    = self:GetComponent("AudioComponent")
     end,
 
     OnDisable = function(self)
@@ -75,6 +90,9 @@ return Component {
         self._hitboxActive      = false
         self._currentHitEventId = nil
         self._comboIndex        = 0
+        self._cooldownTimer     = 0.0
+
+        _G.player_is_attacking = false
     end,
 
     ----------------------------------------------------------------------
@@ -84,20 +102,18 @@ return Component {
         self._time = self._time + dt
 
         -- ---- Input handling ----
-        local leftDown   = false
+        local leftDown    = false
         local leftPressed = false
 
         if Input and Input.GetMouseButton then
             leftDown = Input.GetMouseButton(Input.MouseButton.Left)
         end
 
-        -- Always compute edge ourselves to avoid buggy GetMouseButtonDown
+        -- Edge detect: emulate GetMouseButtonDown
         leftPressed = (leftDown and not self._prevLeftDown)
 
         if leftPressed then
             self._lastClickTime = self._time
-            -- optional: debug
-            -- print("[LUA][PlayerAttack] leftPressed true at t=" .. string.format("%.3f", self._time))
         end
 
         self._prevLeftDown = leftDown
@@ -111,10 +127,18 @@ return Component {
     -- Combo state machine
     ----------------------------------------------------------------------
     _updateCombo = function(self, dt, leftPressed)
+        -- Update cooldown timer
+        if self._cooldownTimer > 0 then
+            self._cooldownTimer = self._cooldownTimer - dt
+            if self._cooldownTimer < 0 then
+                self._cooldownTimer = 0
+            end
+        end
+
         -- If no attack is active
         if self._comboIndex == 0 then
-            if leftPressed then
-                -- Start combo at step 1
+            -- Only start new attack if cooldown is over and player clicked
+            if leftPressed and self._cooldownTimer <= 0 then
                 self:_startAttackStep(1)
             end
             return
@@ -123,28 +147,34 @@ return Component {
         -- There is an active attack step
         self._attackTimer = self._attackTimer + dt
 
-        -- Queue next swing if player clicks during current step
-        if leftPressed then
+        -- Only allow queuing the next swing during the first 0.3 seconds of the attack
+        -- This prevents spam clicking throughout the entire attack duration
+        local canQueueNext = (self._attackTimer <= 0.3 and not self._queuedNextSwing and self._comboIndex < self._maxComboSteps)
+        if leftPressed and canQueueNext then
             self._queuedNextSwing = true
+            print("[LUA][PlayerAttack] Queued next swing (step " .. tostring(self._comboIndex + 1) .. ")")
         end
 
         -- Update hitbox for this frame
         self:_updateHitbox(dt)
 
-        -- Check if current step is finished
+        -- Check if current step is finished (animation duration completed)
         local duration = self:_getAttackDuration(self._comboIndex)
         if self._attackTimer >= duration then
             if self._queuedNextSwing and self._comboIndex < self._maxComboSteps then
-                -- Chain to next step
+                -- Chain to next step - only NOW play the next animation/SFX
                 self:_startAttackStep(self._comboIndex + 1)
             else
-                -- Combo fully finished
+                -- Combo fully finished - start cooldown to prevent spam
                 print("[LUA][PlayerAttack] Combo finished")
                 self._comboIndex        = 0
                 self._attackTimer       = 0.0
                 self._queuedNextSwing   = false
                 self._hitboxActive      = false
                 self._currentHitEventId = nil
+                self._cooldownTimer     = self.attackCooldown or 3.0
+
+                _G.player_is_attacking = false
             end
         end
     end,
@@ -160,7 +190,12 @@ return Component {
         self._currentHitEventId = self._hitEventIdCounter
 
         print("[LUA][PlayerAttack] Start attack step " .. tostring(stepIndex))
+
+        _G.player_is_attacking = true
+
+        -- 🔧 FIXED: use ':' not '->'
         self:_playSlashAnimation(stepIndex)
+        self:_playAttackSFX()
     end,
 
     ----------------------------------------------------------------------
@@ -215,8 +250,6 @@ return Component {
             return
         end
 
-        -- While active, fire hitbox event every frame;
-        -- EnemyHealth.lua uses hitId so each enemy only takes damage once per swing.
         if not (self.GetPosition and self.GetRotation) then
             return
         end
@@ -224,7 +257,6 @@ return Component {
         local px, py, pz = self:GetPosition()
         local rx, ry, rz = self:GetRotation()  -- assumed Euler degrees (x, y, z)
 
-        -- Simple forward from yaw (Y axis)
         local yawRad   = math.rad(ry or 0.0)
         local forwardX = math.sin(yawRad)
         local forwardZ = math.cos(yawRad)
@@ -258,21 +290,31 @@ return Component {
     -- Animation hook
     ----------------------------------------------------------------------
     _playSlashAnimation = function(self, stepIndex)
-        local animName = nil
+        local animator = self._animator
+        if not animator then return end
+
+        local clipIndex = 3  -- default
         if stepIndex == 1 then
-            animName = self.animSlash1
+            clipIndex = self._attackAnimClip1 or 3
         elseif stepIndex == 2 then
-            animName = self.animSlash2
+            clipIndex = self._attackAnimClip2 or 4
         elseif stepIndex == 3 then
-            animName = self.animSlash3
+            clipIndex = self._attackAnimClip3 or 5
         end
 
-        if animName and animName ~= "" then
-            print("[LUA][PlayerAttack] Play animation:\t" .. tostring(animName))
-            -- TODO: hook into your animation system here, e.g.:
-            -- if self.PlayAnimation then self:PlayAnimation(animName) end
-        else
-            print("[LUA][PlayerAttack] No animation name set for step " .. tostring(stepIndex))
-        end
+        print("[LUA][PlayerAttack] Play animation clip " .. tostring(clipIndex))
+        animator:PlayClip(clipIndex, false)
+    end,
+
+    ----------------------------------------------------------------------
+    -- SFX hook
+    ----------------------------------------------------------------------
+    _playAttackSFX = function(self)
+        local audio = self._audio
+        local clips = self.attackSFXClips
+        if not audio or not clips or #clips == 0 then return end
+
+        local clipIndex = math.random(1, #clips)
+        audio:PlayOneShot(clips[clipIndex])
     end,
 }

@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/japaneseWallNormal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

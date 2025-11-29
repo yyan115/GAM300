@@ -2074,7 +2074,7 @@ static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson)
                 }
                 else {
                     // Successfully deserialized, clear any pending state
-                    sd.pendingInstanceState.clear();
+                    sd.pendingInstanceState = instJson;
                 }
             }
 
@@ -2144,6 +2144,12 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             }
             if (scriptData.HasMember("scriptPath") && scriptData["scriptPath"].IsString()) {
                 sd.scriptPath = scriptData["scriptPath"].GetString();
+#ifndef EDITOR
+                // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+                if (sd.scriptPath.find("../../Resources") == 0) {
+                    sd.scriptPath = sd.scriptPath.substr(6); // Remove "../../" prefix
+                }
+#endif
             }
 
             // If scriptPath is empty, try to resolve it from GUID
@@ -2211,6 +2217,12 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
         // Read simple fields
         if (scriptJSON.HasMember("scriptPath") && scriptJSON["scriptPath"].IsString()) {
             sd.scriptPath = scriptJSON["scriptPath"].GetString();
+#ifndef EDITOR
+            // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+            if (sd.scriptPath.find("../../Resources") == 0) {
+                sd.scriptPath = sd.scriptPath.substr(6); // Remove "../../" prefix
+            }
+#endif
         }
         if (scriptJSON.HasMember("enabled") && scriptJSON["enabled"].IsBool()) {
             sd.enabled = scriptJSON["enabled"].GetBool();
@@ -2299,8 +2311,15 @@ void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const r
                         // New format with scriptPath
                         if (bd[0].HasMember("data") && bd[0]["data"].IsString())
                             binding.targetEntityGuidStr = bd[0]["data"].GetString();
-                        if (bd[1].HasMember("data") && bd[1]["data"].IsString())
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString()) {
                             binding.scriptPath = bd[1]["data"].GetString();
+#ifndef EDITOR
+                            // Game build: normalize paths saved by Editor (../../Resources/... -> Resources/...)
+                            if (binding.scriptPath.find("../../Resources") == 0) {
+                                binding.scriptPath = binding.scriptPath.substr(6); // Remove "../../" prefix
+                            }
+#endif
+                        }
                         if (bd[2].HasMember("data") && bd[2]["data"].IsString())
                             binding.scriptGuidStr = bd[2]["data"].GetString();
                         if (bd[3].HasMember("data") && bd[3]["data"].IsString())
