@@ -239,7 +239,7 @@ namespace TimeWrappers {
 
 namespace SceneWrappers {
     inline void LoadScene(const std::string& scenePath) {
-        SceneManager::GetInstance().LoadScene(scenePath);
+        SceneManager::GetInstance().LoadScene(scenePath, true);
     }
     
     inline std::string GetCurrentSceneName() {

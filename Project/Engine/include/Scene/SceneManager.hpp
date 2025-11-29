@@ -10,7 +10,7 @@ public:
 	// Temporary function to load the test scene.
 	void LoadTestScene();
 
-	void ENGINE_API LoadScene(const std::string& scenePath);
+	void ENGINE_API LoadScene(const std::string& scenePath, bool callingFromLua = false);
 
 	void UpdateScene(double dt);
 
@@ -54,4 +54,7 @@ private:
 	std::unique_ptr<IScene> currentScene = nullptr;
 	std::string currentScenePath;
 	std::string currentSceneName;
+
+	bool loadSceneNextFrame = false;
+	std::string sceneToLoadNextFrame{};
 };

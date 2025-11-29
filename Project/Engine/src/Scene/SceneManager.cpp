@@ -42,7 +42,15 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-void SceneManager::LoadScene(const std::string& scenePath) {
+void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) {
+    if (callingFromLua) {
+        // If calling from Lua, defer loading to the next frame so that the Lua function can complete and return properly
+		// before shutting down the scripting system in currentScene->Exit().
+        loadSceneNextFrame = true;
+        sceneToLoadNextFrame = scenePath;
+        return;
+    }
+
 #if 1
 #ifdef EDITOR
 	// Reset game state to edit mode when loading a new scene
@@ -240,6 +248,12 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 }
 
 void SceneManager::UpdateScene(double dt) {
+    if (loadSceneNextFrame) {
+        LoadScene(sceneToLoadNextFrame);
+        loadSceneNextFrame = false;
+        sceneToLoadNextFrame = "";
+        return;
+    }
 	if (currentScene) {
 		currentScene->Update(dt);
 	}
