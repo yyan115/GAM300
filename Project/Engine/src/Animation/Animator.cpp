@@ -53,8 +53,9 @@ void Animator::PlayAnimation(Animation* pAnimation)
 	{
 		size_t n = pAnimation->GetBoneIDMap().size();
 		mFinalBoneMatrices.assign(n ? n : 1, glm::mat4(1.0f));
-	}
 
+		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+	}
 }
 
 void Animator::SetCurrentTime(float time)
