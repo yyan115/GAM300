@@ -7840,15 +7840,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.0124431
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2.05548e-9
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.00000149427
+                                    "data": 0
                                 }
                             ]
                         },
@@ -7857,15 +7857,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.00000154646
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.00225936
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.012959
+                                    "data": 0
                                 }
                             ]
                         },
@@ -8970,7 +8970,7 @@
                     "data": [
                         "0025dbe70c8f8ceb-00033724b8000029",
                         "0060f444e1e8808c-000337e664000011",
-                        "0025dbe748fe63ce-00033724ba00002b",
+                        "005330ffb75ae0fb-00036c7f64000003",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -9160,7 +9160,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "bool",
