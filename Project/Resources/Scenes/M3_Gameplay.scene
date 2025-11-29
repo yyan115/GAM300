@@ -149,15 +149,6 @@
                         }
                     ]
                 },
-                "AudioListenerComponent": {
-                    "type": "AudioListenerComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
                 "CameraComponent": {
                     "type": "CameraComponent",
                     "data": [
@@ -627,7 +618,16 @@
                         },
                         {
                             "type": "float",
-                            "data": 15
+                            "data": 5
+                        }
+                    ]
+                },
+                "AudioListenerComponent": {
+                    "type": "AudioListenerComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },
@@ -715,41 +715,28 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_wasGrounded": true,
-                                "__created_at": 1764350408.0,
-                                "_private": {},
-                                "_currentRotZ": 0.0,
-                                "rotationSpeed": 10.0,
-                                "__meta": {},
-                                "_prevInputW": false,
-                                "_currentRotW": 1.0,
-                                "_currentRotX": 0.0,
-                                "footstepInterval": 0.6,
-                                "name": "PlayerMovement",
-                                "footstepSFXClips": [
-                                    "00300b827de9c2cc-00035fcbf200000d",
-                                    "00300b820f30f21e-00035fcbf200000f",
-                                    "00300b827e3b8dee-00035fcbf2000011",
-                                    "00300b8264003235-00035fcbf2000013",
-                                    "00300b820282a972-00035fcbf2000015"
-                                ],
-                                "__field_list": {
-                                    "footstepInterval": 0.8,
-                                    "name": "PlayerMovement",
-                                    "jumpSFXClips": {},
-                                    "moveSpeed": 2.0,
-                                    "landingSFXClips": {},
-                                    "rotationSpeed": 10.0,
-                                    "sfxVolume": 0.5,
-                                    "footstepSFXClips": {},
-                                    "jumpSpeed": 5.0,
-                                    "gravity": -9.8
-                                },
-                                "_velY": 0.0,
-                                "gravity": -9.8,
+                                "_isWalking": false,
                                 "_prevInputA": false,
+                                "_transform_fetched": false,
+                                "__meta": {},
+                                "_currentRotX": 0.0,
                                 "_groundY": 0.0,
-                                "moveSpeed": 2.0,
+                                "__field_list": {
+                                    "sfxVolume": 0.5,
+                                    "jumpSpeed": 5.0,
+                                    "jumpSFXClips": {},
+                                    "gravity": -9.8,
+                                    "rotationSpeed": 10.0,
+                                    "footstepInterval": 0.8,
+                                    "landingSFXClips": {},
+                                    "moveSpeed": 2.0,
+                                    "name": "PlayerMovement",
+                                    "footstepSFXClips": {}
+                                },
+                                "_wasGrounded": true,
+                                "_idleAnimationClip": 0.0,
+                                "rotationSpeed": 10.0,
+                                "footstepInterval": 0.65,
                                 "landingSFXClips": [
                                     "00300b822d4682fa-00035fcbf2000025",
                                     "00300b823d619b92-00035fcbf2000027",
@@ -757,27 +744,38 @@
                                     "00300b826700c35f-00035fcbf200002b",
                                     "00300b8279ba969d-00035fcbf200002d"
                                 ],
+                                "_currentRotZ": 0.0,
                                 "_isGrounded": true,
-                                "_prevInputD": false,
-                                "_currentRotY": 0.0,
-                                "_jumpAnimationClip": 2.0,
-                                "_isWalking": false,
-                                "_subscriptions": {},
-                                "_transform_fetched": false,
-                                "_idleAnimationClip": 0.0,
                                 "jumpSFXClips": [
+                                    "00300b827846b9bd-00035fcbf2000023",
                                     "00300b82038ed2c4-00035fcbf2000019",
-                                    "00300b82016c91ec-00035fcbf200001b",
-                                    "00300b82417482af-00035fcbf200001d",
-                                    "00300b8221f1fecf-00035fcbf200001f",
-                                    "00300b820a3c376f-00035fcbf2000021"
+                                    "00300b82016c91ec-00035fcbf200001b"
                                 ],
-                                "sfxVolume": 0.5,
-                                "_walkAnimationClip": 1.0,
-                                "_isJumping": false,
-                                "_prevInputS": false,
+                                "name": "PlayerMovement",
+                                "footstepSFXClips": [
+                                    "00300b826ee09636-00035fcbf2000017",
+                                    "00300b820f30f21e-00035fcbf200000f",
+                                    "00300b827e3b8dee-00035fcbf2000011",
+                                    "00300b8264003235-00035fcbf2000013",
+                                    "00300b820282a972-00035fcbf2000015"
+                                ],
+                                "moveSpeed": 2.0,
+                                "_subscriptions": {},
+                                "_prevInputW": false,
+                                "sfxVolume": 0.2,
+                                "__created_at": 1764350408.0,
                                 "jumpSpeed": 5.0,
-                                "_footstepTimer": 0.0
+                                "_jumpAnimationClip": 2.0,
+                                "_velY": 0.0,
+                                "_isJumping": false,
+                                "_currentRotW": 1.0,
+                                "_footstepTimer": 0.0,
+                                "_prevInputS": false,
+                                "_prevInputD": false,
+                                "gravity": -9.8,
+                                "_private": {},
+                                "_currentRotY": 0.0,
+                                "_walkAnimationClip": 1.0
                             }
                         },
                         {
@@ -1975,7 +1973,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "00204b0cada7cf4f-00035fc45e000007",
+                        "00131462bafd2c7d-00036b9494000003",
                         {
                             "type": "bool",
                             "data": false
@@ -1998,7 +1996,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.495413
+                            "data": 0.696429
                         },
                         {
                             "type": "float",
@@ -2204,7 +2202,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "00204b0ca73f7361-00035fc45e000005",
+                        "001314629adbc299-00036b9494000001",
                         {
                             "type": "bool",
                             "data": false
@@ -2227,7 +2225,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.40367
+                            "data": 0.600098
                         },
                         {
                             "type": "float",
@@ -9953,7 +9951,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0.10119
                         },
                         {
                             "type": "float",
