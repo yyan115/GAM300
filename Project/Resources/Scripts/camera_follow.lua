@@ -53,6 +53,11 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
+        -- Camera collision settings
+        collisionEnabled = true,
+        collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
+        collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
+        collisionLerpOut = 5.0,    -- Slower ease when wall clears
     },
 
     Awake = function(self)
@@ -65,6 +70,7 @@ return Component {
         self._lastMouseX = 0.0
         self._lastMouseY = 0.0
         self._firstMouse = true
+        self._currentCollisionDist = nil  -- Track current collision-adjusted distance
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -190,6 +196,59 @@ return Component {
         local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
 
         local desiredX, desiredY, desiredZ = tx + offsetX, ty + offsetY, tz + offsetZ
+
+        -- Camera collision detection using raycast
+        if self.collisionEnabled and Physics and Physics.Raycast then
+            -- Direction from target to desired camera position
+            local dirX = desiredX - tx
+            local dirY = desiredY - ty
+            local dirZ = desiredZ - tz
+            local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
+
+            if dirLen > 0.001 then
+                -- Normalize direction
+                dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
+
+                -- Raycast from target toward camera
+                -- Returns: distance (float, -1 if no hit)
+                local dist = Physics.Raycast(
+                    tx, ty, tz,           -- origin (player position)
+                    dirX, dirY, dirZ,     -- direction (toward camera)
+                    dirLen + 0.5          -- max distance (slightly beyond desired)
+                )
+
+                local hit = (dist >= 0 and dist < dirLen)
+                local collisionOffset = self.collisionOffset or 0.2
+                local targetDist = dirLen  -- Default: no collision
+
+                if hit then
+                    -- Wall detected! Pull camera in front of hit point
+                    targetDist = math.max(dist - collisionOffset, 0.5)  -- Minimum 0.5 distance from player
+                end
+
+                -- Smooth collision distance (fast in, slow out)
+                if self._currentCollisionDist == nil then
+                    self._currentCollisionDist = targetDist
+                else
+                    local lerpSpeed
+                    if targetDist < self._currentCollisionDist then
+                        -- Snapping in (wall hit) - fast
+                        lerpSpeed = self.collisionLerpIn or 20.0
+                    else
+                        -- Easing out (wall cleared) - slow
+                        lerpSpeed = self.collisionLerpOut or 5.0
+                    end
+                    local collisionT = 1.0 - math.exp(-lerpSpeed * dt)
+                    self._currentCollisionDist = self._currentCollisionDist + (targetDist - self._currentCollisionDist) * collisionT
+                end
+
+                -- Apply collision-adjusted position
+                local adjustedDist = self._currentCollisionDist
+                desiredX = tx + dirX * adjustedDist
+                desiredY = ty + dirY * adjustedDist
+                desiredZ = tz + dirZ * adjustedDist
+            end
+        end
 
         -- Smooth follow
         local cx, cy, cz = 0.0, 0.0, 0.0

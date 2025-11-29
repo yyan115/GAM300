@@ -191,6 +191,18 @@ BEGIN_SYSTEM("PhysicsSystem")
 END_SYSTEM()
 
 // ============================================================================
+// PHYSICS RAYCAST SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Physics")
+    // Test function to verify binding works
+    FUNCTION("Test", PhysicsSystemWrappers::TestBinding)
+    // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    // Returns: distance (float, -1.0 if no hit)
+    FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+END_SYSTEM()
+
+// ============================================================================
 // TAG SYSTEM
 // ============================================================================
 

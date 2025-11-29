@@ -161,6 +161,10 @@ static size_t Lua_FindCurrentClipByName(const std::string& name)
 
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
+    // DEBUG: This MUST print if new code is compiled - v3
+    std::cout << "[ScriptSystem] ===== INITIALISE v3 =====" << std::endl;
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] ===== INITIALISE v3 =====");
+
     m_ecs = &ecsManager;
 	g_ecsManager = &ecsManager;
 
@@ -257,7 +261,17 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #define END_SYSTEM() \
                 .endNamespace();
 
+            // Force rebuild when LuaSystemBindings.inc changes - v2
             #include "Script/LuaSystemBindings.inc"
+
+            // Debug: Verify Physics namespace was created
+            lua_getglobal(L, "Physics");
+            if (lua_isnil(L, -1)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] CRITICAL: Physics namespace not created!");
+            } else {
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Physics namespace created successfully");
+            }
+            lua_pop(L, 1);
 
             #undef BEGIN_SYSTEM
             #undef BEGIN_CONSTANTS
