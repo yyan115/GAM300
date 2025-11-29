@@ -145,28 +145,22 @@ return Component {
         
         -- Timers
         self._footstepTimer = 0
-        
+
         -- Input tracking for key press detection
         self._prevInputW = false
         self._prevInputS = false
         self._prevInputA = false
         self._prevInputD = false
 
-        -- Camera basis (for camera-relative movement)
-        self._camForwardX = 0.0   -- default: world +Z
-        self._camForwardZ = 1.0
-        self._camBasisSub = nil
+        -- Camera yaw for camera-relative movement (default 180 to match camera initial yaw)
+        self._cameraYaw = 180.0
+        self._cameraYawSub = nil
 
+        -- Subscribe to camera yaw updates
         if event_bus and event_bus.subscribe then
-            self._camBasisSub = event_bus.subscribe("camera_basis", function(payload)
-                if not payload or not payload.forward then return end
-                local f = payload.forward
-                local fx = f.x or f[1] or 0.0
-                local fz = f.z or f[3] or 1.0
-                local len = math.sqrt(fx*fx + fz*fz)
-                if len > 0.0001 then
-                    self._camForwardX = fx / len
-                    self._camForwardZ = fz / len
+            self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
+                if yaw then
+                    self._cameraYaw = yaw
                 end
             end)
         end
@@ -242,32 +236,18 @@ return Component {
         
         local hasMovementInput = (len > 0.0001)
 
-        --------------------------------------------------
-        -- Camera-relative movement (always reset per frame)
-        --------------------------------------------------
-        local moveX, moveZ = 0.0, 0.0   -- <-- IMPORTANT: local + zeroed every Update
-
+        -- Transform movement to camera-relative direction
+        local moveX, moveZ = 0.0, 0.0
         if hasMovementInput then
-            -- camera forward (from camera_follow)
-            local fx = self._camForwardX or 0.0
-            local fz = self._camForwardZ or 1.0
+            local yawRad = math.rad(self._cameraYaw or 180.0)
+            local sinYaw = math.sin(yawRad)
+            local cosYaw = math.cos(yawRad)
 
-            -- right vector on XZ: (fz, -fx)
-            local rx = fz
-            local rz = -fx
-
-            -- rawMoveZ = "forward/back"
-            -- rawMoveX = "left/right"
-            -- Move = forward * rawMoveZ + left * rawMoveX
-            -- left = -right = (-rx, -rz)
-            moveX = fx * rawMoveZ - rx * rawMoveX
-            moveZ = fz * rawMoveZ - rz * rawMoveX
-        end
-
-        -- Lock horizontal movement while attacking
-        if isAttacking then
-            moveX, moveZ = 0.0, 0.0
-            hasMovementInput = false
+            -- Camera forward is (-sinYaw, -cosYaw)
+            -- Note: rawMoveX sign is flipped to match original A=+X, D=-X mapping
+            -- rawMoveZ = forward/back, rawMoveX = strafe
+            moveX = rawMoveZ * (-sinYaw) - rawMoveX * cosYaw
+            moveZ = rawMoveZ * (-cosYaw) + rawMoveX * sinYaw
         end
 
         local speed = self.moveSpeed or 5.0
@@ -439,9 +419,10 @@ return Component {
     OnDisable = function(self)
         print("[LUA][PlayerMovement] OnDisable")
 
-        if event_bus and event_bus.unsubscribe and self._camBasisSub then
-            event_bus.unsubscribe(self._camBasisSub)
-            self._camBasisSub = nil
+        -- Unsubscribe from camera yaw updates
+        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
+            event_bus.unsubscribe(self._cameraYawSub)
+            self._cameraYawSub = nil
         end
     end,
 }

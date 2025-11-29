@@ -50,6 +50,14 @@ return Component {
         mouseSensitivity = 0.15,
         minPitch         = -30.0,
         maxPitch         = 60.0,
+        minZoom          = 2.0,
+        maxZoom          = 15.0,
+        zoomSpeed        = 1.0,
+        -- Camera collision settings
+        collisionEnabled = true,
+        collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
+        collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
+        collisionLerpOut = 5.0,    -- Slower ease when wall clears
     },
 
     Awake = function(self)
@@ -62,6 +70,7 @@ return Component {
         self._lastMouseX = 0.0
         self._lastMouseY = 0.0
         self._firstMouse = true
+        self._currentCollisionDist = nil  -- Track current collision-adjusted distance
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -69,14 +78,18 @@ return Component {
                 local x = payload.x or payload[1] or 0.0
                 local y = payload.y or payload[2] or 0.0
                 local z = payload.z or payload[3] or 0.0
-                self._targetPos.x, self._targetPos.y, self._targetPos.z = x, y + 1, z
+                -- Store raw position, height offset applied in Update based on zoom
+                self._targetPos.x, self._targetPos.y, self._targetPos.z = x, y, z
+
+                -- Lock cursor only when we first receive player position (entering gameplay)
+                -- This prevents cursor lock in menu scenes where there's no player
+                if not self._hasTarget then
+                    if Screen and Screen.SetCursorLocked then
+                        Screen.SetCursorLocked(true)
+                    end
+                end
                 self._hasTarget = true
             end)
-        end
-
-        -- Lock cursor when camera starts (game mode)
-        if Screen and Screen.SetCursorLocked then
-            Screen.SetCursorLocked(true)
         end
     end,
 
@@ -92,8 +105,25 @@ return Component {
         end
     end,
 
+    _updateScrollZoom = function(self)
+        if not (Input and Input.GetScrollY) then return end
+
+        local scrollY = Input.GetScrollY()
+        if scrollY ~= 0 then
+            local zoomSpeed = self.zoomSpeed or 1.0
+            self.followDistance = self.followDistance - scrollY * zoomSpeed
+            self.followDistance = clamp(self.followDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+
+            -- Consume scroll so it doesn't accumulate
+            if Input.ConsumeScroll then
+                Input.ConsumeScroll()
+            end
+        end
+    end,
+
     _updateMouseLook = function(self, dt)
-        if not (Input and Input.GetMouseButton and Input.GetMouseX and Input.GetMouseY) then return end
+        -- Process mouse look for camera rotation
+        if not (Input and Input.GetMouseX and Input.GetMouseY) then return end
         local xpos, ypos = Input.GetMouseX(), Input.GetMouseY()
         if self._firstMouse then
             self._firstMouse = false
@@ -103,9 +133,13 @@ return Component {
         local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
         local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
         self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   - xoffset
+        self._yaw   = self._yaw   - xoffset  -- Inverted for correct left/right panning
         self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
+        -- Broadcast camera yaw for camera-relative player movement
+        if event_bus and event_bus.publish then
+            event_bus.publish("camera_yaw", self._yaw)
+        end
     end,
 
     Update = function(self, dt)
@@ -136,10 +170,28 @@ return Component {
             self:_updateMouseLook(dt)
         end
 
-        local tx, ty, tz = self._targetPos.x, self._targetPos.y, self._targetPos.z
-        local radius   = self.followDistance or 5.0
+        -- Update scroll zoom
+        self:_updateScrollZoom()
+
+        local radius = self.followDistance or 5.0
         local pitchRad = math.rad(self._pitch)
-        local yawRad   = math.rad(self._yaw)
+        local yawRad = math.rad(self._yaw)
+
+        -- Scale height offset based on zoom distance (less offset when zoomed in)
+        local minZoom = self.minZoom or 2.0
+        local maxZoom = self.maxZoom or 15.0
+        local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)  -- 0 at min zoom, 1 at max zoom
+        zoomFactor = clamp(zoomFactor, 0.0, 1.0)
+
+        -- Target look-at point: scale from feet (0.5) at close zoom to chest (1.2) at far zoom
+        local lookAtHeight = 0.5 + zoomFactor * 0.7  -- 0.5 to 1.2
+        local tx = self._targetPos.x
+        local ty = self._targetPos.y + lookAtHeight
+        local tz = self._targetPos.z
+
+        -- Camera height offset also scales with zoom
+        local baseHeightOffset = self.heightOffset or 1.0
+        local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)  -- 30% to 100% of offset
 
         if event_bus and event_bus.publish then
             local fx = math.sin(yawRad)  -- forward.x
@@ -152,9 +204,62 @@ return Component {
         local horizontalRadius = radius * math.cos(pitchRad)
         local offsetX = horizontalRadius * math.sin(yawRad)
         local offsetZ = horizontalRadius * math.cos(yawRad)
-        local offsetY = radius * math.sin(pitchRad) + (self.heightOffset or 0.0)
+        local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
 
         local desiredX, desiredY, desiredZ = tx + offsetX, ty + offsetY, tz + offsetZ
+
+        -- Camera collision detection using raycast
+        if self.collisionEnabled and Physics and Physics.Raycast then
+            -- Direction from target to desired camera position
+            local dirX = desiredX - tx
+            local dirY = desiredY - ty
+            local dirZ = desiredZ - tz
+            local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
+
+            if dirLen > 0.001 then
+                -- Normalize direction
+                dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
+
+                -- Raycast from target toward camera
+                -- Returns: distance (float, -1 if no hit)
+                local dist = Physics.Raycast(
+                    tx, ty, tz,           -- origin (player position)
+                    dirX, dirY, dirZ,     -- direction (toward camera)
+                    dirLen + 0.5          -- max distance (slightly beyond desired)
+                )
+
+                local hit = (dist >= 0 and dist < dirLen)
+                local collisionOffset = self.collisionOffset or 0.2
+                local targetDist = dirLen  -- Default: no collision
+
+                if hit then
+                    -- Wall detected! Pull camera in front of hit point
+                    targetDist = math.max(dist - collisionOffset, 0.5)  -- Minimum 0.5 distance from player
+                end
+
+                -- Smooth collision distance (fast in, slow out)
+                if self._currentCollisionDist == nil then
+                    self._currentCollisionDist = targetDist
+                else
+                    local lerpSpeed
+                    if targetDist < self._currentCollisionDist then
+                        -- Snapping in (wall hit) - fast
+                        lerpSpeed = self.collisionLerpIn or 20.0
+                    else
+                        -- Easing out (wall cleared) - slow
+                        lerpSpeed = self.collisionLerpOut or 5.0
+                    end
+                    local collisionT = 1.0 - math.exp(-lerpSpeed * dt)
+                    self._currentCollisionDist = self._currentCollisionDist + (targetDist - self._currentCollisionDist) * collisionT
+                end
+
+                -- Apply collision-adjusted position
+                local adjustedDist = self._currentCollisionDist
+                desiredX = tx + dirX * adjustedDist
+                desiredY = ty + dirY * adjustedDist
+                desiredZ = tz + dirZ * adjustedDist
+            end
+        end
 
         -- Smooth follow
         local cx, cy, cz = 0.0, 0.0, 0.0

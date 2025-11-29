@@ -21,6 +21,10 @@ public:
 	static double GetMouseX();
 	static double GetMouseY();
 
+	static double GetScrollX();
+	static double GetScrollY();
+	static void ConsumeScroll();  // Reset scroll delta after reading
+
 	static bool GetAnyKeyDown();
 	static bool GetAnyMouseButtonDown();
 	static bool GetAnyInputDown();

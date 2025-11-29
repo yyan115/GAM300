@@ -8,6 +8,8 @@
 #include "EditorComponents.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "WindowManager.hpp"
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cmath>
 
@@ -159,6 +161,27 @@ void GamePanel::OnImGuiRender() {
                                            ImGui::IsMouseClicked(ImGuiMouseButton_Middle) ||
                                            ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
                 ImGui::SetWindowFocus();
+
+                // Capture cursor when clicking in game panel during play mode
+                // Only if game code has requested cursor lock (respects main menu wanting cursor free)
+                if (Engine::ShouldRunGameLogic() && !cursorCaptured && WindowManager::IsCursorLockRequested()) {
+                    SetCursorCaptured(true);
+                }
+            }
+
+            // Release cursor on Escape key during play mode
+            if (cursorCaptured && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                SetCursorCaptured(false);
+            }
+
+            // Release cursor when game stops
+            if (cursorCaptured && !Engine::ShouldRunGameLogic()) {
+                SetCursorCaptured(false);
+            }
+
+            // Release cursor if game code explicitly unlocked it
+            if (cursorCaptured && !WindowManager::IsCursorLockRequested()) {
+                SetCursorCaptured(false);
             }
 
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -188,31 +211,41 @@ void GamePanel::OnImGuiRender() {
             }
 
             // Update the engine's InputManager mouse position relative to the game panel.
-            // Get absolute mouse position
-            ImVec2 mousePos = ImGui::GetMousePos();
-
             // Panel bounds
             ImVec2 panelMin = ImGui::GetItemRectMin();
             ImVec2 panelMax = ImGui::GetItemRectMax();
 
-            // Relative position inside panel
-            float relX = mousePos.x - panelMin.x;
-            float relY = mousePos.y - panelMin.y;
+            // When cursor is captured, use GLFW raw mouse position for unlimited movement
+            // Otherwise use ImGui position with bounds check
+            if (cursorCaptured) {
+                // Get raw GLFW mouse position - this gives unlimited virtual movement
+                double glfwMouseX, glfwMouseY;
+                GLFWwindow* window = static_cast<GLFWwindow*>(WindowManager::getWindow());
+                glfwGetCursorPos(window, &glfwMouseX, &glfwMouseY);
 
-            // Clamp to panel bounds
-            bool insidePanel = (mousePos.x >= panelMin.x && mousePos.x <= panelMax.x &&
-                mousePos.y >= panelMin.y && mousePos.y <= panelMax.y);
+                // Feed raw position directly to InputManager for camera rotation
+                // The camera script uses mouse delta, so absolute position works
+                InputManager::SetGamePanelMousePos((float)glfwMouseX, (float)glfwMouseY);
+            } else {
+                // Normal mode - only update when inside panel
+                ImVec2 mousePos = ImGui::GetMousePos();
+                float relX = mousePos.x - panelMin.x;
+                float relY = mousePos.y - panelMin.y;
 
-            if (insidePanel) {
-                // Scale relative coords to framebuffer resolution
-                float scaleX = (float)renderWidth / (panelMax.x - panelMin.x);
-                float scaleY = (float)renderHeight / (panelMax.y - panelMin.y);
+                bool insidePanel = (mousePos.x >= panelMin.x && mousePos.x <= panelMax.x &&
+                    mousePos.y >= panelMin.y && mousePos.y <= panelMax.y);
 
-                float gameX = relX * scaleX;
-                float gameY = relY * scaleY;
+                if (insidePanel) {
+                    // Scale relative coords to framebuffer resolution
+                    float scaleX = (float)renderWidth / (panelMax.x - panelMin.x);
+                    float scaleY = (float)renderHeight / (panelMax.y - panelMin.y);
 
-                // Feed into InputManager (game-space coordinates)
-                InputManager::SetGamePanelMousePos(gameX, gameY);
+                    float gameX = relX * scaleX;
+                    float gameY = relY * scaleY;
+
+                    // Feed into InputManager (game-space coordinates)
+                    InputManager::SetGamePanelMousePos(gameX, gameY);
+                }
             }
 
         }
@@ -368,5 +401,19 @@ void GamePanel::GetTargetGameResolution(int& outWidth, int& outHeight) const {
         const auto& res = resolutions[selectedResolutionIndex];
         outWidth = res.width;
         outHeight = res.height;
+    }
+}
+
+void GamePanel::SetCursorCaptured(bool captured) {
+    if (cursorCaptured == captured) return;
+
+    cursorCaptured = captured;
+    GLFWwindow* window = static_cast<GLFWwindow*>(WindowManager::getWindow());
+    if (window) {
+        if (captured) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
     }
 }

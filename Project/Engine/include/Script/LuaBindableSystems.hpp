@@ -1,5 +1,6 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include <tuple>
 
 // ============================================================================
 // INPUT SYSTEM WRAPPERS
@@ -41,6 +42,31 @@ namespace PhysicsSystemWrappers {
             return nullptr;
         }
         return &g_PhysicsSystem->GetJoltSystem();
+    }
+
+    // Simple test function to verify Lua bindings work
+    inline float TestBinding() {
+        std::cout << "[Physics] TestBinding called from Lua!" << std::endl;
+        return 42.0f;
+    }
+
+    // Raycast wrapper for Lua - returns distance to hit, or -1 if no hit
+    // Usage: local distance = Physics.Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    // Returns: distance (float, -1.0 if no hit)
+    inline float Raycast(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return -1.0f;
+        }
+
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+        return result.hit ? result.distance : -1.0f;
     }
 }
 
@@ -239,7 +265,7 @@ namespace TimeWrappers {
 
 namespace SceneWrappers {
     inline void LoadScene(const std::string& scenePath) {
-        SceneManager::GetInstance().LoadScene(scenePath);
+        SceneManager::GetInstance().LoadScene(scenePath, true);
     }
     
     inline std::string GetCurrentSceneName() {

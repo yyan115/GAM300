@@ -89,6 +89,9 @@ BEGIN_SYSTEM("Input")
     FUNCTION("GetMouseButtonDown", InputWrappers::GetMouseButtonDown)
     FUNCTION("GetMouseX", InputManager::GetMouseX)
     FUNCTION("GetMouseY", InputManager::GetMouseY)
+    FUNCTION("GetScrollX", InputManager::GetScrollX)
+    FUNCTION("GetScrollY", InputManager::GetScrollY)
+    FUNCTION("ConsumeScroll", InputManager::ConsumeScroll)
     FUNCTION("GetAnyKeyDown", InputManager::GetAnyKeyDown)
     FUNCTION("GetAnyMouseButtonDown", InputManager::GetAnyMouseButtonDown)
     FUNCTION("GetAnyInputDown", InputManager::GetAnyInputDown)
@@ -185,6 +188,18 @@ END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
     FUNCTION("GetSystem", PhysicsSystemWrappers::GetSystem)
+END_SYSTEM()
+
+// ============================================================================
+// PHYSICS RAYCAST SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Physics")
+    // Test function to verify binding works
+    FUNCTION("Test", PhysicsSystemWrappers::TestBinding)
+    // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    // Returns: distance (float, -1.0 if no hit)
+    FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
 END_SYSTEM()
 
 // ============================================================================

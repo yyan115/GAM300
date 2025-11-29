@@ -251,6 +251,10 @@ bool WindowManager::IsCursorLocked() {
     return s_cursorActuallyLocked;
 }
 
+bool WindowManager::IsCursorLockRequested() {
+    return s_cursorLockRequested;
+}
+
 void WindowManager::ForceUnlockCursor() {
     s_cursorLockRequested = false;
     s_cursorActuallyLocked = false;

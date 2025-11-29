@@ -63,6 +63,7 @@ public:
     // Cursor management - robust system that works with ImGui
     static void SetCursorLocked(bool locked);  // Request cursor lock state
     static bool IsCursorLocked();              // Check if cursor is currently locked
+    static bool IsCursorLockRequested();       // Check if game code requested cursor lock
     static void UpdateCursorState();           // Called each frame to enforce cursor state (after ImGui)
     static void ForceUnlockCursor();           // Force unlock (called when game stops, etc.)
 

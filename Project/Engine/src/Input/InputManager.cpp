@@ -88,6 +88,22 @@ double InputManager::GetMouseY()
 #endif
 }
 
+double InputManager::GetScrollX()
+{
+	return RunTimeVar::input.scrollOffsetX;
+}
+
+double InputManager::GetScrollY()
+{
+	return RunTimeVar::input.scrollOffsetY;
+}
+
+void InputManager::ConsumeScroll()
+{
+	RunTimeVar::input.scrollOffsetX = 0.0;
+	RunTimeVar::input.scrollOffsetY = 0.0;
+}
+
 bool InputManager::GetAnyKeyDown()
 {
 	for (const auto& keyState : keyStates) {
