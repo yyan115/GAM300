@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c64e9721f62-00036d0ed20000f1",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthBacking.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBacking.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
