@@ -93,7 +93,7 @@ return Component {
         local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
         local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
         self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   + xoffset
+        self._yaw   = self._yaw   - xoffset
         self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
     end,
