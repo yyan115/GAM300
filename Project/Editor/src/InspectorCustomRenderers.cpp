@@ -70,6 +70,7 @@ extern "C" {
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <Panels/MaterialInspector.hpp>
 
 // External drag-drop state
 extern GUID_128 DraggedModelGuid;
@@ -994,7 +995,7 @@ void RegisterInspectorCustomRenderers()
 
     // Material GUID drag-drop
     ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "materialGUID",
-    [](const char *, void *ptr, Entity, ECSManager &ecs)
+    [](const char *, void *ptr, Entity entity, ECSManager &ecs)
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
@@ -1018,6 +1019,13 @@ void RegisterInspectorCustomRenderers()
                 // Take snapshot before changing material
                 SnapshotManager::GetInstance().TakeSnapshot("Assign Material");
                 *guid = DraggedMaterialGuid;
+                // Try GUID first, then fallback to path
+                if (DraggedMaterialGuid.high != 0 || DraggedMaterialGuid.low != 0) {
+                    MaterialInspector::ApplyMaterialToModel(entity, DraggedMaterialGuid);
+                }
+                else {
+                    MaterialInspector::ApplyMaterialToModelByPath(entity, DraggedMaterialPath);
+                }
                 EditorComponents::EndDragDropTarget();
                 return true;
             }
