@@ -1404,15 +1404,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.000030014
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 8.21053e-11
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000749718
+                                    "data": 0
                                 }
                             ]
                         },
@@ -1421,15 +1421,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.00000357346
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.0000107287
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000143061
+                                    "data": 0
                                 }
                             ]
                         },
@@ -7740,7 +7740,7 @@
                     "data": [
                         "0025dbe70c8f8ceb-00033724b8000029",
                         "0060f444e1e8808c-000337e664000011",
-                        "0025dbe748fe63ce-00033724ba00002b",
+                        "005330ffb75ae0fb-00036c7f64000003",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -7840,15 +7840,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.275645
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000142471
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.0000852694
+                                    "data": 0
                                 }
                             ]
                         },
@@ -7857,15 +7857,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0000823551
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0509099
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.286903
+                                    "data": 0
                                 }
                             ]
                         },
@@ -8970,7 +8970,7 @@
                     "data": [
                         "0025dbe70c8f8ceb-00033724b8000029",
                         "0060f444e1e8808c-000337e664000011",
-                        "0025dbe748fe63ce-00033724ba00002b",
+                        "005330ffb75ae0fb-00036c7f64000003",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -10898,18 +10898,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "00323d3e81a7eedc-00036ca94c000001",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingKnife.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
                         }
                     ]
                 }

@@ -516,9 +516,9 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
-	SetName(p.stem().generic_string());
 	// Try to get the material info from the material asset first (if it exists).
 	GetMaterialPropertiesFromAsset(materialPath);
+	SetName(p.stem().generic_string());
 
 	if (forAndroid) {
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();

@@ -40,7 +40,7 @@ public:
 	ENGINE_API static AssetManager& GetInstance();
 
 	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
-	bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
+	ENGINE_API bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
 	std::shared_ptr<AssetMeta> AddAssetMetaToMap(const std::string& assetPath);
 
 	/**
@@ -269,6 +269,7 @@ private:
 
 		metaPtr = asset->ExtendMetaFile(filePath, metaPtr, forAndroid);
 		assetMetaMap[guid] = metaPtr;
+
 		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		// HOT-RELOAD (typed)
