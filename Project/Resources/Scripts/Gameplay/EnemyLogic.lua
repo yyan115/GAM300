@@ -13,10 +13,43 @@ local currentState = IDLE
 
 -- Helper Functions
 local function IsPlayerInRange()
-    if Input.GetKeyDown(Input.Key.U) then
-        playerNear = true
-    end
-    return playerNear
+
+    local tr = Engine.FindTransformByName("Player")
+    local pos = Engine.GetTransformPosition(tr)  -- Get the table
+
+    local player_x = pos[1]  -- First element
+    local player_y = pos[2]  -- Second element
+    local player_z = pos[3]  -- Third element
+
+    print("Player pos is ", player_x, player_y, player_z)
+
+    -- Get enemy position
+    local Ground_Enemytr = Engine.FindTransformByName("GroundEnemy")
+    local enemyPos = Engine.GetTransformPosition(Ground_Enemytr)
+    local enemy_x = enemyPos[1]
+    local enemy_y = enemyPos[2]
+    local enemy_z = enemyPos[3]
+    
+    print("enemyPos is ", enemy_x, enemy_y, enemy_z)
+
+
+    -- Calculate distance
+    local dx = player_x - enemy_x
+    local dy = player_y - enemy_y
+    local dz = player_z - enemy_z
+    local distance = math.sqrt(dx*dx + dy*dy + dz*dz)
+    
+    -- Check if player is within range
+    local detectionRange = 4.0  -- Adjust this value as needed
+
+    print("distance is ", distance)
+    return distance < detectionRange
+
+
+    -- if Input.GetKeyDown(Input.Key.U) then
+    --     playerNear = true
+    -- end
+    -- return playerNear
 end
 
 local function TakeDamage(self)
@@ -49,7 +82,7 @@ return Component {
         elseif Input.GetKeyDown(Input.Key.U) then
             TakeDamage(self)
             newState = TAKE_DAMAGE
-        elseif Input.GetKeyDown(Input.Key.I) then
+        elseif IsPlayerInRange() then
             newState = ATTACK
         else
             newState = IDLE

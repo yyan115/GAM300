@@ -46,7 +46,6 @@ return Component {
     
     Update = function(self, dt) 
         local newState = currentState
-
         -- Determine new state 
         if self.Health <= 0 then
             newState = FALL
