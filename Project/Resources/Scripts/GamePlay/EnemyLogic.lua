@@ -2,12 +2,10 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-
 --CONFIGURATIONS
 local ENEMY_NAME = "GroundEnemy"  -- Change this to match your enemy's name
 local FLOOR_NAME = "TopWall"      -- Change this to match your floor's name
 local PLAYER_NAME = "Player"      -- Change this to match your player's name
-
 
 -- Animation States
 local IDLE          = 0
@@ -20,7 +18,6 @@ local currentState = IDLE
 
 -- Helper Functions
 local function IsPlayerInRange()
-
     local tr = Engine.FindTransformByName(PLAYER_NAME)
     local pos = Engine.GetTransformPosition(tr)  -- Get the table
 
@@ -99,7 +96,6 @@ local function RotateTowardsPlayer(self)
     -- Apply rotation
     self:SetRotation(quat.w, quat.x, quat.y, quat.z)
 end
-    
 
 local function TakeDamage(self)
     self.Health = self.Health - 1
@@ -120,15 +116,42 @@ return Component {
 
         -- SFX settings
         sfxVolume        = 0.5,
+        attackSoundInterval = 5.0,
     },
     
+    Awake = function(self)
+        print("[EnemyLogic] Awake")
+        self.hasRotated = false
+        currentState = IDLE
+        
+        -- Add timers for periodic SFX
+        self._attackSoundTimer = 0.0
+        self._attackSoundInterval = 3.3  -- Play attack sound every 2 seconds while attacking
+    end,
+    
     Start = function(self) 
-        self.animation = self:GetComponent("AnimationComponent") 
-        self.collider = self:GetComponent("ColliderComponent")
-        self._audio    = self:GetComponent("AudioComponent")
-        Animation.PlayClip(self.animation, IDLE, true)
-        currentState = IDLE        self.hasRotated = false --TO TRACK ROTATION TO PLAYER
-
+        print("[EnemyLogic] Start - Caching components...")
+        
+        -- Cache components (same as PlayerMovement)
+        self._animator = self:GetComponent("AnimationComponent")
+        self._collider = self:GetComponent("ColliderComponent")
+        self._audio = self:GetComponent("AudioComponent")
+        
+        print("[EnemyLogic] Animator:", self._animator)
+        print("[EnemyLogic] Collider:", self._collider)
+        print("[EnemyLogic] Audio:", self._audio)
+        
+        -- Initialize animator
+        if self._animator then
+            self._animator.enabled = true
+            -- Use PlayClip directly like PlayerMovement (not Animation.PlayClip)
+            self._animator:PlayClip(IDLE, true)
+            print("[EnemyLogic] Started IDLE animation")
+        else
+            print("[EnemyLogic ERROR] No AnimationComponent found!")
+        end
+        
+        -- Initialize audio
         if self._audio then
             self._audio.enabled = true
             self._audio:SetVolume(self.sfxVolume or 0.5)
@@ -136,7 +159,12 @@ return Component {
     end,
     
     Update = function(self, dt) 
-        local audio    = self._audio
+        -- Safety check
+        if not self._animator then
+            return
+        end
+        
+        local audio = self._audio
         local newState = currentState
 
         -- Determine new state 
@@ -155,24 +183,18 @@ return Component {
         if currentState == DEATH then
             newState = DEATH  -- Death cannot be interrupted
         elseif currentState == TAKE_DAMAGE then
-            if Animation.IsPlaying(self.animation) then
+            -- Check if damage animation is still playing using isPlay property
+            if self._animator.isPlay then
                 newState = TAKE_DAMAGE  -- Keep playing damage animation
-
-                -- Play hurt SFX
-                playRandomSFX(audio, self.hurtSFXClips)
             else
                 newState = ATTACK  -- After damage, go to attack
-                
-                -- Play attack SFX
-                playRandomSFX(audio, self.attackSFXClips)
             end
         elseif currentState == ATTACK and newState == IDLE then
             newState = ATTACK  -- Attack cannot be interrupted by idle
         end
         
-
         --HANDLE ROTATION
-        if newState == ATTACK or newState == TAKE_DAMAGE and not self.hasRotated then 
+        if (newState == ATTACK or newState == TAKE_DAMAGE) and not self.hasRotated then 
             RotateTowardsPlayer(self)
             self.hasRotated = true
         end
@@ -185,21 +207,37 @@ return Component {
 
         -- Update animation if state changed
         if newState ~= currentState then
-            Animation.Pause(self.animation)
             local loop = (newState ~= DEATH and newState ~= TAKE_DAMAGE)
-            Animation.PlayClip(self.animation, newState, loop)
+            
+            -- Use component method directly (like PlayerMovement does with animator:PlayClip)
+            self._animator:PlayClip(newState, loop)
+            
+            print("[EnemyLogic] State changed: " .. currentState .. " -> " .. newState)
             currentState = newState
+
+            -- Play appropriate SFX when entering new state
+            if currentState == ATTACK then
+                playRandomSFX(audio, self.attackSFXClips)
+                self._attackSoundTimer = 0.0  -- Reset timer on state entry
+            elseif currentState == TAKE_DAMAGE then
+                playRandomSFX(audio, self.hurtSFXClips)
+            end
+        end
+        
+        -- Play periodic attack sounds while in ATTACK state
+        if currentState == ATTACK then
+            self._attackSoundTimer = self._attackSoundTimer + dt
+            if self._attackSoundTimer >= self._attackSoundInterval then
+                playRandomSFX(audio, self.attackSFXClips)
+                self._attackSoundTimer = 0.0
+                print("[EnemyLogic] Playing periodic attack sound")
+            end
         end
     end
 }
 
+--  Animation clip indices:
+--  0 = IDLE
 --  1 = ATTACK
 --  2 = TAKEDAMAGE
---  3 = ENEMYDEATH
-
--- Animation.PlayOnce(self.animation, AttackAnimation)      -- plays a clip once
--- Animation.Pause(self.animation)                           -- pauses playback
--- Animation.Stop(self.animation)                            -- stops and resets playback
--- Animation.SetSpeed(self.animation, 1.5)                  -- sets playback speed
--- Animation.SetLooping(self.animation, true)               -- sets looping
--- local playing = Animation.IsPlaying(self.animation)      -- returns true/false
+--  3 = DEATH
