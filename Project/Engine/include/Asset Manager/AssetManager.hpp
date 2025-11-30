@@ -283,7 +283,7 @@ private:
 					ResourceManager::GetInstance().GetFontResource(compiledPath, 0, true);
 				}
 				else if constexpr (std::is_same_v<T, Shader>) {
-					ResourceManager::GetInstance().GetResource<Shader>(compiledPath, true);
+					ResourceManager::GetInstance().GetResource<Shader>(filePath, true);
 				}
 				else {
 					// For model/material/audio/script etc., call typed GetResource<T>.

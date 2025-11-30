@@ -14,7 +14,8 @@ return Component {
         
         -- Other fields
         playOnStart = true,
-        volume = 0.5
+        volume = 0.5,
+        soundTimer = 0
     },
 
     -- Called when the script starts (after Awake)
@@ -25,11 +26,11 @@ return Component {
         if self.audio then
             self.audio.enabled = true
             self.audio.PlayOnAwake = self.playOnStart
-            self.audio:setVolume(self.volume)
+            self.audio:SetVolume(self.volume)
 
             -- Set the audio clip if provided
             if self.testAudioClip ~= "" then
-                self.audio:setClip(self.testAudioClip)
+                self.audio:SetClip(self.testAudioClip)
                 print("Set audio clip to: " .. self.testAudioClip)
             else
                 print("No testAudioClip set, using component's existing clip")
@@ -62,7 +63,7 @@ return Component {
     PlayRandomHurtSound = function(self)
         if self.audio and #self.enemyHurtSFXClips > 0 then
             local index = math.random(1, #self.enemyHurtSFXClips)
-            self.audio:playOneShot(self.enemyHurtSFXClips[index])
+            self.audio:PlayOneShot(self.enemyHurtSFXClips[index])
             print("Playing random hurt sound: " .. tostring(index) .. " (every 2 seconds)")
         else
             print("No audio component or no hurt clips available")
@@ -83,8 +84,8 @@ return Component {
             print("Testing all " .. #self.enemyHurtSFXClips .. " hurt clips")
             for i, clipGuid in ipairs(self.enemyHurtSFXClips) do
                 if clipGuid ~= "" then
-                    self.audio:setClip(clipGuid)
-                    self.audio:play()
+                    self.audio:SetClip(clipGuid)
+                    self.audio:Play()
                     -- In a real game, you'd add delays between plays
                     print("Playing clip " .. i)
                 end

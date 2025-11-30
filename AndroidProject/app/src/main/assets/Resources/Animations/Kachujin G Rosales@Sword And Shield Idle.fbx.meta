@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00736103a388472e-000366d5fc000003",
+        "source": "../../Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx",
+        "compiled": "../../Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx",
+        "android_compiled": "Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad531397620b-00036c91e200000d",
+        "source": "../../Resources/Textures/Rock.jpg",
+        "compiled": "../../Resources/Textures/Rock.dds",
+        "android_compiled": "Resources/Textures/Rock_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

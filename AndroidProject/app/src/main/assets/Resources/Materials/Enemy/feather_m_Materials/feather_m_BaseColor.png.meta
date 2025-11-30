@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006438bf5fc4a181-00036c9d30000003",
+        "source": "../../Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.png",
+        "compiled": "../../Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.dds",
+        "android_compiled": "Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
