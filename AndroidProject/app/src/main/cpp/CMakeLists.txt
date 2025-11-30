@@ -24,7 +24,7 @@ if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
             -DANDROID_ABI=arm64-v8a
             -DANDROID_PLATFORM=android-33
-            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_ANDROID_STL_TYPE=c++_shared
             RESULT_VARIABLE CONFIG_RESULT
             OUTPUT_VARIABLE CONFIG_OUTPUT
