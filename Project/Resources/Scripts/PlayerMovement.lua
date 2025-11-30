@@ -1,8 +1,5 @@
 -- PlayerMovement.lua
--- Player movement using CharacterController for proper wall collision
--- Includes walking/jump animation, camera-relative rotation, and SFX
-
-print("[PlayerMovement] SCRIPT LOADING...")
+-- Complete player movement with walking/jump animation, camera-relative rotation, and SFX
 
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
@@ -10,11 +7,42 @@ local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 local Input = _G.Input
-local CharacterController = _G.CharacterController
+
+-- Reusable position table to avoid GC allocations
+local _tempPos = { x = 0, y = 0, z = 0 }
 
 --------------------------------------------------------------------------------
 -- Helper Functions
 --------------------------------------------------------------------------------
+
+-- Get world position (optimized - reuses table)
+local function getWorldPosition(self, outPos)
+    outPos = outPos or _tempPos
+    local ok, a, b, c = pcall(self.GetPosition, self)
+    if not ok then
+        outPos.x, outPos.y, outPos.z = 0, 0, 0
+        return outPos
+    end
+    
+    if type(a) == "table" then
+        outPos.x = a.x or a[1] or 0
+        outPos.y = a.y or a[2] or 0
+        outPos.z = a.z or a[3] or 0
+    else
+        outPos.x = a or 0
+        outPos.y = b or 0
+        outPos.z = c or 0
+    end
+    return outPos
+end
+
+-- Set world position
+local function setWorldPosition(self, x, y, z)
+    local ok = pcall(self.SetPosition, self, x, y, z)
+    if not ok then
+        pcall(function() self:SetPosition({ x = x, y = y, z = z }) end)
+    end
+end
 
 -- Direction to quaternion (Y-axis rotation) - for facing movement direction
 local function directionToQuaternion(dx, dz)
@@ -28,7 +56,7 @@ local function directionToQuaternion(dx, dz)
     else
         angle = dx > 0 and (math.pi * 0.5) or (-math.pi * 0.5)
     end
-
+    
     local halfAngle = angle * 0.5
     return math.cos(halfAngle), 0, math.sin(halfAngle), 0
 end
@@ -39,13 +67,13 @@ local function lerpQuaternion(w1, x1, y1, z1, w2, x2, y2, z2, t)
     if w1*w2 + x1*x2 + y1*y2 + z1*z2 < 0 then
         w2, x2, y2, z2 = -w2, -x2, -y2, -z2
     end
-
+    
     -- Lerp components
     local w = w1 + (w2 - w1) * t
     local x = x1 + (x2 - x1) * t
     local y = y1 + (y2 - y1) * t
     local z = z1 + (z2 - z1) * t
-
+    
     -- Normalize
     local invLen = 1.0 / math.sqrt(w*w + x*x + y*y + z*z + 0.0001)
     return w * invLen, x * invLen, y * invLen, z * invLen
@@ -71,19 +99,20 @@ return Component {
     ----------------------------------------------------------------------
     fields = {
         name = "PlayerMovement",
-
+        
         -- Movement settings
-        moveSpeed     = 5.0,
-        jumpHeight    = 1.5,
+        moveSpeed     = 2.0,
+        jumpSpeed     = 5.0,
+        gravity       = -9.8,
         rotationSpeed = 10.0,
-
+        
         -- SFX clip arrays (populate in editor with audio GUIDs)
         footstepSFXClips = {},
         jumpSFXClips     = {},
         landingSFXClips  = {},
-
+        
         -- SFX timing
-        footstepInterval = 0.4,
+        footstepInterval = 0.6,
         sfxVolume        = 0.5,
     },
 
@@ -91,31 +120,29 @@ return Component {
     -- Lifecycle: Awake
     ----------------------------------------------------------------------
     Awake = function(self)
-        print("[PlayerMovement] Awake - Using CharacterController")
-
-        -- Character controller instance
-        self._charController = nil
-        self._controllerReady = false
-
+        print("[LUA][PlayerMovement] Awake")
+        
         -- Movement state
+        self._velY       = 0
+        self._groundY    = 0
         self._isGrounded = true
-        self._wasGrounded = true
-
+        self._wasGrounded = true  -- track previous frame for landing detection
+        
         -- Animation state
         self._isWalking  = false
         self._isJumping  = false
 
-        -- Animation clip indices
+                -- Animation clip indices (configurable in editor)
         self._idleAnimationClip = 0
         self._walkAnimationClip = 1
         self._jumpAnimationClip = 2
-
+        
         -- Rotation state (quaternion: w, x, y, z)
         self._currentRotW = 1
         self._currentRotX = 0
         self._currentRotY = 0
         self._currentRotZ = 0
-
+        
         -- Timers
         self._footstepTimer = 0
 
@@ -125,7 +152,7 @@ return Component {
         self._prevInputA = false
         self._prevInputD = false
 
-        -- Camera yaw for camera-relative movement
+        -- Camera yaw for camera-relative movement (default 180 to match camera initial yaw)
         self._cameraYaw = 180.0
         self._cameraYawSub = nil
 
@@ -143,102 +170,34 @@ return Component {
     -- Lifecycle: Start
     ----------------------------------------------------------------------
     Start = function(self)
-        print("[PlayerMovement] ===== START CALLED =====")
-
+        print("[LUA][PlayerMovement] Start")
+        
         -- Cache component references
         self._animator = self:GetComponent("AnimationComponent")
         self._audio    = self:GetComponent("AudioComponent")
-        self._collider = self:GetComponent("ColliderComponent")
-        self._transform = self:GetComponent("Transform")
-
-        -- Debug: Print what we got
-        print("[PlayerMovement] animator:", self._animator)
-        print("[PlayerMovement] collider:", self._collider)
-        print("[PlayerMovement] transform:", self._transform)
-
+        
         if self._animator then
             self._animator.enabled = true
+            -- Start with idle animation
             self._animator:PlayClip(self._idleAnimationClip or 0, true)
         end
-
+        
         if self._audio then
             self._audio.enabled = true
             self._audio:SetVolume(self.sfxVolume or 0.5)
         end
-
-        -- Debug: Check if ColliderComponent exists
-        if not self._collider then
-            print("[PlayerMovement] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("[PlayerMovement] WARNING: No ColliderComponent found on Player!")
-            print("[PlayerMovement] Add a ColliderComponent (Capsule type) to the Player entity and save the scene.")
-            print("[PlayerMovement] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        else
-            print("[PlayerMovement] ColliderComponent FOUND!")
-        end
-
-        -- Create and initialize CharacterController
-        if CharacterController and CharacterController.new then
-            self._charController = CharacterController.new()
-
-            if self._charController and self._collider and self._transform then
-                -- Use capsule dimensions configured in the editor
-                local success = CharacterController.Initialise(
-                    self._charController,
-                    self._collider,
-                    self._transform
-                )
-
-                if success then
-                    print("[PlayerMovement] CharacterController initialized successfully!")
-                    self._controllerReady = true
-                else
-                    print("[PlayerMovement] ERROR: CharacterController.Initialise failed!")
-                end
-            else
-                print("[PlayerMovement] ERROR: Missing components for CharacterController")
-                print("  charController:", self._charController)
-                print("  collider:", self._collider)
-                print("  transform:", self._transform)
-            end
-        else
-            print("[PlayerMovement] ERROR: CharacterController not available in Lua!")
-        end
+        
+        -- Cache ground level from initial position
+        local pos = getWorldPosition(self)
+        self._groundY = pos.y
 
         -- Initial position broadcast for camera
         if event_bus and event_bus.publish then
-            local pos = self:_getPosition()
-            event_bus.publish("player_position", { x = pos.x, y = pos.y, z = pos.z })
-        end
-    end,
-
-    ----------------------------------------------------------------------
-    -- Helper: Get position from CharacterController or Transform
-    ----------------------------------------------------------------------
-    _getPosition = function(self)
-        if self._controllerReady and self._charController then
-            local pos = CharacterController.GetPosition(self._charController)
-            return { x = pos.x or 0, y = pos.y or 0, z = pos.z or 0 }
-        else
-            -- Fallback to transform
-            local ok, a, b, c = pcall(self.GetPosition, self)
-            if ok then
-                if type(a) == "table" then
-                    return { x = a.x or 0, y = a.y or 0, z = a.z or 0 }
-                else
-                    return { x = a or 0, y = b or 0, z = c or 0 }
-                end
-            end
-            return { x = 0, y = 0, z = 0 }
-        end
-    end,
-
-    ----------------------------------------------------------------------
-    -- Helper: Sync transform from CharacterController position
-    ----------------------------------------------------------------------
-    _syncTransformFromController = function(self)
-        if self._controllerReady and self._charController then
-            local pos = CharacterController.GetPosition(self._charController)
-            pcall(self.SetPosition, self, pos.x, pos.y, pos.z)
+            event_bus.publish("player_position", {
+                x = pos.x,
+                y = pos.y,
+                z = pos.z,
+            })
         end
     end,
 
@@ -246,12 +205,13 @@ return Component {
     -- Lifecycle: Update
     ----------------------------------------------------------------------
     Update = function(self, dt)
+        -- Cache components locally for performance
         local animator = self._animator
         local audio    = self._audio
 
-        -- Read global attack state
+        -- Read global attack state (set by PlayerAttack.lua)
         local isAttacking = (_G.player_is_attacking == true)
-
+        
         --------------------------------------
         -- 1) Read WASD Input
         --------------------------------------
@@ -259,13 +219,13 @@ return Component {
         local inputS = Input and Input.GetKey and Input.GetKey(Input.Key.S) or false
         local inputA = Input and Input.GetKey and Input.GetKey(Input.Key.A) or false
         local inputD = Input and Input.GetKey and Input.GetKey(Input.Key.D) or false
-
-        -- Raw input direction
+        
+        -- Raw input direction (before camera transformation)
         local rawMoveX, rawMoveZ = 0.0, 0.0
-        if inputW then rawMoveZ = rawMoveZ + 1.0 end
-        if inputS then rawMoveZ = rawMoveZ - 1.0 end
-        if inputA then rawMoveX = rawMoveX + 1.0 end
-        if inputD then rawMoveX = rawMoveX - 1.0 end
+        if inputW then rawMoveZ = rawMoveZ + 1.0 end  -- forward (+Z)
+        if inputS then rawMoveZ = rawMoveZ - 1.0 end  -- backward (-Z)
+        if inputA then rawMoveX = rawMoveX + 1.0 end  -- left (+X)
+        if inputD then rawMoveX = rawMoveX - 1.0 end  -- right (-X)
 
         -- Normalize diagonal movement
         local len = math.sqrt(rawMoveX * rawMoveX + rawMoveZ * rawMoveZ)
@@ -273,18 +233,29 @@ return Component {
             rawMoveX = rawMoveX / len
             rawMoveZ = rawMoveZ / len
         end
-
+        
         local hasMovementInput = (len > 0.0001)
 
-        -- Transform to camera-relative direction
+        -- Transform movement to camera-relative direction
         local moveX, moveZ = 0.0, 0.0
         if hasMovementInput then
             local yawRad = math.rad(self._cameraYaw or 180.0)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
+
+            -- Camera forward is (-sinYaw, -cosYaw)
+            -- Note: rawMoveX sign is flipped to match original A=+X, D=-X mapping
+            -- rawMoveZ = forward/back, rawMoveX = strafe
             moveX = rawMoveZ * (-sinYaw) - rawMoveX * cosYaw
             moveZ = rawMoveZ * (-cosYaw) + rawMoveX * sinYaw
         end
+
+        local speed = self.moveSpeed or 5.0
+        local dx = moveX * speed * dt
+        local dz = moveZ * speed * dt
+
+
+        local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
         --------------------------------------
         -- 2) Detect Key Press for Footstep SFX
@@ -293,65 +264,61 @@ return Component {
                             (inputS and not self._prevInputS) or
                             (inputA and not self._prevInputA) or
                             (inputD and not self._prevInputD)
-
+        
         self._prevInputW = inputW
         self._prevInputS = inputS
         self._prevInputA = inputA
         self._prevInputD = inputD
 
         --------------------------------------
-        -- 3) CharacterController Movement
+        -- 3) Jump + Gravity
         --------------------------------------
-        if self._controllerReady and self._charController then
-            -- Check grounded state
-            self._wasGrounded = self._isGrounded
-            self._isGrounded = CharacterController.IsGrounded(self._charController)
+        local pos = getWorldPosition(self)
+        local wasInAir = not self._isGrounded
+        self._wasGrounded = self._isGrounded
 
-            -- Debug: Print grounded state occasionally
-            self._groundedDebugTimer = (self._groundedDebugTimer or 0) + dt
-            if self._groundedDebugTimer > 2.0 then
-                print("[PlayerMovement] isGrounded=" .. tostring(self._isGrounded) .. " hasInput=" .. tostring(hasMovementInput))
-                self._groundedDebugTimer = 0
+        -- Jump input (Space key) - disabled while attacking
+        local jumpPressed = Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Space)
+        if self._isGrounded and jumpPressed and not isAttacking then
+            self._velY       = self.jumpSpeed or 5.0
+            self._isGrounded = false
+            self._isJumping  = true
+            
+            -- Play jump animation
+            if animator then
+                animator:PlayClip(self._jumpAnimationClip, false)
             end
+            
+            -- Play jump SFX
+            playRandomSFX(audio, self.jumpSFXClips)
+            
+            print("[LUA][PlayerMovement] Jump!")
+        end
 
-            -- Get current velocity for Y preservation
-            local currentVel = CharacterController.GetVelocity(self._charController)
-            local velY = currentVel.y or 0
+        -- Apply gravity when in air (still allowed during attack)
+        if not self._isGrounded then
+            self._velY = self._velY + (self.gravity) * dt
+        end
 
-            -- Calculate horizontal velocity
-            local speed = self.moveSpeed or 5.0
-            local velX = moveX * speed
-            local velZ = moveZ * speed
+        local dy   = self._velY * dt
+        local newY = pos.y + dy
 
-            -- Jump input - only when grounded and not attacking
-            local jumpPressed = Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Space)
-            if self._isGrounded and jumpPressed and not isAttacking then
-                CharacterController.Jump(self._charController, self.jumpHeight or 1.5)
-                self._isJumping = true
-
-                if animator then
-                    animator:PlayClip(self._jumpAnimationClip, false)
-                end
-                playRandomSFX(audio, self.jumpSFXClips)
-                print("[PlayerMovement] Jump!")
-            end
-
-            -- Set movement velocity (CharacterController handles gravity)
-            CharacterController.Move(self._charController, velX, velY, velZ)
-
-            -- Update CharacterController physics
-            CharacterController.Update(self._charController, dt)
-
-            -- Sync transform from CharacterController
-            self:_syncTransformFromController()
-
+        -- Ground collision check
+        if newY <= self._groundY then
+            newY       = self._groundY
+            self._velY = 0.0
+            
             -- Landing detection
-            if self._isGrounded and not self._wasGrounded then
+            if not self._isGrounded then
+                self._isGrounded = true
+                
+                -- Play landing SFX if we were jumping
                 if self._isJumping then
                     playRandomSFX(audio, self.landingSFXClips)
                     self._isJumping = false
-                    print("[PlayerMovement] Landed!")
-
+                    print("[LUA][PlayerMovement] Landed!")
+                    
+                    -- Return to idle/walk animation after landing
                     if animator and not isAttacking then
                         if hasMovementInput then
                             animator:PlayClip(self._walkAnimationClip or 1, true)
@@ -361,65 +328,70 @@ return Component {
                     end
                 end
             end
-        else
-            -- Fallback: Direct transform movement (no collision)
-            -- Assume grounded in fallback mode so animations work
-            self._isGrounded = true
-
-            local pos = self:_getPosition()
-            local speed = self.moveSpeed or 5.0
-            local newX = pos.x + moveX * speed * dt
-            local newZ = pos.z + moveZ * speed * dt
-            pcall(self.SetPosition, self, newX, pos.y, newZ)
         end
 
         --------------------------------------
-        -- 4) Rotation: Face Movement Direction
+        -- 4) Apply Movement to Transform
+        --------------------------------------
+        local newX = pos.x + dx
+        local newZ = pos.z + dz
+        setWorldPosition(self, newX, newY, newZ)
+
+        --------------------------------------
+        -- 5) Rotation: Face Movement Direction
         --------------------------------------
         if hasMovementInput and self.SetRotation and not isAttacking then
+            -- Calculate target rotation quaternion (face the actual movement direction)
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
-
+            
+            -- Smooth rotation via lerp
             local t = math.min((self.rotationSpeed or 10.0) * dt, 1.0)
             local newW, newX2, newY2, newZ2 = lerpQuaternion(
                 self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ,
                 targetW, targetX, targetY, targetZ,
                 t
             )
-
+            
             self._currentRotW = newW
             self._currentRotX = newX2
             self._currentRotY = newY2
             self._currentRotZ = newZ2
-
+            
+            -- Apply rotation (quaternion: w, x, y, z)
             pcall(self.SetRotation, self, newW, newX2, newY2, newZ2)
         end
 
         --------------------------------------
-        -- 5) Walking Animation & Footstep SFX
+        -- 6) Walking Animation & Footstep SFX
         --------------------------------------
         local isWalkingNow = hasMovementInput and self._isGrounded and not isAttacking
 
+        -- Animation state change (only when grounded, not jumping, and not attacking)
         if isWalkingNow ~= self._isWalking and not self._isJumping then
             self._isWalking = isWalkingNow
-
+            
             if animator and not isAttacking then
                 if isWalkingNow then
                     animator:PlayClip(self._walkAnimationClip or 1, true)
+                    print("[LUA][PlayerMovement] Walking")
                 else
                     animator:PlayClip(self._idleAnimationClip or 0, true)
+                    print("[LUA][PlayerMovement] Idle")
                 end
             end
         end
 
-        -- Footstep SFX
+        -- Footstep SFX: play on key press + timer-based while walking
         if isWalkingNow then
+            -- Play immediately on key press
             if keyJustPressed then
                 playRandomSFX(audio, self.footstepSFXClips)
                 self._footstepTimer = 0
             end
-
+            
+            -- Timer-based footsteps while holding key
             self._footstepTimer = self._footstepTimer + dt
-            if self._footstepTimer >= (self.footstepInterval or 0.4) then
+            if self._footstepTimer >= (self.footstepInterval or 0.8) then
                 playRandomSFX(audio, self.footstepSFXClips)
                 self._footstepTimer = 0
             end
@@ -428,26 +400,24 @@ return Component {
         end
 
         --------------------------------------
-        -- 6) Broadcast Position for Camera
+        -- 7) Broadcast Position for Camera
         --------------------------------------
         if event_bus and event_bus.publish then
-            local pos = self:_getPosition()
-            event_bus.publish("player_position", { x = pos.x, y = pos.y, z = pos.z })
+            local p = getWorldPosition(self)
+            event_bus.publish("player_position", {
+                x = p.x,
+                y = p.y,
+                z = p.z,
+            })
         end
     end,
+
 
     ----------------------------------------------------------------------
     -- Lifecycle: OnDisable
     ----------------------------------------------------------------------
     OnDisable = function(self)
-        print("[PlayerMovement] OnDisable")
-
-        -- Destroy CharacterController
-        if self._charController and CharacterController and CharacterController.Destroy then
-            CharacterController.Destroy(self._charController)
-            self._charController = nil
-            self._controllerReady = false
-        end
+        print("[LUA][PlayerMovement] OnDisable")
 
         -- Unsubscribe from camera yaw updates
         if event_bus and event_bus.unsubscribe and self._cameraYawSub then

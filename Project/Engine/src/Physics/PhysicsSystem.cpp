@@ -303,31 +303,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
-    // ========== REMOVE BODIES FOR CHARACTER LAYER ENTITIES ==========
-    // CharacterController sets layer to CHARACTER after physics init, so we need to
-    // remove the physics body that was created, otherwise it blocks the CharacterVirtual
-    std::vector<Entity> bodiesToRemove;
-    for (auto& e : entities) {
-        auto bodyIt = entityBodyMap.find(e);
-        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
-
-        if (!ecsManager.HasComponent<ColliderComponent>(e)) continue;
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-
-        if (col.layer == Layers::CHARACTER) {
-            // Remove this body - it's managed by CharacterController
-            JPH::BodyID bodyId = bodyIt->second;
-            if (bi.IsAdded(bodyId)) {
-                bi.RemoveBody(bodyId);
-                bi.DestroyBody(bodyId);
-            }
-            bodiesToRemove.push_back(e);
-        }
-    }
-    for (Entity e : bodiesToRemove) {
-        entityBodyMap.erase(e);
-    }
-
     // ========== UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP ==========
     for (auto& e : entities) {
         // Skip entities without a body in our map
@@ -335,17 +310,11 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
 
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
-            !ecsManager.HasComponent<ColliderComponent>(e)) continue;
+        if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& tr = ecsManager.GetComponent<Transform>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
-        // Skip CHARACTER layer entities - they are managed by CharacterController
-        if (col.layer == Layers::CHARACTER) continue;
-
-        // Always sync kinematic bodies from transform (scripts may modify transform directly)
-        if (rb.motion == Motion::Kinematic) {
+        if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
             JPH::RVec3 pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
             // Convert rotation from ECS to Jolt
             JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
@@ -373,13 +342,8 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
 
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
-            !ecsManager.HasComponent<ColliderComponent>(e)) continue;
+        if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-
-        // Skip CHARACTER layer entities - they are managed by CharacterController
-        if (col.layer == Layers::CHARACTER) continue;
 
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
@@ -420,9 +384,6 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-
-        // Skip CHARACTER layer entities - they are managed by CharacterController
-        if (col.layer == Layers::CHARACTER) continue;
 
         // Only sync Dynamic bodies (physics controls them)
         // Kinematic/Static bodies are controlled by Transform, not physics

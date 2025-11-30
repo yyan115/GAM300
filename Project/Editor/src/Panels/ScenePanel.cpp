@@ -1473,6 +1473,15 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
+        //check if entity has ModelRender
+        if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
+        {
+            ModelRenderComponent& rc = ecsManager.GetComponent<ModelRenderComponent>(selectedEntity);
+            collider.center = rc.CalculateCenter(*rc.model);
+        }
+
+
+
         // Get world position, rotation and scale from transform
         glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
         glm::quat worldRot = glm::quat(transform.localRotation.w, transform.localRotation.x, transform.localRotation.y, transform.localRotation.z); // Convert custom Quaternion to glm::quat
@@ -1621,86 +1630,161 @@ void ScenePanel::DrawColliderGizmos() {
         }
 
         case ColliderShapeType::Capsule: {
-            // Draw wireframe capsule - scale radius by XZ, height by Y
-            // Use direct world-space approach for reliability
-            float radialScale = glm::max(worldScale.x, worldScale.z);
-            float radius = collider.capsuleRadius * radialScale;
-            float halfHeight = collider.capsuleHalfHeight * worldScale.y;
-            int segments = 16;
+            // Draw wireframe capsule with hemispheres
+            float radius = collider.capsuleRadius;
+            float halfHeight = collider.capsuleHalfHeight;
+            int segments = 16; // Horizontal segments around the capsule
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
 
-            // Calculate world center including collider offset
-            glm::vec3 colliderOffset = glm::vec3(collider.center.x * worldScale.x,
-                                                  collider.center.y * worldScale.y,
-                                                  collider.center.z * worldScale.z);
-            glm::vec3 center = worldPos + colliderOffset;
-            glm::vec3 top = center + glm::vec3(0, halfHeight, 0);
-            glm::vec3 bottom = center - glm::vec3(0, halfHeight, 0);
+            // Define top and bottom centers in LOCAL space
+            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
 
-            // 1. Draw cylinder body (vertical lines)
+            // 1. Draw cylinder body (vertical lines connecting top and bottom circles)
             for (int i = 0; i < segments; i++) {
                 float angle = (float)i / segments * 2.0f * 3.14159f;
-                glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+                glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                glm::vec3 p1 = TransformPoint(localTop + localOffset);
+                glm::vec3 p2 = TransformPoint(localBottom + localOffset);
 
                 bool vis1, vis2;
-                ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
-                ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                 if (vis1 && vis2) {
                     drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 }
             }
 
-            // 2. Draw top and bottom circles (equator of hemispheres)
+            // 2. Draw equator circles (where cylinder meets hemispheres)
             for (int i = 0; i < segments; i++) {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                glm::vec3 topP1 = TransformPoint(localTop + localP1);
+                glm::vec3 topP2 = TransformPoint(localTop + localP2);
+                glm::vec3 botP1 = TransformPoint(localBottom + localP1);
+                glm::vec3 botP2 = TransformPoint(localBottom + localP2);
 
                 bool vis1, vis2, vis3, vis4;
-                ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
-                ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
-                ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
+                ImVec2 s1 = ProjectToScreen(topP1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(topP2, vis2, vp, windowPos, windowSize);
+                ImVec2 s3 = ProjectToScreen(botP1, vis3, vp, windowPos, windowSize);
+                ImVec2 s4 = ProjectToScreen(botP2, vis4, vp, windowPos, windowSize);
 
                 if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
             }
 
-            // 3. Draw top hemisphere arcs (4 cardinal directions)
-            for (int slice = 0; slice < 4; slice++) {
-                float theta = (float)slice / 4.0f * 2.0f * 3.14159f;
+            // 3. Draw TOP HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
 
+                // Draw arc from equator up to the top pole
                 for (int i = 0; i < segments / 2; i++) {
                     float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
                     float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
 
-                    glm::vec3 p1(cos(theta) * radius * sin(angle1), radius * cos(angle1), sin(theta) * radius * sin(angle1));
-                    glm::vec3 p2(cos(theta) * radius * sin(angle2), radius * cos(angle2), sin(theta) * radius * sin(angle2));
+                    // Arc in the vertical plane
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localTop + localP1);
+                    glm::vec3 p2 = TransformPoint(localTop + localP2);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
                 }
             }
 
-            // 4. Draw bottom hemisphere arcs (4 cardinal directions)
-            for (int slice = 0; slice < 4; slice++) {
-                float theta = (float)slice / 4.0f * 2.0f * 3.14159f;
+            // 4. Draw BOTTOM HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
 
+                // Draw arc from equator down to the bottom pole
                 for (int i = 0; i < segments / 2; i++) {
                     float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
                     float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
 
-                    glm::vec3 p1(cos(theta) * radius * sin(angle1), -radius * cos(angle1), sin(theta) * radius * sin(angle1));
-                    glm::vec3 p2(cos(theta) * radius * sin(angle2), -radius * cos(angle2), sin(theta) * radius * sin(angle2));
+                    // Arc in the vertical plane (mirrored downward)
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        -radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        -radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localBottom + localP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + localP2);
 
                     bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(bottom + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(bottom + p2, vis2, vp, windowPos, windowSize);
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
+            // 5. Draw horizontal latitude circles on both hemispheres for better visibility
+            int latitudeLines = 3; // Number of horizontal circles on each hemisphere
+            for (int lat = 1; lat <= latitudeLines; lat++) {
+                float angle = (float)lat / (latitudeLines + 1) * 3.14159f * 0.5f;
+                float latRadius = radius * sin(angle);
+                float latHeight = radius * cos(angle);
+
+                // Top hemisphere circle
+                for (int i = 0; i < segments; i++) {
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 topP1 = glm::vec3(latRadius * cos(theta1), latHeight, latRadius * sin(theta1));
+                    glm::vec3 topP2 = glm::vec3(latRadius * cos(theta2), latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localTop + topP1);
+                    glm::vec3 p2 = TransformPoint(localTop + topP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+
+                // Bottom hemisphere circle
+                for (int i = 0; i < segments; i++) {
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                    glm::vec3 botP1 = glm::vec3(latRadius * cos(theta1), -latHeight, latRadius * sin(theta1));
+                    glm::vec3 botP2 = glm::vec3(latRadius * cos(theta2), -latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localBottom + botP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + botP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
                     if (vis1 && vis2) {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }

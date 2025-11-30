@@ -2,7 +2,6 @@
 #include "pch.h"
 #include "Physics/Kinematics/CharacterController.hpp"
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
-#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include "Physics/CollisionFilters.hpp"
 #include "Physics/CollisionLayers.hpp"
@@ -31,45 +30,20 @@ CharacterController::~CharacterController()
 }
 bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
-    // Use the collider settings configured by the user in the editor
+    //SHAPE TYPE HAS TO BE A CAPSULE..
+    collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
+    // Commented out to fix warning C4189 - unused variable
+    // float height = collider.capsuleHalfHeight * 2.0f;
+    // float radius = collider.capsuleRadius;
 
-    // Create capsule shape using user's configured dimensions
-    // Use safe defaults if values seem invalid
-    float halfHeight = collider.capsuleHalfHeight;
-    float radius = collider.capsuleRadius;
-
-    // Validate and clamp values to reasonable ranges
-    if (halfHeight <= 0.0f || halfHeight > 100.0f) halfHeight = 0.5f;
-    if (radius <= 0.0f || radius > 100.0f) radius = 0.3f;
-
-    std::cout << "[CharacterController] Creating capsule: halfHeight=" << halfHeight
-              << ", radius=" << radius << std::endl;
-
-    JPH::Ref<JPH::Shape> shape = new JPH::CapsuleShape(halfHeight, radius);
-
+    JPH::Ref<JPH::Shape> capsule = new JPH::CapsuleShape(collider.capsuleHalfHeight, collider.capsuleRadius);
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
-    settings->mShape = shape;
-    settings->mMass = 70.0f;
-    settings->mMaxStrength = 100.0f;
+    settings->mShape = capsule;
+    settings->mMass = 70.0f;   
+     settings->mMaxStrength = 100.0f;
 
-    // Offset the shape so its bottom is at the character position (feet)
-    // Capsule center is at halfHeight + radius above the bottom
-    // Validate center offset to avoid garbage values
-    float centerX = collider.center.x;
-    float centerY = collider.center.y;
-    float centerZ = collider.center.z;
-    if (std::abs(centerX) > 100.0f) centerX = 0.0f;
-    if (std::abs(centerY) > 100.0f) centerY = 0.0f;
-    if (std::abs(centerZ) > 100.0f) centerZ = 0.0f;
-
-    float shapeOffsetY = halfHeight + radius + centerY;
-    settings->mShapeOffset = JPH::Vec3(centerX, shapeOffsetY, centerZ);
-
-    std::cout << "[CharacterController] Shape offset: (" << centerX << ", "
-              << shapeOffsetY << ", " << centerZ << ")" << std::endl;
-
-    //  CREATE VIRTUAL CHARACTER
+    //  CREATE VIRTUAL CHARACTER    
     mCharacter = new JPH::CharacterVirtual(
         settings,
         JPH::RVec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z),

@@ -649,17 +649,6 @@ void RegisterInspectorCustomRenderers()
         }
         }
 
-        // Center Offset (X, Y, Z)
-        ImGui::Text("Center Offset");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
-        float centerOffset[3] = {collider.center.x, collider.center.y, collider.center.z};
-        if (UndoableWidgets::DragFloat3("##CenterOffset", centerOffset, 0.01f, -FLT_MAX, FLT_MAX, "%.2f"))
-        {
-            collider.center = Vector3D(centerOffset[0], centerOffset[1], centerOffset[2]);
-            shapeParamsChanged = true;
-        }
-
         if (shapeParamsChanged)
         {
             collider.version++;
