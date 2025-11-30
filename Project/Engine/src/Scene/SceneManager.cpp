@@ -61,9 +61,9 @@ void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) 
 		Engine::SetGameState(GameState::EDIT_MODE);
 	}
 
+#endif
 	// Stop all audio when loading a new scene
 	AudioManager::GetInstance().StopAll();
-#endif
 
 	// Exit and clean up the current scene if it exists.
 	if (currentScene)
