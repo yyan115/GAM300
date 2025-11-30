@@ -10,6 +10,12 @@ Our engine is called Engine Engine, as a tribute to the Engines back in 1900s. S
 
 Run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirements for Windows, Linux and android.
 
+1. Open Visual Studio, press "open a local folder", select "Project" folder and open it
+2. Let cmake set up and config everything for you. First run will take 5-10mins. You can see it configure in the output console in Visual Studio. Wait for it to say "1> CMake generation finished."
+3. Select your compile option and startup item (green button there), its either gonna be Editor.exe or Game.exe. EDITOR MUST BE RAN FIRST TO COMPILE ASSETS BEFORE GAME CAN BE RAN.
+
+There is no solution files anymore as this is the modern way of using cmake with Visual Studios.
+
 ## Project Structure
 
 The project supports using either Visual Studio or Visual Studio Code. Android Studio is required for Android development.
@@ -64,7 +70,7 @@ Libraries are rather messy as some needs to manually compiled, some have availab
 
 ## Set up Development Environment
 
-Visual Studio Code IS SLOW TO UPDATE, MAY BREAK, AND IS NOT RECOMMENDED. Please use Visual Studio instead. However, Visual Studio Code might still have to be installed, for Android Studio to correctly pick up the cmake configuration. So please install Visual Studio Code as well.
+Visual Studio Code IS SLOW TO UPDATE, MAY BREAK, AND IS NOT RECOMMENDED. Please use Visual Studio instead.
 
 Everyone should set up Android Studio to make sure their code works on Android.
 
@@ -72,15 +78,10 @@ Some additional library set ups may be required but not covered as everyone shou
 
 ### Visual Studios
 
-Run setup-vcpkg.bat to set up vcpkg.
-
-Install Visual Studio and open the .sln file.
-
-Select the compile option (Debug, Release, EditorDebug, EditorRelease) and select default project to run. Do note that the compile options are project dependent, I.E. Trying to compile and run the game using EditorDebug or EditorRelease will not work, and vice versa trying to compile and run the editor using Debug or Release will not work.
-
-Do note that Visual Studios DOES NOT USE CMake.
-
-Visual Studio uses vcpkg and precompiled binaries downloaded from the internet. It will eventually all be migrated to vcpkg.
+1. Run setup-vcpkg.bat
+2. Open Visual Studio, press "open a local folder", select "Project" folder and open it
+3. Let cmake set up and config everything for you. First run will take 5-10mins. You can see it configure in the output console in Visual Studio. Wait for it to say "1> CMake generation finished."
+4. Select your compile option and startup item (green button there), its either gonna be Editor.exe or Game.exe
 
 ### Visual Studio Code
 
