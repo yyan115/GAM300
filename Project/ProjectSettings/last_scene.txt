@@ -1,1 +1,1 @@
-Resources/Scenes/M3_Gameplay.scene
+../../Resources/Scenes/Joe_MainMenuTest.scene
