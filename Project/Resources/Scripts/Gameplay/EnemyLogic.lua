@@ -46,6 +46,14 @@ local function IsPlayerInRange()
     return distance < detectionRange
 end
 
+-- Play random SFX from array
+local function playRandomSFX(audio, clips)
+    local count = clips and #clips or 0
+    if count > 0 and audio then
+        audio:PlayOneShot(clips[math.random(1, count)])
+    end
+end
+
 -- Helper function to create a rotation quaternion from Euler angles (degrees)
 local function eulerToQuat(pitch, yaw, roll)
     -- Convert degrees to radians
@@ -104,18 +112,31 @@ return Component {
         Health          = 5,
         Damage          = 1,
         Attack_Speed    = 1.0,
-        Attack_Cooldown = 1.0
+        Attack_Cooldown = 1.0,
+
+        -- SFX clip arrays (populate in editor with audio GUIDs)
+        attackSFXClips = {},
+        hurtSFXClips = {},
+
+        -- SFX settings
+        sfxVolume        = 0.5,
     },
     
     Start = function(self) 
         self.animation = self:GetComponent("AnimationComponent") 
         self.collider = self:GetComponent("ColliderComponent")
+        self._audio    = self:GetComponent("AudioComponent")
         Animation.PlayClip(self.animation, IDLE, true)
         currentState = IDLE        self.hasRotated = false --TO TRACK ROTATION TO PLAYER
 
+        if self._audio then
+            self._audio.enabled = true
+            self._audio:SetVolume(self.sfxVolume or 0.5)
+        end
     end,
     
     Update = function(self, dt) 
+        local audio    = self._audio
         local newState = currentState
 
         -- Determine new state 
@@ -136,8 +157,14 @@ return Component {
         elseif currentState == TAKE_DAMAGE then
             if Animation.IsPlaying(self.animation) then
                 newState = TAKE_DAMAGE  -- Keep playing damage animation
+
+                -- Play hurt SFX
+                playRandomSFX(audio, self.hurtSFXClips)
             else
                 newState = ATTACK  -- After damage, go to attack
+                
+                -- Play attack SFX
+                playRandomSFX(audio, self.attackSFXClips)
             end
         elseif currentState == ATTACK and newState == IDLE then
             newState = ATTACK  -- Attack cannot be interrupted by idle
