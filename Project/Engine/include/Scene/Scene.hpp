@@ -15,6 +15,9 @@ public:
 	virtual void Exit() = 0;
 	virtual void ShutDownPhysics() = 0;
 
+	bool updateSynchronized = true;
+	bool drawSynchronized = true;
+
 protected:
 	std::string scenePath{};
 };

@@ -9,5 +9,5 @@ public:
     void Draw() override;
 
 private:
-    xscheduler::system scheduler{ 4 };
+    xscheduler::system scheduler{ 5 };
 };

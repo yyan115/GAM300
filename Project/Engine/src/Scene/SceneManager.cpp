@@ -43,8 +43,10 @@ void SceneManager::LoadTestScene() {
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) {
-    if (callingFromLua) {
-        // If calling from Lua, defer loading to the next frame so that the Lua function can complete and return properly
+    if (currentScene && (callingFromLua || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
+		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
+		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
+		// If calling from Lua, defer loading to the next frame to allow the Lua function call to be returned properly
 		// before shutting down the scripting system in currentScene->Exit().
         loadSceneNextFrame = true;
         sceneToLoadNextFrame = scenePath;
@@ -248,11 +250,12 @@ void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) 
 }
 
 void SceneManager::UpdateScene(double dt) {
-    if (loadSceneNextFrame) {
+    if (loadSceneNextFrame && currentScene->updateSynchronized && currentScene->drawSynchronized) {
+		ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
         LoadScene(sceneToLoadNextFrame);
         loadSceneNextFrame = false;
         sceneToLoadNextFrame = "";
-        return;
+
     }
 	if (currentScene) {
 		currentScene->Update(dt);

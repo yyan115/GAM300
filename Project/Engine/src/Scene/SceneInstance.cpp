@@ -36,27 +36,27 @@
 
 Entity fpsText;
 
-SceneInstance::SceneInstance() {
-	if (!multithreadSystems)
-	{
-		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
-	}
-	else
-	{
-		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
-	}
-}
-
-SceneInstance::SceneInstance(const std::string& path) : IScene(path) {
-	if (!multithreadSystems)
-	{
-		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
-	}
-	else
-	{
-		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
-	}
-}
+//SceneInstance::SceneInstance() {
+//	if (!multithreadSystems)
+//	{
+//		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+//	}
+//	else
+//	{
+//		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+//	}
+//}
+//
+//SceneInstance::SceneInstance(const std::string& path) : IScene(path) {
+//	if (!multithreadSystems)
+//	{
+//		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+//	}
+//	else
+//	{
+//		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+//	}
+//}
 
 void SceneInstance::Initialize()
 {
@@ -119,41 +119,17 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
+
+	if (!multithreadSystems)
+	{
+		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+	}
+	else
+	{
+		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+	}
+
 	ENGINE_PRINT("Scene Initialized\n");
-
-	//// Create Test Button entity
-	//{
-	//Entity buttonEntity = ecsManager.CreateEntity();
-
-	//// 1) Attach ScriptComponentData with ScriptData using the path directly
-	//ScriptComponentData scriptComp;
-	//ScriptData sd;
-
-	//sd.scriptPath = "../../Resources/Scripts/template/testbutton.lua";
-	//sd.scriptGuidStr = "123";       // optional: keep empty if not using GUID-based lookup
-	//sd.enabled = true;
-	//
-	//scriptComp.scripts.push_back(sd);
-
-	//// Attach ScriptComponentData
-	//ecsManager.AddComponent<ScriptComponentData>(buttonEntity, scriptComp);
-
-	//// 2) Attach ButtonComponent with binding that also uses the script path
-	//ButtonComponent buttonData;
-
-	//ButtonBinding binding;
-	//binding.targetEntityGuidStr = "";    // empty = same entity
-	//binding.scriptGuidStr = "123";     // not using GUID lookup
-	//binding.functionName = "OnClick";
-	//binding.callWithSelf = true;
-
-	//// Add binding
-	//buttonData.bindings.push_back(binding);
-	//buttonData.interactable = true;
-
-	//// Attach button data
-	//ecsManager.AddComponent<ButtonComponent>(buttonEntity, buttonData);
-	//}
 }
 
 void SceneInstance::InitializeJoltPhysics()
@@ -184,7 +160,9 @@ void SceneInstance::Update(double dt)
 
 	processInput((float)TimeManager::GetDeltaTime());
 
+	updateSynchronized = false;
 	systemOrchestrator->Update();
+	updateSynchronized = true;
 }
 
 void SceneInstance::Draw()
@@ -228,7 +206,9 @@ void SceneInstance::Draw()
 	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
 	gfxManager.UpdateFrustum();
 
+	drawSynchronized = false;
 	systemOrchestrator->Draw();
+	drawSynchronized = true;
 
 // #ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
@@ -267,6 +247,7 @@ void SceneInstance::Exit()
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
+	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
