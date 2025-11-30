@@ -44,7 +44,7 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        followDistance   = 2.0,
+        followDistance   = 8.0,
         heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,

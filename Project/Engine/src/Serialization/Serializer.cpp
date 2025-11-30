@@ -1975,21 +1975,28 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (colliderJSON.HasMember("data") && colliderJSON["data"].IsArray()) {
         const auto& d = colliderJSON["data"];
-        colliderComp.enabled = d[0]["data"].GetBool();
-        colliderComp.layerID = d[1]["data"].GetInt();
+        rapidjson::SizeType idx = 0;
+
+        // Read base fields
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.enabled = d[idx++]["data"].GetBool();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.layerID = d[idx++]["data"].GetInt();
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
-        colliderComp.version = d[2]["data"].GetUint();
-        colliderComp.shapeTypeID = d[3]["data"].GetInt();
-        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
-        readVec3Generic(d[4], colliderComp.boxHalfExtents);
-        switch (colliderComp.shapeType)
-        {
-        case ColliderShapeType::Cylinder:
-            colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
-            break;
-        default:
-            break;
-        }
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.version = d[idx++]["data"].GetUint();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.shapeTypeID = d[idx++]["data"].GetInt();
+        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+
+        // Read boxHalfExtents
+        if (d.Size() > idx) readVec3Generic(d[idx++], colliderComp.boxHalfExtents);
+
+        // Read center offset
+        if (d.Size() > idx) readVec3Generic(d[idx++], colliderComp.center);
+
+        // Read shape-specific parameters
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.sphereRadius = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.capsuleRadius = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.capsuleHalfHeight = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.cylinderRadius = d[idx++]["data"].GetFloat();
+        if (d.Size() > idx && d[idx].HasMember("data")) colliderComp.cylinderHalfHeight = d[idx++]["data"].GetFloat();
     }
 }
 
