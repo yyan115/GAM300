@@ -278,9 +278,18 @@ void SceneManager::ExitScene() {
 	}
 }
 
-void SceneManager::SaveScene() 
+void SceneManager::SaveScene()
 {
-    Serializer::SerializeScene(currentScenePath);
+    namespace fs = std::filesystem;
+
+    // Convert relative path to absolute path in project root
+    // (current working directory is usually Build/EditorRelease or Build/EditorDebug)
+    fs::path projectRoot = fs::current_path().parent_path().parent_path();
+    fs::path absoluteScenePath = projectRoot / currentScenePath;
+
+    std::cout << "[SaveScene] Saving to project folder: " << absoluteScenePath.string() << std::endl;
+
+    Serializer::SerializeScene(absoluteScenePath.string());
 
 // COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
 //    namespace fs = std::filesystem;
@@ -421,19 +430,29 @@ void SceneManager::ShutDownScenePhysics() {
 }
 
 void SceneManager::SaveTempScene() {
-	// Serialize the current scene data to a temporary file.
-	std::string tempScenePath = currentScenePath + ".temp";
-	Serializer::SerializeScene(tempScenePath);
+	namespace fs = std::filesystem;
+
+	// Serialize the current scene data to a temporary file in the project folder.
+	fs::path projectRoot = fs::current_path().parent_path().parent_path();
+	fs::path absoluteTempPath = projectRoot / (currentScenePath + ".temp");
+
+	Serializer::SerializeScene(absoluteTempPath.string());
 }
 
 void SceneManager::ReloadTempScene() {
-	std::string tempScenePath = currentScenePath + ".temp";
-	if (std::filesystem::exists(tempScenePath)) {
-		Serializer::ReloadScene(tempScenePath, currentScenePath);
+	namespace fs = std::filesystem;
+
+	// Look for temp scene in project folder
+	fs::path projectRoot = fs::current_path().parent_path().parent_path();
+	fs::path absoluteTempPath = projectRoot / (currentScenePath + ".temp");
+	fs::path absoluteCurrentPath = projectRoot / currentScenePath;
+
+	if (fs::exists(absoluteTempPath)) {
+		Serializer::ReloadScene(absoluteTempPath.string(), absoluteCurrentPath.string());
 	}
 	else {
 		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist, skipping reload: ", tempScenePath, "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist, skipping reload: ", absoluteTempPath.string(), "\n");
 		return; // Early exit if needed
 	}
 }
