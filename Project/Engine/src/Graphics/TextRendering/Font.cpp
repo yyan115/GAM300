@@ -86,51 +86,57 @@ std::string Font::CompileToResource(const std::string& assetPath, bool forAndroi
     return outPath;
 }
 
-bool Font::LoadResource(const std::string& resourcePath, const std::string& assetPath, unsigned int newFontSize, bool setFontSize)
+bool Font::LoadResource(const std::string& resourcePath,
+    const std::string& assetPath,
+    unsigned int newFontSize,
+    bool setFontSize)
 {
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] LoadResource called with resourcePath=", resourcePath,
+        " assetPath=", assetPath,
+        " newFontSize=", newFontSize,
+        " setFontSize=", setFontSize, "\n");
+
     if (setFontSize)
         fontSize = newFontSize;
     fontAssetPath = assetPath;
     fontResourcePath = resourcePath;
 
-    // Clean up existing font data if any
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Cleanup existing font data\n");
     Cleanup();
-
-    //// Read the .font resource file as binary.
-    //std::ifstream fontFile(resourcePath, std::ios::binary | std::ios::ate);
-    //if (!fontFile.is_open()) {
-    //    std::cerr << "[Font] Failed to open font asset: " << resourcePath << std::endl;
-    //    return false;
-    //}
-
-    //std::streamsize size = fontFile.tellg();
-    //fontFile.seekg(0, std::ios::beg); // Return to beginning of file
-
-    //// Store font data.
-    //std::vector<unsigned char> fontData(size);
-    //fontFile.read(reinterpret_cast<char*>(fontData.data()), size);
-
-    //fontFile.close();
 
     // Initialize FreeType
     FT_Library ft;
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Initializing FreeType library...\n");
     if (FT_Init_FreeType(&ft))
     {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Could not initialize FreeType Library\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[Font] Could not initialize FreeType Library\n");
         return false;
     }
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] FreeType initialized successfully\n");
 
-    // Load font using font data from the binary file.
-    // Use platform abstraction to get asset list (works on Windows, Linux, Android)
+    // Load font using platform abstraction
     IPlatform* platform = WindowManager::GetPlatform();
     if (!platform) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] ERROR: Platform not available for asset discovery!", "\n");
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[Font] ERROR: Platform not available for asset discovery!\n");
         return false;
     }
 
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Reading asset via platform: ", resourcePath, "\n");
     buffer = platform->ReadAsset(resourcePath);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Buffer size after ReadAsset=", buffer.size(), "\n");
+
     FT_Face face{};
     if (!buffer.empty()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+            "[Font] Creating FreeType face from memory buffer...\n");
         FT_Error error = FT_New_Memory_Face(
             ft,
             reinterpret_cast<const FT_Byte*>(buffer.data()),
@@ -140,58 +146,62 @@ bool Font::LoadResource(const std::string& resourcePath, const std::string& asse
         );
 
         if (error) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Failed to load font resource: ", resourcePath, "\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error,
+                "[Font] Failed to load font resource: ", resourcePath,
+                " FreeType error code=", error, "\n");
+            FT_Done_FreeType(ft);
+            return false;
+        }
+        else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+                "[Font] FreeType face created successfully\n");
         }
     }
-    //if (FT_New_Memory_Face(ft, fontData.data(), static_cast<FT_Long>(fontData.size()), 0, &face))
-    //{
-    //    std::cerr << "[Font] Failed to load font resource: " << resourcePath << std::endl;
-    //    FT_Done_FreeType(ft);
-    //    return false;
-    //}
+    else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[Font] Buffer empty, cannot create FreeType face\n");
+        FT_Done_FreeType(ft);
+        return false;
+    }
 
-    // Sets the font's width and height parameters
-    // Setting the width to 0 lets the face dynamically calculate the width based on the given height
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Setting pixel sizes: height=", fontSize, "\n");
     FT_Set_Pixel_Sizes(face, 0, fontSize);
 
-    // Disable byte-alignment restriction
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // Load first 128 characters of ASCII set
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Loading glyphs...\n");
     for (unsigned char c = 0; c < 128; c++)
     {
-        // Load character glyph
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Font] Failed to load Glyph for character: ", c, "\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error,
+                "[Font] Failed to load Glyph for character code=", (int)c, "\n");
             continue;
         }
 
-        // Generate texture
         unsigned int texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        if (face) {
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-            );
-        }
 
-        // Set texture options
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            face->glyph->bitmap.width,
+            face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            face->glyph->bitmap.buffer
+        );
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        // Store character for later use
         Character character = {
             texture,
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
@@ -199,29 +209,39 @@ bool Font::LoadResource(const std::string& resourcePath, const std::string& asse
             static_cast<unsigned int>(face->glyph->advance.x)
         };
         Characters.insert(std::pair<char, Character>(c, character));
+
+        ENGINE_PRINT(EngineLogging::LogLevel::Trace,
+            "[Font] Loaded glyph for char=", (int)c,
+            " texID=", texture,
+            " size=", face->glyph->bitmap.width, "x", face->glyph->bitmap.rows, "\n");
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Destroy FreeType once we're finished
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Cleaning up FreeType face and library\n");
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
-    // Set up VAO/VBO for text rendering using your extended classes
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug,
+        "[Font] Setting up VAO/VBO for text rendering\n");
     textVAO = std::make_unique<VAO>();
     textVBO = std::make_unique<VBO>(sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
 
     textVAO->Bind();
     textVBO->Bind();
 
-    // Set up vertex attributes for text (vec4: x, y, u, v)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
     textVBO->Unbind();
     textVAO->Unbind();
-    ENGINE_PRINT("[Font] Successfully loaded font resource: ", resourcePath, " (size: ", fontSize,  ")\n");
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Info,
+        "[Font] Successfully loaded font resource: ", resourcePath,
+        " (size: ", fontSize, ")\n");
     return true;
 }
+
 
 bool Font::ReloadResource(const std::string& resourcePath, const std::string& assetPath)
 {

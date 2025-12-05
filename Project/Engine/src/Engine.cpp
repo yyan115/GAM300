@@ -585,7 +585,7 @@ bool Engine::InitializeGraphicsResources() {
 	std::string lastScenePath = SceneManager::LoadLastOpenedScenePath();
 	if (lastScenePath.empty()) {
 		// No last scene, load default
-		lastScenePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/New Scene.scene";
+		lastScenePath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/Joe_MainMenuTest.scene";
 		ENGINE_LOG_INFO("No previous scene found, loading default scene");
 	}
 	else {
@@ -593,9 +593,16 @@ bool Engine::InitializeGraphicsResources() {
 	}
 	SceneManager::GetInstance().LoadScene(lastScenePath);
 #else
-	// Game build always loads default scene
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/M3_Gameplay.scene"); ///Scenes/basicLevel.scene
-	ENGINE_LOG_INFO("Loaded default scene");
+	// Game build loads default scene
+#ifdef ANDROID
+	// Android: Load gameplay directly (main menu buttons don't work yet)
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/M3_Gameplay.scene");
+	ENGINE_LOG_INFO("Loaded gameplay scene (Android)");
+#else
+	// Desktop: Load main menu
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/Joe_MainMenuTest.scene");
+	ENGINE_LOG_INFO("Loaded main menu scene");
+#endif
 #endif
 
 #ifdef ANDROID
@@ -720,7 +727,7 @@ void Engine::Draw() {
 #endif
 }
 
-void Engine::EndDraw() {    
+void Engine::EndDraw() {
 	WindowManager::SwapBuffers();
 
 	// Only process input if the game should be running (not paused)
@@ -729,6 +736,9 @@ void Engine::EndDraw() {
 	}
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
+
+	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
+	WindowManager::UpdateCursorState();
 }
 
 void Engine::Shutdown() {
@@ -751,7 +761,13 @@ bool Engine::IsRunning() {
 
 // Game state management functions
 void Engine::SetGameState(GameState state) {
+	GameState previousState = currentGameState;
 	currentGameState = state;
+
+	// When leaving play mode, force unlock cursor
+	if (previousState == GameState::PLAY_MODE && state != GameState::PLAY_MODE) {
+		WindowManager::ForceUnlockCursor();
+	}
 }
 
 GameState Engine::GetGameState() {

@@ -202,6 +202,19 @@ void DesktopPlatform::GetMousePosition(double* x, double* y) {
     }
 }
 
+void DesktopPlatform::SetCursorLocked(bool locked) {
+    if (window) {
+        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
+}
+
+bool DesktopPlatform::IsCursorLocked() {
+    if (window) {
+        return glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+    }
+    return false;
+}
+
 double DesktopPlatform::GetTime() {
     return glfwGetTime();
 }

@@ -1,45 +1,23 @@
-Resources/Audio/BGM/BossfightEND.wav
-Resources/Audio/BGM/BossfightEND.wav.meta
-Resources/Audio/BGM/BossFight_BGM_Loop.wav
-Resources/Audio/BGM/BossFight_BGM_Loop.wav.meta
-Resources/Audio/BGM/Fire_Cave_Loop.wav
-Resources/Audio/BGM/Fire_Cave_Loop.wav.meta
-Resources/Audio/BGM/Snow_Day_Loop.wav
-Resources/Audio/BGM/Snow_Day_Loop.wav.meta
-Resources/Audio/BGM/WalkAbout_BGM.wav
-Resources/Audio/BGM/WalkAbout_BGM.wav.meta
-Resources/Audio/sfx/Danger Low Hit_SFX.wav
-Resources/Audio/sfx/Danger Low Hit_SFX.wav.meta
-Resources/Audio/sfx/Footsteps Cave Jump-Land_1.wav
-Resources/Audio/sfx/Footsteps Cave Jump-Land_1.wav.meta
-Resources/Audio/sfx/Footsteps Cave Jump-Land_2.wav
-Resources/Audio/sfx/Footsteps Cave Jump-Land_2.wav.meta
-Resources/Audio/sfx/Footsteps Cave Jump-Land_3.wav
-Resources/Audio/sfx/Footsteps Cave Jump-Land_3.wav.meta
-Resources/Audio/sfx/Footsteps Cave Jump-Land_4.wav
-Resources/Audio/sfx/Footsteps Cave Jump-Land_4.wav.meta
-Resources/Audio/sfx/Footsteps Cave Jump-Land_5.wav
-Resources/Audio/sfx/Footsteps Cave Jump-Land_5.wav.meta
-Resources/Audio/sfx/Footsteps Cave_1.wav
-Resources/Audio/sfx/Footsteps Cave_1.wav.meta
-Resources/Audio/sfx/Footsteps Cave_2.wav
-Resources/Audio/sfx/Footsteps Cave_2.wav.meta
-Resources/Audio/sfx/Footsteps Cave_3.wav
-Resources/Audio/sfx/Footsteps Cave_3.wav.meta
-Resources/Audio/sfx/Footsteps Cave_4.wav
-Resources/Audio/sfx/Footsteps Cave_4.wav.meta
-Resources/Audio/sfx/Footsteps Cave_5.wav
-Resources/Audio/sfx/Footsteps Cave_5.wav.meta
-Resources/Audio/sfx/Footsteps Cave_6.wav
-Resources/Audio/sfx/Footsteps Cave_6.wav.meta
+Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx
+Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx.meta
+Resources/Animations/PlayerRetractChain.fbx
+Resources/Animations/PlayerRetractChain.fbx.meta
+Resources/Animations/PlayerSlamChain.fbx
+Resources/Animations/PlayerSlamChain.fbx.meta
+Resources/Animations/PlayerSlashAround.fbx
+Resources/Animations/PlayerSlashAround.fbx.meta
+Resources/Animations/PlayerSlashInward.fbx
+Resources/Animations/PlayerSlashInward.fbx.meta
+Resources/Animations/PlayerSlashOutward.fbx
+Resources/Animations/PlayerSlashOutward.fbx.meta
 Resources/Audio/InUse/CutScenes/CutSceneBGM.wav
 Resources/Audio/InUse/CutScenes/CutSceneBGM.wav.meta
 Resources/Audio/InUse/Loading/EncounterFlute.wav
 Resources/Audio/InUse/Loading/EncounterFlute.wav.meta
-Resources/Audio/InUse/M3_GameLevel/04.Snow_Day-Night_Cold_Wind_Loop.wav
-Resources/Audio/InUse/M3_GameLevel/04.Snow_Day-Night_Cold_Wind_Loop.wav.meta
-Resources/Audio/InUse/M3_GameLevel/10Suns_WalkAbout_BGM1_Loop.wav
-Resources/Audio/InUse/M3_GameLevel/10Suns_WalkAbout_BGM1_Loop.wav.meta
+Resources/Audio/InUse/M3_GameLevel/BGM/04.Snow_Day-Night_Cold_Wind_Loop.ogg
+Resources/Audio/InUse/M3_GameLevel/BGM/04.Snow_Day-Night_Cold_Wind_Loop.ogg.meta
+Resources/Audio/InUse/M3_GameLevel/BGM/10Suns_WalkAbout_BGM1_Loop.ogg
+Resources/Audio/InUse/M3_GameLevel/BGM/10Suns_WalkAbout_BGM1_Loop.ogg.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack10.wav
@@ -94,8 +72,8 @@ Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle-81020.mp3
-Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle-81020.mp3.meta
+Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle.wav
+Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav
 Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav.meta
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart1.wav
@@ -112,8 +90,6 @@ Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clang-284809.mp3
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clang-284809.mp3.meta
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clink-415813.wav
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/metal-clink-415813.wav.meta
-Resources/Audio/InUse/M3_GameLevel/match-lighting-candle-81020.mp3
-Resources/Audio/InUse/M3_GameLevel/match-lighting-candle-81020.mp3.meta
 Resources/Audio/InUse/M3_GameLevel/Player/Fight1.wav
 Resources/Audio/InUse/M3_GameLevel/Player/Fight1.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Player/Fight2.wav
@@ -180,13 +156,49 @@ Resources/Materials/backpack_Scene_-_Root.mat
 Resources/Materials/backpack_Scene_-_Root.mat.meta
 Resources/Materials/Candle1_Candle1.mat
 Resources/Materials/Candle1_Candle1.mat.meta
+Resources/Materials/Carpet_heris.mat
+Resources/Materials/Carpet_heris.mat.meta
+Resources/Materials/Carpet_Material.002.mat
+Resources/Materials/Carpet_Material.002.mat.meta
+Resources/Materials/Cave Side_crack_rock_cave_projekt_final_u1_v1.mat
+Resources/Materials/Cave Side_crack_rock_cave_projekt_final_u1_v1.mat.meta
+Resources/Materials/Coffin_Coffin_01.mat
+Resources/Materials/Coffin_Coffin_01.mat.meta
+Resources/Materials/Creeper_Creepers Vine Leaf.mat
+Resources/Materials/Creeper_Creepers Vine Leaf.mat.meta
 Resources/Materials/cube_backup_initialShadingGroup.mat
 Resources/Materials/cube_backup_initialShadingGroup.mat.meta
 Resources/Materials/cube_initialShadingGroup.mat
 Resources/Materials/cube_initialShadingGroup.mat.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_AO.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_AO.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_AO.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_ClearCoat.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_ClearCoat.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_ClearCoat.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Metallic.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Metallic.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Metallic.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Normal.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Normal.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Normal.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Roughness.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Roughness.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Roughness.png.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Scatter.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Scatter.png
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Scatter.png.meta
 Resources/Materials/Enemy/Nightshade_diffuse.dds
 Resources/Materials/Enemy/Nightshade_diffuse.png
 Resources/Materials/Enemy/Nightshade_diffuse.png.meta
+Resources/Materials/EnemyWings_wing_low.mat
+Resources/Materials/EnemyWings_wing_low.mat.meta
 Resources/Materials/Environment/road_C_fix.dds
 Resources/Materials/Environment/road_C_fix.jpg
 Resources/Materials/Environment/road_C_fix.jpg.meta
@@ -208,23 +220,43 @@ Resources/Materials/Kachujin_kachujin_MAT.mat
 Resources/Materials/Kachujin_kachujin_MAT.mat.meta
 Resources/Materials/Kachujin_kachujin_MAT_.mat
 Resources/Materials/Kachujin_kachujin_MAT_.mat.meta
+Resources/Materials/NewMaterial2.mat
+Resources/Materials/NewMaterial2.mat.meta
+Resources/Materials/NewMaterial3.mat
+Resources/Materials/NewMaterial3.mat.meta
+Resources/Materials/NewMaterial4.mat
+Resources/Materials/NewMaterial4.mat.meta
+Resources/Materials/NewMaterial5.mat
+Resources/Materials/NewMaterial5.mat.meta
 Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat
 Resources/Materials/Nightshade J Friedrich_Nightshade_MAT.mat.meta
+Resources/Materials/Nightshade_MAT.mat
+Resources/Materials/Nightshade_MAT.mat.meta
 Resources/Materials/Pillar 2_Stone-Pillar-Ancient.mat
 Resources/Materials/Pillar 2_Stone-Pillar-Ancient.mat.meta
 Resources/Materials/road_C_Material.002.mat
 Resources/Materials/road_C_Material.002.mat.meta
 Resources/Materials/Rock Flat_stone.001.mat
 Resources/Materials/Rock Flat_stone.001.mat.meta
+Resources/Materials/Rock_stone.011.mat
+Resources/Materials/Rock_stone.011.mat.meta
 Resources/Materials/Roof_Roof.001.mat
 Resources/Materials/Roof_Roof.001.mat.meta
 Resources/Materials/SideWall2_OldConcreto.mat
 Resources/Materials/SideWall2_OldConcreto.mat.meta
+Resources/Materials/sketchfeather_feather_m.mat
+Resources/Materials/sketchfeather_feather_m.mat.meta
 Resources/Materials/Small Stairs.mat.meta
+Resources/Materials/Small Stairs_000000.002.mat
+Resources/Materials/Small Stairs_000000.002.mat.meta
 Resources/Materials/Small Stairs_000000.002.mat
 Resources/Materials/Small Stairs_000000.002.mat.meta
 Resources/Materials/SquarePedestral_podsokl.mat
 Resources/Materials/SquarePedestral_podsokl.mat.meta
+Resources/Materials/Trim_Column_2x2x240_Square_lambert2.mat
+Resources/Materials/Trim_Column_2x2x240_Square_lambert2.mat.meta
+Resources/Materials/Trim_Window_4x8_lambert2.mat
+Resources/Materials/Trim_Window_4x8_lambert2.mat.meta
 Resources/Materials/Wall Pillar.mat
 Resources/Materials/Wall Pillar.mat.meta
 Resources/Materials/Wall Pillar_ruin_brick_pillar_1.mat
@@ -247,9 +279,41 @@ Resources/Models/backpack/roughness.jpg.meta
 Resources/Models/backpack/specular.dds
 Resources/Models/backpack/specular.jpg
 Resources/Models/backpack/specular.jpg.meta
+Resources/Models/Character/Enemy/Animation/EnemyAttack.fbx
+Resources/Models/Character/Enemy/Animation/EnemyAttack.fbx.meta
+Resources/Models/Character/Enemy/Animation/EnemyDeath.fbx
+Resources/Models/Character/Enemy/Animation/EnemyDeath.fbx.meta
+Resources/Models/Character/Enemy/Animation/EnemyGroundIdle.fbx
+Resources/Models/Character/Enemy/Animation/EnemyGroundIdle.fbx.meta
+Resources/Models/Character/Enemy/Animation/EnemyHurt.fbx
+Resources/Models/Character/Enemy/Animation/EnemyHurt.fbx.meta
+Resources/Models/Character/Enemy/EnemyWings.fbx
+Resources/Models/Character/Enemy/EnemyWings.fbx.meta
+Resources/Models/Character/Enemy/EnemyWings.mesh
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx.meta
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallToGround.fbx
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallToGround.fbx.meta
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFlyPose.fbx
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyFlyPose.fbx.meta
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyHurt2.fbx
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyHurt2.fbx.meta
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyPierced.fbx
+Resources/Models/Character/Enemy/FlyingAnimation/EnemyPierced.fbx.meta
+Resources/Models/Character/Enemy/GroundAnimation/EnemyAttack.fbx
+Resources/Models/Character/Enemy/GroundAnimation/EnemyAttack.fbx.meta
+Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx
+Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx.meta
+Resources/Models/Character/Enemy/GroundAnimation/EnemyGroundIdle.fbx
+Resources/Models/Character/Enemy/GroundAnimation/EnemyGroundIdle.fbx.meta
+Resources/Models/Character/Enemy/GroundAnimation/EnemyHurt.fbx
+Resources/Models/Character/Enemy/GroundAnimation/EnemyHurt.fbx.meta
 Resources/Models/Character/Enemy/Nightshade J Friedrich.fbx
 Resources/Models/Character/Enemy/Nightshade J Friedrich.fbx.meta
 Resources/Models/Character/Enemy/Nightshade J Friedrich.mesh
+Resources/Models/Character/Enemy/sketchfeather.fbx
+Resources/Models/Character/Enemy/sketchfeather.fbx.meta
+Resources/Models/Character/Enemy/sketchfeather.mesh
 Resources/Models/cube.mesh
 Resources/Models/cube.obj
 Resources/Models/cube.obj.meta
@@ -274,6 +338,18 @@ Resources/Models/Environment/SideWall2.png.meta
 Resources/Models/Environment/InUse/Candle1.fbx
 Resources/Models/Environment/InUse/Candle1.fbx.meta
 Resources/Models/Environment/InUse/Candle1.mesh
+Resources/Models/Environment/InUse/Carpet.fbx
+Resources/Models/Environment/InUse/Carpet.fbx.meta
+Resources/Models/Environment/InUse/Carpet.mesh
+Resources/Models/Environment/InUse/Cave Side.fbx
+Resources/Models/Environment/InUse/Cave Side.fbx.meta
+Resources/Models/Environment/InUse/Cave Side.mesh
+Resources/Models/Environment/InUse/Coffin.fbx
+Resources/Models/Environment/InUse/Coffin.fbx.meta
+Resources/Models/Environment/InUse/Coffin.mesh
+Resources/Models/Environment/InUse/Creeper.fbx
+Resources/Models/Environment/InUse/Creeper.fbx.meta
+Resources/Models/Environment/InUse/Creeper.mesh
 Resources/Models/Environment/InUse/JapaneseSmallWall.mesh
 Resources/Models/Environment/InUse/JapaneseSmallWall.obj
 Resources/Models/Environment/InUse/JapaneseSmallWall.obj.meta
@@ -292,12 +368,21 @@ Resources/Models/Environment/InUse/road_C.mesh
 Resources/Models/Environment/InUse/Rock Flat.fbx
 Resources/Models/Environment/InUse/Rock Flat.fbx.meta
 Resources/Models/Environment/InUse/Rock Flat.mesh
+Resources/Models/Environment/InUse/Rock.fbx
+Resources/Models/Environment/InUse/Rock.fbx.meta
+Resources/Models/Environment/InUse/Rock.mesh
 Resources/Models/Environment/InUse/Small Stairs.fbx
 Resources/Models/Environment/InUse/Small Stairs.fbx.meta
 Resources/Models/Environment/InUse/Small Stairs.mesh
 Resources/Models/Environment/InUse/SquarePedestral.fbx
 Resources/Models/Environment/InUse/SquarePedestral.fbx.meta
 Resources/Models/Environment/InUse/SquarePedestral.mesh
+Resources/Models/Environment/InUse/Trim_Column_2x2x240_Square.fbx
+Resources/Models/Environment/InUse/Trim_Column_2x2x240_Square.fbx.meta
+Resources/Models/Environment/InUse/Trim_Column_2x2x240_Square.mesh
+Resources/Models/Environment/InUse/Trim_Window_4x8.fbx
+Resources/Models/Environment/InUse/Trim_Window_4x8.fbx.meta
+Resources/Models/Environment/InUse/Trim_Window_4x8.mesh
 Resources/Models/Environment/InUse/Wall Pillar.fbx
 Resources/Models/Environment/InUse/Wall Pillar.fbx.meta
 Resources/Models/Environment/InUse/Wall Pillar.mesh
@@ -306,6 +391,12 @@ Resources/Models/FinalBaseMesh.obj
 Resources/Models/FinalBaseMesh.obj.meta
 Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx
 Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx.meta
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Attack.fbx
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Attack.fbx.meta
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx.meta
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx
+Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx.meta
 Resources/Models/Kachujin/Animation/Slash.fbx
 Resources/Models/Kachujin/Animation/Slash.fbx.meta
 Resources/Models/Kachujin/Kachujin G Rosales.fbx
@@ -328,6 +419,8 @@ Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
 Resources/Scripts/camera_follow.lua
 Resources/Scripts/camera_follow.lua.meta
+Resources/Scripts/EnemyHealth.lua
+Resources/Scripts/EnemyHealth.lua.meta
 Resources/Scripts/extension/data_asset.lua
 Resources/Scripts/extension/data_asset.lua.meta
 Resources/Scripts/extension/debug_helpers.lua
@@ -352,6 +445,16 @@ Resources/Scripts/extension/transform_mixin.lua
 Resources/Scripts/extension/transform_mixin.lua.meta
 Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
+Resources/Scripts/GamePlay/EnemyLogic.lua
+Resources/Scripts/GamePlay/EnemyLogic.lua.meta
+Resources/Scripts/GamePlay/FlyingKnife.lua
+Resources/Scripts/GamePlay/FlyingKnife.lua.meta
+Resources/Scripts/GamePlay/KnifeLogic.lua
+Resources/Scripts/GamePlay/KnifeLogic.lua.meta
+Resources/Scripts/main_menu.lua
+Resources/Scripts/main_menu.lua.meta
+Resources/Scripts/PlayerAttack.lua
+Resources/Scripts/PlayerAttack.lua.meta
 Resources/Scripts/PlayerMovement.lua
 Resources/Scripts/PlayerMovement.lua.meta
 Resources/Scripts/rigidbody__test.lua
@@ -384,39 +487,49 @@ Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
 Resources/Scripts/test_audio.lua
 Resources/Scripts/test_audio.lua.meta
+Resources/Scripts/UI/ButtonHover.lua
+Resources/Scripts/UI/ButtonHover.lua.meta
+Resources/Scripts/UI/PlayButton.lua
+Resources/Scripts/UI/PlayButton.lua.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
-Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
 Resources/Shaders/debugandroid.frag
 Resources/Shaders/debugandroid.meta
+Resources/Shaders/debugandroid.shader
 Resources/Shaders/debugandroid.vert
 Resources/Shaders/default.frag
 Resources/Shaders/default.meta
 Resources/Shaders/default.vert
 Resources/Shaders/defaultandroid.frag
 Resources/Shaders/defaultandroid.meta
+Resources/Shaders/defaultandroid.shader
 Resources/Shaders/defaultandroid.vert
 Resources/Shaders/light.frag
 Resources/Shaders/light.meta
+Resources/Shaders/light.shader
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.frag
 Resources/Shaders/particle.meta
+Resources/Shaders/particle.shader
 Resources/Shaders/particle.vert
 Resources/Shaders/particleandroid.frag
 Resources/Shaders/particleandroid.meta
+Resources/Shaders/particleandroid.shader
 Resources/Shaders/particleandroid.vert
 Resources/Shaders/skybox.frag
 Resources/Shaders/skybox.meta
 Resources/Shaders/skybox.vert
 Resources/Shaders/skyboxandroid.frag
 Resources/Shaders/skyboxandroid.meta
+Resources/Shaders/skyboxandroid.shader
 Resources/Shaders/skyboxandroid.vert
 Resources/Shaders/sprite.frag
 Resources/Shaders/sprite.meta
+Resources/Shaders/sprite.shader
 Resources/Shaders/sprite.vert
 Resources/Shaders/spriteandroid.frag
 Resources/Shaders/spriteandroid.meta
@@ -436,6 +549,48 @@ Resources/Shaders/tonemappingandroid.vert
 Resources/Shaders/virtualcontrolsandroid.frag
 Resources/Shaders/virtualcontrolsandroid.meta
 Resources/Shaders/virtualcontrolsandroid.vert
+Resources/Sprites/MainMenuUI/barmid_ready.dds
+Resources/Sprites/MainMenuUI/barmid_ready.png
+Resources/Sprites/MainMenuUI/barmid_ready.png.meta
+Resources/Sprites/MainMenuUI/button_cancel.dds
+Resources/Sprites/MainMenuUI/button_cancel.png
+Resources/Sprites/MainMenuUI/button_cancel.png.meta
+Resources/Sprites/MainMenuUI/HoverHighlight.dds
+Resources/Sprites/MainMenuUI/HoverHighlight.png
+Resources/Sprites/MainMenuUI/HoverHighlight.png.meta
+Resources/Sprites/MainMenuUI/Kusane no bg.dds
+Resources/Sprites/MainMenuUI/Kusane no bg.png
+Resources/Sprites/MainMenuUI/Kusane no bg.png.meta
+Resources/Sprites/PlayerHUD/ChainPCicon.dds
+Resources/Sprites/PlayerHUD/ChainPCicon.png
+Resources/Sprites/PlayerHUD/ChainPCicon.png.meta
+Resources/Sprites/PlayerHUD/Crosshair.dds
+Resources/Sprites/PlayerHUD/Crosshair.png
+Resources/Sprites/PlayerHUD/Crosshair.png.meta
+Resources/Sprites/PlayerHUD/Feather Pickup.dds
+Resources/Sprites/PlayerHUD/Feather Pickup.png
+Resources/Sprites/PlayerHUD/Feather Pickup.png.meta
+Resources/Sprites/PlayerHUD/FeatherBurstPCicon.dds
+Resources/Sprites/PlayerHUD/FeatherBurstPCicon.png
+Resources/Sprites/PlayerHUD/FeatherBurstPCicon.png.meta
+Resources/Sprites/PlayerHUD/fillFollow.dds
+Resources/Sprites/PlayerHUD/fillFollow.png
+Resources/Sprites/PlayerHUD/fillFollow.png.meta
+Resources/Sprites/PlayerHUD/HealthBacking.dds
+Resources/Sprites/PlayerHUD/HealthBacking.png
+Resources/Sprites/PlayerHUD/HealthBacking.png.meta
+Resources/Sprites/PlayerHUD/HealthBarFrame.dds
+Resources/Sprites/PlayerHUD/HealthBarFrame.png
+Resources/Sprites/PlayerHUD/HealthBarFrame.png.meta
+Resources/Sprites/PlayerHUD/HealthNotch.dds
+Resources/Sprites/PlayerHUD/HealthNotch.png
+Resources/Sprites/PlayerHUD/HealthNotch.png.meta
+Resources/Sprites/PlayerHUD/SwordPCicon.dds
+Resources/Sprites/PlayerHUD/SwordPCicon.png
+Resources/Sprites/PlayerHUD/SwordPCicon.png.meta
+Resources/Sprites/PlayerHUD/Underline.dds
+Resources/Sprites/PlayerHUD/Underline.png
+Resources/Sprites/PlayerHUD/Underline.png.meta
 Resources/Textures/awesomeface.dds
 Resources/Textures/awesomeface.png
 Resources/Textures/awesomeface.png.meta
@@ -448,15 +603,27 @@ Resources/Textures/Candle [Normal].png.meta
 Resources/Textures/CandleFlame.dds
 Resources/Textures/CandleFlame.png
 Resources/Textures/CandleFlame.png.meta
+Resources/Textures/Carpet.dds
+Resources/Textures/Carpet.jpg
+Resources/Textures/Carpet.jpg.meta
+Resources/Textures/Cave Side.dds
+Resources/Textures/Cave Side.jpg
+Resources/Textures/Cave Side.jpg.meta
 Resources/Textures/cobbleStoneRoadNormal.dds
 Resources/Textures/cobbleStoneRoadNormal.jpg
 Resources/Textures/cobbleStoneRoadNormal.jpg.meta
+Resources/Textures/Coffin.dds
+Resources/Textures/Coffin.jpg
+Resources/Textures/Coffin.jpg.meta
 Resources/Textures/container2.dds
 Resources/Textures/container2.png
 Resources/Textures/container2.png.meta
 Resources/Textures/container2_specular.dds
 Resources/Textures/container2_specular.png
 Resources/Textures/container2_specular.png.meta
+Resources/Textures/Creeper.dds
+Resources/Textures/Creeper.png
+Resources/Textures/Creeper.png.meta
 Resources/Textures/Flat Rock.dds
 Resources/Textures/Flat Rock.jpg
 Resources/Textures/Flat Rock.jpg.meta
@@ -484,6 +651,9 @@ Resources/Textures/Pillar 2.png.meta
 Resources/Textures/road_C_fix.dds
 Resources/Textures/road_C_fix.jpg
 Resources/Textures/road_C_fix.jpg.meta
+Resources/Textures/Rock.dds
+Resources/Textures/Rock.jpg
+Resources/Textures/Rock.jpg.meta
 Resources/Textures/Roof.dds
 Resources/Textures/Roof.jpg
 Resources/Textures/Roof.jpg.meta
@@ -502,6 +672,18 @@ Resources/Textures/ToriBottom.jpg.meta
 Resources/Textures/ToriTopjpg.dds
 Resources/Textures/ToriTopjpg.jpg
 Resources/Textures/ToriTopjpg.jpg.meta
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.png
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.png.meta
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.png
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.png.meta
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.png
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.png.meta
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.png
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.png.meta
 Resources/Textures/Wall Pillar.dds
 Resources/Textures/Wall Pillar.jpg
 Resources/Textures/Wall Pillar.jpg.meta

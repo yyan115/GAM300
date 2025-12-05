@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c64f1a4f82a-00036d0ec20000d1",
+        "source": "../../Resources/Sprites/PlayerHUD/fillFollow.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/fillFollow.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/fillFollow_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

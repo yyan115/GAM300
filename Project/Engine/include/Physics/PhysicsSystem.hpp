@@ -27,7 +27,7 @@ class ECSManager;
 
 class PhysicsSystem : public System {
 public:
-	PhysicsSystem() = default;
+	PhysicsSystem() : m_joltInitialized(false) {}
 	~PhysicsSystem() = default;
 
 	bool InitialiseJolt();
@@ -40,6 +40,16 @@ public:
 
 	JPH::PhysicsSystem& GetJoltSystem() { return physics; }
 
+	// Raycasting for camera collision, line-of-sight checks, etc.
+	// Returns: hit distance (negative if no hit), and optionally fills hitPoint
+	struct RaycastResult {
+		bool hit = false;
+		float distance = -1.0f;
+		Vector3D hitPoint = Vector3D(0, 0, 0);
+		Vector3D hitNormal = Vector3D(0, 0, 0);
+	};
+	RaycastResult Raycast(const Vector3D& origin, const Vector3D& direction, float maxDistance);
+
 
 	MyBroadPhaseLayerInterface broadphase;
 	MyObjectVsBroadPhaseLayerFilter objVsBP;
@@ -48,8 +58,10 @@ public:
 private:
 	JPH::PhysicsSystem          physics;
 	std::unordered_map<JPH::BodyID, int> bodyToEntityMap;	//to reference physics id -> entity id (for logging)
+	std::unordered_map<int, JPH::BodyID> entityBodyMap;     // Track body ID per entity (workaround for shared component bug)
 	std::unique_ptr<MyContactListener> contactListener;
 	std::unique_ptr<JPH::JobSystem> jobs;           // e.g., JobSystemThreadPool
 	std::unique_ptr<JPH::TempAllocator> temp;       // e.g., TempAllocatorImpl
+	bool m_joltInitialized;  // Track if THIS instance's physics has been initialized
 
 };

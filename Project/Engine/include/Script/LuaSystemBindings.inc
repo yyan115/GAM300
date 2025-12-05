@@ -89,6 +89,9 @@ BEGIN_SYSTEM("Input")
     FUNCTION("GetMouseButtonDown", InputWrappers::GetMouseButtonDown)
     FUNCTION("GetMouseX", InputManager::GetMouseX)
     FUNCTION("GetMouseY", InputManager::GetMouseY)
+    FUNCTION("GetScrollX", InputManager::GetScrollX)
+    FUNCTION("GetScrollY", InputManager::GetScrollY)
+    FUNCTION("ConsumeScroll", InputManager::ConsumeScroll)
     FUNCTION("GetAnyKeyDown", InputManager::GetAnyKeyDown)
     FUNCTION("GetAnyMouseButtonDown", InputManager::GetAnyMouseButtonDown)
     FUNCTION("GetAnyInputDown", InputManager::GetAnyInputDown)
@@ -131,6 +134,8 @@ BEGIN_SYSTEM("Screen")
     FUNCTION("IsMinimized", WindowWrappers::IsWindowMinimized)
     FUNCTION("SetTitle", WindowWrappers::SetWindowTitle)
     FUNCTION("RequestClose", WindowWrappers::RequestClose)
+    FUNCTION("SetCursorLocked", WindowWrappers::SetCursorLocked)
+    FUNCTION("IsCursorLocked", WindowWrappers::IsCursorLocked)
 END_SYSTEM()
 
 // ============================================================================
@@ -186,6 +191,18 @@ BEGIN_SYSTEM("PhysicsSystem")
 END_SYSTEM()
 
 // ============================================================================
+// PHYSICS RAYCAST SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Physics")
+    // Test function to verify binding works
+    FUNCTION("Test", PhysicsSystemWrappers::TestBinding)
+    // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    // Returns: distance (float, -1.0 if no hit)
+    FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+END_SYSTEM()
+
+// ============================================================================
 // TAG SYSTEM
 // ============================================================================
 
@@ -218,19 +235,12 @@ BEGIN_SYSTEM("Animation")
     FUNCTION("PlayClip",    AnimationWrappers::PlayClip)
     FUNCTION("PlayOnce",    AnimationWrappers::PlayOnce)
     FUNCTION("Pause",       AnimationWrappers::Pause)
-    FUNCTION("Stop",        AnimationWrappers::Stop)
+    FUNCTION("Stop",        AnimationWrappers::Stop) 
     FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
     FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
     FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
 
 END_SYSTEM()
-
-
-
-
-
-
-
 
 
 // ============================================================================
@@ -239,6 +249,8 @@ END_SYSTEM()
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
+    FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
+    FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
 END_SYSTEM()
 
 

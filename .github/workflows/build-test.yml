@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # vcpkg commit - update this when you want to upgrade vcpkg
+  VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
+
 jobs:
   build:
     runs-on: windows-2022
@@ -14,29 +18,85 @@ jobs:
       fail-fast: false
       matrix:
         preset: [debug, release, editor-debug, editor-release]
+        include:
+          - preset: debug
+            output_dir: Debug
+            build_type: Debug
+          - preset: release
+            output_dir: Release
+            build_type: Release
+          - preset: editor-debug
+            output_dir: EditorDebug
+            build_type: EditorDebug
+          - preset: editor-release
+            output_dir: EditorRelease
+            build_type: EditorRelease
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    # Cache vcpkg executable (shared across all builds)
+    - name: Cache vcpkg
+      uses: actions/cache@v4
+      with:
+        path: vcpkg
+        key: vcpkg-exe-${{ env.VCPKG_COMMIT }}
+
+    # Cache vcpkg installed packages (shared across all configurations)
+    # x64-windows triplet installs both debug and release variants
+    - name: Cache vcpkg packages
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/vcpkg_installed
+        key: vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-${{ hashFiles('Project/vcpkg.json') }}
+        restore-keys: |
+          vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-
+
     - name: Setup vcpkg
       run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        cd vcpkg
-        git checkout 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
-        .\bootstrap-vcpkg.bat -disableMetrics
+        if (!(Test-Path "vcpkg/vcpkg.exe")) {
+          if (Test-Path "vcpkg") { Remove-Item -Recurse -Force vcpkg }
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          git checkout ${{ env.VCPKG_COMMIT }}
+          .\bootstrap-vcpkg.bat -disableMetrics
+        } else {
+          Write-Host "vcpkg already cached, skipping clone"
+        }
+      shell: pwsh
 
     - name: Configure CMake
       run: cmake --preset ${{ matrix.preset }}
       working-directory: Project
 
     - name: Build
-      run: cmake --build --preset ${{ matrix.preset }}
+      run: cmake --build --preset ${{ matrix.preset }} --parallel
       working-directory: Project
 
+    # Upload executable and required DLLs
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Build-${{ matrix.preset }}
-        path: Project/Build/${{ matrix.preset }}/*.exe
+        path: |
+          Project/Build/${{ matrix.output_dir }}/*.exe
+          Project/Build/${{ matrix.output_dir }}/*.dll
+          Project/Build/${{ matrix.output_dir }}/Resources/**
         retention-days: 7
+        if-no-files-found: error
+
+  # Summary job that runs after all builds complete
+  build-summary:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check build results
+        run: |
+          if [ "${{ needs.build.result }}" == "success" ]; then
+            echo "✅ All builds completed successfully!"
+          else
+            echo "❌ Some builds failed. Check the individual build jobs for details."
+            exit 1
+          fi

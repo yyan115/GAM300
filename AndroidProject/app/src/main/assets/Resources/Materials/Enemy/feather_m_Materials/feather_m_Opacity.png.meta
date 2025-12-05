@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006438bf2b24c038-00036c9d3400000b",
+        "source": "../../Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.png",
+        "compiled": "../../Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.dds",
+        "android_compiled": "Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

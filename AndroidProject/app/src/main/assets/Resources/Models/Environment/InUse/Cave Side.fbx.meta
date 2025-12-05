@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad5323e9c6d9-00036c922000000f",
+        "source": "../../Resources/Models/Environment/_InUse/Cave Side.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/Cave Side.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/Cave Side_android.mesh"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c64c768cf09-00036d0d48000013",
+        "source": "../../Resources/Sprites/PlayerHUD/Underline.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Underline.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Underline_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

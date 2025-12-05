@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00374a2169532b43-000331fc3a000001",
-        "source": "../../Resources/Audio/BGM/BossfightEND.wav",
-        "compiled": "../../Resources/Audio/BGM/BossfightEND.wav",
-        "android_compiled": "Resources/Audio/BGM/BossfightEND.wav"
-    }
-}

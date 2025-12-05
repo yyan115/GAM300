@@ -9,8 +9,8 @@
 
 class SceneInstance : public IScene {
 public:
-	SceneInstance();
-	SceneInstance(const std::string& path);
+	SceneInstance() = default;
+	SceneInstance(const std::string& path) : IScene(path) {};
 	~SceneInstance() override = default;
 
 	void Initialize() override;

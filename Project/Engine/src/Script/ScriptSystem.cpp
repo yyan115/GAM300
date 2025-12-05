@@ -104,8 +104,67 @@ static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
     return std::make_tuple(p.x, p.y, p.z);
 }
 
+static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
+{
+    if (!t)
+    {
+        // Return something reasonable; Lua will get three numbers
+        return std::make_tuple(0.0f, 0.0f, 0.0f);
+    }
+
+    const auto& p = t->localRotation; // or global/world position if you have it
+    return std::make_tuple(p.x, p.y, p.z);
+}
+
+
+
+
+//TEMP FUNCTION TO BE CHANGED
+static size_t Lua_FindCurrentClipByName(const std::string& name)
+{
+    if (!g_ecsManager) return -1;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            // Found the entity with matching name, now ensure it has a Transform
+            if (ecs.HasComponent<AnimationComponent>(e))
+            {
+                auto& animation = ecs.GetComponent<AnimationComponent>(e);
+                return animation.GetActiveClipIndex();
+            }
+
+            // Name matched but no AnimationComponent; stop searching if names are unique
+            break;
+        }
+    }
+
+    return -1;
+}
+
+
+
+
+
+
+
+
+
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
+    // DEBUG: This MUST print if new code is compiled - v3
+    std::cout << "[ScriptSystem] ===== INITIALISE v3 =====" << std::endl;
+    ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] ===== INITIALISE v3 =====");
+
     m_ecs = &ecsManager;
 	g_ecsManager = &ecsManager;
 
@@ -202,7 +261,17 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #define END_SYSTEM() \
                 .endNamespace();
 
+            // Force rebuild when LuaSystemBindings.inc changes - v2
             #include "Script/LuaSystemBindings.inc"
+
+            // Debug: Verify Physics namespace was created
+            lua_getglobal(L, "Physics");
+            if (lua_isnil(L, -1)) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] CRITICAL: Physics namespace not created!");
+            } else {
+                ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Physics namespace created successfully");
+            }
+            lua_pop(L, 1);
 
             #undef BEGIN_SYSTEM
             #undef BEGIN_CONSTANTS

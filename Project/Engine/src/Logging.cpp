@@ -141,22 +141,28 @@ namespace EngineLogging {
             android_sink->set_pattern("%v");
             sinks.push_back(android_sink);
 #else
-            // Create logs directory if it doesn't exist (desktop only)
-            std::filesystem::create_directories("logs");
-            assert(std::filesystem::exists("logs") && "Logs directory should exist after creation");
-
-            // Desktop: use stdout and file logging
+            // Desktop: use stdout logging (always works)
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             assert(console_sink != nullptr && "Console sink creation failed");
             console_sink->set_level(spdlog::level::trace);
             console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
             sinks.push_back(console_sink);
 
-            auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine.log", true);
-            assert(file_sink != nullptr && "File sink creation failed");
-            file_sink->set_level(spdlog::level::trace);
-            file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
-            sinks.push_back(file_sink);
+            // Try to create logs directory and file logging (may fail if working directory is wrong)
+            try {
+                std::filesystem::create_directories("logs");
+                if (std::filesystem::exists("logs")) {
+                    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine.log", true);
+                    if (file_sink) {
+                        file_sink->set_level(spdlog::level::trace);
+                        file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
+                        sinks.push_back(file_sink);
+                    }
+                }
+            } catch (const std::exception& e) {
+                // File logging failed - continue with console only
+                std::cerr << "[Logging] Warning: Could not create log file: " << e.what() << std::endl;
+            }
 #endif
 
             // GUI sink for editor (all platforms)
@@ -172,7 +178,7 @@ namespace EngineLogging {
             assert(logger != nullptr && "Logger creation failed");
             
             logger->set_level(spdlog::level::trace);
-            logger->flush_on(spdlog::level::warn);
+            logger->flush_on(spdlog::level::trace);  // Flush immediately on all messages to see output before crash
 
             // Register as default logger
             spdlog::set_default_logger(logger);

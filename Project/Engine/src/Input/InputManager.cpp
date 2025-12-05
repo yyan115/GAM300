@@ -65,6 +65,11 @@ double InputManager::GetMouseX()
 #ifndef EDITOR
 	return RunTimeVar::input.mouseX;
 #else
+	// When cursor is locked, use raw mouse position for proper delta calculation
+	// Otherwise use game panel relative position
+	if (WindowManager::IsCursorLocked()) {
+		return RunTimeVar::input.mouseX;
+	}
 	return gamePanelMouseX;
 #endif
 }
@@ -74,8 +79,29 @@ double InputManager::GetMouseY()
 #ifndef EDITOR
 	return RunTimeVar::input.mouseY;
 #else
+	// When cursor is locked, use raw mouse position for proper delta calculation
+	// Otherwise use game panel relative position
+	if (WindowManager::IsCursorLocked()) {
+		return RunTimeVar::input.mouseY;
+	}
 	return gamePanelMouseY;
 #endif
+}
+
+double InputManager::GetScrollX()
+{
+	return RunTimeVar::input.scrollOffsetX;
+}
+
+double InputManager::GetScrollY()
+{
+	return RunTimeVar::input.scrollOffsetY;
+}
+
+void InputManager::ConsumeScroll()
+{
+	RunTimeVar::input.scrollOffsetX = 0.0;
+	RunTimeVar::input.scrollOffsetY = 0.0;
 }
 
 bool InputManager::GetAnyKeyDown()

@@ -42,7 +42,17 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-void SceneManager::LoadScene(const std::string& scenePath) {
+void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) {
+    if (currentScene && (callingFromLua || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
+		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
+		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
+		// If calling from Lua, defer loading to the next frame to allow the Lua function call to be returned properly
+		// before shutting down the scripting system in currentScene->Exit().
+        loadSceneNextFrame = true;
+        sceneToLoadNextFrame = scenePath;
+        return;
+    }
+
 #if 1
 #ifdef EDITOR
 	// Reset game state to edit mode when loading a new scene
@@ -51,9 +61,9 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 		Engine::SetGameState(GameState::EDIT_MODE);
 	}
 
+#endif
 	// Stop all audio when loading a new scene
 	AudioManager::GetInstance().StopAll();
-#endif
 
 	// Exit and clean up the current scene if it exists.
 	if (currentScene)
@@ -240,6 +250,13 @@ void SceneManager::LoadScene(const std::string& scenePath) {
 }
 
 void SceneManager::UpdateScene(double dt) {
+    if (loadSceneNextFrame && currentScene->updateSynchronized && currentScene->drawSynchronized) {
+		ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
+        LoadScene(sceneToLoadNextFrame);
+        loadSceneNextFrame = false;
+        sceneToLoadNextFrame = "";
+
+    }
 	if (currentScene) {
 		currentScene->Update(dt);
 	}

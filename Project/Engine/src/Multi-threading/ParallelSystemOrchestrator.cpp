@@ -60,26 +60,31 @@ void ParallelSystemOrchestrator::Draw() {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running ModelJob");
         ecs.modelSystem->Update();
+        //ENGINE_PRINT("ModelJob finished");
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running TextJob");
         ecs.textSystem->Update();
+       // ENGINE_PRINT("TextJob finished");
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running SpriteJob");
         ecs.spriteSystem->Update();
+        //ENGINE_PRINT("SpriteJob finished");
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running ParticleJob");
         ecs.particleSystem->Update();
+        //ENGINE_PRINT("ParticleJob finished");
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running DebugDrawJob");
         ecs.debugDrawSystem->Update();
+        //ENGINE_PRINT("DebugDrawJob finished");
         });
 
     frameChannel.join(); // waits for actual work to finish

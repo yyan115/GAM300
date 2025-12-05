@@ -449,7 +449,13 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 #ifndef ANDROID
 		return it->second->sourceFilePath;
 #else
-		std::string path = FileUtilities::SanitizePathForAndroid(std::filesystem::path(it->second->sourceFilePath)).generic_string();
+		std::string path = it->second->sourceFilePath;
+		// Strip ../../ prefix and get path starting from "Resources"
+		size_t resourcesPos = path.find("Resources");
+		if (resourcesPos != std::string::npos) {
+			path = path.substr(resourcesPos);
+		}
+		path = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path)).generic_string();
 		return path;
 #endif
 	}
