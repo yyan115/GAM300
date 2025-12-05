@@ -45,6 +45,17 @@ public:
 		VIEW_2D       // 2D mode - show 2D sprites only in screen space
 	};
 
+	enum class CullMode {
+		BACK,
+		FRONT,
+		FRONT_AND_BACK
+	};
+
+	enum class FrontFace {
+		CCW,
+		CW
+	};
+
 	ENGINE_API static GraphicsManager& GetInstance();
 
 	// Initialization
@@ -84,6 +95,14 @@ public:
     // Main rendering
     void Render();
     void RenderSkybox();
+
+	// Face Culling
+	void SetFaceCulling(bool enabled);
+	bool IsFaceCullingEnabled() const { return faceCullingEnabled; }
+	void SetCullMode(CullMode mode);
+	CullMode GetCullMode() const { return cullMode; }
+	void SetFrontFace(FrontFace face);
+	FrontFace GetFrontFace() const { return frontFace; }
 
     // FRUSTUM CULLING FUNCTIONS:
     void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
@@ -145,6 +164,11 @@ private:
     ViewportDimensions currentFrameViewport;
     ViewportDimensions GetCurrentViewport() const;
     CullingStats cullingStats;
+
+	// Face Culling state
+	bool faceCullingEnabled = true; // Default enabled
+	CullMode cullMode = CullMode::BACK; // Default back face culling
+	FrontFace frontFace = FrontFace::CCW; // Default Counter-Clockwise
 
     // Skybox rendering
     unsigned int skyboxVAO = 0;

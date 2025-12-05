@@ -29,9 +29,19 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	glDepthFunc(GL_LESS);
 
 	// Enable face culling (backface culling)
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);      // Cull back-facing triangles
-	//glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
+	if (faceCullingEnabled)
+		glEnable(GL_CULL_FACE);
+	else
+		glDisable(GL_CULL_FACE);
+
+	GLenum cMode = GL_BACK;
+	if (cullMode == CullMode::FRONT) cMode = GL_FRONT;
+	if (cullMode == CullMode::FRONT_AND_BACK) cMode = GL_FRONT_AND_BACK;
+	glCullFace(cMode);      // Cull back-facing triangles
+
+	GLenum fFace = GL_CCW;
+	if (frontFace == FrontFace::CW) fFace = GL_CW;
+	glFrontFace(fFace);      // Counter-clockwise winding = front face
 
 	// Initialize skybox
 	InitializeSkybox();
@@ -327,14 +337,17 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	{
 		return;
 	}
+	// Calculate model matrix once
+	glm::mat4 modelMatrix = item.transform.ConvertToGLM();
 
 	// Count total objects when culling is enabled
 	if (frustumCullingEnabled && currentCamera)
 	{
 		//cullingStats.totalObjects++;
 
+
 		AABB modelBBox = item.model->GetBoundingBox();
-		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
+		//glm::mat4 modelMatrix = item.transform.ConvertToGLM(); // Moved to outer scope
 		AABB worldBBox = modelBBox.Transform(modelMatrix);
 
 		// Use tolerance to prevent edge-case culling
@@ -359,6 +372,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
 	}
+
 
 	// Draw the model with entity material
 	if (item.HasAnimation())
@@ -680,7 +694,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 #endif
 }
 
@@ -756,7 +770,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
@@ -887,7 +901,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	// Restore depth testing for 3D objects
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
@@ -1095,7 +1109,37 @@ void GraphicsManager::RenderSkybox()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDepthMask(GL_TRUE);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
+}
+
+void GraphicsManager::SetFaceCulling(bool enabled)
+{
+	faceCullingEnabled = enabled;
+	if (enabled)
+		glEnable(GL_CULL_FACE);
+	else
+		glDisable(GL_CULL_FACE);
+}
+
+void GraphicsManager::SetCullMode(CullMode mode)
+{
+	cullMode = mode;
+	GLenum glMode = GL_BACK;
+	switch (mode)
+	{
+	case CullMode::BACK: glMode = GL_BACK; break;
+	case CullMode::FRONT: glMode = GL_FRONT; break;
+	case CullMode::FRONT_AND_BACK: glMode = GL_FRONT_AND_BACK; break;
+	}
+	glCullFace(glMode);
+}
+
+void GraphicsManager::SetFrontFace(FrontFace face)
+{
+	frontFace = face;
+	GLenum glFace = GL_CCW;
+	if (face == FrontFace::CW) glFace = GL_CW;
+	glFrontFace(glFace);
 }
 
