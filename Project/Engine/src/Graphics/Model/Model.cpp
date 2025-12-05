@@ -109,7 +109,15 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#else
 	// The function expects a file path and several post-processing options as its second argument
 	// aiProcess_Triangulate tells Assimp that if the model does not (entirely) consist of triangles, it should transform all the model's primitive shapes to triangles first.
-	const aiScene* scene = importer.ReadFile(assetPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	// Build post-processing flags
+    unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace;
+
+    // Check if this is a wall/pillar model and flip winding order to fix face culling
+    if (assetPath.find("Wall") != std::string::npos ) {
+        postProcessFlags |= aiProcess_FlipWindingOrder;
+    }
+
+    const aiScene* scene = importer.ReadFile(assetPath, postProcessFlags);
 //#endif
 
 	if (!scene || !scene->mRootNode)
