@@ -13,7 +13,7 @@ return Component {
     -- Editable fields (visible in inspector)
     fields = {
         speed = 2.0,
-        directionX = 1.0,
+        directionX = 3.0,
         directionY = 0.0,
         directionZ = 0.0
     },

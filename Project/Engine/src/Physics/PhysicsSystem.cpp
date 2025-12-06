@@ -1,4 +1,4 @@
-/*********************************************************************************
+﻿/*********************************************************************************
 * @File			PhysicsSystem.cpp
 * @Author		Ang Jia Jun Austin, a,jiajunaustin@digipen.edu
 * @Co-Author	-
@@ -250,9 +250,14 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             if (motionType == JPH::EMotionType::Dynamic)
                 bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
-            // IMPORTANT: Also enable CCD for kinematic bodies if they move fast
+            //// IMPORTANT: Also enable CCD for kinematic bodies if they move fast
+            //if (motionType == JPH::EMotionType::Kinematic)
+            //    bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+
+            
             if (motionType == JPH::EMotionType::Kinematic)
                 bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+
 
             // --- Apply damping and restitution ---
             bcs.mRestitution = 0.2f;
@@ -291,6 +296,19 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 }
 
 
+//KINEMATIC: NOT AFFECTED BY GRAVITY, FORCES, IMPULSES, OTHER BODIES MOVING IT.
+//MOVE MANUALLY VIA POS, ROTATION E.T.C
+
+
+//DYNAMIC: USE PHYSICS SIMULATION. IF ANY CHANGES TO BE MADE, ADJUST VIA FORCES, NOT POS
+
+
+
+
+
+
+
+
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -313,17 +331,44 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& tr = ecsManager.GetComponent<Transform>(e);
+        
 
-        if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
-            JPH::RVec3 pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-            // Convert rotation from ECS to Jolt
-            JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
-                tr.localRotation.z, tr.localRotation.w);
+        if (rb.motion == Motion::Kinematic) {
+            JPH::RVec3 targetPos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+            JPH::Quat targetRot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
+                tr.localRotation.z, tr.localRotation.w).Normalized();
 
-            // IMPORTANT: Use fixedDt to enable continuous collision detection
-            bi.MoveKinematic(bodyId, pos, rot, fixedDt);
+            // Get current position and rotation
+            JPH::RVec3 currentPos = bi.GetPosition(bodyId);
+            JPH::Quat currentRot = bi.GetRotation(bodyId);
+
+            // Calculate linear velocity from position delta (CRITICAL for collision detection!)
+            JPH::Vec3 linearVel = (targetPos - currentPos) / fixedDt;
+
+            // Calculate angular velocity from rotation delta
+            JPH::Quat deltaRot = targetRot * currentRot.Conjugated();
+
+            // Extract axis and angle using GetAxisAngle
+            JPH::Vec3 axis;
+            float angle;
+            deltaRot.GetAxisAngle(axis, angle);
+
+            // Angular velocity = axis * (angle / deltaTime)
+            JPH::Vec3 angularVel = axis * (angle / fixedDt);
+
+            // Set velocities BEFORE moving (Jolt uses this for collision detection)
+            bi.SetLinearVelocity(bodyId, linearVel);
+            bi.SetAngularVelocity(bodyId, angularVel);
+
+            // Now move the kinematic body
+            bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
+
+            // Ensure body stays active for collision detection
+            bi.ActivateBody(bodyId);
 
             rb.transform_dirty = false;
+
+                
 
 #ifdef __ANDROID__
             if (updateCount % 60 == 0) {
@@ -348,9 +393,16 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
 
-        // Read back velocities from physics engine
-        rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(bodyId));
-        rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
+        //// Read back velocities from physics engine
+        //rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(body Id));
+        //rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
+
+        if (rb.motion == Motion::Dynamic)
+        {
+            bi.SetLinearVelocity(rb.id, ToJoltVec3(rb.linearVel));
+            bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));
+        }
+
     }
 
     // ========== RUN PHYSICS SIMULATION ==========

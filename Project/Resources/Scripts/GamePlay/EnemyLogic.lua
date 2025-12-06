@@ -16,6 +16,35 @@ local DEATH         = 3
 local playerNear = false
 local currentState = IDLE
 
+
+--HACK FUNCTION FOR NOW
+local function SimulateAttackFromPlayer()
+    local tr = Engine.FindTransformByName(PLAYER_NAME)
+    local pos = Engine.GetTransformPosition(tr)  -- Get the table
+
+    local player_x = pos[1]  -- First element
+    local player_y = pos[2]  -- Second element
+    local player_z = pos[3]  -- Third element
+
+    -- Get enemy position
+    local Ground_Enemytr = Engine.FindTransformByName(ENEMY_NAME)
+    local enemyPos = Engine.GetTransformPosition(Ground_Enemytr)
+    local enemy_x = enemyPos[1]
+    local enemy_y = enemyPos[2]
+    local enemy_z = enemyPos[3]
+
+    -- Calculate distance
+    local dx = player_x - enemy_x
+    local dy = player_y - enemy_y
+    local dz = player_z - enemy_z
+    local distance = math.sqrt(dx*dx + dy*dy + dz*dz)
+    
+    -- Check if player is within range
+    local getDamagedRange = 1.0
+    return distance < getDamagedRange
+end
+
+
 -- Helper Functions
 local function IsPlayerInRange()
     local tr = Engine.FindTransformByName(PLAYER_NAME)
@@ -170,7 +199,7 @@ return Component {
         -- Determine new state 
         if self.Health <= 0 then
             newState = DEATH
-        elseif Input.GetKeyDown(Input.Key.U) then
+        elseif Input.GetMouseButton(Input.MouseButton.Left) and SimulateAttackFromPlayer() then
             TakeDamage(self)
             newState = TAKE_DAMAGE
         elseif IsPlayerInRange() then
