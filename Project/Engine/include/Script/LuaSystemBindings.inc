@@ -202,6 +202,17 @@ BEGIN_SYSTEM("Physics")
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
 END_SYSTEM()
 
+
+// ============================================================================
+// RIGIDBODY SYSTEM
+// ============================================================================
+BEGIN_SYSTEM("RigidBodyComponent")
+    FUNCTION("AddForce", RigidBodySystemWrappers::AddForce)
+    FUNCTION("AddTorque", RigidBodySystemWrappers::AddTorque)
+    FUNCTION("AddImpulse", RigidBodySystemWrappers::AddImpulse)
+END_SYSTEM()
+
+
 // ============================================================================
 // TAG SYSTEM
 // ============================================================================
@@ -239,7 +250,6 @@ BEGIN_SYSTEM("Animation")
     FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
     FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
     FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
-
 END_SYSTEM()
 
 

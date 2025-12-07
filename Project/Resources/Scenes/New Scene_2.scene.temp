@@ -1313,6 +1313,18 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0027b6d5df717b3f-00037ede34000001",
+                            "scriptPath": "../../Resources/Scripts/template/DynamicTesting.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         }

@@ -1,16 +1,8 @@
--- simple_mover.lua
--- Moves an entity in a direction at a given speed
--- This is what a non-programmer would write!
-
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 -- local TransformMixin = require("extension.transform_mixin")
 
 return Component {
-    -- -- Apply the transform mixin for easy movement
-    -- mixins = { TransformMixin },
-    
-    -- Editable fields (visible in inspector)
     fields = {
         velocityX = -3.0,
         velocityY = 0.0,
@@ -30,11 +22,19 @@ return Component {
         end
 
         if Input.GetKey(Input.Key.W) then 
-            print("W is pressed")
+            -- RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
         end
 
-        self._rb.linearVel.x = -3
+        --FORCE TEST
+
+        -- RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
+
+        --TORQUE TEST
+        -- RigidBodyComponent.AddTorque(self._rb, 0.0, 500.0, 600.0)
+        --
 
 
+        --IMPULSE TEST
+        -- RigidBodyComponent.AddImpulse(self._rb, 0.0, 500.0, 200.0)
     end
 }

@@ -46,6 +46,15 @@ struct RigidBodyComponent {
 	float angularDamping = 0.95f;
 
 
+	//TO BE USED FOR SCRIPT
+	Vector3D forceApplied = { 0.0f,0.0f,0.0f };
+	Vector3D torqueApplied = { 0.0f,0.0f,0.0f };
+	Vector3D impulseApplied = { 0.0f,0.0f,0.0f };
+	void AddForce(Vector3D force)		{forceApplied += force;}
+	void AddTorque(Vector3D torque)		{torqueApplied += torque;}
+	void AddImpulse(Vector3D impulse)	{impulseApplied += impulse;}
+
+
 
 	Motion motion{};
 	bool transform_dirty = false;     // set by gameplay when you edit Transform of kinematic/static
