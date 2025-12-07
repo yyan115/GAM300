@@ -399,10 +399,17 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (rb.motion == Motion::Dynamic)
         {
-            bi.SetLinearVelocity(rb.id, ToJoltVec3(rb.linearVel));
-            bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));
-        }
+            // Only apply velocity if it's non-zero (script wants to control it)
+            if (rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f || rb.linearVel.z != 0.0f) {
+                bi.SetLinearVelocity(rb.id, ToJoltVec3(rb.linearVel));
+                rb.linearVel = Vector3D(0, 0, 0); // Reset after applying
+            }
 
+            if (rb.angularVel.x != 0.0f || rb.angularVel.y != 0.0f || rb.angularVel.z != 0.0f) {
+                bi.SetAngularVelocity(rb.id, ToJoltVec3(rb.angularVel));
+                rb.angularVel = Vector3D(0, 0, 0); // Reset after applying
+            }
+        }
     }
 
     // ========== RUN PHYSICS SIMULATION ==========
