@@ -54,6 +54,8 @@ struct RigidBodyComponent {
 	void AddTorque(Vector3D torque)		{torqueApplied += torque;}
 	void AddImpulse(Vector3D impulse)	{impulseApplied += impulse;}
 
+	bool collideWithStatic = false;		//To be used only by rigidbody Kinematic 
+
 
 
 	Motion motion{};

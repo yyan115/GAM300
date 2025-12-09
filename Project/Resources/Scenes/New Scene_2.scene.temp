@@ -1217,7 +1217,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "Vector3D",

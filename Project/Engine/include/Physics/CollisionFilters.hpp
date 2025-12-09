@@ -48,7 +48,7 @@ public:
     bool ShouldCollide(JPH::ObjectLayer layer, JPH::BroadPhaseLayer bp) const override {
         switch (layer) {
         case Layers::NON_MOVING:
-            return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::CHARACTER;
+            return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::CHARACTER || bp == BroadPhaseLayers::NON_MOVING;
 
         case Layers::MOVING:
         case Layers::SENSOR:
@@ -72,7 +72,7 @@ public:
     ~MyObjectLayerPairFilter() override = default;
 
     bool ShouldCollide(JPH::ObjectLayer a, JPH::ObjectLayer b) const override {
-        if (a == Layers::NON_MOVING && b == Layers::NON_MOVING) return false;
+        //if (a == Layers::NON_MOVING && b == Layers::NON_MOVING) return false;
         if (a == Layers::DEBRIS && b == Layers::DEBRIS) return false;
 
         // Optional: Prevent characters from colliding with each other

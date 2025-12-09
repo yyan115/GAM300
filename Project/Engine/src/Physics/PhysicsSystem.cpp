@@ -256,7 +256,10 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
             
             if (motionType == JPH::EMotionType::Kinematic)
+            {
+                bcs.mCollideKinematicVsNonDynamic = true;
                 bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+            }
 
 
             // --- Apply damping and restitution ---
@@ -301,12 +304,6 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
 
 //DYNAMIC: USE PHYSICS SIMULATION. IF ANY CHANGES TO BE MADE, ADJUST VIA FORCES, NOT POS
-
-
-
-
-
-
 
 
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
@@ -569,5 +566,3 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
 
     return result;
 }
-
-//OFFSETCENTEROF MASS CAUSING THE DIFFERENCE BETWEEN USING CHARACTER AND NORMAL OBJECTS? GAP IN BETWEEN FLOOR AND ENTITY?
