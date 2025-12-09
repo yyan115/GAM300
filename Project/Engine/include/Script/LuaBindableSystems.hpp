@@ -70,6 +70,29 @@ namespace PhysicsSystemWrappers {
     }
 }
 
+
+// ============================================================================
+// RIGIDBODY SYSTEM WRAPPERS
+// ============================================================================
+#include "Physics/RigidBodyComponent.hpp"
+
+namespace RigidBodySystemWrappers {
+    inline void AddForce(RigidBodyComponent& rigidbody, float x, float y, float z)
+    {
+        rigidbody.AddForce(Vector3D(x,y,z));
+    }
+    inline void AddTorque(RigidBodyComponent& rigidbody, float x, float y, float z)
+    {
+        rigidbody.AddTorque(Vector3D(x, y, z));
+    }
+    inline void AddImpulse(RigidBodyComponent& rigidbody, float x, float y, float z)
+    {
+        rigidbody.AddImpulse(Vector3D(x, y, z));
+    }
+}
+
+
+
 // ============================================================================
 // CHARACTER CONTROLLER WRAPPERS
 // ============================================================================
@@ -427,8 +450,4 @@ namespace AnimationWrappers {
     {
         return myAnim.IsPlaying();
     }
-
-
-
-
 }

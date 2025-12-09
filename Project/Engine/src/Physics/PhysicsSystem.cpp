@@ -1,4 +1,4 @@
-/*********************************************************************************
+﻿/*********************************************************************************
 * @File			PhysicsSystem.cpp
 * @Author		Ang Jia Jun Austin, a,jiajunaustin@digipen.edu
 * @Co-Author	-
@@ -250,9 +250,17 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             if (motionType == JPH::EMotionType::Dynamic)
                 bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
-            // IMPORTANT: Also enable CCD for kinematic bodies if they move fast
+            //// IMPORTANT: Also enable CCD for kinematic bodies if they move fast
+            //if (motionType == JPH::EMotionType::Kinematic)
+            //    bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+
+            
             if (motionType == JPH::EMotionType::Kinematic)
+            {
+                bcs.mCollideKinematicVsNonDynamic = true;
                 bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+            }
+
 
             // --- Apply damping and restitution ---
             bcs.mRestitution = 0.2f;
@@ -291,6 +299,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 }
 
 
+//KINEMATIC: NOT AFFECTED BY GRAVITY, FORCES, IMPULSES, OTHER BODIES MOVING IT.
+//MOVE MANUALLY VIA POS, ROTATION E.T.C
+
+
+//DYNAMIC: USE PHYSICS SIMULATION. IF ANY CHANGES TO BE MADE, ADJUST VIA FORCES, NOT POS
+
+
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -313,17 +328,44 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& tr = ecsManager.GetComponent<Transform>(e);
+        
 
-        if (rb.motion == Motion::Kinematic && rb.transform_dirty) {
-            JPH::RVec3 pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-            // Convert rotation from ECS to Jolt
-            JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
-                tr.localRotation.z, tr.localRotation.w);
+        if (rb.motion == Motion::Kinematic) {
+            JPH::RVec3 targetPos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+            JPH::Quat targetRot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
+                tr.localRotation.z, tr.localRotation.w).Normalized();
 
-            // IMPORTANT: Use fixedDt to enable continuous collision detection
-            bi.MoveKinematic(bodyId, pos, rot, fixedDt);
+            // Get current position and rotation
+            JPH::RVec3 currentPos = bi.GetPosition(bodyId);
+            JPH::Quat currentRot = bi.GetRotation(bodyId);
+
+            // Calculate linear velocity from position delta (CRITICAL for collision detection!)
+            JPH::Vec3 linearVel = (targetPos - currentPos) / fixedDt;
+
+            // Calculate angular velocity from rotation delta
+            JPH::Quat deltaRot = targetRot * currentRot.Conjugated();
+
+            // Extract axis and angle using GetAxisAngle
+            JPH::Vec3 axis;
+            float angle;
+            deltaRot.GetAxisAngle(axis, angle);
+
+            // Angular velocity = axis * (angle / deltaTime)
+            JPH::Vec3 angularVel = axis * (angle / fixedDt);
+
+            // Set velocities BEFORE moving (Jolt uses this for collision detection)
+            bi.SetLinearVelocity(bodyId, linearVel);
+            bi.SetAngularVelocity(bodyId, angularVel);
+
+            // Now move the kinematic body
+            bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
+
+            // Ensure body stays active for collision detection
+            bi.ActivateBody(bodyId);
 
             rb.transform_dirty = false;
+
+                
 
 #ifdef __ANDROID__
             if (updateCount % 60 == 0) {
@@ -348,9 +390,41 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
 
-        // Read back velocities from physics engine
-        rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(bodyId));
-        rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
+        //// Read back velocities from physics engine
+        //rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(body Id));
+        //rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
+
+        if (rb.motion == Motion::Dynamic)
+        {
+            // Only apply velocity if it's non-zero, but should never touch this directly in script.
+            if (rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f || rb.linearVel.z != 0.0f) {
+                bi.SetLinearVelocity(bodyId, ToJoltVec3(rb.linearVel));
+                rb.linearVel = Vector3D(0, 0, 0); // Reset after applying
+            }
+
+            if (rb.angularVel.x != 0.0f || rb.angularVel.y != 0.0f || rb.angularVel.z != 0.0f) {
+                bi.SetAngularVelocity(bodyId, ToJoltVec3(rb.angularVel));
+                rb.angularVel = Vector3D(0, 0, 0); // Reset after applying
+            }
+
+            if (rb.forceApplied.x != 0.0f || rb.forceApplied.y != 0.0f || rb.forceApplied.z != 0.0f)
+            {
+                bi.AddForce(bodyId, ToJoltVec3(rb.forceApplied));
+                rb.forceApplied = Vector3D(0.0f, 0.0f, 0.0f);   //reset back to 0
+            }
+            if (rb.torqueApplied.x != 0.0f || rb.torqueApplied.y != 0.0f || rb.torqueApplied.z != 0.0f)
+            {
+                bi.AddTorque(bodyId, ToJoltVec3(rb.torqueApplied));
+                rb.torqueApplied = Vector3D(0.0f, 0.0f, 0.0f);
+            }
+            
+            if (rb.impulseApplied.x != 0.0f || rb.impulseApplied.y != 0.0f || rb.impulseApplied.z != 0.0f)
+            {
+                bi.AddImpulse(bodyId, ToJoltVec3(rb.impulseApplied));
+                rb.impulseApplied = Vector3D(0.0f, 0.0f, 0.0f);
+            }
+
+        }
     }
 
     // ========== RUN PHYSICS SIMULATION ==========
@@ -492,5 +566,3 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
 
     return result;
 }
-
-//OFFSETCENTEROF MASS CAUSING THE DIFFERENCE BETWEEN USING CHARACTER AND NORMAL OBJECTS? GAP IN BETWEEN FLOOR AND ENTITY?

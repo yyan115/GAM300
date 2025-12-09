@@ -7840,15 +7840,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0392137
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 2.36843e-9
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.000004824
+                                    "data": 0
                                 }
                             ]
                         },
@@ -7857,15 +7857,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.00000499741
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.00769519
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.040735
+                                    "data": 0
                                 }
                             ]
                         },
@@ -10282,7 +10282,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0000069085
+                                    "data": 8.74228e-10
                                 },
                                 {
                                     "type": "float",
@@ -10298,7 +10298,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
@@ -10318,11 +10318,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.64274e-17
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000069085
+                                    "data": 8.74228e-10
                                 },
                                 {
                                     "type": "float",
@@ -10961,5 +10961,24 @@
             "index": 10,
             "name": "test"
         }
-    ]
+    ],
+    "lightingSystem": {
+        "ambientMode": 0,
+        "ambientIntensity": 1.0,
+        "ambientSky": [
+            0.699999988079071,
+            0.699999988079071,
+            0.699999988079071
+        ],
+        "ambientEquator": [
+            0.5,
+            0.5,
+            0.5
+        ],
+        "ambientGround": [
+            0.30000001192092896,
+            0.30000001192092896,
+            0.30000001192092896
+        ]
+    }
 }
