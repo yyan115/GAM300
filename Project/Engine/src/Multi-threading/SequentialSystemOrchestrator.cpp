@@ -2,6 +2,7 @@
 #include "Multi-threading/SequentialSystemOrchestrator.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <Physics/PhysicsSystem.hpp>
+#include <Physics/Kinematics/CharacterController.hpp>
 #include <TimeManager.hpp>
 
 void SequentialSystemOrchestrator::Update() {
@@ -9,6 +10,7 @@ void SequentialSystemOrchestrator::Update() {
 
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+	mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();

@@ -1,16 +1,17 @@
 #pragma once
 #include "pch.h"
 #include "Physics/JoltInclude.hpp"
+#include "ECS/System.hpp"
 #include "Math/Vector3D.hpp"
 
 
 struct ColliderComponent;
-struct CharacterControllerComponent;
 struct Transform;
+class ECSManager;
 
 
 // Pure runtime class that handles movement logic
-class CharacterController
+class CharacterController : public System
 {
 public:
     // Constructor: Needs a PhysicsSystem reference
@@ -22,7 +23,7 @@ public:
     bool Initialise(ColliderComponent &collider, Transform &transform);
 
     // Called each frame
-    void Update(float deltaTime);
+    void Update(float deltaTime, ECSManager& ecsManager);
 
     // Expose raw character for internal use
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }

@@ -9,6 +9,9 @@
 #include "Transform/TransformComponent.hpp"
 #include "Math/Vector3D.hpp"
 
+#include "ECS/System.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/ActiveComponent.hpp"
 
 
 //Separate initialise with ctor -> cannot guaranteed exist before that e.g components like rigidbody + collider
@@ -58,7 +61,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     return true;
 }
 
-void CharacterController::Update(float deltaTime) {
+void CharacterController::Update(float deltaTime, ECSManager& ecsManager) {
     if (!mCharacter || !mPhysicsSystem)
         return;
 

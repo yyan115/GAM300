@@ -21,13 +21,13 @@ return Component {
             return
         end
 
-        if Input.GetKey(Input.Key.W) then 
-            -- RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
-        end
+        -- if Input.GetKey(Input.Key.W) then 
+        --     RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
+        -- end
 
         --FORCE TEST
 
-        -- RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
+        RigidBodyComponent.AddForce(self._rb,0.0,1000.0,0.0)
 
         --TORQUE TEST
         -- RigidBodyComponent.AddTorque(self._rb, 0.0, 500.0, 600.0)
