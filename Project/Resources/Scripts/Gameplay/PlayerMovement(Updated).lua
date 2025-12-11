@@ -23,10 +23,24 @@ return Component {
             print("collider or transform is nil")
         end
 
-        -- CharacterController.Update(controller, dt)
+        if controller == nil then
+            print("this aint working tho")
+        end
+        CharacterController.Update(controller, dt)
 
-        -- if Input.GetKey(Input.Key.W) then 
-        CharacterController.Move(controller, 0,1,0)
+        -- -- if Input.GetKey(Input.Key.W) then 
+        -- CharacterController.Move(controller, 0,0,0)
+
+
+        local position = CharacterController.GetPosition(controller)
+
+        print("position y is ", position.y)
+        if position then
+            self:SetPosition(position.x, position.y, position.z)
+        else
+            print("[LUA WARNING] GetPosition returned nil")
+        end
+
     end
 }
 

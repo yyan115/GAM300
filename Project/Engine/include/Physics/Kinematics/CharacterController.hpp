@@ -23,7 +23,7 @@ public:
     bool Initialise(ColliderComponent &collider, Transform &transform);
 
     // Called each frame
-    void Update(float deltaTime, ECSManager& ecsManager);
+    void Update(float deltaTime);
 
     // Expose raw character for internal use
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }
@@ -66,4 +66,7 @@ private:
 
     // Cache velocity
     JPH::Vec3 mVelocity = JPH::Vec3::sZero();
+
+    float collider_offsetY;
+
 };

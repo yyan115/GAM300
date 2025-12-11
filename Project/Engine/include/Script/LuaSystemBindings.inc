@@ -176,7 +176,7 @@ BEGIN_SYSTEM("CharacterController")
     // Methods
     FUNCTION("Move", CharacterControllerWrappers::Move)
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
-    //FUNCTION("Update", CharacterControllerWrappers::Update)
+    FUNCTION("Update", CharacterControllerWrappers::Update)
     FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
     FUNCTION("IsGrounded", CharacterControllerWrappers::IsGrounded)
     FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)

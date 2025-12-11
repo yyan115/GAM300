@@ -122,10 +122,10 @@ namespace CharacterControllerWrappers {
         return false;
     }
 
-    //inline void Update(CharacterController* controller, float deltaTime) {
-    //    if (controller)
-    //        controller->Update(deltaTime);
-    //}
+    inline void Update(CharacterController* controller, float deltaTime) {
+        if (controller)
+            controller->Update(deltaTime);
+    }
 
     // Movement wrappers
     inline void Move(CharacterController* controller, float x, float y, float z) {

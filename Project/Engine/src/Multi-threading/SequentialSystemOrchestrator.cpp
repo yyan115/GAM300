@@ -10,7 +10,7 @@ void SequentialSystemOrchestrator::Update() {
 
 	// Update systems.
 	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+	mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime());
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
