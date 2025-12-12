@@ -498,7 +498,8 @@ void PhysicsSystem::Shutdown() {
     entityBodyMap.clear();
     bodyToEntityMap.clear();
 
-    // 2. Drop collider shapes
+    // 2. Drop 
+    //  shapes
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     for (auto e : entities) {
         if (!ecs.HasComponent<ColliderComponent>(e)) continue;

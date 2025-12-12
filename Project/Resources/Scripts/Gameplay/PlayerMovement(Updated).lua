@@ -5,6 +5,10 @@ local TransformMixin = require("extension.transform_mixin")
 -- Animation States
 local IDLE = 0
 local RUN  = 1
+local JUMP = 2
+
+
+local JumpHeight = 4
 
 -- Helper: convert 2D movement vector to Y-axis quaternion
 local function directionToQuaternion(dx, dz)
@@ -60,6 +64,7 @@ return Component {
         self._animator:PlayClip(IDLE, true)
 
         self._isRunning = false
+        self._isJumping = false
         self.rotationSpeed = 10.0  -- adjust for smoothness
     end,
 
@@ -85,25 +90,51 @@ return Component {
             moveZ = moveZ / length
         end
 
+        local isGrounded = CharacterController.IsGrounded(self._controller)
+        local isJumping = false
+        if Input.GetKeyDown(Input.Key.Space) and isGrounded then 
+            CharacterController.Jump(self._controller, JumpHeight)
+            isJumping = true
+        end
+
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
         -- APPLY MOVEMENT
-        if isMoving then
+        if not isJumping and isMoving then
             CharacterController.Move(self._controller, moveX * self.Speed, moveY, moveZ * self.Speed)
         end
+        
+        -- Detect landing
+        local wasJumping = self._isJumping
+        if wasJumping and isGrounded then
+            -- Landed
+            self._animator:PlayClip(IDLE, true)
+            self._isJumping = false
+            self._isRunning = false
+        end
 
-        -- ANIMATION SWITCHING
-        if isMoving then
+        -- Jump start
+        if isJumping then
+            self._animator:PlayClip(JUMP, false)
+            self._isJumping = true
+            self._isRunning = false
+            return  -- Don't override animation this frame
+        end
+
+        -- Running
+        if isMoving and not self._isJumping then
             if not self._isRunning then
                 self._animator:PlayClip(RUN, true)
                 self._isRunning = true
             end
         else
-            if self._isRunning then
+            -- Idle
+            if not self._isJumping and self._isRunning then
                 self._animator:PlayClip(IDLE, true)
                 self._isRunning = false
             end
         end
+
 
         -- ROTATION: face movement direction
         if isMoving and self.SetRotation then

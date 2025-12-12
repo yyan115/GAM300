@@ -947,6 +947,56 @@
                         }
                     ]
                 },
+                "AnimationComponent": {
+                    "type": "AnimationComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "int",
+                            "data": 3
+                        },
+                        {
+                            "type": "std::vector<std::string>",
+                            "data": [
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                }
+                            ]
+                        },
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0000000000000000-0000000000000000",
+                                "0000000000000000-0000000000000000",
+                                "0000000000000000-0000000000000000"
+                            ]
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -1559,7 +1609,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 847
+                            "data": 1454
                         },
                         {
                             "type": "int",
@@ -1605,7 +1655,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "std::vector<std::string>",
@@ -1617,6 +1667,10 @@
                                 {
                                     "type": "std::string",
                                     "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx"
                                 }
                             ]
                         },
@@ -1624,7 +1678,8 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "004e92db961a1354-00036a0aa4000003",
-                                "0009550cc76b3c56-000336feaa0000ff"
+                                "0009550cc76b3c56-000336feaa0000ff",
+                                "004e92dbddf51b33-00036a0aa4000005"
                             ]
                         }
                     ]

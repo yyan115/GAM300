@@ -119,7 +119,7 @@ void CharacterController::Update(float deltaTime) {
     if (!mCharacter || !mPhysicsSystem)
         return;
 
-    std::cout << "=== CharacterController Update ===" << std::endl;
+    //std::cout << "=== CharacterController Update ===" << std::endl;
 
     JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
 
@@ -137,25 +137,39 @@ void CharacterController::Update(float deltaTime) {
     JPH::Vec3 currentVelocity = mCharacter->GetLinearVelocity();
     JPH::CharacterVirtual::EGroundState groundState = mCharacter->GetGroundState();
 
-    std::cout << "[C++] Current Ground State: " << (int)groundState << std::endl;
-    std::cout << "[C++] Current Position Y: " << mCharacter->GetPosition().GetY() << std::endl;
-    std::cout << "[C++] Velocity BEFORE calculation: y=" << currentVelocity.GetY() << std::endl;
+    //std::cout << "[C++] Current Ground State: " << (int)groundState << std::endl;
+    //std::cout << "[C++] Current Position Y: " << mCharacter->GetPosition().GetY() << std::endl;
+    //std::cout << "[C++] Velocity BEFORE calculation: y=" << currentVelocity.GetY() << std::endl;
 
     // Calculate new velocity based on ground state
     JPH::Vec3 newVelocity;
 
     if (groundState == JPH::CharacterVirtual::EGroundState::OnGround) {
-        // On ground: Use ground velocity (platform movement) + horizontal input
-        // DON'T add gravity - we're supported by the ground!
-        newVelocity = mCharacter->GetGroundVelocity();
-        
-        // Add any player horizontal movement to this
-        newVelocity += JPH::Vec3(mVelocity.GetX(), 0, mVelocity.GetZ());
-        
-        // Reset vertical component when on ground
-        newVelocity.SetY(0);
-        
-        std::cout << "[C++] On ground - using ground velocity, no gravity" << std::endl;
+
+        if (jump_Requested)
+        {
+            newVelocity = currentVelocity;
+            newVelocity.SetY(mVelocity.GetY());
+
+            groundState = JPH::CharacterVirtual::EGroundState::InAir;
+
+            jump_Requested = false;
+        }
+        else
+        {
+
+            // On ground: Use ground velocity (platform movement) + horizontal input
+            // DON'T add gravity - we're supported by the ground!
+            newVelocity = mCharacter->GetGroundVelocity();
+
+            // Add any player horizontal movement to this
+            newVelocity += JPH::Vec3(mVelocity.GetX(), 0, mVelocity.GetZ());
+
+            // Reset vertical component when on ground
+            newVelocity.SetY(0);
+
+            //std::cout << "[C++] On ground - using ground velocity, no gravity" << std::endl;
+        }
     }
     else {
         // In air: Apply gravity to current velocity
@@ -164,15 +178,15 @@ void CharacterController::Update(float deltaTime) {
         // Add player input (allows air control)
         newVelocity += JPH::Vec3(mVelocity.GetX(), mVelocity.GetY(), mVelocity.GetZ()) * deltaTime;
         
-        std::cout << "[C++] In air - applying gravity" << std::endl;
+        //std::cout << "[C++] In air - applying gravity" << std::endl;
     }
 
-    std::cout << "[C++] New velocity calculated: y=" << newVelocity.GetY() << std::endl;
+    //std::cout << "[C++] New velocity calculated: y=" << newVelocity.GetY() << std::endl;
 
     // Set velocity BEFORE ExtendedUpdate
     mCharacter->SetLinearVelocity(newVelocity);
 
-    std::cout << "[C++] Position BEFORE ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
+    //std::cout << "[C++] Position BEFORE ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
 
     // Configure update settings
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
@@ -191,9 +205,9 @@ void CharacterController::Update(float deltaTime) {
         temp_allocator
     );
 
-    std::cout << "[C++] Position AFTER ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
-    std::cout << "[C++] Velocity AFTER: y=" << mCharacter->GetLinearVelocity().GetY() << std::endl;
-    std::cout << "[C++] Ground State AFTER: " << (int)mCharacter->GetGroundState() << std::endl;
+    //std::cout << "[C++] Position AFTER ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
+    //std::cout << "[C++] Velocity AFTER: y=" << mCharacter->GetLinearVelocity().GetY() << std::endl;
+    //std::cout << "[C++] Ground State AFTER: " << (int)mCharacter->GetGroundState() << std::endl;
 
     // Debug ground contact info
     if (mCharacter->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround) {
@@ -201,13 +215,13 @@ void CharacterController::Update(float deltaTime) {
         JPH::Vec3 groundVelocity = mCharacter->GetGroundVelocity();
         JPH::BodyID groundBodyID = mCharacter->GetGroundBodyID();
         
-        std::cout << "[C++] ON GROUND! Normal: (" << groundNormal.GetX() << ", " 
-                  << groundNormal.GetY() << ", " << groundNormal.GetZ() << ")" << std::endl;
-        std::cout << "[C++] Ground Body ID: " << groundBodyID.GetIndex() << std::endl;
-        std::cout << "[C++] Ground Velocity: " << groundVelocity.GetY() << std::endl;
+        //std::cout << "[C++] ON GROUND! Normal: (" << groundNormal.GetX() << ", " 
+        //          << groundNormal.GetY() << ", " << groundNormal.GetZ() << ")" << std::endl;
+        //std::cout << "[C++] Ground Body ID: " << groundBodyID.GetIndex() << std::endl;
+        //std::cout << "[C++] Ground Velocity: " << groundVelocity.GetY() << std::endl;
     }
     
-    std::cout << "===================================" << std::endl;
+    //std::cout << "===================================" << std::endl;
 
     // Clear player input velocity after applying it
     mVelocity = JPH::Vec3::sZero();
@@ -229,6 +243,7 @@ void CharacterController::Jump(float height)
 
     // Set upward velocity
     mVelocity.SetY(jumpVelocity);
+    jump_Requested = true;
 }
 
 Vector3D CharacterController::GetPosition() const
@@ -243,10 +258,7 @@ Vector3D CharacterController::GetPosition() const
             physicsPosition.GetX(), 
             physicsPosition.GetY() - collider_offsetY,
             physicsPosition.GetZ()
-        );
-        
-        std::cout << "[CharacterController] offsetcolllider is " << collider_offsetY << std::endl;
-        
+        );        
         return feetPosition;
     }
     return Vector3D(0, 0, 0);

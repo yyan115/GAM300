@@ -68,5 +68,6 @@ private:
     JPH::Vec3 mVelocity = JPH::Vec3::sZero();
 
     float collider_offsetY;
+    bool jump_Requested = false;
 
 };

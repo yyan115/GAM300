@@ -631,6 +631,44 @@
                         }
                     ]
                 },
+                "ColliderComponent": {
+                    "type": "ColliderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "unsigned",
+                            "data": 404
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 96.9484
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 103.871
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 19.6703
+                                }
+                            ]
+                        }
+                    ]
+                },
                 "AnimationComponent": {
                     "type": "AnimationComponent",
                     "data": [
@@ -718,140 +756,12 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "003de4311308a78f-0003672c96000001",
-                            "scriptPath": "../../Resources/Scripts/PlayerMovement.lua",
+                            "scriptGuidStr": "00092849f6ebfca5-000386dee2000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "_isWalking": false,
-                                "_prevInputA": false,
-                                "_transform_fetched": false,
-                                "__meta": {},
-                                "_currentRotX": 0.0,
-                                "_groundY": 0.0,
-                                "__field_list": {
-                                    "sfxVolume": 0.5,
-                                    "jumpSpeed": 5.0,
-                                    "jumpSFXClips": {},
-                                    "gravity": -9.8,
-                                    "rotationSpeed": 10.0,
-                                    "footstepInterval": 0.8,
-                                    "landingSFXClips": {},
-                                    "moveSpeed": 2.0,
-                                    "name": "PlayerMovement",
-                                    "footstepSFXClips": {}
-                                },
-                                "_wasGrounded": true,
-                                "_idleAnimationClip": 0.0,
-                                "rotationSpeed": 10.0,
-                                "footstepInterval": 0.65,
-                                "landingSFXClips": [
-                                    "00300b822d4682fa-00035fcbf2000025",
-                                    "00300b823d619b92-00035fcbf2000027",
-                                    "00300b824d645440-00035fcbf2000029",
-                                    "00300b826700c35f-00035fcbf200002b",
-                                    "00300b8279ba969d-00035fcbf200002d"
-                                ],
-                                "_currentRotZ": 0.0,
-                                "_isGrounded": true,
-                                "jumpSFXClips": [
-                                    "00300b827846b9bd-00035fcbf2000023",
-                                    "00300b82038ed2c4-00035fcbf2000019",
-                                    "00300b82016c91ec-00035fcbf200001b"
-                                ],
-                                "name": "PlayerMovement",
-                                "footstepSFXClips": [
-                                    "00300b826ee09636-00035fcbf2000017",
-                                    "00300b820f30f21e-00035fcbf200000f",
-                                    "00300b827e3b8dee-00035fcbf2000011",
-                                    "00300b8264003235-00035fcbf2000013",
-                                    "00300b820282a972-00035fcbf2000015"
-                                ],
-                                "moveSpeed": 2.0,
-                                "_subscriptions": {},
-                                "_prevInputW": false,
-                                "sfxVolume": 0.2,
-                                "__created_at": 1764350408.0,
-                                "jumpSpeed": 5.0,
-                                "_jumpAnimationClip": 2.0,
-                                "_velY": 0.0,
-                                "_isJumping": false,
-                                "_currentRotW": 1.0,
-                                "_footstepTimer": 0.0,
-                                "_prevInputS": false,
-                                "_prevInputD": false,
-                                "gravity": -9.8,
-                                "_private": {},
-                                "_currentRotY": 0.0,
-                                "_walkAnimationClip": 1.0
-                            }
-                        },
-                        {
-                            "scriptGuidStr": "002b71499146a215-000369868c000001",
-                            "scriptPath": "../../Resources/Scripts/PlayerAttack.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "__field_list": {
-                                    "maxComboSteps": 3.0,
-                                    "attack2HitEnd": 1.4,
-                                    "attack3HitStart": 0.2,
-                                    "damage": 10.0,
-                                    "comboResetTime": 1.3,
-                                    "attack1HitStart": 1.1,
-                                    "hitboxRadius": 1.5,
-                                    "attack3Duration": 0.55,
-                                    "attack1HitEnd": 1.4,
-                                    "attack1Duration": 2.0,
-                                    "hitboxForward": 1.5,
-                                    "attack3HitEnd": 0.4,
-                                    "attack2Duration": 2.0,
-                                    "attackCooldown": 2.0,
-                                    "attack2HitStart": 1.1,
-                                    "attackSFXClips": {}
-                                },
-                                "__created_at": 1764404391.0,
-                                "_hitboxActive": false,
-                                "_time": 0.0,
-                                "attack3HitStart": 1.0,
-                                "__meta": {},
-                                "_private": {},
-                                "_attackAnimClip2": 4.0,
-                                "_comboIndex": 0.0,
-                                "hitboxForward": 1.5,
-                                "_maxComboSteps": 3.0,
-                                "_lastClickTime": -999.0,
-                                "comboResetTime": 1.3,
-                                "attack1HitStart": 1.1,
-                                "_transform_fetched": false,
-                                "attack3Duration": 1.8,
-                                "attack1HitEnd": 1.4,
-                                "_cooldownTimer": 0.0,
-                                "attackSFXClips": [
-                                    "00300b821b8a6db1-00035fcbf2000009",
-                                    "00300b82119ee2f8-00035fcbf200000b"
-                                ],
-                                "_attackAnimClip1": 3.0,
-                                "attack2Duration": 2.5,
-                                "_subscriptions": {},
-                                "hitboxRadius": 1.5,
-                                "attack2HitStart": 1.7,
-                                "_attackTimer": 0.0,
-                                "maxComboSteps": 3.0,
-                                "attack2HitEnd": 2.0,
-                                "_prevLeftDown": false,
-                                "attack1Duration": 2.0,
-                                "damage": 10.0,
-                                "attack3HitEnd": 1.3,
-                                "_queuedNextSwing": false,
-                                "_attackAnimClip3": 5.0,
-                                "attackCooldown": 2.0,
-                                "_hitEventIdCounter": 0.0
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
