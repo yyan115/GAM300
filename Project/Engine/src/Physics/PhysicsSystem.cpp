@@ -235,6 +235,55 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * tr.localScale.y,
                     col.cylinderRadius * std::max(tr.localScale.x, tr.localScale.z));
                 break;
+
+            case ColliderShapeType::MeshShape:
+            {
+                // Get the model's mesh data
+                if (ecsManager.HasComponent<ModelRenderComponent>(e)) {
+                    auto& rc = ecsManager.GetComponent<ModelRenderComponent>(e);
+
+                    if (rc.model && rc.model->meshes.size() > 0) {
+                        JPH::TriangleList triangles;
+
+                        // Extract triangles from all meshes in the model
+                        for (const auto& mesh : rc.model->meshes) {
+                            // Assuming your mesh has vertices with positions
+                            for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                                // Get the three vertices of the triangle
+                                const auto& v0 = mesh.vertices[mesh.indices[i]];
+                                const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
+                                const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
+
+                                // Apply local scale to vertices
+                                JPH::Float3 p0(v0.position.x * tr.localScale.x,
+                                    v0.position.y * tr.localScale.y,
+                                    v0.position.z * tr.localScale.z);
+                                JPH::Float3 p1(v1.position.x * tr.localScale.x,
+                                    v1.position.y * tr.localScale.y,
+                                    v1.position.z * tr.localScale.z);
+                                JPH::Float3 p2(v2.position.x * tr.localScale.x,
+                                    v2.position.y * tr.localScale.y,
+                                    v2.position.z * tr.localScale.z);
+
+                                triangles.push_back(JPH::Triangle(p0, p1, p2));
+                            }
+                        }
+
+                        // Create the mesh shape
+                        JPH::MeshShapeSettings meshSettings(triangles);
+                        JPH::Shape::ShapeResult result = meshSettings.Create();
+
+                        if (result.IsValid()) {
+                            col.shape = result.Get();
+                        }
+                        else {
+                            // Fallback to box if mesh creation fails
+                            col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
+                        }
+                    }
+                }
+                break;
+            }
             }
 
             // Map our Motion enum to JPH::EMotionType

@@ -1609,7 +1609,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 1617
+                            "data": 1880
                         },
                         {
                             "type": "int",
@@ -4771,11 +4771,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 27.1603
+                                    "data": 27.1592
                                 },
                                 {
                                     "type": "float",
-                                    "data": 10.9293
+                                    "data": 4.70323
                                 },
                                 {
                                     "type": "float",
@@ -4842,7 +4842,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 27.1603
+                                    "data": 27.1592
                                 },
                                 {
                                     "type": "float",
@@ -4858,7 +4858,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 10.9293
+                                    "data": 4.70323
                                 },
                                 {
                                     "type": "float",
@@ -5041,6 +5041,44 @@
                         {
                             "type": "float",
                             "data": 0.95
+                        }
+                    ]
+                },
+                "ColliderComponent": {
+                    "type": "ColliderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "unsigned",
+                            "data": 2
+                        },
+                        {
+                            "type": "int",
+                            "data": 4
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1.025
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1.025
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.25
+                                }
+                            ]
                         }
                     ]
                 },

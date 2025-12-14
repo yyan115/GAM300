@@ -10,7 +10,7 @@ local IDLE = 0
 local RUN  = 1
 local JUMP = 2
 
-local JumpHeight = 4
+local JumpHeight = 1.5
 
 -- Helper: convert 2D movement vector to Y-axis quaternion
 local function directionToQuaternion(dx, dz)
@@ -145,24 +145,33 @@ return Component {
             )
         end
 
-        -- ===============================
         -- ANIMATION
-        -- ===============================
-        if isJumping then
-            self._animator:PlayClip(JUMP, false)
-            self._isJumping = true
-            self._isRunning = false
-            return
-        end
-
-        if isMoving and not self._isJumping then
-            if not self._isRunning then
+        if not isGrounded then
+            if not self._isJumping then
+                -- Start jump animation
+                self._animator:PlayClip(JUMP, false)
+                self._isJumping = true
+                self._isRunning = false
+            end
+        else
+            -- Landed
+            if self._isJumping then
+                self._isJumping = false
+                -- Resume proper state based on movement
+                if isMoving then
+                    self._animator:PlayClip(RUN, true)
+                    self._isRunning = true
+                else
+                    self._animator:PlayClip(IDLE, true)
+                    self._isRunning = false
+                end
+            elseif isMoving and not self._isRunning then
                 self._animator:PlayClip(RUN, true)
                 self._isRunning = true
+            elseif not isMoving and self._isRunning then
+                self._animator:PlayClip(IDLE, true)
+                self._isRunning = false
             end
-        elseif self._isRunning then
-            self._animator:PlayClip(IDLE, true)
-            self._isRunning = false
         end
 
         -- ===============================

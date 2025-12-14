@@ -560,11 +560,11 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Shape Type");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder"};
+        const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder", "MeshShape"};
         int currentShapeType = static_cast<int>(collider.shapeType);
 
         EditorComponents::PushComboColors();
-        bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 4);
+        bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
         EditorComponents::PopComboColors();
 
         if (changed)
@@ -646,6 +646,14 @@ void RegisterInspectorCustomRenderers()
                 shapeParamsChanged = true;
             }
             break;
+        }
+        case ColliderShapeType::MeshShape:
+        {
+            ImGui::Text("Mesh Shape");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            ImGui::TextDisabled("Uses Model Geometry");
         }
         }
 
