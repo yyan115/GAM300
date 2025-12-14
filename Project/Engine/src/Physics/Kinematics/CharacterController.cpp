@@ -73,9 +73,9 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 
     // ADD THESE CRITICAL SETTINGS:
     settings->mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
-    settings->mPenetrationRecoverySpeed = 3.0f;  // Try 2.0-5.0 if still phasing
-    settings->mPredictiveContactDistance = 0.1f;
-    settings->mMaxCollisionIterations = 5;  // More iterations = better collision
+    settings->mPenetrationRecoverySpeed = 5.0f;  // Try 2.0-5.0 if still phasing
+    settings->mPredictiveContactDistance = 0.2f;
+    settings->mMaxCollisionIterations = 10;  // More iterations = better collision
     settings->mMaxConstraintIterations = 15;
     settings->mMinTimeRemaining = 1.0e-4f;
     settings->mCollisionTolerance = 1.0e-3f;
