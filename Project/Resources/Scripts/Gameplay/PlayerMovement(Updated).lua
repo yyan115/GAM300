@@ -10,7 +10,7 @@ local IDLE = 0
 local RUN  = 1
 local JUMP = 2
 
-local JumpHeight = 1.5
+local JumpHeight = 1.2
 
 -- Helper: convert 2D movement vector to Y-axis quaternion
 local function directionToQuaternion(dx, dz)

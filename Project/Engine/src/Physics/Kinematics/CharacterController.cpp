@@ -71,6 +71,19 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mMass = 70.0f;   
     settings->mMaxStrength = 100.0f;
 
+    // ADD THESE CRITICAL SETTINGS:
+    settings->mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
+    settings->mPenetrationRecoverySpeed = 3.0f;  // Try 2.0-5.0 if still phasing
+    settings->mPredictiveContactDistance = 0.1f;
+    settings->mMaxCollisionIterations = 5;  // More iterations = better collision
+    settings->mMaxConstraintIterations = 15;
+    settings->mMinTimeRemaining = 1.0e-4f;
+    settings->mCollisionTolerance = 1.0e-3f;
+    settings->mCharacterPadding = 0.02f;
+    settings->mMaxNumHits = 256;
+    settings->mHitReductionCosMaxAngle = 0.999f;
+
+
     // CRITICAL FIX: Add the offset when creating the character
     // Transform position = feet position
     // Physics needs the capsule CENTER position, which is offset upward
