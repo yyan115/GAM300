@@ -1526,7 +1526,7 @@ void ScenePanel::DrawColliderGizmos() {
             );
 
             // 8 corners in LOCAL space (before transformation)
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
             glm::vec3 localCorners[8] = {
                 colliderCenter + glm::vec3(-extents.x, -extents.y, -extents.z),
                 colliderCenter + glm::vec3(extents.x, -extents.y, -extents.z),
@@ -1567,7 +1567,7 @@ void ScenePanel::DrawColliderGizmos() {
             // Draw wireframe sphere (3 orthogonal circles)
             float radius = collider.sphereRadius;
             int segments = 32;
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
             // Define circles in LOCAL space, then transform each point
             // XY plane circle
@@ -1634,7 +1634,7 @@ void ScenePanel::DrawColliderGizmos() {
             float radius = collider.capsuleRadius;
             float halfHeight = collider.capsuleHalfHeight;
             int segments = 16; // Horizontal segments around the capsule
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
             // Define top and bottom centers in LOCAL space
             glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
@@ -1798,7 +1798,7 @@ void ScenePanel::DrawColliderGizmos() {
             float radius = collider.cylinderRadius;
             float halfHeight = collider.cylinderHalfHeight;
             int segments = 16;
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
             // Define top and bottom centers in LOCAL space
             glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);

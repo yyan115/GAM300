@@ -1267,7 +1267,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "Vector3D",
@@ -1390,7 +1390,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.803419
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1461,7 +1461,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.803419
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1609,7 +1609,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 1690
+                            "data": 1617
                         },
                         {
                             "type": "int",
@@ -5041,44 +5041,6 @@
                         {
                             "type": "float",
                             "data": 0.95
-                        }
-                    ]
-                },
-                "ColliderComponent": {
-                    "type": "ColliderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 2
-                        },
-                        {
-                            "type": "int",
-                            "data": 4
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1.025
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1.025
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.25
-                                }
-                            ]
                         }
                     ]
                 },

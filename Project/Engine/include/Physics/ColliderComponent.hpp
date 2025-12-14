@@ -34,6 +34,9 @@ struct ColliderComponent {
 	JPH::RefConst<JPH::Shape> shape;
 
 	Vector3D center = { 0,0,0 };									//Center of the model , calculated in InspectorCustomRender 
+
+	Vector3D offset = { 0,0,0 };
+
 	ColliderComponent() = default;
 	~ColliderComponent() = default;
 

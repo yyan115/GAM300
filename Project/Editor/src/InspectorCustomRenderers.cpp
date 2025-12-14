@@ -567,6 +567,18 @@ void RegisterInspectorCustomRenderers()
         bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
         EditorComponents::PopComboColors();
 
+        ImGui::Text("Collider Offset");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        float colliderOffset[3] = { collider.offset.x, collider.offset.y, collider.offset.z };
+        if (UndoableWidgets::DragFloat3("##ColliderOffset", colliderOffset, 0.05f, -FLT_MAX, FLT_MAX, "%.2f"))
+        {
+            collider.offset = Vector3D(colliderOffset[0], colliderOffset[1], colliderOffset[2]);
+        }
+
+
+
         if (changed)
         {
             collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
