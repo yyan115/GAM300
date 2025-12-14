@@ -756,15 +756,6 @@ void RegisterInspectorCustomRenderers()
             UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
         }
 
-        //CHECKBOX IF WANT TO LET KINEMATIC ENTITY COLLIDE WITH STATIC OBJECTS (SIMPLE AABB)
-        if (rigidBody.motion == Motion::Kinematic)
-        {
-            ImGui::AlignTextToFramePadding();
-            UndoableWidgets::Checkbox("##CollideWithStatic", &rigidBody.collideWithStatic);
-            ImGui::SameLine();
-            ImGui::Text("Collide With Static");
-        }
-
         // --- Info Section (Read-only) ---
         if (ImGui::CollapsingHeader("Info", ImGuiTreeNodeFlags_DefaultOpen))
         {

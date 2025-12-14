@@ -2,11 +2,13 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
+local event_bus = _G.event_bus
+local Input = _G.Input
+
 -- Animation States
 local IDLE = 0
 local RUN  = 1
 local JUMP = 2
-
 
 local JumpHeight = 4
 
@@ -43,108 +45,141 @@ end
 return Component {
     mixins = { TransformMixin },
 
-        fields = {
-        Speed          = 10,
-        },
+    fields = {
+        Speed = 1.5,
+    },
 
     Awake = function(self)
         self._currentRotW = 1
         self._currentRotX = 0
         self._currentRotY = 0
         self._currentRotZ = 0
+
+        -- ===============================
+        -- CAMERA STATE (MERGED)
+        -- ===============================
+        self._cameraYaw = 180.0
+        self._cameraYawSub = nil
+
+        if event_bus and event_bus.subscribe then
+            self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
+                if yaw then
+                    self._cameraYaw = yaw
+                end
+            end)
+        end
     end,
 
     Start = function(self)
-        self._collider = self:GetComponent("ColliderComponent")
-        self._animator = self:GetComponent("AnimationComponent")
+        self._collider  = self:GetComponent("ColliderComponent")
+        self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
 
         self._controller = CharacterController.new()
         CharacterController.Initialise(self._controller, self._collider, self._transform)
+
         self._animator:PlayClip(IDLE, true)
 
         self._isRunning = false
         self._isJumping = false
-        self.rotationSpeed = 10.0  -- adjust for smoothness
+        self.rotationSpeed = 10.0
     end,
 
     Update = function(self, dt)
         if not self._collider or not self._transform or not self._controller then
-            print("Missing component/controller")
             return
         end
 
         CharacterController.Update(self._controller, dt)
 
-        -- MOVEMENT INPUT
-        local moveX, moveY, moveZ = 0, 0, 0
-        if Input.GetKey(Input.Key.W) then moveZ = moveZ + 1 end
-        if Input.GetKey(Input.Key.S) then moveZ = moveZ - 1 end
-        if Input.GetKey(Input.Key.A) then moveX = moveX + 1 end
-        if Input.GetKey(Input.Key.D) then moveX = moveX - 1 end
+        -- ===============================
+        -- RAW INPUT (LOCAL SPACE)
+        -- ===============================
+        local rawX, rawZ = 0, 0
+        if Input.GetKey(Input.Key.W) then rawZ = rawZ + 1 end
+        if Input.GetKey(Input.Key.S) then rawZ = rawZ - 1 end
+        if Input.GetKey(Input.Key.A) then rawX = rawX + 1 end
+        if Input.GetKey(Input.Key.D) then rawX = rawX - 1 end
 
-        -- normalize diagonal movement
-        local length = math.sqrt(moveX*moveX + moveZ*moveZ)
-        if length > 1 then
-            moveX = moveX / length
-            moveZ = moveZ / length
+        local len = math.sqrt(rawX*rawX + rawZ*rawZ)
+        if len > 1 then
+            rawX = rawX / len
+            rawZ = rawZ / len
         end
 
-        local isGrounded = CharacterController.IsGrounded(self._controller)
-        local isJumping = false
-        if Input.GetKeyDown(Input.Key.Space) and isGrounded then 
-            CharacterController.Jump(self._controller, JumpHeight)
-            isJumping = true
+        -- ===============================
+        -- CAMERA-RELATIVE MOVEMENT (MERGED)
+        -- ===============================
+        local moveX, moveZ = 0, 0
+        if rawX ~= 0 or rawZ ~= 0 then
+            local yawRad = math.rad(self._cameraYaw)
+            local sinYaw = math.sin(yawRad)
+            local cosYaw = math.cos(yawRad)
+
+            moveX = rawZ * (-sinYaw) - rawX * cosYaw
+            moveZ = rawZ * (-cosYaw) + rawX * sinYaw
         end
 
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
-        -- APPLY MOVEMENT
-        if not isJumping and isMoving then
-            CharacterController.Move(self._controller, moveX * self.Speed, moveY, moveZ * self.Speed)
-        end
-        
-        -- Detect landing
-        local wasJumping = self._isJumping
-        if wasJumping and isGrounded then
-            -- Landed
-            self._animator:PlayClip(IDLE, true)
-            self._isJumping = false
-            self._isRunning = false
+        -- ===============================
+        -- JUMP
+        -- ===============================
+        local isGrounded = CharacterController.IsGrounded(self._controller)
+        local isJumping = false
+
+        if Input.GetKeyDown(Input.Key.Space) and isGrounded then
+            CharacterController.Jump(self._controller, JumpHeight)
+            isJumping = true
         end
 
-        -- Jump start
+        -- ===============================
+        -- APPLY MOVEMENT (WORLD UNITS)
+        -- ===============================
+        if not isJumping and isMoving then
+            CharacterController.Move(
+                self._controller,
+                moveX * self.Speed,
+                0,
+                moveZ * self.Speed
+            )
+        end
+
+        -- ===============================
+        -- ANIMATION
+        -- ===============================
         if isJumping then
             self._animator:PlayClip(JUMP, false)
             self._isJumping = true
             self._isRunning = false
-            return  -- Don't override animation this frame
+            return
         end
 
-        -- Running
         if isMoving and not self._isJumping then
             if not self._isRunning then
                 self._animator:PlayClip(RUN, true)
                 self._isRunning = true
             end
-        else
-            -- Idle
-            if not self._isJumping and self._isRunning then
-                self._animator:PlayClip(IDLE, true)
-                self._isRunning = false
-            end
+        elseif self._isRunning then
+            self._animator:PlayClip(IDLE, true)
+            self._isRunning = false
         end
 
-
-        -- ROTATION: face movement direction
+        -- ===============================
+        -- ROTATION
+        -- ===============================
         if isMoving and self.SetRotation then
-            local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
+            local targetW, targetX, targetY, targetZ =
+                directionToQuaternion(moveX, moveZ)
+
             local t = math.min(self.rotationSpeed * dt, 1.0)
-            local newW, newX, newY, newZ = lerpQuaternion(
-                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ,
-                targetW, targetX, targetY, targetZ,
-                t
-            )
+            local newW, newX, newY, newZ =
+                lerpQuaternion(
+                    self._currentRotW, self._currentRotX,
+                    self._currentRotY, self._currentRotZ,
+                    targetW, targetX, targetY, targetZ,
+                    t
+                )
 
             self._currentRotW = newW
             self._currentRotX = newX
@@ -154,12 +189,23 @@ return Component {
             pcall(self.SetRotation, self, newW, newX, newY, newZ)
         end
 
-        -- UPDATE POSITION
+        -- ===============================
+        -- POSITION SYNC + CAMERA BROADCAST
+        -- ===============================
         local position = CharacterController.GetPosition(self._controller)
         if position then
             self:SetPosition(position.x, position.y, position.z)
-        else
-            print("[LUA WARNING] GetPosition returned nil")
+
+            if event_bus and event_bus.publish then
+                event_bus.publish("player_position", position)
+            end
         end
-    end
+    end,
+
+    OnDisable = function(self)
+        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
+            event_bus.unsubscribe(self._cameraYawSub)
+            self._cameraYawSub = nil
+        end
+    end,
 }
