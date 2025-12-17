@@ -29,8 +29,6 @@ struct ColliderComponent {
 	float cylinderRadius = 0.5f;                            // For Cylinder
 	float cylinderHalfHeight = 0.5f;                        // For Cylinder
 
-	std::string meshAssetPath = "";
-
 	JPH::RefConst<JPH::Shape> shape;
 
 	Vector3D center = { 0,0,0 };									//Center of the model , calculated in InspectorCustomRender 
