@@ -1980,16 +1980,13 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
         colliderComp.version = d[2]["data"].GetUint();
         colliderComp.shapeTypeID = d[3]["data"].GetInt();
-        //colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
+        colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[4], colliderComp.boxHalfExtents);
-        switch (colliderComp.shapeType)
-        {
-        case ColliderShapeType::Cylinder:
-            colliderComp.shape = new JPH::BoxShape((JPH::Vec3(colliderComp.boxHalfExtents.x, colliderComp.boxHalfExtents.y, colliderComp.boxHalfExtents.z)));
-            break;
-        default:
-            break;
-        }
+        colliderComp.sphereRadius = d[5]["data"].GetFloat();
+        colliderComp.capsuleRadius = d[6]["data"].GetFloat();
+        colliderComp.capsuleHalfHeight = d[7]["data"].GetFloat();
+        colliderComp.cylinderRadius = d[8]["data"].GetFloat();
+        colliderComp.cylinderHalfHeight = d[9]["data"].GetFloat();
     }
 }
 
