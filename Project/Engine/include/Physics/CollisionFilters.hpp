@@ -10,10 +10,10 @@ class MyBroadPhaseLayerInterface final : public JPH::BroadPhaseLayerInterface {
 public:
     MyBroadPhaseLayerInterface() {
         mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
-        mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
-        mObjectToBroadPhase[Layers::CHARACTER] = BroadPhaseLayers::CHARACTER;  // Add this
-        mObjectToBroadPhase[Layers::SENSOR] = BroadPhaseLayers::MOVING;
-        mObjectToBroadPhase[Layers::DEBRIS] = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::MOVING]     = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::CHARACTER]  = BroadPhaseLayers::CHARACTER;  
+        mObjectToBroadPhase[Layers::SENSOR]     = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::DEBRIS]     = BroadPhaseLayers::MOVING;
     }
 
     ~MyBroadPhaseLayerInterface() override = default;
@@ -32,7 +32,7 @@ public:
         {
         case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING: return "NON_MOVING";
         case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:     return "MOVING";
-        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::CHARACTER:  return "CHARACTER";  // Add this
+        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::CHARACTER:  return "CHARACTER"; 
         default: JPH_ASSERT(false); return "INVALID";
         }
     }

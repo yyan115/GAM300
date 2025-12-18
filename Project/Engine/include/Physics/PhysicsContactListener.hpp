@@ -65,7 +65,8 @@ public:
     {
         if (enableDetailedLogging) {
             std::cout << "[Collision] Validating contact between entities "
-                << GetEntityID(inBody1) << " and " << GetEntityID(inBody2) << std::endl;
+                << GetEntityID(inBody1) << " (" << GetMotionTypeName(inBody1) << ") and "
+                << GetEntityID(inBody2) << " (" << GetMotionTypeName(inBody2) << ")" << std::endl;
         }
 
         // You can add custom validation logic here
@@ -92,7 +93,8 @@ public:
         if (activeCollisions.insert(key).second) {
             if (enableLogging) {
                 std::cout << "[Collision] Enter: Entity " << entityA
-                    << " <-> Entity " << entityB << std::endl;
+                    << " (" << GetMotionTypeName(inBody1) << ") <-> Entity " << entityB
+                    << " (" << GetMotionTypeName(inBody2) << ")" << std::endl;
             }
 
             if (onCollisionEnter && inManifold.mRelativeContactPointsOn1.size() > 0) {
@@ -124,6 +126,8 @@ public:
 
         if (activeCollisions.erase(key) > 0) {
             if (enableLogging) {
+                // We need to access the bodies to get their motion type
+                // Note: This requires access to the body interface
                 std::cout << "[Collision] Exit: Entity " << entityA
                     << " <-> Entity " << entityB << std::endl;
             }
@@ -164,6 +168,16 @@ private:
         return it != bodyToEntityMap.end() ? it->second : -1;
     }
 
+    // Get motion type name as string
+    const char* GetMotionTypeName(const JPH::Body& body) const {
+        switch (body.GetMotionType()) {
+        case JPH::EMotionType::Static:    return "Static";
+        case JPH::EMotionType::Kinematic: return "Kinematic";
+        case JPH::EMotionType::Dynamic:   return "Dynamic";
+        default:                          return "Unknown";
+        }
+    }
+
     // Create unique collision key (order-independent)
     uint64_t MakeCollisionKey(int entityA, int entityB) const {
         if (entityA > entityB) std::swap(entityA, entityB);
@@ -174,7 +188,8 @@ private:
     void LogCollisionDetails(const JPH::Body& body1, const JPH::Body& body2,
         const JPH::ContactManifold& manifold) {
         std::cout << "========= COLLISION DETAIL =========" << std::endl;
-        std::cout << "Entity " << GetEntityID(body1) << " <-> Entity " << GetEntityID(body2) << std::endl;
+        std::cout << "Entity " << GetEntityID(body1) << " (" << GetMotionTypeName(body1)
+            << ") <-> Entity " << GetEntityID(body2) << " (" << GetMotionTypeName(body2) << ")" << std::endl;
         std::cout << "Contact points: " << manifold.mRelativeContactPointsOn1.size() << std::endl;
 
         for (size_t i = 0; i < manifold.mRelativeContactPointsOn1.size(); ++i) {
@@ -203,8 +218,8 @@ private:
         float speed = angVel.Length();
 
         if (speed > 0.5f) {
-            std::cout << "Entity " << GetEntityID(body) << " angular speed: "
-                << std::fixed << std::setprecision(2) << speed << " rad/s" << std::endl;
+            std::cout << "Entity " << GetEntityID(body) << " (" << GetMotionTypeName(body)
+                << ") angular speed: " << std::fixed << std::setprecision(2) << speed << " rad/s" << std::endl;
             std::cout << "  Vector: (" << angVel.GetX() << ", "
                 << angVel.GetY() << ", " << angVel.GetZ() << ")" << std::endl;
         }

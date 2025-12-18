@@ -82,6 +82,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mCharacterPadding = 0.02f;
     settings->mMaxNumHits = 256;
     settings->mHitReductionCosMaxAngle = 0.999f;
+    settings->mEnhancedInternalEdgeRemoval = true;      //in-edge smoothing
 
 
     // CRITICAL FIX: Add the offset when creating the character
