@@ -65,16 +65,12 @@ void CameraSystem::Update()
 		activeCameraEntity = UINT32_MAX;
 	}
 
-	// Check if current active camera entity has become inactive
-	if (activeCameraEntity != UINT32_MAX && ecsManager.HasComponent<ActiveComponent>(activeCameraEntity))
+	// Check if current active camera entity has become inactive (checks hierarchy too)
+	if (activeCameraEntity != UINT32_MAX && !ecsManager.IsEntityActiveInHierarchy(activeCameraEntity))
 	{
-		auto& activeComp = ecsManager.GetComponent<ActiveComponent>(activeCameraEntity);
-		if (!activeComp.isActive)
-		{
-			// Active camera entity was disabled, need to find a new one
-			ENGINE_PRINT("[CameraSystem] Active camera entity ", activeCameraEntity, " was disabled, finding new camera\n");
-			activeCameraEntity = UINT32_MAX; // Force re-evaluation
-		}
+		// Active camera entity (or its parent) was disabled, need to find a new one
+		ENGINE_PRINT("[CameraSystem] Active camera entity ", activeCameraEntity, " was disabled in hierarchy, finding new camera\n");
+		activeCameraEntity = UINT32_MAX; // Force re-evaluation
 	}
 
 	// Check if current active camera component has become disabled (component-level enable/disable)
@@ -252,19 +248,16 @@ Entity CameraSystem::FindHighestPriorityCamera()
 	Entity highest = UINT32_MAX;  // Use UINT32_MAX as "no entity" instead of 0
 	int highestPriority = -999999;
 
-	// First pass: find active camera with highest priority (skip inactive entities)
+	// First pass: find active camera with highest priority (skip inactive entities in hierarchy)
 	for (const auto& entity : entities)
 	{
 		// Safety check: ensure component still exists (entity might be in process of deletion)
 		if (!ecsManager.HasComponent<CameraComponent>(entity))
 			continue;
 
-		// Skip cameras on inactive entities
-		if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-			auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-			if (!activeComp.isActive) {
-				continue; // Skip inactive entities
-			}
+		// Skip cameras on entities that are inactive in hierarchy (checks parents too)
+		if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+			continue;
 		}
 
 		auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);
@@ -281,7 +274,7 @@ Entity CameraSystem::FindHighestPriorityCamera()
 		}
 	}
 
-	// If no active camera found, activate the highest priority camera that exists (and is on an active entity)
+	// If no active camera found, activate the highest priority camera that exists (and is on an active entity in hierarchy)
 	if (highest == UINT32_MAX && !entities.empty())
 	{
 		highestPriority = -999999;
@@ -290,12 +283,9 @@ Entity CameraSystem::FindHighestPriorityCamera()
 			if (!ecsManager.HasComponent<CameraComponent>(entity))
 				continue;
 
-			// Skip cameras on inactive entities
-			if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-				auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-				if (!activeComp.isActive) {
-					continue;
-				}
+			// Skip cameras on entities that are inactive in hierarchy (checks parents too)
+			if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+				continue;
 			}
 
 			auto& camComp = ecsManager.GetComponent<CameraComponent>(entity);

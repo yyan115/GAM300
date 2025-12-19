@@ -238,3 +238,41 @@ void ECSManager::ClearAllEntities() {
 	systemManager->AllEntitiesDestroyed();
 	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
 }
+
+bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
+	// Check if entity itself is active
+	if (HasComponent<ActiveComponent>(entity)) {
+		auto& activeComp = GetComponent<ActiveComponent>(entity);
+		if (!activeComp.isActive) {
+			return false;
+		}
+	}
+
+	// Traverse up the parent hierarchy and check each ancestor
+	Entity currentEntity = entity;
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+	while (HasComponent<ParentComponent>(currentEntity)) {
+		// Get parent entity
+		auto& parentComp = GetComponent<ParentComponent>(currentEntity);
+		Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+
+		// Check if parent is valid
+		if (parentEntity == UINT32_MAX) {
+			break; // Invalid parent, stop traversal
+		}
+
+		// Check if parent is active
+		if (HasComponent<ActiveComponent>(parentEntity)) {
+			auto& parentActiveComp = GetComponent<ActiveComponent>(parentEntity);
+			if (!parentActiveComp.isActive) {
+				return false; // Parent is inactive, so this entity is inactive in hierarchy
+			}
+		}
+
+		// Move up to the parent
+		currentEntity = parentEntity;
+	}
+
+	return true; // Entity and all ancestors are active
+}
