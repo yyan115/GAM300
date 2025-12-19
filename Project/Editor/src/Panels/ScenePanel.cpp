@@ -275,6 +275,58 @@ void ScenePanel::HandleKeyboardInput() {
             }
         }
     }
+
+    // Handle 'F' key to focus on selected entity (Frame Selected - like Unity)
+    if (ImGui::IsKeyPressed(ImGuiKey_F) && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+        Entity selectedEntity = GUIManager::GetSelectedEntity();
+        if (selectedEntity != static_cast<Entity>(-1)) {
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (ecsManager.HasComponent<Transform>(selectedEntity)) {
+                    Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+                    glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                       transform.worldMatrix.m.m13,
+                                       transform.worldMatrix.m.m23);
+
+                    // Determine if entity is 2D or 3D
+                    bool entityIs3D = true;
+                    bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(selectedEntity);
+                    bool hasText = ecsManager.HasComponent<TextRenderComponent>(selectedEntity);
+                    bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(selectedEntity);
+
+                    if (hasModel) {
+                        entityIs3D = true;
+                    } else if (hasSprite) {
+                        auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(selectedEntity);
+                        entityIs3D = sprite.is3D;
+                        if (!sprite.is3D) {
+                            entityPos = sprite.position.ConvertToGLM();
+                        }
+                    } else if (hasText) {
+                        auto& text = ecsManager.GetComponent<TextRenderComponent>(selectedEntity);
+                        entityIs3D = text.is3D;
+                    }
+
+                    // Switch view mode to match entity if needed
+                    EditorState& editorState = EditorState::GetInstance();
+                    bool currentIs2D = editorState.Is2DMode();
+                    bool targetIs2D = !entityIs3D;
+
+                    if (currentIs2D != targetIs2D) {
+                        EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                        editorState.SetViewMode(newViewMode);
+                        GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                        GraphicsManager::GetInstance().SetViewMode(gfxMode);
+                    }
+
+                    // Frame the entity
+                    SetCameraTarget(entityPos);
+                }
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to focus entity: ", e.what(), "\n");
+            }
+        }
+    }
 }
 
 void ScenePanel::HandleCameraInput() {
