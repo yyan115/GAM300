@@ -475,7 +475,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
 	}
 	else {
-		// 2D text: disable depth testing so render order determines what's on top (Unity-style)
+		// 2D text: disable depth testing so render order determines what's on top 
 		glDisable(GL_DEPTH_TEST);
 	}
 
@@ -787,7 +787,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		glDepthMask(GL_TRUE);
 	}
 	else {
-		// 2D sprite: disable depth testing so render order determines what's on top (Unity-style)
+		// 2D sprite: disable depth testing so render order determines what's on top
 		glDisable(GL_DEPTH_TEST);
 	}
 

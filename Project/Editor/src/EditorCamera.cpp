@@ -1,5 +1,6 @@
 #include "EditorCamera.hpp"
 #include <algorithm>
+#include <cmath>
 
 EditorCamera::EditorCamera(glm::vec3 target, float distance)
     : Target(target), Distance(distance), Yaw(0.0f), Pitch(20.0f),
@@ -69,14 +70,14 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
         UpdateCameraVectors();
     }
 
-    
+
     if (isMiddleMousePressed) {
         // Calculate right and up vectors relative to the camera
         glm::vec3 right = Right;
         glm::vec3 up = Up;
 
         // Pan the target point based on mouse movement
-        // In 2D mode, scale by OrthoZoomLevel; in 3D mode, scale by Distance
+        // use logarithmic scaling so pan speed feels consistent at any zoom level
         float panScale;
         if (is2DMode) {
             // In 2D mode, use zoom-scaled sensitivity
@@ -84,8 +85,11 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
             float referenceZoom = 2.5f;
             panScale = PanSensitivity * (referenceZoom / OrthoZoomLevel);
         } else {
-            // In 3D mode, scale by distance
-            panScale = Distance * PanSensitivity;
+            // In 3D mode, use logarithmic scaling (like Unity)
+            // log2(distance + 1) gives smooth feel: close-up is slower, far is faster
+            // This makes pan speed proportional to visible area, not raw distance
+            float logDistance = std::log2(Distance + 1.0f);
+            panScale = std::max(0.001f, logDistance * PanSensitivity * 0.5f);
         }
 
         Target -= right * mouseDeltaX * panScale;  // X-axis inverted: drag right moves world left

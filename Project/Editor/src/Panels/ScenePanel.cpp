@@ -322,7 +322,9 @@ void ScenePanel::HandleCameraInput() {
     }
 
     // Set orbit sensitivity based on zoom level (distance) - more zoomed in = slower rotation
-    editorCamera.OrbitSensitivity = 0.35f * (5.0f / (editorCamera.Distance + 5.0f));
+    // logarithmic scaling for consistent feel at any zoom level
+    float logDistance = std::log2(editorCamera.Distance + 1.0f);
+    editorCamera.OrbitSensitivity = std::max(0.05f, logDistance * 0.12f);
 
     editorCamera.ProcessInput(
         io.DeltaTime,
@@ -337,10 +339,13 @@ void ScenePanel::HandleCameraInput() {
         is2DMode
     );
 
-    // WASD movement when right-click rotating
+    // WASD movement when right-click rotating (3D fly-through mode)
     if (isRightMousePressed && !is2DMode) {
-        float moveSpeed = editorCamera.Distance * 0.01f; // Scale movement speed by distance
-        
+        // logarithmic scaling: movement feels consistent at any zoom level
+        // Using log scale: speed = base * log2(distance + 1) for smoother feel at close range
+        float logDistance = std::log2(editorCamera.Distance + 1.0f);
+        float moveSpeed = std::max(0.005f, logDistance * 0.02f); // Floor prevents imperceptible movement
+
         if (ImGui::IsKeyDown(ImGuiKey_W)) {
             editorCamera.Position += editorCamera.Front * moveSpeed;
             editorCamera.Target += editorCamera.Front * moveSpeed;
@@ -357,8 +362,73 @@ void ScenePanel::HandleCameraInput() {
             editorCamera.Position += editorCamera.Right * moveSpeed;
             editorCamera.Target += editorCamera.Right * moveSpeed;
         }
-        
-        // Update camera vectors after movement
+
+        editorCamera.UpdateCameraVectors();
+    }
+
+    // Keyboard camera movement (Minecraft creative style)
+    // Arrow keys: Up/Down = forward/backward, Left/Right = strafe
+    // Space = move up, Shift = move down
+    bool movementKeyPressed = ImGui::IsKeyDown(ImGuiKey_UpArrow) || ImGui::IsKeyDown(ImGuiKey_DownArrow) ||
+                              ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_RightArrow) ||
+                              ImGui::IsKeyDown(ImGuiKey_Space) || ImGui::IsKeyDown(ImGuiKey_LeftShift);
+
+    if (movementKeyPressed && !isAltPressed && !isRightMousePressed) {
+        float nudgeSpeed;
+
+        if (is2DMode) {
+            // In 2D: scale by ortho zoom level (proportional to visible area)
+            nudgeSpeed = editorCamera.OrthoZoomLevel * 3.0f * io.DeltaTime;
+        } else {
+            // In 3D: logarithmic scaling for consistent feel at any zoom level
+            float logDistance = std::log2(editorCamera.Distance + 1.0f);
+            nudgeSpeed = std::max(0.002f, logDistance * 0.015f) * io.DeltaTime * 60.0f;
+        }
+
+        glm::vec3 movement(0.0f);
+
+        // Up/Down arrows: forward/backward (toward/away from where camera is looking)
+        if (ImGui::IsKeyDown(ImGuiKey_UpArrow)) {
+            if (is2DMode) {
+                movement.y += nudgeSpeed; // In 2D, up arrow moves up on Y axis
+            } else {
+                movement += editorCamera.Front * nudgeSpeed; // Move toward target
+            }
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_DownArrow)) {
+            if (is2DMode) {
+                movement.y -= nudgeSpeed;
+            } else {
+                movement -= editorCamera.Front * nudgeSpeed; // Move away from target
+            }
+        }
+
+        // Left/Right arrows: strafe left/right
+        if (ImGui::IsKeyDown(ImGuiKey_LeftArrow)) {
+            if (is2DMode) {
+                movement.x -= nudgeSpeed;
+            } else {
+                movement -= editorCamera.Right * nudgeSpeed;
+            }
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_RightArrow)) {
+            if (is2DMode) {
+                movement.x += nudgeSpeed;
+            } else {
+                movement += editorCamera.Right * nudgeSpeed;
+            }
+        }
+
+        // Space = move up, Shift = move down (Minecraft creative style)
+        if (ImGui::IsKeyDown(ImGuiKey_Space) && !is2DMode) {
+            movement += glm::vec3(0.0f, 1.0f, 0.0f) * nudgeSpeed; // World up
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && !is2DMode) {
+            movement -= glm::vec3(0.0f, 1.0f, 0.0f) * nudgeSpeed; // World down
+        }
+
+        editorCamera.Target += movement;
+        editorCamera.Position += movement;
         editorCamera.UpdateCameraVectors();
     }
 }
