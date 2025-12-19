@@ -1186,8 +1186,12 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
     glm::mat4 view = editorCamera.GetViewMatrix();
     glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
 
+    // Rotate the view 180 degrees around Y axis so gizmo faces the same direction as camera
+    glm::mat4 rotateY180 = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 gizmoView = view * rotateY180;
+
     float viewMatrix[16], projMatrix[16];
-    Mat4ToFloatArray(view, viewMatrix);
+    Mat4ToFloatArray(gizmoView, viewMatrix);
     Mat4ToFloatArray(projection, projMatrix);
 
     // Position the ViewGizmo in the top right corner
@@ -1224,6 +1228,10 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
         for (int i = 0; i < 16; ++i) {
             glm::value_ptr(newViewMatrix)[i] = manipulatedViewMatrix[i];
         }
+
+        // Reverse the 180 degree Y rotation we applied for the gizmo
+        glm::mat4 rotateY180Inverse = glm::rotate(glm::mat4(1.0f), glm::radians(-180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        newViewMatrix = newViewMatrix * rotateY180Inverse;
 
         // Extract camera position and orientation from the inverse view matrix
         glm::mat4 inverseView = glm::inverse(newViewMatrix);
@@ -1956,22 +1964,23 @@ void ScenePanel::DrawCameraGizmos() {
         // Get camera world position from transform
         glm::vec3 camPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
 
-        // Calculate camera forward, right, up vectors
-        glm::vec3 camForward, camRight, camUp;
-        if (camera.useFreeRotation) {
-            // Use yaw/pitch to calculate direction
-            float yawRad = glm::radians(camera.yaw);
-            float pitchRad = glm::radians(camera.pitch);
-            camForward.x = cos(yawRad) * cos(pitchRad);
-            camForward.y = sin(pitchRad);
-            camForward.z = sin(yawRad) * cos(pitchRad);
-            camForward = glm::normalize(camForward);
-        } else {
-            // Use target direction
-            camForward = glm::normalize(camera.target);
+        // Extract forward direction from transform's Z column (same as CameraSystem does)
+        glm::vec3 fwdCol(
+            transform.worldMatrix.m.m02,
+            transform.worldMatrix.m.m12,
+            transform.worldMatrix.m.m22
+        );
+        glm::vec3 camForward = glm::length(fwdCol) > 0.0001f
+            ? glm::normalize(fwdCol)
+            : glm::vec3(0.0f, 0.0f, 1.0f);
+
+        // Build camera basis vectors
+        glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+        if (std::abs(glm::dot(camForward, worldUp)) > 0.99f) {
+            worldUp = glm::vec3(0.0f, 0.0f, 1.0f);
         }
-        camRight = glm::normalize(glm::cross(camForward, camera.up));
-        camUp = glm::normalize(glm::cross(camRight, camForward));
+        glm::vec3 camRight = glm::normalize(glm::cross(worldUp, camForward));
+        glm::vec3 camUp = glm::normalize(glm::cross(camForward, camRight));
 
         // Get ImGui draw list
         ImDrawList* drawList = ImGui::GetWindowDrawList();
