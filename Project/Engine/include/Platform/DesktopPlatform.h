@@ -66,6 +66,9 @@ public:
     bool IsKeyPressed(Input::Key key) override;
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
+
+    void SetCursorLocked(bool locked) override;
+    bool IsCursorLocked() override;
     
     double GetTime() override;
     

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002939570c94fa37-000369ea04000001",
+        "source": "../../Resources/Models/Character/Enemy/Animation/EnemyAttack.fbx",
+        "compiled": "../../Resources/Models/Character/Enemy/Animation/EnemyAttack.fbx",
+        "android_compiled": "Resources/Models/Character/Enemy/Animation/EnemyAttack.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

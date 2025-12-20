@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad5336722ecb-00036c9a00000029",
+        "source": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.png",
+        "compiled": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.dds",
+        "android_compiled": "Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

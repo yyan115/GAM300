@@ -243,6 +243,12 @@ void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
+	
+	// Actually start playing the animation on the animator
+	if (!clips.empty() && clipIndex < clips.size()) {
+		EnsureAnimator();
+		animator->PlayAnimation(clips[clipIndex].get());
+	}
 }
 
 void AnimationComponent::PlayOnce(std::size_t clipIndex) {

@@ -1608,17 +1608,19 @@ void AssetBrowserPanel::ConfirmRename() {
                 if (oldPath != newPath && std::filesystem::exists(oldPath)) {
                     std::filesystem::rename(oldPath, newPath);
                     auto assetMeta = AssetManager::GetInstance().GetAssetMeta(asset.guid);
-                    if (assetMeta)
+                    if (assetMeta) {
                         assetMeta->sourceFilePath = newPath.generic_string();
-
-                    // Also rename the .meta file if it exists
-                    std::filesystem::path oldMetaPath = oldPath;
-                    oldMetaPath += ".meta";
-                    if (std::filesystem::exists(oldMetaPath)) {
-                        std::filesystem::path newMetaPath = newPath;
-                        newMetaPath += ".meta";
-                        std::filesystem::rename(oldMetaPath, newMetaPath);
+                        AssetManager::GetInstance().CompileAsset(assetMeta, true);
                     }
+
+                    //// Also rename the .meta file if it exists
+                    //std::filesystem::path oldMetaPath = oldPath;
+                    //oldMetaPath += ".meta";
+                    //if (std::filesystem::exists(oldMetaPath)) {
+                    //    std::filesystem::path newMetaPath = newPath;
+                    //    newMetaPath += ".meta";
+                    //    std::filesystem::rename(oldMetaPath, newMetaPath);
+                    //}
                     ENGINE_PRINT("[AssetBrowserPanel] Renamed: ", oldPath, " -> ", newPath, "\n");
                 }
             }

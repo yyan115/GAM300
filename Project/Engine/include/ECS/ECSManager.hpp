@@ -18,10 +18,11 @@
 #include "Graphics/Camera/CameraSystem.hpp"
 #include <Animation/AnimationSystem.hpp>
 #include <Graphics/Sprite/SpriteAnimationSystem.hpp>
-
+#include "UI/Button/ButtonSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
-class CharacterControllerSystem;
+class CharacterController;
+
 class ECSManager {
 public:
 	ECSManager() { Initialize(); };
@@ -115,6 +116,15 @@ public:
 	std::vector<Entity> GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
+
+	/**
+	 * @brief Check if an entity is active considering its entire parent hierarchy.
+	 * Returns false if the entity itself or ANY of its ancestors is inactive.
+	 * This is like Unity's activeInHierarchy property.
+	 * @param entity The entity to check
+	 * @return true if entity and all ancestors are active, false otherwise
+	 */
+	bool ENGINE_API IsEntityActiveInHierarchy(Entity entity);
 	
 	// Get system manager for profiling access
 	const SystemManager* GetSystemManager() const {
@@ -128,7 +138,7 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<PhysicsSystem> physicsSystem;
-	std::shared_ptr<CharacterControllerSystem> characterControllerSystem;
+	std::shared_ptr<CharacterController> characterControllerSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;
@@ -137,7 +147,7 @@ public:
 	std::shared_ptr<CameraSystem> cameraSystem;
 	std::shared_ptr<ScriptSystem> scriptSystem;
 	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
-
+	std::shared_ptr<ButtonSystem> buttonSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

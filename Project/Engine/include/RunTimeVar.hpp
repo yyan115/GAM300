@@ -18,6 +18,11 @@ namespace RunTimeVar {
         GLint windowedPosX = 0;    // Default window position
         GLint windowedPosY = 0;    // Default window position
 
+        GLint gameResolutionWidth = 1600;
+        GLint gameResolutionHeight = 900;
+        GLint gameViewportWidth = 1600;
+        GLint gameViewportHeight = 900;
+
         bool isFullscreen = false;
         bool isFocused = true;
     };

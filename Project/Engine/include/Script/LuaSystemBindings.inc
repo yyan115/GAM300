@@ -1,6 +1,11 @@
 // LuaSystemBindings.inc
 // System bindings using macro-based approach similar to components
 // Edit this file to add/remove system bindings
+//
+// OPTIMIZATION NOTES:
+// - Only essential functions are exposed to reduce Lua binding overhead
+// - Static functions are preferred over instance methods where possible
+// - Wrapper functions are used to simplify API (e.g., passing x,y,z instead of Vector3D)
 
 // ============================================================================
 // INPUT SYSTEM
@@ -49,10 +54,15 @@ BEGIN_SYSTEM("Input")
         CONSTANT("Enter", Input::Key::ENTER)
         CONSTANT("Tab", Input::Key::TAB)
         CONSTANT("Backspace", Input::Key::BACKSPACE)
+        CONSTANT("Escape", Input::Key::ESC)
+        CONSTANT("Delete", Input::Key::DELETE_)
         CONSTANT("Left", Input::Key::LEFT)
         CONSTANT("Right", Input::Key::RIGHT)
         CONSTANT("Up", Input::Key::UP)
         CONSTANT("Down", Input::Key::DOWN)
+        CONSTANT("Shift", Input::Key::SHIFT)
+        CONSTANT("Ctrl", Input::Key::CTRL)
+        CONSTANT("Alt", Input::Key::ALT)
         CONSTANT("F1", Input::Key::F1)
         CONSTANT("F2", Input::Key::F2)
         CONSTANT("F3", Input::Key::F3)
@@ -79,12 +89,75 @@ BEGIN_SYSTEM("Input")
     FUNCTION("GetMouseButtonDown", InputWrappers::GetMouseButtonDown)
     FUNCTION("GetMouseX", InputManager::GetMouseX)
     FUNCTION("GetMouseY", InputManager::GetMouseY)
+    FUNCTION("GetScrollX", InputManager::GetScrollX)
+    FUNCTION("GetScrollY", InputManager::GetScrollY)
+    FUNCTION("ConsumeScroll", InputManager::ConsumeScroll)
     FUNCTION("GetAnyKeyDown", InputManager::GetAnyKeyDown)
     FUNCTION("GetAnyMouseButtonDown", InputManager::GetAnyMouseButtonDown)
     FUNCTION("GetAnyInputDown", InputManager::GetAnyInputDown)
 
 END_SYSTEM()
 
+// ============================================================================
+// TIME SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Time")
+    FUNCTION("GetDeltaTime", TimeWrappers::GetDeltaTime)
+    FUNCTION("GetFixedDeltaTime", TimeWrappers::GetFixedDeltaTime)
+    FUNCTION("GetFPS", TimeWrappers::GetFPS)
+    FUNCTION("GetTimeScale", TimeWrappers::GetTimeScale)
+    FUNCTION("SetTimeScale", TimeWrappers::SetTimeScale)
+    FUNCTION("GetScaledDeltaTime", TimeWrappers::GetScaledDeltaTime)
+END_SYSTEM()
+
+// ============================================================================
+// SCENE MANAGER 
+// ============================================================================
+
+BEGIN_SYSTEM("Scene")
+    FUNCTION("Load", SceneWrappers::LoadScene)
+    FUNCTION("GetCurrentName", SceneWrappers::GetCurrentSceneName)
+    FUNCTION("GetCurrentPath", SceneWrappers::GetCurrentScenePath)
+END_SYSTEM()
+
+// ============================================================================
+// WINDOW/SCREEN SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Screen")
+    FUNCTION("GetWidth", WindowWrappers::GetWindowWidth)
+    FUNCTION("GetHeight", WindowWrappers::GetWindowHeight)
+    FUNCTION("GetViewportWidth", WindowWrappers::GetViewportWidth)
+    FUNCTION("GetViewportHeight", WindowWrappers::GetViewportHeight)
+    FUNCTION("IsFocused", WindowWrappers::IsWindowFocused)
+    FUNCTION("IsMinimized", WindowWrappers::IsWindowMinimized)
+    FUNCTION("SetTitle", WindowWrappers::SetWindowTitle)
+    FUNCTION("RequestClose", WindowWrappers::RequestClose)
+    FUNCTION("SetCursorLocked", WindowWrappers::SetCursorLocked)
+    FUNCTION("IsCursorLocked", WindowWrappers::IsCursorLocked)
+END_SYSTEM()
+
+// ============================================================================
+// DEBUG DRAW SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Debug")
+    FUNCTION("DrawLine", DebugDrawWrappers::DrawLine)
+    FUNCTION("DrawCube", DebugDrawWrappers::DrawCube)
+    FUNCTION("DrawSphere", DebugDrawWrappers::DrawSphere)
+END_SYSTEM()
+
+// ============================================================================
+// AUDIO MANAGER (Global audio controls)
+// ============================================================================
+
+BEGIN_SYSTEM("Audio")
+    FUNCTION("StopAll", AudioManagerWrappers::StopAll)
+    FUNCTION("SetMasterVolume", AudioManagerWrappers::SetMasterVolume)
+    FUNCTION("GetMasterVolume", AudioManagerWrappers::GetMasterVolume)
+    FUNCTION("SetGlobalPaused", AudioManagerWrappers::SetGlobalPaused)
+END_SYSTEM()
 
 // ============================================================================
 // CHARACTER CONTROLLER SYSTEM
@@ -95,28 +168,48 @@ luabridge::getGlobalNamespace(L)
     .beginClass<CharacterController>("CharacterControllerClass")
     .endClass();
 
-
 BEGIN_SYSTEM("CharacterController")
-
     // Constructor
     FUNCTION("new", CharacterControllerWrappers::Create)
-    //Initialise
+    // Initialise
     FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
-
     // Methods
     FUNCTION("Move", CharacterControllerWrappers::Move)
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
     FUNCTION("Update", CharacterControllerWrappers::Update)
     FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("IsGrounded", CharacterControllerWrappers::IsGrounded)
     FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
+    FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
     FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
-
 END_SYSTEM()
-
 
 BEGIN_SYSTEM("PhysicsSystem")
     FUNCTION("GetSystem", PhysicsSystemWrappers::GetSystem)
+END_SYSTEM()
+
+// ============================================================================
+// PHYSICS RAYCAST SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Physics")
+    // Test function to verify binding works
+    FUNCTION("Test", PhysicsSystemWrappers::TestBinding)
+    // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    // Returns: distance (float, -1.0 if no hit)
+    FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+END_SYSTEM()
+
+
+// ============================================================================
+// RIGIDBODY SYSTEM
+// ============================================================================
+BEGIN_SYSTEM("RigidBodyComponent")
+    FUNCTION("AddForce", RigidBodySystemWrappers::AddForce)
+    FUNCTION("AddTorque", RigidBodySystemWrappers::AddTorque)
+    FUNCTION("AddImpulse", RigidBodySystemWrappers::AddImpulse)
 END_SYSTEM()
 
 
@@ -145,16 +238,35 @@ BEGIN_SYSTEM("Layer")
 END_SYSTEM()
 
 
-// ENGINE HELPERS
+// ============================================================================
+// ANIMATION SYSTEM
+// ============================================================================
+
+BEGIN_SYSTEM("Animation")
+    FUNCTION("PlayClip",    AnimationWrappers::PlayClip)
+    FUNCTION("PlayOnce",    AnimationWrappers::PlayOnce)
+    FUNCTION("Pause",       AnimationWrappers::Pause)
+    FUNCTION("Stop",        AnimationWrappers::Stop) 
+    FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
+    FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
+    FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
+END_SYSTEM()
+
+
+// ============================================================================
+// ENGINE HELPERS (Entity/Transform lookup)
+// ============================================================================
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
+    FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
+    FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
 END_SYSTEM()
+
 
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
 // ============================================================================
-
 /*
 BEGIN_SYSTEM_NAMESPACE("Time")
     SYSTEM_FUNCTION("GetDeltaTime", TimeManager::GetDeltaTime)

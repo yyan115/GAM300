@@ -181,7 +181,8 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.ktx";
 		// Ensure parent directories exist
-		std::filesystem::path newPath(outPath);
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(outPath));
+		outPath = newPath.generic_string();
 		std::filesystem::create_directories(newPath.parent_path());
 		gli::save(tex, outPath);
 		
@@ -336,6 +337,8 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	else {
 		std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
 		metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".meta";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(metaFilePath));
+		metaFilePath = newPath.generic_string();
 	}
 	std::ifstream ifs(metaFilePath);
 	std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());

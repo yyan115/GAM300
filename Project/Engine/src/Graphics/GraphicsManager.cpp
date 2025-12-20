@@ -9,6 +9,7 @@
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include <ECS/SortingLayerManager.hpp>
 #include "Logging.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Camera/CameraSystem.hpp"
@@ -28,9 +29,19 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	glDepthFunc(GL_LESS);
 
 	// Enable face culling (backface culling)
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);      // Cull back-facing triangles
-	//glFrontFace(GL_CCW);      // Counter-clockwise winding = front face
+	if (faceCullingEnabled)
+		glEnable(GL_CULL_FACE);
+	else
+		glDisable(GL_CULL_FACE);
+
+	GLenum cMode = GL_BACK;
+	if (cullMode == CullMode::FRONT) cMode = GL_FRONT;
+	if (cullMode == CullMode::FRONT_AND_BACK) cMode = GL_FRONT_AND_BACK;
+	glCullFace(cMode);      // Cull back-facing triangles
+
+	GLenum fFace = GL_CCW;
+	if (frontFace == FrontFace::CW) fFace = GL_CW;
+	glFrontFace(fFace);      // Counter-clockwise winding = front face
 
 	// Initialize skybox
 	InitializeSkybox();
@@ -126,6 +137,7 @@ void GraphicsManager::GetViewportSize(int& width, int& height) const
 
 void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 {
+	std::lock_guard<std::mutex> lock(renderQueueMutex);
 	if (renderItem && renderItem->isVisible)
 	{
 		renderQueue.push_back(std::move(renderItem));
@@ -199,10 +211,76 @@ void GraphicsManager::Render()
 	// Render skybox first (before other objects)
 	RenderSkybox();
 
-	// Sort render queue by render order (lower numbers render first)
+	// Sort render queue - Unity-like sorting for 2D elements
+	// For 2D elements: sort by sortingLayer then sortingOrder (higher = on top = renders later)
+	// 3D objects render based on renderOrder
 	std::sort(renderQueue.begin(), renderQueue.end(),
 		[](const std::unique_ptr<IRenderComponent>& a, const std::unique_ptr<IRenderComponent>& b) {
-			return a->renderOrder < b->renderOrder;
+			// Helper to check if component is 2D
+			auto is2D = [](const IRenderComponent* comp) -> bool {
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					return !text->is3D;
+				}
+				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					return !sprite->is3D;
+				}
+				return false;
+			};
+
+			// Helper to get sortingLayer ORDER (for rendering priority)
+			auto getSortingLayer = [](const IRenderComponent* comp) -> int {
+				int layerID = 0;
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					layerID = text->sortingLayer;
+				}
+				else if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					layerID = sprite->sortingLayer;
+				}
+
+				// Get the order from the sorting layer manager
+				// Lower order = rendered first (behind), higher order = rendered last (on top)
+				int order = SortingLayerManager::GetInstance().GetLayerOrder(layerID);
+				if (order == -1) {
+					// Invalid layer ID, use default (0)
+					return 0;
+				}
+				return order;
+			};
+
+			// Helper to get sortingOrder
+			auto getSortingOrder = [](const IRenderComponent* comp) -> int {
+				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
+					return text->sortingOrder;
+				}
+				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
+					return sprite->sortingOrder;
+				}
+				return 0;
+			};
+
+			bool aIs2D = is2D(a.get());
+			bool bIs2D = is2D(b.get());
+
+			// If both are 2D or both are 3D, use appropriate sorting
+			if (aIs2D && bIs2D) {
+				// Both 2D - sort by sortingLayer then sortingOrder (Unity-like)
+				int layerA = getSortingLayer(a.get());
+				int layerB = getSortingLayer(b.get());
+				if (layerA != layerB) {
+					return layerA < layerB; // Higher layer = on top = renders later
+				}
+				int orderA = getSortingOrder(a.get());
+				int orderB = getSortingOrder(b.get());
+				return orderA < orderB; // Higher order = on top = renders later
+			}
+			else if (!aIs2D && !bIs2D) {
+				// Both 3D - sort by renderOrder
+				return a->renderOrder < b->renderOrder;
+			}
+			else {
+				// Mixed 2D and 3D - render 3D first, then 2D on top
+				return !aIs2D; // 3D (false) < 2D (true), so 3D renders first
+			}
 		});
 
 	// Render all items in the queue
@@ -259,14 +337,17 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	{
 		return;
 	}
+	// Calculate model matrix once
+	glm::mat4 modelMatrix = item.transform.ConvertToGLM();
 
 	// Count total objects when culling is enabled
 	if (frustumCullingEnabled && currentCamera)
 	{
 		//cullingStats.totalObjects++;
 
+
 		AABB modelBBox = item.model->GetBoundingBox();
-		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
+		//glm::mat4 modelMatrix = item.transform.ConvertToGLM(); // Moved to outer scope
 		AABB worldBBox = modelBBox.Transform(modelMatrix);
 
 		// Use tolerance to prevent edge-case culling
@@ -291,6 +372,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
 	}
+
 
 	// Draw the model with entity material
 	if (item.HasAnimation())
@@ -321,16 +403,31 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		glm::mat4 view;
 		glm::mat4 projection;
 
-		// In 2D editor mode, use orthographic projection with camera position as center
+		// In 2D editor mode, use orthographic projection with screen-space coordinates
 		if (IsRenderingForEditor() && Is2DMode()) {
 			// Use identity view matrix for 2D (camera doesn't rotate)
 			view = glm::mat4(1.0f);
 
-			// Create orthographic projection centered on camera's XY position
-			// The camera position represents the center of the view in pixel space
-			// Apply OrthoZoomLevel to the viewport size (1.0 = normal, 0.5 = zoomed in 2x, 2.0 = zoomed out 2x)
-			float viewWidth = renderWidth * currentCamera->OrthoZoomLevel;
-			float viewHeight = renderHeight * currentCamera->OrthoZoomLevel;
+			// Use target game resolution for consistent 2D rendering between Scene and Game panels
+			float gameWidth = (float)targetGameWidth;
+			float gameHeight = (float)targetGameHeight;
+			float gameAspect = gameWidth / gameHeight;
+			float viewportAspect = (float)renderWidth / (float)renderHeight;
+
+			// Calculate view dimensions that preserve game aspect ratio within viewport
+			float viewWidth, viewHeight;
+			if (viewportAspect > gameAspect) {
+				// Viewport is wider than game - fit by height, add horizontal padding
+				viewHeight = gameHeight * currentCamera->OrthoZoomLevel;
+				viewWidth = viewHeight * viewportAspect;
+			} else {
+				// Viewport is taller than game - fit by width, add vertical padding
+				viewWidth = gameWidth * currentCamera->OrthoZoomLevel;
+				viewHeight = viewWidth / viewportAspect;
+			}
+
+			// Create projection centered on camera Position
+			// Position represents the CENTER of the view (where the camera is looking)
 			float halfWidth = viewWidth * 0.5f;
 			float halfHeight = viewHeight * 0.5f;
 			float left = currentCamera->Position.x - halfWidth;
@@ -368,9 +465,16 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		return;
 	}
 
-	// Enable depth testing for 3D text
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+	// Configure depth testing based on 2D/3D mode
+	if (item.is3D) {
+		// 3D text: enable depth testing
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+	}
+	else {
+		// 2D text: disable depth testing so render order determines what's on top 
+		glDisable(GL_DEPTH_TEST);
+	}
 
 	// Enable blending for text transparency
 	glEnable(GL_BLEND);
@@ -393,13 +497,14 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		// 2D screen space text rendering
 		if (IsRenderingForEditor() && Is2DMode()) {
 			// Use the editor camera's view/projection matrices
+			// Don't apply scale to model matrix - we'll apply it per-character for proper axis control
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
 			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
-			modelMatrix = glm::scale(modelMatrix, glm::vec3(item.scale, item.scale, 1.0f));
 			SetupMatrices(*item.shader, modelMatrix);
 		} else {
 			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
-			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), item.scale);
+			// Don't apply scale to matrices - we'll apply it per-character for proper axis control
+			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), 1.0f, 1.0f);
 		}
 	}
 
@@ -421,19 +526,21 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	float y = 0.0f;
 
 	// For 3D text, scale down from pixels to world units (1 pixel = 0.01 units)
-	// 3D text uses Transform scale (already in model matrix), 2D text uses item.scale
+	// For 2D text, apply Transform scale per-axis for Unity-like behavior
+	// Note: fontSize controls the font resolution (glyphs are loaded at that size)
+	// Transform scale then scales those glyphs for final visual size
 	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
-	float finalScale = item.is3D ? worldScaleFactor : (item.scale * worldScaleFactor);
+	float scaleX = item.is3D ? worldScaleFactor : (item.transformScale.x * worldScaleFactor);
+	float scaleY = item.is3D ? worldScaleFactor : (item.transformScale.y * worldScaleFactor);
 
 	// Calculate starting position based on alignment
 	if (item.alignment == TextRenderComponent::Alignment::CENTER)
 	{
-		x = -item.font->GetTextWidth(item.text, finalScale) / 2.0f;
+		x = -item.font->GetTextWidth(item.text, scaleX) / 2.0f;
 	}
-
 	else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
 	{
-		x = -item.font->GetTextWidth(item.text, finalScale);
+		x = -item.font->GetTextWidth(item.text, scaleX);
 	}
 
 	// Iterate through all characters
@@ -445,11 +552,12 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 			continue;
 		}
 
-		float xpos = x + ch.bearing.x * finalScale;
-		float ypos = y - (ch.size.y - ch.bearing.y) * finalScale;
+		// Apply scaleX to horizontal metrics, scaleY to vertical metrics (Unity-like behavior)
+		float xpos = x + ch.bearing.x * scaleX;
+		float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
 
-		float w = ch.size.x * finalScale;
-		float h = ch.size.y * finalScale;
+		float w = ch.size.x * scaleX;
+		float h = ch.size.y * scaleY;
 
 		// Update VBO for each character
 		float vertices[6][4] = {
@@ -472,23 +580,32 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		x += (ch.advance >> 6) * finalScale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+		x += (ch.advance >> 6) * scaleX; // Bitshift by 6 to get value in pixels (2^6 = 64), use scaleX for horizontal spacing
 	}
 
 	fontVAO->Unbind();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE); // Restore depth writing
+	glEnable(GL_DEPTH_TEST); // Restore depth testing for 3D objects
 }
 
-void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale)
+void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
 {
-	glm::mat4 projection = glm::ortho(0.0f, (float)WindowManager::GetWindowWidth(), 0.0f, (float)WindowManager::GetWindowHeight());
+	// Use target game resolution for 2D projection
+	// This ensures Scene Panel and Game Panel show text at consistent positions
+	int gameWidth = targetGameWidth;
+	int gameHeight = targetGameHeight;
+
+	// Use screen-space projection where (0,0) is at bottom-left corner
+	// This matches traditional 2D game coordinate systems and is consistent with sprites
+	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
+
 	glm::mat4 view = glm::mat4(1.0f); // Identity matrix for 2D
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);  // Use position as-is
-	model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
+	model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.0f));
 
 	shader.setMat4("projection", projection);
 	shader.setMat4("view", view);
@@ -574,7 +691,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	// Restore render state
 	glEnable(GL_DEPTH_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 #endif
 }
 
@@ -650,7 +767,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
@@ -658,6 +775,17 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO)
 	{
 		return;
+	}
+
+	// Configure depth testing based on 2D/3D mode
+	if (item.is3D) {
+		// 3D sprite: enable depth testing
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+	}
+	else {
+		// 2D sprite: disable depth testing so render order determines what's on top
+		glDisable(GL_DEPTH_TEST);
 	}
 
 	// Enable blending for sprite transparency
@@ -767,18 +895,22 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 	// Disable blending
 	glDisable(GL_BLEND);
-	//glEnable(GL_CULL_FACE);
+	// Restore depth testing for 3D objects
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
 {
+	// Use target game resolution for 2D projection
+	// This ensures Scene Panel and Game Panel show sprites at consistent positions
+	int gameWidth = targetGameWidth;
+	int gameHeight = targetGameHeight;
 
-	// Use orthographic projection for 2D sprites
-	// Use viewport dimensions (render target size) instead of window dimensions
-	GLint renderWidth = (RunTimeVar::window.viewportWidth > 0) ? RunTimeVar::window.viewportWidth : RunTimeVar::window.width;
-	GLint renderHeight = (RunTimeVar::window.viewportHeight > 0) ? RunTimeVar::window.viewportHeight : RunTimeVar::window.height;
-	glm::mat4 projection = glm::ortho(0.0f, (float)renderWidth,
-		0.0f, (float)renderHeight);
+	// Use screen-space projection where (0,0) is at bottom-left corner
+	// This matches traditional 2D game coordinate systems
+	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
 
 	// Create model matrix
 	glm::mat4 model = glm::mat4(1.0f);
@@ -974,7 +1106,37 @@ void GraphicsManager::RenderSkybox()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDepthMask(GL_TRUE);
-	//glEnable(GL_CULL_FACE);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 	glDepthFunc(GL_LESS);
+}
+
+void GraphicsManager::SetFaceCulling(bool enabled)
+{
+	faceCullingEnabled = enabled;
+	if (enabled)
+		glEnable(GL_CULL_FACE);
+	else
+		glDisable(GL_CULL_FACE);
+}
+
+void GraphicsManager::SetCullMode(CullMode mode)
+{
+	cullMode = mode;
+	GLenum glMode = GL_BACK;
+	switch (mode)
+	{
+	case CullMode::BACK: glMode = GL_BACK; break;
+	case CullMode::FRONT: glMode = GL_FRONT; break;
+	case CullMode::FRONT_AND_BACK: glMode = GL_FRONT_AND_BACK; break;
+	}
+	glCullFace(glMode);
+}
+
+void GraphicsManager::SetFrontFace(FrontFace face)
+{
+	frontFace = face;
+	GLenum glFace = GL_CCW;
+	if (face == FrontFace::CW) glFace = GL_CW;
+	glFrontFace(glFace);
 }
 

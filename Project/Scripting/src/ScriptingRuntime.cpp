@@ -309,7 +309,7 @@ namespace Scripting {
 #endif
 
                     m_moduleLoader->InstallLuaSearcher(newL, -1);
-                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader reinstalled for reload with root: ", rootDir.c_str());
+                    //ENGINE_PRINT(EngineLogging::LogLevel::Info, "ModuleLoader reinstalled for reload with root: ", rootDir.c_str());
                 }
 
                 g_runtime_for_cfuncs = this;

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00328d6a4e55cb37-0003611882000089",
+        "source": "../../Resources/Sprites/MainMenuUI/HoverHighlight.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/HoverHighlight.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

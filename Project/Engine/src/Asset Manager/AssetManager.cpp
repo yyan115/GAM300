@@ -446,7 +446,18 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
+#ifndef ANDROID
 		return it->second->sourceFilePath;
+#else
+		std::string path = it->second->sourceFilePath;
+		// Strip ../../ prefix and get path starting from "Resources"
+		size_t resourcesPos = path.find("Resources");
+		if (resourcesPos != std::string::npos) {
+			path = path.substr(resourcesPos);
+		}
+		path = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path)).generic_string();
+		return path;
+#endif
 	}
 
 	ENGINE_LOG_ERROR("[AssetManager] ERROR: Asset meta with GUID " + GUIDUtilities::ConvertGUID128ToString(guid) + " not found.");
@@ -492,6 +503,8 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			if (std::filesystem::is_regular_file(p)) {
 				std::string path = p.path().generic_string();
 				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
 					ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
 				}
@@ -514,6 +527,8 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		{
 			std::string path = p.path().generic_string();
 			path = path.substr(path.find("Resources"));
+			std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+			path = newPath.generic_string();
 			out << path << "\n";
 		}
 	}

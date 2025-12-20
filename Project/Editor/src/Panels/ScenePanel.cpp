@@ -97,13 +97,32 @@ void ScenePanel::DrawGameViewportIndicator() {
     glm::vec3 worldBottomLeft(0.0f, 0.0f, 0.0f);
 
     // Convert world space to screen space using editor camera
-    auto worldToScreen = [this](const glm::vec3& worldPos) -> ImVec2 {
-        // For 2D orthographic: screen_x = (world_x - camera_target_x) / zoom + viewport_center
-        // EditorCamera orthographic projection centers around Target, not Position
+    // This must match the projection calculation in GraphicsManager::SetupMatrices
+    auto worldToScreen = [this, gameWidth, gameHeight](const glm::vec3& worldPos) -> ImVec2 {
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-        float screenX = ((worldPos.x - editorCamera.Target.x) / editorCamera.OrthoZoomLevel) + viewportSize.x * 0.5f;
-        float screenY = ((editorCamera.Target.y - worldPos.y) / editorCamera.OrthoZoomLevel) + viewportSize.y * 0.5f;
+        float gameAspect = (float)gameWidth / (float)gameHeight;
+        float viewportAspect = viewportSize.x / viewportSize.y;
+
+        // Calculate view dimensions that preserve game aspect ratio (same as SetupMatrices)
+        float viewWidth, viewHeight;
+        if (viewportAspect > gameAspect) {
+            // Viewport is wider than game - fit by height
+            viewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+            viewWidth = viewHeight * viewportAspect;
+        } else {
+            // Viewport is taller than game - fit by width
+            viewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+            viewHeight = viewWidth / viewportAspect;
+        }
+
+        // Map world coordinates to screen coordinates
+        // Position is the CENTER of the view, so left/bottom are position minus half the view size
+        float left = editorCamera.Position.x - viewWidth * 0.5f;
+        float bottom = editorCamera.Position.y - viewHeight * 0.5f;
+
+        float screenX = (worldPos.x - left) * viewportSize.x / viewWidth;
+        float screenY = viewportSize.y - (worldPos.y - bottom) * viewportSize.y / viewHeight;
 
         ImVec2 windowPos = ImGui::GetCursorScreenPos();
         return ImVec2(windowPos.x + screenX, windowPos.y + screenY);
@@ -124,6 +143,384 @@ void ScenePanel::DrawGameViewportIndicator() {
     drawList->AddLine(screenTopRight, screenBottomRight, color, thickness);
     drawList->AddLine(screenBottomRight, screenBottomLeft, color, thickness);
     drawList->AddLine(screenBottomLeft, screenTopLeft, color, thickness);
+}
+
+// ============================================================================
+// 2D GIZMO SYSTEM
+// ============================================================================
+
+ImVec2 ScenePanel::WorldToScreen2D(const glm::vec3& worldPos, float sceneWidth, float sceneHeight) {
+    // Get game resolution
+    int gameWidth = RunTimeVar::window.width;
+    int gameHeight = RunTimeVar::window.height;
+    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+    auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+    if (gamePanel) {
+        gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+    }
+
+    float gameAspect = (float)gameWidth / (float)gameHeight;
+    float viewportAspect = sceneWidth / sceneHeight;
+
+    // Calculate view dimensions that preserve game aspect ratio (same as GraphicsManager)
+    float viewWidth, viewHeight;
+    if (viewportAspect > gameAspect) {
+        viewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+        viewWidth = viewHeight * viewportAspect;
+    } else {
+        viewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+        viewHeight = viewWidth / viewportAspect;
+    }
+
+    // Map world coordinates to screen coordinates
+    // Position is the CENTER of the view, so left/bottom are position minus half the view size
+    float left = editorCamera.Position.x - viewWidth * 0.5f;
+    float bottom = editorCamera.Position.y - viewHeight * 0.5f;
+
+    float screenX = (worldPos.x - left) * sceneWidth / viewWidth;
+    float screenY = sceneHeight - (worldPos.y - bottom) * sceneHeight / viewHeight;
+
+    ImVec2 windowPos = ImGui::GetCursorScreenPos();
+    return ImVec2(windowPos.x + screenX, windowPos.y + screenY);
+}
+
+glm::vec3 ScenePanel::ScreenToWorld2D(const ImVec2& screenPos, float sceneWidth, float sceneHeight) {
+    // Get game resolution
+    int gameWidth = RunTimeVar::window.width;
+    int gameHeight = RunTimeVar::window.height;
+    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+    auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+    if (gamePanel) {
+        gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+    }
+
+    float gameAspect = (float)gameWidth / (float)gameHeight;
+    float viewportAspect = sceneWidth / sceneHeight;
+
+    // Calculate view dimensions that preserve game aspect ratio
+    float viewWidth, viewHeight;
+    if (viewportAspect > gameAspect) {
+        viewHeight = gameHeight * editorCamera.OrthoZoomLevel;
+        viewWidth = viewHeight * viewportAspect;
+    } else {
+        viewWidth = gameWidth * editorCamera.OrthoZoomLevel;
+        viewHeight = viewWidth / viewportAspect;
+    }
+
+    // Position is the CENTER of the view, so left/bottom are position minus half the view size
+    float left = editorCamera.Position.x - viewWidth * 0.5f;
+    float bottom = editorCamera.Position.y - viewHeight * 0.5f;
+
+    // Convert screen position to window-relative
+    ImVec2 windowPos = ImGui::GetCursorScreenPos();
+    float relX = screenPos.x - windowPos.x;
+    float relY = screenPos.y - windowPos.y;
+
+    // Inverse of WorldToScreen2D
+    float worldX = (relX * viewWidth / sceneWidth) + left;
+    float worldY = ((sceneHeight - relY) * viewHeight / sceneHeight) + bottom;
+
+    return glm::vec3(worldX, worldY, 0.0f);
+}
+
+void ScenePanel::Handle2DGizmo(float sceneWidth, float sceneHeight) {
+    auto selectedEntities = GUIManager::GetSelectedEntities();
+    if (selectedEntities.empty()) {
+        activeGizmo2DAxis = Gizmo2DAxis::None;
+        return;
+    }
+
+    // Get the PlayControlPanel to check state and get gizmo operation
+    auto playControlPanelPtr = GUIManager::GetPanelManager().GetPanel("Play Controls");
+    auto playControlPanel = std::dynamic_pointer_cast<PlayControlPanel>(playControlPanelPtr);
+    bool isNormalPanMode = playControlPanel ? playControlPanel->IsNormalPanMode() : false;
+    ImGuizmo::OPERATION gizmoOperation = playControlPanel ? playControlPanel->GetGizmoOperation() : ImGuizmo::TRANSLATE;
+
+    if (isNormalPanMode) {
+        activeGizmo2DAxis = Gizmo2DAxis::None;
+        return;
+    }
+
+    // Check if all selected entities are 2D
+    EditorState& editorState = EditorState::GetInstance();
+    if (!editorState.Is2DMode()) return;
+
+    bool all2D = true;
+    for (auto entity : selectedEntities) {
+        if (RaycastUtil::IsEntity3D(entity)) {
+            all2D = false;
+            break;
+        }
+    }
+    if (!all2D) return;
+
+    // Get ECS manager
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    // Calculate average position of selected entities
+    glm::vec3 avgPos(0.0f);
+    int validCount = 0;
+    for (auto entity : selectedEntities) {
+        if (ecsManager.HasComponent<Transform>(entity)) {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            avgPos.x += transform.worldMatrix.m.m03;
+            avgPos.y += transform.worldMatrix.m.m13;
+            avgPos.z += transform.worldMatrix.m.m23;
+            validCount++;
+        }
+    }
+    if (validCount == 0) return;
+    avgPos /= static_cast<float>(validCount);
+
+    // Convert to screen coordinates
+    ImVec2 centerScreen = WorldToScreen2D(avgPos, sceneWidth, sceneHeight);
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 mousePos = ImGui::GetMousePos();
+
+    // Gizmo visual settings
+    const float handleLength = 80.0f;
+    const float handleThickness = 3.0f;
+    const float arrowSize = 12.0f;
+    const float centerSquareSize = 12.0f;
+    const float hitRadius = 10.0f;
+
+    // Colors
+    ImU32 xColorNormal = IM_COL32(220, 60, 60, 255);     // Red
+    ImU32 xColorHover = IM_COL32(255, 100, 100, 255);
+    ImU32 yColorNormal = IM_COL32(60, 180, 60, 255);     // Green
+    ImU32 yColorHover = IM_COL32(100, 220, 100, 255);
+    ImU32 xyColorNormal = IM_COL32(255, 255, 60, 200);   // Yellow
+    ImU32 xyColorHover = IM_COL32(255, 255, 150, 255);
+    ImU32 rotateColorNormal = IM_COL32(60, 150, 255, 255); // Blue
+    ImU32 rotateColorHover = IM_COL32(100, 180, 255, 255);
+
+    // Calculate handle endpoints
+    ImVec2 xEnd(centerScreen.x + handleLength, centerScreen.y);
+    ImVec2 yEnd(centerScreen.x, centerScreen.y - handleLength); // Y goes up in world, down in screen
+
+    // Hit detection helper
+    auto pointToLineDistance = [](ImVec2 p, ImVec2 a, ImVec2 b) -> float {
+        ImVec2 ab(b.x - a.x, b.y - a.y);
+        ImVec2 ap(p.x - a.x, p.y - a.y);
+        float t = (ap.x * ab.x + ap.y * ab.y) / (ab.x * ab.x + ab.y * ab.y + 0.0001f);
+        t = std::clamp(t, 0.0f, 1.0f);
+        ImVec2 closest(a.x + t * ab.x, a.y + t * ab.y);
+        float dx = p.x - closest.x;
+        float dy = p.y - closest.y;
+        return std::sqrt(dx * dx + dy * dy);
+    };
+
+    // Determine hovered axis (only if not actively dragging)
+    if (activeGizmo2DAxis == Gizmo2DAxis::None) {
+        hoveredGizmo2DAxis = Gizmo2DAxis::None;
+
+        if (gizmoOperation == ImGuizmo::TRANSLATE) {
+            // Check XY square first (highest priority)
+            ImVec2 xyCorner(centerScreen.x + centerSquareSize, centerScreen.y - centerSquareSize);
+            if (mousePos.x >= centerScreen.x && mousePos.x <= xyCorner.x &&
+                mousePos.y <= centerScreen.y && mousePos.y >= xyCorner.y) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::XY;
+            }
+            // Check X axis
+            else if (pointToLineDistance(mousePos, centerScreen, xEnd) < hitRadius) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::X;
+            }
+            // Check Y axis
+            else if (pointToLineDistance(mousePos, centerScreen, yEnd) < hitRadius) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::Y;
+            }
+        }
+        else if (gizmoOperation == ImGuizmo::ROTATE) {
+            // Check rotation circle
+            float dist = std::sqrt((mousePos.x - centerScreen.x) * (mousePos.x - centerScreen.x) +
+                                   (mousePos.y - centerScreen.y) * (mousePos.y - centerScreen.y));
+            if (std::abs(dist - handleLength * 0.8f) < hitRadius) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::Rotate;
+            }
+        }
+        else if (gizmoOperation == ImGuizmo::SCALE) {
+            // Check scale handles (squares at end of axes)
+            float scaleBoxSize = 8.0f;
+            ImVec2 xScaleBox(xEnd.x - scaleBoxSize, xEnd.y - scaleBoxSize);
+            ImVec2 yScaleBox(yEnd.x - scaleBoxSize, yEnd.y - scaleBoxSize);
+            ImVec2 xyScaleBox(centerScreen.x + centerSquareSize * 0.5f - scaleBoxSize * 0.5f,
+                             centerScreen.y - centerSquareSize * 0.5f - scaleBoxSize * 0.5f);
+
+            // XY scale (center)
+            if (mousePos.x >= centerScreen.x - centerSquareSize && mousePos.x <= centerScreen.x + centerSquareSize &&
+                mousePos.y >= centerScreen.y - centerSquareSize && mousePos.y <= centerScreen.y + centerSquareSize) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::ScaleXY;
+            }
+            // X scale
+            else if (mousePos.x >= xEnd.x - scaleBoxSize * 2 && mousePos.x <= xEnd.x + scaleBoxSize &&
+                     mousePos.y >= xEnd.y - scaleBoxSize && mousePos.y <= xEnd.y + scaleBoxSize) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::ScaleX;
+            }
+            // Y scale
+            else if (mousePos.x >= yEnd.x - scaleBoxSize && mousePos.x <= yEnd.x + scaleBoxSize &&
+                     mousePos.y >= yEnd.y - scaleBoxSize && mousePos.y <= yEnd.y + scaleBoxSize * 2) {
+                hoveredGizmo2DAxis = Gizmo2DAxis::ScaleY;
+            }
+        }
+    }
+
+    // Handle mouse interaction
+    bool isHoveringGizmo = hoveredGizmo2DAxis != Gizmo2DAxis::None || activeGizmo2DAxis != Gizmo2DAxis::None;
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && hoveredGizmo2DAxis != Gizmo2DAxis::None) {
+        activeGizmo2DAxis = hoveredGizmo2DAxis;
+        gizmo2DStartWorldPos = avgPos;
+        gizmo2DMouseStart = mousePos;
+        gizmo2DSnapshotTaken = false;
+
+        // Store original local positions/scales/rotations for ALL selected entities
+        gizmo2DOriginalLocalPositions.clear();
+        gizmo2DOriginalLocalScales.clear();
+        gizmo2DOriginalLocalRotations.clear();
+        for (auto entity : selectedEntities) {
+            if (ecsManager.HasComponent<Transform>(entity)) {
+                auto& transform = ecsManager.GetComponent<Transform>(entity);
+                gizmo2DOriginalLocalPositions.push_back(glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z));
+                gizmo2DOriginalLocalScales.push_back(glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z));
+                gizmo2DOriginalLocalRotations.push_back(transform.localRotation.z);
+            } else {
+                gizmo2DOriginalLocalPositions.push_back(glm::vec3(0.0f));
+                gizmo2DOriginalLocalScales.push_back(glm::vec3(1.0f));
+                gizmo2DOriginalLocalRotations.push_back(0.0f);
+            }
+        }
+    }
+
+    if (activeGizmo2DAxis != Gizmo2DAxis::None) {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+            // Take undo snapshot on first movement
+            if (!gizmo2DSnapshotTaken) {
+                SnapshotManager::GetInstance().TakeSnapshot("2D Transform");
+                SnapshotManager::GetInstance().SetSnapshotEnabled(false);
+                gizmo2DSnapshotTaken = true;
+            }
+
+            // Convert mouse positions to world coordinates
+            glm::vec3 worldStart = ScreenToWorld2D(gizmo2DMouseStart, sceneWidth, sceneHeight);
+            glm::vec3 worldCurrent = ScreenToWorld2D(mousePos, sceneWidth, sceneHeight);
+            glm::vec3 worldDelta = worldCurrent - worldStart;
+
+            // Apply transform based on active axis
+            for (size_t i = 0; i < selectedEntities.size(); ++i) {
+                Entity entity = selectedEntities[i];
+                if (!ecsManager.HasComponent<Transform>(entity)) continue;
+                if (i >= gizmo2DOriginalLocalPositions.size()) continue;
+
+                auto& transform = ecsManager.GetComponent<Transform>(entity);
+                const glm::vec3& origPos = gizmo2DOriginalLocalPositions[i];
+                const glm::vec3& origScale = gizmo2DOriginalLocalScales[i];
+                float origRotation = gizmo2DOriginalLocalRotations[i];
+
+                if (activeGizmo2DAxis == Gizmo2DAxis::X) {
+                    transform.localPosition.x = origPos.x + worldDelta.x;
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::Y) {
+                    transform.localPosition.y = origPos.y + worldDelta.y;
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::XY) {
+                    transform.localPosition.x = origPos.x + worldDelta.x;
+                    transform.localPosition.y = origPos.y + worldDelta.y;
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::Rotate) {
+                    // Calculate rotation based on mouse angle from center
+                    float startAngle = std::atan2(gizmo2DMouseStart.y - centerScreen.y, gizmo2DMouseStart.x - centerScreen.x);
+                    float currentAngle = std::atan2(mousePos.y - centerScreen.y, mousePos.x - centerScreen.x);
+                    float deltaAngle = (currentAngle - startAngle) * (180.0f / 3.14159265f);
+                    transform.localRotation.z = origRotation - deltaAngle; // Negative because screen Y is flipped
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::ScaleX) {
+                    float scaleFactor = 1.0f + worldDelta.x / 100.0f;
+                    transform.localScale.x = origScale.x * std::max(0.01f, scaleFactor);
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::ScaleY) {
+                    float scaleFactor = 1.0f + worldDelta.y / 100.0f;
+                    transform.localScale.y = origScale.y * std::max(0.01f, scaleFactor);
+                }
+                else if (activeGizmo2DAxis == Gizmo2DAxis::ScaleXY) {
+                    float scaleFactor = 1.0f + (worldDelta.x + worldDelta.y) / 200.0f;
+                    scaleFactor = std::max(0.01f, scaleFactor);
+                    transform.localScale.x = origScale.x * scaleFactor;
+                    transform.localScale.y = origScale.y * scaleFactor;
+                }
+
+                transform.isDirty = true;
+            }
+        }
+        else {
+            // Mouse released
+            activeGizmo2DAxis = Gizmo2DAxis::None;
+            if (gizmo2DSnapshotTaken) {
+                SnapshotManager::GetInstance().SetSnapshotEnabled(true);
+                gizmo2DSnapshotTaken = false;
+            }
+            justFinishedGizmoDrag = true;
+            // Clear stored data
+            gizmo2DOriginalLocalPositions.clear();
+            gizmo2DOriginalLocalScales.clear();
+            gizmo2DOriginalLocalRotations.clear();
+        }
+    }
+
+    // Draw the gizmo
+    if (gizmoOperation == ImGuizmo::TRANSLATE) {
+        // Draw XY square (translate both)
+        ImU32 xyColor = (hoveredGizmo2DAxis == Gizmo2DAxis::XY || activeGizmo2DAxis == Gizmo2DAxis::XY) ? xyColorHover : xyColorNormal;
+        drawList->AddRectFilled(centerScreen, ImVec2(centerScreen.x + centerSquareSize, centerScreen.y - centerSquareSize), xyColor);
+
+        // Draw X axis (red, pointing right)
+        ImU32 xColor = (hoveredGizmo2DAxis == Gizmo2DAxis::X || activeGizmo2DAxis == Gizmo2DAxis::X) ? xColorHover : xColorNormal;
+        drawList->AddLine(centerScreen, xEnd, xColor, handleThickness);
+        // Arrow head
+        drawList->AddTriangleFilled(
+            ImVec2(xEnd.x + arrowSize, xEnd.y),
+            ImVec2(xEnd.x - arrowSize * 0.3f, xEnd.y - arrowSize * 0.5f),
+            ImVec2(xEnd.x - arrowSize * 0.3f, xEnd.y + arrowSize * 0.5f),
+            xColor);
+
+        // Draw Y axis (green, pointing up)
+        ImU32 yColor = (hoveredGizmo2DAxis == Gizmo2DAxis::Y || activeGizmo2DAxis == Gizmo2DAxis::Y) ? yColorHover : yColorNormal;
+        drawList->AddLine(centerScreen, yEnd, yColor, handleThickness);
+        // Arrow head
+        drawList->AddTriangleFilled(
+            ImVec2(yEnd.x, yEnd.y - arrowSize),
+            ImVec2(yEnd.x - arrowSize * 0.5f, yEnd.y + arrowSize * 0.3f),
+            ImVec2(yEnd.x + arrowSize * 0.5f, yEnd.y + arrowSize * 0.3f),
+            yColor);
+
+        // Draw center circle
+        drawList->AddCircleFilled(centerScreen, 5.0f, IM_COL32(255, 255, 255, 255));
+    }
+    else if (gizmoOperation == ImGuizmo::ROTATE) {
+        // Draw rotation circle
+        ImU32 rotColor = (hoveredGizmo2DAxis == Gizmo2DAxis::Rotate || activeGizmo2DAxis == Gizmo2DAxis::Rotate) ? rotateColorHover : rotateColorNormal;
+        drawList->AddCircle(centerScreen, handleLength * 0.8f, rotColor, 64, handleThickness);
+        drawList->AddCircleFilled(centerScreen, 5.0f, IM_COL32(255, 255, 255, 255));
+    }
+    else if (gizmoOperation == ImGuizmo::SCALE) {
+        float scaleBoxSize = 8.0f;
+
+        // Draw X axis with scale box
+        ImU32 xColor = (hoveredGizmo2DAxis == Gizmo2DAxis::ScaleX || activeGizmo2DAxis == Gizmo2DAxis::ScaleX) ? xColorHover : xColorNormal;
+        drawList->AddLine(centerScreen, xEnd, xColor, handleThickness);
+        drawList->AddRectFilled(ImVec2(xEnd.x - scaleBoxSize, xEnd.y - scaleBoxSize),
+                               ImVec2(xEnd.x + scaleBoxSize, xEnd.y + scaleBoxSize), xColor);
+
+        // Draw Y axis with scale box
+        ImU32 yColor = (hoveredGizmo2DAxis == Gizmo2DAxis::ScaleY || activeGizmo2DAxis == Gizmo2DAxis::ScaleY) ? yColorHover : yColorNormal;
+        drawList->AddLine(centerScreen, yEnd, yColor, handleThickness);
+        drawList->AddRectFilled(ImVec2(yEnd.x - scaleBoxSize, yEnd.y - scaleBoxSize),
+                               ImVec2(yEnd.x + scaleBoxSize, yEnd.y + scaleBoxSize), yColor);
+
+        // Draw center XY scale box
+        ImU32 xyColor = (hoveredGizmo2DAxis == Gizmo2DAxis::ScaleXY || activeGizmo2DAxis == Gizmo2DAxis::ScaleXY) ? xyColorHover : xyColorNormal;
+        drawList->AddRectFilled(ImVec2(centerScreen.x - centerSquareSize, centerScreen.y - centerSquareSize),
+                               ImVec2(centerScreen.x + centerSquareSize, centerScreen.y + centerSquareSize), xyColor);
+    }
 }
 
 void ScenePanel::InitializeMatrices() {
@@ -250,6 +647,56 @@ void ScenePanel::HandleKeyboardInput() {
             }
         }
     }
+
+    // Handle 'F' key to focus on selected entity (Frame Selected - like Unity)
+    if (ImGui::IsKeyPressed(ImGuiKey_F) && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+        Entity selectedEntity = GUIManager::GetSelectedEntity();
+        if (selectedEntity != static_cast<Entity>(-1)) {
+            try {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (ecsManager.HasComponent<Transform>(selectedEntity)) {
+                    Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
+                    glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                       transform.worldMatrix.m.m13,
+                                       transform.worldMatrix.m.m23);
+
+                    // Determine if entity is 2D or 3D
+                    bool entityIs3D = true;
+                    bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(selectedEntity);
+                    bool hasText = ecsManager.HasComponent<TextRenderComponent>(selectedEntity);
+                    bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(selectedEntity);
+
+                    if (hasModel) {
+                        entityIs3D = true;
+                    } else if (hasSprite) {
+                        auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(selectedEntity);
+                        entityIs3D = sprite.is3D;
+                        // Always use transform.worldMatrix for position - sprite.position is not kept updated
+                    } else if (hasText) {
+                        auto& text = ecsManager.GetComponent<TextRenderComponent>(selectedEntity);
+                        entityIs3D = text.is3D;
+                    }
+
+                    // Switch view mode to match entity if needed
+                    EditorState& editorState = EditorState::GetInstance();
+                    bool currentIs2D = editorState.Is2DMode();
+                    bool targetIs2D = !entityIs3D;
+
+                    if (currentIs2D != targetIs2D) {
+                        EditorState::ViewMode newViewMode = entityIs3D ? EditorState::ViewMode::VIEW_3D : EditorState::ViewMode::VIEW_2D;
+                        editorState.SetViewMode(newViewMode);
+                        GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
+                        GraphicsManager::GetInstance().SetViewMode(gfxMode);
+                    }
+
+                    // Frame the entity
+                    SetCameraTarget(entityPos);
+                }
+            } catch (const std::exception& e) {
+                ENGINE_PRINT("[ScenePanel] Failed to focus entity: ", e.what(), "\n");
+            }
+        }
+    }
 }
 
 void ScenePanel::HandleCameraInput() {
@@ -297,7 +744,9 @@ void ScenePanel::HandleCameraInput() {
     }
 
     // Set orbit sensitivity based on zoom level (distance) - more zoomed in = slower rotation
-    editorCamera.OrbitSensitivity = 0.35f * (5.0f / (editorCamera.Distance + 5.0f));
+    // logarithmic scaling for consistent feel at any zoom level
+    float logDistance = std::log2(editorCamera.Distance + 1.0f);
+    editorCamera.OrbitSensitivity = std::max(0.05f, logDistance * 0.12f);
 
     editorCamera.ProcessInput(
         io.DeltaTime,
@@ -312,10 +761,13 @@ void ScenePanel::HandleCameraInput() {
         is2DMode
     );
 
-    // WASD movement when right-click rotating
+    // WASD movement when right-click rotating (3D fly-through mode)
     if (isRightMousePressed && !is2DMode) {
-        float moveSpeed = editorCamera.Distance * 0.01f; // Scale movement speed by distance
-        
+        // logarithmic scaling: movement feels consistent at any zoom level
+        // Using log scale: speed = base * log2(distance + 1) for smoother feel at close range
+        float logDistance = std::log2(editorCamera.Distance + 1.0f);
+        float moveSpeed = std::max(0.005f, logDistance * 0.02f); // Floor prevents imperceptible movement
+
         if (ImGui::IsKeyDown(ImGuiKey_W)) {
             editorCamera.Position += editorCamera.Front * moveSpeed;
             editorCamera.Target += editorCamera.Front * moveSpeed;
@@ -332,8 +784,73 @@ void ScenePanel::HandleCameraInput() {
             editorCamera.Position += editorCamera.Right * moveSpeed;
             editorCamera.Target += editorCamera.Right * moveSpeed;
         }
-        
-        // Update camera vectors after movement
+
+        editorCamera.UpdateCameraVectors();
+    }
+
+    // Keyboard camera movement (Minecraft creative style)
+    // Arrow keys: Up/Down = forward/backward, Left/Right = strafe
+    // Space = move up, Shift = move down
+    bool movementKeyPressed = ImGui::IsKeyDown(ImGuiKey_UpArrow) || ImGui::IsKeyDown(ImGuiKey_DownArrow) ||
+                              ImGui::IsKeyDown(ImGuiKey_LeftArrow) || ImGui::IsKeyDown(ImGuiKey_RightArrow) ||
+                              ImGui::IsKeyDown(ImGuiKey_Space) || ImGui::IsKeyDown(ImGuiKey_LeftShift);
+
+    if (movementKeyPressed && !isAltPressed && !isRightMousePressed) {
+        float nudgeSpeed;
+
+        if (is2DMode) {
+            // In 2D: scale by ortho zoom level (proportional to visible area)
+            nudgeSpeed = editorCamera.OrthoZoomLevel * 3.0f * io.DeltaTime;
+        } else {
+            // In 3D: logarithmic scaling for consistent feel at any zoom level
+            float logDistance = std::log2(editorCamera.Distance + 1.0f);
+            nudgeSpeed = std::max(0.002f, logDistance * 0.015f) * io.DeltaTime * 60.0f;
+        }
+
+        glm::vec3 movement(0.0f);
+
+        // Up/Down arrows: forward/backward (toward/away from where camera is looking)
+        if (ImGui::IsKeyDown(ImGuiKey_UpArrow)) {
+            if (is2DMode) {
+                movement.y += nudgeSpeed; // In 2D, up arrow moves up on Y axis
+            } else {
+                movement += editorCamera.Front * nudgeSpeed; // Move toward target
+            }
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_DownArrow)) {
+            if (is2DMode) {
+                movement.y -= nudgeSpeed;
+            } else {
+                movement -= editorCamera.Front * nudgeSpeed; // Move away from target
+            }
+        }
+
+        // Left/Right arrows: strafe left/right
+        if (ImGui::IsKeyDown(ImGuiKey_LeftArrow)) {
+            if (is2DMode) {
+                movement.x -= nudgeSpeed;
+            } else {
+                movement -= editorCamera.Right * nudgeSpeed;
+            }
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_RightArrow)) {
+            if (is2DMode) {
+                movement.x += nudgeSpeed;
+            } else {
+                movement += editorCamera.Right * nudgeSpeed;
+            }
+        }
+
+        // Space = move up, Shift = move down (Minecraft creative style)
+        if (ImGui::IsKeyDown(ImGuiKey_Space) && !is2DMode) {
+            movement += glm::vec3(0.0f, 1.0f, 0.0f) * nudgeSpeed; // World up
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && !is2DMode) {
+            movement -= glm::vec3(0.0f, 1.0f, 0.0f) * nudgeSpeed; // World down
+        }
+
+        editorCamera.Target += movement;
+        editorCamera.Position += movement;
         editorCamera.UpdateCameraVectors();
     }
 }
@@ -420,8 +937,18 @@ void ScenePanel::HandleEntitySelection() {
                         bool is2DMode = editorState.Is2DMode();
 
                         float aspectRatio = sceneWidth / sceneHeight;
+
+                        // Get game resolution for 2D projection
+                        int gameWidth = RunTimeVar::window.width;
+                        int gameHeight = RunTimeVar::window.height;
+                        auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+                        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+                        if (gamePanel) {
+                            gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+                        }
+
                         glm::mat4 glmViewMatrix = is2DMode ? editorCamera.Get2DViewMatrix() : editorCamera.GetViewMatrix();
-                        glm::mat4 glmProjMatrix = is2DMode ? editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight) : editorCamera.GetProjectionMatrix(aspectRatio);
+                        glm::mat4 glmProjMatrix = is2DMode ? editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight) : editorCamera.GetProjectionMatrix(aspectRatio);
                         glm::mat4 vp = glmProjMatrix * glmViewMatrix;
 
                         for (auto entity : ecsManager.GetActiveEntities()) {
@@ -456,6 +983,12 @@ void ScenePanel::HandleEntitySelection() {
                 }
             }
 
+            // Only perform raycast on actual click/release, not during drag
+            // Skip raycast while marquee dragging or during continuous drag
+            if (!isLeftClicked && !isDoubleClicked && !(isLeftReleased && !isMarqueeSelecting)) {
+                return; // Skip raycast during drag or other states
+            }
+
             // Perform proper raycasting for entity selection
             EditorState& editorState = EditorState::GetInstance();
             bool is2DMode = editorState.Is2DMode();
@@ -465,10 +998,19 @@ void ScenePanel::HandleEntitySelection() {
             glm::mat4 glmViewMatrix;
             glm::mat4 glmProjMatrix;
 
+            // Get game resolution for 2D projection
+            int gameWidth = RunTimeVar::window.width;
+            int gameHeight = RunTimeVar::window.height;
+            auto gamePanelPtr2 = GUIManager::GetPanelManager().GetPanel("Game");
+            auto gamePanel2 = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr2);
+            if (gamePanel2) {
+                gamePanel2->GetTargetGameResolution(gameWidth, gameHeight);
+            }
+
             if (is2DMode) {
                 // Use 2D orthographic matrices for 2D mode
                 glmViewMatrix = editorCamera.Get2DViewMatrix();
-                glmProjMatrix = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight);
+                glmProjMatrix = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight);
             } else {
                 // Use 3D perspective matrices for 3D mode
                 glmViewMatrix = editorCamera.GetViewMatrix();
@@ -476,18 +1018,8 @@ void ScenePanel::HandleEntitySelection() {
             }
 
             // Convert GLM matrices to Matrix4x4 for raycast
-            Matrix4x4 viewMatrix(
-                glmViewMatrix[0][0], glmViewMatrix[1][0], glmViewMatrix[2][0], glmViewMatrix[3][0],
-                glmViewMatrix[0][1], glmViewMatrix[1][1], glmViewMatrix[2][1], glmViewMatrix[3][1],
-                glmViewMatrix[0][2], glmViewMatrix[1][2], glmViewMatrix[2][2], glmViewMatrix[3][2],
-                glmViewMatrix[0][3], glmViewMatrix[1][3], glmViewMatrix[2][3], glmViewMatrix[3][3]
-            );
-            Matrix4x4 projMatrix(
-                glmProjMatrix[0][0], glmProjMatrix[1][0], glmProjMatrix[2][0], glmProjMatrix[3][0],
-                glmProjMatrix[0][1], glmProjMatrix[1][1], glmProjMatrix[2][1], glmProjMatrix[3][1],
-                glmProjMatrix[0][2], glmProjMatrix[1][2], glmProjMatrix[2][2], glmProjMatrix[3][2],
-                glmProjMatrix[0][3], glmProjMatrix[1][3], glmProjMatrix[2][3], glmProjMatrix[3][3]
-            );
+            Matrix4x4 viewMatrix = Matrix4x4::ConvertToMatrix4x4(glmViewMatrix);
+            Matrix4x4 projMatrix = Matrix4x4::ConvertToMatrix4x4(glmProjMatrix);
 
             // Cast ray from camera through mouse position
             RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(
@@ -541,19 +1073,12 @@ void ScenePanel::HandleEntitySelection() {
                         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
                         if (ecsManager.HasComponent<Transform>(hit.entity)) {
                             Transform& transform = ecsManager.GetComponent<Transform>(hit.entity);
-                            Vector3D targetPos(transform.worldMatrix.m.m03,
-                                             transform.worldMatrix.m.m13,
-                                             transform.worldMatrix.m.m23);
+                            glm::vec3 entityPos(transform.worldMatrix.m.m03,
+                                               transform.worldMatrix.m.m13,
+                                               transform.worldMatrix.m.m23);
 
-                            glm::vec3 entityPos(targetPos.x, targetPos.y, targetPos.z);
-
-                            if (is2DMode) {
-                                // Focus in 2D
-                                editorCamera.Target = glm::vec3(targetPos.x, targetPos.y, 0.0f);
-                            } else {
-                                // Focus in 3D
-                                editorCamera.FrameTarget(entityPos, 5.0f);
-                            }
+                            // Use SetCameraTarget which properly handles both 2D and 3D modes
+                            SetCameraTarget(entityPos);
                             ENGINE_PRINT("[ScenePanel] Focused camera on entity ", hit.entity, "\n");
                         }
                     } catch (const std::exception& e) {
@@ -680,8 +1205,12 @@ void ScenePanel::OnImGuiRender()
             cachedProjectionMatrix = editorCamera.GetProjectionMatrix(static_cast<float>(sceneViewWidth) / sceneViewHeight);
             cachedWindowSize = ImVec2((float)sceneViewWidth, (float)sceneViewHeight);
 
-            // ImGuizmo manipulation inside the child
-            HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
+            // Gizmo manipulation - use custom 2D gizmo in 2D mode, ImGuizmo in 3D mode
+            if (editorState.Is2DMode()) {
+                Handle2DGizmo((float)sceneViewWidth, (float)sceneViewHeight);
+            } else {
+                HandleImGuizmoInChildWindow((float)sceneViewWidth, (float)sceneViewHeight);
+            }
 
             // Draw collider gizmos for selected entity
             DrawColliderGizmos();
@@ -689,9 +1218,13 @@ void ScenePanel::OnImGuiRender()
             DrawAudioGizmos();
             DrawLightGizmos();
 
-            // Draw selection outline for selected entities
+            // Draw selection outline for selected entities (skip 2D entities in 2D mode - they use custom 2D gizmo)
             auto selectedEntities = GUIManager::GetSelectedEntities();
             for (auto entity : selectedEntities) {
+                // In 2D mode, skip drawing 3D selection outline for 2D entities
+                if (editorState.Is2DMode() && !RaycastUtil::IsEntity3D(entity)) {
+                    continue;
+                }
                 DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
             }
 
@@ -716,7 +1249,8 @@ void ScenePanel::OnImGuiRender()
 
         // Route input to camera/selection when not interacting with gizmos or dragging
         const bool hasActiveDragPayload = ImGui::GetDragDropPayload() != nullptr;
-        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing() && !isDraggingModel && !hasActiveDragPayload;
+        const bool is2DGizmoActive = (activeGizmo2DAxis != Gizmo2DAxis::None) || (hoveredGizmo2DAxis != Gizmo2DAxis::None);
+        const bool canHandleInput = isSceneHovered && !ImGuizmo::IsOver() && !ImGuizmo::IsUsing() && !is2DGizmoActive && !isDraggingModel && !hasActiveDragPayload;
         if (canHandleInput)
         {
             HandleCameraInput();
@@ -776,6 +1310,19 @@ void ScenePanel::RenderSceneWithEditorCamera(int width, int height) {
     try {
         auto& gfx = GraphicsManager::GetInstance();
 
+        // Only set target game resolution in 2D mode (for 2D rendering synchronization)
+        // This prevents 2D resolution settings from affecting 3D rendering
+        EditorState& editorState = EditorState::GetInstance();
+        if (editorState.Is2DMode()) {
+            auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+            auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+            if (gamePanel) {
+                int targetWidth, targetHeight;
+                gamePanel->GetTargetGameResolution(targetWidth, targetHeight);
+                gfx.SetTargetGameResolution(targetWidth, targetHeight);
+            }
+        }
+
         // Set viewport size for correct aspect ratio
         gfx.SetViewportSize(width, height);
 
@@ -828,17 +1375,39 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     ImGuizmo::AllowAxisFlip(false);
 
 
-    // Get matrices from editor camera
+    // Get matrices from editor camera based on 2D/3D mode
+    EditorState& editorState = EditorState::GetInstance();
     float aspectRatio = sceneWidth / sceneHeight;
-    glm::mat4 view = editorCamera.GetViewMatrix();
-    glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
+
+    // Get game resolution for 2D projection
+    int gameWidth = RunTimeVar::window.width;
+    int gameHeight = RunTimeVar::window.height;
+    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+    auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+    if (gamePanel) {
+        gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+    }
+
+    glm::mat4 view, projection;
+    if (editorState.Is2DMode()) {
+        // Use 2D orthographic matrices for proper gizmo alignment
+        view = editorCamera.Get2DViewMatrix();
+        projection = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight);
+        // IMPORTANT: Tell ImGuizmo we're using orthographic projection
+        ImGuizmo::SetOrthographic(true);
+    } else {
+        // Use 3D perspective matrices
+        view = editorCamera.GetViewMatrix();
+        projection = editorCamera.GetProjectionMatrix(aspectRatio);
+        // Use perspective mode for ImGuizmo
+        ImGuizmo::SetOrthographic(false);
+    }
 
     float viewMatrix[16], projMatrix[16];
     Mat4ToFloatArray(view, viewMatrix);
     Mat4ToFloatArray(projection, projMatrix);
 
     // Draw grid (only in 3D mode)
-    EditorState& editorState = EditorState::GetInstance();
     if (!editorState.Is2DMode()) {
         ImGuizmo::DrawGrid(viewMatrix, projMatrix, identityMatrix, 10.0f);
     }
@@ -1082,8 +1651,12 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
     glm::mat4 view = editorCamera.GetViewMatrix();
     glm::mat4 projection = editorCamera.GetProjectionMatrix(aspectRatio);
 
+    // Rotate the view 180 degrees around Y axis so gizmo faces the same direction as camera
+    glm::mat4 rotateY180 = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 gizmoView = view * rotateY180;
+
     float viewMatrix[16], projMatrix[16];
-    Mat4ToFloatArray(view, viewMatrix);
+    Mat4ToFloatArray(gizmoView, viewMatrix);
     Mat4ToFloatArray(projection, projMatrix);
 
     // Position the ViewGizmo in the top right corner
@@ -1120,6 +1693,10 @@ void ScenePanel::RenderViewGizmo(float sceneWidth, float sceneHeight) {
         for (int i = 0; i < 16; ++i) {
             glm::value_ptr(newViewMatrix)[i] = manipulatedViewMatrix[i];
         }
+
+        // Reverse the 180 degree Y rotation we applied for the gizmo
+        glm::mat4 rotateY180Inverse = glm::rotate(glm::mat4(1.0f), glm::radians(-180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        newViewMatrix = newViewMatrix * rotateY180Inverse;
 
         // Extract camera position and orientation from the inverse view matrix
         glm::mat4 inverseView = glm::inverse(newViewMatrix);
@@ -1439,16 +2016,33 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
-        // Get world position and scale from transform
+        //check if entity has ModelRender
+        if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
+        {
+            ModelRenderComponent& rc = ecsManager.GetComponent<ModelRenderComponent>(selectedEntity);
+            collider.center = rc.CalculateCenter(*rc.model);
+        }
+
+
+
+        // Get world position, rotation and scale from transform
         glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+        glm::quat worldRot = glm::quat(transform.localRotation.w, transform.localRotation.x, transform.localRotation.y, transform.localRotation.z); // Convert custom Quaternion to glm::quat
         glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+
+        // Build transformation matrix (TRS order: Translation * Rotation * Scale)
+        glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), worldPos)
+            * glm::mat4_cast(worldRot)
+            * glm::scale(glm::mat4(1.0f), worldScale);
+
+        // Apply collider offset in local space
+        glm::vec3 localOffset = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+        glm::vec3 offset = glm::vec3(transformMatrix * glm::vec4(localOffset, 1.0f)) - worldPos;
+        worldPos += offset;
 
         // Get viewport dimensions from current ImGui window
         ImVec2 windowSize = cachedWindowSize;
         if (windowSize.x == 0 || windowSize.y == 0) return;
-
-        // Commented out to fix warning C4189 - unused variable
-        // float aspectRatio = windowSize.x / windowSize.y;
 
         // Project to screen space
         glm::mat4 vp = cachedProjectionMatrix * cachedViewMatrix;
@@ -1459,65 +2053,258 @@ void ScenePanel::DrawColliderGizmos() {
         // Green color for collider gizmos (like Unity)
         ImU32 gizmoColor = IM_COL32(0, 255, 0, 255);
 
+        // Helper lambda to transform a local point to world space
+        auto TransformPoint = [&](const glm::vec3& localPoint) -> glm::vec3 {
+            return glm::vec3(transformMatrix * glm::vec4(localPoint, 1.0f));
+            };
+
         // Draw based on shape type
         switch (collider.shapeType) {
-            case ColliderShapeType::Box: {
-                // Draw wireframe box - apply transform scale to extents
-                glm::vec3 extents = glm::vec3(
-                    collider.boxHalfExtents.x * worldScale.x,
-                    collider.boxHalfExtents.y * worldScale.y,
-                    collider.boxHalfExtents.z * worldScale.z
-                );
+        case ColliderShapeType::Box: {
+            // Draw wireframe box - define corners in LOCAL space
+            glm::vec3 extents = glm::vec3(
+                collider.boxHalfExtents.x,
+                collider.boxHalfExtents.y,
+                collider.boxHalfExtents.z
+            );
 
-                // 8 corners of the box
-                glm::vec3 corners[8] = {
-                    worldPos + glm::vec3(-extents.x, -extents.y, -extents.z),
-                    worldPos + glm::vec3( extents.x, -extents.y, -extents.z),
-                    worldPos + glm::vec3( extents.x,  extents.y, -extents.z),
-                    worldPos + glm::vec3(-extents.x,  extents.y, -extents.z),
-                    worldPos + glm::vec3(-extents.x, -extents.y,  extents.z),
-                    worldPos + glm::vec3( extents.x, -extents.y,  extents.z),
-                    worldPos + glm::vec3( extents.x,  extents.y,  extents.z),
-                    worldPos + glm::vec3(-extents.x,  extents.y,  extents.z),
-                };
+            // 8 corners in LOCAL space (before transformation)
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
+            glm::vec3 localCorners[8] = {
+                colliderCenter + glm::vec3(-extents.x, -extents.y, -extents.z),
+                colliderCenter + glm::vec3(extents.x, -extents.y, -extents.z),
+                colliderCenter + glm::vec3(extents.x,  extents.y, -extents.z),
+                colliderCenter + glm::vec3(-extents.x,  extents.y, -extents.z),
+                colliderCenter + glm::vec3(-extents.x, -extents.y,  extents.z),
+                colliderCenter + glm::vec3(extents.x, -extents.y,  extents.z),
+                colliderCenter + glm::vec3(extents.x,  extents.y,  extents.z),
+                colliderCenter + glm::vec3(-extents.x,  extents.y,  extents.z),
+            };
 
-                // Project corners to screen with visibility check
-                ImVec2 screenCorners[8];
-                bool visible[8];
-                for (int i = 0; i < 8; i++) {
-                    screenCorners[i] = ProjectToScreen(corners[i], visible[i], vp, windowPos, windowSize);
-                }
-
-                // Draw 12 edges of the box - only draw if both endpoints are visible
-                int edges[12][2] = {
-                    {0,1}, {1,2}, {2,3}, {3,0}, // Bottom face
-                    {4,5}, {5,6}, {6,7}, {7,4}, // Top face
-                    {0,4}, {1,5}, {2,6}, {3,7}  // Vertical edges
-                };
-
-                for (int i = 0; i < 12; i++) {
-                    int idx0 = edges[i][0];
-                    int idx1 = edges[i][1];
-                    if (visible[idx0] && visible[idx1]) {
-                        drawList->AddLine(screenCorners[idx0], screenCorners[idx1], gizmoColor, 2.0f);
-                    }
-                }
-                break;
+            // Transform corners to world space, then project to screen
+            ImVec2 screenCorners[8];
+            bool visible[8];
+            for (int i = 0; i < 8; i++) {
+                glm::vec3 worldCorner = TransformPoint(localCorners[i]);
+                screenCorners[i] = ProjectToScreen(worldCorner, visible[i], vp, windowPos, windowSize);
             }
 
-            case ColliderShapeType::Sphere: {
-                // Draw wireframe sphere (3 orthogonal circles) - use max scale component
-                float maxScale = glm::max(glm::max(worldScale.x, worldScale.y), worldScale.z);
-                float radius = collider.sphereRadius * maxScale;
-                int segments = 32;
+            // Draw 12 edges of the box
+            int edges[12][2] = {
+                {0,1}, {1,2}, {2,3}, {3,0}, // Bottom face
+                {4,5}, {5,6}, {6,7}, {7,4}, // Top face
+                {0,4}, {1,5}, {2,6}, {3,7}  // Vertical edges
+            };
 
-                // XY plane circle
+            for (int i = 0; i < 12; i++) {
+                int idx0 = edges[i][0];
+                int idx1 = edges[i][1];
+                if (visible[idx0] && visible[idx1]) {
+                    drawList->AddLine(screenCorners[idx0], screenCorners[idx1], gizmoColor, 2.0f);
+                }
+            }
+            break;
+        }
+
+        case ColliderShapeType::Sphere: {
+            // Draw wireframe sphere (3 orthogonal circles)
+            float radius = collider.sphereRadius;
+            int segments = 32;
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
+
+            // Define circles in LOCAL space, then transform each point
+            // XY plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
+
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+
+            // XZ plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+
+            // YZ plane circle
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = colliderCenter + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
+                glm::vec3 localP2 = colliderCenter + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
+
+                glm::vec3 p1 = TransformPoint(localP1);
+                glm::vec3 p2 = TransformPoint(localP2);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+            break;
+        }
+
+        case ColliderShapeType::Capsule: {
+            // Draw wireframe capsule with hemispheres
+            float radius = collider.capsuleRadius;
+            float halfHeight = collider.capsuleHalfHeight;
+            int segments = 16; // Horizontal segments around the capsule
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
+
+            // Define top and bottom centers in LOCAL space
+            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
+
+            // 1. Draw cylinder body (vertical lines connecting top and bottom circles)
+            for (int i = 0; i < segments; i++) {
+                float angle = (float)i / segments * 2.0f * 3.14159f;
+                glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
+
+                glm::vec3 p1 = TransformPoint(localTop + localOffset);
+                glm::vec3 p2 = TransformPoint(localBottom + localOffset);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                }
+            }
+
+            // 2. Draw equator circles (where cylinder meets hemispheres)
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+
+                glm::vec3 topP1 = TransformPoint(localTop + localP1);
+                glm::vec3 topP2 = TransformPoint(localTop + localP2);
+                glm::vec3 botP1 = TransformPoint(localBottom + localP1);
+                glm::vec3 botP2 = TransformPoint(localBottom + localP2);
+
+                bool vis1, vis2, vis3, vis4;
+                ImVec2 s1 = ProjectToScreen(topP1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(topP2, vis2, vp, windowPos, windowSize);
+                ImVec2 s3 = ProjectToScreen(botP1, vis3, vp, windowPos, windowSize);
+                ImVec2 s4 = ProjectToScreen(botP2, vis4, vp, windowPos, windowSize);
+
+                if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
+            }
+
+            // 3. Draw TOP HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
+
+                // Draw arc from equator up to the top pole
+                for (int i = 0; i < segments / 2; i++) {
+                    float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
+                    float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
+
+                    // Arc in the vertical plane
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localTop + localP1);
+                    glm::vec3 p2 = TransformPoint(localTop + localP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
+            // 4. Draw BOTTOM HEMISPHERE - draw several vertical arc slices
+            for (int slice = 0; slice < segments; slice++) {
+                float theta = (float)slice / segments * 2.0f * 3.14159f;
+
+                // Draw arc from equator down to the bottom pole
+                for (int i = 0; i < segments / 2; i++) {
+                    float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
+                    float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
+
+                    // Arc in the vertical plane (mirrored downward)
+                    glm::vec3 localP1(
+                        cos(theta) * radius * sin(angle1),
+                        -radius * cos(angle1),
+                        sin(theta) * radius * sin(angle1)
+                    );
+                    glm::vec3 localP2(
+                        cos(theta) * radius * sin(angle2),
+                        -radius * cos(angle2),
+                        sin(theta) * radius * sin(angle2)
+                    );
+
+                    glm::vec3 p1 = TransformPoint(localBottom + localP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + localP2);
+
+                    bool vis1, vis2;
+                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                    if (vis1 && vis2) {
+                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                    }
+                }
+            }
+
+            // 5. Draw horizontal latitude circles on both hemispheres for better visibility
+            int latitudeLines = 3; // Number of horizontal circles on each hemisphere
+            for (int lat = 1; lat <= latitudeLines; lat++) {
+                float angle = (float)lat / (latitudeLines + 1) * 3.14159f * 0.5f;
+                float latRadius = radius * sin(angle);
+                float latHeight = radius * cos(angle);
+
+                // Top hemisphere circle
                 for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
-                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
+                    glm::vec3 topP1 = glm::vec3(latRadius * cos(theta1), latHeight, latRadius * sin(theta1));
+                    glm::vec3 topP2 = glm::vec3(latRadius * cos(theta2), latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localTop + topP1);
+                    glm::vec3 p2 = TransformPoint(localTop + topP2);
 
                     bool vis1, vis2;
                     ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
@@ -1527,13 +2314,16 @@ void ScenePanel::DrawColliderGizmos() {
                     }
                 }
 
-                // XZ plane circle
+                // Bottom hemisphere circle
                 for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
+                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
+                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                    glm::vec3 p1 = worldPos + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = worldPos + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+                    glm::vec3 botP1 = glm::vec3(latRadius * cos(theta1), -latHeight, latRadius * sin(theta1));
+                    glm::vec3 botP2 = glm::vec3(latRadius * cos(theta2), -latHeight, latRadius * sin(theta2));
+
+                    glm::vec3 p1 = TransformPoint(localBottom + botP1);
+                    glm::vec3 p2 = TransformPoint(localBottom + botP2);
 
                     bool vis1, vis2;
                     ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
@@ -1542,117 +2332,67 @@ void ScenePanel::DrawColliderGizmos() {
                         drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                     }
                 }
-
-                // YZ plane circle
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = worldPos + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
-                    glm::vec3 p2 = worldPos + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
-
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
-                }
-                break;
             }
 
-            case ColliderShapeType::Capsule: {
-                // Draw wireframe capsule - scale radius by XZ, height by Y
-                float radialScale = glm::max(worldScale.x, worldScale.z);
-                float radius = collider.capsuleRadius * radialScale;
-                float halfHeight = collider.capsuleHalfHeight * worldScale.y;
-                int segments = 16;
+            break;
+        }
+        case ColliderShapeType::Cylinder: {
+            // Draw wireframe cylinder
+            float radius = collider.cylinderRadius;
+            float halfHeight = collider.cylinderHalfHeight;
+            int segments = 16;
+            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
-                // Draw cylinder body (vertical lines)
-                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
-                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+            // Define top and bottom centers in LOCAL space
+            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
 
-                for (int i = 0; i < segments; i++) {
-                    float angle = (float)i / segments * 2.0f * 3.14159f;
-                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+            // Vertical edges
+            for (int i = 0; i < segments; i++) {
+                float angle = (float)i / segments * 2.0f * 3.14159f;
+                glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
 
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
+                glm::vec3 p1 = TransformPoint(localTop + localOffset);
+                glm::vec3 p2 = TransformPoint(localBottom + localOffset);
+
+                bool vis1, vis2;
+                ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
+                if (vis1 && vis2) {
+                    drawList->AddLine(s1, s2, gizmoColor, 2.0f);
                 }
-
-                // Top and bottom circles
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
-
-                    bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
-                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
-                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
-
-                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
-                }
-                break;
             }
 
-            case ColliderShapeType::Cylinder: {
-                // Draw wireframe cylinder - scale radius by XZ, height by Y
-                float radialScale = glm::max(worldScale.x, worldScale.z);
-                float radius = collider.cylinderRadius * radialScale;
-                float halfHeight = collider.cylinderHalfHeight * worldScale.y;
-                int segments = 16;
+            // Top and bottom circles
+            for (int i = 0; i < segments; i++) {
+                float angle1 = (float)i / segments * 2.0f * 3.14159f;
+                float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 top = worldPos + glm::vec3(0, halfHeight, 0);
-                glm::vec3 bottom = worldPos - glm::vec3(0, halfHeight, 0);
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
-                // Vertical edges
-                for (int i = 0; i < segments; i++) {
-                    float angle = (float)i / segments * 2.0f * 3.14159f;
-                    glm::vec3 offset(cos(angle) * radius, 0, sin(angle) * radius);
+                glm::vec3 topP1 = TransformPoint(localTop + localP1);
+                glm::vec3 topP2 = TransformPoint(localTop + localP2);
+                glm::vec3 botP1 = TransformPoint(localBottom + localP1);
+                glm::vec3 botP2 = TransformPoint(localBottom + localP2);
 
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(top + offset, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(bottom + offset, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
-                }
+                bool vis1, vis2, vis3, vis4;
+                ImVec2 s1 = ProjectToScreen(topP1, vis1, vp, windowPos, windowSize);
+                ImVec2 s2 = ProjectToScreen(topP2, vis2, vp, windowPos, windowSize);
+                ImVec2 s3 = ProjectToScreen(botP1, vis3, vp, windowPos, windowSize);
+                ImVec2 s4 = ProjectToScreen(botP2, vis4, vp, windowPos, windowSize);
 
-                // Top and bottom circles
-                for (int i = 0; i < segments; i++) {
-                    float angle1 = (float)i / segments * 2.0f * 3.14159f;
-                    float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 p1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                    glm::vec3 p2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
-
-                    bool vis1, vis2, vis3, vis4;
-                    ImVec2 s1 = ProjectToScreen(top + p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(top + p2, vis2, vp, windowPos, windowSize);
-                    ImVec2 s3 = ProjectToScreen(bottom + p1, vis3, vp, windowPos, windowSize);
-                    ImVec2 s4 = ProjectToScreen(bottom + p2, vis4, vp, windowPos, windowSize);
-
-                    if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
-                }
-                break;
+                if (vis1 && vis2) drawList->AddLine(s1, s2, gizmoColor, 2.0f);
+                if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
             }
+            break;
+        }
         }
     }
     catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
     }
 }
-
 void ScenePanel::DrawCameraGizmos() {
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity == static_cast<Entity>(-1)) return;
@@ -1689,22 +2429,23 @@ void ScenePanel::DrawCameraGizmos() {
         // Get camera world position from transform
         glm::vec3 camPos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
 
-        // Calculate camera forward, right, up vectors
-        glm::vec3 camForward, camRight, camUp;
-        if (camera.useFreeRotation) {
-            // Use yaw/pitch to calculate direction
-            float yawRad = glm::radians(camera.yaw);
-            float pitchRad = glm::radians(camera.pitch);
-            camForward.x = cos(yawRad) * cos(pitchRad);
-            camForward.y = sin(pitchRad);
-            camForward.z = sin(yawRad) * cos(pitchRad);
-            camForward = glm::normalize(camForward);
-        } else {
-            // Use target direction
-            camForward = glm::normalize(camera.target);
+        // Extract forward direction from transform's Z column (same as CameraSystem does)
+        glm::vec3 fwdCol(
+            transform.worldMatrix.m.m02,
+            transform.worldMatrix.m.m12,
+            transform.worldMatrix.m.m22
+        );
+        glm::vec3 camForward = glm::length(fwdCol) > 0.0001f
+            ? glm::normalize(fwdCol)
+            : glm::vec3(0.0f, 0.0f, 1.0f);
+
+        // Build camera basis vectors
+        glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+        if (std::abs(glm::dot(camForward, worldUp)) > 0.99f) {
+            worldUp = glm::vec3(0.0f, 0.0f, 1.0f);
         }
-        camRight = glm::normalize(glm::cross(camForward, camera.up));
-        camUp = glm::normalize(glm::cross(camRight, camForward));
+        glm::vec3 camRight = glm::normalize(glm::cross(worldUp, camForward));
+        glm::vec3 camUp = glm::normalize(glm::cross(camForward, camRight));
 
         // Get ImGui draw list
         ImDrawList* drawList = ImGui::GetWindowDrawList();

@@ -169,23 +169,38 @@ void WindowManager::fbsize_cb(PlatformWindow ptr_win, int _width, int _height) {
 
 GLint WindowManager::GetWindowWidth()
 {
+#ifndef EDITOR
     return RunTimeVar::window.width;
+#else
+    return RunTimeVar::window.gameResolutionWidth;
+#endif;
 }
 
 GLint WindowManager::GetWindowHeight()
 {
+#ifndef EDITOR
     return RunTimeVar::window.height;
+#else
+    return RunTimeVar::window.gameResolutionHeight;
+#endif
 }
 
 GLint WindowManager::GetViewportWidth()
 {
-    //std::cout << "viewportW: " << viewportWidth << ", normalW: " << width << "\n";
+#ifndef EDITOR
     return RunTimeVar::window.viewportWidth;
+#else
+    return RunTimeVar::window.gameViewportWidth;
+#endif
 }
 
 GLint WindowManager::GetViewportHeight()
 {
+#ifndef EDITOR
     return RunTimeVar::window.viewportHeight;
+#else
+    return RunTimeVar::window.gameViewportHeight;
+#endif
 }
 
 void WindowManager::SetViewportDimensions(GLint width, GLint height)
@@ -218,6 +233,62 @@ bool WindowManager::IsWindowMinimized() {
 bool WindowManager::IsWindowFocused() {
     return RunTimeVar::window.isFocused;
 }
+
+// ============================================================================
+// CURSOR MANAGEMENT - Robust system that works with ImGui
+// ============================================================================
+
+// Static state tracking
+static bool s_cursorLockRequested = false;   // What game code wants
+static bool s_cursorActuallyLocked = false;  // Current actual state
+
+void WindowManager::SetCursorLocked(bool locked) {
+    s_cursorLockRequested = locked;
+    // Actual locking happens in UpdateCursorState() each frame
+}
+
+bool WindowManager::IsCursorLocked() {
+    return s_cursorActuallyLocked;
+}
+
+bool WindowManager::IsCursorLockRequested() {
+    return s_cursorLockRequested;
+}
+
+void WindowManager::ForceUnlockCursor() {
+    s_cursorLockRequested = false;
+    s_cursorActuallyLocked = false;
+    if (platform) {
+        platform->SetCursorLocked(false);
+    }
+}
+
+void WindowManager::UpdateCursorState() {
+    if (!platform) return;
+
+    bool shouldLock = s_cursorLockRequested;
+
+#ifdef EDITOR
+    // In Editor, only actually lock cursor if game is playing
+    if (!Engine::ShouldRunGameLogic()) {
+        shouldLock = false;
+    }
+#endif
+
+    // Only change state if needed
+    if (shouldLock != s_cursorActuallyLocked) {
+        platform->SetCursorLocked(shouldLock);
+        s_cursorActuallyLocked = shouldLock;
+    }
+
+    // Re-enforce every frame in case ImGui or something else changed it
+    // This is the key to making it robust - we always re-apply our desired state
+    if (s_cursorActuallyLocked) {
+        platform->SetCursorLocked(true);
+    }
+}
+
+// ============================================================================
 
 // Platform abstraction methods
 void WindowManager::SwapBuffers() {

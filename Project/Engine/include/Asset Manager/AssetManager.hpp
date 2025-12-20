@@ -40,7 +40,7 @@ public:
 	ENGINE_API static AssetManager& GetInstance();
 
 	ENGINE_API bool CompileAsset(const std::string& filePathStr, bool forceCompile = false, bool forAndroid = false);
-	bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
+	ENGINE_API bool CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool forceCompile = false, bool forAndroid = false);
 	std::shared_ptr<AssetMeta> AddAssetMetaToMap(const std::string& assetPath);
 
 	/**
@@ -269,6 +269,7 @@ private:
 
 		metaPtr = asset->ExtendMetaFile(filePath, metaPtr, forAndroid);
 		assetMetaMap[guid] = metaPtr;
+
 		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		// HOT-RELOAD (typed)
@@ -282,7 +283,7 @@ private:
 					ResourceManager::GetInstance().GetFontResource(compiledPath, 0, true);
 				}
 				else if constexpr (std::is_same_v<T, Shader>) {
-					ResourceManager::GetInstance().GetResource<Shader>(compiledPath, true);
+					ResourceManager::GetInstance().GetResource<Shader>(filePath, true);
 				}
 				else {
 					// For model/material/audio/script etc., call typed GetResource<T>.

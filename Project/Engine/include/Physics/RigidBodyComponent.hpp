@@ -40,10 +40,21 @@ struct RigidBodyComponent {
 	float gravityFactor = 1.0f;
 
 	Vector3D angularVel = { 0.0f,0.0f,0.0f };
-	Vector3D linearVel = { 0.0f, 0.0f,0.0f };
+	Vector3D linearVel = { 0.0f, -9.81f,0.0f };
 
 	float linearDamping = 0.0f;
 	float angularDamping = 0.95f;
+
+
+	//TO BE USED FOR SCRIPT
+	Vector3D forceApplied = { 0.0f,0.0f,0.0f };
+	Vector3D torqueApplied = { 0.0f,0.0f,0.0f };
+	Vector3D impulseApplied = { 0.0f,0.0f,0.0f };
+	void AddForce(Vector3D force)		{forceApplied += force;}
+	void AddTorque(Vector3D torque)		{torqueApplied += torque;}
+	void AddImpulse(Vector3D impulse)	{impulseApplied += impulse;}
+
+	bool collideWithStatic = false;		//To be used only by rigidbody Kinematic 
 
 
 
@@ -55,4 +66,7 @@ struct RigidBodyComponent {
 
 	RigidBodyComponent() = default;
 	~RigidBodyComponent() = default;
+
+	void SetEnabled(bool e) { enabled = e; }
+	bool IsEnabled() const { return enabled; }
 };

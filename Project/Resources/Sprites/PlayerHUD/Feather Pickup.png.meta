@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c64e748d4ba-00036d0ee8000109",
+        "source": "../../Resources/Sprites/PlayerHUD/Feather Pickup.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Feather Pickup.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

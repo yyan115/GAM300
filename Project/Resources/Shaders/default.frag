@@ -237,9 +237,8 @@ void main()
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
 
-    vec3 materialColor = getMaterialDiffuse();
-    vec3 result = calculateAmbient(norm) * materialColor;
-
+    vec3 result = calculateAmbient(norm) * getMaterialDiffuse() * 0.5;
+    //vec3 result = calculateAmbient(norm) * 0.3;
     result += calculateDirectionLight(dirLight, norm, viewDir);
     
     // Point lights loop

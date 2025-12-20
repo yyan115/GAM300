@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0012224c65294563-00036adb5e000001",
+        "source": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx",
+        "compiled": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx",
+        "android_compiled": "Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

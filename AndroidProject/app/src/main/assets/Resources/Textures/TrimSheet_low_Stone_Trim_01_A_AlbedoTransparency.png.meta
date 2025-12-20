@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad537403043e-00036c99fe000025",
+        "source": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.png",
+        "compiled": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.dds",
+        "android_compiled": "Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

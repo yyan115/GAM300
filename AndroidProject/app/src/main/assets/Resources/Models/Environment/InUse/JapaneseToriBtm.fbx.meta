@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c2675de3a25-000360373e00005b",
+        "source": "../../Resources/Models/Environment/_InUse/JapaneseToriBtm.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/JapaneseToriBtm.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/JapaneseToriBtm_android.mesh"
+    }
+}

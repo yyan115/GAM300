@@ -51,12 +51,9 @@ void AnimationSystem::Update()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities)
 	{
-		// Skip inactive entities
-		if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-			auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-			if (!activeComp.isActive) {
-				continue;
-			}
+		// Skip entities that are inactive in hierarchy (checks parents too)
+		if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+			continue;
 		}
 
 		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);

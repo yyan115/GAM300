@@ -12,6 +12,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include <filesystem>
+#include "Logging.hpp"
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Transform/TransformSystem.hpp"
@@ -42,13 +43,16 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/LayerComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "ECS/LayerManager.hpp"
+#include "ECS/SortingLayerManager.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include "Script/ScriptComponentData.hpp"
+#include "UI/Button/ButtonComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
+#include "Panels/PanelManager.hpp"
 #include "GUIManager.hpp"
 extern "C" {
 #include "lua.h"
@@ -66,6 +70,7 @@ extern "C" {
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <Panels/MaterialInspector.hpp>
 
 // External drag-drop state
 extern GUID_128 DraggedModelGuid;
@@ -555,12 +560,24 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Shape Type");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder"};
+        const char *shapeTypes[] = {"Box", "Sphere", "Capsule", "Cylinder", "MeshShape"};
         int currentShapeType = static_cast<int>(collider.shapeType);
 
         EditorComponents::PushComboColors();
-        bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 4);
+        bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
         EditorComponents::PopComboColors();
+
+        ImGui::Text("Collider Offset");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        float colliderOffset[3] = { collider.offset.x, collider.offset.y, collider.offset.z };
+        if (UndoableWidgets::DragFloat3("##ColliderOffset", colliderOffset, 0.05f, -FLT_MAX, FLT_MAX, "%.2f"))
+        {
+            collider.offset = Vector3D(colliderOffset[0], colliderOffset[1], colliderOffset[2]);
+        }
+
+
 
         if (changed)
         {
@@ -581,7 +598,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Extents");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.boxHalfExtents = halfExtent;
+            //collider.boxHalfExtents = halfExtent;
             float halfExtents[3] = {collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z};
             if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
@@ -595,7 +612,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.sphereRadius = radius;
+            //collider.sphereRadius = radius;
             if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -603,11 +620,11 @@ void RegisterInspectorCustomRenderers()
             break;
         }
         case ColliderShapeType::Capsule:
-        {
+        {            
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
+            //collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -615,7 +632,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.capsuleHalfHeight = halfExtent.y;
+            //collider.capsuleHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -627,7 +644,7 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
+            //collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
             if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
@@ -635,12 +652,20 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            collider.cylinderHalfHeight = halfExtent.y;
+            //collider.cylinderHalfHeight = halfExtent.y;
             if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
             {
                 shapeParamsChanged = true;
             }
             break;
+        }
+        case ColliderShapeType::MeshShape:
+        {
+            ImGui::Text("Mesh Shape");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            ImGui::TextDisabled("Uses Model Geometry");
         }
         }
 
@@ -863,7 +888,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         if (ecs.lightingSystem) {
             float ambientIntensity = ecs.lightingSystem->ambientIntensity;
-            if (UndoableWidgets::SliderFloat("##AmbientIntensity", &ambientIntensity, 0.0f, 5.0f))
+            if (UndoableWidgets::DragFloat("##AmbientIntensity", &ambientIntensity, 0.01f, 0.0f, 1.0f, "%.2f"))
             {
                 ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
             }
@@ -990,7 +1015,7 @@ void RegisterInspectorCustomRenderers()
 
     // Material GUID drag-drop
     ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "materialGUID",
-    [](const char *, void *ptr, Entity, ECSManager &ecs)
+    [](const char *, void *ptr, Entity entity, ECSManager &ecs)
     {
         ecs;
         GUID_128 *guid = static_cast<GUID_128 *>(ptr);
@@ -1014,6 +1039,13 @@ void RegisterInspectorCustomRenderers()
                 // Take snapshot before changing material
                 SnapshotManager::GetInstance().TakeSnapshot("Assign Material");
                 *guid = DraggedMaterialGuid;
+                // Try GUID first, then fallback to path
+                if (DraggedMaterialGuid.high != 0 || DraggedMaterialGuid.low != 0) {
+                    MaterialInspector::ApplyMaterialToModel(entity, DraggedMaterialGuid);
+                }
+                else {
+                    MaterialInspector::ApplyMaterialToModelByPath(entity, DraggedMaterialPath);
+                }
                 EditorComponents::EndDragDropTarget();
                 return true;
             }
@@ -1085,6 +1117,63 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "saved3DPosition",
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
+
+    // Sprite sorting layer dropdown
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "sortingLayer",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* sortingLayerID = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Sorting Layer");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        // Get all sorting layers from the manager
+        const auto& sortingLayers = SortingLayerManager::GetInstance().GetAllLayers();
+
+        // Find current layer name
+        std::string currentLayerName = SortingLayerManager::GetInstance().GetLayerName(*sortingLayerID);
+        if (currentLayerName.empty()) {
+            currentLayerName = "Default";
+            *sortingLayerID = 0; // Reset to default if invalid
+        }
+
+        EditorComponents::PushComboColors();
+        bool changed = false;
+        if (ImGui::BeginCombo("##SpriteSortingLayer", currentLayerName.c_str()))
+        {
+            // Show all existing sorting layers
+            for (const auto& layer : sortingLayers) {
+                bool isSelected = (*sortingLayerID == layer.id);
+                if (ImGui::Selectable(layer.name.c_str(), isSelected)) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Change Sorting Layer");
+                    *sortingLayerID = layer.id;
+                    changed = true;
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::Separator();
+
+            // "Add Sorting Layer..." option
+            if (ImGui::Selectable("Add Sorting Layer...")) {
+                // Open the Tags & Layers panel
+                auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                if (tagsLayersPanel) {
+                    tagsLayersPanel->SetOpen(true);
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        EditorComponents::PopComboColors();
+
+        return changed;
+    });
 
     // Camera skybox texture GUID
     ReflectionRenderer::RegisterFieldRenderer("CameraComponent", "skyboxTextureGUID",
@@ -1296,6 +1385,123 @@ void RegisterInspectorCustomRenderers()
         }
 
         return false;
+    });
+
+    // Text sorting layer dropdown
+    ReflectionRenderer::RegisterFieldRenderer("TextRenderComponent", "sortingLayer",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* sortingLayerID = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Sorting Layer");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        // Get all sorting layers from the manager
+        const auto& sortingLayers = SortingLayerManager::GetInstance().GetAllLayers();
+
+        // Find current layer name
+        std::string currentLayerName = SortingLayerManager::GetInstance().GetLayerName(*sortingLayerID);
+        if (currentLayerName.empty()) {
+            currentLayerName = "Default";
+            *sortingLayerID = 0; // Reset to default if invalid
+        }
+
+        EditorComponents::PushComboColors();
+        bool changed = false;
+        if (ImGui::BeginCombo("##SortingLayer", currentLayerName.c_str()))
+        {
+            // Show all existing sorting layers
+            for (const auto& layer : sortingLayers) {
+                bool isSelected = (*sortingLayerID == layer.id);
+                if (ImGui::Selectable(layer.name.c_str(), isSelected)) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Change Sorting Layer");
+                    *sortingLayerID = layer.id;
+                    changed = true;
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::Separator();
+
+            // "Add Sorting Layer..." option
+            if (ImGui::Selectable("Add Sorting Layer...")) {
+                // Open the Tags & Layers panel
+                auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                if (tagsLayersPanel) {
+                    tagsLayersPanel->SetOpen(true);
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        EditorComponents::PopComboColors();
+
+        return changed;
+    });
+
+    // Text alignment icon buttons
+    ReflectionRenderer::RegisterFieldRenderer("TextRenderComponent", "alignmentInt",
+    [](const char*, void* ptr, Entity, ECSManager& ecs)
+    {
+        ecs;
+        int* alignmentInt = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Alignment");
+        ImGui::SameLine(labelWidth);
+
+        bool changed = false;
+
+        // Calculate button size for even distribution
+        float availWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = (availWidth - ImGui::GetStyle().ItemSpacing.x * 2) / 3.0f;
+
+        // Left align button
+        ImVec4 leftColor = (*alignmentInt == 0) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, leftColor);
+        if (ImGui::Button("Left", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 0) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 0;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+
+        // Center align button
+        ImVec4 centerColor = (*alignmentInt == 1) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, centerColor);
+        if (ImGui::Button("Center", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 1) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 1;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+
+        // Right align button
+        ImVec4 rightColor = (*alignmentInt == 2) ? ImVec4(0.3f, 0.5f, 0.8f, 1.0f) : ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, rightColor);
+        if (ImGui::Button("Right", ImVec2(buttonWidth, 0))) {
+            if (*alignmentInt != 2) {
+                SnapshotManager::GetInstance().TakeSnapshot("Change Text Alignment");
+                *alignmentInt = 2;
+                changed = true;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        return changed;
     });
 
     // Audio GUID
@@ -3208,6 +3414,268 @@ void RegisterInspectorCustomRenderers()
 
     ReflectionRenderer::RegisterFieldRenderer("ScriptComponentData", "autoInvokeEntry",
                                               [](const char *, void *, Entity, ECSManager &)
+                                              { return true; });
+
+    // ==================== BUTTON COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("ButtonComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    {
+        ButtonComponent& buttonComp = *static_cast<ButtonComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Helper lambda: Parse Lua script to extract function names
+        auto extractLuaFunctions = [](const std::string& scriptPath) -> std::vector<std::string> {
+            std::vector<std::string> functions;
+            if (scriptPath.empty()) return functions;
+
+            // Normalize path separators for comparison
+            std::string normalizedPath = scriptPath;
+            std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+            // Convert to lowercase for case-insensitive comparison
+            std::string lowerPath = normalizedPath;
+            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+
+            // Get full path to script - try multiple strategies
+            std::filesystem::path fullPath;
+            std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            std::filesystem::path projectRoot = std::filesystem::path(rootDir).parent_path();
+
+            // Strategy 1: Check if path is already absolute
+            if (std::filesystem::path(normalizedPath).is_absolute()) {
+                fullPath = normalizedPath;
+            }
+            // Strategy 2: Path starts with Resources/ or resources/
+            else if (lowerPath.find("resources/") == 0) {
+                fullPath = projectRoot / normalizedPath;
+            }
+            // Strategy 3: Path starts with scripts/ (without Resources prefix)
+            else if (lowerPath.find("scripts/") == 0) {
+                fullPath = projectRoot / "Resources" / normalizedPath;
+            }
+            // Strategy 4: Just the filename - try common locations
+            else {
+                // Try Resources/Scripts/
+                fullPath = projectRoot / "Resources" / "Scripts" / normalizedPath;
+                if (!std::filesystem::exists(fullPath)) {
+                    // Try rootDir (which is typically Resources)
+                    fullPath = std::filesystem::path(rootDir) / "Scripts" / normalizedPath;
+                }
+                if (!std::filesystem::exists(fullPath)) {
+                    // Try project root
+                    fullPath = projectRoot / normalizedPath;
+                }
+            }
+
+            std::ifstream file(fullPath);
+            if (!file.is_open()) {
+                // Debug: Log the attempted path if file not found
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ButtonComponent] Could not open script file: ", fullPath.string().c_str());
+                return functions;
+            }
+
+            std::string line;
+            while (std::getline(file, line)) {
+                std::string funcName;
+
+                // Pattern 1: Traditional function definition
+                // function ClassName:FunctionName() or function ClassName.FunctionName() or function FunctionName()
+                size_t funcPos = line.find("function ");
+                if (funcPos != std::string::npos) {
+                    size_t start = funcPos + 9; // After "function "
+                    size_t colonPos = line.find(':', start);
+                    size_t dotPos = line.find('.', start);
+                    size_t parenPos = line.find('(', start);
+
+                    if (parenPos != std::string::npos) {
+                        if (colonPos != std::string::npos && colonPos < parenPos) {
+                            // ClassName:FunctionName pattern
+                            funcName = line.substr(colonPos + 1, parenPos - colonPos - 1);
+                        } else if (dotPos != std::string::npos && dotPos < parenPos) {
+                            // ClassName.FunctionName pattern
+                            funcName = line.substr(dotPos + 1, parenPos - dotPos - 1);
+                        } else {
+                            // Just FunctionName pattern
+                            funcName = line.substr(start, parenPos - start);
+                        }
+                    }
+                }
+
+                // Pattern 2: Anonymous function assignment (common in Lua table definitions)
+                // FunctionName = function( or FunctionName=function(
+                if (funcName.empty()) {
+                    size_t eqFuncPos = line.find("= function(");
+                    if (eqFuncPos == std::string::npos) {
+                        eqFuncPos = line.find("=function(");
+                    }
+                    if (eqFuncPos != std::string::npos) {
+                        // Extract the name before the '='
+                        size_t nameEnd = eqFuncPos;
+                        // Skip whitespace before '='
+                        while (nameEnd > 0 && (line[nameEnd - 1] == ' ' || line[nameEnd - 1] == '\t')) {
+                            nameEnd--;
+                        }
+                        // Find the start of the name (scan backwards for non-identifier chars)
+                        size_t nameStart = nameEnd;
+                        while (nameStart > 0 && (std::isalnum(line[nameStart - 1]) || line[nameStart - 1] == '_')) {
+                            nameStart--;
+                        }
+                        if (nameStart < nameEnd) {
+                            funcName = line.substr(nameStart, nameEnd - nameStart);
+                        }
+                    }
+                }
+
+                // Process the extracted function name
+                if (!funcName.empty()) {
+                    // Trim whitespace
+                    funcName.erase(0, funcName.find_first_not_of(" \t"));
+                    if (!funcName.empty()) {
+                        funcName.erase(funcName.find_last_not_of(" \t") + 1);
+                    }
+
+                    // Skip internal/lifecycle functions
+                    if (!funcName.empty() &&
+                        funcName != "new" && funcName != "New" &&
+                        funcName != "Awake" && funcName != "Start" &&
+                        funcName != "Update" && funcName != "FixedUpdate" &&
+                        funcName != "OnDestroy" && funcName != "OnEnable" &&
+                        funcName != "OnDisable" && funcName != "fields") {
+                        functions.push_back(funcName);
+                    }
+                }
+            }
+            return functions;
+        };
+
+        // Cache for script functions
+        static std::unordered_map<std::string, std::vector<std::string>> scriptFunctionsCache;
+
+        // Interactable toggle
+        ImGui::Text("Interactable");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::Checkbox("##Interactable", &buttonComp.interactable);
+
+        ImGui::Separator();
+        ImGui::Text("On Click ()");
+
+        // Render existing bindings
+        int bindingToRemove = -1;
+        for (size_t i = 0; i < buttonComp.bindings.size(); ++i) {
+            ButtonBinding& binding = buttonComp.bindings[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Binding header with remove button
+            ImGui::BeginGroup();
+
+            // Script field with drag-drop
+            std::string scriptDisplayName = binding.scriptPath.empty() ? "None (Script)" :
+                std::filesystem::path(binding.scriptPath).stem().string();
+
+            ImGui::Text("Script");
+            ImGui::SameLine(labelWidth);
+            float fieldWidth = ImGui::GetContentRegionAvail().x - 25.0f;
+            EditorComponents::DrawDragDropButton(scriptDisplayName.c_str(), fieldWidth);
+
+            // Drag-drop target for scripts
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD")) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Button Script");
+                    const char* droppedPath = (const char*)payload->Data;
+                    std::string pathStr(droppedPath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    binding.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(DraggedScriptGuid);
+                    binding.scriptPath = pathStr;
+                    binding.functionName = ""; // Reset function when script changes
+
+                    // Invalidate cache for this script
+                    scriptFunctionsCache.erase(pathStr);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            // Remove button
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveBinding")) {
+                bindingToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this binding");
+            }
+
+            // Function dropdown (only if script is assigned)
+            if (!binding.scriptPath.empty()) {
+                // Get or cache functions for this script
+                auto cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                if (cacheIt == scriptFunctionsCache.end()) {
+                    scriptFunctionsCache[binding.scriptPath] = extractLuaFunctions(binding.scriptPath);
+                    cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                }
+
+                const std::vector<std::string>& functions = cacheIt->second;
+
+                ImGui::Text("Function");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+
+                std::string previewFunc = binding.functionName.empty() ? "No Function" : binding.functionName;
+                EditorComponents::PushComboColors();
+                if (ImGui::BeginCombo("##Function", previewFunc.c_str())) {
+                    // "No Function" option
+                    if (ImGui::Selectable("No Function", binding.functionName.empty())) {
+                        binding.functionName = "";
+                    }
+
+                    // Available functions
+                    for (const auto& funcName : functions) {
+                        bool isSelected = (binding.functionName == funcName);
+                        if (ImGui::Selectable(funcName.c_str(), isSelected)) {
+                            SnapshotManager::GetInstance().TakeSnapshot("Set Button Function");
+                            binding.functionName = funcName;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    if (functions.empty()) {
+                        ImGui::TextDisabled("No functions found in script");
+                    }
+
+                    ImGui::EndCombo();
+                }
+                EditorComponents::PopComboColors();
+            }
+
+            ImGui::EndGroup();
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+
+        // Remove binding if requested
+        if (bindingToRemove >= 0 && bindingToRemove < static_cast<int>(buttonComp.bindings.size())) {
+            SnapshotManager::GetInstance().TakeSnapshot("Remove Button Binding");
+            buttonComp.bindings.erase(buttonComp.bindings.begin() + bindingToRemove);
+        }
+
+        // Add binding button
+        if (ImGui::Button(ICON_FA_PLUS " Add Binding", ImVec2(-1, 0))) {
+            SnapshotManager::GetInstance().TakeSnapshot("Add Button Binding");
+            ButtonBinding newBinding;
+            buttonComp.bindings.push_back(newBinding);
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide ButtonComponent fields from default rendering (we handle them in the custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("ButtonComponent", "bindings",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ButtonComponent", "interactable",
+                                              [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
     // ==================== SPRITE ANIMATION COMPONENT ====================

@@ -6,6 +6,7 @@
 #include "Graphics/TextRendering/TextUtils.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <Asset Manager/AssetManager.hpp>
+#include <Asset Manager/MetaFilesManager.hpp>
 #include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
 
@@ -16,6 +17,7 @@ bool TextRenderingSystem::Initialise()
         auto& textComp = ecsManager.GetComponent<TextRenderComponent>(entity);
         std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.fontGUID);
         textComp.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComp.fontGUID, fontPath, textComp.fontSize);
+        textComp.lastLoadedFontGUID = textComp.fontGUID; // Remember which font we loaded
 #ifndef ANDROID
         std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComp.shaderGUID);
         textComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComp.shaderGUID, shaderPath);
@@ -35,51 +37,96 @@ void TextRenderingSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
+    //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Update start, entities=", entities.size(), "\n");
+
     // Submit all visible text components to the graphics manager
     for (const auto& entity : entities)
     {
-        // Skip inactive entities
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                continue; // Don't render inactive entities
-            }
+        //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Processing entity ", entity, "\n");
+
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+            continue;
         }
 
         auto& textComponent = ecsManager.GetComponent<TextRenderComponent>(entity);
+        //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Got TextRenderComponent for entity ", entity, "\n");
 
-        // Check if font size changed and reload if needed
-        if (textComponent.font && textComponent.font->GetFontSize() != textComponent.fontSize) {
-            std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
-            textComponent.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComponent.fontGUID, fontPath, textComponent.fontSize);
-            //ENGINE_PRINT("[TextSystem] Font reloaded with size: ", textComponent.fontSize, "\n");
-        }
+        //// Check if font needs to be loaded, or if font/size changed
+        //bool fontGUIDChanged = (textComponent.fontGUID != textComponent.lastLoadedFontGUID);
+        //bool fontSizeChanged = textComponent.font && (textComponent.font->GetFontSize() != textComponent.fontSize);
 
-        // Sync position and transform from Transform component
+        //if (!textComponent.font || fontGUIDChanged) {
+        //    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Font load required for entity ", entity, "\n");
+        //    try {
+        //        std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
+        //        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Font path=", fontPath, "\n");
+        //        if (!fontPath.empty()) {
+        //            textComponent.font = ResourceManager::GetInstance().GetFontResource(fontPath, textComponent.fontSize);
+        //            textComponent.lastLoadedFontGUID = textComponent.fontGUID;
+        //            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TextSystem] Font loaded: ", fontPath, " size=", textComponent.fontSize, "\n");
+        //        }
+        //    }
+        //    catch (const std::exception& e) {
+        //        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TextSystem] Failed to load font: ", e.what(), "\n");
+        //    }
+        //}
+        //else if (fontSizeChanged && textComponent.fontSize > 0) {
+        //    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Font size changed for entity ", entity, " new size=", textComponent.fontSize, "\n");
+        //    try {
+        //        std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
+        //        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Reload font path=", fontPath, "\n");
+        //        if (!fontPath.empty()) {
+        //            std::string resourcePath = MetaFilesManager::GetResourceNameFromAssetFile(fontPath);
+        //            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Resource path=", resourcePath, "\n");
+        //            if (!resourcePath.empty()) {
+        //                auto newFont = std::make_shared<Font>();
+        //                if (newFont->LoadResource(resourcePath, fontPath, textComponent.fontSize)) {
+        //                    textComponent.font = newFont;
+        //                    ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TextSystem] Font reloaded with new size=", textComponent.fontSize, "\n");
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (const std::exception& e) {
+        //        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TextSystem] Failed to reload font: ", e.what(), "\n");
+        //    }
+        //}
+
+        // Sync position, scale and transform from Transform component
         if (ecsManager.HasComponent<Transform>(entity)) {
             Transform& transform = ecsManager.GetComponent<Transform>(entity);
+            //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Syncing transform for entity ", entity, "\n");
+
+            textComponent.transformScale = transform.localScale;
 
             if (textComponent.is3D) {
-                // 3D mode: sync world transform matrix
                 textComponent.transform = transform.worldMatrix;
-            } else {
-                // 2D mode: sync screen space position from Transform
+                //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Entity ", entity, " in 3D mode\n");
+            }
+            else {
                 textComponent.position = Vector3D(transform.worldMatrix.m.m03,
-                                                 transform.worldMatrix.m.m13,
-                                                 transform.worldMatrix.m.m23);
+                    transform.worldMatrix.m.m13,
+                    transform.worldMatrix.m.m23);
+                //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Entity ", entity, " in 2D mode, pos=", textComponent.position.x, ",", textComponent.position.y, ",", textComponent.position.z, "\n");
             }
         }
 
         // Only submit valid, visible text
         if (textComponent.isVisible && TextUtils::IsValid(textComponent))
         {
-            // Create a copy of the text component for submission
-            // This ensures the graphics manager has its own copy to work with
+            //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Submitting text for entity ", entity, "\n");
             auto textRenderItem = std::make_unique<TextRenderComponent>(textComponent);
             gfxManager.Submit(std::move(textRenderItem));
         }
+        else {
+            //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Entity ", entity, " not visible or invalid, skipping\n");
+        }
     }
+
+    //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Update end\n");
 }
+
 
 void TextRenderingSystem::Shutdown()
 {

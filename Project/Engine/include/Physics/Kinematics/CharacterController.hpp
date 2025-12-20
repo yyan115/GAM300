@@ -1,16 +1,17 @@
 #pragma once
 #include "pch.h"
 #include "Physics/JoltInclude.hpp"
+#include "ECS/System.hpp"
 #include "Math/Vector3D.hpp"
 
 
 struct ColliderComponent;
-struct CharacterControllerComponent;
 struct Transform;
+class ECSManager;
 
 
 // Pure runtime class that handles movement logic
-class CharacterController
+class CharacterController : public System
 {
 public:
     // Constructor: Needs a PhysicsSystem reference
@@ -19,7 +20,7 @@ public:
     // Destructor
     ~CharacterController();
 
-    void Initialise(ColliderComponent &collider, Transform &transform);
+    bool Initialise(ColliderComponent &collider, Transform &transform);
 
     // Called each frame
     void Update(float deltaTime);
@@ -40,14 +41,15 @@ public:
     void Move(float x, float y, float z);   // Set Move Velocity, Position updated in "Update", change name to clearer?
     void Jump(float height);                // Jump
 
+    bool IsGrounded() const;
 
+    Vector3D GetGravity() const;
+
+    void SetGravity(Vector3D gravity);
 
     //TODO:
     //void SetRotation(float yaw);            // Set facing direction (degrees)
     //void GetRotation();            // Add to current rotation
-
-    //void SetGravity(float gravity);         // Adjust gravity (-9.81 default)
-    //float GetGravity() const;
 
     //void SetMass(float mass);               // Character mass
     //float GetMass() const;
@@ -64,4 +66,8 @@ private:
 
     // Cache velocity
     JPH::Vec3 mVelocity = JPH::Vec3::sZero();
+
+    float collider_offsetY;
+    bool jump_Requested = false;
+
 };

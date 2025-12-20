@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0012224c799bfa66-00036adb5e000005",
+        "source": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFlyPose.fbx",
+        "compiled": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFlyPose.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

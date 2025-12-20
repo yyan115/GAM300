@@ -58,12 +58,34 @@ extern std::string DraggedFontPath;
 #include <algorithm>
 #include "Sound/AudioComponent.hpp"
 #include "Sound/AudioListenerComponent.hpp"
+#include "UI/Button/ButtonComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
 #include <Script/ScriptComponentData.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
+
+// Component clipboard for copy/paste functionality (Unity-style)
+namespace {
+    struct ComponentClipboard {
+        std::string componentType;      // Type name of copied component
+        std::string jsonData;           // Serialized component data as JSON string
+        bool hasData = false;           // Whether clipboard contains valid data
+
+        void Clear() {
+            componentType.clear();
+            jsonData.clear();
+            hasData = false;
+        }
+    };
+
+    static ComponentClipboard g_ComponentClipboard;
+}
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
 template <typename T>
@@ -265,6 +287,12 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<ScriptComponentData>(entity) ?
 				(void*)&ecs.GetComponent<ScriptComponentData>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ScriptComponentData>(entity); }},
+
+		// UI components
+		{"Button", "ButtonComponent",
+			[&]() { return ecs.HasComponent<ButtonComponent>(entity) ?
+				(void*)&ecs.GetComponent<ButtonComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<ButtonComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -285,7 +313,7 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 		}
 		else {
 			// Normal components get collapsing header
-			if (DrawComponentHeaderWithRemoval(info.displayName, entity, info.typeName)) {
+			if (DrawComponentHeaderWithRemoval(info.displayName, entity, info.typeName, componentPtr)) {
 				DrawComponentGeneric(componentPtr, info.typeName, entity);
 			}
 		}
@@ -893,7 +921,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				{"AI", ICON_FA_BRAIN},
 				{"Scripting", ICON_FA_CODE},
 				{"General", ICON_FA_TAG},
-				{"Scripts", ICON_FA_FILE_CODE}
+				{"Scripts", ICON_FA_FILE_CODE},
+				{"UI", ICON_FA_HAND_POINTER}
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -954,6 +983,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			}
 			if (!ecsManager.HasComponent<LayerComponent>(entity)) {
 				allComponents.push_back({ "Layer", "LayerComponent", "General" });
+			}
+			if (!ecsManager.HasComponent<ButtonComponent>(entity)) {
+				allComponents.push_back({ "Button", "ButtonComponent", "UI" });
 			}
 
 		// Cache scripts to avoid filesystem scanning every frame
@@ -1061,7 +1093,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				std::vector<std::string> categoryOrder = {
 					"Rendering", "Audio", "Lighting", "Camera", "Physics",
-					"Animation", "AI", "Scripting", "General", "Scripts"
+					"Animation", "AI", "Scripting", "General", "Scripts", "UI"
 				};
 
 				for (const auto& category : categoryOrder) {
@@ -1324,7 +1356,6 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			component.is3D = false;
 			component.isVisible = true;
 			component.position = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
-			component.scale = 1.0f;
 
 			// Load font and shader resources
 			if (std::filesystem::exists(defaultFontPath)) {
@@ -1368,7 +1399,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			{
 				auto& rc = ecsManager.GetComponent<ModelRenderComponent>(entity);
 				if (rc.model)
+				{
 					component.boxHalfExtents = rc.CalculateModelHalfExtent(*rc.model);	//no need apply local scale
+					//component.center = rc.CalculateCenter(*rc.model);
+				}
 			}
 			component.layer = Layers::MOVING;
 			component.layerID = static_cast<int>(component.layer);
@@ -1458,6 +1492,12 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<ScriptComponentData>(entity, component);
 			std::cout << "[Inspector] Added ScriptComponentData to entity " << entity << " (ready for script assignment)" << std::endl;
 		}
+		else if (componentType == "ButtonComponent") {
+			ButtonComponent component;
+			component.interactable = true;
+			ecsManager.AddComponent<ButtonComponent>(entity, component);
+			std::cout << "[Inspector] Added ButtonComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1479,7 +1519,7 @@ void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatc
 	}
 }
 
-bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags) {
+bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr, ImGuiTreeNodeFlags flags) {
 
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
@@ -1598,7 +1638,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	}
 	ImGui::PopID();
 
-	// Context menu for component removal
+	// Context menu for component operations
 	std::string popupName = "ComponentContextMenu_" + componentType;
 	if (ImGui::BeginPopup(popupName.c_str())) {
 		if (ImGui::MenuItem("Remove Component")) {
@@ -1609,12 +1649,89 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component reset for processing after ImGui rendering is complete
 			pendingComponentResets.push_back({ entity, componentType });
 		}
-		//if (ImGui::MenuItem("Copy Component")) {
-		//	// TODO: Implement copy functionality
-		//}
-		//if (ImGui::MenuItem("Paste Component Values")) {
-		//	// TODO: Implement paste functionality
-		//}
+
+		ImGui::Separator();
+
+		// Copy Component - serialize to clipboard
+		if (ImGui::MenuItem("Copy Component")) {
+			if (componentPtr) {
+				// Get type descriptor from reflection system
+				auto& lookup = TypeDescriptor::type_descriptor_lookup();
+				auto it = lookup.find(componentType);
+				if (it != lookup.end()) {
+					TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+					if (typeDesc) {
+						// Serialize component to JSON
+						rapidjson::Document doc;
+						doc.SetObject();
+						auto& allocator = doc.GetAllocator();
+
+						// Serialize each member
+						std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+						for (const auto& member : members) {
+							void* fieldPtr = member.get_ptr(componentPtr);
+							if (fieldPtr && member.type) {
+								rapidjson::Document fieldDoc;
+								member.type->SerializeJson(fieldPtr, fieldDoc);
+								rapidjson::Value key(member.name, allocator);
+								rapidjson::Value val(fieldDoc, allocator);
+								doc.AddMember(key, val, allocator);
+							}
+						}
+
+						// Convert to string
+						rapidjson::StringBuffer buffer;
+						rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+						doc.Accept(writer);
+
+						// Store in clipboard
+						g_ComponentClipboard.componentType = componentType;
+						g_ComponentClipboard.jsonData = buffer.GetString();
+						g_ComponentClipboard.hasData = true;
+					}
+				}
+			}
+		}
+
+		// Paste Component Values - only enabled if clipboard has same component type
+		bool canPaste = g_ComponentClipboard.hasData && g_ComponentClipboard.componentType == componentType;
+		if (ImGui::MenuItem("Paste Component Values", nullptr, false, canPaste)) {
+			if (componentPtr && canPaste) {
+				// Take snapshot for undo
+				SnapshotManager::GetInstance().TakeSnapshot("Paste Component Values");
+
+				// Get type descriptor
+				auto& lookup = TypeDescriptor::type_descriptor_lookup();
+				auto it = lookup.find(componentType);
+				if (it != lookup.end()) {
+					TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+					if (typeDesc) {
+						// Parse JSON from clipboard
+						rapidjson::Document doc;
+						doc.Parse(g_ComponentClipboard.jsonData.c_str());
+
+						if (!doc.HasParseError() && doc.IsObject()) {
+							// Deserialize field by field (matching how we serialized)
+							std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+							for (const auto& member : members) {
+								if (doc.HasMember(member.name)) {
+									void* fieldPtr = member.get_ptr(componentPtr);
+									if (fieldPtr && member.type) {
+										member.type->Deserialize(fieldPtr, doc[member.name]);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Show what's in clipboard as tooltip
+		if (ImGui::IsItemHovered() && g_ComponentClipboard.hasData) {
+			ImGui::SetTooltip("Clipboard: %s", g_ComponentClipboard.componentType.c_str());
+		}
+
 		ImGui::EndPopup();
 	}
 
@@ -1698,6 +1815,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<ScriptComponentData>(request.entity);
 				std::cout << "[Inspector] Removed ScriptComponentData from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "ButtonComponent") {
+				ecsManager.RemoveComponent<ButtonComponent>(request.entity);
+				std::cout << "[Inspector] Removed ButtonComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
 			}
@@ -1779,6 +1900,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "ScriptComponentData") {
 				ecsManager.GetComponent<ScriptComponentData>(request.entity) = ScriptComponentData{};
 				std::cout << "[Inspector] Reset ScriptComponentData on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "ButtonComponent") {
+				ecsManager.GetComponent<ButtonComponent>(request.entity) = ButtonComponent{};
+				std::cout << "[Inspector] Reset ButtonComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values

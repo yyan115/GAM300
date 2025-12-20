@@ -66,7 +66,23 @@ if(CMAKE_BUILD_TYPE MATCHES "Editor" OR ANDROID)
 else()
     # Game configs: Game as executable
     message(STATUS "Building Game as executable")
-    add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE} )
+
+    # ============================================================================
+    # CONSOLE WINDOW TOGGLE
+    # ============================================================================
+    # TO SHOW CONSOLE:  Use add_executable(Game ...) without WIN32
+    # TO HIDE CONSOLE:  Use add_executable(Game WIN32 ...) with /ENTRY:mainCRTStartup
+    # ============================================================================
+
+    # Console HIDDEN (for release builds)
+    add_executable(Game WIN32 ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE})
+    if(WIN32)
+        set_target_properties(Game PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+    endif()
+
+    # Console VISIBLE (for debugging) - uncomment below and comment out the WIN32 section above
+    # add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE})
+
 endif()
 
 

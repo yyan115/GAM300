@@ -516,14 +516,16 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	//p = ResolveToProjectRoot(p);
 
 	std::string materialPath = (p.parent_path() / p.stem()).generic_string() + ".mat";
-	SetName(p.stem().generic_string());
 	// Try to get the material info from the material asset first (if it exists).
 	GetMaterialPropertiesFromAsset(materialPath);
+	SetName(p.stem().generic_string());
 
 	if (forAndroid) {
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(materialPath));
+		materialPath = newPath.generic_string();
 	}
 
 	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
@@ -586,6 +588,8 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		materialPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.mat";
+		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(materialPath));
+		materialPath = newPath.generic_string();
 	}
 
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
@@ -595,10 +599,9 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 	ENGINE_PRINT("[Material] SAVE - Number of textures: ", m_textureInfo.size(), "\n");
 	ENGINE_PRINT("[Material] SAVE - Ambient: (", m_ambient.x, ", ", m_ambient.y, ", ", m_ambient.z, ")\n");
 
-	//int counter = 1;
-	//while (std::filesystem::exists(materialPath)) {
-	//	materialPath = (p.parent_path() / p.stem()).generic_string() + "_" + std::to_string(counter++) + ".mat";
-	//}
+	p = materialPath;
+	std::filesystem::create_directories(p.parent_path());
+
 	std::ofstream materialFile(materialPath, std::ios::binary);
 	if (materialFile.is_open()) {
 		// Write material name
@@ -652,7 +655,7 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 	}
 
 	ENGINE_LOG_INFO("[Material] Resolving project root");
-#ifndef ANDROID
+#ifdef EDITOR
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
 #endif
 	std::string finalResourcePath = resourcePathFS.generic_string();

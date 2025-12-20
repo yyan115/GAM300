@@ -45,6 +45,17 @@ public:
 		VIEW_2D       // 2D mode - show 2D sprites only in screen space
 	};
 
+	enum class CullMode {
+		BACK,
+		FRONT,
+		FRONT_AND_BACK
+	};
+
+	enum class FrontFace {
+		CCW,
+		CW
+	};
+
 	ENGINE_API static GraphicsManager& GetInstance();
 
 	// Initialization
@@ -74,12 +85,24 @@ public:
     void SetRenderingForEditor(bool isEditor) { isRenderingForEditor = isEditor; }
     bool IsRenderingForEditor() const { return isRenderingForEditor; }
 
+    // Target game resolution for 2D rendering (used to sync Scene and Game panels)
+    void SetTargetGameResolution(int width, int height) { targetGameWidth = width; targetGameHeight = height; }
+    void GetTargetGameResolution(int& width, int& height) const { width = targetGameWidth; height = targetGameHeight; }
+
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
 
     // Main rendering
     void Render();
     void RenderSkybox();
+
+	// Face Culling
+	void SetFaceCulling(bool enabled);
+	bool IsFaceCullingEnabled() const { return faceCullingEnabled; }
+	void SetCullMode(CullMode mode);
+	CullMode GetCullMode() const { return cullMode; }
+	void SetFrontFace(FrontFace face);
+	FrontFace GetFrontFace() const { return frontFace; }
 
     // FRUSTUM CULLING FUNCTIONS:
     void SetFrustumCullingEnabled(bool enabled) { frustumCullingEnabled = enabled; }
@@ -102,7 +125,7 @@ private:
 
     // Private text rendering methods
     void RenderText(const TextRenderComponent& item);
-    void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scale);
+    void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY);
 
     std::vector<std::unique_ptr<IRenderComponent>> renderQueue;
     Camera* currentCamera = nullptr;
@@ -118,6 +141,10 @@ private:
 
     // Flag to indicate if currently rendering for editor (vs game)
     bool isRenderingForEditor = false;
+
+    // Target game resolution for 2D rendering synchronization
+    int targetGameWidth = 1920;
+    int targetGameHeight = 1080;
 
     // Debug Draw
     void RenderDebugDraw(const DebugDrawComponent& item);
@@ -138,9 +165,17 @@ private:
     ViewportDimensions GetCurrentViewport() const;
     CullingStats cullingStats;
 
+	// Face Culling state
+	bool faceCullingEnabled = true; // Default enabled
+	CullMode cullMode = CullMode::BACK; // Default back face culling
+	FrontFace frontFace = FrontFace::CCW; // Default Counter-Clockwise
+
     // Skybox rendering
     unsigned int skyboxVAO = 0;
     unsigned int skyboxVBO = 0;
     std::shared_ptr<Shader> skyboxShader = nullptr;
     void InitializeSkybox();
+
+    // Multi-threading mutex
+    std::mutex renderQueueMutex;
 };

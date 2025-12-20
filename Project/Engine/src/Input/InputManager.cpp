@@ -13,6 +13,9 @@ std::unordered_map<Input::MouseButton, bool> InputManager::mouseButtonStates;
 std::unordered_map<Input::Key, bool> InputManager::prevKeyStates;
 std::unordered_map<Input::MouseButton, bool> InputManager::prevMouseButtonStates;
 
+double InputManager::gamePanelMouseX = 0.0;
+double InputManager::gamePanelMouseY = 0.0;
+
 //double InputManager::mouseX = 0.0;
 //double InputManager::mouseY = 0.0;
 //double InputManager::scrollOffsetX = 0.0;
@@ -59,12 +62,46 @@ bool InputManager::GetMouseButton(Input::MouseButton button)
 
 double InputManager::GetMouseX()
 {
+#ifndef EDITOR
 	return RunTimeVar::input.mouseX;
+#else
+	// When cursor is locked, use raw mouse position for proper delta calculation
+	// Otherwise use game panel relative position
+	if (WindowManager::IsCursorLocked()) {
+		return RunTimeVar::input.mouseX;
+	}
+	return gamePanelMouseX;
+#endif
 }
 
 double InputManager::GetMouseY()
 {
-	return  RunTimeVar::input.mouseY;
+#ifndef EDITOR
+	return RunTimeVar::input.mouseY;
+#else
+	// When cursor is locked, use raw mouse position for proper delta calculation
+	// Otherwise use game panel relative position
+	if (WindowManager::IsCursorLocked()) {
+		return RunTimeVar::input.mouseY;
+	}
+	return gamePanelMouseY;
+#endif
+}
+
+double InputManager::GetScrollX()
+{
+	return RunTimeVar::input.scrollOffsetX;
+}
+
+double InputManager::GetScrollY()
+{
+	return RunTimeVar::input.scrollOffsetY;
+}
+
+void InputManager::ConsumeScroll()
+{
+	RunTimeVar::input.scrollOffsetX = 0.0;
+	RunTimeVar::input.scrollOffsetY = 0.0;
 }
 
 bool InputManager::GetAnyKeyDown()
@@ -115,4 +152,9 @@ void InputManager::OnScrollEvent(double xOffset, double yOffset)
 {
 	RunTimeVar::input.scrollOffsetX += xOffset;
 	RunTimeVar::input.scrollOffsetY += yOffset;
+}
+
+ENGINE_API void InputManager::SetGamePanelMousePos(float newX, float newY) {
+	gamePanelMouseX = newX;
+	gamePanelMouseY = newY;
 }

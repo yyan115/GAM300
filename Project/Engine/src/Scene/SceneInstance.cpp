@@ -30,19 +30,43 @@
 
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
+#include <UI/Button/ButtonComponent.hpp>
+#include <Multi-threading/SequentialSystemOrchestrator.hpp>
+#include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
 Entity fpsText;
 
 void testing(ECSManager&);
+//SceneInstance::SceneInstance() {
+//	if (!multithreadSystems)
+//	{
+//		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+//	}
+//	else
+//	{
+//		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+//	}
+//}
+//
+//SceneInstance::SceneInstance(const std::string& path) : IScene(path) {
+//	if (!multithreadSystems)
+//	{
+//		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+//	}
+//	else
+//	{
+//		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+//	}
+//}
 
 void SceneInstance::Initialize()
 {
 	// Initialize GraphicsManager first
-	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
+	GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 	// gfxManager.Initialize(WindowManager::GetWindowWidth(), WindowManager::GetWindowHeight());
 	gfxManager.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
 	// Get the ECS manager for this scene
-	ECSManager &ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	if (!PostProcessingManager::GetInstance().Initialize())
 	{
@@ -51,7 +75,7 @@ void SceneInstance::Initialize()
 	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
 
 	// Configure HDR settings
-	auto *hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
+	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
 	if (hdrEffect)
 	{
 		hdrEffect->SetEnabled(true);
@@ -98,6 +122,18 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.buttonSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Button system initialized");
+
+	if (!multithreadSystems)
+	{
+		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+	}
+	else
+	{
+		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+	}
+
 	ENGINE_PRINT("Scene Initialized\n");
 }
 
@@ -129,24 +165,9 @@ void SceneInstance::Update(double dt)
 
 	processInput((float)TimeManager::GetDeltaTime());
 
-	// Update systems.
-	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	// mainECS.physicsSystem->physicsSyncBack(mainECS);
-	mainECS.transformSystem->Update();
-
-	mainECS.animationSystem->Update();
-
-	mainECS.cameraSystem->Update();
-	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update();
-
-	mainECS.spriteAnimationSystem->Update();
-
-	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
-	if (mainECS.audioSystem)
-	{
-		mainECS.audioSystem->Update((float)dt);
-	}
+	updateSynchronized = false;
+	systemOrchestrator->Update();
+	updateSynchronized = true;
 }
 
 void SceneInstance::Draw()
@@ -190,56 +211,10 @@ void SceneInstance::Draw()
 	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
 	gfxManager.UpdateFrustum();
 
-	if (mainECS.modelSystem)
-	{
-		mainECS.modelSystem->Update();
-	}
-	if (mainECS.textSystem)
-	{
-		// #ifdef ANDROID
-		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call textSystem->Update()");
-		// #endif
-		mainECS.textSystem->Update();
-		// #ifdef ANDROID
-		//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "textSystem->Update() completed");
-		// #endif
-	}
+	drawSynchronized = false;
+	systemOrchestrator->Draw();
+	drawSynchronized = true;
 
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call spriteSystem->Update()");
-	// #endif
-	if (mainECS.spriteSystem)
-	{
-		mainECS.spriteSystem->Update();
-	}
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "spriteSystem->Update() completed");
-	// #endif
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call particleSystem->Update()");
-	// #endif
-	if (mainECS.particleSystem)
-	{
-		mainECS.particleSystem->Update();
-	}
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "particleSystem->Update() completed");
-	// #endif
-	//  Test debug drawing
-	// DebugDrawSystem::DrawCube(Vector3D(0, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 0, 0)); // Red cube above origin
-	// DebugDrawSystem::DrawSphere(Vector3D(2, 0, 0), 1.0f, Vector3D(0, 1, 0)); // Green sphere to the right
-	// DebugDrawSystem::DrawLine(Vector3D(0, 0, 0), Vector3D(3, 3, 3), Vector3D(0, 0, 1)); // Blue line diagonal
-	// auto backpackModel = ResourceManager::GetInstance().GetResource<Model>("Resources/Models/backpack/backpack.obj");
-	// DebugDrawSystem::DrawMeshWireframe(backpackModel, Vector3D(-2, 0, 0), Vector3D(1, 1, 0), 0.0f);
-
-	// Update debug draw system to submit to graphics manager
-	// #ifdef ANDROID
-	//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call debugDrawSystem->Update()");
-	// #endif
-	if (mainECS.debugDrawSystem)
-	{
-		mainECS.debugDrawSystem->Update();
-	}
 // #ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "debugDrawSystem->Update() completed");
 // #endif
@@ -277,6 +252,7 @@ void SceneInstance::Exit()
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
+	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
@@ -287,8 +263,8 @@ void SceneInstance::ShutDownPhysics()
 
 void SceneInstance::processInput(float deltaTime)
 {
-	if (InputManager::GetKeyDown(Input::Key::ESC))
-		WindowManager::SetWindowShouldClose();
+	// ESC handling is now done in Lua (camera_follow.lua) for cursor lock toggle
+	// Game-specific pause menus should also be handled in Lua
 
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 	Entity activeCam = mainECS.cameraSystem->GetActiveCameraEntity();
@@ -368,50 +344,50 @@ void SceneInstance::processInput(float deltaTime)
 	if (InputManager::GetKeyDown(Input::Key::SPACE))
 		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
-	// MADE IT so that you must drag to look around
-	//
-	// Only process mouse look when left mouse button is held down
-	static float lastX = 0.0f;
-	static float lastY = 0.0f;
-	static bool firstMouse = true;
+	//// MADE IT so that you must drag to look around
+	////
+	//// Only process mouse look when left mouse button is held down
+	//static float lastX = 0.0f;
+	//static float lastY = 0.0f;
+	//static bool firstMouse = true;
 
-	if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
-	{
-		float xpos = (float)InputManager::GetMouseX();
-		float ypos = (float)InputManager::GetMouseY();
+	//if (InputManager::GetMouseButton(Input::MouseButton::LEFT))
+	//{
+	//	float xpos = (float)InputManager::GetMouseX();
+	//	float ypos = (float)InputManager::GetMouseY();
 
-		// Reset firstMouse when starting a new mouse drag (fixes touch jump on Android)
-		// Check for large jumps in mouse position which indicates a new touch
-		if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT) || firstMouse)
-		{
-			firstMouse = false;
-			lastX = xpos;
-			lastY = ypos;
-			return; // Skip this frame to prevent jump
-		}
+	//	// Reset firstMouse when starting a new mouse drag (fixes touch jump on Android)
+	//	// Check for large jumps in mouse position which indicates a new touch
+	//	if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT) || firstMouse)
+	//	{
+	//		firstMouse = false;
+	//		lastX = xpos;
+	//		lastY = ypos;
+	//		return; // Skip this frame to prevent jump
+	//	}
 
-		// Also check for large position jumps (indicates finger lifted and touched elsewhere) - fixed jumps on desktop also as a side effect (intended to be ifdef)
-		float positionJump = sqrt((xpos - lastX) * (xpos - lastX) + (ypos - lastY) * (ypos - lastY));
-		if (positionJump > 100.0f) // Threshold for detecting new touch
-		{
-			lastX = xpos;
-			lastY = ypos;
-			return; // Skip this frame to prevent jump
-		}
+	//	// Also check for large position jumps (indicates finger lifted and touched elsewhere) - fixed jumps on desktop also as a side effect (intended to be ifdef)
+	//	float positionJump = sqrt((xpos - lastX) * (xpos - lastX) + (ypos - lastY) * (ypos - lastY));
+	//	if (positionJump > 100.0f) // Threshold for detecting new touch
+	//	{
+	//		lastX = xpos;
+	//		lastY = ypos;
+	//		return; // Skip this frame to prevent jump
+	//	}
 
-		float xoffset = xpos - lastX;
-		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	//	float xoffset = xpos - lastX;
+	//	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-		lastX = xpos;
-		lastY = ypos;
+	//	lastX = xpos;
+	//	lastY = ypos;
 
-		camera->ProcessMouseMovement(xoffset, yoffset);
-	}
-	else
-	{
-		// When mouse button is released, reset for next touch
-		firstMouse = true;
-	}
+	//	camera->ProcessMouseMovement(xoffset, yoffset);
+	//}
+	//else
+	//{
+	//	// When mouse button is released, reset for next touch
+	//	firstMouse = true;
+	//}
 
 	if (InputManager::GetKeyDown(Input::Key::H))
 	{

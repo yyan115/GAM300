@@ -21,6 +21,10 @@ public:
 	static double GetMouseX();
 	static double GetMouseY();
 
+	static double GetScrollX();
+	static double GetScrollY();
+	static void ConsumeScroll();  // Reset scroll delta after reading
+
 	static bool GetAnyKeyDown();
 	static bool GetAnyMouseButtonDown();
 	static bool GetAnyInputDown();
@@ -31,6 +35,8 @@ public:
 	static void OnMousePositionEvent(double x, double y);
 	static void OnScrollEvent(double xOffset, double yOffset);
 
+	ENGINE_API static void SetGamePanelMousePos(float newX, float newY);
+
 private:
 	static IPlatform* platform;  // Reference to platform for input polling
 	
@@ -40,6 +46,8 @@ private:
 	
 	static std::unordered_map<Input::Key, bool> prevKeyStates;
 	static std::unordered_map<Input::MouseButton, bool> prevMouseButtonStates;
+
+	static double gamePanelMouseX, gamePanelMouseY;
 
 	//static double mouseX;
 	//static double mouseY;
