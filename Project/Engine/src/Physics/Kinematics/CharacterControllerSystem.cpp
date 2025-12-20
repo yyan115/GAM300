@@ -1,71 +1,42 @@
-//// CharacterControllerSystem.cpp
-//#pragma once
-//
-//#include "pch.h"
-//#include "Physics/Kinematics/CharacterController.hpp"
-//#include "ECS/ECSManager.hpp"
-//#include "ECS/ECSRegistry.hpp"
-//#include "Physics/ColliderComponent.hpp"
-//#include "Transform/TransformComponent.hpp"
-//#include "Performance/PerformanceProfiler.hpp"
-//
-//#ifdef __ANDROID__
-//#include <android/log.h>
-//#endif
-//
-//void CharacterControllerSystem::Initialise(ECSManager& ecsManager, JPH::PhysicsSystem* physicsSystem) {
-//    if (m_initialized) {
-//        std::cout << "[CharacterController] Already initialized, skipping..." << std::endl;
-//        return;
-//    }
-//
-//    if (!physicsSystem) {
-//        std::cerr << "[CharacterController] ERROR: PhysicsSystem is null!" << std::endl;
-//        return;
-//    }
-//
-//    m_physicsSystem = physicsSystem;
-//
-//#ifdef __ANDROID__
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300",
-//        "[CharacterController] Initialise called, entities=%zu", entities.size());
-//#endif
-//
-//    // Clear any existing controllers from previous play session
-//    m_controllers.clear();
-//
-//    // Create controllers for all entities that have Collider + Transform
-//    // (You can add a tag component later if you want to mark specific entities as character controllers)
-//    for (auto& e : entities) {
-//        // Skip entities that don't have the required components
-//        if (!ecsManager.HasComponent<ColliderComponent>(e) ||
-//            !ecsManager.HasComponent<Transform>(e)) {
-//            continue;
-//        }
-//
-//        auto& collider = ecsManager.GetComponent<ColliderComponent>(e);
-//        auto& transform = ecsManager.GetComponent<Transform>(e);
-//
-//        // Create the character controller
-//        auto controller = std::make_unique<CharacterController>(m_physicsSystem);
-//
-//        if (controller->Initialise(collider, transform)) {
-//            m_controllers[e] = std::move(controller);
-//
-//#ifdef __ANDROID__
-//            __android_log_print(ANDROID_LOG_INFO, "GAM300",
-//                "[CharacterController] Created controller for entity %d", e);
-//#endif
-//        }
-//        else {
-//            std::cerr << "[CharacterController] Failed to initialize controller for entity " << e << std::endl;
-//        }
-//    }
-//
-//    m_initialized = true;
-//    std::cout << "[CharacterController] Initialized " << m_controllers.size() << " controllers" << std::endl;
-//}
-//
+#pragma once
+
+#include "pch.h"
+#include "Physics/Kinematics/CharacterController.hpp"
+#include "Physics/Kinematics/CharacterControllerSystem.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "Physics/ColliderComponent.hpp"
+#include "Transform/TransformComponent.hpp"
+#include "Performance/PerformanceProfiler.hpp"
+
+
+CharacterController* CharacterControllerSystem::CreateController(Entity id,
+    ColliderComponent& collider,
+    Transform& transform)
+{
+    if (m_controllers.contains(id)) {
+        std::cerr << "[WARN] Entity " << id << " already has a controller\n";
+        return m_controllers[id].get();
+    }
+
+    auto controller = std::make_unique<CharacterController>(m_physicsSystem);
+
+    if (!controller->Initialise(collider, transform)) {
+        std::cerr << "[ERROR] Failed to initialise controller for entity " << id << "\n";
+        return nullptr;
+    }
+
+    //add into map
+    m_controllers.emplace(id, std::move(controller));
+
+    CharacterController* ptr = controller.get(); // raw pointer for Lua access
+
+    return ptr;
+}
+
+
+
+
 //void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) {
 //    PROFILE_FUNCTION();
 //

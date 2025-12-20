@@ -15,16 +15,24 @@ public:
 
     ~CharacterControllerSystem() = default;
 
-    // Initialise a controller for a specific entity
-    bool Initialise(ColliderComponent& collider, Transform& transform) {
+    void SetPhysicsSystem(JPH::PhysicsSystem* physicsSystem) {
+        m_physicsSystem = physicsSystem;
+    }
+
+    // ADD INTO MAP
+    CharacterController* CreateController(Entity id, ColliderComponent& collider, Transform& transform);
+        //std::cout << "Initialise is being called for SYSTEM CONTROLLER" << std::endl;
+        
+        //LUA CALLS CREATE CONTROLLER -> CALLS
+
+
+
         //auto controller = std::make_unique<CharacterController>(m_physicsSystem);
         //if (!controller->Initialise(collider, transform))
         //    return false;
 
         //m_controllers[entity] = std::move(controller);
         //return true;
-        std::cout << "Initialise is being called for SYSTEM CONTROLLER" << std::endl;
-    }
 
     // Called every frame
     void Update(float deltaTime) {

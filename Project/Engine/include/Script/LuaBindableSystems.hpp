@@ -100,30 +100,13 @@ namespace RigidBodySystemWrappers {
 #include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "ECS/ECSManager.hpp"
+
+using Entity = unsigned int;
 
 namespace CharacterControllerWrappers {
-    // Constructor wrapper
-    inline CharacterController* Create() {
-        JPH::PhysicsSystem* physicsSystem = PhysicsSystemWrappers::GetSystem();
 
-        if (!physicsSystem) {
-            std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
-            return nullptr;
-        }
-        return new CharacterController(physicsSystem);
-    }
-
-    inline bool Initialise(CharacterController* controller,
-        ColliderComponent* collider,
-        Transform* transform) {
-
-        if (controller && collider && transform) {
-            return controller->Initialise(*collider, *transform);
-        }
-        return false;
-    }
-
-    inline CharacterController* CreateAndInitialise(
+    inline CharacterController* CreateController(Entity id,
         ColliderComponent* collider,
         Transform* transform)
     {
@@ -139,15 +122,18 @@ namespace CharacterControllerWrappers {
             return nullptr;
         }
 
+        //auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        //if (!ecsManager.characterControllerSystem)
+        //{
+        //    std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
+        //    return nullptr;
+        //}
+
+        ////call system to create controller
+        //return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
+
         CharacterController* controller = new CharacterController(physicsSystem);
-
-        if (!controller->Initialise(*collider, *transform)) {
-            std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
-            delete controller;
-            return nullptr;
-        }
-
-        return controller;
+        return controller->CreateController(*collider, *transform);
     }
 
 

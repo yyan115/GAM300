@@ -120,6 +120,14 @@ void ECSManager::Initialize() {
 		SetSystemSignature<CharacterControllerSystem>(signature);
 	}
 
+	if (physicsSystem && characterControllerSystem)
+	{
+		JPH::PhysicsSystem* joltPhysics = &physicsSystem->GetJoltSystem();
+		if (joltPhysics)
+		{
+			characterControllerSystem->SetPhysicsSystem(joltPhysics);
+		}
+	}
 
 
 	lightingSystem = RegisterSystem<LightingSystem>();

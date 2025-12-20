@@ -129,6 +129,28 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     return true;
 }
 
+
+//TEMP, TO BE DELETED
+CharacterController* CharacterController::CreateController(ColliderComponent& collider, Transform& transform)
+{
+    if (!mPhysicsSystem) {
+        std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
+        return nullptr;
+    }
+
+    CharacterController* controller = new CharacterController(mPhysicsSystem);
+
+    if (!controller->Initialise(collider, transform)) {
+        std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
+        delete controller;
+        return nullptr;
+    }
+    return controller;
+}
+
+
+
+
 void CharacterController::Update(float deltaTime) {
     if (!mCharacter || !mPhysicsSystem)
         return;

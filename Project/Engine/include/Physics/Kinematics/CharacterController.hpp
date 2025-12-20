@@ -28,6 +28,10 @@ public:
     // Expose raw character for internal use
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }
 
+    //TEMP, TO BE DELETED
+
+    CharacterController* CreateController(ColliderComponent& collider, Transform& transform);
+
 
     //GETTER FUNCTIONS
     Vector3D GetPosition() const;

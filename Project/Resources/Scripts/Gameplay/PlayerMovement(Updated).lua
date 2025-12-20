@@ -76,9 +76,9 @@ return Component {
         self._transform = self:GetComponent("Transform")
 
         -- self._controller = CharacterController.new()
-        -- CharacterController.Initialise(self._controller, self._collider, self._transform)
+        self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        self._controller = CharacterController.Create(self._collider, self._transform)
+        -- self._controller = CharacterController.Create(self.entityId ,self._collider, self._transform)
 
         self._animator:PlayClip(IDLE, true)
 
@@ -88,10 +88,14 @@ return Component {
     end,
 
     Update = function(self, dt)
+        if not self._controller then 
+            print("not self controller")
+        end
         if not self._collider or not self._transform or not self._controller then
             return
         end
         
+        -- print(self.entityId)
 
         CharacterController.Update(self._controller, dt)
 

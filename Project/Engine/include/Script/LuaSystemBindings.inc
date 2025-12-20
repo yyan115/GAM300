@@ -169,12 +169,7 @@ luabridge::getGlobalNamespace(L)
     .endClass();
 
 BEGIN_SYSTEM("CharacterController")
-    // Constructor
-    FUNCTION("new", CharacterControllerWrappers::Create)
-    // Initialise
-    FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
-    // Methods
-    FUNCTION("Create", CharacterControllerWrappers::CreateAndInitialise)
+    FUNCTION("Create", CharacterControllerWrappers::CreateController)
 
     FUNCTION("Move", CharacterControllerWrappers::Move)
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
