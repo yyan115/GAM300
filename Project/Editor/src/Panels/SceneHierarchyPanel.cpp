@@ -115,9 +115,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
                         } else if (hasSprite) {
                             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(selectedEntity);
                             entityIs3D = sprite.is3D;
-                            if (!sprite.is3D) {
-                                entityPos = sprite.position.ConvertToGLM();
-                            }
+                            // Always use transform.worldMatrix for position - sprite.position is not kept updated
                         } else if (hasText) {
                             auto& text = ecsManager.GetComponent<TextRenderComponent>(selectedEntity);
                             entityIs3D = text.is3D;
@@ -450,14 +448,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                         } else if (hasSprite) {
                             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
                             entityIs3D = sprite.is3D;
-                            std::cout << "[SceneHierarchy] Entity has sprite at position ("
-                                     << sprite.position.x << ", " << sprite.position.y << ", " << sprite.position.z
-                                     << ") is3D=" << sprite.is3D << std::endl;
-                            // For 2D sprites, use the sprite position instead of transform
-                            if (!sprite.is3D) {
-                                entityPos = sprite.position.ConvertToGLM();
-                                std::cout << "[SceneHierarchy] Using sprite position for 2D sprite" << std::endl;
-                            }
+                            // Always use transform.worldMatrix for position - sprite.position is not kept updated
+                            std::cout << "[SceneHierarchy] Entity has sprite, is3D=" << sprite.is3D << std::endl;
                         } else if (hasText) {
                             auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
                             entityIs3D = text.is3D;
