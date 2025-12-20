@@ -96,7 +96,8 @@ namespace RigidBodySystemWrappers {
 // ============================================================================
 // CHARACTER CONTROLLER WRAPPERS
 // ============================================================================
-#include "Physics/Kinematics/CharacterController.hpp"
+#include "Physics/Kinematics/CharacterController.hpp"       //to be removed 
+#include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 
@@ -121,6 +122,35 @@ namespace CharacterControllerWrappers {
         }
         return false;
     }
+
+    inline CharacterController* CreateAndInitialise(
+        ColliderComponent* collider,
+        Transform* transform)
+    {
+        JPH::PhysicsSystem* physicsSystem = PhysicsSystemWrappers::GetSystem();
+
+        if (!physicsSystem) {
+            std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
+            return nullptr;
+        }
+
+        if (!collider || !transform) {
+            std::cerr << "[ERROR] Cannot create CharacterController - invalid inputs!" << std::endl;
+            return nullptr;
+        }
+
+        CharacterController* controller = new CharacterController(physicsSystem);
+
+        if (!controller->Initialise(*collider, *transform)) {
+            std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
+            delete controller;
+            return nullptr;
+        }
+
+        return controller;
+    }
+
+
 
     inline void Update(CharacterController* controller, float deltaTime) {
         if (controller)

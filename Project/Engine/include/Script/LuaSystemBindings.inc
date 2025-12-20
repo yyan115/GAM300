@@ -174,6 +174,8 @@ BEGIN_SYSTEM("CharacterController")
     // Initialise
     FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
     // Methods
+    FUNCTION("Create", CharacterControllerWrappers::CreateAndInitialise)
+
     FUNCTION("Move", CharacterControllerWrappers::Move)
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
     FUNCTION("Update", CharacterControllerWrappers::Update)

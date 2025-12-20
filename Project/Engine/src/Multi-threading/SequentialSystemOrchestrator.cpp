@@ -2,7 +2,7 @@
 #include "Multi-threading/SequentialSystemOrchestrator.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <Physics/PhysicsSystem.hpp>
-#include <Physics/Kinematics/CharacterController.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <TimeManager.hpp>
 
 void SequentialSystemOrchestrator::Update() {
