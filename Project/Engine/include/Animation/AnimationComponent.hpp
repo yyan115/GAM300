@@ -6,6 +6,8 @@
 #include "Reflection/ReflectionBase.hpp"
 #include "Utilities/GUID.hpp"
 
+class AnimationStateMachine;
+
 class ENGINE_API AnimationComponent
 {
 public:
@@ -79,15 +81,7 @@ public:
     const AnimationStateMachine*    GetStateMachine() const { return stateMachine.get(); }
 
     // Helper to lazily allocate FSM:
-    AnimationStateMachine* EnsureStateMachine()
-    {
-        if (!stateMachine)
-        {
-            stateMachine = std::make_unique<AnimationStateMachine>();
-            stateMachine->SetOwner(this);
-        }
-        return stateMachine.get();
-    }
+    AnimationStateMachine* EnsureStateMachine();
 
 private:
     std::vector<std::unique_ptr<Animation>> clips;

@@ -87,7 +87,9 @@ void SceneInstance::Initialize()
 
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 	
+	// Any test code
 	testing(ecsManager);
+
 
 	// Initialize systems.
 	ecsManager.transformSystem->Initialise();

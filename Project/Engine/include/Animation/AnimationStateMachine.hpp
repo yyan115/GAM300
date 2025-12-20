@@ -1,10 +1,12 @@
 #pragma once
+#include <pch.h>
 #include <vector>
 #include <functional>
 #include "Animation/AnimationParam.hpp"
 #include "Animation/AnimationComponent.hpp"
 
 using AnimStateID = std::string;
+class AnimationComponent;
 
 struct AnimStateConfig
 {
@@ -40,51 +42,11 @@ public:
 
 	const AnimStateID& GetCurrentState() const { return mCurrentState; }
 
-	void Update(float dt)
-	{
-		mStateTime += dt;
-
-		AnimStateID nextState = mCurrentState;
-		bool found = false;
-
-		for(const auto& t : mTransitions)
-		{
-			if(!t.anyState && t.from != mCurrentState)
-				continue;
-
-			if (t.condition(mParam))
-			{
-				nextState = t.to;
-				found = true;
-				break;
-			}
-		}
-
-		if (found)
-		{
-			EnterState(nextState);
-		}
-
-	}
+	void Update(float dt);
 	
 
 private:
-	void EnterState(const AnimStateID& id)
-	{
-		mCurrentState = id;
-		mStateTime = 0.0f;
-
-		auto it = mStates.find(id);
-		if(it == mStates.end() || !mOwner)
-			return;
-
-		const AnimStateConfig& config = it->second;
-
-		if(config.loop)
-			mOwner->PlayClip(config.clipIndex, true);
-		else
-			mOwner->PlayOnce(config.clipIndex);
-	}
+	void EnterState(const AnimStateID& id);
 
 private:
 	AnimationComponent* mOwner = nullptr;

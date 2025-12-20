@@ -273,3 +273,13 @@ void AnimationComponent::ResetPreview() {
 		animator->PlayAnimation(clips[activeClip].get());
 	}
 }
+
+AnimationStateMachine* AnimationComponent::EnsureStateMachine()
+{
+    if (!stateMachine)
+    {
+        stateMachine = std::make_unique<AnimationStateMachine>();
+        stateMachine->SetOwner(this);
+    }
+    return stateMachine.get();
+}
