@@ -75,10 +75,7 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
 
-        -- self._controller = CharacterController.new()
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
-
-        -- self._controller = CharacterController.Create(self.entityId ,self._collider, self._transform)
 
         self._animator:PlayClip(IDLE, true)
 
@@ -88,9 +85,6 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self._controller then 
-            print("not self controller")
-        end
         if not self._collider or not self._transform or not self._controller then
             return
         end
@@ -136,7 +130,7 @@ return Component {
         local isJumping = false
 
         if Input.GetKeyDown(Input.Key.Space) and isGrounded then
-            CharacterController.Jump(self._controller, JumpHeight)
+            CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
         end
 

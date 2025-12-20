@@ -19,6 +19,7 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
         return m_controllers[id].get();
     }
 
+
     auto controller = std::make_unique<CharacterController>(m_physicsSystem);
 
     if (!controller->Initialise(collider, transform)) {

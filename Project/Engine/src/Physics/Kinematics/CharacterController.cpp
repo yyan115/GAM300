@@ -35,8 +35,6 @@ CharacterController::~CharacterController()
 
 bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
-    std::cout << "[CharacterController] mPhysicsSystem = " << mPhysicsSystem << std::endl;
-
     if (!mPhysicsSystem) {
         std::cerr << "[CharacterController] ERROR: PhysicsSystem is NULL!" << std::endl;
         return false;
@@ -46,6 +44,8 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
 
+    //std::cout << "calculation for new offset Y is " << ((collider.capsuleHalfHeight + collider.capsuleRadius) * transform.localScale.y) << std::endl;
+    collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 

@@ -122,18 +122,18 @@ namespace CharacterControllerWrappers {
             return nullptr;
         }
 
-        //auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-        //if (!ecsManager.characterControllerSystem)
-        //{
-        //    std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
-        //    return nullptr;
-        //}
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (!ecsManager.characterControllerSystem)
+        {
+            std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
+            return nullptr;
+        }
+        std::cout << "UPDATED 0" << std::endl;
+        //call system to create controller
+        return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
 
-        ////call system to create controller
-        //return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
-
-        CharacterController* controller = new CharacterController(physicsSystem);
-        return controller->CreateController(*collider, *transform);
+        //CharacterController* controller = new CharacterController(physicsSystem);
+        //return controller->CreateController(*collider, *transform);
     }
 
 
