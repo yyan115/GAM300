@@ -33,16 +33,29 @@ glm::mat4 EditorCamera::GetProjectionMatrix(float aspectRatio) const {
     return glm::perspective(glm::radians(Zoom), safeAspectRatio, 0.1f, 100.0f);
 }
 
-glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const {
+glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight,
+                                                         int gameWidth, int gameHeight) const {
     // For 2D mode, create an orthographic projection with zoom support
-    // This matches GraphicsManager exactly for consistency
+    // This matches GraphicsManager and WorldToScreen2D exactly for consistency
     // OrthoZoomLevel: 1.0 = normal (1:1 pixel mapping), 0.5 = zoomed in 2x, 2.0 = zoomed out 2x
     (void)aspectRatio;
-    // Apply zoom to viewport size
-    float viewWidth = viewportWidth * OrthoZoomLevel;
-    float viewHeight = viewportHeight * OrthoZoomLevel;
 
-    // Center the view around Position (matches GraphicsManager)
+    float gameAspect = (float)gameWidth / (float)gameHeight;
+    float viewportAspect = viewportWidth / viewportHeight;
+
+    // Calculate view dimensions that preserve game aspect ratio (same as GraphicsManager)
+    float viewWidth, viewHeight;
+    if (viewportAspect > gameAspect) {
+        // Viewport is wider than game - fit by height
+        viewHeight = gameHeight * OrthoZoomLevel;
+        viewWidth = viewHeight * viewportAspect;
+    } else {
+        // Viewport is taller than game - fit by width
+        viewWidth = gameWidth * OrthoZoomLevel;
+        viewHeight = viewWidth / viewportAspect;
+    }
+
+    // Center the view around Position (matches GraphicsManager and WorldToScreen2D)
     float halfWidth = viewWidth * 0.5f;
     float halfHeight = viewHeight * 0.5f;
     float left = Position.x - halfWidth;

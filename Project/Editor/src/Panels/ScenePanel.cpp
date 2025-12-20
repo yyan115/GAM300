@@ -937,8 +937,18 @@ void ScenePanel::HandleEntitySelection() {
                         bool is2DMode = editorState.Is2DMode();
 
                         float aspectRatio = sceneWidth / sceneHeight;
+
+                        // Get game resolution for 2D projection
+                        int gameWidth = RunTimeVar::window.width;
+                        int gameHeight = RunTimeVar::window.height;
+                        auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+                        auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+                        if (gamePanel) {
+                            gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+                        }
+
                         glm::mat4 glmViewMatrix = is2DMode ? editorCamera.Get2DViewMatrix() : editorCamera.GetViewMatrix();
-                        glm::mat4 glmProjMatrix = is2DMode ? editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight) : editorCamera.GetProjectionMatrix(aspectRatio);
+                        glm::mat4 glmProjMatrix = is2DMode ? editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight) : editorCamera.GetProjectionMatrix(aspectRatio);
                         glm::mat4 vp = glmProjMatrix * glmViewMatrix;
 
                         for (auto entity : ecsManager.GetActiveEntities()) {
@@ -988,10 +998,19 @@ void ScenePanel::HandleEntitySelection() {
             glm::mat4 glmViewMatrix;
             glm::mat4 glmProjMatrix;
 
+            // Get game resolution for 2D projection
+            int gameWidth = RunTimeVar::window.width;
+            int gameHeight = RunTimeVar::window.height;
+            auto gamePanelPtr2 = GUIManager::GetPanelManager().GetPanel("Game");
+            auto gamePanel2 = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr2);
+            if (gamePanel2) {
+                gamePanel2->GetTargetGameResolution(gameWidth, gameHeight);
+            }
+
             if (is2DMode) {
                 // Use 2D orthographic matrices for 2D mode
                 glmViewMatrix = editorCamera.Get2DViewMatrix();
-                glmProjMatrix = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight);
+                glmProjMatrix = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight);
             } else {
                 // Use 3D perspective matrices for 3D mode
                 glmViewMatrix = editorCamera.GetViewMatrix();
@@ -1360,11 +1379,20 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
     EditorState& editorState = EditorState::GetInstance();
     float aspectRatio = sceneWidth / sceneHeight;
 
+    // Get game resolution for 2D projection
+    int gameWidth = RunTimeVar::window.width;
+    int gameHeight = RunTimeVar::window.height;
+    auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+    auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+    if (gamePanel) {
+        gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+    }
+
     glm::mat4 view, projection;
     if (editorState.Is2DMode()) {
         // Use 2D orthographic matrices for proper gizmo alignment
         view = editorCamera.Get2DViewMatrix();
-        projection = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight);
+        projection = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneWidth, sceneHeight, gameWidth, gameHeight);
         // IMPORTANT: Tell ImGuizmo we're using orthographic projection
         ImGuizmo::SetOrthographic(true);
     } else {
