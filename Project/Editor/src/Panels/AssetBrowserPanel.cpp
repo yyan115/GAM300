@@ -33,6 +33,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Logging.hpp"
 #include "Scene/SceneManager.hpp"
 #include "Panels/PrefabEditorPanel.hpp"
+#include "Panels/AnimatorEditorWindow.hpp"
 #include "Utilities/GUID.hpp"
 #include <IconsFontAwesome6.h>
 #include <FileWatch.hpp>
@@ -648,9 +649,10 @@ void AssetBrowserPanel::RenderAssetGrid()
             bool isFont = (lowerExt == ".ttf" || lowerExt == ".otf");
             bool isPrefab = (lowerExt == ".prefab");
             bool isScript = (lowerExt == ".lua");
+            bool isAnimator = (lowerExt == ".animator");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio || isFont || isScript) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont || isScript || isAnimator) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -695,6 +697,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Send script path directly
                     ImGui::SetDragDropPayload("SCRIPT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Script: %s", asset.fileName.c_str());
+                } else if (isAnimator) {
+                    // Send animator controller path directly
+                    ImGui::SetDragDropPayload("ANIMATOR_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Animator: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -746,6 +752,17 @@ void AssetBrowserPanel::RenderAssetGrid()
                     int result = system(command.c_str());
                     if (result != 0) {
                         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AssetBrowserPanel] Failed to open VS Code for script: ", asset.filePath, "\n");
+                    }
+
+                    ImGui::PopID();
+                    ImGui::EndGroup();
+                    break;
+                }
+                else if (lowerExt == ".animator") {
+                    // Open the Animator Editor window
+                    AnimatorEditorWindow* animatorEditor = GetAnimatorEditor();
+                    if (animatorEditor) {
+                        animatorEditor->OpenController(asset.filePath);
                     }
 
                     ImGui::PopID();
@@ -829,7 +846,8 @@ void AssetBrowserPanel::RenderAssetGrid()
             std::transform(lowerExtCheck.begin(), lowerExtCheck.end(), lowerExtCheck.begin(), ::tolower);
             bool isDraggableAsset = (lowerExtCheck == ".obj" || lowerExtCheck == ".fbx" ||
                                     lowerExtCheck == ".dae" || lowerExtCheck == ".3ds" ||
-                                    lowerExtCheck == ".mat" || lowerExtCheck == ".prefab");
+                                    lowerExtCheck == ".mat" || lowerExtCheck == ".prefab" ||
+                                    lowerExtCheck == ".animator");
 
             ImU32 iconColor = isDraggableAsset ? IM_COL32(100, 180, 255, 255) : IM_COL32(220, 220, 220, 255);
             dl->AddText(font, fontSize, iconPos, iconColor, icon.c_str());
@@ -1452,6 +1470,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".prefab",                                         // Prefabs
         ".scene",                                          // Scenes
         ".lua",                                            // Scripts
+        ".animator",                                       // Animator Controllers
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;

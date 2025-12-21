@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include "Animation/AnimationSystem.hpp"
+#include "Animation/AnimatorController.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
@@ -22,17 +23,41 @@ bool AnimationSystem::Initialise()
 				continue;
 			auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
 
-			Animator* animator = animComp.EnsureAnimator();
-			modelComp.SetAnimator(animator);
+			try {
+				// Load animator controller if path is set
+				if (!animComp.controllerPath.empty()) {
+					AnimatorController controller;
+					if (controller.LoadFromFile(animComp.controllerPath)) {
+						// Apply state machine configuration
+						AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
+						controller.ApplyToStateMachine(stateMachine);
 
-			if (modelComp.model && !animComp.clipPaths.empty()) {
-				animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
-				if (!animComp.GetClips().empty()) {
-					animComp.Play();
+						// Copy clip paths FROM the controller (not from scene data)
+						const auto& ctrlClipPaths = controller.GetClipPaths();
+						animComp.clipPaths = ctrlClipPaths;
+						animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
+
+						ENGINE_PRINT("[AnimationSystem] Loaded controller: ", animComp.controllerPath, " with ", ctrlClipPaths.size(), " clips\n");
+					} else {
+						ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AnimationSystem] Failed to load controller: ", animComp.controllerPath, "\n");
+					}
 				}
-			}
 
-			ENGINE_PRINT("[AnimationSystem] AnimationComponent initialized for entity ", entity, "\n");
+				Animator* animator = animComp.EnsureAnimator();
+				modelComp.SetAnimator(animator);
+
+				if (modelComp.model && !animComp.clipPaths.empty()) {
+					animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+					if (!animComp.GetClips().empty()) {
+						animator->PlayAnimation(animComp.GetClips()[0].get());
+					}
+				}
+
+				ENGINE_PRINT("[AnimationSystem] AnimationComponent initialized for entity ", entity, "\n");
+			}
+			catch (const std::exception& e) {
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationSystem] Exception initializing entity ", entity, ": ", e.what(), "\n");
+			}
 		}
 	}
 

@@ -786,8 +786,6 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 
 		if (!assetMeta) {
 			// Check if this is a fallback GUID - try to find the file path from the asset browser
-			std::cout << "[Inspector] AssetMeta not found for GUID, trying fallback path lookup" << std::endl;
-
 			sourceFilePath = AssetBrowserPanel::GetFallbackGuidFilePath(assetGuid);
 			if (sourceFilePath.empty()) {
 				ImGui::Text("Asset not found - no metadata or fallback path available");
@@ -819,7 +817,6 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				}
 				return;
 			}
-			std::cout << "[Inspector] Found fallback path: " << sourceFilePath << std::endl;
 		}
 		else {
 			sourceFilePath = assetMeta->sourceFilePath;

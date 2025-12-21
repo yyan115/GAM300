@@ -10,6 +10,8 @@ public:
 	void UpdateAnimation(float dt, bool isLoop);
 
 	void PlayAnimation(Animation* pAnimation);
+	void ClearAnimation() { mCurrentAnimation = nullptr; }
+	bool HasAnimation() const { return mCurrentAnimation != nullptr; }
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform);
 
@@ -18,7 +20,7 @@ public:
 	void SetCurrentTime(float time); // For editor preview
 
 private:
-	Animation* mCurrentAnimation;
-	float mCurrentTime;
+	Animation* mCurrentAnimation = nullptr;
+	float mCurrentTime = 0.0f;
 	std::vector<glm::mat4> mFinalBoneMatrices;
 };

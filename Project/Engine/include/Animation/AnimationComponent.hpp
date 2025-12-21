@@ -15,7 +15,10 @@ public:
 
 	AnimationComponent();
 
-    ~AnimationComponent() = default;
+    ~AnimationComponent();
+
+    // Clear all clips and animator state (for scene reset)
+    void ClearClips();
 
     AnimationComponent(const AnimationComponent& other);
 
@@ -68,6 +71,9 @@ public:
     std::vector<std::string> clipPaths;
     std::vector<GUID_128> clipGUIDs;
 
+    // Animator Controller path (serialized - for Unity-style workflow)
+    std::string controllerPath;
+
     // Editor preview state (NOT serialized - only for inspector preview)
     float editorPreviewTime = 0.0f;  // Separate time for inspector preview
 
@@ -82,6 +88,20 @@ public:
 
     // Helper to lazily allocate FSM:
     AnimationStateMachine* EnsureStateMachine();
+
+    // Lua-friendly parameter setters (forward to state machine)
+    void SetBool(const std::string& name, bool value);
+    void SetInt(const std::string& name, int value);
+    void SetFloat(const std::string& name, float value);
+    void SetTrigger(const std::string& name);
+
+    // Lua-friendly parameter getters
+    bool GetBool(const std::string& name) const;
+    int GetInt(const std::string& name) const;
+    float GetFloat(const std::string& name) const;
+
+    // Get current state name from state machine
+    std::string GetCurrentState() const;
 
 private:
     std::vector<std::unique_ptr<Animation>> clips;

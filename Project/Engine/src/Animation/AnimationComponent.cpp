@@ -15,12 +15,33 @@ REFL_REGISTER_START(AnimationComponent)
 	REFL_REGISTER_PROPERTY(clipCount)
 	REFL_REGISTER_PROPERTY(clipPaths)
 	REFL_REGISTER_PROPERTY(clipGUIDs)
+	REFL_REGISTER_PROPERTY(controllerPath)
 REFL_REGISTER_END
 #pragma endregion
 
 AnimationComponent::AnimationComponent()
 {
     animator = std::make_unique<Animator>(nullptr); // set clip later
+}
+
+AnimationComponent::~AnimationComponent()
+{
+    // Clear animator's reference to prevent dangling pointer access
+    if (animator) {
+        animator->ClearAnimation();
+    }
+    clips.clear();
+}
+
+void AnimationComponent::ClearClips()
+{
+    // Clear animator's reference first
+    if (animator) {
+        animator->ClearAnimation();
+    }
+    clips.clear();
+    activeClip = 0;
+    isPlay = false;
 }
 
 
@@ -32,6 +53,7 @@ AnimationComponent::AnimationComponent(const AnimationComponent& other)
     , clipCount(other.clipCount)
     , clipPaths(other.clipPaths)
     , clipGUIDs(other.clipGUIDs)
+    , controllerPath(other.controllerPath)
     , activeClip(other.activeClip)
 {
     clips.reserve(other.clips.size());
@@ -63,23 +85,25 @@ void swap(AnimationComponent& a, AnimationComponent& b) noexcept
     swap(a.clipCount, b.clipCount);
     swap(a.clipPaths, b.clipPaths);
     swap(a.clipGUIDs, b.clipGUIDs);
+    swap(a.controllerPath, b.controllerPath);
     swap(a.activeClip, b.activeClip);
     swap(a.clips, b.clips);
     swap(a.animator, b.animator);
 }
 
-void AnimationComponent::Update(float dt) 
+void AnimationComponent::Update(float dt)
 {
 	if (!animator) return;
 
-
-    if (isPlay && !clips.empty())
-    {   
+    if (isPlay && !clips.empty() && activeClip < clips.size())
+    {
         animator->UpdateAnimation(dt * speed, isLoop);
         if (!isLoop)
         {
-            const float durTicks = clips[activeClip]->GetDuration();       // ticks
-            if (animator->GetCurrentTime() >= durTicks) isPlay = false;
+            if (clips[activeClip]) {
+                const float durTicks = clips[activeClip]->GetDuration();
+                if (animator->GetCurrentTime() >= durTicks) isPlay = false;
+            }
         }
     }
 }
@@ -143,10 +167,10 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
 }
 
 
-void AnimationComponent::Play() 
+void AnimationComponent::Play()
 {
-    isPlay = true; 
-    if (!clips.empty())
+    isPlay = true;
+    if (!clips.empty() && activeClip < clips.size())
     {
 		EnsureAnimator();
 		animator->PlayAnimation(clips[activeClip].get());
@@ -154,12 +178,11 @@ void AnimationComponent::Play()
 }
 void AnimationComponent::Pause() { isPlay = false; }
 
-void AnimationComponent::Stop() 
-{ 
+void AnimationComponent::Stop()
+{
     isPlay = false;
-    if(!clips.empty())
-        if(animator)
-            animator->PlayAnimation(clips[activeClip].get()); 
+    if(!clips.empty() && activeClip < clips.size() && animator)
+        animator->PlayAnimation(clips[activeClip].get());
 }
 
 void AnimationComponent::SetLooping(bool v) { isLoop = v; }
@@ -185,19 +208,38 @@ Animator* AnimationComponent::EnsureAnimator()
     return animator.get();
 }
 
-Animation& AnimationComponent::GetClip(size_t i) { return *clips[i]; }
-const Animation& AnimationComponent::GetClip(size_t i) const { return *clips[i]; }
+Animation& AnimationComponent::GetClip(size_t i) {
+    if (i >= clips.size()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] GetClip index ", i, " out of bounds (size=", clips.size(), ")\n");
+        static Animation dummyAnim;
+        return dummyAnim;
+    }
+    return *clips[i];
+}
+const Animation& AnimationComponent::GetClip(size_t i) const {
+    if (i >= clips.size()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] GetClip const index ", i, " out of bounds (size=", clips.size(), ")\n");
+        static Animation dummyAnim;
+        return dummyAnim;
+    }
+    return *clips[i];
+}
 const std::vector<std::unique_ptr<Animation>>& AnimationComponent::GetClips() const { return clips; }
-size_t AnimationComponent::GetActiveClipIndex() const 
-{ 
-    if (activeClip > clipCount)
-        return clipCount - 1;
-    return activeClip; 
+size_t AnimationComponent::GetActiveClipIndex() const
+{
+    if (clips.empty())
+        return 0;
+    if (activeClip >= clips.size())
+        return clips.size() - 1;
+    return activeClip;
 }
 
 
 void AnimationComponent::SyncAnimatorToActiveClip()
 {
+    if (clips.empty() || activeClip >= clips.size() || !clips[activeClip] || !animator) {
+        return;
+    }
     Animation* clip = clips[activeClip].get();
     animator->PlayAnimation(clip);
 }
@@ -211,6 +253,10 @@ void AnimationComponent::SetClipCount(size_t count)
 
 void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
+    // Clear animator's reference before clearing clips to prevent dangling pointer
+    if (animator) {
+        animator->ClearAnimation();
+    }
     clips.clear();
 
     for (const auto& path : clipPaths) {
@@ -219,7 +265,13 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         }
         std::string pathToLoad{};
 #ifndef EDITOR
-        pathToLoad = path.substr(path.find("Resources"));
+        // Safely extract path from "Resources" onwards
+        size_t resPos = path.find("Resources");
+        if (resPos != std::string::npos) {
+            pathToLoad = path.substr(resPos);
+        } else {
+            pathToLoad = path;  // Use as-is if "Resources" not found
+        }
 #else
         pathToLoad = path;
 #endif
@@ -261,7 +313,7 @@ bool AnimationComponent::IsPlaying() const {
 
 void AnimationComponent::ResetForPlay() {
 	// Reset animator to beginning for fresh game start
-	if (!clips.empty() && animator) {
+	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
 		animator->PlayAnimation(clips[activeClip].get());
 	}
 }
@@ -269,7 +321,7 @@ void AnimationComponent::ResetForPlay() {
 void AnimationComponent::ResetPreview() {
 	// Reset editor preview time to 0
 	editorPreviewTime = 0.0f;
-	if (!clips.empty() && animator) {
+	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
 		animator->PlayAnimation(clips[activeClip].get());
 	}
 }
@@ -282,4 +334,66 @@ AnimationStateMachine* AnimationComponent::EnsureStateMachine()
         stateMachine->SetOwner(this);
     }
     return stateMachine.get();
+}
+
+// Lua-friendly parameter setters
+void AnimationComponent::SetBool(const std::string& name, bool value)
+{
+    if (stateMachine) {
+        stateMachine->GetParams().SetBool(name, value);
+    }
+}
+
+void AnimationComponent::SetInt(const std::string& name, int value)
+{
+    if (stateMachine) {
+        stateMachine->GetParams().SetInt(name, value);
+    }
+}
+
+void AnimationComponent::SetFloat(const std::string& name, float value)
+{
+    if (stateMachine) {
+        stateMachine->GetParams().SetFloat(name, value);
+    }
+}
+
+void AnimationComponent::SetTrigger(const std::string& name)
+{
+    if (stateMachine) {
+        stateMachine->GetParams().SetTrigger(name);
+    }
+}
+
+// Lua-friendly parameter getters
+bool AnimationComponent::GetBool(const std::string& name) const
+{
+    if (stateMachine) {
+        return stateMachine->GetParams().GetBool(name);
+    }
+    return false;
+}
+
+int AnimationComponent::GetInt(const std::string& name) const
+{
+    if (stateMachine) {
+        return stateMachine->GetParams().GetInt(name);
+    }
+    return 0;
+}
+
+float AnimationComponent::GetFloat(const std::string& name) const
+{
+    if (stateMachine) {
+        return stateMachine->GetParams().GetFloat(name);
+    }
+    return 0.0f;
+}
+
+std::string AnimationComponent::GetCurrentState() const
+{
+    if (stateMachine) {
+        return stateMachine->GetCurrentState();
+    }
+    return "";
 }
