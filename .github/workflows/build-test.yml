@@ -36,6 +36,12 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    # Setup MSVC environment (same compiler as local development)
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
     # Cache vcpkg executable (shared across all builds)
     - name: Cache vcpkg
       uses: actions/cache@v4
