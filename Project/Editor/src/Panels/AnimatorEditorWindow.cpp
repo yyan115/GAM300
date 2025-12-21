@@ -468,9 +468,14 @@ void AnimatorEditorWindow::DrawNodeGraph()
                 dx /= len;
                 dy /= len;
 
-                // Perpendicular direction for bidirectional offset
+                // Perpendicular direction (must match DrawTransitionArrow)
                 float perpX = -dy;
                 float perpY = dx;
+                // Use consistent perpendicular regardless of direction
+                if (perpY < 0 || (perpY == 0 && perpX < 0)) {
+                    perpX = -perpX;
+                    perpY = -perpY;
+                }
 
                 // Check for bidirectional transitions - same logic as DrawTransitions
                 float perpOffset = 0.0f;
@@ -478,18 +483,25 @@ void AnimatorEditorWindow::DrawNodeGraph()
                     for (size_t j = 0; j < transitions.size(); j++) {
                         if (i != j && !transitions[j].anyState &&
                             transitions[j].from == trans.to && transitions[j].to == trans.from) {
-                            perpOffset = (trans.from < trans.to) ? 20.0f : -20.0f;
+                            // Must match DrawTransitions offset calculation
+                            perpOffset = (trans.from < trans.to) ? 6.0f : -6.0f;
                             break;
                         }
                     }
                 }
 
                 // Apply same offset as DrawTransitionArrow to get actual visible line
-                float offset = NODE_HEIGHT * m_ViewZoom * 0.5f + 5.0f;
-                ImVec2 start(fromCenter.x + dx * offset + perpX * perpOffset,
-                             fromCenter.y + dy * offset + perpY * perpOffset);
-                ImVec2 end(toCenter.x - dx * offset + perpX * perpOffset,
-                           toCenter.y - dy * offset + perpY * perpOffset);
+                float halfWidth = NODE_WIDTH * m_ViewZoom * 0.5f;
+                float halfHeight = NODE_HEIGHT * m_ViewZoom * 0.5f;
+                float edgeOffsetX = (fabsf(dx) > 0.001f) ? halfWidth / fabsf(dx) : 9999.0f;
+                float edgeOffsetY = (fabsf(dy) > 0.001f) ? halfHeight / fabsf(dy) : 9999.0f;
+                float edgeOffset = fminf(edgeOffsetX, edgeOffsetY) + 3.0f;
+                ImVec2 start(fromCenter.x + dx * edgeOffset, fromCenter.y + dy * edgeOffset);
+                ImVec2 end(toCenter.x - dx * edgeOffset, toCenter.y - dy * edgeOffset);
+                start.x += perpX * perpOffset;
+                start.y += perpY * perpOffset;
+                end.x += perpX * perpOffset;
+                end.y += perpY * perpOffset;
 
                 // Calculate point-to-line-segment distance using the actual visible line
                 float lineDx = end.x - start.x;
@@ -753,7 +765,8 @@ void AnimatorEditorWindow::DrawTransitions()
                         transitions[j].from == trans.to && transitions[j].to == trans.from) {
                         // There's a reverse transition - offset this one
                         // Use consistent side based on alphabetical order of state names
-                        perpOffset = (trans.from < trans.to) ? 20.0f : -20.0f;
+                        // 6px each side = 12px total separation (Unity-style parallel lines)
+                        perpOffset = (trans.from < trans.to) ? 6.0f : -6.0f;
                         break;
                     }
                 }
@@ -772,7 +785,7 @@ void AnimatorEditorWindow::DrawTransitionArrow(const ImVec2& from, const ImVec2&
         color = IM_COL32(150, 200, 255, 255);
     }
 
-    // Calculate direction
+    // Calculate direction from center to center
     float dx = to.x - from.x;
     float dy = to.y - from.y;
     float len = sqrtf(dx * dx + dy * dy);
@@ -781,18 +794,37 @@ void AnimatorEditorWindow::DrawTransitionArrow(const ImVec2& from, const ImVec2&
     dx /= len;
     dy /= len;
 
-    // Perpendicular direction for offset (rotate 90 degrees)
+    // Perpendicular direction (rotate 90 degrees CCW)
     float perpX = -dy;
     float perpY = dx;
 
-    // Offset from node edges
-    float offset = NODE_HEIGHT * m_ViewZoom * 0.5f + 5.0f;
+    // For bidirectional: use CONSISTENT perpendicular regardless of direction
+    // Always use perpendicular that points in positive Y (up) or positive X (right) direction
+    if (perpY < 0 || (perpY == 0 && perpX < 0)) {
+        perpX = -perpX;
+        perpY = -perpY;
+    }
 
-    // Apply perpendicular offset for bidirectional transitions (fixed pixels, not zoom-scaled)
-    ImVec2 start(from.x + dx * offset + perpX * perpOffset,
-                 from.y + dy * offset + perpY * perpOffset);
-    ImVec2 end(to.x - dx * offset + perpX * perpOffset,
-               to.y - dy * offset + perpY * perpOffset);
+    // Calculate edge offset based on direction (use width for horizontal, height for vertical)
+    // This ensures arrows start from the correct edge of the rectangular node
+    float halfWidth = NODE_WIDTH * m_ViewZoom * 0.5f;
+    float halfHeight = NODE_HEIGHT * m_ViewZoom * 0.5f;
+
+    // Calculate how far to move along direction to reach node edge
+    // For a rectangle, we need to find where the ray intersects the edge
+    float edgeOffsetX = (fabsf(dx) > 0.001f) ? halfWidth / fabsf(dx) : 9999.0f;
+    float edgeOffsetY = (fabsf(dy) > 0.001f) ? halfHeight / fabsf(dy) : 9999.0f;
+    float edgeOffset = fminf(edgeOffsetX, edgeOffsetY) + 3.0f; // Small gap from edge
+
+    // Calculate start and end at node edges
+    ImVec2 start(from.x + dx * edgeOffset, from.y + dy * edgeOffset);
+    ImVec2 end(to.x - dx * edgeOffset, to.y - dy * edgeOffset);
+
+    // Apply perpendicular offset for bidirectional transitions (offset the whole line)
+    start.x += perpX * perpOffset;
+    start.y += perpY * perpOffset;
+    end.x += perpX * perpOffset;
+    end.y += perpY * perpOffset;
 
     // Draw line
     float thickness = isSelected ? 3.0f : 2.0f;
