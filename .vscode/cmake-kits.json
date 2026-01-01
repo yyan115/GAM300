@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Visual Studio Community 2022 Release - amd64",
+    "visualStudio": "VisualStudio.17.0",
+    "visualStudioArchitecture": "x64",
+    "preferredGenerator": {
+      "name": "Ninja"
+    }
+  }
+]

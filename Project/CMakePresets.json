@@ -20,8 +20,16 @@
             "name": "ninja-base",
             "hidden": true,
             "inherits": "base",
-            "description": "Ninja generator for fast parallel builds (recommended for all platforms)",
+            "description": "Ninja generator for fast parallel builds (for Visual Studio IDE)",
             "generator": "Ninja"
+        },
+        {
+            "name": "vscode-base",
+            "hidden": true,
+            "inherits": "base",
+            "description": "Visual Studio generator (for VSCode)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64"
         },
         {
             "name": "debug",
@@ -61,6 +69,50 @@
             "displayName": "Build Editor (Release)",
             "description": "Editor executable - Release build",
             "inherits": "ninja-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/EditorRelease",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorRelease",
+                "OUTPUT_DIR": "${sourceDir}/Build/EditorRelease"
+            }
+        },
+        {
+            "name": "debug-vscode",
+            "displayName": "[VSCode] Game Debug",
+            "description": "Game executable - Debug build (for VSCode)",
+            "inherits": "vscode-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/Debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "OUTPUT_DIR": "${sourceDir}/Build/Debug"
+            }
+        },
+        {
+            "name": "release-vscode",
+            "displayName": "[VSCode] Game Release",
+            "description": "Game executable - Release build (for VSCode)",
+            "inherits": "vscode-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/Release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "OUTPUT_DIR": "${sourceDir}/Build/Release"
+            }
+        },
+        {
+            "name": "editor-debug-vscode",
+            "displayName": "[VSCode] Editor Debug",
+            "description": "Editor executable - Debug build (for VSCode)",
+            "inherits": "vscode-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/EditorDebug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorDebug",
+                "OUTPUT_DIR": "${sourceDir}/Build/EditorDebug"
+            }
+        },
+        {
+            "name": "editor-release-vscode",
+            "displayName": "[VSCode] Editor Release",
+            "description": "Editor executable - Release build (for VSCode)",
+            "inherits": "vscode-base",
             "binaryDir": "${sourceDir}/Build/Intermediate/EditorRelease",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "EditorRelease",

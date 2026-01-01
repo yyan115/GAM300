@@ -1,13 +1,9 @@
 {
+    "cmake.sourceDirectory": "${workspaceFolder}/Project",
+    "cmake.buildDirectory": "${workspaceFolder}/Project/Build/Intermediate/${presetName}",
     "cmake.configureOnOpen": false,
-    "cmake.buildDirectory": "${workspaceFolder}/Build/${buildType}",
-    "cmake.generator": "Unix Makefiles",
-    "cmake.configureSettings": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-    },
-    "cmake.buildArgs": [
-        "-j8"
-    ],
+    "cmake.useCMakePresets": "always",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "files.associations": {
         "*.h": "cpp",
         "*.hpp": "cpp",
@@ -96,25 +92,8 @@
         "filesystem": "cpp",
         "ios": "cpp",
         "locale": "cpp",
-        "xfacet": "cpp",
-        "xhash": "cpp",
-        "xiosbase": "cpp",
-        "xlocale": "cpp",
-        "xlocbuf": "cpp",
-        "xlocinfo": "cpp",
-        "xlocmes": "cpp",
-        "xlocmon": "cpp",
-        "xlocnum": "cpp",
-        "xloctime": "cpp",
-        "xmemory": "cpp",
-        "xstring": "cpp",
-        "xtr1common": "cpp",
-        "xtree": "cpp",
-        "xutility": "cpp",
         "shared_mutex": "cpp",
         "csignal": "cpp"
     },
-    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-    "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
     "Lua.workspace.library": ["${workspaceFolder}/api.lua"]
 }
