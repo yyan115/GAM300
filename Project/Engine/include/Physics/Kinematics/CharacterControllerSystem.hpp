@@ -34,15 +34,20 @@ public:
         //m_controllers[entity] = std::move(controller);
         //return true;
 
+    void Update(float deltaTime, ECSManager& ecsManager);
+    void Shutdown();
+
+
+
     // Called every frame
-    void Update(float deltaTime) {
+    //void Update(float deltaTime) {
         //for (auto& [entity, controller] : m_controllers) {
         //    controller->Update(deltaTime, ecsManager);
         //}
 
         //std::cout << "UPDATE is being called for SYSTEM CONTROLLER" << std::endl;
 
-    }
+    //}
 
     //// Get a pointer to the runtime controller
     //CharacterController* GetController(Entity entity) {

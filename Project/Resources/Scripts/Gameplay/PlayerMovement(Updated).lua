@@ -44,8 +44,8 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        -- Speed = 1.5,
-        Speed = 8, --HERE FOR TESTING
+        Speed = 1.5,
+        -- Speed = 8, --HERE FOR TESTING
         JumpHeight = 1.2,
     },
 
@@ -90,8 +90,6 @@ return Component {
         end
         
         -- print(self.entityId)
-
-        CharacterController.Update(self._controller, dt)
 
         -- ===============================
         -- RAW INPUT (LOCAL SPACE)

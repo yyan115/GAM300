@@ -10,7 +10,7 @@ void ParallelSystemOrchestrator::Update() {
     // Update physics and transform systems sequentially first.
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
     mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-    mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime());
+    mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
 
 	// Then update the other systems in parallel.

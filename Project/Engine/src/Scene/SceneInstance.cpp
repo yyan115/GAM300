@@ -14,6 +14,7 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -243,6 +244,7 @@ void SceneInstance::Exit()
 	// Exit systems.
 	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown();
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();

@@ -36,47 +36,29 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
 }
 
 
+//ITERATE MAP CONTROLLERS
 
+void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) {
+    PROFILE_FUNCTION();
+    for (auto& [entityId, controller] : m_controllers) {
+        if (controller)
+            controller->Update(deltaTime);
+    }
+}
 
-//void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) {
-//    PROFILE_FUNCTION();
-//
-//    if (!m_initialized || !m_physicsSystem) {
-//        return;
-//    }
-//
-//#ifdef __ANDROID__
-//    static int updateCount = 0;
-//    if (updateCount++ % 60 == 0) {
-//        __android_log_print(ANDROID_LOG_INFO, "GAM300",
-//            "[CharacterController] Update called, deltaTime=%f, controllers=%zu",
-//            deltaTime, m_controllers.size());
-//    }
-//#endif
-//
-//    if (m_controllers.empty()) return;
-//
-//    // Update each character controller
-//    for (auto& [entityID, controller] : m_controllers) {
-//        // Skip if entity no longer has required components
-//        if (!ecsManager.HasComponent<Transform>(entityID)) {
-//            continue;
-//        }
-//
-//        // Just call the controller's Update - it handles everything internally
-//        controller->Update(deltaTime, ecsManager);
-//
-//#ifdef __ANDROID__
-//        if (updateCount % 60 == 0) {
-//            Vector3D pos = controller->GetPosition();
-//            __android_log_print(ANDROID_LOG_INFO, "GAM300",
-//                "[CharacterController] Entity %d pos: (%f, %f, %f)",
-//                entityID, pos.x, pos.y, pos.z);
-//        }
-//#endif
-//    }
-//}
-//
+void CharacterControllerSystem::Shutdown() {
+    PROFILE_FUNCTION();
+
+    // Manually destroy each controller 
+    for (auto& [entityId, controller] : m_controllers) {
+        if (controller) {
+            controller.reset(); // Explicitly destroy
+        }
+    }
+    // Clear the map
+    m_controllers.clear();
+}
+
 //CharacterController* CharacterControllerSystem::GetController(int entityID) {
 //    auto it = m_controllers.find(entityID);
 //    return (it != m_controllers.end()) ? it->second.get() : nullptr;
