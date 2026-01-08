@@ -2,11 +2,8 @@
 #include "pch.h"
 #include "Animation/Animator.hpp"
 #include "Animation/AnimationSystem.hpp"
-#include "Animation/AnimationStateMachine.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include "Utilities/GUID.hpp"
-
-class AnimationStateMachine;
 
 class ENGINE_API AnimationComponent
 {
@@ -15,10 +12,7 @@ public:
 
 	AnimationComponent();
 
-    ~AnimationComponent();
-
-    // Clear all clips and animator state (for scene reset)
-    void ClearClips();
+    ~AnimationComponent() = default;
 
     AnimationComponent(const AnimationComponent& other);
 
@@ -71,9 +65,6 @@ public:
     std::vector<std::string> clipPaths;
     std::vector<GUID_128> clipGUIDs;
 
-    // Animator Controller path (serialized - for Unity-style workflow)
-    std::string controllerPath;
-
     // Editor preview state (NOT serialized - only for inspector preview)
     float editorPreviewTime = 0.0f;  // Separate time for inspector preview
 
@@ -81,35 +72,11 @@ public:
     void ResetForPlay();  // Reset animator to 0 for fresh game start
     void ResetPreview();  // Reset preview time to 0
 
-
-	// StateMachine
-    AnimationStateMachine*          GetStateMachine()       { return stateMachine.get(); }
-    const AnimationStateMachine*    GetStateMachine() const { return stateMachine.get(); }
-
-    // Helper to lazily allocate FSM:
-    AnimationStateMachine* EnsureStateMachine();
-
-    // Lua-friendly parameter setters (forward to state machine)
-    void SetBool(const std::string& name, bool value);
-    void SetInt(const std::string& name, int value);
-    void SetFloat(const std::string& name, float value);
-    void SetTrigger(const std::string& name);
-
-    // Lua-friendly parameter getters
-    bool GetBool(const std::string& name) const;
-    int GetInt(const std::string& name) const;
-    float GetFloat(const std::string& name) const;
-
-    // Get current state name from state machine
-    std::string GetCurrentState() const;
-
 private:
     std::vector<std::unique_ptr<Animation>> clips;
     size_t activeClip = 0;
 
     std::unique_ptr<Animator> animator;
-
-	std::unique_ptr<AnimationStateMachine> stateMachine;
 
     void SyncAnimatorToActiveClip();
     std::unique_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);

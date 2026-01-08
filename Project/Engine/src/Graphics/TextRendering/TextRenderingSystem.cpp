@@ -44,9 +44,13 @@ void TextRenderingSystem::Update()
     {
         //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Processing entity ", entity, "\n");
 
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
-            continue;
+        // Skip inactive entities
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                //ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[TextSystem] Entity ", entity, " inactive, skipping\n");
+                continue; // Don't render inactive entities
+            }
         }
 
         auto& textComponent = ecsManager.GetComponent<TextRenderComponent>(entity);

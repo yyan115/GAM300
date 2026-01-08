@@ -171,23 +171,22 @@ return Component {
     ----------------------------------------------------------------------
     Start = function(self)
         print("[LUA][PlayerMovement] Start")
-
+        
         -- Cache component references
         self._animator = self:GetComponent("AnimationComponent")
         self._audio    = self:GetComponent("AudioComponent")
-
+        
         if self._animator then
             self._animator.enabled = true
-            -- Initialize state machine parameters (uses PlayerController.animator)
-            self._animator:SetBool("IsWalking", false)
-            self._animator:SetBool("IsGrounded", true)
+            -- Start with idle animation
+            self._animator:PlayClip(self._idleAnimationClip or 0, true)
         end
-
+        
         if self._audio then
             self._audio.enabled = true
             self._audio:SetVolume(self.sfxVolume or 0.5)
         end
-
+        
         -- Cache ground level from initial position
         local pos = getWorldPosition(self)
         self._groundY = pos.y
@@ -284,16 +283,15 @@ return Component {
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
             self._isJumping  = true
-
-            -- Trigger jump via state machine
+            
+            -- Play jump animation
             if animator then
-                animator:SetTrigger("Jump")
-                animator:SetBool("IsGrounded", false)
+                animator:PlayClip(self._jumpAnimationClip, false)
             end
-
+            
             -- Play jump SFX
             playRandomSFX(audio, self.jumpSFXClips)
-
+            
             print("[LUA][PlayerMovement] Jump!")
         end
 
@@ -313,16 +311,20 @@ return Component {
             -- Landing detection
             if not self._isGrounded then
                 self._isGrounded = true
-
+                
                 -- Play landing SFX if we were jumping
                 if self._isJumping then
                     playRandomSFX(audio, self.landingSFXClips)
                     self._isJumping = false
                     print("[LUA][PlayerMovement] Landed!")
-
-                    -- Signal grounded state to state machine (it will auto-transition to Idle/Walk)
+                    
+                    -- Return to idle/walk animation after landing
                     if animator and not isAttacking then
-                        animator:SetBool("IsGrounded", true)
+                        if hasMovementInput then
+                            animator:PlayClip(self._walkAnimationClip or 1, true)
+                        else
+                            animator:PlayClip(self._idleAnimationClip or 0, true)
+                        end
                     end
                 end
             end
@@ -367,13 +369,13 @@ return Component {
         -- Animation state change (only when grounded, not jumping, and not attacking)
         if isWalkingNow ~= self._isWalking and not self._isJumping then
             self._isWalking = isWalkingNow
-
-            -- Update state machine parameter (it will auto-transition Idle<->Walk)
+            
             if animator and not isAttacking then
-                animator:SetBool("IsWalking", isWalkingNow)
                 if isWalkingNow then
+                    animator:PlayClip(self._walkAnimationClip or 1, true)
                     print("[LUA][PlayerMovement] Walking")
                 else
+                    animator:PlayClip(self._idleAnimationClip or 0, true)
                     print("[LUA][PlayerMovement] Idle")
                 end
             end

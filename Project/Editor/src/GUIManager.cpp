@@ -37,7 +37,6 @@
 #include "Panels/AssetBrowserPanel.hpp"
 #include "Panels/TagsLayersPanel.hpp"
 #include "Panels/SpriteAnimationEditorWindow.hpp"
-#include "Panels/AnimatorEditorWindow.hpp"
 
 
 // Static member definitions
@@ -205,10 +204,6 @@ void GUIManager::SetupDefaultPanels() {
 	// Register the sprite animation editor window
 	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor());
 	panelManager->RegisterPanel(spriteAnimEditor);
-
-	// Register the 3D animator editor window (use singleton pattern like SpriteAnimationEditor)
-	auto animatorEditor = std::shared_ptr<EditorPanel>(GetAnimatorEditor());
-	panelManager->RegisterPanel(animatorEditor);
 
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");
 }

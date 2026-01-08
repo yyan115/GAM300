@@ -51,7 +51,7 @@ private:
 
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
-    bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr = nullptr, ImGuiTreeNodeFlags flags = 0);
+    bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags = 0);
     void ProcessPendingComponentRemovals();
     void ProcessPendingComponentResets();
 

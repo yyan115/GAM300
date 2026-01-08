@@ -34,12 +34,11 @@ namespace {
 
     // robust "is finished" check:
     inline bool finished(const AnimationComponent& a) {
-        if (a.GetClips().empty()) return true;  // Check actual clips, not clipCount
+        if (a.clipCount < 1) return true;
         // Robust in both PLAY (AnimationSystem ticks) and EDIT (Inspector ticks).
         const Animator* anim = a.GetAnimatorPtr();
         if (!anim) return true;                       // no animator -> treat as finished
         const size_t idx = a.GetActiveClipIndex();
-        if (idx >= a.GetClips().size()) return true;  // Safety check
         const Animation& clip = a.GetClip(idx);
         const float t = anim->GetCurrentTime();
         const float len = clip.GetDuration();

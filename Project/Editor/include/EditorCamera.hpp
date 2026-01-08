@@ -65,10 +65,8 @@ public:
 
     /**
      * @brief Returns orthographic projection matrix for 2D view
-     * Uses game dimensions with aspect ratio preservation to match rendering
      */
-    glm::mat4 GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight,
-                                               int gameWidth = 1920, int gameHeight = 1080) const;
+    glm::mat4 GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const;
 
     /**
      * @brief Process editor input

@@ -45,17 +45,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/LayerManager.hpp"
 #include "ECS/SortingLayerManager.hpp"
 #include "Animation/AnimationComponent.hpp"
-#include "Animation/AnimatorController.hpp"
-#include "Panels/AnimatorEditorWindow.hpp"
-#include <filesystem>
-
-#ifdef _WIN32
-#define NOMINMAX
-#include <Windows.h>
-#include <shobjidl.h>
-// Undefine Windows macros that conflict with our code
-#undef GetCurrentTime
-#endif
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 #include "Script/ScriptComponentData.hpp"
@@ -2052,243 +2041,250 @@ void RegisterInspectorCustomRenderers()
         return true;
     });
 
-    // ==================== ANIMATION COMPONENT (Unity-style) ====================
     ReflectionRenderer::RegisterComponentRenderer("AnimationComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        (void)ecs;
+            ecs;
         AnimationComponent &animComp = *static_cast<AnimationComponent *>(componentPtr);
-        const float labelWidth = EditorComponents::GetLabelWidth();
 
-        // Preview state tracking
-        enum class PreviewState { Stopped, Playing, Paused };
+        enum class PreviewState
+        {
+            Stopped,
+            Playing,
+            Paused
+        };
         static std::unordered_map<Entity, PreviewState> previewState;
-        if (previewState.find(entity) == previewState.end()) {
+
+        if (previewState.find(entity) == previewState.end())
+        {
             previewState[entity] = PreviewState::Stopped;
         }
 
-        // Handle preview animation in edit mode
-        if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE) {
-            Animator *animator = animComp.GetAnimatorPtr();
-            if (animator && !animComp.GetClips().empty()) {
-                const auto& clips = animComp.GetClips();
-                size_t activeClipIndex = animComp.GetActiveClipIndex();
+        // Inspector preview - uses separate editorPreviewTime (doesn't affect runtime)
+        if (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE)
+        {
+            if (previewState[entity] == PreviewState::Playing && animComp.enabled)
+            {
+                Animator *animator = animComp.GetAnimatorPtr();
+                if (animator && !animComp.GetClips().empty())
+                {
+                    const auto& clips = animComp.GetClips();
+                    size_t activeClipIndex = animComp.GetActiveClipIndex();
 
-                if (activeClipIndex < clips.size()) {
-                    if (previewState[entity] == PreviewState::Playing && animComp.enabled) {
+                    if (activeClipIndex < clips.size())
+                    {
                         const Animation& clip = *clips[activeClipIndex];
                         float tps = clip.GetTicksPerSecond();
                         if (tps <= 0.0f) tps = 25.0f;
 
+                        // Update preview time
                         animComp.editorPreviewTime += tps * ImGui::GetIO().DeltaTime * animComp.speed;
+
+                        // Handle looping
                         float duration = clip.GetDuration();
-                        if (animComp.isLoop) {
+                        if (animComp.isLoop)
+                        {
                             animComp.editorPreviewTime = fmod(animComp.editorPreviewTime, duration);
-                        } else if (animComp.editorPreviewTime > duration) {
-                            animComp.editorPreviewTime = duration;
-                            previewState[entity] = PreviewState::Paused;
                         }
+                        else
+                        {
+                            if (animComp.editorPreviewTime > duration)
+                            {
+                                animComp.editorPreviewTime = duration;
+                                previewState[entity] = PreviewState::Paused;
+                            }
+                        }
+
+                        // Set animator time for visualization (doesn't persist to runtime)
+                        animator->SetCurrentTime(animComp.editorPreviewTime);
                     }
+                }
+            }
+            else if (previewState[entity] == PreviewState::Paused || previewState[entity] == PreviewState::Stopped)
+            {
+                // When paused or stopped, keep animator at preview time for visualization
+                Animator *animator = animComp.GetAnimatorPtr();
+                if (animator && !animComp.GetClips().empty())
+                {
                     animator->SetCurrentTime(animComp.editorPreviewTime);
                 }
             }
         }
 
-        // ===== CONTROLLER FIELD (Unity-style) =====
-        ImGui::Text("Controller");
-        ImGui::SameLine(labelWidth);
+        ImGui::Text("Animation Clips");
 
-        AnimationStateMachine* sm = animComp.GetStateMachine();
-        bool hasController = sm && !sm->GetAllStates().empty();
-
-        // Determine display text - show controller name or file name
-        std::string displayText;
-        if (hasController) {
-            displayText = sm->GetName().empty() ? "Controller" : sm->GetName();
-        } else if (!animComp.controllerPath.empty()) {
-            // Show file name from saved path (controller not loaded yet)
-            std::filesystem::path p(animComp.controllerPath);
-            displayText = p.stem().string() + " (not loaded)";
-        } else {
-            displayText = "None (Animator Controller)";
-        }
-
-        float fieldWidth = ImGui::GetContentRegionAvail().x - 25;
-        EditorComponents::DrawDragDropButton(displayText.c_str(), fieldWidth);
-
-        // Double-click to open Animator Editor
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            AnimatorEditorWindow* animatorEditor = GetAnimatorEditor();
-            if (animatorEditor) {
-                animatorEditor->OpenForEntity(entity, &animComp);
+        int prevClipCount = animComp.clipCount;
+        if (UndoableWidgets::InputInt("Size", &animComp.clipCount, 1, 1))
+        {
+            if (animComp.clipCount < 0)
+                animComp.clipCount = 0;
+            if (animComp.clipCount != prevClipCount)
+            {
+                animComp.SetClipCount(animComp.clipCount);
             }
         }
 
-        // Drag-drop target for .animator files
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ANIMATOR_PAYLOAD")) {
-                const char* droppedPath = static_cast<const char*>(payload->Data);
-                std::string pathStr(droppedPath);
+        for (int i = 0; i < animComp.clipCount; ++i)
+        {
+            ImGui::PushID(i);
 
-                AnimatorController controller;
-                if (controller.LoadFromFile(pathStr)) {
-                    // Save the controller path for serialization
-                    animComp.controllerPath = pathStr;
+            std::string slotLabel = "Element " + std::to_string(i);
+            ImGui::Text("%s", slotLabel.c_str());
+            ImGui::SameLine();
 
-                    // Apply state machine configuration
-                    AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
-                    controller.ApplyToStateMachine(stateMachine);
+            std::string clipName = animComp.clipPaths[i].empty() ? "None (Animation)" : animComp.clipPaths[i];
 
-                    // Copy clip paths from controller to component
-                    const auto& ctrlClipPaths = controller.GetClipPaths();
-                    animComp.clipPaths = ctrlClipPaths;
-                    animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+            size_t lastSlash = clipName.find_last_of("/\\");
+            if (lastSlash != std::string::npos)
+            {
+                clipName = clipName.substr(lastSlash + 1);
+            }
 
-                    // Load clips from controller paths if model is available
-                    if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(clipName.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop .fbx animation file here");
+
+                if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("MODEL_DRAG"))
+                {
+                    // Take snapshot before changing animation clip
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Animation Clip");
+                    animComp.clipPaths[i] = DraggedModelPath;
+                    animComp.clipGUIDs[i] = DraggedModelGuid;
+
+                    if (ecs.HasComponent<ModelRenderComponent>(entity))
+                    {
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
-                        if (modelComp.model) {
+                        if (modelComp.model)
+                        {
+                            // Load animation clips from paths
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+
+                            // CRITICAL: Link animator to model (same as AnimationSystem::Initialise)
                             Animator* animator = animComp.EnsureAnimator();
                             modelComp.SetAnimator(animator);
+
+                            // If clips were loaded successfully, set up the animator
                             if (!animComp.GetClips().empty()) {
-                                animator->PlayAnimation(animComp.GetClips()[0].get());
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
                             }
                         }
                     }
                 }
+                EditorComponents::EndDragDropTarget();
             }
-            ImGui::EndDragDropTarget();
-        }
 
-        // Picker button
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_CIRCLE_DOT "##PickController", ImVec2(22, 0))) {
-            #ifdef _WIN32
-            HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-            if (SUCCEEDED(hrCo)) {
-                IFileOpenDialog* pFileOpen = nullptr;
-                HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOpen));
-                if (SUCCEEDED(hr) && pFileOpen) {
-                    const COMDLG_FILTERSPEC fileTypes[] = {
-                        { L"Animator Controller (*.animator)", L"*.animator" },
-                        { L"All Files (*.*)", L"*.*" }
-                    };
-                    pFileOpen->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
-                    pFileOpen->SetTitle(L"Select Animator Controller");
+            if (!animComp.clipPaths[i].empty())
+            {
+                ImGui::SameLine();
+                ImGui::PushID("clear");
+                if (ImGui::SmallButton(ICON_FA_XMARK))
+                {
+                    animComp.clipPaths[i].clear();
+                    animComp.clipGUIDs[i] = {0, 0};
 
-                    DWORD options = 0;
-                    if (SUCCEEDED(pFileOpen->GetOptions(&options))) {
-                        pFileOpen->SetOptions(options | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST);
-                    }
+                    if (ecs.HasComponent<ModelRenderComponent>(entity))
+                    {
+                        auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                        if (modelComp.model)
+                        {
+                            // Reload clips from paths
+                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
 
-                    hr = pFileOpen->Show(nullptr);
-                    if (SUCCEEDED(hr)) {
-                        IShellItem* pItem = nullptr;
-                        if (SUCCEEDED(pFileOpen->GetResult(&pItem)) && pItem) {
-                            PWSTR pszFilePath = nullptr;
-                            if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath) {
-                                std::filesystem::path p(pszFilePath);
-                                std::string controllerPath = p.string();
-                                CoTaskMemFree(pszFilePath);
-
-                                AnimatorController controller;
-                                if (controller.LoadFromFile(controllerPath)) {
-                                    // Save the controller path for serialization
-                                    animComp.controllerPath = controllerPath;
-
-                                    // Apply state machine configuration
-                                    AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
-                                    controller.ApplyToStateMachine(stateMachine);
-
-                                    // Copy clip paths from controller to component
-                                    const auto& ctrlClipPaths = controller.GetClipPaths();
-                                    animComp.clipPaths = ctrlClipPaths;
-                                    animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
-
-                                    // Load clips from controller paths if model is available
-                                    if (ecs.HasComponent<ModelRenderComponent>(entity)) {
-                                        auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
-                                        if (modelComp.model) {
-                                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
-                                            Animator* animator = animComp.EnsureAnimator();
-                                            modelComp.SetAnimator(animator);
-                                            if (!animComp.GetClips().empty()) {
-                                                animator->PlayAnimation(animComp.GetClips()[0].get());
-                                            }
-                                        }
-                                    }
-                                }
+                            // Update animator link
+                            if (!animComp.GetClips().empty()) {
+                                Animator* animator = animComp.EnsureAnimator();
+                                modelComp.SetAnimator(animator);
+                                animComp.GetAnimatorPtr()->PlayAnimation(animComp.GetClips()[animComp.GetActiveClipIndex()].get());
+                            } else {
+                                // No clips left, unlink animator
+                                modelComp.SetAnimator(nullptr);
                             }
-                            pItem->Release();
                         }
                     }
-                    pFileOpen->Release();
                 }
-                CoUninitialize();
+                ImGui::PopID();
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("Clear Animation");
+                }
             }
-            #endif
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Select Animator Controller");
+
+            ImGui::PopID();
         }
 
-        // ===== CURRENT STATE (read-only, from state machine) =====
-        if (hasController) {
-            ImGui::Spacing();
-            ImGui::Text("Current State");
-            ImGui::SameLine(labelWidth);
-            std::string currentState = sm->GetCurrentState();
-            if (currentState.empty()) currentState = sm->GetEntryState();
-            ImGui::TextDisabled("%s", currentState.c_str());
+        const auto &clips = animComp.GetClips();
+        size_t activeClipIndex = animComp.GetActiveClipIndex();
+
+        if (!clips.empty())
+        {
+            ImGui::Separator();
+            ImGui::Text("Active Clip");
+
+            int currentClip = static_cast<int>(activeClipIndex);
+            if (ImGui::SliderInt("##ActiveClip", &currentClip, 0, static_cast<int>(clips.size()) - 1))
+            {
+                animComp.SetClip(currentClip);
+            }
+
+            const Animation &clip = animComp.GetClip(activeClipIndex);
+            ImGui::Text("Duration: %.2f ticks", clip.GetDuration());
+            ImGui::Text("Ticks Per Second: %.2f", clip.GetTicksPerSecond());
         }
 
-        ImGui::Spacing();
         ImGui::Separator();
-        ImGui::Spacing();
+        ImGui::Text("Playback Controls (Preview Only)");
 
-        // ===== PREVIEW CONTROLS =====
         bool isEditMode = (EditorState::GetInstance().GetState() == EditorState::State::EDIT_MODE);
-        ImGui::BeginDisabled(!isEditMode || animComp.GetClips().empty());
+        ImGui::BeginDisabled(!isEditMode);
 
         float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
         bool isPlaying = (previewState[entity] == PreviewState::Playing);
 
-        if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth)) {
+        if (EditorComponents::DrawPlayButton(isPlaying, buttonWidth))
+        {
             previewState[entity] = PreviewState::Playing;
+            // Preview continues from current editorPreviewTime
         }
+
         ImGui::SameLine();
-        if (EditorComponents::DrawPauseButton(!isPlaying, buttonWidth)) {
+
+        if (EditorComponents::DrawPauseButton(!isPlaying, buttonWidth))
+        {
             previewState[entity] = PreviewState::Paused;
         }
-        if (EditorComponents::DrawStopButton()) {
+
+        if (EditorComponents::DrawStopButton())
+        {
             previewState[entity] = PreviewState::Stopped;
-            animComp.ResetPreview();
+            animComp.ResetPreview(); // Reset preview time to 0
         }
 
         ImGui::EndDisabled();
 
-        // Progress bar
-        const auto &clips = animComp.GetClips();
-        if (!clips.empty()) {
-            size_t activeClipIndex = animComp.GetActiveClipIndex();
-            if (activeClipIndex < clips.size()) {
-                const Animator *animator = animComp.GetAnimatorPtr();
-                if (animator) {
-                    float currentTime = animator->GetCurrentTime();
-                    const Animation &clip = animComp.GetClip(activeClipIndex);
-                    float duration = clip.GetDuration();
-                    float progress = duration > 0.0f ? (currentTime / duration) : 0.0f;
+        if (!clips.empty() && activeClipIndex < clips.size())
+        {
+            const Animator *animator = animComp.GetAnimatorPtr();
+            if (animator)
+            {
+                float currentTime = animator->GetCurrentTime();
+                const Animation &clip = animComp.GetClip(activeClipIndex);
+                float duration = clip.GetDuration();
 
-                    ImGui::Spacing();
-                    ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
-                }
+                ImGui::Separator();
+                ImGui::Text("Current Time: %.2f / %.2f", currentTime, duration);
+
+                float progress = duration > 0.0f ? (currentTime / duration) : 0.0f;
+                ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
             }
         }
 
-        return true; // Skip default field rendering
+        ImGui::Separator();
+
+        return false;
     });
 
     ReflectionRenderer::RegisterComponentRenderer("BrainComponent",

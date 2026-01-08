@@ -98,11 +98,6 @@ void SpriteAnimationSystem::Update()
 
     for (const auto& entity : entities)
     {
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
-            continue;
-        }
-
         auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(entity);
 		auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 

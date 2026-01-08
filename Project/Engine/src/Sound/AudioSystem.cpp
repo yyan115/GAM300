@@ -60,8 +60,11 @@ void AudioSystem::Update(float deltaTime) {
 
         // Update AudioReverbZone components
         if (ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) {
-            // Skip entities that are inactive in hierarchy (checks parents too)
-            if (!ecsManager.IsEntityActiveInHierarchy(entity)) continue;
+            // Skip inactive entities
+            if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+                auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+                if (!activeComp.isActive) continue;
+            }
 
             AudioReverbZoneComponent& reverbZoneComp = ecsManager.GetComponent<AudioReverbZoneComponent>(entity);
 
@@ -77,14 +80,17 @@ void AudioSystem::Update(float deltaTime) {
 
         // Update AudioComponent entities
         if (ecsManager.HasComponent<AudioComponent>(entity)) {
-            // Skip entities that are inactive in hierarchy (checks parents too)
-            if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
-                // Stop audio for inactive entities
-                auto& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
-                if (audioComp.IsPlaying) {
-                    audioComp.Stop();
+            // Skip inactive entities
+            if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+                auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+                if (!activeComp.isActive) {
+                    // Stop audio for inactive entities
+                    auto& audioComp = ecsManager.GetComponent<AudioComponent>(entity);
+                    if (audioComp.IsPlaying) {
+                        audioComp.Stop();
+                    }
+                    continue;
                 }
-                continue;
             }
 
             AudioComponent& audioComp = ecsManager.GetComponent<AudioComponent>(entity);

@@ -65,27 +65,6 @@ extern std::string DraggedFontPath;
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
-#include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/prettywriter.h>
-
-// Component clipboard for copy/paste functionality (Unity-style)
-namespace {
-    struct ComponentClipboard {
-        std::string componentType;      // Type name of copied component
-        std::string jsonData;           // Serialized component data as JSON string
-        bool hasData = false;           // Whether clipboard contains valid data
-
-        void Clear() {
-            componentType.clear();
-            jsonData.clear();
-            hasData = false;
-        }
-    };
-
-    static ComponentClipboard g_ComponentClipboard;
-}
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
 template <typename T>
@@ -313,7 +292,7 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 		}
 		else {
 			// Normal components get collapsing header
-			if (DrawComponentHeaderWithRemoval(info.displayName, entity, info.typeName, componentPtr)) {
+			if (DrawComponentHeaderWithRemoval(info.displayName, entity, info.typeName)) {
 				DrawComponentGeneric(componentPtr, info.typeName, entity);
 			}
 		}
@@ -786,6 +765,8 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 
 		if (!assetMeta) {
 			// Check if this is a fallback GUID - try to find the file path from the asset browser
+			std::cout << "[Inspector] AssetMeta not found for GUID, trying fallback path lookup" << std::endl;
+
 			sourceFilePath = AssetBrowserPanel::GetFallbackGuidFilePath(assetGuid);
 			if (sourceFilePath.empty()) {
 				ImGui::Text("Asset not found - no metadata or fallback path available");
@@ -817,6 +798,7 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				}
 				return;
 			}
+			std::cout << "[Inspector] Found fallback path: " << sourceFilePath << std::endl;
 		}
 		else {
 			sourceFilePath = assetMeta->sourceFilePath;
@@ -1516,7 +1498,7 @@ void InspectorPanel::OnScriptFileChanged(const std::string& path, const filewatc
 	}
 }
 
-bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr, ImGuiTreeNodeFlags flags) {
+bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, ImGuiTreeNodeFlags flags) {
 
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
@@ -1635,7 +1617,7 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 	}
 	ImGui::PopID();
 
-	// Context menu for component operations
+	// Context menu for component removal
 	std::string popupName = "ComponentContextMenu_" + componentType;
 	if (ImGui::BeginPopup(popupName.c_str())) {
 		if (ImGui::MenuItem("Remove Component")) {
@@ -1646,89 +1628,12 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			// Queue the component reset for processing after ImGui rendering is complete
 			pendingComponentResets.push_back({ entity, componentType });
 		}
-
-		ImGui::Separator();
-
-		// Copy Component - serialize to clipboard
-		if (ImGui::MenuItem("Copy Component")) {
-			if (componentPtr) {
-				// Get type descriptor from reflection system
-				auto& lookup = TypeDescriptor::type_descriptor_lookup();
-				auto it = lookup.find(componentType);
-				if (it != lookup.end()) {
-					TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
-					if (typeDesc) {
-						// Serialize component to JSON
-						rapidjson::Document doc;
-						doc.SetObject();
-						auto& allocator = doc.GetAllocator();
-
-						// Serialize each member
-						std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
-						for (const auto& member : members) {
-							void* fieldPtr = member.get_ptr(componentPtr);
-							if (fieldPtr && member.type) {
-								rapidjson::Document fieldDoc;
-								member.type->SerializeJson(fieldPtr, fieldDoc);
-								rapidjson::Value key(member.name, allocator);
-								rapidjson::Value val(fieldDoc, allocator);
-								doc.AddMember(key, val, allocator);
-							}
-						}
-
-						// Convert to string
-						rapidjson::StringBuffer buffer;
-						rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-						doc.Accept(writer);
-
-						// Store in clipboard
-						g_ComponentClipboard.componentType = componentType;
-						g_ComponentClipboard.jsonData = buffer.GetString();
-						g_ComponentClipboard.hasData = true;
-					}
-				}
-			}
-		}
-
-		// Paste Component Values - only enabled if clipboard has same component type
-		bool canPaste = g_ComponentClipboard.hasData && g_ComponentClipboard.componentType == componentType;
-		if (ImGui::MenuItem("Paste Component Values", nullptr, false, canPaste)) {
-			if (componentPtr && canPaste) {
-				// Take snapshot for undo
-				SnapshotManager::GetInstance().TakeSnapshot("Paste Component Values");
-
-				// Get type descriptor
-				auto& lookup = TypeDescriptor::type_descriptor_lookup();
-				auto it = lookup.find(componentType);
-				if (it != lookup.end()) {
-					TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
-					if (typeDesc) {
-						// Parse JSON from clipboard
-						rapidjson::Document doc;
-						doc.Parse(g_ComponentClipboard.jsonData.c_str());
-
-						if (!doc.HasParseError() && doc.IsObject()) {
-							// Deserialize field by field (matching how we serialized)
-							std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
-							for (const auto& member : members) {
-								if (doc.HasMember(member.name)) {
-									void* fieldPtr = member.get_ptr(componentPtr);
-									if (fieldPtr && member.type) {
-										member.type->Deserialize(fieldPtr, doc[member.name]);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// Show what's in clipboard as tooltip
-		if (ImGui::IsItemHovered() && g_ComponentClipboard.hasData) {
-			ImGui::SetTooltip("Clipboard: %s", g_ComponentClipboard.componentType.c_str());
-		}
-
+		//if (ImGui::MenuItem("Copy Component")) {
+		//	// TODO: Implement copy functionality
+		//}
+		//if (ImGui::MenuItem("Paste Component Values")) {
+		//	// TODO: Implement paste functionality
+		//}
 		ImGui::EndPopup();
 	}
 

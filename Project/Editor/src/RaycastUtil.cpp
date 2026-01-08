@@ -86,20 +86,12 @@ RaycastUtil::AABB RaycastUtil::CreateAABBFromTransform(const Matrix4x4& transfor
 }
 
 RaycastUtil::AABB RaycastUtil::CreateAABBFromSprite(const glm::vec3& position, const glm::vec3& scale, bool is3D) {
+	(void)is3D;
     glm::vec3 halfSize = scale * 0.5f;
 
     // For both 2D and 3D sprites, position is now the center (after rendering fix)
     // The sprite quad is 0,0 to 1,1, and we offset by -0.5,-0.5 in the shader to center it
     glm::vec3 center = position;
-
-    // For 2D sprites, ensure a minimum Z depth for reliable ray intersection
-    // 2D sprites are flat (Z scale ~ 0), but we need thickness for picking
-    if (!is3D) {
-        const float MIN_DEPTH = 100.0f;  // Generous depth for 2D picking
-        if (halfSize.z < MIN_DEPTH) {
-            halfSize.z = MIN_DEPTH;
-        }
-    }
 
     // Create AABB around the sprite's center
     return AABB(center - halfSize, center + halfSize);
@@ -184,55 +176,7 @@ RaycastUtil::RaycastHit RaycastUtil::RaycastScene(const Ray& ray, Entity exclude
                         , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
                         , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
                 }
-                // Second, check if entity has TextRenderComponent
-                else if (ecsManager.HasComponent<TextRenderComponent>(entity)) {
-                    auto& text = ecsManager.GetComponent<TextRenderComponent>(entity);
-
-                    entitiesWithComponent++;
-                    ENGINE_PRINT("[RaycastUtil] Found entity " , entity , " with TextRenderComponent (is3D=", text.is3D, ")\n");
-
-                    // Get text position from Transform if available
-                    glm::vec3 textPosition = text.position.ConvertToGLM();
-                    if (ecsManager.HasComponent<Transform>(entity)) {
-                        auto& transform = ecsManager.GetComponent<Transform>(entity);
-                        textPosition = glm::vec3(transform.worldMatrix.m.m03,
-                                                 transform.worldMatrix.m.m13,
-                                                 transform.worldMatrix.m.m23);
-                    }
-
-                    // Estimate text bounds based on font size and text length
-                    // This is an approximation - actual bounds would require font metrics
-                    float charWidth = static_cast<float>(text.fontSize) * 0.6f;  // Approximate character width
-                    float textWidth = charWidth * static_cast<float>(text.text.length());
-                    float textHeight = static_cast<float>(text.fontSize);
-
-                    glm::vec3 textScale(textWidth, textHeight, 1.0f);
-                    glm::vec3 halfSize = textScale * 0.5f;
-
-                    // For 2D text, ensure minimum Z depth for reliable ray intersection
-                    if (!text.is3D) {
-                        const float MIN_DEPTH = 100.0f;
-                        halfSize.z = MIN_DEPTH;
-                    }
-
-                    // Text position is typically the bottom-left corner for left-aligned text
-                    // Adjust center based on alignment
-                    glm::vec3 center = textPosition;
-                    if (text.alignment == TextRenderComponent::Alignment::LEFT) {
-                        center.x += halfSize.x;  // Shift right by half width
-                    } else if (text.alignment == TextRenderComponent::Alignment::RIGHT) {
-                        center.x -= halfSize.x;  // Shift left by half width
-                    }
-                    center.y += halfSize.y;  // Shift up by half height (text origin is typically baseline)
-
-                    entityAABB = AABB(center - halfSize, center + halfSize);
-                    hasValidAABB = true;
-
-                    ENGINE_PRINT("[RaycastUtil] Entity ", entity, " (Text) AABB: min("
-                        , entityAABB.min.x, ", ", entityAABB.min.y, ", ", entityAABB.min.z
-                        , ") max(", entityAABB.max.x, ", ", entityAABB.max.y, ", ", entityAABB.max.z, ")\n");
-                }
-                // Third, check if entity has Transform component (for 3D models without sprites)
+                // Second, check if entity has Transform component (for 3D models without sprites)
                 else if (ecsManager.HasComponent<Transform>(entity)) {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
 
@@ -485,28 +429,28 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             Quaternion newRotation = Quaternion::FromMatrix(rotMatrix4x4);
             newRotation.Normalize();
 
-            //// Directly update Transform component to avoid multiple recalculations (prevents flickering)
-            //if (ecsManager.HasComponent<Transform>(entity)) {
-            //    auto& transform = ecsManager.GetComponent<Transform>(entity);
+            // Directly update Transform component to avoid multiple recalculations (prevents flickering)
+            if (ecsManager.HasComponent<Transform>(entity)) {
+                auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-            //    // Set local transform components directly
-            //    transform.localPosition = newPosition;
-            //    transform.localScale = newScale;
-            //    transform.localRotation = newRotation;
+                // Set local transform components directly
+                transform.localPosition = newPosition;
+                transform.localScale = newScale;
+                transform.localRotation = newRotation;
 
-            //    // Update world matrix directly to avoid recalculation
-            //    transform.worldMatrix = newMatrix;
+                // Update world matrix directly to avoid recalculation
+                transform.worldMatrix = newMatrix;
 
-            //    // Mark as dirty so TransformSystem knows to update children if needed
-            //    // (TransformSystem will detect the change on next update)
-            //} else {
-            // Fallback: use TransformSystem methods (slower but safer)
-            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
-            ecsManager.transformSystem->SetWorldScale(entity, newScale);
-            // Convert quaternion to Euler for SetWorldRotation
-            Vector3D euler = newRotation.ToEulerDegrees();
-            ecsManager.transformSystem->SetWorldRotation(entity, euler);
-            //}
+                // Mark as dirty so TransformSystem knows to update children if needed
+                // (TransformSystem will detect the change on next update)
+            } else {
+                // Fallback: use TransformSystem methods (slower but safer)
+                ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+                ecsManager.transformSystem->SetWorldScale(entity, newScale);
+                // Convert quaternion to Euler for SetWorldRotation
+                Vector3D euler = newRotation.ToEulerDegrees();
+                ecsManager.transformSystem->SetWorldRotation(entity, euler);
+            }
 
             //transform.position = newPosition;
             //transform.scale = newScale;  // Make sure scale is updated too

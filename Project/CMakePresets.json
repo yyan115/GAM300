@@ -72,22 +72,22 @@
         {
             "name": "debug",
             "configurePreset": "debug",
-            "displayName": "Build Game (Debug)"
+            "displayName": "Build Game (Debug)",
         },
         {
             "name": "release",
             "configurePreset": "release",
-            "displayName": "Build Game (Release)"
+            "displayName": "Build Game (Release)",
         },
         {
             "name": "editor-debug",
             "configurePreset": "editor-debug",
-            "displayName": "Build Editor (Debug)"
+            "displayName": "Build Editor (Debug)",
         },
         {
             "name": "editor-release",
             "configurePreset": "editor-release",
-            "displayName": "Build Editor (Release)"
+            "displayName": "Build Editor (Release)",
         }
     ]
 }

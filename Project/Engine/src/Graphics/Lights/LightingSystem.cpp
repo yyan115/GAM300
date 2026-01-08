@@ -116,9 +116,12 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
-            continue;
+        // Skip inactive entities
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue; // Don't render inactive entities
+            }
         }
 
         // Collect directional light (first one only)

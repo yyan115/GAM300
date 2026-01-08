@@ -116,15 +116,6 @@ public:
 	std::vector<Entity> GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
-
-	/**
-	 * @brief Check if an entity is active considering its entire parent hierarchy.
-	 * Returns false if the entity itself or ANY of its ancestors is inactive.
-	 * This is like Unity's activeInHierarchy property.
-	 * @param entity The entity to check
-	 * @return true if entity and all ancestors are active, false otherwise
-	 */
-	bool ENGINE_API IsEntityActiveInHierarchy(Entity entity);
 	
 	// Get system manager for profiling access
 	const SystemManager* GetSystemManager() const {
