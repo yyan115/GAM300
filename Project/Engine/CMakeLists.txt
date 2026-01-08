@@ -75,7 +75,7 @@ list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
 # Engine is ALWAYS a shared library
-add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp")
+add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp")
 
 # Enable precompiled headers for faster compilation (C++ only)
 target_precompile_headers(Engine PRIVATE

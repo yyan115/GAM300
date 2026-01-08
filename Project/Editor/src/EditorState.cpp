@@ -10,6 +10,7 @@
 #include "Physics/PhysicsSystem.hpp"
 #include "Animation/AnimationComponent.hpp"
 
+
 EditorState& EditorState::GetInstance() {
     static EditorState instance;
     return instance;
@@ -124,11 +125,14 @@ void EditorState::Stop() {
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();
 
+    // Re-acquire ECS reference after scene reload (old reference is now stale)
+    ECSManager& ecsAfterReload = ECSRegistry::GetInstance().GetActiveECSManager();
+
     // Reset all animation preview states to 0 (fresh editor state)
-    for (auto ent : ecs.GetActiveEntities()) {
-        if (ecs.HasComponent<AnimationComponent>(ent)) {
-            AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
-            animComp.ResetPreview(); // Reset preview time to 0
+    for (auto ent : ecsAfterReload.GetActiveEntities()) {
+        if (ecsAfterReload.HasComponent<AnimationComponent>(ent)) {
+            AnimationComponent& animComp = ecsAfterReload.GetComponent<AnimationComponent>(ent);
+            animComp.ResetPreview();
         }
     }
 

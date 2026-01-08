@@ -104,6 +104,22 @@ private:
     void DrawLightGizmos();
     void DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight);
 
+    // 2D Gizmo system for screen-space manipulation
+    void Handle2DGizmo(float sceneWidth, float sceneHeight);
+    ImVec2 WorldToScreen2D(const glm::vec3& worldPos, float sceneWidth, float sceneHeight);
+    glm::vec3 ScreenToWorld2D(const ImVec2& screenPos, float sceneWidth, float sceneHeight);
+
+    // 2D Gizmo state
+    enum class Gizmo2DAxis { None, X, Y, XY, Rotate, ScaleX, ScaleY, ScaleXY };
+    Gizmo2DAxis activeGizmo2DAxis = Gizmo2DAxis::None;
+    Gizmo2DAxis hoveredGizmo2DAxis = Gizmo2DAxis::None;
+    glm::vec3 gizmo2DStartWorldPos;      // Starting world position when drag began (for gizmo center)
+    ImVec2 gizmo2DMouseStart;            // Mouse position when drag began
+    std::vector<glm::vec3> gizmo2DOriginalLocalPositions;  // Original local positions of all selected entities
+    std::vector<glm::vec3> gizmo2DOriginalLocalScales;     // Original local scales of all selected entities
+    std::vector<float> gizmo2DOriginalLocalRotations;      // Original local Z rotations of all selected entities
+    bool gizmo2DSnapshotTaken = false;   // Undo snapshot taken for this drag
+
     // Helper functions
     void Mat4ToFloatArray(const glm::mat4& mat, float* arr);
     ImVec2 ProjectToScreen(const glm::vec3& worldPoint, bool& isVisible, const glm::mat4& vp, const ImVec2& windowPos, const ImVec2& windowSize) const;

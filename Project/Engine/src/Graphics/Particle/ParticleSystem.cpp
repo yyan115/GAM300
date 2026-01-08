@@ -243,12 +243,9 @@ void ParticleSystem::Update()
 
     for (const auto& entity : entities)
     {
-        // Skip inactive entities
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                continue; // Don't render inactive entities
-            }
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+            continue;
         }
 
         auto& particleComp = ecsManager.GetComponent<ParticleComponent>(entity);

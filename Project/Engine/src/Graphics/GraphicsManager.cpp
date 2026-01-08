@@ -426,17 +426,14 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 				viewHeight = viewWidth / viewportAspect;
 			}
 
-			// Center the game view within the adjusted view dimensions
-			float gameViewWidth = gameWidth * currentCamera->OrthoZoomLevel;
-			float gameViewHeight = gameHeight * currentCamera->OrthoZoomLevel;
-			float paddingX = (viewWidth - gameViewWidth) * 0.5f;
-			float paddingY = (viewHeight - gameViewHeight) * 0.5f;
-
-			// Create projection that shows world from camera position with aspect ratio correction
-			float left = currentCamera->Position.x - paddingX;
-			float right = currentCamera->Position.x + viewWidth - paddingX;
-			float bottom = currentCamera->Position.y - paddingY;
-			float top = currentCamera->Position.y + viewHeight - paddingY;
+			// Create projection centered on camera Position
+			// Position represents the CENTER of the view (where the camera is looking)
+			float halfWidth = viewWidth * 0.5f;
+			float halfHeight = viewHeight * 0.5f;
+			float left = currentCamera->Position.x - halfWidth;
+			float right = currentCamera->Position.x + halfWidth;
+			float bottom = currentCamera->Position.y - halfHeight;
+			float top = currentCamera->Position.y + halfHeight;
 
 			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
 
@@ -475,7 +472,7 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
 	}
 	else {
-		// 2D text: disable depth testing so render order determines what's on top (Unity-style)
+		// 2D text: disable depth testing so render order determines what's on top 
 		glDisable(GL_DEPTH_TEST);
 	}
 
@@ -787,7 +784,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		glDepthMask(GL_TRUE);
 	}
 	else {
-		// 2D sprite: disable depth testing so render order determines what's on top (Unity-style)
+		// 2D sprite: disable depth testing so render order determines what's on top
 		glDisable(GL_DEPTH_TEST);
 	}
 
