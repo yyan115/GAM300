@@ -299,9 +299,11 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             // Create body creation settings
             JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
 
-            // --- Apply CCD according to component ---
             if (motionType == JPH::EMotionType::Dynamic)
+            {
+                // --- Apply CCD according to component ---
                 bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+            }
 
             //// IMPORTANT: Also enable CCD for kinematic bodies if they move fast
             //if (motionType == JPH::EMotionType::Kinematic)
@@ -458,9 +460,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
 
-        //// Read back velocities from physics engine
-        //rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(body Id));
-        //rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
 
         if (rb.motion == Motion::Dynamic)
         {

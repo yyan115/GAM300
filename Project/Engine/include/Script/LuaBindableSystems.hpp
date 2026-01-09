@@ -71,25 +71,25 @@ namespace PhysicsSystemWrappers {
 }
 
 
-// ============================================================================
-// RIGIDBODY SYSTEM WRAPPERS
-// ============================================================================
-#include "Physics/RigidBodyComponent.hpp"
-
-namespace RigidBodySystemWrappers {
-    inline void AddForce(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddForce(Vector3D(x,y,z));
-    }
-    inline void AddTorque(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddTorque(Vector3D(x, y, z));
-    }
-    inline void AddImpulse(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddImpulse(Vector3D(x, y, z));
-    }
-}
+//// ============================================================================
+//// RIGIDBODY SYSTEM WRAPPERS
+//// ============================================================================
+//#include "Physics/RigidBodyComponent.hpp"
+//
+//namespace RigidBodySystemWrappers {
+//    inline void AddForce(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddForce(Vector3D(x,y,z));
+//    }
+//    inline void AddTorque(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddTorque(Vector3D(x, y, z));
+//    }
+//    inline void AddImpulse(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddImpulse(Vector3D(x, y, z));
+//    }
+//}
 
 
 
@@ -423,47 +423,5 @@ namespace AudioManagerWrappers {
     
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
-    }
-}
-
-#include "Animation/AnimationComponent.hpp"
-// ============================================================================
-// ANIMATION SYSTEM WRAPPERS
-// ============================================================================
-namespace AnimationWrappers {
-    inline void PlayClip(AnimationComponent& myAnim,std::size_t clipIndex, bool loop)
-    {
-        myAnim.PlayClip(clipIndex, loop);   //set the clip and loop flag
-        myAnim.Play();                      //start the Playback
-    }
-
-    inline void PlayOnce(AnimationComponent& myAnim, std::size_t clipIndex)
-    {
-        myAnim.PlayOnce(clipIndex);
-    }
-
-    inline void Pause(AnimationComponent& myAnim)
-    {
-        myAnim.Pause();
-    }
-
-    inline void Stop(AnimationComponent& myAnim)
-    {
-        myAnim.Stop();
-    }
-
-    inline void SetSpeed(AnimationComponent& myAnim, float speed)
-    {
-        myAnim.SetSpeed(speed);
-    }
-
-    inline void SetLooping(AnimationComponent& myAnim, bool loop)
-    {
-        myAnim.SetLooping(loop);
-    }
-
-    inline bool IsPlaying(AnimationComponent& myAnim)
-    {
-        return myAnim.IsPlaying();
     }
 }
