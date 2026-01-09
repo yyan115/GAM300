@@ -1,5 +1,6 @@
 #include "EditorCamera.hpp"
 #include <algorithm>
+#include <cmath>
 
 EditorCamera::EditorCamera(glm::vec3 target, float distance)
     : Target(target), Distance(distance), Yaw(0.0f), Pitch(20.0f),
@@ -18,9 +19,8 @@ glm::mat4 EditorCamera::GetViewMatrix() const {
 }
 
 glm::mat4 EditorCamera::Get2DViewMatrix() const {
-    // For 2D mode, use a simple identity view matrix
-    // The camera is looking straight down at the XY plane
-    // Position doesn't matter since we're using orthographic projection centered on Target
+    // For 2D mode, use identity view matrix - same as GraphicsManager
+    // The orthographic projection handles camera positioning
     return glm::mat4(1.0f);
 }
 
@@ -33,20 +33,35 @@ glm::mat4 EditorCamera::GetProjectionMatrix(float aspectRatio) const {
     return glm::perspective(glm::radians(Zoom), safeAspectRatio, 0.1f, 100.0f);
 }
 
-glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight) const {
+glm::mat4 EditorCamera::GetOrthographicProjectionMatrix(float aspectRatio, float viewportWidth, float viewportHeight,
+                                                         int gameWidth, int gameHeight) const {
     // For 2D mode, create an orthographic projection with zoom support
+    // This matches GraphicsManager and WorldToScreen2D exactly for consistency
     // OrthoZoomLevel: 1.0 = normal (1:1 pixel mapping), 0.5 = zoomed in 2x, 2.0 = zoomed out 2x
     (void)aspectRatio;
-    // Apply zoom to viewport size
-    float viewWidth = viewportWidth * OrthoZoomLevel;
-    float viewHeight = viewportHeight * OrthoZoomLevel;
 
-    // Center the view around the target point in pixel space
-    // Target.x and Target.y represent the center pixel coordinate you're looking at
-    float left = Target.x - viewWidth * 0.5f;
-    float right = Target.x + viewWidth * 0.5f;
-    float bottom = Target.y - viewHeight * 0.5f;
-    float top = Target.y + viewHeight * 0.5f;
+    float gameAspect = (float)gameWidth / (float)gameHeight;
+    float viewportAspect = viewportWidth / viewportHeight;
+
+    // Calculate view dimensions that preserve game aspect ratio (same as GraphicsManager)
+    float viewWidth, viewHeight;
+    if (viewportAspect > gameAspect) {
+        // Viewport is wider than game - fit by height
+        viewHeight = gameHeight * OrthoZoomLevel;
+        viewWidth = viewHeight * viewportAspect;
+    } else {
+        // Viewport is taller than game - fit by width
+        viewWidth = gameWidth * OrthoZoomLevel;
+        viewHeight = viewWidth / viewportAspect;
+    }
+
+    // Center the view around Position (matches GraphicsManager and WorldToScreen2D)
+    float halfWidth = viewWidth * 0.5f;
+    float halfHeight = viewHeight * 0.5f;
+    float left = Position.x - halfWidth;
+    float right = Position.x + halfWidth;
+    float bottom = Position.y - halfHeight;
+    float top = Position.y + halfHeight;
 
     return glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
 }
@@ -69,14 +84,22 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
         UpdateCameraVectors();
     }
 
-    
+
     if (isMiddleMousePressed) {
         // Calculate right and up vectors relative to the camera
-        glm::vec3 right = Right;
-        glm::vec3 up = Up;
+        glm::vec3 right, up;
+        if (is2DMode) {
+            // In 2D mode, use fixed world-aligned axes for consistent panning
+            right = glm::vec3(1.0f, 0.0f, 0.0f);
+            up = glm::vec3(0.0f, 1.0f, 0.0f);
+        } else {
+            // In 3D mode, use camera-relative axes
+            right = Right;
+            up = Up;
+        }
 
         // Pan the target point based on mouse movement
-        // In 2D mode, scale by OrthoZoomLevel; in 3D mode, scale by Distance
+        // use logarithmic scaling so pan speed feels consistent at any zoom level
         float panScale;
         if (is2DMode) {
             // In 2D mode, use zoom-scaled sensitivity
@@ -84,8 +107,11 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
             float referenceZoom = 2.5f;
             panScale = PanSensitivity * (referenceZoom / OrthoZoomLevel);
         } else {
-            // In 3D mode, scale by distance
-            panScale = Distance * PanSensitivity;
+            // In 3D mode, use logarithmic scaling (like Unity)
+            // log2(distance + 1) gives smooth feel: close-up is slower, far is faster
+            // This makes pan speed proportional to visible area, not raw distance
+            float logDistance = std::log2(Distance + 1.0f);
+            panScale = std::max(0.001f, logDistance * PanSensitivity * 0.5f);
         }
 
         Target -= right * mouseDeltaX * panScale;  // X-axis inverted: drag right moves world left

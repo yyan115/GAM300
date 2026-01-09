@@ -11,7 +11,48 @@ env:
   VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
 
 jobs:
+  # Setup vcpkg once, share cache with all build jobs
+  setup-vcpkg:
+    runs-on: windows-2022
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v4
+      with:
+        path: vcpkg
+        key: vcpkg-exe-${{ env.VCPKG_COMMIT }}
+
+    - name: Cache vcpkg packages
+      id: cache-vcpkg-packages
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/vcpkg_installed
+        key: vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-${{ hashFiles('Project/vcpkg.json') }}
+
+    - name: Bootstrap vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        git checkout ${{ env.VCPKG_COMMIT }}
+        .\bootstrap-vcpkg.bat -disableMetrics
+      shell: pwsh
+
+    - name: Install dependencies
+      if: steps.cache-vcpkg-packages.outputs.cache-hit != 'true'
+      run: cmake --preset debug
+      working-directory: Project
+
   build:
+    needs: setup-vcpkg
     runs-on: windows-2022
 
     strategy:
@@ -21,58 +62,70 @@ jobs:
         include:
           - preset: debug
             output_dir: Debug
-            build_type: Debug
           - preset: release
             output_dir: Release
-            build_type: Release
           - preset: editor-debug
             output_dir: EditorDebug
-            build_type: EditorDebug
           - preset: editor-release
             output_dir: EditorRelease
-            build_type: EditorRelease
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # Cache vcpkg executable (shared across all builds)
-    - name: Cache vcpkg
-      uses: actions/cache@v4
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Restore vcpkg cache
+      uses: actions/cache/restore@v4
       with:
         path: vcpkg
         key: vcpkg-exe-${{ env.VCPKG_COMMIT }}
 
-    # Cache vcpkg installed packages (shared across all configurations)
-    # x64-windows triplet installs both debug and release variants
-    - name: Cache vcpkg packages
-      uses: actions/cache@v4
+    - name: Restore vcpkg packages cache
+      uses: actions/cache/restore@v4
       with:
         path: Project/Build/vcpkg_installed
         key: vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-${{ hashFiles('Project/vcpkg.json') }}
-        restore-keys: |
-          vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-
-
-    - name: Setup vcpkg
-      run: |
-        if (!(Test-Path "vcpkg/vcpkg.exe")) {
-          if (Test-Path "vcpkg") { Remove-Item -Recurse -Force vcpkg }
-          git clone https://github.com/Microsoft/vcpkg.git
-          cd vcpkg
-          git checkout ${{ env.VCPKG_COMMIT }}
-          .\bootstrap-vcpkg.bat -disableMetrics
-        } else {
-          Write-Host "vcpkg already cached, skipping clone"
-        }
-      shell: pwsh
 
     - name: Configure CMake
       run: cmake --preset ${{ matrix.preset }}
       working-directory: Project
 
     - name: Build
-      run: cmake --build --preset ${{ matrix.preset }} --parallel
+      id: build
+      run: |
+        cmake --build --preset ${{ matrix.preset }} --parallel 2>&1 | Tee-Object -FilePath build.log
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       working-directory: Project
+      shell: pwsh
+
+    - name: Build Summary
+      if: always()
+      run: |
+        echo "## Build Result: ${{ matrix.preset }}" >> $env:GITHUB_STEP_SUMMARY
+        if ("${{ steps.build.outcome }}" -eq "success") {
+          echo "**Status:** SUCCESS" >> $env:GITHUB_STEP_SUMMARY
+        } else {
+          echo "**Status:** FAILED" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "### Error Log:" >> $env:GITHUB_STEP_SUMMARY
+          echo '```' >> $env:GITHUB_STEP_SUMMARY
+          Get-Content build.log -Tail 50 >> $env:GITHUB_STEP_SUMMARY
+          echo '```' >> $env:GITHUB_STEP_SUMMARY
+        }
+      working-directory: Project
+      shell: pwsh
+
+    - name: Upload build log on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log-${{ matrix.preset }}
+        path: Project/build.log
+        retention-days: 7
 
     # Upload executable and required DLLs
     - name: Upload Artifacts
@@ -92,11 +145,24 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check build results
+      - name: Build Results Summary
         run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
           if [ "${{ needs.build.result }}" == "success" ]; then
-            echo "✅ All builds completed successfully!"
+            echo "### All builds completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Configuration | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Debug | PASS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Release | PASS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Editor Debug | PASS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Editor Release | PASS |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Some builds failed. Check the individual build jobs for details."
+            echo "### Build failures detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check the individual job logs above for detailed error messages." >> $GITHUB_STEP_SUMMARY
+            echo "Build logs have been uploaded as artifacts for failed builds." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi

@@ -388,6 +388,11 @@ void ScriptSystem::Update()
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
     {
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+            continue;
+        }
+
         ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
 

@@ -342,10 +342,7 @@ std::shared_ptr<AssetMeta> AssetManager::GetAssetMeta(GUID_128 guid) {
 	if (it != assetMetaMap.end()) {
 		return it->second;
 	}
-	else {
-		std::cerr << "[AssetManager] ERROR: AssetMeta not found for GUID_128." << std::endl;
-		return nullptr;
-	}
+	return nullptr;
 }
 
 void AssetManager::InitializeSupportedExtensions() {
