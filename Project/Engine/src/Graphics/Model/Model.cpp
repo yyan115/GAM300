@@ -998,6 +998,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 
 }
 
+void Model::DrawDepthOnly()
+{
+    for (auto& mesh : meshes)
+    {
+        mesh.DrawDepthOnly();
+    }
+}
+
 #ifdef __ANDROID__
 // Forward declaration
 std::string get_file_contents(const char* filename);

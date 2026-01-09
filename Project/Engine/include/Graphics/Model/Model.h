@@ -83,6 +83,7 @@ public:
 	void Draw(Shader& shader, const Camera& camera);
 	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
     void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator);
+    void DrawDepthOnly();
 
 	// Helper functions for Bones
 	auto& GetBoneInfoMap() { return mBoneInfoMap;}

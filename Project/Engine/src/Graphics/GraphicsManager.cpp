@@ -46,6 +46,18 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	// Initialize skybox
 	InitializeSkybox();
 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.lightingSystem)
+	{
+		ecsManager.lightingSystem->Initialise();
+
+		ecsManager.lightingSystem->SetShadowRenderCallback(
+			[this](Shader& depthShader) {
+				RenderSceneForShadows(depthShader);
+			}
+		);
+	}
+
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
 }
@@ -207,6 +219,12 @@ void GraphicsManager::Render()
 	}
 
 	currentFrameViewport = GetCurrentViewport();
+
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.lightingSystem)
+	{
+		ecsManager.lightingSystem->RenderShadowMaps();
+	}
 
 	// Render skybox first (before other objects)
 	RenderSkybox();
@@ -371,6 +389,15 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	if (ecsManager.lightingSystem) 
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
+		ecsManager.lightingSystem->ApplyShadows(*item.shader);
+
+		// Temporary debug - remove later
+		static bool once = false;
+		if (!once) 
+		{
+			std::cout << "[Debug] ApplyShadows called" << std::endl;
+			once = true;
+		}
 	}
 
 
@@ -1030,6 +1057,51 @@ void GraphicsManager::InitializeSkybox()
 	}
 
 	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
+}
+
+void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
+{
+	static int frameCount = 0;
+	frameCount++;
+	if (frameCount <= 5) {
+		std::cout << "[Shadow] RenderSceneForShadows called - frame " << frameCount
+			<< ", queue size: " << renderQueue.size() << std::endl;
+	}
+
+	int count = 0;
+	for (const auto& renderItem : renderQueue)
+	{
+		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+		if (!modelItem || !modelItem->isVisible || !modelItem->model)
+			continue;
+
+		count++;
+
+		// Set model matrix
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+		depthShader.setMat4("model", modelMatrix);
+
+		// Handle animation
+		depthShader.setBool("isAnimated", modelItem->HasAnimation());
+		if (modelItem->HasAnimation() && modelItem->animator)
+		{
+			auto transforms = modelItem->animator->GetFinalBoneMatrices();
+			for (size_t i = 0; i < transforms.size(); ++i)
+			{
+				depthShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+			}
+		}
+
+		// Draw model geometry only (no materials)
+		modelItem->model->DrawDepthOnly();
+	}
+
+	// Debug
+	static bool once = false;
+	if (!once) {
+		std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
+		once = true;
+	}
 }
 
 void GraphicsManager::RenderSkybox()
