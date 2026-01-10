@@ -10,10 +10,10 @@ class MyBroadPhaseLayerInterface final : public JPH::BroadPhaseLayerInterface {
 public:
     MyBroadPhaseLayerInterface() {
         mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
-        mObjectToBroadPhase[Layers::MOVING]     = BroadPhaseLayers::MOVING;
-        mObjectToBroadPhase[Layers::CHARACTER]  = BroadPhaseLayers::CHARACTER;  
-        mObjectToBroadPhase[Layers::SENSOR]     = BroadPhaseLayers::MOVING;
-        mObjectToBroadPhase[Layers::DEBRIS]     = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::CHARACTER] = BroadPhaseLayers::CHARACTER;
+        mObjectToBroadPhase[Layers::SENSOR] = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::DEBRIS] = BroadPhaseLayers::MOVING;
     }
 
     ~MyBroadPhaseLayerInterface() override = default;
@@ -32,7 +32,7 @@ public:
         {
         case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING: return "NON_MOVING";
         case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:     return "MOVING";
-        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::CHARACTER:  return "CHARACTER"; 
+        case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::CHARACTER:  return "CHARACTER";
         default: JPH_ASSERT(false); return "INVALID";
         }
     }
@@ -58,7 +58,7 @@ public:
                 bp == BroadPhaseLayers::CHARACTER;  // Allow collision with characters
 
         case Layers::CHARACTER:
-            return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::NON_MOVING;  // Add character collision rules
+            return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::NON_MOVING || bp == BroadPhaseLayers::CHARACTER;
 
         default:
             return false;
@@ -74,9 +74,6 @@ public:
     bool ShouldCollide(JPH::ObjectLayer a, JPH::ObjectLayer b) const override {
         //if (a == Layers::NON_MOVING && b == Layers::NON_MOVING) return false;
         if (a == Layers::DEBRIS && b == Layers::DEBRIS) return false;
-
-        // Optional: Prevent characters from colliding with each other
-        // if (a == Layers::CHARACTER && b == Layers::CHARACTER) return false;
 
         return true;
     }

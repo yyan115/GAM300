@@ -1,16 +1,16 @@
-﻿/*********************************************************************************
+﻿/*****************************************************************************
 * @File			PhysicsContactListener.hpp
 * @Author		Ang Jia Jun Austin, a.jiajunaustin@digipen.edu
-* @Co-Author	-
-* @Date			9/11/2025
+* @Co - Author -
+*@Date			9 / 11 / 2025
 * @Brief		Contact listener implementation for Jolt Physics collision callbacks.
-*				Handles collision validation and events, mapping physics bodies
-*				to game entities for event processing.
+* Handles collision validation and events, mapping physics bodies
+* to game entities for event processing.
 *
-* Copyright (C) 2025 DigiPen Institute of Technology. Reproduction or disclosure
+* Copyright(C) 2025 DigiPen Institute of Technology.Reproduction or disclosure
 * of this file or its contents without the prior written consent of DigiPen
 * Institute of Technology is prohibited.
-*********************************************************************************/
+* ********************************************************************************/
 
 #pragma once
 #include <Jolt/Jolt.h>

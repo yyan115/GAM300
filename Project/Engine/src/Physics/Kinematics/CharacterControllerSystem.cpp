@@ -27,10 +27,18 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
         return nullptr;
     }
 
-    //add into map
-    m_controllers.emplace(id, std::move(controller));
+    JPH::CharacterVirtual* character = const_cast<JPH::CharacterVirtual*>(controller->GetCharacterVirtual());
+
+    if (character && m_charVsCharCollision)
+    {
+        character->SetCharacterVsCharacterCollision(m_charVsCharCollision);
+        m_charVsCharCollision->Add(character);
+    }
 
     CharacterController* ptr = controller.get(); // raw pointer for Lua access
+
+    //add into map
+    m_controllers.emplace(id, std::move(controller));
 
     return ptr;
 }
@@ -40,6 +48,7 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
 
 void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
+
     for (auto& [entityId, controller] : m_controllers) {
         if (controller)
             controller->Update(deltaTime);
@@ -59,24 +68,21 @@ void CharacterControllerSystem::Shutdown() {
     m_controllers.clear();
 }
 
-//CharacterController* CharacterControllerSystem::GetController(int entityID) {
-//    auto it = m_controllers.find(entityID);
-//    return (it != m_controllers.end()) ? it->second.get() : nullptr;
-//}
-//
-//void CharacterControllerSystem::Shutdown() {
-//    std::cout << "[CharacterController] Shutting down " << m_controllers.size() << " controllers..." << std::endl;
-//
-//#ifdef __ANDROID__
-//    __android_log_print(ANDROID_LOG_INFO, "GAM300",
-//        "[CharacterController] Shutdown called");
-//#endif
-//
-//    // Clear all controllers (unique_ptr will handle cleanup)
-//    m_controllers.clear();
-//
-//    m_physicsSystem = nullptr;
-//    m_initialized = false;
-//
-//    std::cout << "[CharacterController] Shutdown complete" << std::endl;
-//}
+void CharacterControllerSystem::RemoveController(Entity entity)
+{
+    auto it = m_controllers.find(entity);
+    if (it != m_controllers.end()) {
+        JPH::CharacterVirtual* character = const_cast<JPH::CharacterVirtual*>(it->second->GetCharacterVirtual());
+        if (character && m_charVsCharCollision) {
+            m_charVsCharCollision->Remove(character);
+        }
+
+        m_controllers.erase(it);
+    }
+}
+
+CharacterController* CharacterControllerSystem::GetController(Entity entity)
+{
+    auto it = m_controllers.find(entity);
+    return (it != m_controllers.end()) ? it->second.get() : nullptr;
+}
