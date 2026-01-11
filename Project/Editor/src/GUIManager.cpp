@@ -600,6 +600,47 @@ void GUIManager::HandleKeyboardShortcuts() {
 			snapshotMgr.Clear();
 		}
 	}
+
+	// Entity shortcuts (work globally when entities are selected)
+	// These are handled here so they work regardless of which panel has focus
+	if (!selectedEntities.empty()) {
+		auto hierarchyPanelPtr = panelManager->GetPanel("Scene Hierarchy");
+		if (hierarchyPanelPtr) {
+			auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
+			if (hierarchyPanel) {
+				// Ctrl+C: Copy entities
+				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+					hierarchyPanel->CopySelectedEntities();
+					ShowNotification("Copied", 1.0f);
+				}
+
+				// Ctrl+D: Duplicate entities
+				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+					std::vector<Entity> duplicated = hierarchyPanel->DuplicateEntities(selectedEntities);
+					if (!duplicated.empty()) {
+						SetSelectedEntities(duplicated);
+						ShowNotification("Duplicated", 1.0f);
+					}
+				}
+
+				// Delete: Delete entities
+				if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+					hierarchyPanel->DeleteSelectedEntities();
+				}
+			}
+		}
+	}
+
+	// Ctrl+V: Paste entities (works even with no selection)
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false)) {
+		auto hierarchyPanelPtr = panelManager->GetPanel("Scene Hierarchy");
+		if (hierarchyPanelPtr) {
+			auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
+			if (hierarchyPanel) {
+				hierarchyPanel->PasteEntities();
+			}
+		}
+	}
 }
 
 void GUIManager::ShowNotification(const std::string& message, float duration) {

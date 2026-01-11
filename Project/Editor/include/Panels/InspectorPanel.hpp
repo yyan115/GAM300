@@ -49,6 +49,13 @@ private:
     void DrawComponentGeneric(void* componentPtr, const char* componentTypeName, Entity entity);
     void DrawComponentsViaReflection(Entity entity);
 
+    // Multi-entity editing
+    void DrawMultiEntityInspector(const std::vector<Entity>& entities);
+    void DrawSharedComponentsHeader(const std::vector<Entity>& entities);
+    std::vector<std::string> GetSharedComponentTypes(const std::vector<Entity>& entities);
+    void DrawSharedComponentGeneric(const std::vector<Entity>& entities, const std::string& componentType);
+    bool HasComponent(Entity entity, const std::string& componentType);
+
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
     bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr = nullptr, ImGuiTreeNodeFlags flags = 0);
