@@ -731,15 +731,11 @@
                         },
                         {
                             "type": "std::vector<GUID_128>",
-                            "data": [
-                                "0000000000000000-0000000000000000",
-                                "0000000000000000-0000000000000000",
-                                "0000000000000000-0000000000000000"
-                            ]
+                            "data": []
                         },
                         {
                             "type": "std::string",
-                            "data": "C:\\Users\\growt\\Desktop\\GAM300\\Project\\Resources\\Animations\\PlayerController.animator"
+                            "data": "Resources/Animations/PlayerController.animator"
                         }
                     ]
                 },
@@ -2585,7 +2581,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -2965,7 +2961,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -3334,7 +3330,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -3703,7 +3699,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -4274,7 +4270,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -4643,7 +4639,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -5012,7 +5008,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -5381,7 +5377,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -5750,7 +5746,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -6119,7 +6115,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -6488,7 +6484,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -6857,7 +6853,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -8202,7 +8198,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -9059,7 +9055,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -17736,7 +17732,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -31062,7 +31058,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -31410,7 +31406,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -9.81
                                 },
                                 {
                                     "type": "float",
@@ -31428,7 +31424,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -32025,7 +32021,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -32632,7 +32628,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -33052,7 +33048,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.95
+                            "data": 0
                         }
                     ]
                 },
@@ -34776,7 +34772,7 @@
         },
         {
             "id": 130,
-            "guid": "00530a246f3eceb2-0003a75300000001",
+            "guid": "00305184f335df96-0003dc4460000001",
             "components": {
                 "NameComponent": {
                     "name": "Entity_130"

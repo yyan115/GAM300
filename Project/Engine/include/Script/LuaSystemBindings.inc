@@ -169,11 +169,8 @@ luabridge::getGlobalNamespace(L)
     .endClass();
 
 BEGIN_SYSTEM("CharacterController")
-    // Constructor
-    FUNCTION("new", CharacterControllerWrappers::Create)
-    // Initialise
-    FUNCTION("Initialise", CharacterControllerWrappers::Initialise)
-    // Methods
+    FUNCTION("Create", CharacterControllerWrappers::CreateController)
+
     FUNCTION("Move", CharacterControllerWrappers::Move)
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
     FUNCTION("Update", CharacterControllerWrappers::Update)
@@ -204,16 +201,6 @@ END_SYSTEM()
 
 
 // ============================================================================
-// RIGIDBODY SYSTEM
-// ============================================================================
-BEGIN_SYSTEM("RigidBodyComponent")
-    FUNCTION("AddForce", RigidBodySystemWrappers::AddForce)
-    FUNCTION("AddTorque", RigidBodySystemWrappers::AddTorque)
-    FUNCTION("AddImpulse", RigidBodySystemWrappers::AddImpulse)
-END_SYSTEM()
-
-
-// ============================================================================
 // TAG SYSTEM
 // ============================================================================
 
@@ -238,19 +225,6 @@ BEGIN_SYSTEM("Layer")
 END_SYSTEM()
 
 
-// ============================================================================
-// ANIMATION SYSTEM
-// ============================================================================
-
-BEGIN_SYSTEM("Animation")
-    FUNCTION("PlayClip",    AnimationWrappers::PlayClip)
-    FUNCTION("PlayOnce",    AnimationWrappers::PlayOnce)
-    FUNCTION("Pause",       AnimationWrappers::Pause)
-    FUNCTION("Stop",        AnimationWrappers::Stop) 
-    FUNCTION("SetSpeed",    AnimationWrappers::SetSpeed)
-    FUNCTION("SetLooping",  AnimationWrappers::SetLooping)
-    FUNCTION("IsPlaying",   AnimationWrappers::IsPlaying)
-END_SYSTEM()
 
 
 // ============================================================================

@@ -95,10 +95,10 @@ return Component {
         -- RAW INPUT (LOCAL SPACE)
         -- ===============================
         local rawX, rawZ = 0, 0
-        if Input.GetKey(Input.Key.W) then rawZ = rawZ + 1 end
-        if Input.GetKey(Input.Key.S) then rawZ = rawZ - 1 end
-        if Input.GetKey(Input.Key.A) then rawX = rawX + 1 end
-        if Input.GetKey(Input.Key.D) then rawX = rawX - 1 end
+        -- if Input.GetKey(Input.Key.W) then rawZ = rawZ + 1 end
+        -- if Input.GetKey(Input.Key.S) then rawZ = rawZ - 1 end
+        -- if Input.GetKey(Input.Key.A) then rawX = rawX + 1 end
+        -- if Input.GetKey(Input.Key.D) then rawX = rawX - 1 end
 
         local len = math.sqrt(rawX*rawX + rawZ*rawZ)
         if len > 1 then

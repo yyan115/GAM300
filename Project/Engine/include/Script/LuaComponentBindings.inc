@@ -287,6 +287,9 @@ BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
     PROPERTY("collider_seen_version", &RigidBodyComponent::collider_seen_version)
     METHOD("SetEnabled", &RigidBodyComponent::SetEnabled)
     METHOD("IsEnabled", &RigidBodyComponent::IsEnabled)
+    METHOD("AddForce", &RigidBodyComponent::AddForce)
+    METHOD("AddTorque", &RigidBodyComponent::AddTorque)
+    METHOD("AddImpulse", &RigidBodyComponent::AddImpulse)
 END_COMPONENT()
 
 // ============================================================================
