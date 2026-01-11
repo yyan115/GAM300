@@ -104,12 +104,14 @@ void PlayControlPanel::OnImGuiRender() {
 
         // Stop button
         if (ImGui::Button(ICON_FA_STOP " Stop", ImVec2(80.0f, buttonHeight))) {
-            editorState.Stop();
-            // Auto-switch to Scene panel when stopping
-            auto scenePanel = GUIManager::GetPanelManager().GetPanel("Scene");
-            if (scenePanel) {
-                scenePanel->SetOpen(true);
-                ImGui::SetWindowFocus("Scene");
+            if (editorState.IsPlayMode()) {
+                editorState.Stop();
+                // Auto-switch to Scene panel when stopping
+                auto scenePanel = GUIManager::GetPanelManager().GetPanel("Scene");
+                if (scenePanel) {
+                    scenePanel->SetOpen(true);
+                    ImGui::SetWindowFocus("Scene");
+                }
             }
         }
 
