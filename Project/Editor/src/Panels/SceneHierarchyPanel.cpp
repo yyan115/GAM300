@@ -32,6 +32,22 @@
 #include "UndoableWidgets.hpp"
 #include <algorithm>
 
+// Entity clipboard for copy/paste functionality
+// Uses GUIDs instead of Entity IDs so clipboard persists across undo/redo
+namespace {
+    struct EntityClipboard {
+        std::vector<GUID_128> copiedEntityGUIDs;  // GUIDs of copied entities (persist across undo/redo)
+        bool hasData = false;
+
+        void Clear() {
+            copiedEntityGUIDs.clear();
+            hasData = false;
+        }
+    };
+
+    static EntityClipboard g_EntityClipboard;
+}
+
 SceneHierarchyPanel::SceneHierarchyPanel()
     : EditorPanel("Scene Hierarchy", true) {
 }
@@ -55,42 +71,8 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        // Handle Ctrl+D for duplicating selected entity
-        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_D) && ImGui::GetIO().KeyCtrl) {
-            Entity selectedEntity = GUIManager::GetSelectedEntity();
-            if (selectedEntity != static_cast<Entity>(-1)) {
-                Entity duplicatedEntity = DuplicateEntity(selectedEntity);
-                if (duplicatedEntity != static_cast<Entity>(-1)) {
-                    GUIManager::SetSelectedEntity(duplicatedEntity);
-                }
-            }
-        }
-
-        // Handle Delete key for deleting selected entity
-        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-            Entity selectedEntity = GUIManager::GetSelectedEntity();
-            if (selectedEntity != static_cast<Entity>(-1)) {
-                try {
-                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                    std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
-
-                    std::cout << "[SceneHierarchy] Deleting entity: " << entityName << " (ID: " << selectedEntity << ")" << std::endl;
-
-                    // Take snapshot before deleting (for undo)
-                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
-
-                    // Clear selection before deleting
-                    GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-
-                    // Delete the entity
-                    ecsManager.DestroyEntity(selectedEntity);
-
-                    std::cout << "[SceneHierarchy] Entity deleted successfully" << std::endl;
-                } catch (const std::exception& e) {
-                    std::cerr << "[SceneHierarchy] Failed to delete entity: " << e.what() << std::endl;
-                }
-            }
-        }
+        // Note: Ctrl+C, Ctrl+V, Ctrl+D, and Delete are now handled globally in GUIManager::HandleKeyboardShortcuts()
+        // This allows them to work regardless of which panel has focus
 
         // Handle 'F' key to focus on selected entity (Frame Selected - like Unity)
         if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F)) {
@@ -412,16 +394,21 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         }
         if (ImGui::IsItemClicked()) {
             ImGuiIO& io = ImGui::GetIO();
-            if (io.KeyCtrl) {
-                // Multi-select: toggle
+            if (io.KeyShift && lastClickedEntity != static_cast<Entity>(-1)) {
+                // Shift+Click: range selection
+                SelectRange(lastClickedEntity, entityId);
+            } else if (io.KeyCtrl) {
+                // Ctrl+Click: toggle selection
                 if (GUIManager::IsEntitySelected(entityId)) {
                     GUIManager::RemoveSelectedEntity(entityId);
                 } else {
                     GUIManager::AddSelectedEntity(entityId);
                 }
+                lastClickedEntity = entityId;
             } else {
-                // Single select
+                // Single click: select only this entity
                 GUIManager::SetSelectedEntity(entityId);
+                lastClickedEntity = entityId;
             }
 
             // Double-click to focus the entity in the scene view
@@ -526,24 +513,71 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     if (ImGui::BeginPopupContextItem())
     {
-        if (ImGui::MenuItem("Duplicate", "Ctrl+D")) {
-            Entity duplicatedEntity = DuplicateEntity(entityId);
-            if (duplicatedEntity != static_cast<Entity>(-1)) {
-                GUIManager::SetSelectedEntity(duplicatedEntity);
+        const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
+        bool isMultiSelect = selectedEntities.size() > 1;
+
+        // Copy menu item
+        if (ImGui::MenuItem("Copy", "Ctrl+C")) {
+            if (isMultiSelect) {
+                CopySelectedEntities();
+            } else {
+                // Store GUID instead of Entity ID for persistence
+                EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+                GUID_128 guid = guidRegistry.GetGUIDByEntity(entityId);
+                g_EntityClipboard.copiedEntityGUIDs.clear();
+                if (guid.high != 0 || guid.low != 0) {
+                    g_EntityClipboard.copiedEntityGUIDs.push_back(guid);
+                    g_EntityClipboard.hasData = true;
+                }
             }
         }
-        if (ImGui::MenuItem("Rename", "F2")) {
+
+        // Paste menu item
+        if (ImGui::MenuItem("Paste", "Ctrl+V", false, g_EntityClipboard.hasData)) {
+            PasteEntities();
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Duplicate", "Ctrl+D")) {
+            if (isMultiSelect) {
+                std::vector<Entity> duplicated = DuplicateEntities(selectedEntities);
+                if (!duplicated.empty()) {
+                    GUIManager::SetSelectedEntities(duplicated);
+                }
+            } else {
+                Entity duplicatedEntity = DuplicateEntity(entityId);
+                if (duplicatedEntity != static_cast<Entity>(-1)) {
+                    GUIManager::SetSelectedEntity(duplicatedEntity);
+                }
+            }
+        }
+        if (ImGui::MenuItem("Rename", "F2", false, !isMultiSelect)) {
             renamingEntity = entityId;
             startRenaming  = true;
         }
         if (ImGui::MenuItem("Delete", "Del")) {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
 
-                SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
-                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-                ecsManager.DestroyEntity(entityId);
+                if (isMultiSelect) {
+                    std::string snapshotDesc = "Delete " + std::to_string(selectedEntities.size()) + " Entities";
+                    SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
+
+                    std::vector<Entity> entitiesToDelete = selectedEntities;
+                    GUIManager::ClearSelectedEntities();
+
+                    for (Entity entity : entitiesToDelete) {
+                        if (ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                            ecsManager.DestroyEntity(entity);
+                        }
+                    }
+                } else {
+                    std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
+                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
+                    GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
+                    ecsManager.DestroyEntity(entityId);
+                }
             } catch (...) {}
         }
         ImGui::EndPopup();
@@ -1167,4 +1201,186 @@ void SceneHierarchyPanel::ReorderRootEntity(Entity draggedEntity, Entity targetS
             ecsManager.GetComponent<SiblingIndexComponent>(sortedRoots[i]).siblingIndex = i;
         }
     }
+}
+
+// ============================================================================
+// Copy/Paste and Multi-Selection Functions
+// ============================================================================
+
+void SceneHierarchyPanel::CopySelectedEntities() {
+    const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
+    if (selectedEntities.empty()) return;
+
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    // Store GUIDs instead of Entity IDs for persistence
+    g_EntityClipboard.copiedEntityGUIDs.clear();
+    for (Entity entity : selectedEntities) {
+        GUID_128 guid = guidRegistry.GetGUIDByEntity(entity);
+        if (guid.high != 0 || guid.low != 0) {
+            g_EntityClipboard.copiedEntityGUIDs.push_back(guid);
+        }
+    }
+    g_EntityClipboard.hasData = !g_EntityClipboard.copiedEntityGUIDs.empty();
+
+    std::cout << "[SceneHierarchy] Copied " << g_EntityClipboard.copiedEntityGUIDs.size() << " entities to clipboard" << std::endl;
+}
+
+void SceneHierarchyPanel::PasteEntities() {
+    std::cout << "[SceneHierarchy] PasteEntities() called. hasData=" << g_EntityClipboard.hasData
+              << ", numGUIDs=" << g_EntityClipboard.copiedEntityGUIDs.size() << std::endl;
+
+    if (!g_EntityClipboard.hasData || g_EntityClipboard.copiedEntityGUIDs.empty()) {
+        std::cout << "[SceneHierarchy] Clipboard is empty, nothing to paste" << std::endl;
+        return;
+    }
+
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    // Resolve GUIDs to current Entity IDs and verify they still exist
+    std::vector<Entity> validEntities;
+    for (const GUID_128& guid : g_EntityClipboard.copiedEntityGUIDs) {
+        Entity entity = guidRegistry.GetEntityByGUID(guid);
+        if (entity != static_cast<Entity>(-1) && ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+            validEntities.push_back(entity);
+        }
+    }
+
+    if (validEntities.empty()) {
+        std::cout << "[SceneHierarchy] No valid entities to paste (original entities may have been deleted)" << std::endl;
+        g_EntityClipboard.Clear();
+        return;
+    }
+
+    std::vector<Entity> pastedEntities = DuplicateEntities(validEntities);
+    if (!pastedEntities.empty()) {
+        GUIManager::SetSelectedEntities(pastedEntities);
+        std::cout << "[SceneHierarchy] Pasted " << pastedEntities.size() << " entities" << std::endl;
+    }
+    // Note: Clipboard is NOT cleared after paste, allowing multiple pastes
+}
+
+std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Entity>& sourceEntities) {
+    std::vector<Entity> duplicatedEntities;
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    if (sourceEntities.empty()) return duplicatedEntities;
+
+    // Build snapshot description
+    std::string snapshotDesc = sourceEntities.size() == 1
+        ? "Duplicate Entity: " + ecsManager.GetComponent<NameComponent>(sourceEntities[0]).name
+        : "Duplicate " + std::to_string(sourceEntities.size()) + " Entities";
+
+    // Take snapshot before duplicating (for undo)
+    SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
+
+    for (Entity sourceEntity : sourceEntities) {
+        Entity duplicated = DuplicateEntity(sourceEntity);
+        if (duplicated != static_cast<Entity>(-1)) {
+            duplicatedEntities.push_back(duplicated);
+        }
+    }
+
+    std::cout << "[SceneHierarchy] Duplicated " << duplicatedEntities.size() << " entities" << std::endl;
+    return duplicatedEntities;
+}
+
+void SceneHierarchyPanel::CollectEntitiesRecursive(Entity entity, std::vector<Entity>& flatList) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    flatList.push_back(entity);
+
+    // If this entity has children, add them recursively
+    if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+        const auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
+        for (const auto& childGUID : children) {
+            Entity child = guidRegistry.GetEntityByGUID(childGUID);
+            if (child != static_cast<Entity>(-1)) {
+                CollectEntitiesRecursive(child, flatList);
+            }
+        }
+    }
+}
+
+std::vector<Entity> SceneHierarchyPanel::GetFlatEntityList() {
+    std::vector<Entity> flatList;
+    std::vector<Entity> rootEntities = GetSortedRootEntities();
+
+    for (Entity root : rootEntities) {
+        CollectEntitiesRecursive(root, flatList);
+    }
+
+    return flatList;
+}
+
+int SceneHierarchyPanel::GetEntityDisplayIndex(Entity entity, const std::vector<Entity>& flatList) {
+    auto it = std::find(flatList.begin(), flatList.end(), entity);
+    if (it != flatList.end()) {
+        return static_cast<int>(std::distance(flatList.begin(), it));
+    }
+    return -1;
+}
+
+void SceneHierarchyPanel::DeleteSelectedEntities() {
+    const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
+    if (selectedEntities.empty()) return;
+
+    try {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Build description for undo
+        std::string snapshotDesc = selectedEntities.size() == 1
+            ? "Delete Entity: " + ecsManager.GetComponent<NameComponent>(selectedEntities[0]).name
+            : "Delete " + std::to_string(selectedEntities.size()) + " Entities";
+
+        std::cout << "[SceneHierarchy] Deleting " << selectedEntities.size() << " entities" << std::endl;
+
+        // Take snapshot before deleting (for undo)
+        SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
+
+        // Make a copy since we're modifying the selection
+        std::vector<Entity> entitiesToDelete = selectedEntities;
+
+        // Clear selection before deleting
+        GUIManager::ClearSelectedEntities();
+
+        // Delete all selected entities
+        for (Entity entity : entitiesToDelete) {
+            if (ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
+                ecsManager.DestroyEntity(entity);
+            }
+        }
+
+        std::cout << "[SceneHierarchy] Entities deleted successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[SceneHierarchy] Failed to delete entities: " << e.what() << std::endl;
+    }
+}
+
+void SceneHierarchyPanel::SelectRange(Entity fromEntity, Entity toEntity) {
+    std::vector<Entity> flatList = GetFlatEntityList();
+
+    int fromIndex = GetEntityDisplayIndex(fromEntity, flatList);
+    int toIndex = GetEntityDisplayIndex(toEntity, flatList);
+
+    if (fromIndex == -1 || toIndex == -1) {
+        // If either entity not found, just select the target
+        GUIManager::SetSelectedEntity(toEntity);
+        return;
+    }
+
+    // Determine range direction
+    int startIndex = std::min(fromIndex, toIndex);
+    int endIndex = std::max(fromIndex, toIndex);
+
+    // Select all entities in the range
+    std::vector<Entity> rangeSelection;
+    for (int i = startIndex; i <= endIndex; ++i) {
+        rangeSelection.push_back(flatList[i]);
+    }
+
+    GUIManager::SetSelectedEntities(rangeSelection);
+    std::cout << "[SceneHierarchy] Range selected " << rangeSelection.size() << " entities" << std::endl;
 }
