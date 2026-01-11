@@ -485,28 +485,28 @@ bool RaycastUtil::SetEntityTransform(Entity entity, const float matrix[16], bool
             Quaternion newRotation = Quaternion::FromMatrix(rotMatrix4x4);
             newRotation.Normalize();
 
-            // Directly update Transform component to avoid multiple recalculations (prevents flickering)
-            if (ecsManager.HasComponent<Transform>(entity)) {
-                auto& transform = ecsManager.GetComponent<Transform>(entity);
+            //// Directly update Transform component to avoid multiple recalculations (prevents flickering)
+            //if (ecsManager.HasComponent<Transform>(entity)) {
+            //    auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-                // Set local transform components directly
-                transform.localPosition = newPosition;
-                transform.localScale = newScale;
-                transform.localRotation = newRotation;
+            //    // Set local transform components directly
+            //    transform.localPosition = newPosition;
+            //    transform.localScale = newScale;
+            //    transform.localRotation = newRotation;
 
-                // Update world matrix directly to avoid recalculation
-                transform.worldMatrix = newMatrix;
+            //    // Update world matrix directly to avoid recalculation
+            //    transform.worldMatrix = newMatrix;
 
-                // Mark as dirty so TransformSystem knows to update children if needed
-                // (TransformSystem will detect the change on next update)
-            } else {
-                // Fallback: use TransformSystem methods (slower but safer)
-                ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
-                ecsManager.transformSystem->SetWorldScale(entity, newScale);
-                // Convert quaternion to Euler for SetWorldRotation
-                Vector3D euler = newRotation.ToEulerDegrees();
-                ecsManager.transformSystem->SetWorldRotation(entity, euler);
-            }
+            //    // Mark as dirty so TransformSystem knows to update children if needed
+            //    // (TransformSystem will detect the change on next update)
+            //} else {
+            // Fallback: use TransformSystem methods (slower but safer)
+            ecsManager.transformSystem->SetWorldPosition(entity, newPosition);
+            ecsManager.transformSystem->SetWorldScale(entity, newScale);
+            // Convert quaternion to Euler for SetWorldRotation
+            Vector3D euler = newRotation.ToEulerDegrees();
+            ecsManager.transformSystem->SetWorldRotation(entity, euler);
+            //}
 
             //transform.position = newPosition;
             //transform.scale = newScale;  // Make sure scale is updated too
