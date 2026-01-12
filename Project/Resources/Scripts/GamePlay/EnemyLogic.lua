@@ -187,82 +187,82 @@ return Component {
         end
     end,
     
-    Update = function(self, dt) 
-        -- Safety check
-        if not self._animator then
-            return
-        end
+    -- Update = function(self, dt) 
+    --     -- Safety check
+    --     if not self._animator then
+    --         return
+    --     end
         
-        local audio = self._audio
-        local newState = currentState
+    --     local audio = self._audio
+    --     local newState = currentState
 
-        -- Determine new state 
-        if self.Health <= 0 then
-            newState = DEATH
-        elseif Input.GetMouseButton(Input.MouseButton.Left) and SimulateAttackFromPlayer() then
-            TakeDamage(self)
-            newState = TAKE_DAMAGE
-        elseif IsPlayerInRange() then
-            newState = ATTACK
-        else
-            newState = IDLE
-        end
+    --     -- Determine new state 
+    --     if self.Health <= 0 then
+    --         newState = DEATH
+    --     elseif Input.GetMouseButton(Input.MouseButton.Left) and SimulateAttackFromPlayer() then
+    --         TakeDamage(self)
+    --         newState = TAKE_DAMAGE
+    --     elseif IsPlayerInRange() then
+    --         newState = ATTACK
+    --     else
+    --         newState = IDLE
+    --     end
         
-        -- Apply state transition rules
-        if currentState == DEATH then
-            newState = DEATH  -- Death cannot be interrupted
-        elseif currentState == TAKE_DAMAGE then
-            -- Check if damage animation is still playing using isPlay property
-            if self._animator.isPlay then
-                newState = TAKE_DAMAGE  -- Keep playing damage animation
-            else
-                newState = ATTACK  -- After damage, go to attack
-            end
-        elseif currentState == ATTACK and newState == IDLE then
-            newState = ATTACK  -- Attack cannot be interrupted by idle
-        end
+    --     -- Apply state transition rules
+    --     if currentState == DEATH then
+    --         newState = DEATH  -- Death cannot be interrupted
+    --     elseif currentState == TAKE_DAMAGE then
+    --         -- Check if damage animation is still playing using isPlay property
+    --         if self._animator.isPlay then
+    --             newState = TAKE_DAMAGE  -- Keep playing damage animation
+    --         else
+    --             newState = ATTACK  -- After damage, go to attack
+    --         end
+    --     elseif currentState == ATTACK and newState == IDLE then
+    --         newState = ATTACK  -- Attack cannot be interrupted by idle
+    --     end
         
-        --HANDLE ROTATION
-        if (newState == ATTACK or newState == TAKE_DAMAGE) and not self.hasRotated then 
-            RotateTowardsPlayer(self)
-            self.hasRotated = true
-        end
-        -- Reset rotation flag when leaving ATTACK or TAKE_DAMAGE
-        if newState ~= ATTACK and newState ~= TAKE_DAMAGE then
-            self.hasRotated = false
-        end
+    --     --HANDLE ROTATION
+    --     if (newState == ATTACK or newState == TAKE_DAMAGE) and not self.hasRotated then 
+    --         RotateTowardsPlayer(self)
+    --         self.hasRotated = true
+    --     end
+    --     -- Reset rotation flag when leaving ATTACK or TAKE_DAMAGE
+    --     if newState ~= ATTACK and newState ~= TAKE_DAMAGE then
+    --         self.hasRotated = false
+    --     end
 
-        --END OF ROTATION HANDLING
+    --     --END OF ROTATION HANDLING
 
-        -- Update animation if state changed
-        if newState ~= currentState then
-            local loop = (newState ~= DEATH and newState ~= TAKE_DAMAGE)
+    --     -- Update animation if state changed
+    --     if newState ~= currentState then
+    --         local loop = (newState ~= DEATH and newState ~= TAKE_DAMAGE)
             
-            -- Use component method directly (like PlayerMovement does with animator:PlayClip)
-            self._animator:PlayClip(newState, loop)
+    --         -- Use component method directly (like PlayerMovement does with animator:PlayClip)
+    --         self._animator:PlayClip(newState, loop)
             
-            print("[EnemyLogic] State changed: " .. currentState .. " -> " .. newState)
-            currentState = newState
+    --         print("[EnemyLogic] State changed: " .. currentState .. " -> " .. newState)
+    --         currentState = newState
 
-            -- Play appropriate SFX when entering new state
-            if currentState == ATTACK then
-                playRandomSFX(audio, self.attackSFXClips)
-                self._attackSoundTimer = 0.0  -- Reset timer on state entry
-            elseif currentState == TAKE_DAMAGE then
-                playRandomSFX(audio, self.hurtSFXClips)
-            end
-        end
+    --         -- Play appropriate SFX when entering new state
+    --         if currentState == ATTACK then
+    --             playRandomSFX(audio, self.attackSFXClips)
+    --             self._attackSoundTimer = 0.0  -- Reset timer on state entry
+    --         elseif currentState == TAKE_DAMAGE then
+    --             playRandomSFX(audio, self.hurtSFXClips)
+    --         end
+    --     end
         
-        -- Play periodic attack sounds while in ATTACK state
-        if currentState == ATTACK then
-            self._attackSoundTimer = self._attackSoundTimer + dt
-            if self._attackSoundTimer >= self._attackSoundInterval then
-                playRandomSFX(audio, self.attackSFXClips)
-                self._attackSoundTimer = 0.0
-                print("[EnemyLogic] Playing periodic attack sound")
-            end
-        end
-    end
+    --     -- Play periodic attack sounds while in ATTACK state
+    --     if currentState == ATTACK then
+    --         self._attackSoundTimer = self._attackSoundTimer + dt
+    --         if self._attackSoundTimer >= self._attackSoundInterval then
+    --             playRandomSFX(audio, self.attackSFXClips)
+    --             self._attackSoundTimer = 0.0
+    --             print("[EnemyLogic] Playing periodic attack sound")
+    --         end
+    --     end
+    -- end
 }
 
 --  Animation clip indices:
