@@ -112,9 +112,9 @@ return Component {
     },
     
     Start = function(self) 
-        self.animation = self:GetComponent("AnimationComponent") 
+        self._animation = self:GetComponent("AnimationComponent") 
         self.collider = self:GetComponent("ColliderComponent")
-        Animation.PlayClip(self.animation, IDLE, true)
+        self._animation:PlayClip(IDLE, true)
         currentState = IDLE
     end,
     
@@ -183,9 +183,9 @@ return Component {
         
         -- Update animation if state changed
         if newState ~= currentState then
-            Animation.Pause(self.animation)
+            self._animation:Pause()
             local loop = (newState ~= FALL and newState ~= TAKE_DAMAGE and newState ~= DEATH)
-            Animation.PlayClip(self.animation, newState, loop)
+            self._animation:PlayClip(newState, loop)
             currentState = newState
         end
 
@@ -196,10 +196,3 @@ return Component {
 --  1 = ATTACK
 --  2 = TAKEDAMAGE
 --  3 = ENEMYDEATH
-
--- Animation.PlayOnce(self.animation, AttackAnimation)      -- plays a clip once
--- Animation.Pause(self.animation)                           -- pauses playback
--- Animation.Stop(self.animation)                            -- stops and resets playback
--- Animation.SetSpeed(self.animation, 1.5)                  -- sets playback speed
--- Animation.SetLooping(self.animation, true)               -- sets looping
--- local playing = Animation.IsPlaying(self.animation)      -- returns true/false

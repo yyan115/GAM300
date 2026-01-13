@@ -13,8 +13,9 @@
 
 #pragma once
 #include "Physics/JoltInclude.hpp"
-#include "Reflection/ReflectionBase.hpp"
+#include "pch.h"
 #include "Math/Vector3D.hpp"
+#include "Reflection/ReflectionBase.hpp"
 
 enum class Motion : int { 
 	Static = 0, 
@@ -43,16 +44,16 @@ struct RigidBodyComponent {
 	Vector3D linearVel = { 0.0f, -9.81f,0.0f };
 
 	float linearDamping = 0.0f;
-	float angularDamping = 0.95f;
+	float angularDamping = 0.0f;
 
 
 	//TO BE USED FOR SCRIPT
 	Vector3D forceApplied = { 0.0f,0.0f,0.0f };
 	Vector3D torqueApplied = { 0.0f,0.0f,0.0f };
 	Vector3D impulseApplied = { 0.0f,0.0f,0.0f };
-	void AddForce(Vector3D force)		{forceApplied += force;}
-	void AddTorque(Vector3D torque)		{torqueApplied += torque;}
-	void AddImpulse(Vector3D impulse)	{impulseApplied += impulse;}
+	void AddForce(float xForce, float yForce, float zForce)			{ forceApplied += Vector3D(xForce, yForce, zForce);}
+	void AddTorque(float xTorque, float yTorque, float zTorque)		{ torqueApplied += Vector3D(xTorque, yTorque, zTorque);}
+	void AddImpulse(float xImpulse, float yImpulse, float zImpulse) { impulseApplied += Vector3D(xImpulse, yImpulse, zImpulse);}
 
 	bool collideWithStatic = false;		//To be used only by rigidbody Kinematic 
 

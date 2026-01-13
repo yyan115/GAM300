@@ -2,6 +2,7 @@
 #include <TimeManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Physics/PhysicsSystem.hpp"
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 
 void ParallelSystemOrchestrator::Update() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"UpdateChannel">, scheduler };
@@ -9,6 +10,7 @@ void ParallelSystemOrchestrator::Update() {
     // Update physics and transform systems sequentially first.
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
     mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+    mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
 
 	// Then update the other systems in parallel.

@@ -71,56 +71,72 @@ namespace PhysicsSystemWrappers {
 }
 
 
-// ============================================================================
-// RIGIDBODY SYSTEM WRAPPERS
-// ============================================================================
-#include "Physics/RigidBodyComponent.hpp"
-
-namespace RigidBodySystemWrappers {
-    inline void AddForce(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddForce(Vector3D(x,y,z));
-    }
-    inline void AddTorque(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddTorque(Vector3D(x, y, z));
-    }
-    inline void AddImpulse(RigidBodyComponent& rigidbody, float x, float y, float z)
-    {
-        rigidbody.AddImpulse(Vector3D(x, y, z));
-    }
-}
+//// ============================================================================
+//// RIGIDBODY SYSTEM WRAPPERS
+//// ============================================================================
+//#include "Physics/RigidBodyComponent.hpp"
+//
+//namespace RigidBodySystemWrappers {
+//    inline void AddForce(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddForce(Vector3D(x,y,z));
+//    }
+//    inline void AddTorque(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddTorque(Vector3D(x, y, z));
+//    }
+//    inline void AddImpulse(RigidBodyComponent& rigidbody, float x, float y, float z)
+//    {
+//        rigidbody.AddImpulse(Vector3D(x, y, z));
+//    }
+//}
 
 
 
 // ============================================================================
 // CHARACTER CONTROLLER WRAPPERS
 // ============================================================================
-#include "Physics/Kinematics/CharacterController.hpp"
+#include "Physics/Kinematics/CharacterController.hpp"       //to be removed 
+#include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "ECS/ECSManager.hpp"
+
+using Entity = unsigned int;
 
 namespace CharacterControllerWrappers {
-    // Constructor wrapper
-    inline CharacterController* Create() {
+
+    inline CharacterController* CreateController(Entity id,
+        ColliderComponent* collider,
+        Transform* transform)
+    {
         JPH::PhysicsSystem* physicsSystem = PhysicsSystemWrappers::GetSystem();
 
         if (!physicsSystem) {
             std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
             return nullptr;
         }
-        return new CharacterController(physicsSystem);
-    }
 
-    inline bool Initialise(CharacterController* controller,
-        ColliderComponent* collider,
-        Transform* transform) {
-
-        if (controller && collider && transform) {
-            return controller->Initialise(*collider, *transform);
+        if (!collider || !transform) {
+            std::cerr << "[ERROR] Cannot create CharacterController - invalid inputs!" << std::endl;
+            return nullptr;
         }
-        return false;
+
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (!ecsManager.characterControllerSystem)
+        {
+            std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
+            return nullptr;
+        }
+        std::cout << "UPDATED 0" << std::endl;
+        //call system to create controller
+        return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
+
+        //CharacterController* controller = new CharacterController(physicsSystem);
+        //return controller->CreateController(*collider, *transform);
     }
+
+
 
     inline void Update(CharacterController* controller, float deltaTime) {
         if (controller)
@@ -407,47 +423,5 @@ namespace AudioManagerWrappers {
     
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
-    }
-}
-
-#include "Animation/AnimationComponent.hpp"
-// ============================================================================
-// ANIMATION SYSTEM WRAPPERS
-// ============================================================================
-namespace AnimationWrappers {
-    inline void PlayClip(AnimationComponent& myAnim,std::size_t clipIndex, bool loop)
-    {
-        myAnim.PlayClip(clipIndex, loop);   //set the clip and loop flag
-        myAnim.Play();                      //start the Playback
-    }
-
-    inline void PlayOnce(AnimationComponent& myAnim, std::size_t clipIndex)
-    {
-        myAnim.PlayOnce(clipIndex);
-    }
-
-    inline void Pause(AnimationComponent& myAnim)
-    {
-        myAnim.Pause();
-    }
-
-    inline void Stop(AnimationComponent& myAnim)
-    {
-        myAnim.Stop();
-    }
-
-    inline void SetSpeed(AnimationComponent& myAnim, float speed)
-    {
-        myAnim.SetSpeed(speed);
-    }
-
-    inline void SetLooping(AnimationComponent& myAnim, bool loop)
-    {
-        myAnim.SetLooping(loop);
-    }
-
-    inline bool IsPlaying(AnimationComponent& myAnim)
-    {
-        return myAnim.IsPlaying();
     }
 }
