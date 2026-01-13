@@ -1,3 +1,4 @@
+-- Resources/Scripts/Gameplay/KnifeLogic.lua
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")

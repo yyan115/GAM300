@@ -207,7 +207,8 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         JPH::RVec3 updatedPos = pos + offsetInWorld;
 
         // --- Set proper collision layer ---
-        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+        //if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+        if (rb.motion == Motion::Static)
             col.layer = Layers::NON_MOVING;
         else
             col.layer = Layers::MOVING;
@@ -297,7 +298,8 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 JPH::EMotionType::Dynamic;
 
             // Create body creation settings
-            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
+            //JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
+            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
 
             if (motionType == JPH::EMotionType::Dynamic)
             {

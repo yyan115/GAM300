@@ -1,4 +1,4 @@
--- Scripts/AI/states/GroundIdleState.lua
+-- Resources/Scripts/Gameplay/GroundIdleState.lua
 local IdleState = {}
 
 function IdleState:Enter(ai)
@@ -6,14 +6,19 @@ function IdleState:Enter(ai)
 end
 
 function IdleState:Update(ai, dt)
-    -- Transition condition
+    print("[FSM][Idle] Update tick")
+
     if ai:IsPlayerInRange(ai.config.DetectionRange) then
+        print("[FSM][Idle] Player detected → Attack")
         ai.fsm:Change("Attack", ai.states.Attack)
         return
     end
 
-    -- (Priority 3) if you later want patrol:
-    -- if ai:ShouldPatrol() then ai.fsm:Change("Patrol", ai.states.Patrol) end
+    if ai.config.EnablePatrol then
+        print("[FSM][Idle] EnablePatrol=true → Patrol")
+        ai.fsm:Change("Patrol", ai.states.Patrol)
+        return
+    end
 end
 
 function IdleState:Exit(ai)

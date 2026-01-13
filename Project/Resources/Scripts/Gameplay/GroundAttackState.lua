@@ -1,4 +1,4 @@
--- Gameplay/EnemyStates/GroundAttackState.lua
+-- Resources/Scripts/Gameplay/GroundAttackState.lua
 local AttackState = {}
 
 function AttackState:Enter(ai)

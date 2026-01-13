@@ -1,3 +1,4 @@
+-- Resources/Scripts/Gameplay/KnifePool.lua
 require("extension.engine_bootstrap")
 
 local KnifePool = {
