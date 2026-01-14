@@ -1,6 +1,7 @@
 -- extension/verletGravity.lua
 -- Lightweight Verlet solver module with correct anchor behavior
 -- First link follows player, last link pins at hit point when fully extended
+-- Now respects component.IsElastic and component.LinkMaxDistance
 
 local M = {}
 
@@ -22,6 +23,11 @@ local function read_world_pos(component, tr)
             return a, b, c
         end
     end
+    -- fallback to localPosition where available
+    if type(tr.localPosition) == "table" or type(tr.localPosition) == "userdata" then
+        local pos = tr.localPosition
+        return pos.x or pos[1] or 0, pos.y or pos[2] or 0, pos.z or pos[3] or 0
+    end
     return 0,0,0
 end
 
@@ -35,6 +41,19 @@ local function write_world_pos(component, tr, x, y, z)
         pcall(function() tr:SetPosition(x, y, z) end)
         return true
     end
+
+    -- fallback write to localPosition if available
+    if type(tr.localPosition) ~= "nil" then
+        pcall(function()
+            local pos = tr.localPosition
+            if type(pos) == "userdata" or type(pos) == "table" then
+                pos.x, pos.y, pos.z = x, y, z
+                tr.isDirty = true
+            end
+        end)
+        return true
+    end
+
     return false
 end
 
@@ -89,7 +108,7 @@ function M.VerletStep(component, dt)
         end
     end
 
-    -- CRITICAL FIX: Anchor first link to player position (start of chain)
+    -- Anchor first link to player position (start of chain)
     local sx, sy, sz = 0, 0, 0
     if type(component._get_start_world) == "function" then
         sx, sy, sz = component:_get_start_world()
@@ -98,16 +117,33 @@ function M.VerletStep(component, dt)
     rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
     rt.invMass[1] = 0  -- First link always kinematic
 
-    -- Compute segment length
+    -- Compute end distance and base total length
     local dx_e = (component.endPosition and component.endPosition[1] or sx) - sx
     local dy_e = (component.endPosition and component.endPosition[2] or sy) - sy
     local dz_e = (component.endPosition and component.endPosition[3] or sz) - sz
     local curEndDist = math.sqrt(dx_e*dx_e + dy_e*dy_e + dz_e*dz_e)
+
+    -- totalLen: prefer MaxLength if set, otherwise measured end distance (avoids divide-by-zero)
     local totalLen = (component.MaxLength and component.MaxLength > 0) and component.MaxLength or math.max(curEndDist, M.EPS)
+
+    -- initial segment length
     local segmentLen = (#rt.p > 1) and (totalLen / (#rt.p - 1)) or 0
 
-    -- Determine which links should be active based on chainLength
+    -- Legacy alias chain length (Verlet expects component.chainLength); guard against nil
     local chainLen = component.chainLength or 0
+
+    -- If not elastic, cap segmentLen to LinkMaxDistance and clamp chain length
+    if not component.IsElastic then
+        local maxd = tonumber(component.LinkMaxDistance) or segmentLen
+        if maxd <= 0 then maxd = segmentLen end
+        -- ensure segmentLen never exceeds per-link cap
+        if segmentLen > maxd then segmentLen = maxd end
+        -- clamp chainLen to maximum allowed (so inactive links logic uses capped value)
+        local maxAllowedTotal = maxd * math.max(0, (#rt.p - 1))
+        if chainLen > maxAllowedTotal then chainLen = maxAllowedTotal end
+    end
+
+    -- Determine which links should be active based on chainLen (uses adjusted segmentLen)
     for i = 1, #rt.p do
         local requiredDist = (i - 1) * segmentLen
         if chainLen + 1e-6 < requiredDist then
@@ -116,28 +152,28 @@ function M.VerletStep(component, dt)
             rt.p[i][1], rt.p[i][2], rt.p[i][3] = sx, sy, sz
             rt.pprev[i][1], rt.pprev[i][2], rt.pprev[i][3] = sx, sy, sz
         else
-            if i ~= 1 then 
+            if i ~= 1 then
                 rt.invMass[i] = 1  -- Link is active and can move freely
             end
         end
     end
 
-    -- CRITICAL FIX: If chain is fully extended (stopped extending), pin LAST link to end position
+    -- If chain is fully extended (stopped extending), pin LAST link to end position
     local lastIdx = #rt.p
     local lastRequired = (lastIdx - 1) * segmentLen
-    local isFullyExtended = not component.isExtending and chainLen + 1e-6 >= lastRequired
-    
+    local isFullyExtended = (not component.isExtending) and (chainLen + 1e-6 >= lastRequired)
+
     if isFullyExtended and component.endPosition then
         -- Last link is pinned to world-space end position (hit point)
         rt.p[lastIdx][1] = component.endPosition[1]
         rt.p[lastIdx][2] = component.endPosition[2]
         rt.p[lastIdx][3] = component.endPosition[3]
-        rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] = 
+        rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
             rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
         rt.invMass[lastIdx] = 0  -- Last link becomes kinematic when pinned
     end
 
-    -- Distance constraints
+    -- Distance constraints (use adjusted segmentLen)
     local iters = math.max(1, math.min(8, tonumber(component.ConstraintIterations or 2)))
     for it = 1, iters do
         for i = 2, #rt.p do
@@ -148,7 +184,16 @@ function M.VerletStep(component, dt)
             local dx, dy, dz = bx - ax, by - ay, bz - az
             local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
             if dist < M.EPS then dist = M.EPS end
-            local diff = (dist - segmentLen) / dist
+
+            local target = segmentLen
+            -- If not elastic, ensure target <= LinkMaxDistance (defensive)
+            if not component.IsElastic then
+                local maxd = tonumber(component.LinkMaxDistance) or segmentLen
+                if maxd <= 0 then maxd = segmentLen end
+                if target > maxd then target = maxd end
+            end
+
+            local diff = (dist - target) / dist
             local invA = rt.invMass[i-1] or 0
             local invB = rt.invMass[i] or 0
             local w = invA + invB
@@ -171,17 +216,38 @@ function M.VerletStep(component, dt)
         -- Re-apply anchors after each constraint iteration
         rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
         rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
-        
+
         if isFullyExtended and component.endPosition then
             rt.p[lastIdx][1] = component.endPosition[1]
             rt.p[lastIdx][2] = component.endPosition[2]
             rt.p[lastIdx][3] = component.endPosition[3]
-            rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] = 
+            rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
                 rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
         end
     end
 
-    -- Write back to transforms
+    -- FINAL GUARANTEE: enforce absolute per-link maximum when IsElastic == false
+    if not component.IsElastic then
+        local maxd = tonumber(component.LinkMaxDistance) or segmentLen
+        if maxd > 0 then
+            -- forward pass: clamp rt.p positions so each pair <= maxd
+            for i = 2, #rt.p do
+                local a = rt.p[i-1]
+                local b = rt.p[i]
+                local ax, ay, az = a[1], a[2], a[3]
+                local bx, by, bz = b[1], b[2], b[3]
+                local dx, dy, dz = bx - ax, by - ay, bz - az
+                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                if dist > maxd and dist > M.EPS then
+                    local inv = 1.0 / dist
+                    local dirx, diry, dirz = dx * inv, dy * inv, dz * inv
+                    b[1], b[2], b[3] = ax + dirx * maxd, ay + diry * maxd, az + dirz * maxd
+                end
+            end
+        end
+    end
+
+    -- Write back to transforms using write_world_pos helper
     for i = 1, #rt.p do
         local tr = rt.childTransforms[i]
         if tr then

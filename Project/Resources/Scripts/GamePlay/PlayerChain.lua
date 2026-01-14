@@ -30,10 +30,15 @@ return Component {
         DumpEveryFrame = false,
         -- Verlet settings
         VerletGravity = 9.81,           -- Gravity magnitude (set to 0 to disable bouncing)
-        VerletDamping = 0.02,            -- Damping (0-1, higher = more damping)
-        ConstraintIterations = 2,        -- Distance constraint iterations (higher = stiffer)
-        EnableVerletPhysics = true,      -- Toggle Verlet simulation on/off
-        -- Read-only status fields (for editor display)
+        VerletDamping = 0.02,           -- Damping (0-1, higher = more damping)
+        ConstraintIterations = 2,       -- Distance constraint iterations (higher = stiffer)
+        EnableVerletPhysics = true,     -- Toggle Verlet simulation on/off
+
+        -- New: Elasticity control
+        IsElastic = true,               -- If false, chain cannot stretch beyond LinkMaxDistance per segment
+        LinkMaxDistance = 1.0,          -- Maximum allowed distance between adjacent links when IsElastic == false
+
+        -- Read-only status fields (for editor display) - these are authoritative for external scripts
         m_CurrentState = "COMPLETELY_LAX",
         m_CurrentLength = 0.0,
         m_IsExtending = false,
@@ -41,13 +46,15 @@ return Component {
         m_LinkCount = 0
     },
 
+    -------------------------------------------------------------------------
     -- Lightweight helpers
+    -------------------------------------------------------------------------
     _unpack_pos = function(self, a, b, c)
         if type(a) == "table" then
             return a[1] or a.x or 0.0, a[2] or a.y or 0.0, a[3] or a.z or 0.0
         end
-        return (type(a) == "number") and a or 0.0, 
-               (type(b) == "number") and b or 0.0, 
+        return (type(a) == "number") and a or 0.0,
+               (type(b) == "number") and b or 0.0,
                (type(c) == "number") and c or 0.0
     end,
 
@@ -58,16 +65,15 @@ return Component {
         print("[PlayerChain] " .. table.concat(parts, " "))
     end,
 
-    -- Optimized position read
     _read_transform_position = function(self, tr)
         if not tr then return 0,0,0 end
         local ok, a, b, c = pcall(function() return tr:GetPosition() end)
         if ok then
-            if type(a) == "table" then 
-                return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0 
+            if type(a) == "table" then
+                return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
             end
-            if type(a) == "number" and type(b) == "number" and type(c) == "number" then 
-                return a, b, c 
+            if type(a) == "number" and type(b) == "number" and type(c) == "number" then
+                return a, b, c
             end
         end
         if type(tr.localPosition) == "table" or type(tr.localPosition) == "userdata" then
@@ -81,11 +87,9 @@ return Component {
         return self:_read_transform_position(tr)
     end,
 
-    -- Optimized position write using TransformMixin proxies
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
-        
-        -- Find and use the proxy with TransformMixin applied
+
         local rt = self._runtime
         if rt and rt.childTransforms and rt.childProxies then
             for i = 1, #rt.childTransforms do
@@ -99,8 +103,7 @@ return Component {
                 end
             end
         end
-        
-        -- Fallback: direct manipulation
+
         if type(tr.localPosition) ~= "nil" then
             local pos = tr.localPosition
             if type(pos) == "userdata" then
@@ -120,6 +123,30 @@ return Component {
         return false
     end,
 
+    -------------------------------------------------------------------------
+    -- Backwards compatibility: sync authoritative m_ fields with legacy aliases
+    -------------------------------------------------------------------------
+    _sync_to_aliases = function(self)
+        -- copy authoritative m_ fields into legacy names used by existing modules
+        self.chainLength     = self.m_CurrentLength or 0.0
+        self.isExtending     = (self.m_IsExtending == true)
+        self.isRetracting    = (self.m_IsRetracting == true)
+    end,
+
+    _sync_from_aliases = function(self)
+        -- after physics/legacy code runs, copy any changes back into editor-facing m_ fields
+        if self.chainLength ~= nil then
+            self.m_CurrentLength = self.chainLength
+        else
+            self.m_CurrentLength = self.m_CurrentLength or 0.0
+        end
+        self.m_IsExtending   = (self.isExtending == true)
+        self.m_IsRetracting  = (self.isRetracting == true)
+    end,
+
+    -------------------------------------------------------------------------
+    -- Lifecycle
+    -------------------------------------------------------------------------
     Start = function(self)
         if type(Engine) ~= "table" then
             print("[PlayerChain] ERROR: Engine global missing.")
@@ -136,17 +163,20 @@ return Component {
             self._input_missing = true
         end
 
-        -- Initialize state
-        self.currentState = COMPLETELY_LAX
-        self.chainLength = 0.0
-        self.endPosition = {0.0, 0.0, 0.0}
-        self.MaxLength = self.MaxLength or 0.0
-        self.isExtending = false
-        self.isRetracting = false
+        -- Authoritative state uses m_ fields (avoid redundant copies)
+        self.currentState = COMPLETELY_LAX                         -- numeric internal state for fast branching
+        self.m_CurrentState = "COMPLETELY_LAX"
+        self.m_CurrentLength = 0.0
+        self.m_IsExtending = false
+        self.m_IsRetracting = false
+        self.m_LinkCount = 0
+
+        -- Internal helpers (not authoritative)
         self.extensionTime = 0.0
         self.lastForward = {0.0, 0.0, 1.0}
         self.playerTransform = nil
         self.lastState = nil
+        self.endPosition = {0.0, 0.0, 0.0}
 
         -- Find link transforms
         for i = 1, math.max(1, self.NumberOfLinks) do
@@ -157,8 +187,8 @@ return Component {
                 pcall(function()
                     if tr.GetComponent then
                         local rb = tr:GetComponent("Rigidbody")
-                        if rb and rb.isKinematic ~= nil then 
-                            rb.isKinematic = true 
+                        if rb and rb.isKinematic ~= nil then
+                            rb.isKinematic = true
                         end
                     end
                 end)
@@ -195,23 +225,26 @@ return Component {
             table.insert(rt.childProxies, proxy)
         end
 
-        -- Initialize Verlet
+        -- Initialize Verlet (module expected to exist)
         Verlet.InitVerlet(self)
 
         local sx, sy, sz = self:_unpack_pos(self:GetPosition())
         self.endPosition[1], self.endPosition[2], self.endPosition[3] = sx, sy, sz
-        self.chainLength = 0.0
+        self.m_CurrentLength = 0.0
 
         if self.EnableLogs then
             self:Log("Started with", #rt.childProxies, "links, AutoStart:", self.AutoStart)
         end
-        
+
         -- Initialize editor display fields
         self.m_LinkCount = #rt.childProxies
         self.m_CurrentState = "COMPLETELY_LAX"
         self.m_CurrentLength = 0.0
         self.m_IsExtending = false
         self.m_IsRetracting = false
+
+        -- Sync to legacy aliases so Verlet/legacy code sees initial values
+        self:_sync_to_aliases()
 
         if self.AutoStart then
             self:StartExtension()
@@ -220,7 +253,7 @@ return Component {
 
     Update = function(self, dt)
         if self._disabled_due_to_missing_engine then return end
-        
+
         local rt = self._runtime or {}
         rt.childProxies = rt.childProxies or {}
 
@@ -238,7 +271,7 @@ return Component {
         if not self._input_missing then
             local keyEnum = Input.Key and Input.Key[self.TriggerKey]
             if keyEnum and Input.GetKeyDown and Input.GetKeyDown(keyEnum) then
-                if not self.isExtending and not self.isRetracting then
+                if not self.m_IsExtending and not self.m_IsRetracting then
                     if self.currentState == COMPLETELY_LAX or self.currentState == LAX then
                         self:StartExtension()
                     end
@@ -246,13 +279,16 @@ return Component {
             end
         end
 
-        -- Update chain mechanics
-        if self.isExtending then 
-            self:ExtendChain(dt) 
+        -- Update chain mechanics (m_ fields are authoritative)
+        if self.m_IsExtending then
+            self:ExtendChain(dt)
         end
-        if self.isRetracting then 
-            self:RetractChain(dt) 
+        if self.m_IsRetracting then
+            self:RetractChain(dt)
         end
+
+        -- Ensure legacy aliases are synced before physics/legacy modules run
+        self:_sync_to_aliases()
 
         -- Physics simulation
         if self.EnableVerletPhysics then
@@ -262,53 +298,43 @@ return Component {
             self:PositionLinksSimple()
         end
 
+        -- Copy back anything physics/legacy code changed
+        self:_sync_from_aliases()
+
         -- State management
         self:CheckState()
-        
-        -- Update editor display fields
+
+        -- Update editor display fields (keeps m_ authoritative)
         self:UpdateEditorFields()
 
-        if self.DumpEveryFrame then 
-            self:DumpLinkPositions() 
+        if self.DumpEveryFrame then
+            self:DumpLinkPositions()
         end
     end,
 
-    -- ========================================================================
+    -------------------------------------------------------------------------
     -- PUBLIC API - Exposed for external scripts
-    -- ========================================================================
-    
-    -- Get current chain state (returns state constant)
-    GetChainState = function(self) 
-        return self.currentState 
+    -------------------------------------------------------------------------
+    GetChainState = function(self)
+        return self.currentState
     end,
-    
-    -- Get chain state as string
+
     GetChainStateString = function(self)
-        local names = {
-            [COMPLETELY_LAX] = "COMPLETELY_LAX",
-            [LAX] = "LAX",
-            [TAUT] = "TAUT",
-            [EXTENDING] = "EXTENDING",
-            [RETRACTING] = "RETRACTING"
-        }
-        return names[self.currentState] or "UNKNOWN"
+        return self.m_CurrentState or "UNKNOWN"
     end,
-    
-    -- Get current chain length
-    GetChainLength = function(self) 
-        return self.chainLength 
+
+    GetChainLength = function(self)
+        return self.m_CurrentLength
     end,
-    
-    -- Get end position as table {x, y, z}
-    GetEndPosition = function(self) 
+
+    GetEndPosition = function(self)
         return {
-            x = self.endPosition[1], 
-            y = self.endPosition[2], 
+            x = self.endPosition[1],
+            y = self.endPosition[2],
             z = self.endPosition[3]
         }
     end,
-    
-    -- Get all link positions (returns array of {x, y, z} tables)
+
     GetLinkPositions = function(self)
         local positions = {}
         local rt = self._runtime or {}
@@ -322,8 +348,7 @@ return Component {
         end
         return positions
     end,
-    
-    -- Get specific link position by index
+
     GetLinkPosition = function(self, index)
         local rt = self._runtime or {}
         if rt.childProxies and rt.childProxies[index] then
@@ -335,36 +360,36 @@ return Component {
         end
         return nil
     end,
-    
-    -- Check if chain is actively extending
-    IsExtending = function(self) 
-        return self.isExtending == true 
+
+    IsExtending = function(self)
+        return self.m_IsExtending == true
     end,
-    
-    -- Check if chain is actively retracting
-    IsRetracting = function(self) 
-        return self.isRetracting == true 
+
+    IsRetracting = function(self)
+        return self.m_IsRetracting == true
     end,
-    
-    -- Get number of links
+
     GetLinkCount = function(self)
-        local rt = self._runtime or {}
-        return rt.childProxies and #rt.childProxies or 0
+        return self.m_LinkCount or 0
     end,
 
-    -- ========================================================================
+    -------------------------------------------------------------------------
     -- CHAIN MECHANICS
-    -- ========================================================================
-
+    -------------------------------------------------------------------------
     StartExtension = function(self)
-        self.isExtending = true
-        self.isRetracting = false
+        self.m_IsExtending = true
+        self.m_IsRetracting = false
         self.extensionTime = 0.0
         self.currentState = EXTENDING
-        self.chainLength = 0.0
+        self.m_CurrentState = "EXTENDING"
+        self.m_CurrentLength = 0.0
         local sx, sy, sz = self:_unpack_pos(self:GetPosition())
         self.endPosition[1], self.endPosition[2], self.endPosition[3] = sx, sy, sz
         self.lastForward = self:GetForwardDirection()
+
+        -- Keep aliases in sync for any immediate legacy calls
+        self:_sync_to_aliases()
+
         if self.EnableLogs then
             self:Log("Extension started")
         end
@@ -373,8 +398,16 @@ return Component {
     ExtendChain = function(self, dt)
         self.extensionTime = self.extensionTime + dt
         local desired = self.ChainSpeed * self.extensionTime
-        if self.MaxLength > 0 and desired > self.MaxLength then 
-            desired = self.MaxLength 
+        if self.MaxLength > 0 and desired > self.MaxLength then
+            desired = self.MaxLength
+        end
+
+        -- If non-elastic, clamp desired length to maximum allowed by LinkMaxDistance
+        local rt = self._runtime or {}
+        local linkCount = (rt.childProxies and #rt.childProxies) or math.max(1, self.NumberOfLinks)
+        if not self.IsElastic then
+            local maxAllowed = self.LinkMaxDistance * (math.max(1, linkCount) - 1)
+            if desired > maxAllowed then desired = maxAllowed end
         end
 
         local forward = self.lastForward
@@ -387,8 +420,8 @@ return Component {
         -- Check for simulated hit
         if self.SimulatedHitDistance and self.SimulatedHitDistance > 0.0 then
             local hitDist = self.SimulatedHitDistance
-            if self.MaxLength > 0 and hitDist > self.MaxLength then 
-                hitDist = self.MaxLength 
+            if self.MaxLength > 0 and hitDist > self.MaxLength then
+                hitDist = self.MaxLength
             end
             if desired >= hitDist then
                 local hitX = sx + forward[1] * hitDist
@@ -396,9 +429,9 @@ return Component {
                 local hitZ = sz + forward[3] * hitDist
                 self.endPosition[1], self.endPosition[2], self.endPosition[3] = hitX, hitY, hitZ
                 local dx, dy, dz = hitX - sx, hitY - sy, hitZ - sz
-                self.chainLength = math.sqrt(dx*dx + dy*dy + dz*dz)
+                self.m_CurrentLength = math.sqrt(dx*dx + dy*dy + dz*dz)
                 if self.EnableLogs then
-                    self:Log("Hit at distance", self.chainLength)
+                    self:Log("Hit at distance", self.m_CurrentLength)
                 end
                 self:StopExtension()
                 return
@@ -406,54 +439,72 @@ return Component {
         end
 
         self.endPosition[1], self.endPosition[2], self.endPosition[3] = newEndX, newEndY, newEndZ
-        self.chainLength = desired
+        self.m_CurrentLength = desired
 
-        if (self.MaxLength > 0 and self.chainLength >= self.MaxLength) or self.extensionTime > 10.0 then
+        if (self.MaxLength > 0 and self.m_CurrentLength >= self.MaxLength) or self.extensionTime > 10.0 then
             if self.EnableLogs then
-                self:Log("Extension stopped at length", self.chainLength)
+                self:Log("Extension stopped at length", self.m_CurrentLength)
             end
             self:StopExtension()
         end
     end,
 
     StartRetraction = function(self)
-        if self.chainLength <= 0 then return end
-        self.isRetracting = true
-        self.isExtending = false
+        if (self.m_CurrentLength or 0) <= 0 then return end
+        self.m_IsRetracting = true
+        self.m_IsExtending = false
         self.currentState = RETRACTING
+        self.m_CurrentState = "RETRACTING"
+
+        -- Keep aliases in sync for legacy code
+        self:_sync_to_aliases()
+
         if self.EnableLogs then
             self:Log("Retraction started")
         end
     end,
 
     RetractChain = function(self, dt)
-        self.chainLength = math.max(0, self.chainLength - self.ChainSpeed * dt)
+        self.m_CurrentLength = math.max(0, (self.m_CurrentLength or 0) - self.ChainSpeed * dt)
         local sx, sy, sz = self:_unpack_pos(self:GetPosition())
         local forward = self.lastForward or self:GetForwardDirection()
-        local ex = sx + forward[1] * self.chainLength
-        local ey = sy + forward[2] * self.chainLength
-        local ez = sz + forward[3] * self.chainLength
+        local ex = sx + forward[1] * self.m_CurrentLength
+        local ey = sy + forward[2] * self.m_CurrentLength
+        local ez = sz + forward[3] * self.m_CurrentLength
         self.endPosition[1], self.endPosition[2], self.endPosition[3] = ex, ey, ez
 
-        if self.chainLength <= 0 then
+        if self.m_CurrentLength <= 0 then
             if self.EnableLogs then
                 self:Log("Retraction complete")
             end
-            self.isRetracting = false
+            self.m_IsRetracting = false
             self.currentState = COMPLETELY_LAX
+            self.m_CurrentState = "COMPLETELY_LAX"
         end
     end,
 
     StopExtension = function(self)
-        if not self.isExtending then return end
+        -- Accept either legacy alias or authoritative m_ field
+        if not self.m_IsExtending and not self.isExtending then return end
+
+        -- Clear both authoritative and alias flags
+        self.m_IsExtending = false
         self.isExtending = false
-        if self.chainLength <= 0.0 then
+
+        if (self.m_CurrentLength or 0) <= 0.0 then
             local sx, sy, sz = self:_unpack_pos(self:GetPosition())
             self.endPosition[1], self.endPosition[2], self.endPosition[3] = sx, sy, sz
             self.currentState = COMPLETELY_LAX
+            self.m_CurrentState = "COMPLETELY_LAX"
+            self.chainLength = 0.0
+            self.m_CurrentLength = 0.0
         else
             self.currentState = LAX
+            self.m_CurrentState = "LAX"
         end
+
+        -- Keep aliases in sync for legacy modules
+        self:_sync_to_aliases()
     end,
 
     _get_start_world = function(self)
@@ -461,34 +512,48 @@ return Component {
     end,
 
     CheckState = function(self)
-        self.chainLength = self.chainLength or 0.0
-        
-        if self.isExtending then
+        self.m_CurrentLength = self.m_CurrentLength or 0.0
+
+        if self.m_IsExtending then
             self.currentState = EXTENDING
-        elseif self.isRetracting then
+            self.m_CurrentState = "EXTENDING"
+        elseif self.m_IsRetracting then
             self.currentState = RETRACTING
+            self.m_CurrentState = "RETRACTING"
         else
-            if self.chainLength <= 0.0 then
+            if self.m_CurrentLength <= 0.0 then
                 self.currentState = COMPLETELY_LAX
+                self.m_CurrentState = "COMPLETELY_LAX"
             else
                 if not self.playerTransform then
                     self.playerTransform = Engine.FindTransformByName(self.PlayerName)
                 end
                 if self.playerTransform then
-                    local px, py, pz = self:_unpack_pos(Engine.GetTransformPosition(self.playerTransform))
+                    local px, py, pz
+                    local ok, a, b, c = pcall(function() return Engine.GetTransformPosition(self.playerTransform) end)
+                    if ok then
+                        px, py, pz = self:_unpack_pos(a, b, c)
+                    else
+                        px, py, pz = self:_unpack_pos(self.playerTransform)
+                    end
+
                     local sx, sy, sz = self:_unpack_pos(self:GetPosition())
                     local dx, dy, dz = px - sx, py - sy, pz - sz
                     local playerDist = math.sqrt(dx*dx + dy*dy + dz*dz)
-                    
-                    if playerDist > self.chainLength + 0.01 then
+
+                    if playerDist > self.m_CurrentLength + 0.01 then
                         self.currentState = TAUT
-                    elseif playerDist < math.max(0.01, self.chainLength * 0.25) then
+                        self.m_CurrentState = "TAUT"
+                    elseif playerDist < math.max(0.01, self.m_CurrentLength * 0.25) then
                         self.currentState = COMPLETELY_LAX
+                        self.m_CurrentState = "COMPLETELY_LAX"
                     else
                         self.currentState = LAX
+                        self.m_CurrentState = "LAX"
                     end
                 else
                     self.currentState = LAX
+                    self.m_CurrentState = "LAX"
                 end
             end
         end
@@ -503,8 +568,8 @@ return Component {
         if self.ForwardOverride and type(self.ForwardOverride) == "table" and #self.ForwardOverride >= 3 then
             local fx, fy, fz = self.ForwardOverride[1], self.ForwardOverride[2], self.ForwardOverride[3]
             local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
-            if mag > 0.0001 then 
-                return {fx/mag, fy/mag, fz/mag} 
+            if mag > 0.0001 then
+                return {fx/mag, fy/mag, fz/mag}
             end
         end
         if self.GetTransformForward then
@@ -513,13 +578,13 @@ return Component {
                 if type(r1) == "table" then
                     local fx, fy, fz = r1[1] or r1.x or 0.0, r1[2] or r1.y or 0.0, r1[3] or r1.z or 0.0
                     local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
-                    if mag > 0.0001 then 
-                        return {fx/mag, fy/mag, fz/mag} 
+                    if mag > 0.0001 then
+                        return {fx/mag, fy/mag, fz/mag}
                     end
                 elseif type(r1) == "number" and type(r2) == "number" and type(r3) == "number" then
                     local mag = math.sqrt(r1*r1 + r2*r2 + r3*r3)
-                    if mag > 0.0001 then 
-                        return {r1/mag, r2/mag, r3/mag} 
+                    if mag > 0.0001 then
+                        return {r1/mag, r2/mag, r3/mag}
                     end
                 end
             end
@@ -535,30 +600,30 @@ return Component {
             self:Log(string.format("Link %d pos=(%.3f, %.3f, %.3f)", i, x, y, z))
         end
     end,
-    
-    -- Update editor-visible status fields
+
     UpdateEditorFields = function(self)
+        -- m_ fields are authoritative; keep them for editor display
         self.m_CurrentState = self:GetChainStateString()
-        self.m_CurrentLength = self.chainLength or 0.0
-        self.m_IsExtending = self.isExtending == true
-        self.m_IsRetracting = self.isRetracting == true
+        self.m_CurrentLength = self.m_CurrentLength or 0.0
+        self.m_IsExtending = (self.m_IsExtending == true)
+        self.m_IsRetracting = (self.m_IsRetracting == true)
         local rt = self._runtime or {}
         self.m_LinkCount = (rt.childProxies and #rt.childProxies) or 0
     end,
-    
+
     -- Simple linear positioning (no physics, no bouncing)
+    -- Now respects IsElastic and LinkMaxDistance (prevents per-link stretching when IsElastic == false)
     PositionLinksSimple = function(self)
         local rt = self._runtime or {}
         if not rt.childProxies or #rt.childProxies == 0 then return end
-        
+
         local sx, sy, sz = self:_unpack_pos(self:GetPosition())
         local ex, ey, ez = self.endPosition[1], self.endPosition[2], self.endPosition[3]
-        
+
         local dx, dy, dz = ex - sx, ey - sy, ez - sz
         local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-        
+
         if dist < 0.0001 then
-            -- All links at start position
             for i, proxy in ipairs(rt.childProxies) do
                 if proxy and proxy.SetPosition then
                     proxy:SetPosition(sx, sy, sz)
@@ -566,16 +631,40 @@ return Component {
             end
             return
         end
-        
+
         local dir = {dx/dist, dy/dist, dz/dist}
         local linkCount = #rt.childProxies
-        local totalLen = (self.MaxLength and self.MaxLength > 0) and self.MaxLength or math.max(dist, 0.0001)
-        local segmentLen = (linkCount > 1) and (totalLen / (linkCount - 1)) or 0
-        
+
+        -- Determine requested total length: prefer authoritative m_CurrentLength; fall back to measured distance
+        local totalRequested = (self.m_CurrentLength and self.m_CurrentLength > 0) and self.m_CurrentLength or dist
+
+        -- If MaxLength is set, do not exceed it
+        if self.MaxLength and self.MaxLength > 0 then
+            totalRequested = math.min(totalRequested, self.MaxLength)
+        end
+
+        -- If not elastic, clamp totalRequested to the maximum allowed by LinkMaxDistance
+        if not self.IsElastic then
+            local maxAllowed = self.LinkMaxDistance * math.max(0, (linkCount - 1))
+            if totalRequested > maxAllowed then
+                totalRequested = maxAllowed
+                -- Also clamp authoritative length so other systems see the constrained value
+                self.m_CurrentLength = totalRequested
+            end
+        end
+
+        local segmentLen = (linkCount > 1) and (totalRequested / (linkCount - 1)) or 0
+
+        -- If not elastic, ensure segmentLen never exceeds LinkMaxDistance
+        if not self.IsElastic and segmentLen > self.LinkMaxDistance then
+            segmentLen = self.LinkMaxDistance
+        end
+
+        -- Place each link along the direction vector up to the current effective distance
         for i, proxy in ipairs(rt.childProxies) do
             if proxy and proxy.SetPosition then
                 local requiredDist = (i - 1) * segmentLen
-                if (self.chainLength or 0) >= requiredDist then
+                if (self.m_CurrentLength or 0) >= requiredDist then
                     local placeDist = math.min(requiredDist, dist)
                     local tx = sx + dir[1] * placeDist
                     local ty = sy + dir[2] * placeDist
