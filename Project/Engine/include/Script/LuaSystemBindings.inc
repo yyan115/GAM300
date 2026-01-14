@@ -235,6 +235,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
+    FUNCTION("GetEntityByName", &Lua_FindEntityByName)
 END_SYSTEM()
 
 

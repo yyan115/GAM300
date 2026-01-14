@@ -382,6 +382,13 @@ BEGIN_COMPONENT(LayerComponent, "LayerComponent")
     METHOD("GetLayerMask", &LayerComponent::GetLayerMask)
 END_COMPONENT()
 
+BEGIN_COMPONENT(ButtonComponent, "ButtonComponent")
+    PROPERTY("interactable", &ButtonComponent::interactable)
+END_COMPONENT()
+
+
+
+
 // ============================================================================
 // Hierarchy Components (read-only for Lua - managed by engine)
 // ============================================================================

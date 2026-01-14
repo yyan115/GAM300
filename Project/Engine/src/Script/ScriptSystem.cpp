@@ -117,6 +117,29 @@ static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 }
 
 
+static Entity Lua_FindEntityByName(const std::string& name)
+{
+    if (!g_ecsManager) return -1; 
+    ECSManager& ecs = *g_ecsManager;
+
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            return e;
+        }
+    }
+
+    return -1; // Not found
+}
+
+
 
 
 //TEMP FUNCTION TO BE CHANGED
