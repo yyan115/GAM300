@@ -54,7 +54,7 @@ function StateMachine:Update(dt)
 
     self.timeInState = self.timeInState + dt
 
-    -- 🔎 DEBUG: always show active state
+    -- DEBUG: always show active state
     print(string.format(
         "[FSM] State=%s  Time=%.2f",
         tostring(self.currentName),

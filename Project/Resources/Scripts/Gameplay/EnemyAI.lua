@@ -10,6 +10,7 @@ local GroundHurtState    = require("Gameplay.GroundHurtState")
 local GroundDeathState   = require("Gameplay.GroundDeathState")
 local GroundHookedState  = require("Gameplay.GroundHookedState")
 local GroundPatrolState  = require("Gameplay.GroundPatrolState")
+local GroundChaseState = require("Gameplay.GroundChaseState")
 
 local KnifePool = require("Gameplay.KnifePool")
 local Input = _G.Input
@@ -25,6 +26,12 @@ local function atan2(y, x)
     if x == 0 and y > 0 then return math.pi / 2 end
     if x == 0 and y < 0 then return -math.pi / 2 end
     return 0
+end
+
+local function yawQuatFromDir(dx, dz)
+    local yaw = atan2(dx, dz)       -- radians
+    local half = yaw * 0.5
+    return math.cos(half), 0, math.sin(half), 0  -- (w,x,y,z) yaw-only about Y
 end
 
 local function eulerToQuat(pitch, yaw, roll)
@@ -44,107 +51,6 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
--- Estimate "half height" of the collider in world units (best-effort)
-local function getColliderHalfHeight(col)
-    if not col then return 1.0 end
-
-    local shape = col.shapeTypeID or -1
-
-    -- Assumption (typical enum order): Box=0, Sphere=1, Capsule=2, Cylinder=3, Mesh=4
-    if shape == 0 and col.boxHalfExtents then
-        return (col.boxHalfExtents.y or 1.0)
-    elseif shape == 1 then
-        return (col.sphereRadius or 0.5)
-    elseif shape == 2 then
-        local hh = col.capsuleHalfHeight or 0.5
-        local r  = col.capsuleRadius or 0.25
-        return hh + r
-    elseif shape == 3 then
-        local hh = col.cylinderHalfHeight or 0.5
-        local r  = col.cylinderRadius or 0.25
-        return hh + r
-    end
-
-    -- Mesh/unknown fallback
-    return 1.0
-end
-
-local function getScaleY(self)
-    -- If TransformMixin exposes scale, use it. Otherwise fallback to 1.
-    local tr = self:GetComponent("Transform")
-    if tr and tr.localScale and tr.localScale.y then
-        return tr.localScale.y
-    end
-    return 1.0
-end
-
-local function getColliderFootprintRadius(col)
-    if not col then return 0.35 end
-    local shape = col.shapeTypeID or -1
-
-    -- Box footprint radius
-    if shape == 0 and col.boxHalfExtents then
-        local hx = col.boxHalfExtents.x or 0.3
-        local hz = col.boxHalfExtents.z or 0.3
-        return math.max(hx, hz)
-    end
-
-    -- Sphere/Capsule/Cylinder radius
-    if shape == 1 then return (col.sphereRadius or 0.25) end
-    if shape == 2 then return (col.capsuleRadius or 0.25) end
-    if shape == 3 then return (col.cylinderRadius or 0.25) end
-
-    return 0.35
-end
-
--- Returns clearance from feet to ground. Avoids self-hit by casting from points outside footprint.
-local function groundClearanceMultiRay(self, rayUp, rayLen)
-    local x, y, z = self:GetPosition()
-    local col = self._collider
-    if not col then return -1 end
-
-    local scaleY = getScaleY(self)
-    local halfH  = getColliderHalfHeight(col) * scaleY
-
-    local r = getColliderFootprintRadius(col) * 0.95
-    local skin = 0.03
-    local off = r + skin
-
-    local ox = x
-    local oz = z
-
-    local samples = {
-        { ox + off, oz },
-        { ox - off, oz },
-        { ox, oz + off },
-        { ox, oz - off },
-        { ox + off * 0.707, oz + off * 0.707 },
-        { ox - off * 0.707, oz + off * 0.707 },
-        { ox + off * 0.707, oz - off * 0.707 },
-        { ox - off * 0.707, oz - off * 0.707 },
-    }
-
-    local bestClearance = nil
-
-    local originY = y + (rayUp or 0.8)
-    local maxD = rayLen or 3.0
-
-    for i = 1, #samples do
-        local sx, sz = samples[i][1], samples[i][2]
-        local d = Physics.Raycast(sx, originY, sz, 0, -1, 0, maxD)
-        if d and d >= 0 then
-            local groundY = originY - d
-            local feetY = y - halfH
-            local clearance = feetY - groundY
-            if bestClearance == nil or clearance < bestClearance then
-                bestClearance = clearance
-            end
-        end
-    end
-
-    return bestClearance or -1
-end
-
 local function isDynamic(self)
     return self._rb and self._rb.motionID == 2
 end
@@ -159,18 +65,20 @@ return Component {
     fields = {
         MaxHealth = 5,
 
-        DetectionRange = 3.0,
+        DetectionRange = 4.0,
+        AttackRange          = 3.0,   -- actually allowed to shoot
+        AttackEngageRange    = 3.5,   -- enter attack state
+        AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown = 1.0,
         HurtDuration   = 2.0,
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
 
         EnablePatrol   = true,
-        PatrolSpeed    = 0.6,
-        PatrolDistance = 4.0,
-        PatrolWait     = 0.5,
-
-        ChaseSpeed     = 1.8,
+        PatrolSpeed    = 0.3,
+        PatrolDistance = 3.0,
+        PatrolWait     = 1.5,
+        ChaseSpeed     = 0.6,
 
         ClipIdle   = 0,
         ClipAttack = 1,
@@ -191,7 +99,9 @@ return Component {
         MaxFallSpeed   = -25.0,
 
         WallRayUp      = 0.8,    -- cast from chest height
-        WallSkin       = 0.10,   -- extra distance to stop before wall
+        WallSkin   = 0.18,  -- your current probe padding
+        WallOffset = 0.08,  -- NEW: how far to stop before the wall
+        MinStep    = 0.01,  -- NEW: avoids tiny jitter moves
     },
 
     Awake = function(self)
@@ -208,6 +118,7 @@ return Component {
             Death  = GroundDeathState,
             Hooked = GroundHookedState,
             Patrol = GroundPatrolState,
+            Chase  = GroundChaseState,
         }
 
         self.clips = {
@@ -219,6 +130,10 @@ return Component {
 
         self.config = {
             DetectionRange = self.DetectionRange,
+            AttackRange          = self.AttackRange,
+            AttackEngageRange    = self.AttackEngageRange,
+            AttackDisengageRange = self.AttackDisengageRange,
+            ChaseSpeed           = self.ChaseSpeed,
             AttackCooldown = self.AttackCooldown,
             HurtDuration   = self.HurtDuration,
             HitIFrame      = self.HitIFrame,
@@ -238,21 +153,41 @@ return Component {
     end,
 
     Start = function(self)
-        self._animator = self:GetComponent("AnimationComponent")
-        self._audio    = self:GetComponent("AudioComponent")
-        self._collider = self:GetComponent("ColliderComponent")
-        self._rb       = self:GetComponent("RigidBodyComponent")
+        self._animator  = self:GetComponent("AnimationComponent")
+        self._audio     = self:GetComponent("AudioComponent")
+        self._collider  = self:GetComponent("ColliderComponent")
+        self._transform = self:GetComponent("Transform")
+        self._rb        = self:GetComponent("RigidBodyComponent")
+
+        -- Create CC only if we have the right inputs
+        if self._collider and self._transform then
+            self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
+        end
+
+        if self._rb then
+            pcall(function() self._rb.motionID = 1 end)
+            -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        -- If you're using CC, do NOT run your old kinematic grounding system
+        self.UseKinematicGrounding = false
+
         self._playerTr = Engine.FindTransformByName(self.PlayerName)
 
         local x, y, z = self:GetPosition()
         self._spawnX, self._spawnY, self._spawnZ = x, y, z
 
-        local dist = self.config.PatrolDistance or self.PatrolDistance or 4.0
+        local dist = self.config.PatrolDistance or self.PatrolDistance or 3.0
         self._patrolA = { x = x - dist, y = y, z = z }
         self._patrolB = { x = x + dist, y = y, z = z }
         self._patrolTarget = self._patrolB
 
-        self._prevX, self._prevZ = x, z
+        print("[EnemyAI] collider=", tostring(self._collider),
+            "transform=", tostring(self._transform),
+            "rb=", tostring(self._rb),
+            "cc=", tostring(self._controller))
 
         self.fsm:Change("Idle", self.states.Idle)
     end,
@@ -283,131 +218,113 @@ return Component {
             self.fsm:ForceChange("Idle", self.states.Idle)
         end
 
-        -- ✅ Let FSM drive behaviour
+        -- Let FSM drive behaviour
         self.fsm:Update(dt)
 
-        -- ✅ Only do custom grounding for KINEMATIC bodies
-        -- Dynamic should be fully handled by Jolt.
-        if isKinematic(self) then
-            self:KinematicPostStep(dt)
+        -- === CharacterController position sync (like PlayerMovement) ===
+        if self._controller then
+            local pos = CharacterController.GetPosition(self._controller)
+            if pos then
+                self:SetPosition(pos.x, pos.y, pos.z)
+            end
         end
     end,
 
-    -- === NEW: fixed-step kinematic grounding/collision ===
-    KinematicPostStep = function(self, dt)
-        if not self.UseKinematicGrounding then return end
-        if not Physics or not Time then return end
+    GetRanges = function(self)
+        local attackR = (self.config and self.config.AttackRange) or self.AttackRange or 3.0
+        local diseng  = (self.config and self.config.AttackDisengageRange) or self.AttackDisengageRange or 4.0
 
-        -- ✅ Kinematic only
-        if not isKinematic(self) then return end
-
-        local fixedDt = Time.GetFixedDeltaTime and Time.GetFixedDeltaTime() or (1.0 / 60.0)
-        if fixedDt <= 0 then fixedDt = 1.0 / 60.0 end
-
-        self._acc = (self._acc or 0) + dt
-        if self._acc > 0.25 then self._acc = 0.25 end
-
-        while self._acc >= fixedDt do
-            self._acc = self._acc - fixedDt
-            self:StepGroundAndWalls(fixedDt)
-        end
+        -- safety: enforce diseng >= attack
+        if diseng < attackR then diseng = attackR + 0.25 end
+        return attackR, diseng
     end,
 
-    StepGroundAndWalls = function(self, fixedDt)
-        local x, y, z = self:GetPosition()
-
-        -- --- WALL BLOCKING (simple) ---
-        if self._prevX ~= nil and self._prevZ ~= nil then
-            local dx = x - self._prevX
-            local dz = z - self._prevZ
-            local dist2 = dx*dx + dz*dz
-            if dist2 > 1e-8 then
-                local dist = math.sqrt(dist2)
-                local dirX = dx / dist
-                local dirZ = dz / dist
-                local rayY = y + (self.WallRayUp or 0.8)
-
-                local hit = Physics.Raycast(x, rayY, z, dirX, 0, dirZ, dist + (self.WallSkin or 0.1))
-                if hit >= 0 and hit <= dist + (self.WallSkin or 0.1) then
-                    -- hit a wall: revert horizontal move
-                    x = self._prevX
-                    z = self._prevZ
-                end
-            end
+    GetPlayerDistanceSq = function(self)
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
         end
+        if not tr then return math.huge end
 
-        -- --- GROUNDING (multi-ray) ---
-        local eps     = self.GroundEps or 0.08
-        local rayLen  = self.GroundRayLen or 3.0
-        local maxSnap = self.GroundSnapMax or 0.35
-        local rayUp   = self.GroundRayUp or 0.8
+        local pp = Engine.GetTransformPosition(tr)
+        local px, pz = pp[1], pp[3]
 
-        local clearance = groundClearanceMultiRay(self, rayUp, rayLen)
-
-        print(string.format("[GROUNDDBG] state=%s y=%.3f clearance=%.3f vy=%.3f",
-        tostring(self.fsm.currentName), y, clearance, self._vy or 0))
-
-        local grounded = (clearance >= 0) and (clearance <= eps)
-
-        if grounded then
-            -- If hovering above ground, snap DOWN
-            if clearance > 0.001 then
-                local snap = clearance
-                if snap > maxSnap then snap = maxSnap end
-                y = y - snap
-            end
-            self._vy = 0
+        -- enemy position MUST be current (controller-based if available)
+        local ex, ez
+        if self.GetEnemyPosXZ then
+            ex, ez = self:GetEnemyPosXZ()
         else
-            local g = self.Gravity or -9.81
-            self._vy = (self._vy or 0) + g * fixedDt
-
-            local maxFall = self.MaxFallSpeed or -25.0
-            if self._vy < maxFall then self._vy = maxFall end
-
-            y = y + self._vy * fixedDt
+            local x, _, z = self:GetPosition()
+            ex, ez = x, z
         end
 
-        self:SetPosition(x, y, z)
-        self._prevX, self._prevZ = x, z
+        local dx, dz = px - ex, pz - ez
+        return dx*dx + dz*dz
     end,
 
-    SetMoveVelocityXZ = function(self, vx, vz)
-        local rb = self._rb
-        if not rb then return end
+    MoveCC = function(self, vx, vz)
+        if not self._controller then
+            print("[EnemyAI] MoveCC called but controller is NIL")
+            return
+        end
 
-        -- Preserve current Y velocity so gravity/jumps still work
-        local vy = 0
-        if rb.linearVel and rb.linearVel.y then vy = rb.linearVel.y end
+        local before = CharacterController.GetPosition(self._controller)
+        CharacterController.Move(self._controller, vx or 0, 0, vz or 0)
+        local after = CharacterController.GetPosition(self._controller)
 
-        rb.linearVel = rb.linearVel or { x=0, y=0, z=0 }
-        rb.linearVel.x = vx or 0
-        rb.linearVel.y = vy
-        rb.linearVel.z = vz or 0
+        if before and after then
+            print(string.format("[EnemyAI] CC move (%.3f, %.3f) pos (%.3f,%.3f)->(%.3f,%.3f)",
+                vx or 0, vz or 0,
+                before.x, before.z, after.x, after.z))
+        else
+            print("[EnemyAI] CC position nil??")
+        end
+
+        -- sync transform from CC
+        if after then
+            self:SetPosition(after.x, after.y, after.z)
+        end
     end,
 
-    -- === Movement command buffers (Lua-writable) ===
-    StopMoveXZ = function(self)
-        local rb = self._rb
-        if not rb then return end
-        -- stop horizontal push without touching Y/gravity
-        pcall(function()
-            rb.impulseApplied = { x = 0, y = 0, z = 0 }
-        end)
+    StopCC = function(self)
+        if not self._controller then return end
+        -- Sending 0s is a safe "do nothing" step.
+        CharacterController.Move(self._controller, 0, 0, 0)
+
+        -- Also kill RB velocity if anything is leaking into motion.
+        if self._rb then
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
     end,
 
-    AddImpulseXZ = function(self, ix, iz)
-        local rb = self._rb
-        if not rb then return false end
-        local ok = pcall(function()
-            rb.impulseApplied = { x = ix or 0, y = 0, z = iz or 0 }
-        end)
-        return ok
+    ApplyRotation = function(self, w, x, y, z)
+        self._lastFacingRot = { w = w, x = x, y = y, z = z }
+        self:SetRotation(w, x, y, z)
     end,
 
     FaceDirection = function(self, dx, dz)
-        local yaw = math.deg(atan2(dx, dz))
-        local q = eulerToQuat(0, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        local w, x, y, z = yawQuatFromDir(dx, dz)
+        self:ApplyRotation(w, x, y, z)
+    end,
+
+    FacePlayer = function(self)
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return end
+
+        local pp = Engine.GetTransformPosition(tr)
+        local px, pz = pp[1], pp[3]
+
+        local ex, ez = self:GetEnemyPosXZ()
+        local dx, dz = px - ex, pz - ez
+
+        local w, x, y, z = yawQuatFromDir(dx, dz)
+        self:ApplyRotation(w, x, y, z)
     end,
 
     PlayClip = function(self, clipIndex, loop)
@@ -427,28 +344,29 @@ return Component {
         local pp = Engine.GetTransformPosition(tr)
         local px, pz = pp[1], pp[3]
 
-        local ex, _, ez = self:GetPosition()
+        local ex, ez
+        if self._controller then
+            local pos = CharacterController.GetPosition(self._controller)
+            if pos then
+                ex, ez = pos.x, pos.z
+            end
+        end
+        if not ex then
+            local x, _, z = self:GetPosition()
+            ex, ez = x, z
+        end
+
         local dx, dz = (px - ex), (pz - ez)
         return (dx*dx + dz*dz) <= (range * range)
     end,
 
-    FacePlayer = function(self)
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
+    GetEnemyPosXZ = function(self)
+        if self._controller then
+            local pos = CharacterController.GetPosition(self._controller)
+            if pos then return pos.x, pos.z end
         end
-        if not tr then return end
-
-        local pp = Engine.GetTransformPosition(tr)
-        local px, pz = pp[1], pp[3]
-
-        local ex, _, ez = self:GetPosition()
-        local dx, dz = px - ex, pz - ez
-
-        local yaw = math.deg(atan2(dx, dz))
-        local q = eulerToQuat(0, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        local x, _, z = self:GetPosition()
+        return x, z
     end,
 
     SpawnKnife = function(self)

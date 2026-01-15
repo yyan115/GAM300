@@ -6,16 +6,12 @@ function IdleState:Enter(ai)
 end
 
 function IdleState:Update(ai, dt)
-    print("[FSM][Idle] Update tick")
-
-    if ai:IsPlayerInRange(ai.config.DetectionRange) then
-        print("[FSM][Idle] Player detected → Attack")
-        ai.fsm:Change("Attack", ai.states.Attack)
+    if ai:IsPlayerInRange(ai.config.AttackDisengageRange or ai.config.DetectionRange) then
+        ai.fsm:Change("Chase", ai.states.Chase)
         return
     end
 
     if ai.config.EnablePatrol then
-        print("[FSM][Idle] EnablePatrol=true → Patrol")
         ai.fsm:Change("Patrol", ai.states.Patrol)
         return
     end

@@ -1,6 +1,8 @@
 -- Resources/Scripts/Gameplay/GroundPatrolState.lua
 local PatrolState = {}
 
+local Physics = _G.Physics
+
 local function atan2(y, x)
     local ok, v = pcall(math.atan, y, x)
     if ok and type(v) == "number" then return v end
@@ -27,48 +29,32 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
-local function faceDir(ai, dirX, dirZ)
-    local yaw = math.deg(atan2(dirX, dirZ))
-    local q = eulerToQuat(0, yaw, 0)
-    ai:SetRotation(q.w, q.x, q.y, q.z)
+local function stop(ai)
+    if ai.StopCC then ai:StopCC() end
 end
 
--- === impulse command buffer (Lua-writable or not) ===
-local function tryAddImpulseXZ(ai, ix, iz)
-    local rb = ai._rb
-    if not rb then return false end
-    local ok = pcall(function()
-        rb.impulseApplied = { x = ix or 0, y = 0, z = iz or 0 }
-    end)
-    return ok
+local function switchTarget(ai)
+    ai._patrolTarget = (ai._patrolTarget == ai._patrolA) and ai._patrolB or ai._patrolA
+    ai._switchLockT = 0.45 -- cannot switch again during this window
+    ai._stuckT = 0
 end
 
-local function stopPushing(ai)
-    local rb = ai._rb
-    if not rb then return end
-    pcall(function()
-        rb.impulseApplied = { x = 0, y = 0, z = 0 }
-    end)
-    -- fallback stop (if your engine uses velocity commands)
-    if ai.SetMoveVelocityXZ then
-        ai:SetMoveVelocityXZ(0, 0)
-    end
+local function clamp01(x)
+    if x < 0 then return 0 end
+    if x > 1 then return 1 end
+    return x
 end
 
 function PatrolState:Enter(ai)
-    print("[FSM] Enter Patrol")
+    ai._patrolWaitT  = 0
+    ai._switchLockT  = 0
+    ai._enteredT     = 0
 
-    ai._patrolWaitT     = 0
-    ai._patrolSwitchCd  = 0
-    ai._minMoveTime     = 0
-    ai._enteredT        = 0
+    ai._stuckT       = 0
+    ai._lastX        = nil
+    ai._lastZ        = nil
 
-    ai._stuckT = 0
-    ai._lastDistSq = nil
-
-    -- for “did we actually move?” check
     local x, y, z = ai:GetPosition()
-    ai._lastX, ai._lastZ = x, z
 
     if not ai._patrolA or not ai._patrolB then
         local dist = ai.config.PatrolDistance or 4.0
@@ -82,9 +68,8 @@ function PatrolState:Enter(ai)
 
     ai:PlayClip(ai.clips.Walk or ai.clips.Idle, true)
 
-    -- IMPORTANT: print ok in a logger-friendly way
-    local ok = tryAddImpulseXZ(ai, 0, 0)
-    print("[Patrol] impulseApplied writable? ", tostring(ok))
+    ai._lastX, ai._lastZ = x, z
+    stop(ai)
 end
 
 function PatrolState:Update(ai, dt)
@@ -93,28 +78,40 @@ function PatrolState:Update(ai, dt)
     if dtSec <= 0 then return end
     if dtSec > 0.05 then dtSec = 0.05 end
 
-    ai._enteredT = (ai._enteredT or 0) + dtSec
+    ai._enteredT    = (ai._enteredT or 0) + dtSec
+    ai._switchLockT = math.max(0, (ai._switchLockT or 0) - dtSec)
 
-    ai._patrolSwitchCd = math.max(0, (ai._patrolSwitchCd or 0) - dtSec)
-    ai._minMoveTime    = math.max(0, (ai._minMoveTime or 0) - dtSec)
-
-    -- endpoint wait
     if (ai._patrolWaitT or 0) > 0 then
         ai._patrolWaitT = ai._patrolWaitT - dtSec
-        stopPushing(ai)
+        stop(ai)
+
+        -- Force rotation to remain stable during wait
+        local r = ai._waitLockRot
+        if r then
+            ai:SetRotation(r.w, r.x, r.y, r.z)
+        end
+
+        -- When wait ends, clear lock so patrol can rotate normally again
+        if ai._patrolWaitT <= 0 then
+            ai._waitLockRot = nil
+        end
+
         return
     end
 
-    -- attack transition
-    if ai:IsPlayerInRange(ai.config.DetectionRange) then
-        stopPushing(ai)
-        ai.fsm:Change("Attack", ai.states.Attack)
+    local attackR, diseng = ai:GetRanges()
+    local d2 = ai:GetPlayerDistanceSq()
+
+    -- if within detection window -> Chase
+    if d2 <= (diseng * diseng) and d2 > (attackR * attackR) then
+        stop(ai)
+        ai.fsm:Change("Chase", ai.states.Chase)
         return
     end
 
     local speed = ai.config.PatrolSpeed or 1.0
     if speed <= 0 then
-        stopPushing(ai)
+        stop(ai)
         return
     end
 
@@ -126,101 +123,111 @@ function PatrolState:Update(ai, dt)
     local dz = t.z - z
     local distSq = dx*dx + dz*dz
 
-    -- Arrive
+    -- arrival
     local arriveRadius = 0.25
-    local arriveSq = arriveRadius * arriveRadius
-    if distSq <= arriveSq and ai._patrolSwitchCd <= 0 and ai._minMoveTime <= 0 then
-        ai._patrolTarget = (ai._patrolTarget == ai._patrolA) and ai._patrolB or ai._patrolA
+    if distSq <= (arriveRadius * arriveRadius) and (ai._switchLockT or 0) <= 0 then
+        -- Lock current facing so waiting never changes orientation
+        ai._waitLockRot = ai._lastFacingRot  -- from EnemyAI:ApplyRotation()
+
+        switchTarget(ai)
         ai._patrolWaitT = ai.config.PatrolWait or 0.5
-        ai._patrolSwitchCd = 0.35
-        ai._minMoveTime = 0.20
-        stopPushing(ai)
+        stop(ai)
         return
     end
 
     local dist = math.sqrt(distSq)
     if dist < 1e-6 then
-        stopPushing(ai)
+        stop(ai)
         return
     end
 
     local dirX = dx / dist
     local dirZ = dz / dist
 
-    -- ============================
-    -- MOVE: IMPULSE (NO dt factor!)
-    -- ============================
-    -- Tune these:
-    -- - impulseStrength: how hard it pushes each tick
-    -- - maxImpulse: clamp to avoid crazy acceleration
-    local impulseStrength = 2.5     -- try 1.0 .. 6.0
-    local maxImpulse      = 8.0
+    local finalSpeedScale = 1.0
 
-    local ix = dirX * impulseStrength * speed
-    local iz = dirZ * impulseStrength * speed
+    if (ai._enteredT or 0) > 0.20 then
+        -- === WALL PROBE + OFFSET (2-ray) ===
+        if Physics then
+            local wallRayUp  = ai.WallRayUp or 0.8
+            local wallSkin   = ai.WallSkin  or 0.18
+            local wallOff    = ai.WallOffset or 0.08
+            local minStep    = ai.MinStep or 0.01
 
-    -- clamp
-    if ix >  maxImpulse then ix =  maxImpulse end
-    if ix < -maxImpulse then ix = -maxImpulse end
-    if iz >  maxImpulse then iz =  maxImpulse end
-    if iz < -maxImpulse then iz = -maxImpulse end
+            local intendedStep = speed * dtSec
+            local probeDist = intendedStep + wallSkin
 
-    local ok = tryAddImpulseXZ(ai, ix, iz)
-    if not ok and ai.SetMoveVelocityXZ then
-        -- fallback (if impulseApplied isn't writable)
-        ai:SetMoveVelocityXZ(dirX * speed, dirZ * speed)
+            -- Two rays: low + high
+            local rayY_low  = y + (wallRayUp * 0.35)   -- near knees
+            local rayY_high = y + wallRayUp            -- chest
+
+            local hitLow  = Physics.Raycast(x, rayY_low,  z, dirX, 0, dirZ, probeDist)
+            local hitHigh = Physics.Raycast(x, rayY_high, z, dirX, 0, dirZ, probeDist)
+
+            local lowOK  = (hitLow  and hitLow  >= 0 and hitLow  <= probeDist)
+            local highOK = (hitHigh and hitHigh >= 0 and hitHigh <= probeDist)
+
+            -- Treat as WALL only if BOTH rays hit.
+            if lowOK and highOK then
+                local hit = math.min(hitLow, hitHigh)
+                local allowedStep = hit - wallOff
+
+                if allowedStep <= minStep then
+                    stop(ai)
+                    ai._stuckT = (ai._stuckT or 0) + dtSec
+                    return
+                end
+
+                finalSpeedScale = clamp01(allowedStep / (intendedStep > 1e-6 and intendedStep or 1e-6))
+            end
+        end
     end
 
-    -- ============================
-    -- STUCK DETECTION (less eager)
-    -- ============================
-    -- Don’t allow “stuck flipping” in the first ~0.5s of entering patrol
-    local stuckArmingTime = 0.50
-    if (ai._enteredT or 0) < stuckArmingTime then
-        ai._lastDistSq = distSq
+    -- Move with reduced speed if near wall
+    if ai.MoveCC then
+        ai:MoveCC(dirX * speed * finalSpeedScale, dirZ * speed * finalSpeedScale)
+    end
+
+    if distSq > 1e-4 and ai.FaceDirection then
+        ai:FaceDirection(dirX, dirZ)
+    end
+
+    -- === STUCK DETECTION (CC-based, stable) ===
+    -- Arm after a short time so it doesn't flip on spawn jitter.
+    if (ai._enteredT or 0) < 0.50 then
         ai._lastX, ai._lastZ = x, z
+        ai._stuckT = 0
+        return
+    end
+
+    -- Only consider stuck if we're not near the endpoint.
+    if distSq <= (arriveRadius * arriveRadius * 4.0) then
+        ai._lastX, ai._lastZ = x, z
+        ai._stuckT = 0
+        return
+    end
+
+    local movedSq = 0
+    if ai._lastX ~= nil and ai._lastZ ~= nil then
+        local mx = x - ai._lastX
+        local mz = z - ai._lastZ
+        movedSq = mx*mx + mz*mz
+    end
+    ai._lastX, ai._lastZ = x, z
+
+    -- If controller isn't letting us move, flip after a while.
+    local movedEpsSq = 1e-6
+    if movedSq < movedEpsSq then
+        ai._stuckT = (ai._stuckT or 0) + dtSec
     else
-        local progressEps = 0.002      -- bigger tolerance (physics jitter)
-        local stuckTimeToFlip = 0.60   -- longer so we don’t ping-pong
-
-        local makingProgress = true
-        if ai._lastDistSq ~= nil then
-            makingProgress = distSq < (ai._lastDistSq - progressEps)
-        end
-
-        -- also check actual translation
-        local movedSq = 0
-        if ai._lastX ~= nil and ai._lastZ ~= nil then
-            movedSq = (x - ai._lastX)*(x - ai._lastX) + (z - ai._lastZ)*(z - ai._lastZ)
-        end
-
-        if (not makingProgress) or (movedSq < 1e-7) then
-            ai._stuckT = (ai._stuckT or 0) + dtSec
-        else
-            ai._stuckT = 0
-        end
-
-        ai._lastDistSq = distSq
-        ai._lastX, ai._lastZ = x, z
-
-        if (ai._stuckT or 0) >= stuckTimeToFlip and ai._patrolSwitchCd <= 0 and ai._minMoveTime <= 0 then
-            ai._stuckT = 0
-            ai._patrolTarget = (ai._patrolTarget == ai._patrolA) and ai._patrolB or ai._patrolA
-            ai._patrolWaitT = 0.15
-            ai._patrolSwitchCd = 0.35
-            ai._minMoveTime = 0.20
-            stopPushing(ai)
-            return
-        end
+        ai._stuckT = 0
     end
 
-    -- Face movement
-    if distSq > 1e-4 then
-        if ai.FaceDirection then
-            ai:FaceDirection(dirX, dirZ)
-        else
-            faceDir(ai, dirX, dirZ)
-        end
+    if (ai._stuckT or 0) >= 0.75 and (ai._switchLockT or 0) <= 0 then
+        switchTarget(ai)
+        ai._patrolWaitT = 0.12
+        stop(ai)
+        return
     end
 end
 
