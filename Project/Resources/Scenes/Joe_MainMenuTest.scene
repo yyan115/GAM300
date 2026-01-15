@@ -274,33 +274,44 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "SerializeFields": null,
+                                "Every": null,
                                 "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene",
-                                "QuitGame": null,
-                                "AwakeSafe": null,
-                                "__meta": {},
-                                "Update": null,
-                                "entityId": 0.0,
+                                "Awake": null,
+                                "StartSafe": null,
                                 "_subscriptions": {},
-                                "UpdateSafe": null,
-                                "StartGame": null,
+                                "fields": {
+                                    "__created_at": 1768415340.0,
+                                    "_subscriptions": {},
+                                    "entityId": 0.0,
+                                    "_private": {},
+                                    "__meta": {},
+                                    "__field_list": {
+                                        "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
+                                    },
+                                    "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
+                                },
+                                "GetComponent": null,
+                                "entityId": 0.0,
+                                "DisableSafe": null,
+                                "AwakeSafe": null,
+                                "_call_lifecycle": null,
+                                "Unsubscribe": null,
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "_private": {},
+                                "OnDisable": null,
                                 "__field_list": {
                                     "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
                                 },
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "OnDisable": null,
-                                "Awake": null,
-                                "GetComponent": null,
-                                "_private": {},
-                                "Subscribe": null,
-                                "DeserializeFields": null,
-                                "__created_at": 1768415340.0,
-                                "StartSafe": null,
+                                "UpdateSafe": null,
+                                "Update": null,
                                 "Destroy": null,
                                 "After": null,
-                                "Unsubscribe": null,
-                                "DisableSafe": null
+                                "Subscribe": null,
+                                "__created_at": 1768415340.0,
+                                "__meta": {},
+                                "QuitGame": null,
+                                "StartGame": null
                             }
                         }
                     ]
@@ -13426,7 +13437,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1065.4
+                                    "data": 1299.41
                                 },
                                 {
                                     "type": "float",
@@ -13497,7 +13508,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1065.4
+                                    "data": 1299.41
                                 },
                                 {
                                     "type": "float",
@@ -13976,6 +13987,19 @@
                             "data": true
                         }
                     ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": []
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
                 }
             }
         },
@@ -14240,6 +14264,19 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": []
+                        },
                         {
                             "type": "bool",
                             "data": true

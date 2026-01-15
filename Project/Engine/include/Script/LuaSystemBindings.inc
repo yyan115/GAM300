@@ -236,6 +236,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
+    FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
 END_SYSTEM()
 
 

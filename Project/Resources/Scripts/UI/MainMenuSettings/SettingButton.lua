@@ -12,7 +12,8 @@ return Component {
         local targetButtons = {
             "PlayGame", 
             "Credits", 
-            "ExitGame"
+            "ExitGame",
+            "Settings"
         }
 
         for index, value in ipairs(targetButtons) do

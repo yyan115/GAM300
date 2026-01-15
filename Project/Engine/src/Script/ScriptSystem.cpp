@@ -139,6 +139,21 @@ static Entity Lua_FindEntityByName(const std::string& name)
     return -1; // Not found
 }
 
+static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
+{
+    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
+    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+    
+    int gameResWidth, gameResHeight;
+    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
+    
+    // Map mouse coordinates from viewport space to game resolution space
+    float gameX = (mouseX / viewportWidth) * static_cast<float>(gameResWidth);
+    float gameY = static_cast<float>(gameResHeight) - (mouseY / viewportHeight) * static_cast<float>(gameResHeight);
+    
+    return std::make_tuple(gameX, gameY);
+}
+
 
 
 
