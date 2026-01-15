@@ -26,9 +26,6 @@ return Component {
 
         self._maxSliderY = self._musicBar.localPosition.y + offsetY
         self._minSliderY = self._musicBar.localPosition.y - offsetY 
-
-        local masterVolumeEntity = Engine.GetEntityByName("BGM")
-        Audio.SetMasterVolume(0.5)
     end,
 
     Update = function(self, dt)
@@ -36,6 +33,7 @@ return Component {
             print("Failed to get Component")
         end
 
+        --GET INPUT OF MOUSE IN GAME COORDINATE
         if Input.GetMouseButton(Input.MouseButton.Left) then
             local mouseX = Input.GetMouseX()
             local mouseY = Input.GetMouseY()
@@ -48,8 +46,27 @@ return Component {
                 return
             end
 
+            --CLAMP AND UPDATE SLIDER TRANSFORM BASED ON CLICK/DRAG
             self._sliderTransform.localPosition.x = math.max(self._minSliderX, math.min(gameX, self._maxSliderX))
             self._sliderTransform.isDirty = true        
+
+
+            --TODO: ENSURE IT PERSIST THROUGHOUT THE GAME
+
+
+            --UPDATE MUSIC BASED ON INPUT 
+            local newVolume = (self._sliderTransform.localPosition.x - self._minSliderX) / (self._maxSliderX - self._minSliderX)
+
+            --APPLY SNAPPING
+            if newVolume < 0.01 then
+                newVolume = 0
+            end
+            if newVolume > 0.99 then
+                newVolume = 1.0
+            end
+
+            Audio.SetMasterVolume(newVolume)    --Persist through states
+
         end
     end,
 }
