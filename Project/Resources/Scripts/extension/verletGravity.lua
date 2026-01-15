@@ -214,15 +214,23 @@ function M.VerletStep(component, dt)
         end
 
         -- Re-apply anchors after each constraint iteration
-        rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
-        rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
-
-        if isFullyExtended and component.endPosition then
-            rt.p[lastIdx][1] = component.endPosition[1]
-            rt.p[lastIdx][2] = component.endPosition[2]
-            rt.p[lastIdx][3] = component.endPosition[3]
-            rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
-                rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
+        if component.IsElastic then
+            -- Elastic: start link is always the anchor
+            rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
+            rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
+        else
+            -- Inelastic: when fully extended, END link becomes the dominant anchor
+            if isFullyExtended and component.endPosition then
+                rt.p[lastIdx][1] = component.endPosition[1]
+                rt.p[lastIdx][2] = component.endPosition[2]
+                rt.p[lastIdx][3] = component.endPosition[3]
+                rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
+                    rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
+            else
+                -- still extending: start stays anchored
+                rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
+                rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
+            end
         end
     end
 
@@ -230,22 +238,40 @@ function M.VerletStep(component, dt)
     if not component.IsElastic then
         local maxd = tonumber(component.LinkMaxDistance) or segmentLen
         if maxd > 0 then
-            -- forward pass: clamp rt.p positions so each pair <= maxd
-            for i = 2, #rt.p do
-                local a = rt.p[i-1]
-                local b = rt.p[i]
-                local ax, ay, az = a[1], a[2], a[3]
-                local bx, by, bz = b[1], b[2], b[3]
-                local dx, dy, dz = bx - ax, by - ay, bz - az
-                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-                if dist > maxd and dist > M.EPS then
-                    local inv = 1.0 / dist
-                    local dirx, diry, dirz = dx * inv, dy * inv, dz * inv
-                    b[1], b[2], b[3] = ax + dirx * maxd, ay + diry * maxd, az + dirz * maxd
+            if isFullyExtended and component.endPosition then
+                -- backward pass: END link is the anchor
+                for i = #rt.p - 1, 1, -1 do
+                    local a = rt.p[i+1]
+                    local b = rt.p[i]
+                    local ax, ay, az = a[1], a[2], a[3]
+                    local bx, by, bz = b[1], b[2], b[3]
+                    local dx, dy, dz = bx - ax, by - ay, bz - az
+                    local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                    if dist > maxd and dist > M.EPS then
+                        local inv = 1.0 / dist
+                        local dirx, diry, dirz = dx * inv, dy * inv, dz * inv
+                        b[1], b[2], b[3] = ax + dirx * maxd, ay + diry * maxd, az + dirz * maxd
+                    end
+                end
+            else
+                -- forward pass: START link is the anchor
+                for i = 2, #rt.p do
+                    local a = rt.p[i-1]
+                    local b = rt.p[i]
+                    local ax, ay, az = a[1], a[2], a[3]
+                    local bx, by, bz = b[1], b[2], b[3]
+                    local dx, dy, dz = bx - ax, by - ay, bz - az
+                    local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                    if dist > maxd and dist > M.EPS then
+                        local inv = 1.0 / dist
+                        local dirx, diry, dirz = dx * inv, dy * inv, dz * inv
+                        b[1], b[2], b[3] = ax + dirx * maxd, ay + diry * maxd, az + dirz * maxd
+                    end
                 end
             end
         end
     end
+
 
     -- Write back to transforms using write_world_pos helper
     for i = 1, #rt.p do
