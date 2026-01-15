@@ -510,162 +510,261 @@ return Component {
         self:_sync_to_aliases()
     end,
 
+    -- Replace UpdateChainRotations with this parallel-transport-based version
     UpdateLinkRotations = function(self)
         local rt = self._runtime or {}
-        if not rt.childTransforms or #rt.childTransforms == 0 then return end
+        local proxies = rt.childProxies or {}
+        local transforms = rt.childTransforms or {}
+        local n = #transforms
+        if n <= 0 then return end
 
-        local sx, sy, sz = self:_unpack_pos(self:GetPosition())
-        local ex, ey, ez = self.endPosition[1], self.endPosition[2], self.endPosition[3]
-        
-        -- Calculate direction from start to end
-        local dx, dy, dz = ex - sx, ey - sy, ez - sz
-        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-        
-        if dist < 0.0001 then
-            -- Chain is collapsed, use default forward
-            dx, dy, dz = 0, 0, 1
-            dist = 1
+        local EPS = 1e-8
+
+        -- math helpers
+        local function len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
+        local function normalize(x,y,z)
+            local L = len(x,y,z)
+            if L < EPS then return 0.0, 0.0, 0.0 end
+            return x / L, y / L, z / L
         end
-        
-        -- Normalize direction
-        local dirX, dirY, dirZ = dx/dist, dy/dist, dz/dist
-        
-        -- Default up vector (uses Y-up as your code did)
-        local upX, upY, upZ = 0, 1, 0
-        
-        -- If direction is too close to up, use alternate up
-        if math.abs(dirX*upX + dirY*upY + dirZ*upZ) > 0.99 then
-            upX, upY, upZ = 1, 0, 0
+        local function dot(ax,ay,az, bx,by,bz) return (ax or 0)*(bx or 0) + (ay or 0)*(by or 0) + (az or 0)*(bz or 0) end
+        local function cross(ax,ay,az, bx,by,bz) return (ay or 0)*(bz or 0) - (az or 0)*(by or 0), (az or 0)*(bx or 0) - (ax or 0)*(bz or 0), (ax or 0)*(by or 0) - (ay or 0)*(bx or 0) end
+
+        -- quat helpers
+        local function quat_from_axis_angle(ax,ay,az, angle)
+            local nx,ny,nz = normalize(ax,ay,az)
+            if nx == 0 and ny == 0 and nz == 0 then return 1.0,0.0,0.0,0.0 end
+            local h = angle * 0.5
+            local s = math.sin(h)
+            return math.cos(h), nx * s, ny * s, nz * s
         end
-        
-        -- Calculate right vector (cross product: up × dir)
-        local rightX = upY * dirZ - upZ * dirY
-        local rightY = upZ * dirX - upX * dirZ
-        local rightZ = upX * dirY - upY * dirX
-        local rightLen = math.sqrt(rightX*rightX + rightY*rightY + rightZ*rightZ)
-        
-        if rightLen < 1e-6 then
-            -- fallback: make right perpendicular to dir using an arbitrary axis
-            if math.abs(dirX) < 0.9 then
-                rightX, rightY, rightZ = 1, 0, 0
+        local function rotate_vec_by_quat(qw,qx,qy,qz, vx,vy,vz)
+            -- optimized quaternion-vector multiplication: v' = q * (0,v) * q^-1
+            local tx = 2 * ( qy * vz - qz * vy )
+            local ty = 2 * ( qz * vx - qx * vz )
+            local tz = 2 * ( qx * vy - qy * vx )
+            local vpx = vx + qw * tx + ( qy * tz - qz * ty )
+            local vpy = vy + qw * ty + ( qz * tx - qx * tz )
+            local vpz = vz + qw * tz + ( qx * ty - qy * tx )
+            return vpx, vpy, vpz
+        end
+
+        -- matrix->quat converter (expects columns: col0=RIGHT, col1=UP, col2=FORWARD)
+        local function mat3_to_quat(m00,m10,m20, m01,m11,m21, m02,m12,m22)
+            local tr = m00 + m11 + m22
+            local qw,qx,qy,qz
+            if tr > 0 then
+                local S = math.sqrt(tr + 1.0) * 2.0
+                qw = 0.25 * S
+                qx = (m21 - m12) / S
+                qy = (m02 - m20) / S
+                qz = (m10 - m01) / S
             else
-                rightX, rightY, rightZ = 0, 1, 0
+                if (m00 > m11) and (m00 > m22) then
+                    local S = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
+                    qw = (m21 - m12) / S
+                    qx = 0.25 * S
+                    qy = (m01 + m10) / S
+                    qz = (m02 + m20) / S
+                elseif m11 > m22 then
+                    local S = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
+                    qw = (m02 - m20) / S
+                    qx = (m01 + m10) / S
+                    qy = 0.25 * S
+                    qz = (m12 + m21) / S
+                else
+                    local S = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
+                    qw = (m10 - m01) / S
+                    qx = (m02 + m20) / S
+                    qy = (m12 + m21) / S
+                    qz = 0.25 * S
+                end
             end
-            -- orthogonalize
-            local proj = (rightX*dirX + rightY*dirY + rightZ*dirZ)
-            rightX = rightX - proj * dirX
-            rightY = rightY - proj * dirY
-            rightZ = rightZ - proj * dirZ
-            rightLen = math.sqrt(rightX*rightX + rightY*rightY + rightZ*rightZ)
+            return qw or 1, qx or 0, qy or 0, qz or 0
         end
 
-        rightX, rightY, rightZ = rightX/rightLen, rightY/rightLen, rightZ/rightLen
-        
-        -- Recalculate up vector (cross product: dir × right)
-        upX = dirY * rightZ - dirZ * rightY
-        upY = dirZ * rightX - dirX * rightZ
-        upZ = dirX * rightY - dirY * rightX
-        local upLen = math.sqrt(upX*upX + upY*upY + upZ*upZ)
-        if upLen > 1e-6 then
-            upX, upY, upZ = upX / upLen, upY / upLen, upZ / upLen
+        -- robust position reader: prefer runtime (Verlet) positions, then component-level reader if provided, then transform/proxy
+        local function read_position(i)
+            -- prefer runtime positions if present (Verlet stores world positions in rt.p)
+            if type(rt.p) == "table" and rt.p[i] and type(rt.p[i]) == "table" then
+                return rt.p[i][1] or 0.0, rt.p[i][2] or 0.0, rt.p[i][3] or 0.0
+            end
+
+            -- try component-provided world reader
+            local tr = transforms[i]
+            if self and type(self._read_world_pos) == "function" and tr then
+                local ok, a,b,c = pcall(function() return self:_read_world_pos(tr) end)
+                if ok then
+                    if type(a) == "table" then return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0 end
+                    if type(a) == "number" and type(b) == "number" and type(c) == "number" then return a,b,c end
+                end
+            end
+
+            -- try proxy:GetPosition
+            local proxy = proxies[i]
+            if proxy and type(proxy.GetPosition) == "function" then
+                local ok, a,b,c = pcall(function() return proxy:GetPosition() end)
+                if ok then
+                    if type(a) == "table" then return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0 end
+                    if type(a) == "number" and type(b) == "number" and type(c) == "number" then return a,b,c end
+                end
+            end
+
+            -- try transform:GetPosition
+            if tr then
+                local ok, a,b,c = pcall(function() return tr:GetPosition() end)
+                if ok then
+                    if type(a) == "table" then return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0 end
+                    if type(a) == "number" and type(b) == "number" and type(c) == "number" then return a,b,c end
+                end
+                -- fallback localPosition
+                if type(tr.localPosition) == "table" or type(tr.localPosition) == "userdata" then
+                    local pos = tr.localPosition
+                    return pos.x or pos[1] or 0, pos.y or pos[2] or 0, pos.z or pos[3] or 0
+                end
+            end
+
+            return 0.0, 0.0, 0.0
         end
 
-        -- For each link, alternate rotation by 90 degrees around the chain axis
-        for i, tr in ipairs(rt.childTransforms) do
-            local finalRightX, finalRightY, finalRightZ = rightX, rightY, rightZ
-            local finalUpX, finalUpY, finalUpZ = upX, upY, upZ
-            
-            -- Apply ±90° twist around forward for alternating links
+        -- get start world: prefer component-specific getter (Verlet offers _get_start_world)
+        local function get_start_world()
+            if self and type(self._get_start_world) == "function" then
+                local ok, a,b,c = pcall(function() return self:_get_start_world() end)
+                if ok and type(a) == "number" and type(b) == "number" and type(c) == "number" then
+                    return a,b,c
+                end
+            end
+            -- fallback to component/GetPosition + unpack
+            if type(self.GetPosition) == "function" then
+                local ok, a,b,c = pcall(function() return self:GetPosition() end)
+                if ok then
+                    if type(a) == "table" then return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0 end
+                    if type(a) == "number" and type(b) == "number" and type(c) == "number" then return a,b,c end
+                end
+            end
+            -- final fallback to 0,0,0
+            return 0,0,0
+        end
+
+        -- end position: prefer component.endPosition if set, else treat equal to start
+        local function get_end_world()
+            if type(self.endPosition) == "table" and #self.endPosition >= 3 then
+                return self.endPosition[1] or 0, self.endPosition[2] or 0, self.endPosition[3] or 0
+            end
+            return get_start_world()
+        end
+
+        -- Build authoritative positions array (size n)
+        local positions = {}
+        for i = 1, n do
+            local x,y,z = read_position(i)
+            positions[i] = { x, y, z }
+        end
+
+        -- Ensure endpoints exist if runtime doesn't provide them
+        if not (type(rt.p) == "table" and #rt.p >= n) then
+            local sx,sy,sz = get_start_world()
+            local ex,ey,ez = get_end_world()
+            positions[1] = positions[1] or { sx, sy, sz }
+            positions[n] = positions[n] or { ex, ey, ez }
+            positions[1][1], positions[1][2], positions[1][3] = sx, sy, sz
+            positions[n][1], positions[n][2], positions[n][3] = ex, ey, ez
+        end
+
+        -- compute per-link forward vectors (local direction) — same idea as your old code
+        local forward = {}
+        for i = 1, n do
+            local fx,fy,fz = 0,0,0
+            if n == 1 then
+                local sx, sy, sz = get_start_world()
+                local ex, ey, ez = get_end_world()
+                fx,fy,fz = ex - sx, ey - sy, ez - sz
+            else
+                if i == 1 then
+                    local nx,ny,nz = positions[i+1][1], positions[i+1][2], positions[i+1][3]
+                    fx,fy,fz = nx - positions[i][1], ny - positions[i][2], nz - positions[i][3]
+                elseif i == n then
+                    local px,py,pz = positions[i-1][1], positions[i-1][2], positions[i-1][3]
+                    fx,fy,fz = positions[i][1] - px, positions[i][2] - py, positions[i][3] - pz
+                else
+                    local px,py,pz = positions[i-1][1], positions[i-1][2], positions[i-1][3]
+                    local nx,ny,nz = positions[i+1][1], positions[i+1][2], positions[i+1][3]
+                    fx,fy,fz = (nx - px) * 0.5, (ny - py) * 0.5, (nz - pz) * 0.5
+                end
+            end
+            local nfx,nfy,nfz = normalize(fx,fy,fz)
+            if nfx == 0 and nfy == 0 and nfz == 0 then
+                -- fallback to global start->end if degenerate
+                local sx,sy,sz = get_start_world()
+                local ex,ey,ez = get_end_world()
+                nfx,nfy,nfz = normalize(ex - sx, ey - sy, ez - sz)
+                if nfx == 0 and nfy == 0 and nfz == 0 then nfx,nfy,nfz = 1.0,0.0,0.0 end
+            end
+            forward[i] = { nfx, nfy, nfz }
+        end
+
+        -- WORLD up (use Y-up to match your working code)
+        local WORLD_UP_X, WORLD_UP_Y, WORLD_UP_Z = 0.0, 1.0, 0.0
+
+        -- For each link build world-space frame, apply alternating twist, convert -> quaternion (w,x,y,z), write
+        for i = 1, n do
+            local fx,fy,fz = forward[i][1], forward[i][2], forward[i][3]
+
+            -- pick reference up (avoid near-parallel)
+            local refUpX, refUpY, refUpZ = WORLD_UP_X, WORLD_UP_Y, WORLD_UP_Z
+            if math.abs(dot(fx,fy,fz, refUpX,refUpY,refUpZ)) > 0.99 then
+                refUpX, refUpY, refUpZ = 1.0, 0.0, 0.0
+            end
+
+            -- right = up × forward  (matches your old working code)
+            local rx,ry,rz = cross(refUpX, refUpY, refUpZ, fx, fy, fz)
+            rx,ry,rz = normalize(rx,ry,rz)
+
+            -- guard degenerate right
+            if rx == 0 and ry == 0 and rz == 0 then
+                if math.abs(fx) < 0.9 then rx,ry,rz = 1,0,0 else rx,ry,rz = 0,1,0 end
+                local proj = dot(rx,ry,rz, fx,fy,fz)
+                rx,ry,rz = rx - proj * fx, ry - proj * fy, rz - proj * fz
+                rx,ry,rz = normalize(rx,ry,rz)
+            end
+
+            -- up = forward × right
+            local ux,uy,uz = cross(fx,fy,fz, rx,ry,rz)
+            ux,uy,uz = normalize(ux,uy,uz)
+
+            -- alternate ±90° twist about forward in world-space
             if (i % 2) == 0 then
-                -- Rotate right and up 90° around forward (Rodrigues)
-                local angle = math.pi / 2
-                local c = math.cos(angle)
-                local s = math.sin(angle)
-
-                -- rotate right vector
-                local dot_right = dirX * rightX + dirY * rightY + dirZ * rightZ
-                local crossX = dirY * rightZ - dirZ * rightY
-                local crossY = dirZ * rightX - dirX * rightZ
-                local crossZ = dirX * rightY - dirY * rightX
-                finalRightX = rightX * c + crossX * s + dirX * dot_right * (1 - c)
-                finalRightY = rightY * c + crossY * s + dirY * dot_right * (1 - c)
-                finalRightZ = rightZ * c + crossZ * s + dirZ * dot_right * (1 - c)
-                
-                -- rotate up vector
-                local dot_up = dirX * upX + dirY * upY + dirZ * upZ
-                local crossUpX = dirY * upZ - dirZ * upY
-                local crossUpY = dirZ * upX - dirX * upZ
-                local crossUpZ = dirX * upY - dirY * upX
-                finalUpX = upX * c + crossUpX * s + dirX * dot_up * (1 - c)
-                finalUpY = upY * c + crossUpY * s + dirY * dot_up * (1 - c)
-                finalUpZ = upZ * c + crossUpZ * s + dirZ * dot_up * (1 - c)
-
-                -- re-normalize small numerical drift
-                local rl = math.sqrt(finalRightX*finalRightX + finalRightY*finalRightY + finalRightZ*finalRightZ)
-                if rl > 1e-6 then finalRightX, finalRightY, finalRightZ = finalRightX/rl, finalRightY/rl, finalRightZ/rl end
-                local ul = math.sqrt(finalUpX*finalUpX + finalUpY*finalUpY + finalUpZ*finalUpZ)
-                if ul > 1e-6 then finalUpX, finalUpY, finalUpZ = finalUpX/ul, finalUpY/ul, finalUpZ/ul end
-            end
-            
-            -- Build rotation matrix (row-major rows are: [right.x, up.x, forward.x], [right.y, up.y, forward.y], [right.z, up.z, forward.z])
-            local m00, m01, m02 = finalRightX, finalUpX, dirX
-            local m10, m11, m12 = finalRightY, finalUpY, dirY
-            local m20, m21, m22 = finalRightZ, finalUpZ, dirZ
-            
-            -- Convert matrix to quaternion (row-major)
-            local trace = m00 + m11 + m22
-            local qx, qy, qz, qw
-            
-            if trace > 0 then
-                local s = math.sqrt(trace + 1.0) * 2
-                qw = 0.25 * s
-                qx = (m21 - m12) / s
-                qy = (m02 - m20) / s
-                qz = (m10 - m01) / s
-            elseif m00 > m11 and m00 > m22 then
-                local s = math.sqrt(1.0 + m00 - m11 - m22) * 2
-                qw = (m21 - m12) / s
-                qx = 0.25 * s
-                qy = (m01 + m10) / s
-                qz = (m02 + m20) / s
-            elseif m11 > m22 then
-                local s = math.sqrt(1.0 + m11 - m00 - m22) * 2
-                qw = (m02 - m20) / s
-                qx = (m01 + m10) / s
-                qy = 0.25 * s
-                qz = (m12 + m21) / s
-            else
-                local s = math.sqrt(1.0 + m22 - m00 - m11) * 2
-                qw = (m10 - m01) / s
-                qx = (m02 + m20) / s
-                qy = (m12 + m21) / s
-                qz = 0.25 * s
+                local angle = math.pi * 0.5
+                local qw,qx,qy,qz = quat_from_axis_angle(fx,fy,fz, angle)
+                rx,ry,rz = rotate_vec_by_quat(qw,qx,qy,qz, rx,ry,rz)
+                ux,uy,uz = rotate_vec_by_quat(qw,qx,qy,qz, ux,uy,uz)
+                rx,ry,rz = normalize(rx,ry,rz)
+                ux,uy,uz = normalize(ux,uy,uz)
             end
 
-            -- Normalize quaternion to avoid scaling / flips
-            local qlen = math.sqrt((qw or 0)*(qw or 0) + (qx or 0)*(qx or 0) + (qy or 0)*(qy or 0) + (qz or 0)*(qz or 0))
-            if qlen > 1e-9 then
-                qw, qx, qy, qz = qw / qlen, qx / qlen, qy / qlen, qz / qlen
-            else
-                qw, qx, qy, qz = 1, 0, 0, 0
-            end
+            -- Build matrix columns: RIGHT, UP, FORWARD (mat3_to_quat expects this)
+            local m00,m10,m20 = rx, ry, rz   -- column 0 = RIGHT
+            local m01,m11,m21 = ux, uy, uz   -- column 1 = UP
+            local m02,m12,m22 = fx, fy, fz   -- column 2 = FORWARD
 
-            -- Write rotation: note _set_transform_rotation expects (transform, w, x, y, z)
-            -- (If your helper expects a different order, swap accordingly.)
+            -- Convert -> quaternion (w,x,y,z)
+            local qw,qx,qy,qz = mat3_to_quat(m00,m10,m20, m01,m11,m21, m02,m12,m22)
+
+            -- normalize quaternion
+            local ql = math.sqrt((qw or 0)*(qw or 0) + (qx or 0)*(qx or 0) + (qy or 0)*(qy or 0) + (qz or 0)*(qz or 0))
+            if ql > 1e-9 then qw,qx,qy,qz = qw/ql, qx/ql, qy/ql, qz/ql else qw,qx,qy,qz = 1,0,0,0 end
+
+            -- write rotation in (w,x,y,z) order
+            local tr = transforms[i]
             if type(self._set_transform_rotation) == "function" then
                 pcall(function() self:_set_transform_rotation(tr, qw, qx, qy, qz) end)
             else
-                -- fallback: try writing localRotation directly if helper missing
                 pcall(function()
                     if tr and tr.localRotation then
                         local rot = tr.localRotation
-                        if type(rot) == "table" then
-                            rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
-                            tr.isDirty = true
-                        elseif type(rot) == "userdata" then
-                            rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
-                            tr.isDirty = true
-                        end
+                        if type(rot) == "table" then rot.w, rot.x, rot.y, rot.z = qw,qx,qy,qz; tr.isDirty = true
+                        elseif type(rot) == "userdata" then rot.w, rot.x, rot.y, rot.z = qw,qx,qy,qz; tr.isDirty = true end
                     end
                 end)
             end
