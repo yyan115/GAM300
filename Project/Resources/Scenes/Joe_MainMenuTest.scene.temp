@@ -13993,7 +13993,33 @@
                     "data": [
                         {
                             "type": "std::vector<ButtonBinding>",
-                            "data": []
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0049a203976048a4-0003e94a5e000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
@@ -14275,7 +14301,33 @@
                     "data": [
                         {
                             "type": "std::vector<ButtonBinding>",
-                            "data": []
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0049a203b9f178d6-0003e94a5e000003"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
