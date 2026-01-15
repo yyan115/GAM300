@@ -986,3 +986,43 @@ bool ScriptSystem::CallStandaloneScriptFunction(const std::string& scriptPath, c
 
     return success;
 }
+
+// Create a fresh ephemeral instance from file, bind it to targetEntity, call the function, then destroy it.
+// This is useful for UI callbacks that need entity context (instance:GetComponent).
+bool ScriptSystem::CallStandaloneScriptFunctionWithEntity(const std::string& scriptPath, const std::string& scriptGuidStr, const std::string& funcName, Entity targetEntity)
+{
+    if (scriptPath.empty() || funcName.empty()) {
+        return false;
+    }
+
+    if (!Scripting::GetLuaState()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot call standalone function with entity: Lua runtime not available");
+        return false;
+    }
+
+    int instRef = Scripting::CreateInstanceFromFile(scriptPath);
+    if (instRef == LUA_NOREF) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot create ephemeral instance for ", scriptPath.c_str());
+        return false;
+    }
+
+    // Bind instance to target entity so that instance:GetComponent works
+    if (!Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(targetEntity))) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Failed to bind ephemeral instance to entity ", targetEntity);
+        // proceed anyway
+    }
+
+    bool success = Scripting::CallInstanceFunction(instRef, funcName);
+
+    if (!success) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Ephemeral call failed: ", funcName.c_str(), " on script ", scriptPath.c_str());
+    }
+
+    Scripting::DestroyInstance(instRef);
+
+    return success;
+}

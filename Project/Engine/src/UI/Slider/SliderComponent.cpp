@@ -1,0 +1,26 @@
+#include <pch.h>
+#include "UI/Slider/SliderComponent.hpp"
+
+#pragma region Reflection
+
+REFL_REGISTER_START(SliderBinding)
+REFL_REGISTER_PROPERTY(targetEntityGuidStr)
+REFL_REGISTER_PROPERTY(scriptPath)
+REFL_REGISTER_PROPERTY(scriptGuidStr)
+REFL_REGISTER_PROPERTY(functionName)
+REFL_REGISTER_PROPERTY(callWithSelf)
+REFL_REGISTER_END
+
+REFL_REGISTER_START(SliderComponent)
+REFL_REGISTER_PROPERTY(onValueChanged)
+REFL_REGISTER_PROPERTY(minValue)
+REFL_REGISTER_PROPERTY(maxValue)
+REFL_REGISTER_PROPERTY(value)
+REFL_REGISTER_PROPERTY(wholeNumbers)
+REFL_REGISTER_PROPERTY(interactable)
+REFL_REGISTER_PROPERTY(horizontal)
+REFL_REGISTER_PROPERTY(trackEntityGuid)
+REFL_REGISTER_PROPERTY(handleEntityGuid)
+REFL_REGISTER_END
+
+#pragma endregion

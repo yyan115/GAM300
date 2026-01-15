@@ -64,3 +64,4 @@
 // UI Components
 // ============================================================================
 #include "UI/Button/ButtonComponent.hpp"
+#include "UI/Slider/SliderComponent.hpp"

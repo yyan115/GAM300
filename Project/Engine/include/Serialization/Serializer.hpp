@@ -31,6 +31,7 @@
 #include "Engine.h"
 #include <Game AI/BrainComponent.hpp>
 #include <UI/Button/ButtonComponent.hpp>
+#include <UI/Slider/SliderComponent.hpp>
 
 class Serializer {
 public:
@@ -64,6 +65,7 @@ public:
 	static void DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON);
 	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
+	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
 
 private:
 	Serializer() = delete;

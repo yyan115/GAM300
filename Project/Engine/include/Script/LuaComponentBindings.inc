@@ -362,6 +362,19 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
 END_COMPONENT()
 
 // ============================================================================
+// UI Components
+// ============================================================================
+
+BEGIN_COMPONENT(SliderComponent, "SliderComponent")
+    PROPERTY("minValue", &SliderComponent::minValue)
+    PROPERTY("maxValue", &SliderComponent::maxValue)
+    PROPERTY("value", &SliderComponent::value)
+    PROPERTY("wholeNumbers", &SliderComponent::wholeNumbers)
+    PROPERTY("interactable", &SliderComponent::interactable)
+    PROPERTY("horizontal", &SliderComponent::horizontal)
+END_COMPONENT()
+
+// ============================================================================
 // Tag and Layer Components
 // ============================================================================
 

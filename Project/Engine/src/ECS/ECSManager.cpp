@@ -34,6 +34,8 @@
 #include <ECS/LayerComponent.hpp>
 #include <ECS/SiblingIndexComponent.hpp>
 #include "UI/Button/ButtonComponent.hpp"
+#include "UI/Slider/SliderComponent.hpp"
+#include "UI/Slider/SliderSystem.hpp"
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 
 void ECSManager::Initialize() {
@@ -72,6 +74,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<BrainComponent>();
 	RegisterComponent<SpriteAnimationComponent>();
 	RegisterComponent<ButtonComponent>();
+	RegisterComponent<SliderComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -196,6 +199,13 @@ void ECSManager::Initialize() {
 		SetSystemSignature<ButtonSystem>(signature);
 	}
 
+	sliderSystem = RegisterSystem<SliderSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<SliderComponent>());
+		SetSystemSignature<SliderSystem>(signature);
+	}
+
 }
 
 Entity ECSManager::CreateEntity() {
@@ -232,14 +242,30 @@ Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 }
 
 void ECSManager::DestroyEntity(Entity entity) {
+	// Recursively destroy children first to avoid dangling ParentComponent references
+	if (HasComponent<ChildrenComponent>(entity)) {
+		auto childrenCopy = GetComponent<ChildrenComponent>(entity).children;
+		for (const auto& childGuid : childrenCopy) {
+			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGuid);
+			if (child != static_cast<Entity>(-1) && child != entity) {
+				DestroyEntity(child);
+			}
+		}
+	}
+
 	// Remove the destroyed entity from its parent's children component, if it was a child.
 	if (HasComponent<ParentComponent>(entity)) {
 		GUID_128 entityGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(entity);
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(GetComponent<ParentComponent>(entity).parent);
-		auto& childrenComp = GetComponent<ChildrenComponent>(parent);
-		childrenComp.children.erase(std::find(childrenComp.children.begin(), childrenComp.children.end(), entityGUID));
-		if (childrenComp.children.empty()) {
-			RemoveComponent<ChildrenComponent>(parent);
+		if (parent != static_cast<Entity>(-1) && HasComponent<ChildrenComponent>(parent)) {
+			auto& childrenComp = GetComponent<ChildrenComponent>(parent);
+			auto it = std::find(childrenComp.children.begin(), childrenComp.children.end(), entityGUID);
+			if (it != childrenComp.children.end()) {
+				childrenComp.children.erase(it);
+			}
+			if (childrenComp.children.empty()) {
+				RemoveComponent<ChildrenComponent>(parent);
+			}
 		}
 	}
 
