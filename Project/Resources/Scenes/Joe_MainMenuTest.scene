@@ -1194,11 +1194,11 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Scripts/UI/SettingButton.lua"
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/SettingButton.lua"
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00101f2435a81baa-0003e69404000001"
+                                            "data": "0054fb434c423092-0003e802a6000003"
                                         },
                                         {
                                             "type": "std::string",
@@ -10930,7 +10930,7 @@
             "guid": "00032e877a997c98-00036d2b58000001",
             "components": {
                 "NameComponent": {
-                    "name": "Settings"
+                    "name": "SettingsUI"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -11636,6 +11636,45 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0054fb434423d354-0003e8028a000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickCloseButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
                         {
                             "type": "bool",
                             "data": true
@@ -12561,7 +12600,7 @@
             "guid": "00032e870a1853b1-00036d3022000043",
             "components": {
                 "NameComponent": {
-                    "name": "Bar"
+                    "name": "MasterBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -12830,7 +12869,7 @@
             "guid": "00032e875add228e-00036d30d8000045",
             "components": {
                 "NameComponent": {
-                    "name": "Bar (1)"
+                    "name": "BGMBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -13099,7 +13138,7 @@
             "guid": "00032e870d444bd5-00036d30d8000047",
             "components": {
                 "NameComponent": {
-                    "name": "Bar (1) (1)"
+                    "name": "SFXBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -13368,7 +13407,7 @@
             "guid": "00032e87635f619f-00036d310c000049",
             "components": {
                 "NameComponent": {
-                    "name": "Notch"
+                    "name": "MasterNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -13629,6 +13668,45 @@
                             "data": true
                         }
                     ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0004ff384a651625-0003e80540000003"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
                 }
             }
         },
@@ -13637,7 +13715,7 @@
             "guid": "00032e8711fa1564-00036d318200004b",
             "components": {
                 "NameComponent": {
-                    "name": "Notch (1)"
+                    "name": "BGMNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -13906,7 +13984,7 @@
             "guid": "00032e8708b1a6d1-00036d318400004d",
             "components": {
                 "NameComponent": {
-                    "name": "Notch (1) (1)"
+                    "name": "SFXNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0

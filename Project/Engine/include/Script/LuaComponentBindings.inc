@@ -404,6 +404,11 @@ BEGIN_COMPONENT(ButtonComponent, "ButtonComponent")
     PROPERTY("interactable", &ButtonComponent::interactable)
 END_COMPONENT()
 
+BEGIN_COMPONENT(ActiveComponent, "ActiveComponent")
+    PROPERTY("isActive", &ActiveComponent::isActive)
+END_COMPONENT()
+
+
 
 
 
