@@ -530,7 +530,7 @@ return Component {
         local function dot(ax,ay,az, bx,by,bz) return (ax or 0)*(bx or 0) + (ay or 0)*(by or 0) + (az or 0)*(bz or 0) end
         local function cross(ax,ay,az, bx,by,bz) return (ay or 0)*(bz or 0) - (az or 0)*(by or 0), (az or 0)*(bx or 0) - (ax or 0)*(bz or 0), (ax or 0)*(by or 0) - (ay or 0)*(bx or 0) end
 
-        -- quat helpers
+        -- quaternion & rotation helpers
         local function quat_from_axis_angle(ax,ay,az, angle)
             local nx,ny,nz = normalize(ax,ay,az)
             if nx == 0 and ny == 0 and nz == 0 then return 1.0,0.0,0.0,0.0 end
@@ -539,7 +539,6 @@ return Component {
             return math.cos(h), nx * s, ny * s, nz * s
         end
         local function rotate_vec_by_quat(qw,qx,qy,qz, vx,vy,vz)
-            -- optimized quaternion-vector multiplication: v' = q * (0,v) * q^-1
             local tx = 2 * ( qy * vz - qz * vy )
             local ty = 2 * ( qz * vx - qx * vz )
             local tz = 2 * ( qx * vy - qy * vx )
@@ -549,7 +548,7 @@ return Component {
             return vpx, vpy, vpz
         end
 
-        -- matrix->quat converter (expects columns: col0=RIGHT, col1=UP, col2=FORWARD)
+        -- matrix->quat converter (expects columns: col0 = RIGHT, col1 = UP, col2 = FORWARD)
         local function mat3_to_quat(m00,m10,m20, m01,m11,m21, m02,m12,m22)
             local tr = m00 + m11 + m22
             local qw,qx,qy,qz
@@ -583,15 +582,14 @@ return Component {
             return qw or 1, qx or 0, qy or 0, qz or 0
         end
 
-        -- robust position reader: prefer runtime (Verlet) positions, then component-level reader if provided, then transform/proxy
+        -- robust position reader (prefers Verlet rt.p)
         local function read_position(i)
-            -- prefer runtime positions if present (Verlet stores world positions in rt.p)
             if type(rt.p) == "table" and rt.p[i] and type(rt.p[i]) == "table" then
                 return rt.p[i][1] or 0.0, rt.p[i][2] or 0.0, rt.p[i][3] or 0.0
             end
 
-            -- try component-provided world reader
             local tr = transforms[i]
+            -- component-level reader if present
             if self and type(self._read_world_pos) == "function" and tr then
                 local ok, a,b,c = pcall(function() return self:_read_world_pos(tr) end)
                 if ok then
@@ -600,7 +598,7 @@ return Component {
                 end
             end
 
-            -- try proxy:GetPosition
+            -- proxy:GetPosition
             local proxy = proxies[i]
             if proxy and type(proxy.GetPosition) == "function" then
                 local ok, a,b,c = pcall(function() return proxy:GetPosition() end)
@@ -610,7 +608,7 @@ return Component {
                 end
             end
 
-            -- try transform:GetPosition
+            -- transform:GetPosition
             if tr then
                 local ok, a,b,c = pcall(function() return tr:GetPosition() end)
                 if ok then
@@ -627,15 +625,12 @@ return Component {
             return 0.0, 0.0, 0.0
         end
 
-        -- get start world: prefer component-specific getter (Verlet offers _get_start_world)
+        -- helpers to get start/end world positions (uses Verlet-provided getter if available)
         local function get_start_world()
             if self and type(self._get_start_world) == "function" then
                 local ok, a,b,c = pcall(function() return self:_get_start_world() end)
-                if ok and type(a) == "number" and type(b) == "number" and type(c) == "number" then
-                    return a,b,c
-                end
+                if ok and type(a) == "number" then return a,b,c end
             end
-            -- fallback to component/GetPosition + unpack
             if type(self.GetPosition) == "function" then
                 local ok, a,b,c = pcall(function() return self:GetPosition() end)
                 if ok then
@@ -643,11 +638,8 @@ return Component {
                     if type(a) == "number" and type(b) == "number" and type(c) == "number" then return a,b,c end
                 end
             end
-            -- final fallback to 0,0,0
             return 0,0,0
         end
-
-        -- end position: prefer component.endPosition if set, else treat equal to start
         local function get_end_world()
             if type(self.endPosition) == "table" and #self.endPosition >= 3 then
                 return self.endPosition[1] or 0, self.endPosition[2] or 0, self.endPosition[3] or 0
@@ -655,14 +647,14 @@ return Component {
             return get_start_world()
         end
 
-        -- Build authoritative positions array (size n)
+        -- Build authoritative positions[] array
         local positions = {}
         for i = 1, n do
             local x,y,z = read_position(i)
             positions[i] = { x, y, z }
         end
 
-        -- Ensure endpoints exist if runtime doesn't provide them
+        -- If runtime doesn't provide endpoints, force them from component
         if not (type(rt.p) == "table" and #rt.p >= n) then
             local sx,sy,sz = get_start_world()
             local ex,ey,ez = get_end_world()
@@ -672,7 +664,7 @@ return Component {
             positions[n][1], positions[n][2], positions[n][3] = ex, ey, ez
         end
 
-        -- compute per-link forward vectors (local direction) — same idea as your old code
+        -- compute per-link forward vectors (same as your old working approach)
         local forward = {}
         for i = 1, n do
             local fx,fy,fz = 0,0,0
@@ -693,31 +685,57 @@ return Component {
                     fx,fy,fz = (nx - px) * 0.5, (ny - py) * 0.5, (nz - pz) * 0.5
                 end
             end
+
             local nfx,nfy,nfz = normalize(fx,fy,fz)
+
+            -- if forward is degenerate, try to reuse last good forward to avoid toggle
             if nfx == 0 and nfy == 0 and nfz == 0 then
-                -- fallback to global start->end if degenerate
-                local sx,sy,sz = get_start_world()
-                local ex,ey,ez = get_end_world()
-                nfx,nfy,nfz = normalize(ex - sx, ey - sy, ez - sz)
-                if nfx == 0 and nfy == 0 and nfz == 0 then nfx,nfy,nfz = 1.0,0.0,0.0 end
+                if rt.lastForward and rt.lastForward[i] then
+                    nfx, nfy, nfz = rt.lastForward[i][1], rt.lastForward[i][2], rt.lastForward[i][3]
+                else
+                    -- fallback to global start->end
+                    local sx,sy,sz = get_start_world()
+                    local ex,ey,ez = get_end_world()
+                    nfx,nfy,nfz = normalize(ex - sx, ey - sy, ez - sz)
+                    if nfx == 0 and nfy == 0 and nfz == 0 then nfx,nfy,nfz = 1.0,0.0,0.0 end
+                end
             end
+
             forward[i] = { nfx, nfy, nfz }
+            -- store lastForward when it is valid
+            rt.lastForward = rt.lastForward or {}
+            if math.abs(nfx) + math.abs(nfy) + math.abs(nfz) > 0 then
+                rt.lastForward[i] = { nfx, nfy, nfz }
+            end
         end
 
-        -- WORLD up (use Y-up to match your working code)
+        -- WORLD reference up (match your old convention: Y-up)
         local WORLD_UP_X, WORLD_UP_Y, WORLD_UP_Z = 0.0, 1.0, 0.0
 
-        -- For each link build world-space frame, apply alternating twist, convert -> quaternion (w,x,y,z), write
+        -- prepare continuity storage
+        rt.qprev = rt.qprev or {}
+        rt.lastForward = rt.lastForward or {}
+
+        -- determine per-frame max angular step (radians). Try component settings, else default 60 degrees.
+        local maxAng = nil
+        if self then
+            if type(self.RotationMaxStepRadians) == "number" then maxAng = self.RotationMaxStepRadians
+            elseif type(self.RotationMaxStep) == "number" then maxAng = math.rad(self.RotationMaxStep)
+            end
+        end
+        if not maxAng then maxAng = math.rad(60) end
+
+        -- For each link: build a stable world-space frame, apply alternating twist, convert -> quaternion, write with SLERP clamp
         for i = 1, n do
             local fx,fy,fz = forward[i][1], forward[i][2], forward[i][3]
 
-            -- pick reference up (avoid near-parallel)
+            -- pick a reference up (avoid near-parallel)
             local refUpX, refUpY, refUpZ = WORLD_UP_X, WORLD_UP_Y, WORLD_UP_Z
             if math.abs(dot(fx,fy,fz, refUpX,refUpY,refUpZ)) > 0.99 then
                 refUpX, refUpY, refUpZ = 1.0, 0.0, 0.0
             end
 
-            -- right = up × forward  (matches your old working code)
+            -- right = up × forward (matches old working code)
             local rx,ry,rz = cross(refUpX, refUpY, refUpZ, fx, fy, fz)
             rx,ry,rz = normalize(rx,ry,rz)
 
@@ -736,38 +754,88 @@ return Component {
             -- alternate ±90° twist about forward in world-space
             if (i % 2) == 0 then
                 local angle = math.pi * 0.5
-                local qw,qx,qy,qz = quat_from_axis_angle(fx,fy,fz, angle)
-                rx,ry,rz = rotate_vec_by_quat(qw,qx,qy,qz, rx,ry,rz)
-                ux,uy,uz = rotate_vec_by_quat(qw,qx,qy,qz, ux,uy,uz)
+                local qw_t,qx_t,qy_t,qz_t = quat_from_axis_angle(fx,fy,fz, angle)
+                rx,ry,rz = rotate_vec_by_quat(qw_t,qx_t,qy_t,qz_t, rx,ry,rz)
+                ux,uy,uz = rotate_vec_by_quat(qw_t,qx_t,qy_t,qz_t, ux,uy,uz)
                 rx,ry,rz = normalize(rx,ry,rz)
                 ux,uy,uz = normalize(ux,uy,uz)
             end
 
-            -- Build matrix columns: RIGHT, UP, FORWARD (mat3_to_quat expects this)
+            -- Build matrix columns: RIGHT, UP, FORWARD
             local m00,m10,m20 = rx, ry, rz   -- column 0 = RIGHT
             local m01,m11,m21 = ux, uy, uz   -- column 1 = UP
             local m02,m12,m22 = fx, fy, fz   -- column 2 = FORWARD
 
-            -- Convert -> quaternion (w,x,y,z)
+            -- Convert matrix -> quaternion (w,x,y,z)
             local qw,qx,qy,qz = mat3_to_quat(m00,m10,m20, m01,m11,m21, m02,m12,m22)
 
-            -- normalize quaternion
-            local ql = math.sqrt((qw or 0)*(qw or 0) + (qx or 0)*(qx or 0) + (qy or 0)*(qy or 0) + (qz or 0)*(qz or 0))
-            if ql > 1e-9 then qw,qx,qy,qz = qw/ql, qx/ql, qy/ql, qz/ql else qw,qx,qy,qz = 1,0,0,0 end
+            -- normalize target quaternion defensively
+            local tlen = math.sqrt((qw or 0)*(qw or 0) + (qx or 0)*(qx or 0) + (qy or 0)*(qy or 0) + (qz or 0)*(qz or 0))
+            if tlen > 1e-12 then qw,qx,qy,qz = qw/tlen, qx/tlen, qy/tlen, qz/tlen else qw,qx,qy,qz = 1,0,0,0 end
 
-            -- write rotation in (w,x,y,z) order
+            -- continuity: load previous quaternion for this link (or identity)
+            local prev_w, prev_x, prev_y, prev_z = 1,0,0,0
+            if rt.qprev[i] and #rt.qprev[i] == 4 then
+                prev_w, prev_x, prev_y, prev_z = rt.qprev[i][1], rt.qprev[i][2], rt.qprev[i][3], rt.qprev[i][4]
+                local plen = math.sqrt(prev_w*prev_w + prev_x*prev_x + prev_y*prev_y + prev_z*prev_z)
+                if plen > 1e-12 then prev_w,prev_x,prev_y,prev_z = prev_w/plen, prev_x/plen, prev_y/plen, prev_z/plen
+                else prev_w,prev_x,prev_y,prev_z = 1,0,0,0 end
+            end
+
+            -- shortest path: flip target sign if dot < 0
+            local dotq = prev_w*qw + prev_x*qx + prev_y*qy + prev_z*qz
+            if dotq < 0 then qw,qx,qy,qz = -qw, -qx, -qy, -qz; dotq = -dotq end
+            if dotq > 1 then dotq = 1 elseif dotq < -1 then dotq = -1 end
+
+            -- angular difference
+            local ang = math.acos(math.max(-1, math.min(1, dotq))) -- radians
+
+            -- clamp / slerp if ang > maxAng
+            local final_w, final_x, final_y, final_z = qw, qx, qy, qz
+            if ang > maxAng + 1e-9 then
+                local t = maxAng / ang
+                if dotq > 0.9995 then
+                    -- linear fallback lerp
+                    final_w = prev_w + t * (qw - prev_w)
+                    final_x = prev_x + t * (qx - prev_x)
+                    final_y = prev_y + t * (qy - prev_y)
+                    final_z = prev_z + t * (qz - prev_z)
+                    local l = math.sqrt(final_w*final_w + final_x*final_x + final_y*final_y + final_z*final_z)
+                    if l > 1e-12 then final_w,final_x,final_y,final_z = final_w/l, final_x/l, final_y/l, final_z/l else final_w,final_x,final_y,final_z = 1,0,0,0 end
+                else
+                    local theta = math.acos(dotq)
+                    local sinTheta = math.sin(theta)
+                    if sinTheta < 1e-12 then
+                        final_w,final_x,final_y,final_z = prev_w, prev_x, prev_y, prev_z
+                    else
+                        local scale0 = math.sin((1 - t) * theta) / sinTheta
+                        local scale1 = math.sin(t * theta) / sinTheta
+                        final_w = prev_w * scale0 + qw * scale1
+                        final_x = prev_x * scale0 + qx * scale1
+                        final_y = prev_y * scale0 + qy * scale1
+                        final_z = prev_z * scale0 + qz * scale1
+                        local l = math.sqrt(final_w*final_w + final_x*final_x + final_y*final_y + final_z*final_z)
+                        if l > 1e-12 then final_w,final_x,final_y,final_z = final_w/l, final_x/l, final_y/l, final_z/l else final_w,final_x,final_y,final_z = 1,0,0,0 end
+                    end
+                end
+            end
+
+            -- Write rotation in (w,x,y,z) order safely
             local tr = transforms[i]
             if type(self._set_transform_rotation) == "function" then
-                pcall(function() self:_set_transform_rotation(tr, qw, qx, qy, qz) end)
+                pcall(function() self:_set_transform_rotation(tr, final_w, final_x, final_y, final_z) end)
             else
                 pcall(function()
                     if tr and tr.localRotation then
                         local rot = tr.localRotation
-                        if type(rot) == "table" then rot.w, rot.x, rot.y, rot.z = qw,qx,qy,qz; tr.isDirty = true
-                        elseif type(rot) == "userdata" then rot.w, rot.x, rot.y, rot.z = qw,qx,qy,qz; tr.isDirty = true end
+                        if type(rot) == "table" then rot.w, rot.x, rot.y, rot.z = final_w, final_x, final_y, final_z; tr.isDirty = true
+                        elseif type(rot) == "userdata" then rot.w, rot.x, rot.y, rot.z = final_w, final_x, final_y, final_z; tr.isDirty = true end
                     end
                 end)
             end
+
+            -- save final quaternion for next frame continuity
+            rt.qprev[i] = { final_w, final_x, final_y, final_z }
         end
     end,
 
