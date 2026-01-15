@@ -27,6 +27,19 @@ return Component {
         self._targetButton.interactable = false
 
 
+        self._targetRender = GetComponent(targetEntity,"SpriteRenderComponent")
+        if self._targetRender then
+            print("i guess render works huh")
+        end
+
+        self._targetRender.alpha = 0    --this works too
+
+        
+
+
+
+
+
     end,
 
     Update = function(self, dt)
@@ -34,6 +47,6 @@ return Component {
 }
 
 --A way to access other entity   DONE
---Enable/Disable Entity   GUESS JUST DONT LAZY.... GET EVERY ENTITY BY NAME...
+--Enable/Disable Entity   EITHER MAKE IT SO THAT LUA CAN ENABLE/DISABLE ENTITY OR JUST MAKE A TABLE COPY PASTE...
 
 --Access Component Button -> Toggle "Interactable"      DONE

@@ -92,6 +92,24 @@ BEGIN_COMPONENT(SpriteAnimationComponent, "SpriteAnimationComponent")
 END_COMPONENT()
 
 // ============================================================================
+// Sprite Animation Component
+// ============================================================================
+
+BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
+    // Properties
+    PROPERTY("isVisible", &SpriteRenderComponent::isVisible)
+    PROPERTY("position", &SpriteRenderComponent::position)
+    PROPERTY("scale", &SpriteRenderComponent::scale)
+    PROPERTY("rotation", &SpriteRenderComponent::rotation)
+    PROPERTY("color", &SpriteRenderComponent::color)
+    PROPERTY("alpha", &SpriteRenderComponent::alpha)
+END_COMPONENT()
+
+
+
+
+
+// ============================================================================
 // AI/Brain Components
 // ============================================================================
 
