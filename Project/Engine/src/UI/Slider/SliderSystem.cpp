@@ -401,8 +401,13 @@ void SliderSystem::Update() {
 
         if (oldValue != sliderComp.value) {
             InvokeOnValueChanged(sliderEntity, sliderComp, oldValue);
+            
+            // Re-fetch component reference after callback in case ECS storage was reallocated
+            if (!m_ecs->HasComponent<SliderComponent>(sliderEntity)) continue;
+            auto& sliderCompAfterCallback = m_ecs->GetComponent<SliderComponent>(sliderEntity);
+            sliderCompAfterCallback.lastValue = sliderCompAfterCallback.value;
+        } else {
+            sliderComp.lastValue = sliderComp.value;
         }
-
-        sliderComp.lastValue = sliderComp.value;
     }
 }
