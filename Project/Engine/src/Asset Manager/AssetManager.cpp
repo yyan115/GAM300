@@ -441,6 +441,8 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
+	if (guid == GUID_128{}) return "";
+
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 #ifndef ANDROID

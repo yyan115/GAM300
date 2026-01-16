@@ -27,6 +27,9 @@ BEGIN_COMPONENT(Transform, "Transform")
     PROPERTY("localPosition", &Transform::localPosition)
     PROPERTY("localScale", &Transform::localScale)
     PROPERTY("localRotation", &Transform::localRotation)
+    PROPERTY("worldPosition", &Transform::worldPosition)
+    PROPERTY("worldRotation", &Transform::worldRotation)
+    PROPERTY("worldScale", &Transform::worldScale)
     PROPERTY("isDirty", &Transform::isDirty)
 END_COMPONENT()
 
@@ -359,6 +362,19 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
     PROPERTY("earlyLateMix", &AudioReverbZoneComponent::earlyLateMix)
     PROPERTY("wetLevel", &AudioReverbZoneComponent::wetLevel)
     PROPERTY("Position", &AudioReverbZoneComponent::Position)
+END_COMPONENT()
+
+// ============================================================================
+// UI Components
+// ============================================================================
+
+BEGIN_COMPONENT(SliderComponent, "SliderComponent")
+    PROPERTY("minValue", &SliderComponent::minValue)
+    PROPERTY("maxValue", &SliderComponent::maxValue)
+    PROPERTY("value", &SliderComponent::value)
+    PROPERTY("wholeNumbers", &SliderComponent::wholeNumbers)
+    PROPERTY("interactable", &SliderComponent::interactable)
+    PROPERTY("horizontal", &SliderComponent::horizontal)
 END_COMPONENT()
 
 // ============================================================================

@@ -28,6 +28,10 @@ public:
 	void ENGINE_API SetWorldScale(Entity entity, Vector3D scale);
 	void ENGINE_API SetLocalScale(Entity entity, Vector3D scale);
 
+	Vector3D& GetWorldPosition(Entity entity);
+	Vector3D& GetWorldRotation(Entity entity);
+	Vector3D& GetWorldScale(Entity entity);
+
 	void SetDirtyRecursive(Entity entity);
 	Transform& GetRootParentTransform(Entity currentEntity);
 };

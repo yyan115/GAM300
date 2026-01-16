@@ -60,11 +60,13 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Game AI/BrainFactory.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "UI/Button/ButtonComponent.hpp"
+#include "UI/Slider/SliderComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
 #include "Panels/PanelManager.hpp"
 #include "GUIManager.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -75,6 +77,7 @@ extern "C" {
 #include "UndoableWidgets.hpp"
 #include <glm/glm.hpp>
 #include <cfloat>
+#include <cmath>
 #include <fstream>
 #include <cctype>
 #include <algorithm>
@@ -3679,6 +3682,300 @@ void RegisterInspectorCustomRenderers()
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
     ReflectionRenderer::RegisterFieldRenderer("ButtonComponent", "interactable",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+
+    // ==================== SLIDER COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("SliderComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager& ecs) -> bool
+    {
+        SliderComponent& sliderComp = *static_cast<SliderComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Helper lambda: Parse Lua script to extract function names
+        auto extractLuaFunctions = [](const std::string& scriptPath) -> std::vector<std::string> {
+            std::vector<std::string> functions;
+            if (scriptPath.empty()) return functions;
+
+            std::string normalizedPath = scriptPath;
+            std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+            std::string lowerPath = normalizedPath;
+            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+
+            std::filesystem::path fullPath;
+            std::string rootDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            std::filesystem::path projectRoot = std::filesystem::path(rootDir).parent_path();
+
+            if (std::filesystem::path(normalizedPath).is_absolute()) {
+                fullPath = normalizedPath;
+            }
+            else if (lowerPath.find("resources/") == 0) {
+                fullPath = projectRoot / normalizedPath;
+            }
+            else if (lowerPath.find("scripts/") == 0) {
+                fullPath = projectRoot / "Resources" / normalizedPath;
+            }
+            else {
+                fullPath = projectRoot / "Resources" / "Scripts" / normalizedPath;
+                if (!std::filesystem::exists(fullPath)) {
+                    fullPath = std::filesystem::path(rootDir) / "Scripts" / normalizedPath;
+                }
+                if (!std::filesystem::exists(fullPath)) {
+                    fullPath = projectRoot / normalizedPath;
+                }
+            }
+
+            std::ifstream file(fullPath);
+            if (!file.is_open()) {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[SliderComponent] Could not open script file: ", fullPath.string().c_str());
+                return functions;
+            }
+
+            std::string line;
+            while (std::getline(file, line)) {
+                std::string funcName;
+
+                size_t funcPos = line.find("function ");
+                if (funcPos != std::string::npos) {
+                    size_t start = funcPos + 9;
+                    size_t colonPos = line.find(':', start);
+                    size_t dotPos = line.find('.', start);
+                    size_t parenPos = line.find('(', start);
+
+                    if (parenPos != std::string::npos) {
+                        if (colonPos != std::string::npos && colonPos < parenPos) {
+                            funcName = line.substr(colonPos + 1, parenPos - colonPos - 1);
+                        } else if (dotPos != std::string::npos && dotPos < parenPos) {
+                            funcName = line.substr(dotPos + 1, parenPos - dotPos - 1);
+                        } else {
+                            funcName = line.substr(start, parenPos - start);
+                        }
+                    }
+                }
+
+                if (funcName.empty()) {
+                    size_t eqFuncPos = line.find("= function(");
+                    if (eqFuncPos == std::string::npos) {
+                        eqFuncPos = line.find("=function(");
+                    }
+                    if (eqFuncPos != std::string::npos) {
+                        size_t nameEnd = eqFuncPos;
+                        while (nameEnd > 0 && (line[nameEnd - 1] == ' ' || line[nameEnd - 1] == '\t')) {
+                            nameEnd--;
+                        }
+                        size_t nameStart = nameEnd;
+                        while (nameStart > 0 && (std::isalnum(line[nameStart - 1]) || line[nameStart - 1] == '_')) {
+                            nameStart--;
+                        }
+                        if (nameStart < nameEnd) {
+                            funcName = line.substr(nameStart, nameEnd - nameStart);
+                        }
+                    }
+                }
+
+                if (!funcName.empty()) {
+                    funcName.erase(0, funcName.find_first_not_of(" \t"));
+                    if (!funcName.empty()) {
+                        funcName.erase(funcName.find_last_not_of(" \t") + 1);
+                    }
+
+                    if (!funcName.empty() &&
+                        funcName != "new" && funcName != "New" &&
+                        funcName != "Awake" && funcName != "Start" &&
+                        funcName != "Update" && funcName != "FixedUpdate" &&
+                        funcName != "OnDestroy" && funcName != "OnEnable" &&
+                        funcName != "OnDisable" && funcName != "fields") {
+                        functions.push_back(funcName);
+                    }
+                }
+            }
+            return functions;
+        };
+
+        static std::unordered_map<std::string, std::vector<std::string>> scriptFunctionsCache;
+
+        // Core slider fields
+        ImGui::Text("Min Value");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##SliderMin", &sliderComp.minValue, 0.1f);
+
+        ImGui::Text("Max Value");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##SliderMax", &sliderComp.maxValue, 0.1f);
+
+        if (sliderComp.maxValue < sliderComp.minValue) {
+            std::swap(sliderComp.maxValue, sliderComp.minValue);
+        }
+
+        ImGui::Text("Value");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##SliderValue", &sliderComp.value, 0.1f, sliderComp.minValue, sliderComp.maxValue);
+
+        sliderComp.value = std::max(sliderComp.minValue, std::min(sliderComp.maxValue, sliderComp.value));
+        if (sliderComp.wholeNumbers) {
+            sliderComp.value = std::round(sliderComp.value);
+        }
+
+        ImGui::Text("Whole Numbers");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::Checkbox("##SliderWhole", &sliderComp.wholeNumbers);
+
+        ImGui::Text("Interactable");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::Checkbox("##SliderInteractable", &sliderComp.interactable);
+
+        ImGui::Text("Horizontal");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::Checkbox("##SliderHorizontal", &sliderComp.horizontal);
+
+        // Show track/handle info
+        auto showChildName = [&](const char* label, const GUID_128& guid) {
+            ImGui::Text("%s", label);
+            ImGui::SameLine(labelWidth);
+            std::string display = "Missing";
+            if (guid.high != 0 || guid.low != 0) {
+                Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+                if (child != static_cast<Entity>(-1) && ecs.HasComponent<NameComponent>(child)) {
+                    display = ecs.GetComponent<NameComponent>(child).name;
+                }
+            }
+            ImGui::TextDisabled("%s", display.c_str());
+        };
+
+        ImGui::Separator();
+        showChildName("Track", sliderComp.trackEntityGuid);
+        showChildName("Handle", sliderComp.handleEntityGuid);
+
+        ImGui::Separator();
+        ImGui::Text("On Value Changed ()");
+
+        int bindingToRemove = -1;
+        for (size_t i = 0; i < sliderComp.onValueChanged.size(); ++i) {
+            SliderBinding& binding = sliderComp.onValueChanged[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            std::string scriptDisplayName = binding.scriptPath.empty() ? "None (Script)" :
+                std::filesystem::path(binding.scriptPath).stem().string();
+
+            ImGui::Text("Script");
+            ImGui::SameLine(labelWidth);
+            float fieldWidth = ImGui::GetContentRegionAvail().x - 25.0f;
+            EditorComponents::DrawDragDropButton(scriptDisplayName.c_str(), fieldWidth);
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_PAYLOAD")) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Slider Script");
+                    const char* droppedPath = (const char*)payload->Data;
+                    std::string pathStr(droppedPath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    binding.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(DraggedScriptGuid);
+                    binding.scriptPath = pathStr;
+                    binding.functionName = "";
+
+                    scriptFunctionsCache.erase(pathStr);
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveSliderBinding")) {
+                bindingToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this binding");
+            }
+
+            if (!binding.scriptPath.empty()) {
+                auto cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                if (cacheIt == scriptFunctionsCache.end()) {
+                    scriptFunctionsCache[binding.scriptPath] = extractLuaFunctions(binding.scriptPath);
+                    cacheIt = scriptFunctionsCache.find(binding.scriptPath);
+                }
+
+                const std::vector<std::string>& functions = cacheIt->second;
+
+                ImGui::Text("Function");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+
+                std::string previewFunc = binding.functionName.empty() ? "No Function" : binding.functionName;
+                EditorComponents::PushComboColors();
+                if (ImGui::BeginCombo("##SliderFunction", previewFunc.c_str())) {
+                    if (ImGui::Selectable("No Function", binding.functionName.empty())) {
+                        binding.functionName = "";
+                    }
+
+                    for (const auto& funcName : functions) {
+                        bool isSelected = (binding.functionName == funcName);
+                        if (ImGui::Selectable(funcName.c_str(), isSelected)) {
+                            SnapshotManager::GetInstance().TakeSnapshot("Set Slider Function");
+                            binding.functionName = funcName;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    if (functions.empty()) {
+                        ImGui::TextDisabled("No functions found in script");
+                    }
+
+                    ImGui::EndCombo();
+                }
+                EditorComponents::PopComboColors();
+            }
+
+            ImGui::Separator();
+            ImGui::PopID();
+        }
+
+        if (bindingToRemove >= 0 && bindingToRemove < static_cast<int>(sliderComp.onValueChanged.size())) {
+            SnapshotManager::GetInstance().TakeSnapshot("Remove Slider Binding");
+            sliderComp.onValueChanged.erase(sliderComp.onValueChanged.begin() + bindingToRemove);
+        }
+
+        if (ImGui::Button(ICON_FA_PLUS " Add Binding", ImVec2(-1, 0))) {
+            SnapshotManager::GetInstance().TakeSnapshot("Add Slider Binding");
+            SliderBinding newBinding;
+            sliderComp.onValueChanged.push_back(newBinding);
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "onValueChanged",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "minValue",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "maxValue",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "value",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "wholeNumbers",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "interactable",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "horizontal",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "trackEntityGuid",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "handleEntityGuid",
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
