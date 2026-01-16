@@ -65,6 +65,10 @@ extern std::string DraggedFontPath;
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
+#include "UI/Slider/SliderComponent.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "Hierarchy/ParentComponent.hpp"
+#include "Hierarchy/ChildrenComponent.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -293,6 +297,10 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<ButtonComponent>(entity) ?
 				(void*)&ecs.GetComponent<ButtonComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ButtonComponent>(entity); }},
+		{"Slider", "SliderComponent",
+			[&]() { return ecs.HasComponent<SliderComponent>(entity) ?
+				(void*)&ecs.GetComponent<SliderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<SliderComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -991,6 +999,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<ButtonComponent>(entity)) {
 				allComponents.push_back({ "Button", "ButtonComponent", "UI" });
 			}
+			if (!ecsManager.HasComponent<SliderComponent>(entity)) {
+				allComponents.push_back({ "Slider", "SliderComponent", "UI" });
+			}
 
 		// Cache scripts to avoid filesystem scanning every frame
 		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
@@ -1502,6 +1513,90 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<ButtonComponent>(entity, component);
 			std::cout << "[Inspector] Added ButtonComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "SliderComponent") {
+			// Ensure entity has Transform component for UI positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				transform.localScale = Vector3D(200.0f, 20.0f, 1.0f);
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Slider" << std::endl;
+			}
+
+			SliderComponent component;
+			component.minValue = 0.0f;
+			component.maxValue = 1.0f;
+			component.value = 0.0f;
+			component.interactable = true;
+			component.horizontal = true;
+			component.wholeNumbers = false;
+
+			auto createSliderSpriteChild = [&](const std::string& childName, int sortingOrder) -> Entity {
+				Entity child = ecsManager.CreateEntity();
+				ecsManager.GetComponent<NameComponent>(child).name = childName;
+
+				GUID_128 spriteShaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"));
+				std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteShaderGUID);
+				auto shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteShaderGUID, shaderPath);
+
+				SpriteRenderComponent sprite;
+				sprite.shader = shader;
+				sprite.shaderGUID = spriteShaderGUID;
+				sprite.texture = nullptr;
+				sprite.is3D = false;
+				sprite.isVisible = true;
+				sprite.sortingOrder = sortingOrder;
+				ecsManager.AddComponent<SpriteRenderComponent>(child, sprite);
+
+				return child;
+			};
+
+			auto attachChild = [&](Entity parent, Entity child) {
+				auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+				GUID_128 parentGuid = guidRegistry.GetGUIDByEntity(parent);
+				GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+
+				if (!ecsManager.HasComponent<ParentComponent>(child)) {
+					ecsManager.AddComponent<ParentComponent>(child, ParentComponent{ parentGuid });
+				}
+
+				if (!ecsManager.HasComponent<ChildrenComponent>(parent)) {
+					ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
+				}
+
+				auto& children = ecsManager.GetComponent<ChildrenComponent>(parent).children;
+				if (std::find(children.begin(), children.end(), childGuid) == children.end()) {
+					children.push_back(childGuid);
+				}
+			};
+
+			Entity trackEntity = createSliderSpriteChild("Slider_Track", 0);
+			Entity handleEntity = createSliderSpriteChild("Slider_Handle", 1);
+
+			component.trackEntityGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(trackEntity);
+			component.handleEntityGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(handleEntity);
+
+			attachChild(entity, trackEntity);
+			attachChild(entity, handleEntity);
+
+			// Set default transforms for children
+			if (ecsManager.HasComponent<Transform>(entity)) {
+				auto& parentTransform = ecsManager.GetComponent<Transform>(entity);
+				auto& trackTransform = ecsManager.GetComponent<Transform>(trackEntity);
+				auto& handleTransform = ecsManager.GetComponent<Transform>(handleEntity);
+
+				trackTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+				trackTransform.localScale = parentTransform.localScale;
+				trackTransform.isDirty = true;
+
+				float handleSize = std::max(10.0f, parentTransform.localScale.y);
+				handleTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+				handleTransform.localScale = Vector3D(handleSize, handleSize, 1.0f);
+				handleTransform.isDirty = true;
+			}
+
+			ecsManager.AddComponent<SliderComponent>(entity, component);
+			std::cout << "[Inspector] Added SliderComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1824,6 +1919,29 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<ButtonComponent>(request.entity);
 				std::cout << "[Inspector] Removed ButtonComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "SliderComponent") {
+				if (ecsManager.HasComponent<SliderComponent>(request.entity)) {
+					auto& sliderComp = ecsManager.GetComponent<SliderComponent>(request.entity);
+					Entity trackEntity = static_cast<Entity>(-1);
+					Entity handleEntity = static_cast<Entity>(-1);
+					if (sliderComp.trackEntityGuid.high != 0 || sliderComp.trackEntityGuid.low != 0) {
+						trackEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sliderComp.trackEntityGuid);
+					}
+					if (sliderComp.handleEntityGuid.high != 0 || sliderComp.handleEntityGuid.low != 0) {
+						handleEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sliderComp.handleEntityGuid);
+					}
+
+					if (trackEntity != static_cast<Entity>(-1)) {
+						ecsManager.DestroyEntity(trackEntity);
+					}
+					if (handleEntity != static_cast<Entity>(-1)) {
+						ecsManager.DestroyEntity(handleEntity);
+					}
+				}
+
+				ecsManager.RemoveComponent<SliderComponent>(request.entity);
+				std::cout << "[Inspector] Removed SliderComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
 			}
@@ -1909,6 +2027,15 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "ButtonComponent") {
 				ecsManager.GetComponent<ButtonComponent>(request.entity) = ButtonComponent{};
 				std::cout << "[Inspector] Reset ButtonComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SliderComponent") {
+				auto& sliderComp = ecsManager.GetComponent<SliderComponent>(request.entity);
+				GUID_128 trackGuid = sliderComp.trackEntityGuid;
+				GUID_128 handleGuid = sliderComp.handleEntityGuid;
+				sliderComp = SliderComponent{};
+				sliderComp.trackEntityGuid = trackGuid;
+				sliderComp.handleEntityGuid = handleGuid;
+				std::cout << "[Inspector] Reset SliderComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values

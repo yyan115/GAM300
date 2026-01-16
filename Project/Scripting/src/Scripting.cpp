@@ -398,11 +398,50 @@ int Scripting::CreateInstanceFromFile(const std::string& scriptPath) {
 }
 
 void Scripting::DestroyInstance(int instanceRef) {
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance START: instanceRef=", instanceRef);
     if (!g_runtime) return;
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return;
     if (instanceRef == LUA_NOREF) return;
+    
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Getting instance from registry");
+    // Call Destroy() method on the instance if it exists to clean up properly
+    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Got instance, type=", luaL_typename(L, -1));
+    if (lua_istable(L, -1)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Instance is table, getting Destroy field");
+        lua_getfield(L, -1, "Destroy");
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy field type=", luaL_typename(L, -1));
+        if (lua_isfunction(L, -1)) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Calling Destroy() method");
+            lua_pushvalue(L, -2); // push self (the instance table)
+            // Use message handler to prevent panic
+            int msgh = PushMessageHandlerBelowFunction(L, 1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: About to pcall Destroy");
+            if (lua_pcall(L, 1, 0, msgh) != LUA_OK) {
+                // Silently ignore errors during cleanup
+                const char* err = lua_tostring(L, -1);
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[DEBUG] DestroyInstance: Destroy() error: ", err ? err : "(null)");
+                lua_pop(L, 1); // pop error message
+            } else {
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy() completed successfully");
+            }
+            // Remove message handler if still on stack
+            int top = lua_gettop(L);
+            if (msgh >= 1 && msgh <= top) lua_remove(L, msgh);
+        } else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy is not a function");
+            lua_pop(L, 1); // pop non-function or nil
+        }
+    } else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Instance is not a table");
+    }
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Popping instance table");
+    lua_pop(L, 1); // pop instance table
+    
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Unrefing instance");
     luaL_unref(L, LUA_REGISTRYINDEX, instanceRef);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance END");
 }
 
 bool Scripting::IsValidInstance(int instanceRef) {
@@ -437,12 +476,20 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
         if (lua_istable(L, instIndex)) {
             lua_getfield(L, instIndex, "_returned"); // +1
             if (!lua_isnil(L, -1)) {
-                // try to get the method from _returned
+                // Ensure it's safe to index: only attempt to get field if _returned is a table or userdata
                 int retIdx = lua_gettop(L);
                 const char* retType = luaL_typename(L, retIdx);
                 ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: wrapper has _returned type=", retType);
-                lua_getfield(L, retIdx, funcName.c_str()); // +1
-                // If still nil, fall through to error handling below.
+                if (lua_istable(L, retIdx) || lua_isuserdata(L, retIdx)) {
+                    // try to get the method from _returned
+                    lua_getfield(L, retIdx, funcName.c_str()); // +1
+                    // If still nil, fall through to error handling below.
+                }
+                else {
+                    // _returned is non-indexable (e.g., function/string); avoid indexing to prevent Lua errors
+                    ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: _returned is not indexable (type=", retType, ") for instanceRef=", instanceRef);
+                    lua_pop(L, 1); // pop _returned
+                }
             }
             else {
                 // no _returned; leave stack as is (we'll clean up)
@@ -458,25 +505,61 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
         return false;
     }
 
+    // Diagnostic: log candidate type and stack snapshot for debugging crashes
+    {
+        const char* candType = luaL_typename(L, -1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: candidate type=", candType, " for method=", funcName.c_str(), " instanceRef=", instanceRef);
+        int top = lua_gettop(L);
+        std::string stackTypes;
+        for (int i = base + 1; i <= top; ++i) {
+            stackTypes += luaL_typename(L, i);
+            if (i != top) stackTypes += ",";
+        }
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: stack types [base+1..top]=", stackTypes.c_str());
+    }
+
+    // Validate candidate is actually callable: either a function or has a callable metatable
+    bool candidateCallable = false;
+    if (lua_isfunction(L, -1)) {
+        candidateCallable = true;
+    } else {
+        if (lua_getmetatable(L, -1)) {
+            lua_getfield(L, -1, "__call");
+            if (lua_isfunction(L, -1)) candidateCallable = true;
+            lua_pop(L, 1); // pop __call
+            lua_pop(L, 1); // pop metatable
+        }
+    }
+
+    if (!candidateCallable) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CallInstanceFunction: candidate for method '", funcName.c_str(), "' is not callable (type=", luaL_typename(L, -1), ") on instanceRef=", instanceRef);
+        lua_settop(L, base);
+        return false;
+    }
+
     int nargs = 0;
     // If it's a plain function, push self (the appropriate self value)
     if (lua_isfunction(L, -1)) {
         // determine which 'self' we should pass:
         // - if we looked up the method directly on the original instance, pass that
-        // - if we looked up on _returned, pass _returned
-        // Find the proper "self" on stack: search from top down for a non-function value we pushed earlier
+        // - if we looked up on _returned, prefer _returned but only if it is indexable (table/userdata)
         // Stack shapes we can have:
         // 1) base..., instance, function
         // 2) base..., instance, _returned, function
-        // We'll push the nearest non-function value below the function as self.
+        // We'll prefer pushing a nearby table/userdata as self; otherwise fall back to the original instance.
         int funcPos = lua_gettop(L);
         int candidateSelfPos = funcPos - 1;
+        bool pushedSelf = false;
         if (candidateSelfPos >= base + 1) {
-            lua_pushvalue(L, candidateSelfPos); // push self
-            nargs = 1;
+            int t = lua_type(L, candidateSelfPos);
+            if (t == LUA_TTABLE || t == LUA_TUSERDATA) {
+                lua_pushvalue(L, candidateSelfPos); // push self
+                nargs = 1;
+                pushedSelf = true;
+            }
         }
-        else {
-            // as a fallback push the original instance
+        if (!pushedSelf) {
+            // as a safe fallback push the original instance (should be table)
             lua_pushvalue(L, instIndex);
             nargs = 1;
         }

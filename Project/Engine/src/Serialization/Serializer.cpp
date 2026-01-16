@@ -567,6 +567,11 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("ButtonComponent", v, alloc);
         }
+        if (ecs.HasComponent<SliderComponent>(entity)) {
+            auto& c = ecs.GetComponent<SliderComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("SliderComponent", v, alloc);
+        }
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -922,6 +927,13 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
             auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
             DeserializeButtonComponent(buttonComp, buttonCompJSON);
+        }
+        // SliderComponent
+        if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
+            const auto& sliderCompJSON = comps["SliderComponent"];
+            ecs.AddComponent<SliderComponent>(newEnt, SliderComponent{});
+            auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
+            DeserializeSliderComponent(sliderComp, sliderCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -1292,6 +1304,14 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             if (ecs.HasComponent<ButtonComponent>(currEnt)) {
                 auto& buttonComp = ecs.GetComponent<ButtonComponent>(currEnt);
                 DeserializeButtonComponent(buttonComp, buttonCompJSON);
+            }
+        }
+        // SliderComponent
+        if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
+            const auto& sliderCompJSON = comps["SliderComponent"];
+            if (ecs.HasComponent<SliderComponent>(currEnt)) {
+                auto& sliderComp = ecs.GetComponent<SliderComponent>(currEnt);
+                DeserializeSliderComponent(sliderComp, sliderCompJSON);
             }
         }
 
@@ -2441,5 +2461,84 @@ void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const r
 
         if (d.Size() > 1 && d[1].HasMember("data") && d[1]["data"].IsBool())
             buttonComp.interactable = d[1]["data"].GetBool();
+    }
+}
+
+void Serializer::DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON) {
+    if (sliderJSON.HasMember("data") && sliderJSON["data"].IsArray()) {
+        const auto& d = sliderJSON["data"];
+        sliderComp.onValueChanged.clear();
+
+        // 0: onValueChanged
+        if (d.Size() > 0 && d[0].HasMember("data") && d[0]["data"].IsArray()) {
+            const auto& bindingsArr = d[0]["data"].GetArray();
+            for (const auto& bindingJSON : bindingsArr) {
+                SliderBinding binding;
+                if (bindingJSON.HasMember("data") && bindingJSON["data"].IsArray()) {
+                    const auto& bd = bindingJSON["data"];
+
+                    if (bd.Size() >= 5) {
+                        if (bd[0].HasMember("data") && bd[0]["data"].IsString())
+                            binding.targetEntityGuidStr = bd[0]["data"].GetString();
+                        if (bd[1].HasMember("data") && bd[1]["data"].IsString()) {
+                            binding.scriptPath = bd[1]["data"].GetString();
+#ifndef EDITOR
+                            if (binding.scriptPath.find("../../Resources") == 0) {
+                                binding.scriptPath = binding.scriptPath.substr(6); // Remove "../../" prefix
+                            }
+#endif
+                        }
+                        if (bd[2].HasMember("data") && bd[2]["data"].IsString())
+                            binding.scriptGuidStr = bd[2]["data"].GetString();
+                        if (bd[3].HasMember("data") && bd[3]["data"].IsString())
+                            binding.functionName = bd[3]["data"].GetString();
+                        if (bd[4].HasMember("data") && bd[4]["data"].IsBool())
+                            binding.callWithSelf = bd[4]["data"].GetBool();
+                    }
+                }
+                sliderComp.onValueChanged.push_back(binding);
+            }
+        }
+
+        // 1: minValue
+        if (d.Size() > 1 && d[1].HasMember("data")) {
+            double v = 0.0;
+            if (getNumberFromValue(d[1], v)) sliderComp.minValue = static_cast<float>(v);
+        }
+        // 2: maxValue
+        if (d.Size() > 2 && d[2].HasMember("data")) {
+            double v = 0.0;
+            if (getNumberFromValue(d[2], v)) sliderComp.maxValue = static_cast<float>(v);
+        }
+        // 3: value
+        if (d.Size() > 3 && d[3].HasMember("data")) {
+            double v = 0.0;
+            if (getNumberFromValue(d[3], v)) sliderComp.value = static_cast<float>(v);
+        }
+        // 4: wholeNumbers
+        if (d.Size() > 4) {
+            bool b = false;
+            if (getBoolFromValue(d[4], b)) sliderComp.wholeNumbers = b;
+        }
+        // 5: interactable
+        if (d.Size() > 5) {
+            bool b = false;
+            if (getBoolFromValue(d[5], b)) sliderComp.interactable = b;
+        }
+        // 6: horizontal
+        if (d.Size() > 6) {
+            bool b = false;
+            if (getBoolFromValue(d[6], b)) sliderComp.horizontal = b;
+        }
+        // 7: trackEntityGuid
+        if (d.Size() > 7) {
+            std::string guidStr = extractGUIDString(d[7]);
+            if (!guidStr.empty()) sliderComp.trackEntityGuid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        }
+        // 8: handleEntityGuid
+        if (d.Size() > 8) {
+            std::string guidStr = extractGUIDString(d[8]);
+            if (!guidStr.empty()) sliderComp.handleEntityGuid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        }
     }
 }

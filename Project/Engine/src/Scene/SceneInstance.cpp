@@ -32,6 +32,7 @@
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
 #include <UI/Button/ButtonComponent.hpp>
+#include <UI/Slider/SliderComponent.hpp>
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
@@ -127,6 +128,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
+	ecsManager.sliderSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Slider system initialized");
+	ecsManager.sliderSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Slider system initialized");
 
 	if (!multithreadSystems)
 	{

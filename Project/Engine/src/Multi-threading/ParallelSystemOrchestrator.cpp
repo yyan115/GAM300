@@ -46,6 +46,13 @@ void ParallelSystemOrchestrator::Update() {
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        //ENGINE_LOG_DEBUG("Running SliderJob");
+        if (ecs.sliderSystem) {
+            ecs.sliderSystem->Update();
+        }
+        });
+    frameChannel.Submit([&] {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
         ecs.spriteAnimationSystem->Update();
 		});
