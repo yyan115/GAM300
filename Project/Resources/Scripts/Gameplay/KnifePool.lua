@@ -13,7 +13,7 @@ end
 function KnifePool.Request()
     local n = #KnifePool.knives
     if n == 0 then
-        print("[KnifePool] No knives registered!")
+        -- print("[KnifePool] No knives registered!")
         return nil
     end
 
@@ -29,7 +29,7 @@ function KnifePool.Request()
     end
 
     -- none free
-    print("[KnifePool] No free knives available")
+    -- print("[KnifePool] No free knives available")
     return nil
 end
 

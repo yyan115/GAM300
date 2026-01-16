@@ -184,11 +184,6 @@ return Component {
         self._patrolB = { x = x + dist, y = y, z = z }
         self._patrolTarget = self._patrolB
 
-        print("[EnemyAI] collider=", tostring(self._collider),
-            "transform=", tostring(self._transform),
-            "rb=", tostring(self._rb),
-            "cc=", tostring(self._controller))
-
         self.fsm:Change("Idle", self.states.Idle)
     end,
 
@@ -201,12 +196,12 @@ return Component {
         self._motionID = self._rb and self._rb.motionID or nil
 
         -- DEBUG print less spammy
-        self._dbgT = (self._dbgT or 0) + dt
-        if self._dbgT > 1.0 then
-            self._dbgT = 0
-            print("[EnemyRB] motionID=", tostring(self._motionID),
-                "gravityFactor=", tostring(self._rb and self._rb.gravityFactor))
-        end
+        -- self._dbgT = (self._dbgT or 0) + dt
+        -- if self._dbgT > 1.0 then
+        --     self._dbgT = 0
+        --     print("[EnemyRB] motionID=", tostring(self._motionID),
+        --         "gravityFactor=", tostring(self._rb and self._rb.gravityFactor))
+        -- end
 
         -- DEBUG
         if Input.GetKeyDown(Input.Key.H) then self:ApplyHit(1) end
@@ -272,14 +267,6 @@ return Component {
         local before = CharacterController.GetPosition(self._controller)
         CharacterController.Move(self._controller, vx or 0, 0, vz or 0)
         local after = CharacterController.GetPosition(self._controller)
-
-        if before and after then
-            print(string.format("[EnemyAI] CC move (%.3f, %.3f) pos (%.3f,%.3f)->(%.3f,%.3f)",
-                vx or 0, vz or 0,
-                before.x, before.z, after.x, after.z))
-        else
-            print("[EnemyAI] CC position nil??")
-        end
 
         -- sync transform from CC
         if after then

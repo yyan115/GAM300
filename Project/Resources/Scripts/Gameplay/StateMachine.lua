@@ -54,12 +54,12 @@ function StateMachine:Update(dt)
 
     self.timeInState = self.timeInState + dt
 
-    -- DEBUG: always show active state
-    print(string.format(
-        "[FSM] State=%s  Time=%.2f",
-        tostring(self.currentName),
-        self.timeInState
-    ))
+    -- DEBUG: show active state
+    -- print(string.format(
+    --     "[FSM] State=%s  Time=%.2f",
+    --     tostring(self.currentName),
+    --     self.timeInState
+    -- ))
 
     if self.current.Update then
         self.current:Update(self.owner, dt)

@@ -80,7 +80,7 @@ return Component {
                   self.dirY * self.Speed * dt,
                   self.dirZ * self.Speed * dt)
         
-        print("[Knife]", self:GetPosition())
+        -- print("[Knife]", self:GetPosition())
     end,
 
     Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ)
