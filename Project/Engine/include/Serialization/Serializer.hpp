@@ -67,6 +67,115 @@ public:
 	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
 	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
 
+    // ==================================================================================
+    // Boolean Helper
+    // Handles: [true] OR [{"type": "bool", "data": true}]
+    // ==================================================================================
+    static bool GetBool(const rapidjson::Value& dataArray, size_t index, bool defaultValue = false)
+    {
+        // 1. Array Bounds Check
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        // 2. Case A: Raw Primitive
+        if (item.IsBool()) {
+            return item.GetBool();
+        }
+
+        // 3. Case B: Wrapped Object ({"data": value})
+        if (item.IsObject() && item.HasMember("data")) {
+            const rapidjson::Value& data = item["data"];
+            if (data.IsBool()) {
+                return data.GetBool();
+            }
+        }
+
+        return defaultValue;
+    }
+
+    // ==================================================================================
+    // Float Helper
+    // Handles: [1.5] OR [{"type": "float", "data": 1.5}]
+    // ==================================================================================
+    static float GetFloat(const rapidjson::Value& dataArray, size_t index, float defaultValue = 0.0f)
+    {
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        // Case A: Raw
+        if (item.IsNumber()) {
+            return item.GetFloat();
+        }
+
+        // Case B: Wrapped
+        if (item.IsObject() && item.HasMember("data")) {
+            const rapidjson::Value& data = item["data"];
+            if (data.IsNumber()) {
+                return data.GetFloat();
+            }
+        }
+
+        return defaultValue;
+    }
+
+    // ==================================================================================
+    // Int Helper
+    // Handles: [42] OR [{"type": "int", "data": 42}]
+    // ==================================================================================
+    static int GetInt(const rapidjson::Value& dataArray, size_t index, int defaultValue = 0)
+    {
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        if (item.IsInt()) {
+            return item.GetInt();
+        }
+
+        if (item.IsObject() && item.HasMember("data")) {
+            const rapidjson::Value& data = item["data"];
+            if (data.IsInt()) {
+                return data.GetInt();
+            }
+        }
+
+        return defaultValue;
+    }
+
+    // ==================================================================================
+    // String Helper
+    // Handles: ["GUID"] OR [{"type": "string", "data": "text"}]
+    // ==================================================================================
+    static std::string GetString(const rapidjson::Value& dataArray, size_t index, const std::string& defaultValue = "")
+    {
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        if (item.IsString()) {
+            return item.GetString();
+        }
+
+        if (item.IsObject() && item.HasMember("data")) {
+            const rapidjson::Value& data = item["data"];
+            if (data.IsString()) {
+                return data.GetString();
+            }
+        }
+
+        return defaultValue;
+    }
+
 private:
 	Serializer() = delete;
 	~Serializer() = delete;
