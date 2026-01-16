@@ -15999,8 +15999,8 @@
             }
         },
         {
-            "id": 61,
-            "guid": "0049cf54eb3684a1-0003e88894000003",
+            "id": 68,
+            "guid": "002ff485dba56b32-0003ea4f9c000009",
             "components": {
                 "NameComponent": {
                     "name": "Empty Entity"
@@ -16022,11 +16022,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1395.04
+                                    "data": 1582.07
                                 },
                                 {
                                     "type": "float",
-                                    "data": 219.161
+                                    "data": 226.01
                                 },
                                 {
                                     "type": "float",
@@ -16039,11 +16039,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -16081,7 +16081,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
@@ -16093,7 +16093,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1395.04
+                                    "data": 1582.07
                                 },
                                 {
                                     "type": "float",
@@ -16101,7 +16101,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -16109,7 +16109,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 219.161
+                                    "data": 226.01
                                 },
                                 {
                                     "type": "float",
@@ -16256,8 +16256,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0049cf54c2b301d0-0003e888ae000005",
-                                "0049cf54ab208dd0-0003e888ae000007"
+                                "002ff485d199faea-0003ea4faa00000b",
+                                "002ff485bc5839fb-0003ea4faa00000d"
                             ]
                         }
                     ]
@@ -16328,15 +16328,15 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0049cf54c2b301d0-0003e888ae000005",
-                        "0049cf54ab208dd0-0003e888ae000007"
+                        "002ff485d199faea-0003ea4faa00000b",
+                        "002ff485bc5839fb-0003ea4faa00000d"
                     ]
                 }
             }
         },
         {
-            "id": 62,
-            "guid": "0049cf54c2b301d0-0003e888ae000005",
+            "id": 69,
+            "guid": "002ff485d199faea-0003ea4faa00000b",
             "components": {
                 "NameComponent": {
                     "name": "Slider_Track"
@@ -16414,7 +16414,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1000
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
@@ -16426,7 +16426,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1395.04
+                                    "data": 1582.07
                                 },
                                 {
                                     "type": "float",
@@ -16434,7 +16434,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -16442,7 +16442,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 219.161
+                                    "data": 226.01
                                 },
                                 {
                                     "type": "float",
@@ -16562,7 +16562,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "Vector3D",
@@ -16586,7 +16586,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0049cf54eb3684a1-0003e88894000003"
+                        "002ff485dba56b32-0003ea4f9c000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -16601,8 +16601,8 @@
             }
         },
         {
-            "id": 63,
-            "guid": "0049cf54ab208dd0-0003e888ae000007",
+            "id": 70,
+            "guid": "002ff485bc5839fb-0003ea4faa00000d",
             "components": {
                 "NameComponent": {
                     "name": "Slider_Handle"
@@ -16638,7 +16638,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.2
+                                    "data": 0.101
                                 },
                                 {
                                     "type": "float",
@@ -16680,7 +16680,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 200
+                                    "data": 50.5
                                 },
                                 {
                                     "type": "float",
@@ -16692,7 +16692,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1395.04
+                                    "data": 1582.07
                                 },
                                 {
                                     "type": "float",
@@ -16700,7 +16700,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 230
+                                    "data": 46
                                 },
                                 {
                                     "type": "float",
@@ -16708,7 +16708,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 219.161
+                                    "data": 226.01
                                 },
                                 {
                                     "type": "float",
@@ -16828,7 +16828,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 1
                         },
                         {
                             "type": "Vector3D",
@@ -16852,7 +16852,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0049cf54eb3684a1-0003e88894000003"
+                        "002ff485dba56b32-0003ea4f9c000009"
                     ]
                 },
                 "ActiveComponent": {

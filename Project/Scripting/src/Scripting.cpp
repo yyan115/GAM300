@@ -398,28 +398,50 @@ int Scripting::CreateInstanceFromFile(const std::string& scriptPath) {
 }
 
 void Scripting::DestroyInstance(int instanceRef) {
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance START: instanceRef=", instanceRef);
     if (!g_runtime) return;
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return;
     if (instanceRef == LUA_NOREF) return;
     
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Getting instance from registry");
     // Call Destroy() method on the instance if it exists to clean up properly
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Got instance, type=", luaL_typename(L, -1));
     if (lua_istable(L, -1)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Instance is table, getting Destroy field");
         lua_getfield(L, -1, "Destroy");
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy field type=", luaL_typename(L, -1));
         if (lua_isfunction(L, -1)) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Calling Destroy() method");
             lua_pushvalue(L, -2); // push self (the instance table)
-            if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+            // Use message handler to prevent panic
+            int msgh = PushMessageHandlerBelowFunction(L, 1);
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: About to pcall Destroy");
+            if (lua_pcall(L, 1, 0, msgh) != LUA_OK) {
                 // Silently ignore errors during cleanup
+                const char* err = lua_tostring(L, -1);
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[DEBUG] DestroyInstance: Destroy() error: ", err ? err : "(null)");
                 lua_pop(L, 1); // pop error message
+            } else {
+                ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy() completed successfully");
             }
+            // Remove message handler if still on stack
+            int top = lua_gettop(L);
+            if (msgh >= 1 && msgh <= top) lua_remove(L, msgh);
         } else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Destroy is not a function");
             lua_pop(L, 1); // pop non-function or nil
         }
+    } else {
+        ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Instance is not a table");
     }
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Popping instance table");
     lua_pop(L, 1); // pop instance table
     
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Unrefing instance");
     luaL_unref(L, LUA_REGISTRYINDEX, instanceRef);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance END");
 }
 
 bool Scripting::IsValidInstance(int instanceRef) {
