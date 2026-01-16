@@ -3,7 +3,7 @@
 #include <Graphics/Bone.hpp>
 #include <pch.h>
 #include <assimp/scene.h>
-#include "Graphics/Model/Model.h"
+#include "Graphics/Model/BoneInfo.hpp"
 
 struct AssimpNodeData
 {

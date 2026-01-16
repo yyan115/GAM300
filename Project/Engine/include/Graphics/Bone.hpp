@@ -36,6 +36,10 @@ private:
     std::string mName;
     int mID;
 
+    glm::vec3 mLocalTranslation;
+    glm::quat mLocalRotation;
+    glm::vec3 mLocalScale;
+
 public:
     /*reads keyframes from aiNodeAnim*/
     Bone(const std::string& name, int ID, const aiNodeAnim* channel);
@@ -46,14 +50,18 @@ public:
     std::string GetBoneName() const { return mName; }
 	int GetBoneID() const { return mID; }
 
+    glm::vec3 GetLocalPosition() const { return mLocalTranslation; }
+    glm::quat GetLocalRotation() const { return mLocalRotation; }
+    glm::vec3 GetLocalScale() const { return mLocalScale; }
+
     int GetPositionIndex(float animationTime);
     int GetRotationIndex(float animationTime);
     int GetScaleIndex(float animationTime);
 
 private:
     float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime);
-    glm::mat4 InterpolatePosition(float animationTime);
-    glm::mat4 InterpolateRotation(float animationTime);
-	glm::mat4 InterpolateScaling(float animationTime);
+    glm::vec3 InterpolatePosition(float animationTime);
+    glm::quat InterpolateRotation(float animationTime);
+	glm::vec3 InterpolateScaling(float animationTime);
 
 };

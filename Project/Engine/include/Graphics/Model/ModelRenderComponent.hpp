@@ -31,8 +31,12 @@ public:
 
 
 	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID, GUID_128 mat_GUID)
-		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) { }
-	ModelRenderComponent() = default;
+		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) 
+	{
+		mFinalBoneMatrices.assign(100, glm::mat4(1.0f));
+	}
+
+	ModelRenderComponent() { mFinalBoneMatrices.assign(100, glm::mat4(1.0f)); }
 	~ModelRenderComponent() = default;
 
 	// Get material for a specific mesh (returns entity material if set, otherwise model default)
@@ -144,6 +148,8 @@ public:
 	//int GetRenderOrder() const override { return 100; }
 	//bool IsVisible() const override { return isVisible && model && shader; }
 
+	std::vector<glm::mat4> mFinalBoneMatrices;
+	std::map<std::string, Entity> boneNameToEntityMap;
 
 	Animator* animator = nullptr;
 	bool HasAnimation() const { return animator != nullptr; }

@@ -8,6 +8,7 @@
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/Lights/LightingSystem.hpp"
 #include <algorithm>
+#include <Graphics/Model/ModelFactory.hpp>
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -756,12 +757,32 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeTransformComponent(newEnt, t);
         }
 
+        // ParentComponent
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(newEnt)) {
+                ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
+            }
+            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
+        }
+
+        // ChildrenComponent
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(newEnt)) {
+                ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
+            }
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
             ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-            DeserializeModelComponent(modelComp, mv);
+            DeserializeModelComponent(modelComp, mv, newEnt);
         }
 
         // SpriteRenderComponent
@@ -880,22 +901,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
             auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
             DeserializeActiveComponent(activeComp, tv);
-        }
-
-        // ParentComponent
-        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
-            const auto& parentCompJSON = comps["ParentComponent"];
-            ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
-            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
-            DeserializeParentComponent(parentComp, parentCompJSON);
-        }
-
-        // ChildrenComponent
-        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
-            const auto& childrenCompJSON = comps["ChildrenComponent"];
-            ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
-            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
-            DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
         // Script component (engine-side)
@@ -1126,6 +1131,27 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeTransformComponent(currEnt, t);
         }
 
+        // ParentComponent
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
+                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
+            }
+            auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
+        }
+
+        // ChildrenComponent
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
+                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
+            }
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
+            childComp.children.clear();
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
@@ -1133,7 +1159,7 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
                 ecs.AddComponent<ModelRenderComponent>(currEnt, ModelRenderComponent{});
             }
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
-            DeserializeModelComponent(modelComp, mv);
+            DeserializeModelComponent(modelComp, mv, currEnt);
         }
 
         // SpriteRenderComponent
@@ -1248,26 +1274,6 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             const rapidjson::Value& tv = comps["ActiveComponent"];
             auto& activeComp = ecs.GetComponent<ActiveComponent>(currEnt);
             DeserializeActiveComponent(activeComp, tv);
-        }
-
-        // ParentComponent
-        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
-            const auto& parentCompJSON = comps["ParentComponent"];
-            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
-                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
-            }
-            auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
-            DeserializeParentComponent(parentComp, parentCompJSON);
-        }
-
-        // ChildrenComponent
-        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
-            const auto& childrenCompJSON = comps["ChildrenComponent"];
-            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
-                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
-            }
-            auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
-            DeserializeChildrenComponent(childComp, childrenCompJSON);
         }
 
         // ScriptComponent (engine-side) - use DeserializeScriptComponent for consistency
@@ -1415,7 +1421,7 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     }
 }
 
-void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON) {
+void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root) {
     if (modelJSON.IsObject()) {
         if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
             const auto& d = modelJSON["data"];
@@ -1490,6 +1496,8 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                     modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
                 }
             }
+
+            modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
         }
     }
 }
@@ -2000,7 +2008,7 @@ void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const r
 
 void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& _childJSON) {
     if (_childJSON.HasMember("data")) {
-        childComp.children.clear();
+        //childComp.children.clear();
         const auto& childrenVectorJSON = _childJSON["data"][0]["data"].GetArray();
         for (const auto& childJSON : childrenVectorJSON) {
             // Use helper function to extract child GUIDs

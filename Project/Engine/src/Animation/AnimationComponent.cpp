@@ -91,13 +91,13 @@ void swap(AnimationComponent& a, AnimationComponent& b) noexcept
     swap(a.animator, b.animator);
 }
 
-void AnimationComponent::Update(float dt)
+void AnimationComponent::Update(float dt, Entity entity)
 {
 	if (!animator) return;
 
     if (isPlay && !clips.empty() && activeClip < clips.size())
     {
-        animator->UpdateAnimation(dt * speed, isLoop);
+        animator->UpdateAnimation(dt * speed, isLoop, entity);
         if (!isLoop)
         {
             if (clips[activeClip]) {
@@ -147,7 +147,7 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
     return std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
 }
 
-void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
+void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
 {
     auto anim = LoadClipFromPath(path, boneInfoMap, boneCount);
     if (!anim) return;
@@ -162,38 +162,38 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
     {
         activeClip = 0;
         EnsureAnimator();
-        animator->PlayAnimation(clips[0].get());
+        animator->PlayAnimation(clips[0].get(), entity);
     }
 }
 
 
-void AnimationComponent::Play()
+void AnimationComponent::Play(Entity entity)
 {
     isPlay = true;
     if (!clips.empty() && activeClip < clips.size())
     {
 		EnsureAnimator();
-		animator->PlayAnimation(clips[activeClip].get());
+		animator->PlayAnimation(clips[activeClip].get(), entity);
     }
 }
 void AnimationComponent::Pause() { isPlay = false; }
 
-void AnimationComponent::Stop()
+void AnimationComponent::Stop(Entity entity)
 {
     isPlay = false;
     if(!clips.empty() && activeClip < clips.size() && animator)
-        animator->PlayAnimation(clips[activeClip].get());
+        animator->PlayAnimation(clips[activeClip].get(), entity);
 }
 
 void AnimationComponent::SetLooping(bool v) { isLoop = v; }
 void AnimationComponent::SetSpeed(float s) { speed = std::max(0.0f, s); }
 
 
-void AnimationComponent::SetClip(size_t index)
+void AnimationComponent::SetClip(size_t index, Entity entity)
 {
     if (index >= clips.size() || index == activeClip) return;
     activeClip = index;
-    SyncAnimatorToActiveClip();
+    SyncAnimatorToActiveClip(entity);
 }
 
 Animator& AnimationComponent::GetAnimator() { return *animator; }
@@ -235,13 +235,13 @@ size_t AnimationComponent::GetActiveClipIndex() const
 }
 
 
-void AnimationComponent::SyncAnimatorToActiveClip()
+void AnimationComponent::SyncAnimatorToActiveClip(Entity entity)
 {
     if (clips.empty() || activeClip >= clips.size() || !clips[activeClip] || !animator) {
         return;
     }
     Animation* clip = clips[activeClip].get();
-    animator->PlayAnimation(clip);
+    animator->PlayAnimation(clip, entity);
 }
 
 void AnimationComponent::SetClipCount(size_t count)
@@ -251,7 +251,7 @@ void AnimationComponent::SetClipCount(size_t count)
     clipGUIDs.resize(count);
 }
 
-void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
+void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
 {
     // Clear animator's reference before clearing clips to prevent dangling pointer
     if (animator) {
@@ -287,11 +287,11 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 
     if (!clips.empty()) {
         EnsureAnimator();
-        SyncAnimatorToActiveClip();
+        SyncAnimatorToActiveClip(entity);
     }
 }
 
-void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
+void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entity) {
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
@@ -299,30 +299,30 @@ void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
 	// Actually start playing the animation on the animator
 	if (!clips.empty() && clipIndex < clips.size()) {
 		EnsureAnimator();
-		animator->PlayAnimation(clips[clipIndex].get());
+		animator->PlayAnimation(clips[clipIndex].get(), entity);
 	}
 }
 
-void AnimationComponent::PlayOnce(std::size_t clipIndex) {
-	PlayClip(clipIndex, false);
+void AnimationComponent::PlayOnce(std::size_t clipIndex, Entity entity) {
+	PlayClip(clipIndex, false, entity);
 }
 
 bool AnimationComponent::IsPlaying() const {
 	return isPlay;
 }
 
-void AnimationComponent::ResetForPlay() {
+void AnimationComponent::ResetForPlay(Entity entity) {
 	// Reset animator to beginning for fresh game start
 	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
-		animator->PlayAnimation(clips[activeClip].get());
+		animator->PlayAnimation(clips[activeClip].get(), entity);
 	}
 }
 
-void AnimationComponent::ResetPreview() {
+void AnimationComponent::ResetPreview(Entity entity) {
 	// Reset editor preview time to 0
 	editorPreviewTime = 0.0f;
 	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
-		animator->PlayAnimation(clips[activeClip].get());
+		animator->PlayAnimation(clips[activeClip].get(), entity);
 	}
 }
 

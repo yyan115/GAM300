@@ -13,6 +13,8 @@
 #include <sstream>
 #include "Asset Manager/Asset.hpp"
 #include "../../Engine.h"
+#include "Math/Matrix4x4.hpp"
+#include "Graphics/Model/BoneInfo.hpp"
 
 class Material;
 
@@ -51,14 +53,12 @@ public:
 };
 #endif
 class Animator;
+class ModelRenderComponent;
 
-struct BoneInfo
-{
-	// Id is index in finalBoneMatrices
-	int id;
-
-	// Offset matrix transforms vertex from model space to bone space
-	glm::mat4 offset;
+struct ModelNode {
+    std::string name;
+    Matrix4x4 localTransform; // Transform relative to parent
+	std::vector<ModelNode> children;
 };
 
 class ENGINE_API Model : public IAsset {
@@ -68,6 +68,13 @@ public:
     std::string modelName;
     std::string modelPath;
     std::shared_ptr<ModelMeta> metaData;
+
+    // Model node hierarchy
+    ModelNode rootNode;
+
+    // Bone data
+    std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
+    int mBoneCounter = 0;
 
 	Model();
     Model(const Model& other) = default;
@@ -80,9 +87,9 @@ public:
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 	
-	void Draw(Shader& shader, const Camera& camera);
-	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
-    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator);
+	void Draw(Shader& shader, const Camera& camera, const ModelRenderComponent* modelComp = nullptr);
+	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp);
+    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator);
 
 	// Helper functions for Bones
 	auto& GetBoneInfoMap() { return mBoneInfoMap;}
@@ -91,7 +98,6 @@ public:
 	void SetVertexBoneDataToDefault(Vertex& vertex);
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
     void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
-
 
     AABB GetBoundingBox() const { return modelBoundingBox; }
 
@@ -131,13 +137,12 @@ private:
 	bool flipUVs = false;
 
 	//void loadModel(const std::string& path);
-	void ProcessNode(aiNode* node, const aiScene* scene);
+	void ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene);
 	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-	
-	// Bone data
-	std::map<std::string, BoneInfo> mBoneInfoMap; // maps a bone name to its index
-	int mBoneCounter = 0;
-	
+
+	void WriteModelNode(std::ofstream& meshFile, const ModelNode& node);
+	void ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node);
+
     void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
     AABB modelBoundingBox;
 };

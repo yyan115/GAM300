@@ -41,7 +41,7 @@ public:
 	static Entity CreateEntityViaGUID(const rapidjson::Value& entityJSON);
 	static void DeserializeNameComponent(NameComponent& nameComp, const rapidjson::Value& nameJSON);
 	static void DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t);
-	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON);
+	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
 	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);

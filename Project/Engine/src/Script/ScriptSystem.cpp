@@ -9,6 +9,7 @@
 #include <LuaBridge.h>
 #include "Logging.hpp"
 #include <TimeManager.hpp>
+#include <Animation/LuaAnimationComponent.hpp>
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
@@ -209,6 +210,23 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #undef PROPERTY
             #undef END_COMPONENT
 
+            // REGISTER THE PROXY CLASS SPECIALLY FOR ANIMATION COMPONENT
+            luabridge::getGlobalNamespace(L)
+                .beginClass<LuaAnimationComponent>("LuaAnimationComponent")
+                .addConstructor<void(*)(Entity)>()
+                .addFunction("Play", &LuaAnimationComponent::Play)
+                .addFunction("Stop", &LuaAnimationComponent::Stop)
+                .addFunction("Pause", &LuaAnimationComponent::Pause)
+                .addFunction("PlayClip", &LuaAnimationComponent::PlayClip)
+                .addFunction("SetSpeed", &LuaAnimationComponent::SetSpeed)
+                .addFunction("SetBool", &LuaAnimationComponent::SetBool)
+                .addFunction("SetTrigger", &LuaAnimationComponent::SetTrigger)
+                .addFunction("SetFloat", &LuaAnimationComponent::SetFloat)
+                .addFunction("SetInt", &LuaAnimationComponent::SetInt)
+                .addFunction("GetCurrentState", &LuaAnimationComponent::GetCurrentState)
+                .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
+                .endClass();
+
             // ---- Second pass: Components metadata table ----
             lua_newtable(L);
 
@@ -318,6 +336,15 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             {
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not found on entity ", entityId, " (getter returned null)");
                 lua_pushnil(L);
+                return true;
+            }
+
+            // [NEW] SPECIAL CASE: ANIMATION PROXY
+            if (compName == "AnimationComponent")
+            {
+                // Create the proxy on the stack
+                LuaAnimationComponent proxy(static_cast<Entity>(entityId));
+                luabridge::push(L, proxy);
                 return true;
             }
 

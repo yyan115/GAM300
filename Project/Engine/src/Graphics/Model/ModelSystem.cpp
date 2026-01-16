@@ -14,6 +14,7 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#include <Graphics/Model/ModelFactory.hpp>
 
 bool ModelSystem::Initialise() 
 {
@@ -39,6 +40,8 @@ bool ModelSystem::Initialise()
         if (!materialPath.empty()) {
             modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
         }
+
+        ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap);
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
@@ -120,7 +123,26 @@ void ModelSystem::Update()
 
         // Passed culling test, create and submit render item
         auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent); 
-        modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix; 
+        modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+
+        // If model doesn't have an animation controller, allow manual manipulation of bone entities.
+        if (!modelRenderItem->HasAnimation()) {
+            for (const auto& [name, boneInfo] : modelRenderItem->model->mBoneInfoMap)
+            {
+                // Get the child entity representing this bone.
+			    Entity boneEntity = modelRenderItem->boneNameToEntityMap[name];
+
+			    // Get the transform of the bone entity.
+                glm::mat4 currentWorld = ecsManager.GetComponent<Transform>(boneEntity).worldMatrix.ConvertToGLM();
+
+                // Get inverse root (mesh space).
+                glm::mat4 rootInverse = glm::inverse(ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM());
+
+			    // Write to the final bone matrices.
+                modelRenderItem->mFinalBoneMatrices[boneInfo.id] =
+                    rootInverse * currentWorld * boneInfo.offset;
+		    }
+        }
 
         gfxManager.Submit(std::move(modelRenderItem)); 
     }

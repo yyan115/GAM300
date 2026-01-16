@@ -2089,7 +2089,7 @@ void RegisterInspectorCustomRenderers()
                             previewState[entity] = PreviewState::Paused;
                         }
                     }
-                    animator->SetCurrentTime(animComp.editorPreviewTime);
+                    animator->SetCurrentTime(animComp.editorPreviewTime, entity);
                 }
             }
         }
@@ -2149,11 +2149,11 @@ void RegisterInspectorCustomRenderers()
                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                         if (modelComp.model) {
-                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                             Animator* animator = animComp.EnsureAnimator();
                             modelComp.SetAnimator(animator);
                             if (!animComp.GetClips().empty()) {
-                                animator->PlayAnimation(animComp.GetClips()[0].get());
+                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
                             }
                         }
                     }
@@ -2212,11 +2212,11 @@ void RegisterInspectorCustomRenderers()
                                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
                                         auto &modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
                                         if (modelComp.model) {
-                                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                                            animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                                             Animator* animator = animComp.EnsureAnimator();
                                             modelComp.SetAnimator(animator);
                                             if (!animComp.GetClips().empty()) {
-                                                animator->PlayAnimation(animComp.GetClips()[0].get());
+                                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
                                             }
                                         }
                                     }
@@ -2265,7 +2265,7 @@ void RegisterInspectorCustomRenderers()
         }
         if (EditorComponents::DrawStopButton()) {
             previewState[entity] = PreviewState::Stopped;
-            animComp.ResetPreview();
+            animComp.ResetPreview(entity);
         }
 
         ImGui::EndDisabled();

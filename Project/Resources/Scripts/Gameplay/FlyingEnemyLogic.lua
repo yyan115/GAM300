@@ -114,7 +114,7 @@ return Component {
     Start = function(self) 
         self._animation = self:GetComponent("AnimationComponent") 
         self.collider = self:GetComponent("ColliderComponent")
-        self._animation:PlayClip(IDLE, true)
+        self._animation:PlayClip(IDLE, true, self.entityId)
         currentState = IDLE
     end,
     
@@ -185,7 +185,7 @@ return Component {
         if newState ~= currentState then
             self._animation:Pause()
             local loop = (newState ~= FALL and newState ~= TAKE_DAMAGE and newState ~= DEATH)
-            self._animation:PlayClip(newState, loop)
+            self._animation:PlayClip(newState, loop, self.entityId)
             currentState = newState
         end
 
