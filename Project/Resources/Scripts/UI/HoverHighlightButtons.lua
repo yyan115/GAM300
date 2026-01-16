@@ -6,6 +6,7 @@ local Component = require("extension.mono_helper")
 
 --NEED TO THINK HOW TO HANDLE THIS HIGHLIGHT FOR ANDROID 
 
+--IF CLICKED ON A BUTTON -> LAST STATE SHOULD BE THAT BUTTON (LOCKED HIGHLIGHT)
 
 local targetButtons = 
 {   "PlayGame", 
@@ -13,24 +14,31 @@ local targetButtons =
     "ExitGame",
     "Settings" }
 
+local UIMenus = 
+{
+    "SettingsUI"
+}
 
 return Component {
     Start = function(self)
         self.lastState = 1      --1 = PLAY GAME
         self.buttonBounds = {} -- TABLE TO STORE ALL MIN/MAX DATA
+        self.UIState = {}
+        self._lockedState = false
 
         --GET ALL THE MIN MAX X Y FOR EACH BUTTON AND STORE IT
         for index, value in ipairs(targetButtons) do
             local targetEntity = Engine.GetEntityByName(value)
             if targetEntity then
                 local transform = GetComponent(targetEntity, "Transform")
-
                 local pos   = transform.localPosition
                 local scale = transform.localScale
 
+                local component = GetComponent(targetEntity, "SpriteRenderComponent")
+
                 --Store DATA
                 self.buttonBounds[index] = {
-                    name = value,            --Store the name as well
+                    spriteComponent = component,            --Store the sprite component to use later
                     minX = pos.x - (scale.x / 2),
                     maxX = pos.x + (scale.x / 2),
                     minY = pos.y - (scale.y / 2),
@@ -38,92 +46,73 @@ return Component {
                 }
             end
         end
-end,
 
-    Update = function(self, dt)
-
-        --GET GAME COORDINATE FOR MOUSE
-        local mouseX = Input.GetMouseX()
-        local mouseY = Input.GetMouseY()
-        local mouseCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
-
-        local inputX = mouseCoordinate[1]
-        local inputY = mouseCoordinate[2]
-
-        for index, bounds in ipairs(self.buttonBounds) do
-
-            --HOVERING OVER A BUTTON
-            if  inputX >= bounds.minX and inputX <= bounds.maxX and
-                inputY >= bounds.minY and inputY <= bounds.maxY then
-                    
-                    --CHECK IF BUTTON HOVERED IS THE SAME AS PREVIOUS STATE
-                    if index == self.lastState then return end      --EXIT IF SAME STATE
-
-                    --SET NEW STATE AND ENABLE HIGHLIGHT ACCORDINGLY
-
-                    --Get ButtonString based on index, Disable previous Component and enable new component
-
-                    local oldButtonName = self.buttonBounds[self.lastState].name
-                    local oldButtonEntity = Engine.GetEntityByName(oldButtonName)
-                    self._oldButtonHighlight = GetComponent(oldButtonEntity, "SpriteRenderComponent")
-
-
-                    local newButtonEntity = Engine.GetEntityByName(bounds.name)
-                    self._newButtonHighlight = GetComponent(newButtonEntity, "SpriteRenderComponent")
-
-                    if self._oldButtonHighlight and self._newButtonHighlight then
-
-                        self._oldButtonHighlight.isVisible   = false
-                        self._newButtonHighlight.isVisible  = true
-                        self.lastState = index  --update state
-                    end
-                    -- print("Button is being hovered")
-
-
-                end
+        --STORE COMPONENTS FOR EACH UI ENTITY
+        for index, value in ipairs(UIMenus) do
+            local UIEntity = Engine.GetEntityByName(value)
+            if UIEntity then
+                local activeComponent = GetComponent(UIEntity, "ActiveComponent")
+                self.UIState[index] = {
+                    component = activeComponent       
+                }
             end
+        end
+    end,
 
+Update = function(self, dt)
 
-end,
-}
---A way to access other entity   DONE
---Enable/Disable Entity   EITHER MAKE IT SO THAT LUA CAN ENABLE/DISABLE ENTITY OR JUST MAKE A TABLE COPY PASTE...
+    --GET GAME COORDINATE FOR MOUSE
+    local mouseX = Input.GetMouseX()
+    local mouseY = Input.GetMouseY()
+    local mouseCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
 
---Access Component Button -> Toggle "Interactable"      DONE
+    local inputX = mouseCoordinate[1]
+    local inputY = mouseCoordinate[2]
 
+    -- CHECK IF ANY UI IS OPEN
+    local anyUIOpen = false
+    for _, states in ipairs(self.UIState) do
+        if states.component.isActive then 
+            anyUIOpen = true
+            break
+        end
+    end
 
-        -- local targetEntity = Engine.GetEntityByName("Testing Entity")
+    -- If no UI is open, unlock the state
+    if not anyUIOpen then
+        self._lockedState = false
+    end
 
-        -- self._targetCollider = GetComponent(targetEntity,"ColliderComponent")
-        -- print("TargetENTITY HERE IS ", targetEntity)
+    -- If locked, don't process hover logic
+    if self._lockedState then
+        return
+    end
 
-        -- if self._targetCollider then
-        --     print("I actually got it?")
-        -- end
+    for index, bounds in ipairs(self.buttonBounds) do
 
-        -- self._targetCollider.enabled = false
+        --HOVERING OVER A BUTTON
+        if  inputX >= bounds.minX and inputX <= bounds.maxX and
+            inputY >= bounds.minY and inputY <= bounds.maxY then
 
+                --IF BUTTON IS CLICKED, LOCK HIGHLIGHT FOR THE BUTTON.
+                if Input.GetMouseButton(Input.MouseButton.Left) then
+                    self._lockedState = true
+                end
 
-        -- local targetEntity = Engine.GetEntityByName("PlayGame")
+                --CHECK IF BUTTON HOVERED IS THE SAME AS PREVIOUS STATE
+                if index == self.lastState then return end
 
-        -- self._targetButton = GetComponent(targetEntity,"ButtonComponent")
-        -- print("TargetENTITY HERE IS ", targetEntity)
+                --OLD BUTTON
+                local oldButtonHighlight = self.buttonBounds[self.lastState].spriteComponent
 
-        -- if self._targetCollider then
-        --     print("I actually got it?")
-        -- end
+                --NEW BUTTON
+                local newButtonHighlight = self.buttonBounds[index].spriteComponent
 
-        -- self._targetButton.interactable = false
-
-
-        -- self._targetRender = GetComponent(targetEntity,"SpriteRenderComponent")
-        -- if self._targetRender then
-        --     print("i guess render works huh")
-        -- end
-
-        -- self._targetRender.alpha = 0    --this works too
-
-
-        -- --TOGGLE ENTITY TEST lets go it works
-        -- self._targetActive = GetComponent(targetEntity, "ActiveComponent")
-        -- self._targetActive.isActive = false
+                if oldButtonHighlight and newButtonHighlight then
+                    oldButtonHighlight.isVisible = false
+                    newButtonHighlight.isVisible = true
+                    self.lastState = index  --update state
+                end
+        end
+    end
+end,}
