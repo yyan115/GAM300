@@ -99,6 +99,50 @@ BEGIN_SYSTEM("Input")
 END_SYSTEM()
 
 // ============================================================================
+// UNIFIED INPUT SYSTEM (NEW - Platform-Agnostic)
+// ============================================================================
+// This is the new unified input system that works on both desktop and Android.
+// Game code should use this instead of the legacy Input system above.
+//
+// Usage examples:
+// -- Check action (works on both desktop and Android)
+// if UnifiedInput.IsActionPressed("Jump") then
+//     player:Jump()
+// end
+//
+// -- Get axis (virtual joystick on Android, WASD on desktop)
+// local moveX, moveY = UnifiedInput.GetAxis("Movement")
+// player:Move(moveX, moveY)
+//
+// -- Batch API (for performance - call once per frame)
+// local states = UnifiedInput.GetAllActionStates()
+// if states["Jump"] then player:Jump() end
+// if states["Attack"] then player:Attack() end
+
+BEGIN_SYSTEM("UnifiedInput")
+    // Actions
+    FUNCTION("IsActionPressed", UnifiedInputWrappers::IsActionPressed)
+    FUNCTION("IsActionJustPressed", UnifiedInputWrappers::IsActionJustPressed)
+    FUNCTION("IsActionJustReleased", UnifiedInputWrappers::IsActionJustReleased)
+
+    // Axes (returns x, y as two return values)
+    FUNCTION("GetAxis", UnifiedInputWrappers::GetAxis)
+
+    // Batch API (for Lua optimization)
+    FUNCTION("GetAllActionStates", UnifiedInputWrappers::GetAllActionStates)
+    FUNCTION("GetAllAxisStates", UnifiedInputWrappers::GetAllAxisStates)
+
+    // Pointer abstraction (for UI - works with mouse OR touch)
+    FUNCTION("IsPointerPressed", UnifiedInputWrappers::IsPointerPressed)
+    FUNCTION("IsPointerJustPressed", UnifiedInputWrappers::IsPointerJustPressed)
+    FUNCTION("GetPointerPosition", UnifiedInputWrappers::GetPointerPosition)
+
+    // Multi-touch (Android - for advanced touch handling)
+    FUNCTION("GetTouchCount", UnifiedInputWrappers::GetTouchCount)
+    FUNCTION("GetTouchPosition", UnifiedInputWrappers::GetTouchPosition)
+END_SYSTEM()
+
+// ============================================================================
 // TIME SYSTEM
 // ============================================================================
 

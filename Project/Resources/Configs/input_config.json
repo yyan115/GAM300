@@ -1,0 +1,135 @@
+{
+  "version": "1.0",
+  "description": "Unified input configuration for desktop and Android platforms",
+
+  "desktop": {
+    "actions": {
+      "Jump": {
+        "keys": ["SPACE"],
+        "mouseButtons": []
+      },
+      "Attack": {
+        "keys": ["E"],
+        "mouseButtons": ["LEFT"]
+      },
+      "Interact": {
+        "keys": ["F"],
+        "mouseButtons": []
+      },
+      "Dash": {
+        "keys": ["SHIFT"],
+        "mouseButtons": []
+      },
+      "OpenInventory": {
+        "keys": ["I", "TAB"],
+        "mouseButtons": []
+      },
+      "Pause": {
+        "keys": ["ESC"],
+        "mouseButtons": []
+      }
+    },
+    "axes": {
+      "Movement": {
+        "positiveX": ["D", "RIGHT"],
+        "negativeX": ["A", "LEFT"],
+        "positiveY": ["W", "UP"],
+        "negativeY": ["S", "DOWN"]
+      },
+      "Look": {
+        "type": "mouse_delta",
+        "sensitivity": 1.0
+      }
+    }
+  },
+
+  "android": {
+    "actions": {
+      "Jump": {
+        "touchZones": [
+          {
+            "type": "circle",
+            "x": 0.85,
+            "y": 0.7,
+            "radius": 0.08,
+            "normalImage": "Resources/UI/button_jump.png",
+            "pressedImage": "Resources/UI/button_jump_pressed.png",
+            "alpha": 0.7
+          }
+        ],
+        "gestures": []
+      },
+      "Attack": {
+        "touchZones": [
+          {
+            "type": "circle",
+            "x": 0.9,
+            "y": 0.85,
+            "radius": 0.1,
+            "normalImage": "Resources/UI/button_attack.png",
+            "pressedImage": "Resources/UI/button_attack_pressed.png",
+            "alpha": 0.7
+          }
+        ],
+        "gestures": []
+      },
+      "Interact": {
+        "touchZones": [
+          {
+            "type": "rect",
+            "x": 0.5,
+            "y": 0.85,
+            "width": 0.15,
+            "height": 0.1,
+            "normalImage": "Resources/UI/button_interact.png",
+            "pressedImage": "Resources/UI/button_interact_pressed.png",
+            "alpha": 0.7
+          }
+        ],
+        "gestures": []
+      },
+      "Dash": {
+        "touchZones": [],
+        "gestures": [
+          {
+            "type": "double_tap",
+            "maxTimeBetweenTaps": 0.3
+          }
+        ]
+      },
+      "OpenInventory": {
+        "touchZones": [],
+        "gestures": [
+          {
+            "type": "swipe_down",
+            "minDistance": 100,
+            "maxTime": 0.5
+          }
+        ]
+      }
+    },
+    "axes": {
+      "Movement": {
+        "type": "virtual_joystick",
+        "x": 0.15,
+        "y": 0.75,
+        "outerRadius": 0.12,
+        "innerRadius": 0.05,
+        "outerImage": "Resources/UI/joystick_outer.png",
+        "innerImage": "Resources/UI/joystick_inner.png",
+        "alpha": 0.6,
+        "deadZone": 0.1
+      },
+      "Look": {
+        "type": "touch_drag",
+        "zone": {
+          "x": 0.3,
+          "y": 0.0,
+          "width": 0.7,
+          "height": 1.0
+        },
+        "sensitivity": 0.5
+      }
+    }
+  }
+}

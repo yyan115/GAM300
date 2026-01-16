@@ -6,6 +6,7 @@
 #include "Logging.hpp"
 #include "TimeManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "Input/IInputSystem.h"
 
 
 void ButtonSystem::Initialise(ECSManager& ecsManager) {
@@ -21,7 +22,13 @@ void ButtonSystem::Update() {
 void ButtonSystem::UpdateButtonStates() {
     if (!m_ecs) return;
 
-    if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT)) {
+    // Use unified input system (works on both desktop and Android)
+    if (!g_inputSystem) {
+        ENGINE_LOG_WARN("[ButtonSystem] g_inputSystem is null! Cannot process button input.");
+        return;
+    }
+
+    if (g_inputSystem->IsPointerJustPressed()) {
         // Get viewport dimensions (actual render area)
         float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
         float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
@@ -30,26 +37,28 @@ void ButtonSystem::UpdateButtonStates() {
         int gameResWidth, gameResHeight;
         GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
 
-        // Get raw mouse position in viewport coordinates
-        float mouseX = static_cast<float>(InputManager::GetMouseX());
-        float mouseY = static_cast<float>(InputManager::GetMouseY());
+        // Get pointer position (mouse on desktop, touch on Android)
+        glm::vec2 pointerPosNormalized = g_inputSystem->GetPointerPosition();
 
-        // Map mouse coordinates from viewport space to game resolution space
-        // X: scale from viewport width to game resolution width
-        // Y: scale from viewport height to game resolution height, and flip (OpenGL has Y=0 at bottom)
-        float gameX = (mouseX / viewportWidth) * static_cast<float>(gameResWidth);
-        float gameY = static_cast<float>(gameResHeight) - (mouseY / viewportHeight) * static_cast<float>(gameResHeight);
+        // Convert normalized coords to viewport pixels (assuming normalized is in pixels already)
+        // TODO: Verify if GetPointerPosition returns pixels or normalized 0-1 coords
+        float pointerX = pointerPosNormalized.x;
+        float pointerY = pointerPosNormalized.y;
 
-        Vector3D mousePosInGameSpace(gameX, gameY, 0.0f);
+        // Map pointer coordinates from viewport space to game resolution space
+        float gameX = (pointerX / viewportWidth) * static_cast<float>(gameResWidth);
+        float gameY = static_cast<float>(gameResHeight) - (pointerY / viewportHeight) * static_cast<float>(gameResHeight);
+
+        Vector3D pointerPosInGameSpace(gameX, gameY, 0.0f);
 
         ENGINE_LOG_INFO("Viewport: " + std::to_string(viewportWidth) + "x" + std::to_string(viewportHeight) +
                        " | Game Res: " + std::to_string(gameResWidth) + "x" + std::to_string(gameResHeight) +
-                       " | Mouse viewport: (" + std::to_string(mouseX) + ", " + std::to_string(mouseY) + ")" +
-                       " | Mouse game: (" + std::to_string(gameX) + ", " + std::to_string(gameY) + ")");
+                       " | Pointer viewport: (" + std::to_string(pointerX) + ", " + std::to_string(pointerY) + ")" +
+                       " | Pointer game: (" + std::to_string(gameX) + ", " + std::to_string(gameY) + ")");
 
         for (Entity e : m_ecs->GetActiveEntities()) {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
-            HandleMouseClick(e, mousePosInGameSpace);
+            HandlePointerClick(e, pointerPosInGameSpace);
         }
     }
 }
@@ -64,8 +73,15 @@ void ButtonSystem::Shutdown() {
 The following functions can be subsumed into each other.
 ***************************************************************/
 
-void ButtonSystem::HandleMouseClick(Entity buttonEntity, Vector3D mousePos)
+void ButtonSystem::HandlePointerClick(Entity buttonEntity, Vector3D pointerPos)
 {
+    if (!m_ecs->HasComponent<ButtonComponent>(buttonEntity)) return;
+
+    auto& buttonComp = m_ecs->GetComponent<ButtonComponent>(buttonEntity);
+
+    // Skip if button is not interactable
+    if (!buttonComp.interactable) return;
+
     if (m_ecs->HasComponent<SpriteRenderComponent>(buttonEntity)) {
         auto& spriteComponent = m_ecs->GetComponent<SpriteRenderComponent>(buttonEntity);
         if (spriteComponent.is3D) {
@@ -74,18 +90,45 @@ void ButtonSystem::HandleMouseClick(Entity buttonEntity, Vector3D mousePos)
         }
 
         auto& transform = m_ecs->GetComponent<Transform>(buttonEntity);
-        float halfExtentsX = transform.localScale.x / 2.0f;
-        float halfExtentsY = transform.localScale.y / 2.0f;
-        float minX = transform.localPosition.x - halfExtentsX;
-        float maxX = transform.localPosition.x + halfExtentsX;
-        float minY = transform.localPosition.y - halfExtentsY;
-        float maxY = transform.localPosition.y + halfExtentsY;
+        bool hit = false;
 
-        // Check if mouse is within button bounds
-        if (mousePos.x >= minX && mousePos.x <= maxX && mousePos.y >= minY && mousePos.y <= maxY) {
-            ENGINE_LOG_INFO("[ButtonSystem] Button hit! Entity: " + std::to_string(buttonEntity) +
-                          " Bounds: (" + std::to_string(minX) + "-" + std::to_string(maxX) + ", " +
-                          std::to_string(minY) + "-" + std::to_string(maxY) + ")");
+        // Check collision based on button shape
+        if (buttonComp.shape == ButtonShape::CIRCLE) {
+            // Circle collision detection
+            float worldRadius = buttonComp.circleRadius * transform.localScale.x;
+            float dx = pointerPos.x - transform.localPosition.x;
+            float dy = pointerPos.y - transform.localPosition.y;
+            float distanceSquared = dx * dx + dy * dy;
+            float radiusSquared = worldRadius * worldRadius;
+
+            hit = (distanceSquared <= radiusSquared);
+
+            if (hit) {
+                ENGINE_LOG_INFO("[ButtonSystem] Circle button hit! Entity: " + std::to_string(buttonEntity) +
+                              " Center: (" + std::to_string(transform.localPosition.x) + ", " +
+                              std::to_string(transform.localPosition.y) + ") Radius: " + std::to_string(worldRadius));
+            }
+        }
+        else {
+            // Rectangle collision detection (default)
+            float halfExtentsX = transform.localScale.x / 2.0f;
+            float halfExtentsY = transform.localScale.y / 2.0f;
+            float minX = transform.localPosition.x - halfExtentsX;
+            float maxX = transform.localPosition.x + halfExtentsX;
+            float minY = transform.localPosition.y - halfExtentsY;
+            float maxY = transform.localPosition.y + halfExtentsY;
+
+            hit = (pointerPos.x >= minX && pointerPos.x <= maxX &&
+                   pointerPos.y >= minY && pointerPos.y <= maxY);
+
+            if (hit) {
+                ENGINE_LOG_INFO("[ButtonSystem] Rect button hit! Entity: " + std::to_string(buttonEntity) +
+                              " Bounds: (" + std::to_string(minX) + "-" + std::to_string(maxX) + ", " +
+                              std::to_string(minY) + "-" + std::to_string(maxY) + ")");
+            }
+        }
+
+        if (hit) {
             TriggerButton(buttonEntity);
         }
     }

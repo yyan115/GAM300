@@ -181,15 +181,19 @@ bool DesktopPlatform::IsWindowFocused() {
 
 bool DesktopPlatform::IsKeyPressed(Input::Key key) {
     if (!window) return false;
-    
-    int glfwKey = static_cast<int>(key);  // Assuming direct mapping
+
+    int glfwKey = EngineKeyToGLFWKey(key);
+    if (glfwKey == -1) return false;  // Unknown key
+
     return glfwGetKey(window, glfwKey) == GLFW_PRESS;
 }
 
 bool DesktopPlatform::IsMouseButtonPressed(Input::MouseButton button) {
     if (!window) return false;
-    
-    int glfwButton = static_cast<int>(button);  // Assuming direct mapping
+
+    int glfwButton = EngineButtonToGLFWButton(button);
+    if (glfwButton == -1) return false;  // Unknown button
+
     return glfwGetMouseButton(window, glfwButton) == GLFW_PRESS;
 }
 
@@ -347,7 +351,100 @@ void DesktopPlatform::ScrollCallback(GLFWwindow* window, double xoffset, double 
 	(void)window;
 }
 
-// Helper functions for input mapping
+// Helper functions for input mapping (Engine -> GLFW)
+int DesktopPlatform::EngineKeyToGLFWKey(Input::Key key) {
+    switch (key) {
+        // Alphabet keys
+        case Input::Key::A: return GLFW_KEY_A;
+        case Input::Key::B: return GLFW_KEY_B;
+        case Input::Key::C: return GLFW_KEY_C;
+        case Input::Key::D: return GLFW_KEY_D;
+        case Input::Key::E: return GLFW_KEY_E;
+        case Input::Key::F: return GLFW_KEY_F;
+        case Input::Key::G: return GLFW_KEY_G;
+        case Input::Key::H: return GLFW_KEY_H;
+        case Input::Key::I: return GLFW_KEY_I;
+        case Input::Key::J: return GLFW_KEY_J;
+        case Input::Key::K: return GLFW_KEY_K;
+        case Input::Key::L: return GLFW_KEY_L;
+        case Input::Key::M: return GLFW_KEY_M;
+        case Input::Key::N: return GLFW_KEY_N;
+        case Input::Key::O: return GLFW_KEY_O;
+        case Input::Key::P: return GLFW_KEY_P;
+        case Input::Key::Q: return GLFW_KEY_Q;
+        case Input::Key::R: return GLFW_KEY_R;
+        case Input::Key::S: return GLFW_KEY_S;
+        case Input::Key::T: return GLFW_KEY_T;
+        case Input::Key::U: return GLFW_KEY_U;
+        case Input::Key::V: return GLFW_KEY_V;
+        case Input::Key::W: return GLFW_KEY_W;
+        case Input::Key::X: return GLFW_KEY_X;
+        case Input::Key::Y: return GLFW_KEY_Y;
+        case Input::Key::Z: return GLFW_KEY_Z;
+
+        // Number keys
+        case Input::Key::NUM_0: return GLFW_KEY_0;
+        case Input::Key::NUM_1: return GLFW_KEY_1;
+        case Input::Key::NUM_2: return GLFW_KEY_2;
+        case Input::Key::NUM_3: return GLFW_KEY_3;
+        case Input::Key::NUM_4: return GLFW_KEY_4;
+        case Input::Key::NUM_5: return GLFW_KEY_5;
+        case Input::Key::NUM_6: return GLFW_KEY_6;
+        case Input::Key::NUM_7: return GLFW_KEY_7;
+        case Input::Key::NUM_8: return GLFW_KEY_8;
+        case Input::Key::NUM_9: return GLFW_KEY_9;
+
+        // Special keys
+        case Input::Key::SPACE: return GLFW_KEY_SPACE;
+        case Input::Key::ENTER: return GLFW_KEY_ENTER;
+        case Input::Key::ESC: return GLFW_KEY_ESCAPE;
+        case Input::Key::TAB: return GLFW_KEY_TAB;
+        case Input::Key::BACKSPACE: return GLFW_KEY_BACKSPACE;
+        case Input::Key::DELETE_: return GLFW_KEY_DELETE;
+
+        // Arrow keys
+        case Input::Key::UP: return GLFW_KEY_UP;
+        case Input::Key::DOWN: return GLFW_KEY_DOWN;
+        case Input::Key::LEFT: return GLFW_KEY_LEFT;
+        case Input::Key::RIGHT: return GLFW_KEY_RIGHT;
+
+        // Function keys
+        case Input::Key::F1: return GLFW_KEY_F1;
+        case Input::Key::F2: return GLFW_KEY_F2;
+        case Input::Key::F3: return GLFW_KEY_F3;
+        case Input::Key::F4: return GLFW_KEY_F4;
+        case Input::Key::F5: return GLFW_KEY_F5;
+        case Input::Key::F6: return GLFW_KEY_F6;
+        case Input::Key::F7: return GLFW_KEY_F7;
+        case Input::Key::F8: return GLFW_KEY_F8;
+        case Input::Key::F9: return GLFW_KEY_F9;
+        case Input::Key::F10: return GLFW_KEY_F10;
+        case Input::Key::F11: return GLFW_KEY_F11;
+        case Input::Key::F12: return GLFW_KEY_F12;
+
+        // Modifier keys
+        case Input::Key::SHIFT: return GLFW_KEY_LEFT_SHIFT;
+        case Input::Key::CTRL: return GLFW_KEY_LEFT_CONTROL;
+        case Input::Key::ALT: return GLFW_KEY_LEFT_ALT;
+
+        case Input::Key::UNKNOWN:
+        default: return -1;
+    }
+}
+
+int DesktopPlatform::EngineButtonToGLFWButton(Input::MouseButton button) {
+    switch (button) {
+        case Input::MouseButton::LEFT: return GLFW_MOUSE_BUTTON_LEFT;
+        case Input::MouseButton::RIGHT: return GLFW_MOUSE_BUTTON_RIGHT;
+        case Input::MouseButton::MIDDLE: return GLFW_MOUSE_BUTTON_MIDDLE;
+        case Input::MouseButton::BUTTON_4: return GLFW_MOUSE_BUTTON_4;
+        case Input::MouseButton::BUTTON_5: return GLFW_MOUSE_BUTTON_5;
+        case Input::MouseButton::UNKNOWN:
+        default: return -1;
+    }
+}
+
+// Helper functions for input mapping (GLFW -> Engine)
 Input::Key DesktopPlatform::GLFWKeyToEngineKey(int glfwKey) {
     switch (glfwKey) {
         // Alphabet keys

@@ -22,6 +22,6 @@ public:
 private:
     void ProcessButtonClick(Entity buttonEntity);
     void UpdateButtonStates();
-    void HandleMouseClick(Entity buttonEntity, Vector3D mousePos);
+    void HandlePointerClick(Entity buttonEntity, Vector3D pointerPos);
     ECSManager* m_ecs = nullptr;
 };

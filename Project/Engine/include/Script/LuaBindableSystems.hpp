@@ -28,6 +28,91 @@ namespace InputWrappers {
 }
 
 // ============================================================================
+// UNIFIED INPUT SYSTEM WRAPPERS (NEW)
+// ============================================================================
+#include "Input/IInputSystem.h"
+#include <unordered_map>
+#include <string>
+
+namespace UnifiedInputWrappers {
+    // Action-based input (platform-agnostic)
+    inline bool IsActionPressed(const std::string& action) {
+        if (!g_inputSystem) return false;
+        return g_inputSystem->IsActionPressed(action);
+    }
+
+    inline bool IsActionJustPressed(const std::string& action) {
+        if (!g_inputSystem) return false;
+        return g_inputSystem->IsActionJustPressed(action);
+    }
+
+    inline bool IsActionJustReleased(const std::string& action) {
+        if (!g_inputSystem) return false;
+        return g_inputSystem->IsActionJustReleased(action);
+    }
+
+    // Axis input returns tuple (x, y)
+    inline std::tuple<float, float> GetAxis(const std::string& axisName) {
+        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
+        glm::vec2 axis = g_inputSystem->GetAxis(axisName);
+        return std::make_tuple(axis.x, axis.y);
+    }
+
+    // Batch API for Lua optimization - returns all action states at once
+    // Lua example: local states = UnifiedInput.GetAllActionStates()
+    //              if states["Jump"] then ... end
+    inline std::unordered_map<std::string, bool> GetAllActionStates() {
+        if (!g_inputSystem) return {};
+        return g_inputSystem->GetAllActionStates();
+    }
+
+    // Get all axis states at once
+    // Returns map of axis name -> {x, y} table
+    // Note: In Lua this will be a table where each entry is a table {x=..., y=...}
+    inline std::unordered_map<std::string, std::tuple<float, float>> GetAllAxisStates() {
+        if (!g_inputSystem) return {};
+
+        auto axisMap = g_inputSystem->GetAllAxisStates();
+        std::unordered_map<std::string, std::tuple<float, float>> result;
+
+        for (const auto& [name, vec] : axisMap) {
+            result[name] = std::make_tuple(vec.x, vec.y);
+        }
+
+        return result;
+    }
+
+    // Pointer abstraction (for UI)
+    inline bool IsPointerPressed() {
+        if (!g_inputSystem) return false;
+        return g_inputSystem->IsPointerPressed();
+    }
+
+    inline bool IsPointerJustPressed() {
+        if (!g_inputSystem) return false;
+        return g_inputSystem->IsPointerJustPressed();
+    }
+
+    inline std::tuple<float, float> GetPointerPosition() {
+        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
+        glm::vec2 pos = g_inputSystem->GetPointerPosition();
+        return std::make_tuple(pos.x, pos.y);
+    }
+
+    // Multi-touch support
+    inline int GetTouchCount() {
+        if (!g_inputSystem) return 0;
+        return g_inputSystem->GetTouchCount();
+    }
+
+    inline std::tuple<float, float> GetTouchPosition(int index) {
+        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
+        glm::vec2 pos = g_inputSystem->GetTouchPosition(index);
+        return std::make_tuple(pos.x, pos.y);
+    }
+}
+
+// ============================================================================
 // PHYSICS SYSTEM WRAPPERS
 // ============================================================================
 #include "Physics/PhysicsSystem.hpp"

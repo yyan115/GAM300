@@ -14,6 +14,11 @@
 
 #include <WindowManager.hpp>
 #include <Input/InputManager.hpp>
+#include <Input/IInputSystem.h>
+#include <Input/DesktopInputSystem.h>
+#ifdef ANDROID
+#include <Input/AndroidInputSystem.h>
+#endif
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Game AI/BrainSystems.hpp"
@@ -53,6 +58,26 @@ bool Engine::Initialize() {
 
 	// WOON LI TEST CODE
 	InputManager::Initialize();
+
+	// Initialize unified input system (NEW)
+	ENGINE_PRINT("[Engine] Initializing unified input system...");
+	#ifdef ANDROID
+		g_inputSystem = new AndroidInputSystem();
+		ENGINE_PRINT("[Engine] Created AndroidInputSystem");
+	#else
+		// Desktop: Pass platform pointer for hardware queries
+		IPlatform* platform = WindowManager::GetPlatform();
+		g_inputSystem = new DesktopInputSystem(platform);
+		ENGINE_PRINT("[Engine] Created DesktopInputSystem");
+	#endif
+
+	// Load input configuration
+	std::string configPath = "Resources/Configs/input_config.json";
+	if (g_inputSystem && !g_inputSystem->LoadConfig(configPath)) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
+	} else {
+		ENGINE_PRINT("[Engine] Input system initialized successfully");
+	}
 
 	// Initialize AudioManager on desktop now that platform assets are available
 	if (!AudioManager::GetInstance().Initialise()) {
@@ -712,10 +737,15 @@ void Engine::Draw() {
 
     try {
         SceneManager::GetInstance().DrawScene();
-        
+
         // Render virtual controls on top of everything (Android only)
-        VirtualControls::Render(surfaceWidth, surfaceHeight);
-        
+        VirtualControls::Render(surfaceWidth, surfaceHeight); // Legacy virtual controls (for backward compatibility)
+
+        // NEW: Render unified input system overlay (joysticks, virtual buttons, etc.)
+        if (g_inputSystem) {
+            g_inputSystem->RenderOverlay(surfaceWidth, surfaceHeight);
+        }
+
     } catch (const std::exception& e) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
@@ -732,7 +762,12 @@ void Engine::EndDraw() {
 
 	// Only process input if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
-		InputManager::Update();
+		// Update unified input system (NEW - platform-agnostic)
+		if (g_inputSystem) {
+			g_inputSystem->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+		}
+
+		InputManager::Update(); // Legacy input system (still needed for editor)
 	}
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
@@ -746,11 +781,19 @@ void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
 	RunBrainExitSystem(ECSRegistry::GetInstance().GetActiveECSManager());
 	AudioManager::GetInstance().Shutdown();
+
+	// Cleanup unified input system
+	if (g_inputSystem) {
+		delete g_inputSystem;
+		g_inputSystem = nullptr;
+		ENGINE_LOG_INFO("Unified input system cleaned up");
+	}
+
     EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
     PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
-    ENGINE_PRINT("[Engine] Shutdown complete\n"); 
+    ENGINE_PRINT("[Engine] Shutdown complete\n");
 }
 
 bool Engine::IsRunning() {
