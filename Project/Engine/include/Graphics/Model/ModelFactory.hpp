@@ -10,5 +10,5 @@ public:
         std::map<std::string, Entity>& boneNameToEntityMap,
         Entity currentEntt, const Matrix4x4& parentAccumulator = Matrix4x4::Identity());
 
-    static void PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap);
+    static void PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap, const Model& model);
 };

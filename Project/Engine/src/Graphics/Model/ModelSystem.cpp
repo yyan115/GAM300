@@ -41,7 +41,10 @@ bool ModelSystem::Initialise()
             modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
         }
 
-        ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap);
+        if (modelComp.model) {
+            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+            modelComp.childBonesSaved = true;
+        }
     }
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");

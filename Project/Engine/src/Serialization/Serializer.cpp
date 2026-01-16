@@ -1497,7 +1497,24 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                 }
             }
 
+            // 1. Calculate the index first for clarity
+            rapidjson::SizeType targetIndex = static_cast<rapidjson::SizeType>(5);
+
+            // 2. Check if the index is within the bounds of the array 'd'
+            if (targetIndex < d.Size()) {
+                // Get a reference to the element to avoid repeated lookups
+                const rapidjson::Value& element = d[targetIndex];
+
+                // 3. Check if the element has the member "data" AND if it is a boolean
+                if (element.HasMember("data") && element["data"].IsBool()) {
+                    modelComp.childBonesSaved = element["data"].GetBool();
+                }
+            }
+
             modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
+            if (!modelComp.childBonesSaved) {
+                ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
+            }
         }
     }
 }

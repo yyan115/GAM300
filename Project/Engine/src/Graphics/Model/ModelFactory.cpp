@@ -140,7 +140,7 @@ Entity ModelFactory::SpawnModelNode(const ModelNode& node, Entity parent,
     return currentEntt;
 }
 
-void ModelFactory::PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap)
+void ModelFactory::PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap, const Model& model)
 {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -148,8 +148,11 @@ void ModelFactory::PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::
         auto& childComp = ecs.GetComponent<ChildrenComponent>(rootEntity);
         for (auto& childGUID : childComp.children) {
 			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
-			boneNameToEntityMap[ecs.GetComponent<NameComponent>(child).name] = child;
-			PopulateBoneNameToEntityMap(child, boneNameToEntityMap);
+			std::string boneName = ecs.GetComponent<NameComponent>(child).name;
+            if (model.mBoneInfoMap.find(boneName) != model.mBoneInfoMap.end()) {
+                boneNameToEntityMap[boneName] = child;
+			}
+			PopulateBoneNameToEntityMap(child, boneNameToEntityMap, model);
         }
     }
 }
