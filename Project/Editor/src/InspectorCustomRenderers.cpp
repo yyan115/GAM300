@@ -2104,14 +2104,17 @@ void RegisterInspectorCustomRenderers()
         AnimationStateMachine* sm = animComp.GetStateMachine();
         bool hasController = sm && !sm->GetAllStates().empty();
 
-        // Determine display text - show controller name or file name
+        // Determine display text - show controller file name
         std::string displayText;
-        if (hasController) {
-            displayText = sm->GetName().empty() ? "Controller" : sm->GetName();
-        } else if (!animComp.controllerPath.empty()) {
-            // Show file name from saved path (controller not loaded yet)
+        if (!animComp.controllerPath.empty()) {
+            // Show file name from controller path
             std::filesystem::path p(animComp.controllerPath);
-            displayText = p.stem().string() + " (not loaded)";
+            displayText = p.stem().string();
+            if (!hasController) {
+                displayText += " (not loaded)";
+            }
+        } else if (hasController) {
+            displayText = "Controller";
         } else {
             displayText = "None (Animator Controller)";
         }
@@ -2155,8 +2158,17 @@ void RegisterInspectorCustomRenderers()
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                             Animator* animator = animComp.EnsureAnimator();
                             modelComp.SetAnimator(animator);
-                            if (!animComp.GetClips().empty()) {
-                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
+
+                            // Play the entry state's animation clip (not just first clip)
+                            if (!animComp.GetClips().empty() && stateMachine) {
+                                std::string entryState = stateMachine->GetEntryState();
+                                const AnimStateConfig* entryConfig = stateMachine->GetState(entryState);
+                                size_t clipToPlay = 0;
+                                if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+                                    clipToPlay = entryConfig->clipIndex;
+                                }
+                                animComp.SetClip(clipToPlay, entity);
+                                animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
                             }
                         }
                     }
@@ -2218,8 +2230,17 @@ void RegisterInspectorCustomRenderers()
                                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                                             Animator* animator = animComp.EnsureAnimator();
                                             modelComp.SetAnimator(animator);
-                                            if (!animComp.GetClips().empty()) {
-                                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
+
+                                            // Play the entry state's animation clip (not just first clip)
+                                            if (!animComp.GetClips().empty() && stateMachine) {
+                                                std::string entryState = stateMachine->GetEntryState();
+                                                const AnimStateConfig* entryConfig = stateMachine->GetState(entryState);
+                                                size_t clipToPlay = 0;
+                                                if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+                                                    clipToPlay = entryConfig->clipIndex;
+                                                }
+                                                animComp.SetClip(clipToPlay, entity);
+                                                animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
                                             }
                                         }
                                     }
@@ -2246,6 +2267,51 @@ void RegisterInspectorCustomRenderers()
             std::string currentState = sm->GetCurrentState();
             if (currentState.empty()) currentState = sm->GetEntryState();
             ImGui::TextDisabled("%s", currentState.c_str());
+        }
+
+        // ===== ANIMATION CLIP SELECTOR =====
+        if (!animComp.clipPaths.empty()) {
+            ImGui::Spacing();
+            ImGui::Text("Animation Clip");
+            ImGui::SameLine(labelWidth);
+
+            // Get current clip name
+            size_t activeClipIndex = animComp.GetActiveClipIndex();
+            std::string currentClipName = "(None)";
+            if (activeClipIndex < animComp.clipPaths.size()) {
+                std::filesystem::path clipPath(animComp.clipPaths[activeClipIndex]);
+                currentClipName = clipPath.stem().string();
+            }
+
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::BeginCombo("##AnimClipSelect", currentClipName.c_str())) {
+                for (size_t i = 0; i < animComp.clipPaths.size(); i++) {
+                    std::filesystem::path clipPath(animComp.clipPaths[i]);
+                    std::string clipName = clipPath.stem().string();
+                    bool isSelected = (i == activeClipIndex);
+
+                    if (ImGui::Selectable(clipName.c_str(), isSelected)) {
+                        // Change to the selected animation
+                        if (i < animComp.GetClips().size()) {
+                            animComp.SetClip(i, entity);
+                            animComp.editorPreviewTime = 0.0f;
+                            // Reset animator to play from beginning
+                            Animator* animator = animComp.GetAnimatorPtr();
+                            if (animator) {
+                                animator->PlayAnimation(animComp.GetClips()[i].get(), entity);
+                            }
+                        }
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                    // Show full path as tooltip
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("%s", animComp.clipPaths[i].c_str());
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
 
         ImGui::Spacing();
