@@ -85,6 +85,11 @@ target_precompile_headers(Engine PRIVATE
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
+# Define ANDROID for Android builds (needed for #ifdef ANDROID in code)
+if(ANDROID)
+    target_compile_definitions(Engine PUBLIC ANDROID)
+endif()
+
 # Define EDITOR for Editor builds (EditorDebug, EditorRelease)
 # Uses generator expression for multi-config generators (Visual Studio)
 # PUBLIC because header templates need this define when compiled by consuming targets

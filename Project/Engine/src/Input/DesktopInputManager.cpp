@@ -43,14 +43,8 @@ glm::vec2 DesktopInputManager::GetAxis(const std::string& axisName) {
         case AxisType::KeyboardComposite:
             return EvaluateKeyboardAxis(binding);
 
-        case AxisType::MouseDelta: {
-            glm::vec2 result = m_mouseDelta * binding.sensitivity;
-            if (result.x != 0.0f || result.y != 0.0f) {
-                std::cout << "[GetAxis] MouseDelta: raw=(" << m_mouseDelta.x << "," << m_mouseDelta.y
-                          << ") sens=" << binding.sensitivity << " result=(" << result.x << "," << result.y << ")" << std::endl;
-            }
-            return result;
-        }
+        case AxisType::MouseDelta:
+            return m_mouseDelta * binding.sensitivity;
 
         case AxisType::Gamepad:
             // TODO: Implement gamepad support
@@ -128,27 +122,27 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
         return false;
     }
 
-    // Check for "desktop" section
-    if (!doc.HasMember("desktop") || !doc["desktop"].IsObject()) {
-        std::cerr << "[DesktopInputManager] ERROR: Config missing 'desktop' section" << std::endl;
-        return false;
-    }
-
-    const auto& desktopConfig = doc["desktop"];
-
     // ===== Load Actions =====
-    if (desktopConfig.HasMember("actions") && desktopConfig["actions"].IsObject()) {
-        const auto& actions = desktopConfig["actions"];
+    // New format: actions at root level, with "desktop" nested inside each action
+    if (doc.HasMember("actions") && doc["actions"].IsObject()) {
+        const auto& actions = doc["actions"];
 
         for (auto it = actions.MemberBegin(); it != actions.MemberEnd(); ++it) {
             std::string actionName = it->name.GetString();
             const auto& actionData = it->value;
 
+            // Skip if no desktop binding
+            if (!actionData.HasMember("desktop") || !actionData["desktop"].IsObject()) {
+                std::cout << "[DesktopInputManager] Skipping action '" << actionName << "' (no desktop binding)" << std::endl;
+                continue;
+            }
+
+            const auto& desktopBinding = actionData["desktop"];
             ActionBinding binding;
 
             // Parse keys
-            if (actionData.HasMember("keys") && actionData["keys"].IsArray()) {
-                const auto& keys = actionData["keys"];
+            if (desktopBinding.HasMember("keys") && desktopBinding["keys"].IsArray()) {
+                const auto& keys = desktopBinding["keys"];
                 for (rapidjson::SizeType i = 0; i < keys.Size(); ++i) {
                     if (keys[i].IsString()) {
                         std::string keyName = keys[i].GetString();
@@ -163,8 +157,8 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
             }
 
             // Parse mouse buttons
-            if (actionData.HasMember("mouseButtons") && actionData["mouseButtons"].IsArray()) {
-                const auto& buttons = actionData["mouseButtons"];
+            if (desktopBinding.HasMember("mouseButtons") && desktopBinding["mouseButtons"].IsArray()) {
+                const auto& buttons = desktopBinding["mouseButtons"];
                 for (rapidjson::SizeType i = 0; i < buttons.Size(); ++i) {
                     if (buttons[i].IsString()) {
                         std::string buttonName = buttons[i].GetString();
@@ -186,59 +180,67 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
     }
 
     // ===== Load Axes =====
-    if (desktopConfig.HasMember("axes") && desktopConfig["axes"].IsObject()) {
-        const auto& axes = desktopConfig["axes"];
+    // New format: axes at root level, with "desktop" nested inside each axis
+    if (doc.HasMember("axes") && doc["axes"].IsObject()) {
+        const auto& axes = doc["axes"];
 
         for (auto it = axes.MemberBegin(); it != axes.MemberEnd(); ++it) {
             std::string axisName = it->name.GetString();
             const auto& axisData = it->value;
 
+            // Skip if no desktop binding
+            if (!axisData.HasMember("desktop") || !axisData["desktop"].IsObject()) {
+                std::cout << "[DesktopInputManager] Skipping axis '" << axisName << "' (no desktop binding)" << std::endl;
+                continue;
+            }
+
+            const auto& desktopBinding = axisData["desktop"];
             AxisBinding binding;
 
             // Check axis type
-            if (axisData.HasMember("type") && axisData["type"].IsString()) {
-                std::string type = axisData["type"].GetString();
+            if (desktopBinding.HasMember("type") && desktopBinding["type"].IsString()) {
+                std::string type = desktopBinding["type"].GetString();
 
                 if (type == "mouse_delta") {
                     binding.type = AxisType::MouseDelta;
 
-                    if (axisData.HasMember("sensitivity") && axisData["sensitivity"].IsNumber()) {
-                        binding.sensitivity = axisData["sensitivity"].GetFloat();
+                    if (desktopBinding.HasMember("sensitivity") && desktopBinding["sensitivity"].IsNumber()) {
+                        binding.sensitivity = desktopBinding["sensitivity"].GetFloat();
                     }
 
                     std::cout << "[DesktopInputManager] Loaded axis: " << axisName
                               << " (mouse_delta, sensitivity=" << binding.sensitivity << ")" << std::endl;
+                }
+                else if (type == "keyboard") {
+                    binding.type = AxisType::KeyboardComposite;
+
+                    // Parse directional keys (new format: up/down/left/right)
+                    auto parseKeyArray = [this](const rapidjson::Value& arr, std::vector<Input::Key>& outKeys) {
+                        if (arr.IsArray()) {
+                            for (rapidjson::SizeType i = 0; i < arr.Size(); ++i) {
+                                if (arr[i].IsString()) {
+                                    Input::Key key = ParseKey(arr[i].GetString());
+                                    if (key != Input::Key::UNKNOWN) {
+                                        outKeys.push_back(key);
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    // New naming: up/down/left/right (maps to positiveY/negativeY/negativeX/positiveX)
+                    if (desktopBinding.HasMember("right")) parseKeyArray(desktopBinding["right"], binding.positiveX);
+                    if (desktopBinding.HasMember("left")) parseKeyArray(desktopBinding["left"], binding.negativeX);
+                    if (desktopBinding.HasMember("up")) parseKeyArray(desktopBinding["up"], binding.positiveY);
+                    if (desktopBinding.HasMember("down")) parseKeyArray(desktopBinding["down"], binding.negativeY);
+
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard)" << std::endl;
                 }
                 else if (type == "gamepad") {
                     binding.type = AxisType::Gamepad;
                     std::cout << "[DesktopInputManager] Loaded axis: " << axisName
                               << " (gamepad - not yet implemented)" << std::endl;
                 }
-            }
-            else {
-                // Default: Keyboard composite
-                binding.type = AxisType::KeyboardComposite;
-
-                // Parse directional keys
-                auto parseKeyArray = [this](const rapidjson::Value& arr, std::vector<Input::Key>& outKeys) {
-                    if (arr.IsArray()) {
-                        for (rapidjson::SizeType i = 0; i < arr.Size(); ++i) {
-                            if (arr[i].IsString()) {
-                                Input::Key key = ParseKey(arr[i].GetString());
-                                if (key != Input::Key::UNKNOWN) {
-                                    outKeys.push_back(key);
-                                }
-                            }
-                        }
-                    }
-                };
-
-                if (axisData.HasMember("positiveX")) parseKeyArray(axisData["positiveX"], binding.positiveX);
-                if (axisData.HasMember("negativeX")) parseKeyArray(axisData["negativeX"], binding.negativeX);
-                if (axisData.HasMember("positiveY")) parseKeyArray(axisData["positiveY"], binding.positiveY);
-                if (axisData.HasMember("negativeY")) parseKeyArray(axisData["negativeY"], binding.negativeY);
-
-                std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard composite)" << std::endl;
             }
 
             m_axisBindings[axisName] = binding;
@@ -284,13 +286,6 @@ void DesktopInputManager::UpdateActionStates() {
     m_previousActions = m_currentActions;
     m_currentActions.clear();
 
-    // Debug: check if left mouse is pressed at platform level
-    static int debugCounter = 0;
-    bool leftMouseAtPlatform = m_platform ? m_platform->IsMouseButtonPressed(Input::MouseButton::LEFT) : false;
-    if (leftMouseAtPlatform && debugCounter++ % 60 == 0) {
-        std::cout << "[DEBUG] Left mouse button IS pressed at platform level" << std::endl;
-    }
-
     // Evaluate all action bindings
     for (const auto& [actionName, binding] : m_actionBindings) {
         bool isPressed = false;
@@ -315,10 +310,6 @@ void DesktopInputManager::UpdateActionStates() {
 
         if (isPressed) {
             m_currentActions.insert(actionName);
-            // Debug: log when Attack is detected
-            if (actionName == "Attack") {
-                std::cout << "[DEBUG] Attack action detected as pressed!" << std::endl;
-            }
         }
     }
 }

@@ -61,10 +61,11 @@ return Component {
 
 Update = function(self, dt)
 
-    --GET GAME COORDINATE FOR MOUSE
-    local mouseX = Input.GetMouseX()
-    local mouseY = Input.GetMouseY()
-    local mouseCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
+    --GET GAME COORDINATE FOR MOUSE (unified input system)
+    local pointerPos = Input.GetPointerPosition()
+    if not pointerPos then return end
+
+    local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
 
     local inputX = mouseCoordinate[1]
     local inputY = mouseCoordinate[2]
@@ -95,7 +96,7 @@ Update = function(self, dt)
             inputY >= bounds.minY and inputY <= bounds.maxY then
 
                 --IF BUTTON IS CLICKED, LOCK HIGHLIGHT FOR THE BUTTON.
-                if Input.GetMouseButton(Input.MouseButton.Left) then
+                if Input.IsPointerPressed() then
                     self._lockedState = true
                 end
 

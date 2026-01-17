@@ -20,6 +20,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <functional>
 #include <android/log.h>
 #include "WindowManager.hpp"
+#include "Input/InputManager.h"
+#include "Input/AndroidInputManager.h"
 
 AndroidPlatform::AndroidPlatform() 
     : window(nullptr)
@@ -374,22 +376,31 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
     // Convert pixel coordinates to normalized (0-1) coordinates
     float normalizedX = x / static_cast<float>(windowWidth);
     float normalizedY = y / static_cast<float>(windowHeight);
-    
-    // First check if touch hits virtual controls
-    bool isPressed = (action == 0 || action == 2); // ACTION_DOWN or ACTION_MOVE counts as pressed
 
-    if (action == 0 || action == 2) {
-        // ACTION_DOWN or ACTION_MOVE - check if touch hits virtual controls
-    } else if (action == 1) {
-        // ACTION_UP - release any pressed virtual controls
+    // Forward touch events to AndroidInputManager for virtual controls
+    AndroidInputManager* androidInput = dynamic_cast<AndroidInputManager*>(g_inputManager);
+    if (androidInput) {
+        // Use pointer ID 0 for single-touch (multi-touch would need actual pointer IDs from JNI)
+        int pointerId = 0;
+
+        switch (action) {
+            case 0: // ACTION_DOWN
+                androidInput->OnTouchDown(pointerId, normalizedX, normalizedY);
+                break;
+            case 1: // ACTION_UP
+                androidInput->OnTouchUp(pointerId, normalizedX, normalizedY);
+                break;
+            case 2: // ACTION_MOVE
+                androidInput->OnTouchMove(pointerId, normalizedX, normalizedY);
+                break;
+        }
     }
-    
-    // If not handled by virtual controls, treat as camera look (mouse input)
-    // Update mouse position
+
+    // Also update mouse position for legacy/fallback systems
     mouseX = static_cast<double>(x);
     mouseY = static_cast<double>(y);
 
-    // Map touch actions to mouse button events for camera look
+    // Map touch actions to mouse button events
     Input::MouseButton button = Input::MouseButton::LEFT;
     int buttonIndex = static_cast<int>(button);
 
@@ -398,7 +409,6 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
             if (buttonIndex >= 0 && buttonIndex < 8) {
                 mouseButtonStates[buttonIndex] = true;
             }
-            // Initialize mouse position to current touch to prevent jump
             break;
 
         case 1: // ACTION_UP
@@ -408,11 +418,9 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
             break;
 
         case 2: // ACTION_MOVE
-            // Just update position for camera look, button state unchanged
+            // Just update position, button state unchanged
             break;
     }
-
-    // Always update mouse position for InputManager (camera look)
 }
 
 void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {

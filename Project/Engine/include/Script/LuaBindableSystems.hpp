@@ -25,27 +25,13 @@ struct Vector2D {
 namespace InputWrappers {
     // Action-based input (platform-agnostic)
     inline bool IsActionPressed(const std::string& action) {
-        if (!g_inputManager) {
-            std::cout << "[LuaWrapper] IsActionPressed: g_inputManager is NULL!" << std::endl;
-            return false;
-        }
-        bool result = g_inputManager->IsActionPressed(action);
-        if (result) {
-            std::cout << "[LuaWrapper] IsActionPressed('" << action << "') = true" << std::endl;
-        }
-        return result;
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionPressed(action);
     }
 
     inline bool IsActionJustPressed(const std::string& action) {
-        if (!g_inputManager) {
-            std::cout << "[LuaWrapper] IsActionJustPressed: g_inputManager is NULL!" << std::endl;
-            return false;
-        }
-        bool result = g_inputManager->IsActionJustPressed(action);
-        if (result) {
-            std::cout << "[LuaWrapper] IsActionJustPressed('" << action << "') = true" << std::endl;
-        }
-        return result;
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustPressed(action);
     }
 
     inline bool IsActionJustReleased(const std::string& action) {
@@ -498,16 +484,55 @@ namespace AudioManagerWrappers {
     inline void StopAll() {
         AudioManager::GetInstance().StopAll();
     }
-    
+
     inline void SetMasterVolume(float volume) {
         AudioManager::GetInstance().SetMasterVolume(volume);
     }
-    
+
     inline float GetMasterVolume() {
         return AudioManager::GetInstance().GetMasterVolume();
     }
-    
+
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
+    }
+}
+
+// ============================================================================
+// PLATFORM WRAPPERS
+// ============================================================================
+
+namespace PlatformWrappers {
+    // Returns true if running on Android, false on desktop
+    inline bool IsAndroid() {
+#ifdef ANDROID
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    // Returns true if running on desktop (Windows/Linux/Mac)
+    inline bool IsDesktop() {
+#ifdef ANDROID
+        return false;
+#else
+        return true;
+#endif
+    }
+
+    // Returns platform name as string
+    inline std::string GetPlatformName() {
+#ifdef ANDROID
+        return "Android";
+#elif defined(_WIN32)
+        return "Windows";
+#elif defined(__linux__)
+        return "Linux";
+#elif defined(__APPLE__)
+        return "macOS";
+#else
+        return "Unknown";
+#endif
     }
 }

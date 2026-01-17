@@ -126,6 +126,7 @@ private:
         int activeTouchId = -1;
         glm::vec2 previousPosition;
         glm::vec2 delta;             // Current frame delta
+        bool movedThisFrame = false; // Track if movement occurred this frame
     };
 
     /**

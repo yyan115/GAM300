@@ -123,20 +123,44 @@ return Component {
 
     _updateMouseLook = function(self, dt)
         -- Process mouse look for camera rotation using unified input
-        if not (Input and Input.GetAxis) then return end
+        if not (Input and Input.GetAxis) then
+            print("[CameraFollow] ERROR: Input.GetAxis not available")
+            return
+        end
 
         -- Get mouse delta from "Look" axis (configured as mouse_delta on desktop, touch_drag on Android)
         local lookAxis = Input.GetAxis("Look")
-        if not lookAxis then return end
+        if not lookAxis then
+            print("[CameraFollow] Look axis returned nil")
+            return
+        end
 
-        -- Axis already has config sensitivity applied, just use camera's additional sensitivity
-        local xoffset = lookAxis.x * (self.mouseSensitivity or 0.15)
-        local yoffset = lookAxis.y * (self.mouseSensitivity or 0.15)
+        -- Check platform for sensitivity adjustment
+        -- Android uses normalized coords (0-1), desktop uses pixel delta - need different sensitivity
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local baseSensitivity = self.mouseSensitivity or 0.15
+
+        -- Android touch coords are normalized (0-1), so we need MUCH higher sensitivity
+        -- Desktop mouse delta is in pixels, so lower sensitivity works
+        local sensitivity = isAndroid and 800.0 or baseSensitivity  -- Direct value for Android
+
+        local xoffset = lookAxis.x * sensitivity
+        local yoffset = lookAxis.y * sensitivity
+
+        -- Debug: Log actual values being applied
+        if not self._logCount then self._logCount = 0 end
+        self._logCount = self._logCount + 1
+        if self._logCount % 30 == 1 and (lookAxis.x ~= 0 or lookAxis.y ~= 0) then
+            print("[CameraFollow] SENS=" .. sensitivity .. " offset=(" .. xoffset .. "," .. yoffset .. ") yaw=" .. self._yaw)
+        end
 
         self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
         self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
 
-        -- Broadcast camera yaw for camera-relative player movement
+        -- Store camera yaw in global for player movement (bypass event_bus)
+        _G.CAMERA_YAW = self._yaw
+
+        -- Also publish via event_bus for backwards compatibility
         if event_bus and event_bus.publish then
             event_bus.publish("camera_yaw", self._yaw)
         end
@@ -165,8 +189,16 @@ return Component {
             end
         end
 
-        -- Only update camera look when cursor is locked
-        if Screen and Screen.IsCursorLocked and Screen.IsCursorLocked() then
+        -- Only update camera look when cursor is locked (desktop) or always on Android
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
+        -- Debug log once
+        if not self._loggedPlatform then
+            print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
+            self._loggedPlatform = true
+        end
+
+        if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
             self:_updateMouseLook(dt)
         end
 

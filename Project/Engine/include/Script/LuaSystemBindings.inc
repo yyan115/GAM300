@@ -118,6 +118,29 @@ BEGIN_SYSTEM("Audio")
 END_SYSTEM()
 
 // ============================================================================
+// PLATFORM SYSTEM
+// ============================================================================
+// Provides platform detection for conditional behavior in Lua scripts.
+// Useful for showing/hiding touch controls on Android vs desktop.
+//
+// Usage examples:
+// if Platform.IsAndroid() then
+//     -- Show touch controls
+//     self.entity:SetActive(true)
+// else
+//     -- Hide on desktop
+//     self.entity:SetActive(false)
+// end
+//
+// local name = Platform.GetName()  -- "Android", "Windows", "Linux", "macOS"
+
+BEGIN_SYSTEM("Platform")
+    FUNCTION("IsAndroid", PlatformWrappers::IsAndroid)
+    FUNCTION("IsDesktop", PlatformWrappers::IsDesktop)
+    FUNCTION("GetName", PlatformWrappers::GetPlatformName)
+END_SYSTEM()
+
+// ============================================================================
 // CHARACTER CONTROLLER SYSTEM
 // ============================================================================
 

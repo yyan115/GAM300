@@ -33,11 +33,11 @@ return Component {
             print("Failed to get Component")
         end
 
-        --GET INPUT OF MOUSE IN GAME COORDINATE
-        if Input.GetMouseButton(Input.MouseButton.Left) then
-            local mouseX = Input.GetMouseX()
-            local mouseY = Input.GetMouseY()
-            local gameCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
+        --GET INPUT OF MOUSE IN GAME COORDINATE (unified input system)
+        if Input.IsPointerPressed() then
+            local pointerPos = Input.GetPointerPosition()
+            if not pointerPos then return end
+            local gameCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
 
             local gameX = gameCoordinate[1]
             local gameY = gameCoordinate[2]

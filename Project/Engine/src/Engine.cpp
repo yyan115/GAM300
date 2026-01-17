@@ -70,12 +70,15 @@ bool Engine::Initialize() {
 	#endif
 
 	// Load input configuration
+	// On Android, this is deferred until after AssetManager is set (called from JNI)
+	#ifndef ANDROID
 	std::string configPath = "Resources/Configs/input_config.json";
 	if (g_inputManager && !g_inputManager->LoadConfig(configPath)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
 	} else {
 		ENGINE_PRINT("[Engine] Input system initialized successfully");
 	}
+	#endif
 
 	// Initialize AudioManager on desktop now that platform assets are available
 	if (!AudioManager::GetInstance().Initialise()) {
@@ -635,6 +638,16 @@ bool Engine::InitializeGraphicsResources() {
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
+}
+
+void Engine::LoadInputConfig() {
+    // Called from JNI on Android after AssetManager is set
+    std::string configPath = "Resources/Configs/input_config.json";
+    if (g_inputManager && !g_inputManager->LoadConfig(configPath)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
+    } else {
+        ENGINE_PRINT("[Engine] Input system initialized successfully");
+    }
 }
 
 bool Engine::InitializeAssets() {

@@ -117,18 +117,7 @@ return Component {
     -- Main update
     ----------------------------------------------------------------------
         Update = function(self, dt)
-        print("[LUA][PlayerAttack] Update called!")
         self._time = self._time + dt
-
-        -- DEBUG: Check if Input table exists
-        if not Input then
-            print("[LUA][PlayerAttack] ERROR: Input table is nil!")
-            return
-        end
-        if not Input.IsActionPressed then
-            print("[LUA][PlayerAttack] ERROR: Input.IsActionPressed is nil!")
-            return
-        end
 
         -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
@@ -142,14 +131,7 @@ return Component {
         -- Use IsActionJustPressed for edge detection
         if Input and Input.IsActionJustPressed then
             leftPressed  = Input.IsActionJustPressed("Attack")
-            -- DEBUG: Print immediately after call
-            print("[LUA][PlayerAttack] IsActionJustPressed returned: " .. tostring(leftPressed) .. " type: " .. type(leftPressed))
             rightPressed = Input.IsActionJustPressed("ChainAttack")
-        end
-
-        -- DEBUG: Log input state
-        if leftDown or leftPressed then
-            print("[LUA][PlayerAttack] leftDown=" .. tostring(leftDown) .. " leftPressed=" .. tostring(leftPressed) .. " comboIndex=" .. tostring(self._comboIndex) .. " cooldown=" .. tostring(self._cooldownTimer))
         end
 
         if leftPressed then

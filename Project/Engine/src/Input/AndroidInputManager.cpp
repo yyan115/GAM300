@@ -8,10 +8,19 @@
 #include <cmath>
 #include <chrono>
 
+#ifdef ANDROID
+#include <android/log.h>
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "GAM300", __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "GAM300", __VA_ARGS__)
+#else
+#define LOGI(...) printf(__VA_ARGS__); printf("\n")
+#define LOGE(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
+#endif
+
 // ========== Constructor ==========
 
 AndroidInputManager::AndroidInputManager() {
-    std::cout << "[AndroidInputManager] Initialized" << std::endl;
+    LOGI("[AndroidInputManager] Initialized");
 }
 
 // ========== IInputSystem Interface Implementation ==========
@@ -113,209 +122,203 @@ void AndroidInputManager::Update(float deltaTime) {
 }
 
 bool AndroidInputManager::LoadConfig(const std::string& path) {
-    std::cout << "[AndroidInputManager] Loading config from: " << path << std::endl;
+    LOGI("[AndroidInputManager] Loading config from: %s", path.c_str());
 
     // Get platform instance
     IPlatform* platform = WindowManager::GetPlatform();
     if (!platform) {
-        std::cerr << "[AndroidInputManager] ERROR: Platform is null!" << std::endl;
+        LOGE("[AndroidInputManager] ERROR: Platform is null!");
         return false;
     }
 
-    // Check if file exists
-    if (!platform->FileExists(path)) {
-        std::cerr << "[AndroidInputManager] ERROR: Config file not found: " << path << std::endl;
-        return false;
-    }
+    // Try to read directly without FileExists check (FileExists may have issues)
+    // Log what we're attempting
+    LOGI("[AndroidInputManager] Attempting to read config file directly...");
 
     // Load file using platform
     std::vector<uint8_t> configData = platform->ReadAsset(path);
     if (configData.empty()) {
-        std::cerr << "[AndroidInputManager] ERROR: Failed to read config file: " << path << std::endl;
+        LOGE("[AndroidInputManager] ERROR: Failed to read config file: %s", path.c_str());
         return false;
     }
+
+    LOGI("[AndroidInputManager] Config file loaded, size: %zu bytes", configData.size());
 
     // Parse JSON
     rapidjson::Document doc;
     doc.Parse(reinterpret_cast<const char*>(configData.data()), configData.size());
 
     if (doc.HasParseError()) {
-        std::cerr << "[AndroidInputManager] ERROR: JSON parse error at offset "
-                  << doc.GetErrorOffset() << ": "
-                  << rapidjson::GetParseError_En(doc.GetParseError()) << std::endl;
+        LOGE("[AndroidInputManager] ERROR: JSON parse error at offset %zu: %s",
+             doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
         return false;
     }
-
-    // Check for "android" section
-    if (!doc.HasMember("android") || !doc["android"].IsObject()) {
-        std::cerr << "[AndroidInputManager] ERROR: Config missing 'android' section" << std::endl;
-        return false;
-    }
-
-    const auto& androidConfig = doc["android"];
 
     // ===== Load Actions (Touch Zones and Gestures) =====
-    if (androidConfig.HasMember("actions") && androidConfig["actions"].IsObject()) {
-        const auto& actions = androidConfig["actions"];
+    // New format: actions at root level, with "android" nested inside each action
+    if (doc.HasMember("actions") && doc["actions"].IsObject()) {
+        const auto& actions = doc["actions"];
 
         for (auto it = actions.MemberBegin(); it != actions.MemberEnd(); ++it) {
             std::string actionName = it->name.GetString();
             const auto& actionData = it->value;
 
-            // Load touch zones
-            if (actionData.HasMember("touchZones") && actionData["touchZones"].IsArray()) {
-                const auto& zones = actionData["touchZones"];
-
-                for (rapidjson::SizeType i = 0; i < zones.Size(); ++i) {
-                    const auto& zoneData = zones[i];
-
-                    TouchZone zone;
-                    zone.action = actionName;
-
-                    // Parse type
-                    if (zoneData.HasMember("type") && zoneData["type"].IsString()) {
-                        std::string type = zoneData["type"].GetString();
-                        zone.isCircle = (type == "circle");
-                    }
-
-                    // Parse position
-                    if (zoneData.HasMember("x") && zoneData.HasMember("y")) {
-                        zone.position.x = zoneData["x"].GetFloat();
-                        zone.position.y = zoneData["y"].GetFloat();
-                    }
-
-                    // Parse size
-                    if (zone.isCircle) {
-                        if (zoneData.HasMember("radius")) {
-                            zone.radius = zoneData["radius"].GetFloat();
-                        }
-                    } else {
-                        if (zoneData.HasMember("width") && zoneData.HasMember("height")) {
-                            zone.rectSize.x = zoneData["width"].GetFloat();
-                            zone.rectSize.y = zoneData["height"].GetFloat();
-                        }
-                    }
-
-                    // Parse visuals
-                    if (zoneData.HasMember("normalImage") && zoneData["normalImage"].IsString()) {
-                        zone.normalImage = zoneData["normalImage"].GetString();
-                    }
-                    if (zoneData.HasMember("pressedImage") && zoneData["pressedImage"].IsString()) {
-                        zone.pressedImage = zoneData["pressedImage"].GetString();
-                    }
-                    if (zoneData.HasMember("alpha")) {
-                        zone.alpha = zoneData["alpha"].GetFloat();
-                    }
-
-                    m_touchZones.push_back(zone);
-                    std::cout << "[AndroidInputManager] Loaded touch zone for action: " << actionName << std::endl;
-                }
+            // Skip if no android binding
+            if (!actionData.HasMember("android") || !actionData["android"].IsObject()) {
+                LOGI("[AndroidInputManager] Skipping action '%s' (no android binding)", actionName.c_str());
+                continue;
             }
 
-            // Load gestures
-            if (actionData.HasMember("gestures") && actionData["gestures"].IsArray()) {
-                const auto& gestures = actionData["gestures"];
+            const auto& androidBinding = actionData["android"];
 
-                for (rapidjson::SizeType i = 0; i < gestures.Size(); ++i) {
-                    const auto& gestureData = gestures[i];
+            // Load touch zone (single object, not array)
+            if (androidBinding.HasMember("touchZone") && androidBinding["touchZone"].IsObject()) {
+                const auto& zoneData = androidBinding["touchZone"];
 
-                    GestureBinding gesture;
-                    gesture.action = actionName;
+                TouchZone zone;
+                zone.action = actionName;
 
-                    if (gestureData.HasMember("type") && gestureData["type"].IsString()) {
-                        std::string type = gestureData["type"].GetString();
+                // Parse position
+                if (zoneData.HasMember("x") && zoneData.HasMember("y")) {
+                    zone.position.x = zoneData["x"].GetFloat();
+                    zone.position.y = zoneData["y"].GetFloat();
+                }
 
-                        if (type == "swipe" || type == "swipe_right" || type == "swipe_left" ||
-                            type == "swipe_up" || type == "swipe_down") {
-                            gesture.type = GestureType::SWIPE;
+                // Parse size - determine circle vs rect based on presence of radius
+                if (zoneData.HasMember("radius")) {
+                    zone.isCircle = true;
+                    zone.radius = zoneData["radius"].GetFloat();
+                } else if (zoneData.HasMember("width") && zoneData.HasMember("height")) {
+                    zone.isCircle = false;
+                    zone.rectSize.x = zoneData["width"].GetFloat();
+                    zone.rectSize.y = zoneData["height"].GetFloat();
+                }
 
-                            // Parse direction
-                            if (type == "swipe_right") gesture.direction = glm::vec2(1.0f, 0.0f);
-                            else if (type == "swipe_left") gesture.direction = glm::vec2(-1.0f, 0.0f);
-                            else if (type == "swipe_up") gesture.direction = glm::vec2(0.0f, -1.0f);
-                            else if (type == "swipe_down") gesture.direction = glm::vec2(0.0f, 1.0f);
+                // Parse visuals (optional)
+                if (zoneData.HasMember("normalImage") && zoneData["normalImage"].IsString()) {
+                    zone.normalImage = zoneData["normalImage"].GetString();
+                }
+                if (zoneData.HasMember("pressedImage") && zoneData["pressedImage"].IsString()) {
+                    zone.pressedImage = zoneData["pressedImage"].GetString();
+                }
+                if (zoneData.HasMember("alpha")) {
+                    zone.alpha = zoneData["alpha"].GetFloat();
+                }
 
-                            if (gestureData.HasMember("minDistance")) {
-                                gesture.minDistance = gestureData["minDistance"].GetFloat();
-                            }
-                            if (gestureData.HasMember("maxTime")) {
-                                gesture.maxTime = gestureData["maxTime"].GetFloat();
-                            }
+                m_touchZones.push_back(zone);
+                LOGI("[AndroidInputManager] Loaded touch zone for action: %s", actionName.c_str());
+            }
+
+            // Load gesture (single object, not array)
+            if (androidBinding.HasMember("gesture") && androidBinding["gesture"].IsObject()) {
+                const auto& gestureData = androidBinding["gesture"];
+
+                GestureBinding gesture;
+                gesture.action = actionName;
+
+                if (gestureData.HasMember("type") && gestureData["type"].IsString()) {
+                    std::string type = gestureData["type"].GetString();
+
+                    if (type == "swipe" || type == "swipe_right" || type == "swipe_left" ||
+                        type == "swipe_up" || type == "swipe_down") {
+                        gesture.type = GestureType::SWIPE;
+
+                        // Parse direction
+                        if (type == "swipe_right") gesture.direction = glm::vec2(1.0f, 0.0f);
+                        else if (type == "swipe_left") gesture.direction = glm::vec2(-1.0f, 0.0f);
+                        else if (type == "swipe_up") gesture.direction = glm::vec2(0.0f, -1.0f);
+                        else if (type == "swipe_down") gesture.direction = glm::vec2(0.0f, 1.0f);
+
+                        if (gestureData.HasMember("minDistance")) {
+                            gesture.minDistance = gestureData["minDistance"].GetFloat();
                         }
-                        else if (type == "double_tap") {
-                            gesture.type = GestureType::DOUBLE_TAP;
-
-                            if (gestureData.HasMember("maxTimeBetweenTaps")) {
-                                gesture.maxTimeBetweenTaps = gestureData["maxTimeBetweenTaps"].GetFloat();
-                            }
+                        if (gestureData.HasMember("maxTime")) {
+                            gesture.maxTime = gestureData["maxTime"].GetFloat();
                         }
                     }
+                    else if (type == "double_tap") {
+                        gesture.type = GestureType::DOUBLE_TAP;
 
-                    m_gestures.push_back(gesture);
-                    std::cout << "[AndroidInputManager] Loaded gesture for action: " << actionName << std::endl;
+                        if (gestureData.HasMember("maxInterval")) {
+                            gesture.maxTimeBetweenTaps = gestureData["maxInterval"].GetFloat();
+                        }
+                    }
                 }
+
+                m_gestures.push_back(gesture);
+                LOGI("[AndroidInputManager] Loaded gesture for action: %s", actionName.c_str());
             }
         }
     }
 
     // ===== Load Axes (Joysticks and Drag Zones) =====
-    if (androidConfig.HasMember("axes") && androidConfig["axes"].IsObject()) {
-        const auto& axes = androidConfig["axes"];
+    // New format: axes at root level, with "android" nested inside each axis
+    if (doc.HasMember("axes") && doc["axes"].IsObject()) {
+        const auto& axes = doc["axes"];
 
         for (auto it = axes.MemberBegin(); it != axes.MemberEnd(); ++it) {
             std::string axisName = it->name.GetString();
             const auto& axisData = it->value;
 
-            if (!axisData.HasMember("type") || !axisData["type"].IsString()) {
+            // Skip if no android binding
+            if (!axisData.HasMember("android") || !axisData["android"].IsObject()) {
+                LOGI("[AndroidInputManager] Skipping axis '%s' (no android binding)", axisName.c_str());
                 continue;
             }
 
-            std::string type = axisData["type"].GetString();
+            const auto& androidBinding = axisData["android"];
+
+            if (!androidBinding.HasMember("type") || !androidBinding["type"].IsString()) {
+                continue;
+            }
+
+            std::string type = androidBinding["type"].GetString();
 
             if (type == "virtual_joystick") {
                 VirtualJoystick joystick;
                 joystick.axisName = axisName;
 
-                // Parse position
-                if (axisData.HasMember("x") && axisData.HasMember("y")) {
-                    joystick.basePosition.x = axisData["x"].GetFloat();
-                    joystick.basePosition.y = axisData["y"].GetFloat();
+                // Parse position (new format uses nested "position" object)
+                if (androidBinding.HasMember("position") && androidBinding["position"].IsObject()) {
+                    const auto& pos = androidBinding["position"];
+                    if (pos.HasMember("x")) joystick.basePosition.x = pos["x"].GetFloat();
+                    if (pos.HasMember("y")) joystick.basePosition.y = pos["y"].GetFloat();
                 }
 
                 // Parse radii
-                if (axisData.HasMember("outerRadius")) {
-                    joystick.outerRadius = axisData["outerRadius"].GetFloat();
+                if (androidBinding.HasMember("outerRadius")) {
+                    joystick.outerRadius = androidBinding["outerRadius"].GetFloat();
                 }
-                if (axisData.HasMember("innerRadius")) {
-                    joystick.innerRadius = axisData["innerRadius"].GetFloat();
+                if (androidBinding.HasMember("innerRadius")) {
+                    joystick.innerRadius = androidBinding["innerRadius"].GetFloat();
                 }
-                if (axisData.HasMember("deadZone")) {
-                    joystick.deadZone = axisData["deadZone"].GetFloat();
+                if (androidBinding.HasMember("deadZone")) {
+                    joystick.deadZone = androidBinding["deadZone"].GetFloat();
                 } else {
                     joystick.deadZone = 0.1f;  // Default
                 }
 
-                // Parse visuals
-                if (axisData.HasMember("outerImage") && axisData["outerImage"].IsString()) {
-                    joystick.outerImage = axisData["outerImage"].GetString();
+                // Parse visuals (optional)
+                if (androidBinding.HasMember("outerImage") && androidBinding["outerImage"].IsString()) {
+                    joystick.outerImage = androidBinding["outerImage"].GetString();
                 }
-                if (axisData.HasMember("innerImage") && axisData["innerImage"].IsString()) {
-                    joystick.innerImage = axisData["innerImage"].GetString();
+                if (androidBinding.HasMember("innerImage") && androidBinding["innerImage"].IsString()) {
+                    joystick.innerImage = androidBinding["innerImage"].GetString();
                 }
-                if (axisData.HasMember("alpha")) {
-                    joystick.alpha = axisData["alpha"].GetFloat();
+                if (androidBinding.HasMember("alpha")) {
+                    joystick.alpha = androidBinding["alpha"].GetFloat();
                 }
 
                 m_joysticks.push_back(joystick);
-                std::cout << "[AndroidInputManager] Loaded virtual joystick: " << axisName << std::endl;
+                LOGI("[AndroidInputManager] Loaded virtual joystick: %s", axisName.c_str());
             }
             else if (type == "touch_drag") {
                 TouchDragZone dragZone;
                 dragZone.axisName = axisName;
 
                 // Parse zone
-                if (axisData.HasMember("zone") && axisData["zone"].IsObject()) {
-                    const auto& zone = axisData["zone"];
+                if (androidBinding.HasMember("zone") && androidBinding["zone"].IsObject()) {
+                    const auto& zone = androidBinding["zone"];
 
                     if (zone.HasMember("x")) dragZone.zonePosition.x = zone["x"].GetFloat();
                     if (zone.HasMember("y")) dragZone.zonePosition.y = zone["y"].GetFloat();
@@ -324,23 +327,20 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                 }
 
                 // Parse sensitivity
-                if (axisData.HasMember("sensitivity")) {
-                    dragZone.sensitivity = axisData["sensitivity"].GetFloat();
+                if (androidBinding.HasMember("sensitivity")) {
+                    dragZone.sensitivity = androidBinding["sensitivity"].GetFloat();
                 } else {
                     dragZone.sensitivity = 1.0f;
                 }
 
                 m_dragZones.push_back(dragZone);
-                std::cout << "[AndroidInputManager] Loaded touch drag zone: " << axisName << std::endl;
+                LOGI("[AndroidInputManager] Loaded touch drag zone: %s", axisName.c_str());
             }
         }
     }
 
-    std::cout << "[AndroidInputManager] Config loaded: "
-              << m_touchZones.size() << " touch zones, "
-              << m_joysticks.size() << " joysticks, "
-              << m_dragZones.size() << " drag zones, "
-              << m_gestures.size() << " gestures" << std::endl;
+    LOGI("[AndroidInputManager] Config loaded: %zu touch zones, %zu joysticks, %zu drag zones, %zu gestures",
+         m_touchZones.size(), m_joysticks.size(), m_dragZones.size(), m_gestures.size());
 
     return true;
 }
@@ -438,6 +438,22 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
                 joystick.isActive = true;
                 joystick.activeTouchId = pointerId;
                 touch.consumed = true;
+
+                // Calculate initial offset on touch down (not just on move)
+                glm::vec2 offset = normalizedPos - joystick.basePosition;
+                float distance = glm::length(offset);
+
+                if (distance < joystick.deadZone) {
+                    joystick.normalizedValue = glm::vec2(0.0f);
+                    joystick.stickOffset = glm::vec2(0.0f);
+                } else {
+                    if (distance > joystick.outerRadius) {
+                        offset = glm::normalize(offset) * joystick.outerRadius;
+                        distance = joystick.outerRadius;
+                    }
+                    joystick.normalizedValue = offset / joystick.outerRadius;
+                    joystick.stickOffset = offset;
+                }
                 break;
             }
         }
@@ -447,6 +463,8 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     if (!touch.consumed) {
         for (auto& dragZone : m_dragZones) {
             if (IsPointInRect(normalizedPos, dragZone.zonePosition, dragZone.zoneSize)) {
+                LOGI("[AndroidInputManager] Touch in drag zone '%s' at (%.2f, %.2f)",
+                     dragZone.axisName.c_str(), normalizedPos.x, normalizedPos.y);
                 dragZone.isActive = true;
                 dragZone.activeTouchId = pointerId;
                 dragZone.previousPosition = normalizedPos;
@@ -497,6 +515,12 @@ void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
         if (dragZone.isActive && dragZone.activeTouchId == pointerId) {
             dragZone.delta = normalizedPos - dragZone.previousPosition;
             dragZone.previousPosition = normalizedPos;
+            dragZone.movedThisFrame = true;
+            // Log non-zero deltas
+            if (dragZone.delta.x != 0.0f || dragZone.delta.y != 0.0f) {
+                LOGI("[AndroidInputManager] Drag '%s' delta: (%.4f, %.4f)",
+                     dragZone.axisName.c_str(), dragZone.delta.x, dragZone.delta.y);
+            }
             break;
         }
     }
@@ -553,11 +577,14 @@ void AndroidInputManager::UpdateJoysticks() {
 }
 
 void AndroidInputManager::UpdateDragZones() {
-    // Reset delta for inactive drag zones
+    // Reset delta for drag zones that didn't move this frame
+    // This ensures delta is 0 when finger is stationary
     for (auto& dragZone : m_dragZones) {
-        if (!dragZone.isActive) {
+        if (!dragZone.movedThisFrame) {
             dragZone.delta = glm::vec2(0.0f);
         }
+        // Reset the flag for next frame
+        dragZone.movedThisFrame = false;
     }
 }
 

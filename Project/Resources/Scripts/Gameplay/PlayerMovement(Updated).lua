@@ -59,11 +59,15 @@ return Component {
         self._cameraYawSub = nil
 
         if event_bus and event_bus.subscribe then
+            print("[PlayerMovement] Subscribing to camera_yaw")
             self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
                 if yaw then
                     self._cameraYaw = yaw
                 end
             end)
+            print("[PlayerMovement] Subscription token: " .. tostring(self._cameraYawSub))
+        else
+            print("[PlayerMovement] ERROR: event_bus not available!")
         end
     end,
 
@@ -75,7 +79,13 @@ return Component {
         print("transform here is ", self._transform.localPosition.x)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        self._animator:PlayClip(IDLE, true)
+        -- Use PlayClip directly (state machine approach doesn't work)
+        if self._animator then
+            print("[PlayerMovement] Animator found, playing IDLE clip")
+            self._animator:PlayClip(IDLE, true)
+        else
+            print("[PlayerMovement] ERROR: Animator is nil!")
+        end
 
         self._isRunning = false
         self._isJumping = false
@@ -97,9 +107,12 @@ return Component {
         -- ===============================
         -- CAMERA-RELATIVE MOVEMENT (MERGED)
         -- ===============================
+        -- Read camera yaw from global (set by camera_follow.lua) - bypasses event_bus
+        local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+
         local moveX, moveZ = 0, 0
         if rawX ~= 0 or rawZ ~= 0 then
-            local yawRad = math.rad(self._cameraYaw)
+            local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
 
@@ -132,10 +145,11 @@ return Component {
             )
         end
 
-        -- ANIMATION
+        -- ANIMATION (using PlayClip directly)
         if not isGrounded then
             if not self._isJumping then
                 -- Start jump animation
+                print("[PlayerMovement] PlayClip(JUMP=" .. JUMP .. ")")
                 self._animator:PlayClip(JUMP, false)
                 self._isJumping = true
                 self._isRunning = false
@@ -146,16 +160,20 @@ return Component {
                 self._isJumping = false
                 -- Resume proper state based on movement
                 if isMoving then
+                    print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
                     self._animator:PlayClip(RUN, true)
                     self._isRunning = true
                 else
+                    print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
                     self._animator:PlayClip(IDLE, true)
                     self._isRunning = false
                 end
             elseif isMoving and not self._isRunning then
+                print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
                 self._animator:PlayClip(RUN, true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
+                print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
                 self._animator:PlayClip(IDLE, true)
                 self._isRunning = false
             end
