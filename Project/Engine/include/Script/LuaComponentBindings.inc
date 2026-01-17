@@ -100,6 +100,24 @@ BEGIN_COMPONENT(SpriteAnimationComponent, "SpriteAnimationComponent")
 END_COMPONENT()
 
 // ============================================================================
+// Sprite Animation Component
+// ============================================================================
+
+BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
+    // Properties
+    PROPERTY("isVisible", &SpriteRenderComponent::isVisible)
+    PROPERTY("position", &SpriteRenderComponent::position)
+    PROPERTY("scale", &SpriteRenderComponent::scale)
+    PROPERTY("rotation", &SpriteRenderComponent::rotation)
+    PROPERTY("color", &SpriteRenderComponent::color)
+    PROPERTY("alpha", &SpriteRenderComponent::alpha)
+END_COMPONENT()
+
+
+
+
+
+// ============================================================================
 // AI/Brain Components
 // ============================================================================
 
@@ -402,6 +420,18 @@ BEGIN_COMPONENT(LayerComponent, "LayerComponent")
     METHOD("IsInLayer", &LayerComponent::IsInLayer)
     METHOD("GetLayerMask", &LayerComponent::GetLayerMask)
 END_COMPONENT()
+
+BEGIN_COMPONENT(ButtonComponent, "ButtonComponent")
+    PROPERTY("interactable", &ButtonComponent::interactable)
+END_COMPONENT()
+
+BEGIN_COMPONENT(ActiveComponent, "ActiveComponent")
+    PROPERTY("isActive", &ActiveComponent::isActive)
+END_COMPONENT()
+
+
+
+
 
 // ============================================================================
 // Hierarchy Components (read-only for Lua - managed by engine)
