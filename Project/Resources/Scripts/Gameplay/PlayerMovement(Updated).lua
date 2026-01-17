@@ -75,6 +75,7 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
 
+        print("transform here is ", self._transform.localPosition.x)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
         self._animator:PlayClip(IDLE, true)
