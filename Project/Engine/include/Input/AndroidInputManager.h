@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IInputSystem.h"
+#include "InputManager.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 /**
- * @brief Android implementation of IInputSystem
+ * @brief Android implementation of InputManager
  *
  * Maps touch inputs, gestures, and virtual controls to logical actions.
  * Supports:
@@ -20,12 +20,12 @@
  * Loads configuration from JSON defining positions, sizes, and visual properties
  * of all virtual controls.
  */
-class AndroidInputSystem : public IInputSystem {
+class AndroidInputManager : public InputManager {
 public:
-    AndroidInputSystem();
-    ~AndroidInputSystem() override = default;
+    AndroidInputManager();
+    ~AndroidInputManager() override = default;
 
-    // IInputSystem interface implementation
+    // InputManager interface implementation
     bool IsActionPressed(const std::string& action) override;
     bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
@@ -45,6 +45,7 @@ public:
     std::unordered_map<std::string, glm::vec2> GetAllAxisStates() override;
 
     void RenderOverlay(int screenWidth, int screenHeight) override;
+    void SetGamePanelMousePos(float newX, float newY) override;
 
     // ========== Android-Specific Methods ==========
 

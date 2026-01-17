@@ -6,7 +6,8 @@
 #include "Logging.hpp"
 #include "TimeManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
-#include "Input/IInputSystem.h"
+#include "WindowManager.hpp"
+#include "Input/InputManager.h"
 
 
 void ButtonSystem::Initialise(ECSManager& ecsManager) {
@@ -23,12 +24,12 @@ void ButtonSystem::UpdateButtonStates() {
     if (!m_ecs) return;
 
     // Use unified input system (works on both desktop and Android)
-    if (!g_inputSystem) {
-        ENGINE_LOG_WARN("[ButtonSystem] g_inputSystem is null! Cannot process button input.");
+    if (!g_inputManager) {
+        ENGINE_LOG_WARN("[ButtonSystem] g_inputManager is null! Cannot process button input.");
         return;
     }
 
-    if (g_inputSystem->IsPointerJustPressed()) {
+    if (g_inputManager->IsPointerJustPressed()) {
         // Get viewport dimensions (actual render area)
         float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
         float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
@@ -38,7 +39,7 @@ void ButtonSystem::UpdateButtonStates() {
         GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
 
         // Get pointer position (mouse on desktop, touch on Android)
-        glm::vec2 pointerPosNormalized = g_inputSystem->GetPointerPosition();
+        glm::vec2 pointerPosNormalized = g_inputManager->GetPointerPosition();
 
         // Convert normalized coords to viewport pixels (assuming normalized is in pixels already)
         // TODO: Verify if GetPointerPosition returns pixels or normalized 0-1 coords

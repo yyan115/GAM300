@@ -203,9 +203,9 @@ return Component {
         --         "gravityFactor=", tostring(self._rb and self._rb.gravityFactor))
         -- end
 
-        -- DEBUG
-        if Input.GetKeyDown(Input.Key.H) then self:ApplyHit(1) end
-        if Input.GetKeyDown(Input.Key.J) then self:ApplyHook(4.0) end
+        -- DEBUG (disabled for unified input - no debug keys mapped)
+        -- if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
+        -- if Input.IsActionJustPressed("DebugHook") then self:ApplyHook(4.0) end
 
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dt)
 

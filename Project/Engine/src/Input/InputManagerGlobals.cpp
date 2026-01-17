@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Input/IInputSystem.h"
+#include "Input/InputManager.h"
 
 // Global input system instance
 // Set by Application during platform initialization
-IInputSystem* g_inputSystem = nullptr;
+InputManager* g_inputManager = nullptr;

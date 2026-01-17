@@ -3,7 +3,7 @@
 #include "ECS/System.hpp"
 #include <Performance/PerformanceProfiler.hpp>
 #include <Graphics/GraphicsManager.hpp>
-#include <Input/InputManager.hpp>
+#include <Input/InputManager.h>
 class ECSManager;
 using Entity = unsigned int;
 

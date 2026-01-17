@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IInputSystem.h"
+#include "InputManager.h"
 #include "Keys.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -11,7 +11,7 @@
 class IPlatform;  // Forward declaration
 
 /**
- * @brief Desktop implementation of IInputSystem
+ * @brief Desktop implementation of InputManager
  *
  * Maps keyboard, mouse, and gamepad inputs to logical actions.
  * Loads key bindings from JSON configuration file.
@@ -31,16 +31,16 @@ class IPlatform;  // Forward declaration
  *   }
  * }
  */
-class DesktopInputSystem : public IInputSystem {
+class DesktopInputManager : public InputManager {
 public:
     /**
      * @brief Constructor
      * @param platform Pointer to platform layer for hardware input queries
      */
-    explicit DesktopInputSystem(IPlatform* platform);
-    ~DesktopInputSystem() override = default;
+    explicit DesktopInputManager(IPlatform* platform);
+    ~DesktopInputManager() override = default;
 
-    // IInputSystem interface implementation
+    // InputManager interface implementation
     bool IsActionPressed(const std::string& action) override;
     bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
@@ -60,6 +60,9 @@ public:
     std::unordered_map<std::string, glm::vec2> GetAllAxisStates() override;
 
     void RenderOverlay(int screenWidth, int screenHeight) override;
+
+    // Editor support
+    void SetGamePanelMousePos(float newX, float newY) override;
 
 private:
     // ========== Internal Types ==========
@@ -118,6 +121,10 @@ private:
     // Pointer state tracking
     bool m_pointerPressed = false;
     bool m_pointerPreviouslyPressed = false;
+
+    // Editor support
+    double m_gamePanelMouseX = 0.0;
+    double m_gamePanelMouseY = 0.0;
 
     // ========== Helper Methods ==========
 

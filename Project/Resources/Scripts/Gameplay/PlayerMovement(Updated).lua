@@ -45,7 +45,6 @@ return Component {
 
     fields = {
         Speed = 1.5,
-        -- Speed = 8, --HERE FOR TESTING
         JumpHeight = 1.2,
     },
 
@@ -55,9 +54,7 @@ return Component {
         self._currentRotY = 0
         self._currentRotZ = 0
 
-        -- ===============================
-        -- CAMERA STATE (MERGED)
-        -- ===============================
+        -- Camera state
         self._cameraYaw = 180.0
         self._cameraYawSub = nil
 
@@ -88,23 +85,13 @@ return Component {
         if not self._collider or not self._transform or not self._controller then
             return
         end
-        
-        -- print(self.entityId)
 
         -- ===============================
-        -- RAW INPUT (LOCAL SPACE)
+        -- RAW INPUT (LOCAL SPACE) - Using new unified input system
         -- ===============================
-        local rawX, rawZ = 0, 0
-        if Input.GetKey(Input.Key.W) then rawZ = rawZ + 1 end
-        if Input.GetKey(Input.Key.S) then rawZ = rawZ - 1 end
-        if Input.GetKey(Input.Key.A) then rawX = rawX + 1 end
-        if Input.GetKey(Input.Key.D) then rawX = rawX - 1 end
-
-        local len = math.sqrt(rawX*rawX + rawZ*rawZ)
-        if len > 1 then
-            rawX = rawX / len
-            rawZ = rawZ / len
-        end
+        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local rawX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
+        local rawZ = axis.y   -- Z is forward/back
 
         -- ===============================
         -- CAMERA-RELATIVE MOVEMENT (MERGED)
@@ -127,7 +114,7 @@ return Component {
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping = false
 
-        if Input.GetKeyDown(Input.Key.Space) and isGrounded then
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
         end

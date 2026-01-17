@@ -3,9 +3,11 @@
 #include <string>
 #include <unordered_map>
 #include <glm/glm.hpp>
+#include "Keys.h"  // For Input::Key and Input::MouseButton enums
+#include "WindowManager.hpp"  // For ENGINE_API macro
 
 /**
- * @brief Platform-agnostic input system interface
+ * @brief Platform-agnostic input manager interface
  *
  * Provides action-based input abstraction that works across desktop and Android.
  * Game code queries logical "actions" (e.g., "Jump", "Attack") instead of raw hardware inputs.
@@ -15,16 +17,16 @@
  *
  * @example
  * // Game code (platform-agnostic)
- * if (g_inputSystem->IsActionPressed("Jump")) {
+ * if (g_inputManager->IsActionPressed("Jump")) {
  *     player.Jump();
  * }
  *
- * glm::vec2 movement = g_inputSystem->GetAxis("Movement");
+ * glm::vec2 movement = g_inputManager->GetAxis("Movement");
  * player.Move(movement.x, movement.y);
  */
-class IInputSystem {
+class InputManager {
 public:
-    virtual ~IInputSystem() = default;
+    virtual ~InputManager() = default;
 
     // ========== Action-Based Input (Game Logic) ==========
 
@@ -139,14 +141,23 @@ public:
      * Android: Renders joysticks, virtual buttons, etc.
      */
     virtual void RenderOverlay(int screenWidth, int screenHeight) = 0;
+
+    // ========== Editor Support ==========
+
+    /**
+     * @brief Set game panel mouse position (for editor)
+     * @param newX X coordinate
+     * @param newY Y coordinate
+     */
+    virtual void SetGamePanelMousePos(float newX, float newY) = 0;
 };
 
 /**
- * @brief Global input system instance
+ * @brief Global input manager instance
  *
- * Set by Application during platform initialization.
+ * Set by Engine during platform initialization.
  * Platform-specific implementation is created based on build target:
- * - Desktop: DesktopInputSystem
- * - Android: AndroidInputSystem
+ * - Desktop: DesktopInputManager
+ * - Android: AndroidInputManager
  */
-extern IInputSystem* g_inputSystem;
+ENGINE_API extern InputManager* g_inputManager;

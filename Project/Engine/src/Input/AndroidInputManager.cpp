@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Input/AndroidInputSystem.h"
+#include "Input/AndroidInputManager.h"
 #include "Platform/IPlatform.h"
 #include <WindowManager.hpp>
 #include <rapidjson/document.h>
@@ -10,27 +10,27 @@
 
 // ========== Constructor ==========
 
-AndroidInputSystem::AndroidInputSystem() {
-    std::cout << "[AndroidInputSystem] Initialized" << std::endl;
+AndroidInputManager::AndroidInputManager() {
+    std::cout << "[AndroidInputManager] Initialized" << std::endl;
 }
 
 // ========== IInputSystem Interface Implementation ==========
 
-bool AndroidInputSystem::IsActionPressed(const std::string& action) {
+bool AndroidInputManager::IsActionPressed(const std::string& action) {
     return m_currentActions.count(action) > 0;
 }
 
-bool AndroidInputSystem::IsActionJustPressed(const std::string& action) {
+bool AndroidInputManager::IsActionJustPressed(const std::string& action) {
     return m_currentActions.count(action) > 0 &&
            m_previousActions.count(action) == 0;
 }
 
-bool AndroidInputSystem::IsActionJustReleased(const std::string& action) {
+bool AndroidInputManager::IsActionJustReleased(const std::string& action) {
     return m_currentActions.count(action) == 0 &&
            m_previousActions.count(action) > 0;
 }
 
-glm::vec2 AndroidInputSystem::GetAxis(const std::string& axisName) {
+glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
     // Check joysticks
     for (const auto& joystick : m_joysticks) {
         if (joystick.axisName == axisName) {
@@ -48,7 +48,7 @@ glm::vec2 AndroidInputSystem::GetAxis(const std::string& axisName) {
     return glm::vec2(0.0f);
 }
 
-bool AndroidInputSystem::IsPointerPressed() {
+bool AndroidInputManager::IsPointerPressed() {
     // Pointer = primary touch (first non-consumed touch)
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.consumed) {
@@ -58,7 +58,7 @@ bool AndroidInputSystem::IsPointerPressed() {
     return false;
 }
 
-bool AndroidInputSystem::IsPointerJustPressed() {
+bool AndroidInputManager::IsPointerJustPressed() {
     // Check if any non-consumed touch was just pressed
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.consumed) {
@@ -72,7 +72,7 @@ bool AndroidInputSystem::IsPointerJustPressed() {
     return false;
 }
 
-glm::vec2 AndroidInputSystem::GetPointerPosition() {
+glm::vec2 AndroidInputManager::GetPointerPosition() {
     // Return position of first non-consumed touch
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.consumed) {
@@ -82,11 +82,11 @@ glm::vec2 AndroidInputSystem::GetPointerPosition() {
     return glm::vec2(0.0f);
 }
 
-int AndroidInputSystem::GetTouchCount() {
+int AndroidInputManager::GetTouchCount() {
     return static_cast<int>(m_activeTouches.size());
 }
 
-glm::vec2 AndroidInputSystem::GetTouchPosition(int index) {
+glm::vec2 AndroidInputManager::GetTouchPosition(int index) {
     if (index < 0 || index >= static_cast<int>(m_activeTouches.size())) {
         return glm::vec2(0.0f);
     }
@@ -96,7 +96,7 @@ glm::vec2 AndroidInputSystem::GetTouchPosition(int index) {
     return it->second.position;
 }
 
-void AndroidInputSystem::Update(float deltaTime) {
+void AndroidInputManager::Update(float deltaTime) {
     m_currentTime += deltaTime;
 
     // Save previous state
@@ -112,26 +112,26 @@ void AndroidInputSystem::Update(float deltaTime) {
     DetectGestures(deltaTime);
 }
 
-bool AndroidInputSystem::LoadConfig(const std::string& path) {
-    std::cout << "[AndroidInputSystem] Loading config from: " << path << std::endl;
+bool AndroidInputManager::LoadConfig(const std::string& path) {
+    std::cout << "[AndroidInputManager] Loading config from: " << path << std::endl;
 
     // Get platform instance
     IPlatform* platform = WindowManager::GetPlatform();
     if (!platform) {
-        std::cerr << "[AndroidInputSystem] ERROR: Platform is null!" << std::endl;
+        std::cerr << "[AndroidInputManager] ERROR: Platform is null!" << std::endl;
         return false;
     }
 
     // Check if file exists
     if (!platform->FileExists(path)) {
-        std::cerr << "[AndroidInputSystem] ERROR: Config file not found: " << path << std::endl;
+        std::cerr << "[AndroidInputManager] ERROR: Config file not found: " << path << std::endl;
         return false;
     }
 
     // Load file using platform
     std::vector<uint8_t> configData = platform->ReadAsset(path);
     if (configData.empty()) {
-        std::cerr << "[AndroidInputSystem] ERROR: Failed to read config file: " << path << std::endl;
+        std::cerr << "[AndroidInputManager] ERROR: Failed to read config file: " << path << std::endl;
         return false;
     }
 
@@ -140,7 +140,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
     doc.Parse(reinterpret_cast<const char*>(configData.data()), configData.size());
 
     if (doc.HasParseError()) {
-        std::cerr << "[AndroidInputSystem] ERROR: JSON parse error at offset "
+        std::cerr << "[AndroidInputManager] ERROR: JSON parse error at offset "
                   << doc.GetErrorOffset() << ": "
                   << rapidjson::GetParseError_En(doc.GetParseError()) << std::endl;
         return false;
@@ -148,7 +148,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
 
     // Check for "android" section
     if (!doc.HasMember("android") || !doc["android"].IsObject()) {
-        std::cerr << "[AndroidInputSystem] ERROR: Config missing 'android' section" << std::endl;
+        std::cerr << "[AndroidInputManager] ERROR: Config missing 'android' section" << std::endl;
         return false;
     }
 
@@ -208,7 +208,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
                     }
 
                     m_touchZones.push_back(zone);
-                    std::cout << "[AndroidInputSystem] Loaded touch zone for action: " << actionName << std::endl;
+                    std::cout << "[AndroidInputManager] Loaded touch zone for action: " << actionName << std::endl;
                 }
             }
 
@@ -252,7 +252,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
                     }
 
                     m_gestures.push_back(gesture);
-                    std::cout << "[AndroidInputSystem] Loaded gesture for action: " << actionName << std::endl;
+                    std::cout << "[AndroidInputManager] Loaded gesture for action: " << actionName << std::endl;
                 }
             }
         }
@@ -307,7 +307,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
                 }
 
                 m_joysticks.push_back(joystick);
-                std::cout << "[AndroidInputSystem] Loaded virtual joystick: " << axisName << std::endl;
+                std::cout << "[AndroidInputManager] Loaded virtual joystick: " << axisName << std::endl;
             }
             else if (type == "touch_drag") {
                 TouchDragZone dragZone;
@@ -331,12 +331,12 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
                 }
 
                 m_dragZones.push_back(dragZone);
-                std::cout << "[AndroidInputSystem] Loaded touch drag zone: " << axisName << std::endl;
+                std::cout << "[AndroidInputManager] Loaded touch drag zone: " << axisName << std::endl;
             }
         }
     }
 
-    std::cout << "[AndroidInputSystem] Config loaded: "
+    std::cout << "[AndroidInputManager] Config loaded: "
               << m_touchZones.size() << " touch zones, "
               << m_joysticks.size() << " joysticks, "
               << m_dragZones.size() << " drag zones, "
@@ -345,7 +345,7 @@ bool AndroidInputSystem::LoadConfig(const std::string& path) {
     return true;
 }
 
-std::unordered_map<std::string, bool> AndroidInputSystem::GetAllActionStates() {
+std::unordered_map<std::string, bool> AndroidInputManager::GetAllActionStates() {
     std::unordered_map<std::string, bool> states;
 
     for (const auto& action : m_currentActions) {
@@ -355,7 +355,7 @@ std::unordered_map<std::string, bool> AndroidInputSystem::GetAllActionStates() {
     return states;
 }
 
-std::unordered_map<std::string, glm::vec2> AndroidInputSystem::GetAllAxisStates() {
+std::unordered_map<std::string, glm::vec2> AndroidInputManager::GetAllAxisStates() {
     std::unordered_map<std::string, glm::vec2> states;
 
     for (const auto& joystick : m_joysticks) {
@@ -369,7 +369,7 @@ std::unordered_map<std::string, glm::vec2> AndroidInputSystem::GetAllAxisStates(
     return states;
 }
 
-void AndroidInputSystem::RenderOverlay(int screenWidth, int screenHeight) {
+void AndroidInputManager::RenderOverlay(int screenWidth, int screenHeight) {
     // TODO: Implement rendering using your rendering system
     // This is a placeholder showing what needs to be rendered
 
@@ -409,7 +409,7 @@ void AndroidInputSystem::RenderOverlay(int screenWidth, int screenHeight) {
 
 // ========== Touch Event Handlers ==========
 
-void AndroidInputSystem::OnTouchDown(int pointerId, float x, float y) {
+void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     glm::vec2 normalizedPos(x, y);
 
     TouchPoint touch;
@@ -459,7 +459,7 @@ void AndroidInputSystem::OnTouchDown(int pointerId, float x, float y) {
     m_activeTouches[pointerId] = touch;
 }
 
-void AndroidInputSystem::OnTouchMove(int pointerId, float x, float y) {
+void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
@@ -502,7 +502,7 @@ void AndroidInputSystem::OnTouchMove(int pointerId, float x, float y) {
     }
 }
 
-void AndroidInputSystem::OnTouchUp(int pointerId, float x, float y) {
+void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
     // Release touch zones
     for (auto& zone : m_touchZones) {
         if (zone.activeTouchId == pointerId) {
@@ -537,12 +537,12 @@ void AndroidInputSystem::OnTouchUp(int pointerId, float x, float y) {
 
 // ========== Private Helper Methods ==========
 
-void AndroidInputSystem::UpdateTouchZones() {
+void AndroidInputManager::UpdateTouchZones() {
     // Touch zones are updated in OnTouchDown/OnTouchUp
     // This method is for any per-frame logic
 }
 
-void AndroidInputSystem::UpdateJoysticks() {
+void AndroidInputManager::UpdateJoysticks() {
     // Joysticks are updated in OnTouchMove
     // Reset delta for inactive joysticks
     for (auto& joystick : m_joysticks) {
@@ -552,7 +552,7 @@ void AndroidInputSystem::UpdateJoysticks() {
     }
 }
 
-void AndroidInputSystem::UpdateDragZones() {
+void AndroidInputManager::UpdateDragZones() {
     // Reset delta for inactive drag zones
     for (auto& dragZone : m_dragZones) {
         if (!dragZone.isActive) {
@@ -561,12 +561,12 @@ void AndroidInputSystem::UpdateDragZones() {
     }
 }
 
-void AndroidInputSystem::DetectGestures(float deltaTime) {
+void AndroidInputManager::DetectGestures(float deltaTime) {
     DetectSwipes();
     DetectDoubleTap();
 }
 
-void AndroidInputSystem::DetectSwipes() {
+void AndroidInputManager::DetectSwipes() {
     // Check each touch that just ended
     // (In a real implementation, you'd track touches ending this frame)
     // For now, this is a simplified version
@@ -579,7 +579,7 @@ void AndroidInputSystem::DetectSwipes() {
     }
 }
 
-void AndroidInputSystem::DetectDoubleTap() {
+void AndroidInputManager::DetectDoubleTap() {
     for (const auto& gesture : m_gestures) {
         if (gesture.type != GestureType::DOUBLE_TAP) continue;
 
@@ -603,7 +603,7 @@ void AndroidInputSystem::DetectDoubleTap() {
     }
 }
 
-bool AndroidInputSystem::IsTouchInsideZone(const TouchZone& zone, glm::vec2 touchPos) {
+bool AndroidInputManager::IsTouchInsideZone(const TouchZone& zone, glm::vec2 touchPos) {
     if (zone.isCircle) {
         float dist = glm::distance(zone.position, touchPos);
         return dist <= zone.radius;
@@ -612,13 +612,21 @@ bool AndroidInputSystem::IsTouchInsideZone(const TouchZone& zone, glm::vec2 touc
     }
 }
 
-bool AndroidInputSystem::IsPointInRect(glm::vec2 point, glm::vec2 rectPos, glm::vec2 rectSize) {
+bool AndroidInputManager::IsPointInRect(glm::vec2 point, glm::vec2 rectPos, glm::vec2 rectSize) {
     return point.x >= rectPos.x &&
            point.x <= rectPos.x + rectSize.x &&
            point.y >= rectPos.y &&
            point.y <= rectPos.y + rectSize.y;
 }
 
-float AndroidInputSystem::GetCurrentTime() {
+float AndroidInputManager::GetCurrentTime() {
     return m_currentTime;
+}
+
+// ========== Editor Support ==========
+
+void AndroidInputManager::SetGamePanelMousePos(float newX, float newY) {
+    // Not used on Android
+    (void)newX;
+    (void)newY;
 }

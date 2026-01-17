@@ -146,8 +146,8 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
-        -- Toggle cursor lock with Escape
-        if Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Escape) then
+        -- Toggle cursor lock with Escape (unified input system)
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 local isLocked = Screen.IsCursorLocked()
                 Screen.SetCursorLocked(not isLocked)
@@ -155,8 +155,8 @@ return Component {
             end
         end
 
-        -- Re-lock cursor when clicking in game (if unlocked)
-        if Input and Input.GetMouseButtonDown and Input.GetMouseButtonDown(Input.MouseButton.Left) then
+        -- Re-lock cursor when clicking Attack action (if unlocked)
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 if not Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(true)

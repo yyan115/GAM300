@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Input/DesktopInputSystem.h"
+#include "Input/DesktopInputManager.h"
 #include "Platform/IPlatform.h"
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -7,31 +7,31 @@
 
 // ========== Constructor ==========
 
-DesktopInputSystem::DesktopInputSystem(IPlatform* platform)
+DesktopInputManager::DesktopInputManager(IPlatform* platform)
     : m_platform(platform)
 {
     if (!m_platform) {
-        std::cerr << "[DesktopInputSystem] ERROR: Platform pointer is null!" << std::endl;
+        std::cerr << "[DesktopInputManager] ERROR: Platform pointer is null!" << std::endl;
     }
 }
 
 // ========== IInputSystem Interface Implementation ==========
 
-bool DesktopInputSystem::IsActionPressed(const std::string& action) {
+bool DesktopInputManager::IsActionPressed(const std::string& action) {
     return m_currentActions.count(action) > 0;
 }
 
-bool DesktopInputSystem::IsActionJustPressed(const std::string& action) {
+bool DesktopInputManager::IsActionJustPressed(const std::string& action) {
     return m_currentActions.count(action) > 0 &&
            m_previousActions.count(action) == 0;
 }
 
-bool DesktopInputSystem::IsActionJustReleased(const std::string& action) {
+bool DesktopInputManager::IsActionJustReleased(const std::string& action) {
     return m_currentActions.count(action) == 0 &&
            m_previousActions.count(action) > 0;
 }
 
-glm::vec2 DesktopInputSystem::GetAxis(const std::string& axisName) {
+glm::vec2 DesktopInputManager::GetAxis(const std::string& axisName) {
     auto it = m_axisBindings.find(axisName);
     if (it == m_axisBindings.end()) {
         return glm::vec2(0.0f);
@@ -55,31 +55,31 @@ glm::vec2 DesktopInputSystem::GetAxis(const std::string& axisName) {
     }
 }
 
-bool DesktopInputSystem::IsPointerPressed() {
+bool DesktopInputManager::IsPointerPressed() {
     return m_pointerPressed;
 }
 
-bool DesktopInputSystem::IsPointerJustPressed() {
+bool DesktopInputManager::IsPointerJustPressed() {
     return m_pointerPressed && !m_pointerPreviouslyPressed;
 }
 
-glm::vec2 DesktopInputSystem::GetPointerPosition() {
+glm::vec2 DesktopInputManager::GetPointerPosition() {
     return GetMousePositionNormalized();
 }
 
-int DesktopInputSystem::GetTouchCount() {
+int DesktopInputManager::GetTouchCount() {
     // Desktop: Treat mouse as single touch point
     return m_pointerPressed ? 1 : 0;
 }
 
-glm::vec2 DesktopInputSystem::GetTouchPosition(int index) {
+glm::vec2 DesktopInputManager::GetTouchPosition(int index) {
     if (index == 0 && m_pointerPressed) {
         return GetMousePositionNormalized();
     }
     return glm::vec2(0.0f);
 }
 
-void DesktopInputSystem::Update(float deltaTime) {
+void DesktopInputManager::Update(float deltaTime) {
     if (!m_platform) return;
 
     UpdateActionStates();
@@ -90,24 +90,24 @@ void DesktopInputSystem::Update(float deltaTime) {
     m_pointerPressed = IsMouseButtonPressed(Input::MouseButton::LEFT);
 }
 
-bool DesktopInputSystem::LoadConfig(const std::string& path) {
-    std::cout << "[DesktopInputSystem] Loading config from: " << path << std::endl;
+bool DesktopInputManager::LoadConfig(const std::string& path) {
+    std::cout << "[DesktopInputManager] Loading config from: " << path << std::endl;
 
     if (!m_platform) {
-        std::cerr << "[DesktopInputSystem] ERROR: Platform is null!" << std::endl;
+        std::cerr << "[DesktopInputManager] ERROR: Platform is null!" << std::endl;
         return false;
     }
 
     // Check if file exists
     if (!m_platform->FileExists(path)) {
-        std::cerr << "[DesktopInputSystem] ERROR: Config file not found: " << path << std::endl;
+        std::cerr << "[DesktopInputManager] ERROR: Config file not found: " << path << std::endl;
         return false;
     }
 
     // Load file using platform
     std::vector<uint8_t> configData = m_platform->ReadAsset(path);
     if (configData.empty()) {
-        std::cerr << "[DesktopInputSystem] ERROR: Failed to read config file: " << path << std::endl;
+        std::cerr << "[DesktopInputManager] ERROR: Failed to read config file: " << path << std::endl;
         return false;
     }
 
@@ -116,7 +116,7 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
     doc.Parse(reinterpret_cast<const char*>(configData.data()), configData.size());
 
     if (doc.HasParseError()) {
-        std::cerr << "[DesktopInputSystem] ERROR: JSON parse error at offset "
+        std::cerr << "[DesktopInputManager] ERROR: JSON parse error at offset "
                   << doc.GetErrorOffset() << ": "
                   << rapidjson::GetParseError_En(doc.GetParseError()) << std::endl;
         return false;
@@ -124,7 +124,7 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
 
     // Check for "desktop" section
     if (!doc.HasMember("desktop") || !doc["desktop"].IsObject()) {
-        std::cerr << "[DesktopInputSystem] ERROR: Config missing 'desktop' section" << std::endl;
+        std::cerr << "[DesktopInputManager] ERROR: Config missing 'desktop' section" << std::endl;
         return false;
     }
 
@@ -150,7 +150,7 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
                         if (key != Input::Key::UNKNOWN) {
                             binding.keys.push_back(key);
                         } else {
-                            std::cerr << "[DesktopInputSystem] WARNING: Unknown key: " << keyName << std::endl;
+                            std::cerr << "[DesktopInputManager] WARNING: Unknown key: " << keyName << std::endl;
                         }
                     }
                 }
@@ -166,14 +166,14 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
                         if (button != Input::MouseButton::UNKNOWN) {
                             binding.mouseButtons.push_back(button);
                         } else {
-                            std::cerr << "[DesktopInputSystem] WARNING: Unknown mouse button: " << buttonName << std::endl;
+                            std::cerr << "[DesktopInputManager] WARNING: Unknown mouse button: " << buttonName << std::endl;
                         }
                     }
                 }
             }
 
             m_actionBindings[actionName] = binding;
-            std::cout << "[DesktopInputSystem] Loaded action: " << actionName
+            std::cout << "[DesktopInputManager] Loaded action: " << actionName
                       << " (" << binding.keys.size() << " keys, "
                       << binding.mouseButtons.size() << " buttons)" << std::endl;
         }
@@ -200,12 +200,12 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
                         binding.sensitivity = axisData["sensitivity"].GetFloat();
                     }
 
-                    std::cout << "[DesktopInputSystem] Loaded axis: " << axisName
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
                               << " (mouse_delta, sensitivity=" << binding.sensitivity << ")" << std::endl;
                 }
                 else if (type == "gamepad") {
                     binding.type = AxisType::Gamepad;
-                    std::cout << "[DesktopInputSystem] Loaded axis: " << axisName
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
                               << " (gamepad - not yet implemented)" << std::endl;
                 }
             }
@@ -232,21 +232,21 @@ bool DesktopInputSystem::LoadConfig(const std::string& path) {
                 if (axisData.HasMember("positiveY")) parseKeyArray(axisData["positiveY"], binding.positiveY);
                 if (axisData.HasMember("negativeY")) parseKeyArray(axisData["negativeY"], binding.negativeY);
 
-                std::cout << "[DesktopInputSystem] Loaded axis: " << axisName << " (keyboard composite)" << std::endl;
+                std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard composite)" << std::endl;
             }
 
             m_axisBindings[axisName] = binding;
         }
     }
 
-    std::cout << "[DesktopInputSystem] Config loaded successfully. "
+    std::cout << "[DesktopInputManager] Config loaded successfully. "
               << m_actionBindings.size() << " actions, "
               << m_axisBindings.size() << " axes" << std::endl;
 
     return true;
 }
 
-std::unordered_map<std::string, bool> DesktopInputSystem::GetAllActionStates() {
+std::unordered_map<std::string, bool> DesktopInputManager::GetAllActionStates() {
     std::unordered_map<std::string, bool> states;
 
     // Include all configured actions (false if not pressed)
@@ -257,7 +257,7 @@ std::unordered_map<std::string, bool> DesktopInputSystem::GetAllActionStates() {
     return states;
 }
 
-std::unordered_map<std::string, glm::vec2> DesktopInputSystem::GetAllAxisStates() {
+std::unordered_map<std::string, glm::vec2> DesktopInputManager::GetAllAxisStates() {
     std::unordered_map<std::string, glm::vec2> states;
 
     for (const auto& [axisName, binding] : m_axisBindings) {
@@ -267,13 +267,13 @@ std::unordered_map<std::string, glm::vec2> DesktopInputSystem::GetAllAxisStates(
     return states;
 }
 
-void DesktopInputSystem::RenderOverlay(int screenWidth, int screenHeight) {
+void DesktopInputManager::RenderOverlay(int screenWidth, int screenHeight) {
     // Desktop has no virtual controls to render
 }
 
 // ========== Private Helper Methods ==========
 
-void DesktopInputSystem::UpdateActionStates() {
+void DesktopInputManager::UpdateActionStates() {
     // Save previous state
     m_previousActions = m_currentActions;
     m_currentActions.clear();
@@ -306,7 +306,7 @@ void DesktopInputSystem::UpdateActionStates() {
     }
 }
 
-void DesktopInputSystem::UpdateAxisStates(float deltaTime) {
+void DesktopInputManager::UpdateAxisStates(float deltaTime) {
     // Update mouse delta for MouseDelta axes
     glm::vec2 currentMousePos = GetMousePositionNormalized();
 
@@ -320,7 +320,7 @@ void DesktopInputSystem::UpdateAxisStates(float deltaTime) {
     }
 }
 
-glm::vec2 DesktopInputSystem::EvaluateKeyboardAxis(const AxisBinding& binding) {
+glm::vec2 DesktopInputManager::EvaluateKeyboardAxis(const AxisBinding& binding) {
     glm::vec2 axis(0.0f);
 
     // X axis
@@ -360,17 +360,17 @@ glm::vec2 DesktopInputSystem::EvaluateKeyboardAxis(const AxisBinding& binding) {
     return axis;
 }
 
-bool DesktopInputSystem::IsKeyPressed(Input::Key key) {
+bool DesktopInputManager::IsKeyPressed(Input::Key key) {
     if (!m_platform) return false;
     return m_platform->IsKeyPressed(key);
 }
 
-bool DesktopInputSystem::IsMouseButtonPressed(Input::MouseButton button) {
+bool DesktopInputManager::IsMouseButtonPressed(Input::MouseButton button) {
     if (!m_platform) return false;
     return m_platform->IsMouseButtonPressed(button);
 }
 
-glm::vec2 DesktopInputSystem::GetMousePositionNormalized() {
+glm::vec2 DesktopInputManager::GetMousePositionNormalized() {
     if (!m_platform) return glm::vec2(0.0f);
 
     double mouseX, mouseY;
@@ -383,7 +383,7 @@ glm::vec2 DesktopInputSystem::GetMousePositionNormalized() {
     return glm::vec2(static_cast<float>(mouseX), static_cast<float>(mouseY));
 }
 
-Input::Key DesktopInputSystem::ParseKey(const std::string& keyName) {
+Input::Key DesktopInputManager::ParseKey(const std::string& keyName) {
     // Alphabet
     if (keyName == "A") return Input::Key::A;
     if (keyName == "B") return Input::Key::B;
@@ -460,7 +460,7 @@ Input::Key DesktopInputSystem::ParseKey(const std::string& keyName) {
     return Input::Key::UNKNOWN;
 }
 
-Input::MouseButton DesktopInputSystem::ParseMouseButton(const std::string& buttonName) {
+Input::MouseButton DesktopInputManager::ParseMouseButton(const std::string& buttonName) {
     if (buttonName == "LEFT") return Input::MouseButton::LEFT;
     if (buttonName == "RIGHT") return Input::MouseButton::RIGHT;
     if (buttonName == "MIDDLE") return Input::MouseButton::MIDDLE;
@@ -468,4 +468,11 @@ Input::MouseButton DesktopInputSystem::ParseMouseButton(const std::string& butto
     if (buttonName == "BUTTON_5") return Input::MouseButton::BUTTON_5;
 
     return Input::MouseButton::UNKNOWN;
+}
+
+// ========== Editor Support ==========
+
+void DesktopInputManager::SetGamePanelMousePos(float newX, float newY) {
+    m_gamePanelMouseX = static_cast<double>(newX);
+    m_gamePanelMouseY = static_cast<double>(newY);
 }

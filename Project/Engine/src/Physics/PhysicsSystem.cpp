@@ -102,14 +102,14 @@ bool PhysicsSystem::InitialiseJolt() {
 #ifdef JPH_OBJECT_LAYER_BITS
         //JPH_OBJECT_LAYER_BITS
 #else
-        16  // default
+        //16  // default
 #endif
         //);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
 #ifdef JPH_ENABLE_ASSERTS
             //1
 #else
-            0
+            //0
 #endif
             //);
 #endif

@@ -1,82 +1,69 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include "Reflection/ReflectionBase.hpp"
 #include <tuple>
+
+// ============================================================================
+// VECTOR2D (for 2D values like axis input, pointer position)
+// ============================================================================
+struct Vector2D {
+    REFL_SERIALIZABLE
+
+    float x, y;
+    Vector2D() : x(0), y(0) {}
+    Vector2D(float _x, float _y) : x(_x), y(_y) {}
+};
 
 // ============================================================================
 // INPUT SYSTEM WRAPPERS
 // ============================================================================
 #include "Input/Keys.h"
-#include "Input/InputManager.hpp"
-
-// Wrapper functions to convert int to enum for Input functions
-namespace InputWrappers {
-    inline bool GetKey(int key) {
-        return InputManager::GetKey(static_cast<Input::Key>(key));
-    }
-
-    inline bool GetKeyDown(int key) {
-        return InputManager::GetKeyDown(static_cast<Input::Key>(key));
-    }
-
-    inline bool GetMouseButton(int button) {
-        return InputManager::GetMouseButton(static_cast<Input::MouseButton>(button));
-    }
-
-    inline bool GetMouseButtonDown(int button) {
-        return InputManager::GetMouseButtonDown(static_cast<Input::MouseButton>(button));
-    }
-}
-
-// ============================================================================
-// UNIFIED INPUT SYSTEM WRAPPERS (NEW)
-// ============================================================================
-#include "Input/IInputSystem.h"
+#include "Input/InputManager.h"
 #include <unordered_map>
 #include <string>
 
-namespace UnifiedInputWrappers {
+namespace InputWrappers {
     // Action-based input (platform-agnostic)
     inline bool IsActionPressed(const std::string& action) {
-        if (!g_inputSystem) return false;
-        return g_inputSystem->IsActionPressed(action);
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionPressed(action);
     }
 
     inline bool IsActionJustPressed(const std::string& action) {
-        if (!g_inputSystem) return false;
-        return g_inputSystem->IsActionJustPressed(action);
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustPressed(action);
     }
 
     inline bool IsActionJustReleased(const std::string& action) {
-        if (!g_inputSystem) return false;
-        return g_inputSystem->IsActionJustReleased(action);
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustReleased(action);
     }
 
-    // Axis input returns tuple (x, y)
-    inline std::tuple<float, float> GetAxis(const std::string& axisName) {
-        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
-        glm::vec2 axis = g_inputSystem->GetAxis(axisName);
-        return std::make_tuple(axis.x, axis.y);
+    // Axis input returns Vector2D (access with .x and .y in Lua)
+    inline Vector2D GetAxis(const std::string& axisName) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 axis = g_inputManager->GetAxis(axisName);
+        return Vector2D(axis.x, axis.y);
     }
 
     // Batch API for Lua optimization - returns all action states at once
     // Lua example: local states = UnifiedInput.GetAllActionStates()
     //              if states["Jump"] then ... end
     inline std::unordered_map<std::string, bool> GetAllActionStates() {
-        if (!g_inputSystem) return {};
-        return g_inputSystem->GetAllActionStates();
+        if (!g_inputManager) return {};
+        return g_inputManager->GetAllActionStates();
     }
 
     // Get all axis states at once
-    // Returns map of axis name -> {x, y} table
-    // Note: In Lua this will be a table where each entry is a table {x=..., y=...}
-    inline std::unordered_map<std::string, std::tuple<float, float>> GetAllAxisStates() {
-        if (!g_inputSystem) return {};
+    // Returns map of axis name -> Vector2D with x, y properties
+    inline std::unordered_map<std::string, Vector2D> GetAllAxisStates() {
+        if (!g_inputManager) return {};
 
-        auto axisMap = g_inputSystem->GetAllAxisStates();
-        std::unordered_map<std::string, std::tuple<float, float>> result;
+        auto axisMap = g_inputManager->GetAllAxisStates();
+        std::unordered_map<std::string, Vector2D> result;
 
         for (const auto& [name, vec] : axisMap) {
-            result[name] = std::make_tuple(vec.x, vec.y);
+            result[name] = Vector2D(vec.x, vec.y);
         }
 
         return result;
@@ -84,31 +71,31 @@ namespace UnifiedInputWrappers {
 
     // Pointer abstraction (for UI)
     inline bool IsPointerPressed() {
-        if (!g_inputSystem) return false;
-        return g_inputSystem->IsPointerPressed();
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerPressed();
     }
 
     inline bool IsPointerJustPressed() {
-        if (!g_inputSystem) return false;
-        return g_inputSystem->IsPointerJustPressed();
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerJustPressed();
     }
 
-    inline std::tuple<float, float> GetPointerPosition() {
-        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
-        glm::vec2 pos = g_inputSystem->GetPointerPosition();
-        return std::make_tuple(pos.x, pos.y);
+    inline Vector2D GetPointerPosition() {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetPointerPosition();
+        return Vector2D(pos.x, pos.y);
     }
 
     // Multi-touch support
     inline int GetTouchCount() {
-        if (!g_inputSystem) return 0;
-        return g_inputSystem->GetTouchCount();
+        if (!g_inputManager) return 0;
+        return g_inputManager->GetTouchCount();
     }
 
-    inline std::tuple<float, float> GetTouchPosition(int index) {
-        if (!g_inputSystem) return std::make_tuple(0.0f, 0.0f);
-        glm::vec2 pos = g_inputSystem->GetTouchPosition(index);
-        return std::make_tuple(pos.x, pos.y);
+    inline Vector2D GetTouchPosition(int index) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetTouchPosition(index);
+        return Vector2D(pos.x, pos.y);
     }
 }
 

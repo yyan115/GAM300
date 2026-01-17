@@ -17,7 +17,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #ifndef ANDROID
 #include "Platform/DesktopPlatform.h"
 #include "Input/Keys.h"
-#include "Input/InputManager.hpp"
 #include <glad/glad.h>
 #include <iostream>
 #include <chrono>
@@ -327,7 +326,6 @@ void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
 
     if (engineKey != Input::Key::UNKNOWN) {
-        InputManager::OnKeyEvent(engineKey, engineAction);
     }
 }
 
@@ -337,17 +335,14 @@ void DesktopPlatform::MouseButtonCallback(GLFWwindow* window, int button, int ac
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
 
     if (engineButton != Input::MouseButton::UNKNOWN) {
-        InputManager::OnMouseButtonEvent(engineButton, engineAction);
     }
 }
 
 void DesktopPlatform::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-    InputManager::OnMousePositionEvent(xpos, ypos);
 	(void)window;
 }
 
 void DesktopPlatform::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-    InputManager::OnScrollEvent(xoffset, yoffset);
 	(void)window;
 }
 

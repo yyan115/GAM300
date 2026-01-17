@@ -13,11 +13,10 @@
 #include "Logging.hpp"
 
 #include <WindowManager.hpp>
-#include <Input/InputManager.hpp>
-#include <Input/IInputSystem.h>
-#include <Input/DesktopInputSystem.h>
+#include <Input/InputManager.h>
+#include <Input/DesktopInputManager.h>
 #ifdef ANDROID
-#include <Input/AndroidInputSystem.h>
+#include <Input/AndroidInputManager.h>
 #endif
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
@@ -29,7 +28,6 @@
 #include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
-#include "Input/VirtualControls.hpp"
 #endif
 #include <Asset Manager/AssetManager.hpp>
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
@@ -57,23 +55,23 @@ bool Engine::Initialize() {
     ENGINE_PRINT("Engine initializing...");
 
 	// WOON LI TEST CODE
-	InputManager::Initialize();
+	//InputManager::Initialize();
 
 	// Initialize unified input system (NEW)
 	ENGINE_PRINT("[Engine] Initializing unified input system...");
 	#ifdef ANDROID
-		g_inputSystem = new AndroidInputSystem();
-		ENGINE_PRINT("[Engine] Created AndroidInputSystem");
+		g_inputManager = new AndroidInputManager();
+		ENGINE_PRINT("[Engine] Created AndroidInputManager");
 	#else
 		// Desktop: Pass platform pointer for hardware queries
 		IPlatform* platform = WindowManager::GetPlatform();
-		g_inputSystem = new DesktopInputSystem(platform);
-		ENGINE_PRINT("[Engine] Created DesktopInputSystem");
+		g_inputManager = new DesktopInputManager(platform);
+		ENGINE_PRINT("[Engine] Created DesktopInputManager");
 	#endif
 
 	// Load input configuration
 	std::string configPath = "Resources/Configs/input_config.json";
-	if (g_inputSystem && !g_inputSystem->LoadConfig(configPath)) {
+	if (g_inputManager && !g_inputManager->LoadConfig(configPath)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
 	} else {
 		ENGINE_PRINT("[Engine] Input system initialized successfully");
@@ -631,9 +629,8 @@ bool Engine::InitializeGraphicsResources() {
 #endif
 
 #ifdef ANDROID
-    // Initialize virtual controls for Android
-    VirtualControls::Initialize();
-    ENGINE_LOG_INFO("Virtual controls initialized");
+    // Virtual controls are now handled by AndroidInputManager (no separate initialization needed)
+    ENGINE_LOG_INFO("Android input system initialized (virtual controls integrated)");
 #endif
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
@@ -738,12 +735,9 @@ void Engine::Draw() {
     try {
         SceneManager::GetInstance().DrawScene();
 
-        // Render virtual controls on top of everything (Android only)
-        VirtualControls::Render(surfaceWidth, surfaceHeight); // Legacy virtual controls (for backward compatibility)
-
-        // NEW: Render unified input system overlay (joysticks, virtual buttons, etc.)
-        if (g_inputSystem) {
-            g_inputSystem->RenderOverlay(surfaceWidth, surfaceHeight);
+        // Render unified input system overlay (joysticks, virtual buttons, etc.)
+        if (g_inputManager) {
+            g_inputManager->RenderOverlay(surfaceWidth, surfaceHeight);
         }
 
     } catch (const std::exception& e) {
@@ -763,11 +757,11 @@ void Engine::EndDraw() {
 	// Only process input if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
 		// Update unified input system (NEW - platform-agnostic)
-		if (g_inputSystem) {
-			g_inputSystem->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+		if (g_inputManager) {
+			g_inputManager->Update(static_cast<float>(TimeManager::GetDeltaTime()));
 		}
 
-		InputManager::Update(); // Legacy input system (still needed for editor)
+		//InputManager::Update(); // Legacy input system (still needed for editor)
 	}
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
@@ -783,9 +777,9 @@ void Engine::Shutdown() {
 	AudioManager::GetInstance().Shutdown();
 
 	// Cleanup unified input system
-	if (g_inputSystem) {
-		delete g_inputSystem;
-		g_inputSystem = nullptr;
+	if (g_inputManager) {
+		delete g_inputManager;
+		g_inputManager = nullptr;
 		ENGINE_LOG_INFO("Unified input system cleaned up");
 	}
 
