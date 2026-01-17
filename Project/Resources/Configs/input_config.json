@@ -12,6 +12,10 @@
         "keys": ["E"],
         "mouseButtons": ["LEFT"]
       },
+      "ChainAttack": {
+        "keys": [],
+        "mouseButtons": ["RIGHT"]
+      },
       "Interact": {
         "keys": ["F"],
         "mouseButtons": []
@@ -38,7 +42,7 @@
       },
       "Look": {
         "type": "mouse_delta",
-        "sensitivity": 1.0
+        "sensitivity": 0.7
       }
     }
   },

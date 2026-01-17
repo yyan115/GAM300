@@ -43,8 +43,14 @@ glm::vec2 DesktopInputManager::GetAxis(const std::string& axisName) {
         case AxisType::KeyboardComposite:
             return EvaluateKeyboardAxis(binding);
 
-        case AxisType::MouseDelta:
-            return m_mouseDelta * binding.sensitivity;
+        case AxisType::MouseDelta: {
+            glm::vec2 result = m_mouseDelta * binding.sensitivity;
+            if (result.x != 0.0f || result.y != 0.0f) {
+                std::cout << "[GetAxis] MouseDelta: raw=(" << m_mouseDelta.x << "," << m_mouseDelta.y
+                          << ") sens=" << binding.sensitivity << " result=(" << result.x << "," << result.y << ")" << std::endl;
+            }
+            return result;
+        }
 
         case AxisType::Gamepad:
             // TODO: Implement gamepad support
@@ -278,6 +284,13 @@ void DesktopInputManager::UpdateActionStates() {
     m_previousActions = m_currentActions;
     m_currentActions.clear();
 
+    // Debug: check if left mouse is pressed at platform level
+    static int debugCounter = 0;
+    bool leftMouseAtPlatform = m_platform ? m_platform->IsMouseButtonPressed(Input::MouseButton::LEFT) : false;
+    if (leftMouseAtPlatform && debugCounter++ % 60 == 0) {
+        std::cout << "[DEBUG] Left mouse button IS pressed at platform level" << std::endl;
+    }
+
     // Evaluate all action bindings
     for (const auto& [actionName, binding] : m_actionBindings) {
         bool isPressed = false;
@@ -302,6 +315,10 @@ void DesktopInputManager::UpdateActionStates() {
 
         if (isPressed) {
             m_currentActions.insert(actionName);
+            // Debug: log when Attack is detected
+            if (actionName == "Attack") {
+                std::cout << "[DEBUG] Attack action detected as pressed!" << std::endl;
+            }
         }
     }
 }
@@ -374,11 +391,19 @@ glm::vec2 DesktopInputManager::GetMousePositionNormalized() {
     if (!m_platform) return glm::vec2(0.0f);
 
     double mouseX, mouseY;
-    m_platform->GetMousePosition(&mouseX, &mouseY);
 
-    // TODO: Get actual window dimensions for proper normalization
-    // For now, assuming these are already in a reasonable range
-    // You may need to normalize based on window size: mouseX / windowWidth, mouseY / windowHeight
+#ifdef EDITOR
+    // In editor, use game panel mouse position when cursor is not locked
+    if (!WindowManager::IsCursorLocked()) {
+        mouseX = m_gamePanelMouseX;
+        mouseY = m_gamePanelMouseY;
+    } else {
+        m_platform->GetMousePosition(&mouseX, &mouseY);
+    }
+#else
+    // In runtime, always use raw platform mouse position
+    m_platform->GetMousePosition(&mouseX, &mouseY);
+#endif
 
     return glm::vec2(static_cast<float>(mouseX), static_cast<float>(mouseY));
 }

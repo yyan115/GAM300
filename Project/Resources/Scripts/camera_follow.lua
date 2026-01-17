@@ -122,19 +122,19 @@ return Component {
     end,
 
     _updateMouseLook = function(self, dt)
-        -- Process mouse look for camera rotation
-        if not (Input and Input.GetMouseX and Input.GetMouseY) then return end
-        local xpos, ypos = Input.GetMouseX(), Input.GetMouseY()
-        if self._firstMouse then
-            self._firstMouse = false
-            self._lastMouseX, self._lastMouseY = xpos, ypos
-            return
-        end
-        local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
-        local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
-        self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   - xoffset  -- Inverted for correct left/right panning
-        self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
+        -- Process mouse look for camera rotation using unified input
+        if not (Input and Input.GetAxis) then return end
+
+        -- Get mouse delta from "Look" axis (configured as mouse_delta on desktop, touch_drag on Android)
+        local lookAxis = Input.GetAxis("Look")
+        if not lookAxis then return end
+
+        -- Axis already has config sensitivity applied, just use camera's additional sensitivity
+        local xoffset = lookAxis.x * (self.mouseSensitivity or 0.15)
+        local yoffset = lookAxis.y * (self.mouseSensitivity or 0.15)
+
+        self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
+        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
 
         -- Broadcast camera yaw for camera-relative player movement
         if event_bus and event_bus.publish then

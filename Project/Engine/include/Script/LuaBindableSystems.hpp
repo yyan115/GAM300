@@ -25,13 +25,27 @@ struct Vector2D {
 namespace InputWrappers {
     // Action-based input (platform-agnostic)
     inline bool IsActionPressed(const std::string& action) {
-        if (!g_inputManager) return false;
-        return g_inputManager->IsActionPressed(action);
+        if (!g_inputManager) {
+            std::cout << "[LuaWrapper] IsActionPressed: g_inputManager is NULL!" << std::endl;
+            return false;
+        }
+        bool result = g_inputManager->IsActionPressed(action);
+        if (result) {
+            std::cout << "[LuaWrapper] IsActionPressed('" << action << "') = true" << std::endl;
+        }
+        return result;
     }
 
     inline bool IsActionJustPressed(const std::string& action) {
-        if (!g_inputManager) return false;
-        return g_inputManager->IsActionJustPressed(action);
+        if (!g_inputManager) {
+            std::cout << "[LuaWrapper] IsActionJustPressed: g_inputManager is NULL!" << std::endl;
+            return false;
+        }
+        bool result = g_inputManager->IsActionJustPressed(action);
+        if (result) {
+            std::cout << "[LuaWrapper] IsActionJustPressed('" << action << "') = true" << std::endl;
+        }
+        return result;
     }
 
     inline bool IsActionJustReleased(const std::string& action) {
