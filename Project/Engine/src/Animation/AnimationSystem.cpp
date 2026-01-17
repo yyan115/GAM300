@@ -47,9 +47,9 @@ bool AnimationSystem::Initialise()
 				modelComp.SetAnimator(animator);
 
 				if (modelComp.model && !animComp.clipPaths.empty()) {
-					animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+					animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
 					if (!animComp.GetClips().empty()) {
-						animator->PlayAnimation(animComp.GetClips()[0].get());
+						animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
 					}
 				}
 
@@ -89,9 +89,9 @@ void AnimationSystem::Update()
 
 		if(auto* fsm = animComp.GetStateMachine())
 		{
-			fsm->Update(dt);
+			fsm->Update(dt, entity);
 		}
 
-		animComp.Update(dt);
+		animComp.Update(dt, entity);
 	}
 }

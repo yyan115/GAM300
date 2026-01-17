@@ -604,6 +604,7 @@ void SceneManager::CreateNewScene(const std::string& directory, bool loadAfterCr
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
+                        { "type": "float", "data": 0 },
                         "0000000000000000-0000000000000000"
                     ]
                 },

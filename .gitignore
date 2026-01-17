@@ -48,3 +48,4 @@ AndroidProject/local.properties
 *.ktx
 
 Project/Scripting/x64/
+.github/copilot-instructions.md

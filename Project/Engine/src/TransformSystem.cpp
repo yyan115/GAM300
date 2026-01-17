@@ -99,6 +99,10 @@ void TransformSystem::UpdateTransform(Entity entity) {
 			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation.ToEulerDegrees());
 		}
 
+		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
+		transform.worldRotation = Matrix4x4::ExtractRotation(transform.worldMatrix);
+		transform.worldScale = Matrix4x4::ExtractScale(transform.worldMatrix);
+
 		transform.isDirty = false;
 	}
 
@@ -192,6 +196,14 @@ void TransformSystem::SetLocalRotation(Entity entity, Vector3D rotation) {
 	SetDirtyRecursive(entity);
 }
 
+void TransformSystem::SetLocalRotation(Entity entity, Quaternion rotation) {
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+
+	transform.localRotation = rotation; // Direct assignment
+	SetDirtyRecursive(entity);
+}
+
 void TransformSystem::SetWorldScale(Entity entity, Vector3D scale) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
@@ -217,6 +229,21 @@ void TransformSystem::SetLocalScale(Entity entity, Vector3D scale) {
 	transform.localScale = scale;
 
 	SetDirtyRecursive(entity);
+}
+
+Vector3D& TransformSystem::GetWorldPosition(Entity entity) {
+	auto& transform = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<Transform>(entity);
+	return transform.worldPosition;
+}
+
+Vector3D& TransformSystem::GetWorldRotation(Entity entity) {
+	auto& transform = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<Transform>(entity);
+	return transform.worldRotation;
+}
+
+Vector3D& TransformSystem::GetWorldScale(Entity entity) {
+	auto& transform = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<Transform>(entity);
+	return transform.worldScale;
 }
 
 void TransformSystem::SetDirtyRecursive(Entity entity) {

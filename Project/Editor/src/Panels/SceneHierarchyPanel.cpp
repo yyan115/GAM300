@@ -1081,7 +1081,7 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
                 if (modelComp.model && !animComp.clipPaths.empty()) {
                     Animator* animator = animComp.EnsureAnimator();
                     modelComp.SetAnimator(animator);
-                    animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+                    animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), newEntity);
                 }
             }
         }

@@ -19,6 +19,7 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
 	mainECS.buttonSystem->Update();
+	mainECS.sliderSystem->Update();
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

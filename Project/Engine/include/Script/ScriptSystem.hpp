@@ -38,6 +38,10 @@ public:
     // Creates a script instance from just the script path, caches it, and calls the function
     bool CallStandaloneScriptFunction(const std::string& scriptPath, const std::string& scriptGuidStr, const std::string& funcName);
 
+    // Variant that creates an ephemeral instance bound to a target entity, calls the function, and destroys it.
+    // This avoids mutating cached standalone instances and ensures instance:GetComponent works for callbacks.
+    bool CallStandaloneScriptFunctionWithEntity(const std::string& scriptPath, const std::string& scriptGuidStr, const std::string& funcName, Entity targetEntity);
+
     // Get or create a standalone instance for a script (returns instance ref or LUA_NOREF)
     int GetOrCreateStandaloneInstance(const std::string& scriptPath, const std::string& scriptGuidStr);
 
