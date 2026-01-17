@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0070e26b6563cb31-0003ef1ca6000005",
+        "source": "../../Resources/Scripts/Gameplay/FlyingEnemyLogic.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/FlyingEnemyLogic.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/FlyingEnemyLogic.lua"
+    }
+}

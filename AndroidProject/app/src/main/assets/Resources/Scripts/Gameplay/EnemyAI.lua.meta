@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0070e26b5d5bf152-0003ef1ca6000001",
+        "source": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/EnemyAI.lua"
+    }
+}

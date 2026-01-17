@@ -21,7 +21,7 @@ uniform mat4 projection;
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
-uniform bool isAnimated;
+uniform bool hasBones;
 
 void main()
 {
@@ -30,7 +30,7 @@ void main()
     vec3 nrm = aNormal;
     vec3 tan = aTangent;
 
-    if (isAnimated)
+    if (hasBones)
     {
         // LBS skinning (no renormalization here)
         mat4 skin = mat4(0.0);

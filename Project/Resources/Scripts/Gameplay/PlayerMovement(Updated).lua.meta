@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00092849f6ebfca5-000386dee2000001",
-        "source": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
-        "compiled": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua"
+        "guid": "0070e26b7d989a1a-0003ef1ca600001b",
+        "source": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua"
     }
 }

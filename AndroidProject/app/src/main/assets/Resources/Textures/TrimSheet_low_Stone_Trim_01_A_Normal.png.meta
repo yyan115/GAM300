@@ -7,8 +7,8 @@
         "android_compiled": "Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal_android.ktx"
     },
     "TextureMetaData": {
-        "type": "normal",
-        "flipUVs": false,
+        "type": "diffuse",
+        "flipUVs": true,
         "generateMipmaps": true
     }
 }

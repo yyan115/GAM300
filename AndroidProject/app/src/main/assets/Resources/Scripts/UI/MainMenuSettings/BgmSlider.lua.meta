@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049a203976048a4-0003e94a5e000001",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua"
+    }
+}

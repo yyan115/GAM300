@@ -140,7 +140,7 @@ Launch = function(self)
     -- Set starting position
     self:SetPosition(spawn_x, spawn_y, spawn_z)
 
-    print("initial position of flying knife is ", spawn_x, spawn_y, spawn_z)
+    -- print("initial position of flying knife is ", spawn_x, spawn_y, spawn_z)
     
     -- Activate knife
     self.active = true
@@ -150,7 +150,7 @@ Launch = function(self)
         ModelRenderComponent.SetVisible(self.model, true)
     end
     
-    print("flying Knife launched!")
+    -- print("flying Knife launched!")
 end,
 
 
@@ -164,7 +164,7 @@ end,
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
         end
-        print("Knife reset")
+        -- print("Knife reset")
     end
 }
 
