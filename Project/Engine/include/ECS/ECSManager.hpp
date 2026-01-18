@@ -36,7 +36,7 @@ public:
 
 	void ENGINE_API DestroyEntity(Entity entity);
 
-	void ClearAllEntities();
+	void ENGINE_API ClearAllEntities();
 
 	template <typename T>
 	void RegisterComponent() {

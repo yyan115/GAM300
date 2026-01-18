@@ -977,7 +977,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     }
 }
 
-Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
+Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapshot) {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -985,6 +985,11 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
         std::string sourceName = "Entity";
         if (ecsManager.HasComponent<NameComponent>(sourceEntity)) {
             sourceName = ecsManager.GetComponent<NameComponent>(sourceEntity).name;
+        }
+
+        // Take snapshot BEFORE duplication (for undo) - only if requested
+        if (takeSnapshot) {
+            SnapshotManager::GetInstance().TakeSnapshot("Duplicate Entity: " + sourceName);
         }
 
         // Generate unique name (Entity (1), Entity (2), etc.)
@@ -1085,9 +1090,6 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
                 }
             }
         }
-
-        // Take snapshot after duplication (for undo)
-        SnapshotManager::GetInstance().TakeSnapshot("Duplicate Entity: " + sourceName);
 
         std::cout << "[SceneHierarchy] Successfully duplicated entity (ID: " << newEntity << ")" << std::endl;
         return newEntity;
@@ -1276,7 +1278,8 @@ std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Ent
     SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
 
     for (Entity sourceEntity : sourceEntities) {
-        Entity duplicated = DuplicateEntity(sourceEntity);
+        // Pass false to skip internal snapshot (we already took one)
+        Entity duplicated = DuplicateEntity(sourceEntity, false);
         if (duplicated != static_cast<Entity>(-1)) {
             duplicatedEntities.push_back(duplicated);
         }
