@@ -28,33 +28,17 @@ public:
     // ========================================================================
     // SHADOW MAPPING - NEW
     // ========================================================================
-
-    /**
-     * @brief Render the shadow pass for all shadow-casting lights
-     * Call this BEFORE the main render pass
-     */
     void RenderShadowMaps();
-
-    /**
-     * @brief Bind shadow maps and set shadow uniforms for a shader
-     * Call this during the main render pass, after ApplyLighting
-     */
     void ApplyShadows(Shader& shader);
-
-    /**
-     * @brief Get the depth shader for shadow pass rendering
-     */
-    Shader* GetShadowDepthShader() const { return shadowDepthShader.get(); }
-
-    /**
-     * @brief Get the directional light space matrix for external use
-     */
-    const glm::mat4& GetDirectionalLightSpaceMatrix() const;
 
     // Shadow settings
     bool shadowsEnabled = true;
     int shadowMapResolution = 4096;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
+
+    void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
+        shadowRenderCallback = callback;
+    }
 
     // ========================================================================
     // AMBIENT LIGHTING
@@ -123,20 +107,8 @@ private:
     // ========================================================================
 
     DirectionalShadowMap directionalShadowMap;
-    std::shared_ptr<Shader> shadowDepthShader;
-
-    bool InitializeShadowMaps();
-    void RenderDirectionalShadowMap();
 
     // Callback to render scene for shadow pass (set by GraphicsManager)
     std::function<void(Shader&)> shadowRenderCallback;
 
-public:
-    /**
-     * @brief Set the callback that renders the scene for shadow maps
-     * GraphicsManager should set this during initialization
-     */
-    void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
-        shadowRenderCallback = callback;
-    }
 };

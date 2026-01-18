@@ -12,10 +12,10 @@ bool LightingSystem::Initialise()
 {
     std::cout << "[LightingSystem] Initializing..." << std::endl;
 
-    // Initialize shadow mapping
-    if (!InitializeShadowMaps())
+    // Initialize directional shadow map
+    if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
-        std::cout << "[LightingSystem] Warning: Shadow map initialization failed, shadows disabled" << std::endl;
+        std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
         shadowsEnabled = false;
     }
 
@@ -23,28 +23,6 @@ bool LightingSystem::Initialise()
     return true;
 }
 
-bool LightingSystem::InitializeShadowMaps()
-{
-    // Initialize directional shadow map
-    if (!directionalShadowMap.Initialize(shadowMapResolution))
-    {
-        std::cout << "[LightingSystem] Failed to initialize directional shadow map" << std::endl;
-        return false;
-    }
-
-    // Load shadow depth shader
-    std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth");
-    shadowDepthShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
-
-    if (!shadowDepthShader)
-    {
-        std::cout << "[LightingSystem] Failed to load shadow depth shader from: " << shaderPath << std::endl;
-        return false;
-    }
-
-    std::cout << "[LightingSystem] Shadow maps initialized - Resolution: " << shadowMapResolution << std::endl;
-    return true;
-}
 
 void LightingSystem::Update()
 {
@@ -55,74 +33,30 @@ void LightingSystem::Update()
 void LightingSystem::Shutdown()
 {
     directionalShadowMap.Shutdown();
-    shadowDepthShader = nullptr;
+
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
 void LightingSystem::RenderShadowMaps()
 {
-    if (!shadowsEnabled || !directionalLightData.hasDirectionalLight)
+    if (!shadowsEnabled || !shadowRenderCallback)
     {
         return;
     }
 
-    PROFILE_FUNCTION();
-    RenderDirectionalShadowMap();
-}
-
-void LightingSystem::RenderDirectionalShadowMap()
-{
-    if (!shadowDepthShader || !directionalShadowMap.IsInitialized())
+    // Render directional shadow
+    if (directionalLightData.hasDirectionalLight)
     {
-        return;
+        Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
+        glm::vec3 sceneCenter = camera ? camera->Position : glm::vec3(0.0f);
+
+        directionalShadowMap.Render(
+            directionalLightData.direction,
+            sceneCenter,
+            shadowDistance,
+            shadowRenderCallback
+        );
     }
-
-    // Debug - check if this runs every frame
-    static int frameCount = 0;
-    frameCount++;
-    if (frameCount <= 5) {
-        std::cout << "[Shadow] RenderDirectionalShadowMap called - frame " << frameCount << std::endl;
-    }
-
-
-    // Get the current camera to center the shadow map around
-    Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
-    glm::vec3 sceneCenter = camera ? camera->Position : glm::vec3(0.0f);
-
-    // Calculate light space matrix
-    directionalShadowMap.CalculateLightSpaceMatrix(
-        directionalLightData.direction,
-        sceneCenter,
-        shadowDistance
-    );
-
-    // Store current framebuffer AND viewport to restore later
-    GLint previousFramebuffer;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    // Bind shadow map for writing
-    directionalShadowMap.BindForWriting();
-
-    // Use the depth shader
-    shadowDepthShader->Activate();
-    shadowDepthShader->setMat4("lightSpaceMatrix", directionalShadowMap.GetLightSpaceMatrix());
-
-    // Render scene geometry (only depth)
-    if (shadowRenderCallback)
-    {
-        shadowRenderCallback(*shadowDepthShader);
-    }
-
-    // Restore previous framebuffer and viewport
-    glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-}
-
-const glm::mat4& LightingSystem::GetDirectionalLightSpaceMatrix() const
-{
-    return directionalShadowMap.GetLightSpaceMatrix();
 }
 
 void LightingSystem::ApplyLighting(Shader& shader)
@@ -189,36 +123,19 @@ void LightingSystem::ApplyLighting(Shader& shader)
 
 void LightingSystem::ApplyShadows(Shader& shader)
 {
-    // Debug - print light space matrix once
-    static bool once = false;
-    if (!once) {
-        glm::mat4 lsm = directionalShadowMap.GetLightSpaceMatrix();
-        std::cout << "[Shadow] LightSpaceMatrix[0]: " << lsm[0][0] << ", " << lsm[1][0] << ", " << lsm[2][0] << ", " << lsm[3][0] << std::endl;
-        std::cout << "[Shadow] LightSpaceMatrix[3]: " << lsm[0][3] << ", " << lsm[1][3] << ", " << lsm[2][3] << ", " << lsm[3][3] << std::endl;
-        std::cout << "[Shadow] Texture ID: " << directionalShadowMap.GetDepthTexture() << std::endl;
-        once = true;
-    }
-
-    if (!shadowsEnabled || !directionalLightData.hasDirectionalLight)
+    if (!shadowsEnabled)
     {
         shader.setBool("shadowsEnabled", false);
         return;
     }
 
-    // Enable shadows
     shader.setBool("shadowsEnabled", true);
 
-    // Set light space matrix
-    shader.setMat4("lightSpaceMatrix", directionalShadowMap.GetLightSpaceMatrix());
-
-    // Bind shadow map to texture unit 8 (leaving 0-7 for material textures)
-    directionalShadowMap.BindForReading(8);
-    shader.setInt("shadowMap", 8);
-
-    // Set shadow parameters
-    shader.setFloat("shadowBias", directionalShadowMap.bias);
-    shader.setFloat("shadowNormalBias", directionalShadowMap.normalBias);
-    shader.setFloat("shadowSoftness", directionalShadowMap.softness);
+    // Directional shadow
+    if (directionalLightData.hasDirectionalLight)
+    {
+        directionalShadowMap.Apply(shader, 8);
+    }
 }
 
 void LightingSystem::CollectLightData()
