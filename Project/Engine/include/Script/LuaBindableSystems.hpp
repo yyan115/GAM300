@@ -376,7 +376,8 @@ namespace TimeWrappers {
 
 namespace SceneWrappers {
     inline void LoadScene(const std::string& scenePath) {
-        SceneManager::GetInstance().LoadScene(scenePath);
+        // Pass true for callingFromLua so editor stays in play mode during scene transitions
+        SceneManager::GetInstance().LoadScene(scenePath, true);
     }
     
     inline std::string GetCurrentSceneName() {
