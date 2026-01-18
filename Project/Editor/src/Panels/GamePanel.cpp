@@ -162,26 +162,16 @@ void GamePanel::OnImGuiRender() {
                                            ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
                 ImGui::SetWindowFocus();
 
-                // Capture cursor when clicking in game panel during play mode
+                // Resume cursor lock when clicking in game panel during play mode
                 // Only if game code has requested cursor lock (respects main menu wanting cursor free)
-                if (Engine::ShouldRunGameLogic() && !cursorCaptured && WindowManager::IsCursorLockRequested()) {
-                    SetCursorCaptured(true);
+                if (Engine::ShouldRunGameLogic() && WindowManager::IsCursorLockRequested() && WindowManager::IsCursorPausedByUser()) {
+                    WindowManager::ResumeCursorLock();
                 }
             }
 
-            // Release cursor on Escape key during play mode
-            if (cursorCaptured && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-                SetCursorCaptured(false);
-            }
-
-            // Release cursor when game stops
-            if (cursorCaptured && !Engine::ShouldRunGameLogic()) {
-                SetCursorCaptured(false);
-            }
-
-            // Release cursor if game code explicitly unlocked it
-            if (cursorCaptured && !WindowManager::IsCursorLockRequested()) {
-                SetCursorCaptured(false);
+            // Pause cursor lock on Escape key during play mode
+            if (WindowManager::IsCursorLocked() && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                WindowManager::PauseCursorLock();
             }
 
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -215,9 +205,9 @@ void GamePanel::OnImGuiRender() {
             ImVec2 panelMin = ImGui::GetItemRectMin();
             ImVec2 panelMax = ImGui::GetItemRectMax();
 
-            // When cursor is captured, use GLFW raw mouse position for unlimited movement
+            // When cursor is locked, use GLFW raw mouse position for unlimited movement
             // Otherwise use ImGui position with bounds check
-            if (cursorCaptured) {
+            if (WindowManager::IsCursorLocked()) {
                 // Get raw GLFW mouse position - this gives unlimited virtual movement
                 double glfwMouseX, glfwMouseY;
                 GLFWwindow* window = static_cast<GLFWwindow*>(WindowManager::getWindow());
@@ -404,16 +394,3 @@ void GamePanel::GetTargetGameResolution(int& outWidth, int& outHeight) const {
     }
 }
 
-void GamePanel::SetCursorCaptured(bool captured) {
-    if (cursorCaptured == captured) return;
-
-    cursorCaptured = captured;
-    GLFWwindow* window = static_cast<GLFWwindow*>(WindowManager::getWindow());
-    if (window) {
-        if (captured) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-    }
-}
