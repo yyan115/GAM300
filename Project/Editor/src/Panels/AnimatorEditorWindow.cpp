@@ -1622,11 +1622,13 @@ void AnimatorEditorWindow::SaveControllerAs()
             pFileSave->SetDefaultExtension(L"animator");
             pFileSave->SetTitle(L"Save Animator Controller");
 
-            // Set default filename
-            std::wstring defaultName = L"NewController";
-            std::string controllerName = m_Controller->GetName();
-            if (!controllerName.empty()) {
-                defaultName = std::wstring(controllerName.begin(), controllerName.end());
+            // Set default filename - use existing filename or "New Animator"
+            std::wstring defaultName = L"New Animator";
+            if (!m_ControllerFilePath.empty()) {
+                // Use existing file name if we have one
+                std::filesystem::path existingPath(m_ControllerFilePath);
+                std::string stemName = existingPath.stem().string();
+                defaultName = std::wstring(stemName.begin(), stemName.end());
             }
             pFileSave->SetFileName(defaultName.c_str());
 
