@@ -126,10 +126,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.uiAnchorSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("UI Anchor system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
-	ecsManager.sliderSystem->Initialise(ecsManager);
-	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.sliderSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Slider system initialized");
 

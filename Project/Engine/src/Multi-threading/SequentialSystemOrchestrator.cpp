@@ -19,6 +19,7 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
+	mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
 	mainECS.buttonSystem->Update();
 	mainECS.sliderSystem->Update();
 	mainECS.spriteAnimationSystem->Update();
