@@ -704,7 +704,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "bool",
@@ -758,7 +758,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d0f919dc3-0003eff7ec00001b",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -65708,7 +65708,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d3d382f4f-0003eff7ec000001",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/EnemyAI.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -78274,7 +78274,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d5637a235-0003eff7ec000005",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/FlyingEnemyLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingEnemyLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -90682,7 +90682,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -91444,7 +91444,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d4f79f92f-0003eff7ec000007",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/FlyingKnife.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingKnife.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -92206,7 +92206,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -92926,7 +92926,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -93646,7 +93646,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -95383,7 +95383,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "000d10069b04910d-0003ee8714000001",
+                        "001b4a95e1e5aaba-0003ef19b4000005",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -95669,7 +95669,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "000d10069b04910d-0003ee8714000001",
+                        "001b4a95e1e5aaba-0003ef19b4000005",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -95831,7 +95831,6 @@
     ],
     "lightingSystem": {
         "ambientMode": 0,
-        "ambientIntensity": 1.0,
         "ambientSky": [
             0.699999988079071,
             0.699999988079071,
