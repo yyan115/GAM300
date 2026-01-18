@@ -36,6 +36,8 @@
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 #include "UI/Slider/SliderSystem.hpp"
+#include "UI/Anchor/UIAnchorComponent.hpp"
+#include "UI/Anchor/UIAnchorSystem.hpp"
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 
 void ECSManager::Initialize() {
@@ -75,6 +77,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<SpriteAnimationComponent>();
 	RegisterComponent<ButtonComponent>();
 	RegisterComponent<SliderComponent>();
+	RegisterComponent<UIAnchorComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -140,6 +143,15 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<PointLightComponent>());
 		signature.set(GetComponentID<SpotLightComponent>());
 		SetSystemSignature<LightingSystem>(signature);
+	}
+
+	// UIAnchorSystem must run BEFORE sprite/button/text systems
+	// so that Transform positions are updated before rendering
+	uiAnchorSystem = RegisterSystem<UIAnchorSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<UIAnchorComponent>());
+		SetSystemSignature<UIAnchorSystem>(signature);
 	}
 
 	spriteSystem = RegisterSystem<SpriteSystem>();
