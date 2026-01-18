@@ -899,17 +899,6 @@ void RegisterInspectorCustomRenderers()
             camera.backgroundColor = glm::vec3(bgColor[0], bgColor[1], bgColor[2]);
         }
 
-        ImGui::Text("Ambient Intensity");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
-        if (ecs.lightingSystem) {
-            float ambientIntensity = ecs.lightingSystem->ambientIntensity;
-            if (UndoableWidgets::DragFloat("##AmbientIntensity", &ambientIntensity, 0.01f, 0.0f, 1.0f, "%.2f"))
-            {
-                ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
-            }
-        }
-
         return false;
     });
 
