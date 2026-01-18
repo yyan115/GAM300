@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/Candle [Normal].dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": true,
         "generateMipmaps": true
     }

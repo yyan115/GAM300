@@ -7,7 +7,7 @@
         "android_compiled": "Resources/Textures/Candle [Normal]_android.ktx"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": true,
         "generateMipmaps": true
     }

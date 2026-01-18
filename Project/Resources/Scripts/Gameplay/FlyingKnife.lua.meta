@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0070e26b655251be-0003ef1ca6000007",
-        "source": "../../Resources/Scripts/Gameplay/FlyingKnife.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/FlyingKnife.lua"
+        "guid": "001d790d4f79f92f-0003eff7ec000007",
+        "source": "../../Resources/Scripts/GamePlay/FlyingKnife.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/FlyingKnife.lua"
     }
 }

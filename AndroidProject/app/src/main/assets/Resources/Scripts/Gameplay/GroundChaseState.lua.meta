@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0070e26b1f669923-0003ef1ca600000b",
-        "source": "../../Resources/Scripts/Gameplay/GroundChaseState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundChaseState.lua",
-        "android_compiled": "Resources/Scripts/Gameplay/GroundChaseState.lua"
+        "guid": "001d790d04f70aa1-0003eff7ec00000b",
+        "source": "../../Resources/Scripts/GamePlay/GroundChaseState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundChaseState.lua",
+        "android_compiled": "Resources/Scripts/GamePlay/GroundChaseState.lua"
     }
 }

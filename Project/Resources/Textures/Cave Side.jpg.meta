@@ -7,7 +7,7 @@
     },
     "TextureMetaData": {
         "type": "diffuse",
-        "flipUVs": true,
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

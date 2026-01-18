@@ -796,7 +796,6 @@ void Engine::Shutdown() {
 		ENGINE_LOG_INFO("Unified input system cleaned up");
 	}
 
-    EngineLogging::Shutdown();
     SceneManager::GetInstance().ExitScene();
     PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();

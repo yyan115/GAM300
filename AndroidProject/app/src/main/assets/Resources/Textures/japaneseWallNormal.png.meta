@@ -7,8 +7,8 @@
         "android_compiled": "Resources/Textures/japaneseWallNormal_android.ktx"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

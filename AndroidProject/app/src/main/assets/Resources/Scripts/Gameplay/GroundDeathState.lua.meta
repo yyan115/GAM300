@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0070e26b2f17cee3-0003ef1ca600000d",
-        "source": "../../Resources/Scripts/Gameplay/GroundDeathState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundDeathState.lua",
-        "android_compiled": "Resources/Scripts/Gameplay/GroundDeathState.lua"
+        "guid": "001d790d3da614a7-0003eff7ec00000d",
+        "source": "../../Resources/Scripts/GamePlay/GroundDeathState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundDeathState.lua",
+        "android_compiled": "Resources/Scripts/GamePlay/GroundDeathState.lua"
     }
 }
