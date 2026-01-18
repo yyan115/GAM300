@@ -2,6 +2,7 @@
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
+#include "Graphics/Shadows/PointShadowMap.hpp" 
 
 struct DirectionalLightComponent;
 struct PointLightComponent;
@@ -12,6 +13,7 @@ class LightingSystem : public System {
 public:
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
+    static const int MAX_POINT_LIGHT_SHADOWS = 4;
 
     LightingSystem() = default;
     ~LightingSystem() = default;
@@ -35,6 +37,8 @@ public:
     bool shadowsEnabled = true;
     int shadowMapResolution = 4096;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
+    int pointShadowMapResolution = 1024;
+    float pointLightShadowFarPlane = 25.0f;
 
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
         shadowRenderCallback = callback;
@@ -72,6 +76,7 @@ private:
         std::vector<float> linear;
         std::vector<float> quadratic;
         std::vector<float> intensity;
+        std::vector<int> shadowIndex;
     } pointLightData;
 
     // Single directional light data
@@ -107,6 +112,7 @@ private:
     // ========================================================================
 
     DirectionalShadowMap directionalShadowMap;
+    std::vector<PointShadowMap> pointShadowMaps;
 
     // Callback to render scene for shadow pass (set by GraphicsManager)
     std::function<void(Shader&)> shadowRenderCallback;

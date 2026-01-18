@@ -19,6 +19,16 @@ bool LightingSystem::Initialise()
         shadowsEnabled = false;
     }
 
+    // Initialize point light shadow maps
+    pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
+    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
+        {
+            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
+        }
+    }
+
     std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
 }
@@ -33,6 +43,12 @@ void LightingSystem::Update()
 void LightingSystem::Shutdown()
 {
     directionalShadowMap.Shutdown();
+
+    for (auto& psm : pointShadowMaps)
+    {
+        psm.Shutdown();
+    }
+    pointShadowMaps.clear();
 
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
@@ -56,6 +72,21 @@ void LightingSystem::RenderShadowMaps()
             shadowDistance,
             shadowRenderCallback
         );
+    }
+
+    // Render point light shadows
+    int shadowIndex = 0;
+    for (size_t i = 0; i < pointLightData.positions.size() && shadowIndex < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        if (pointLightData.shadowIndex[i] >= 0)
+        {
+            pointShadowMaps[shadowIndex].Render(
+                pointLightData.positions[i],
+                pointLightShadowFarPlane,
+                shadowRenderCallback
+            );
+            shadowIndex++;
+        }
     }
 }
 
@@ -136,11 +167,31 @@ void LightingSystem::ApplyShadows(Shader& shader)
     {
         directionalShadowMap.Apply(shader, 8);
     }
+
+    // Point light shadows
+    shader.setFloat("pointShadowFarPlane", pointLightShadowFarPlane);
+
+    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        if (i < pointShadowMaps.size() && pointShadowMaps[i].IsInitialized())
+        {
+            pointShadowMaps[i].Apply(shader, 9 + i, i);  // Texture units 9, 10, 11, 12
+        }
+    }
+
+    // Send shadow indices for each point light
+    for (size_t i = 0; i < pointLightData.shadowIndex.size(); ++i)
+    {
+        shader.setInt("pointLights[" + std::to_string(i) + "].shadowIndex", pointLightData.shadowIndex[i]);
+    }
 }
 
 void LightingSystem::CollectLightData()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    int pointShadowCount = 0;
+    pointLightData.shadowIndex.clear();
 
     // Clear previous frame data
     pointLightData.positions.clear();
@@ -227,6 +278,17 @@ void LightingSystem::CollectLightData()
                     pointLightData.linear.push_back(light.linear);
                     pointLightData.quadratic.push_back(light.quadratic);
                     pointLightData.intensity.push_back(light.intensity);
+
+                    // Assign shadow index if we have available shadow maps
+                    if (pointShadowCount < MAX_POINT_LIGHT_SHADOWS)
+                    {
+                        pointLightData.shadowIndex.push_back(pointShadowCount);
+                        pointShadowCount++;
+                    }
+                    else
+                    {
+                        pointLightData.shadowIndex.push_back(-1);  // No shadow for this light
+                    }
                 }
                 else
                 {
