@@ -146,11 +146,8 @@ return Component {
         -- Timers
         self._footstepTimer = 0
 
-        -- Input tracking for key press detection
-        self._prevInputW = false
-        self._prevInputS = false
-        self._prevInputA = false
-        self._prevInputD = false
+        -- Movement tracking for footstep detection
+        self._wasMoving = false
 
         -- Camera yaw for camera-relative movement (default 180 to match camera initial yaw)
         self._cameraYaw = 180.0
@@ -171,22 +168,23 @@ return Component {
     ----------------------------------------------------------------------
     Start = function(self)
         print("[LUA][PlayerMovement] Start")
-        
+
         -- Cache component references
         self._animator = self:GetComponent("AnimationComponent")
         self._audio    = self:GetComponent("AudioComponent")
-        
+
         if self._animator then
             self._animator.enabled = true
-            -- Start with idle animation
-            self._animator:PlayClip(self._idleAnimationClip or 0, true)
+            -- Initialize state machine parameters (uses PlayerController.animator)
+            self._animator:SetBool("IsWalking", false)
+            self._animator:SetBool("IsGrounded", true)
         end
-        
+
         if self._audio then
             self._audio.enabled = true
             self._audio:SetVolume(self.sfxVolume or 0.5)
         end
-        
+
         -- Cache ground level from initial position
         local pos = getWorldPosition(self)
         self._groundY = pos.y
@@ -213,27 +211,23 @@ return Component {
         local isAttacking = (_G.player_is_attacking == true)
         
         --------------------------------------
-        -- 1) Read WASD Input
+        -- 1) Read Movement Input (Unified Input System)
         --------------------------------------
-        local inputW = Input and Input.GetKey and Input.GetKey(Input.Key.W) or false
-        local inputS = Input and Input.GetKey and Input.GetKey(Input.Key.S) or false
-        local inputA = Input and Input.GetKey and Input.GetKey(Input.Key.A) or false
-        local inputD = Input and Input.GetKey and Input.GetKey(Input.Key.D) or false
-        
-        -- Raw input direction (before camera transformation)
-        local rawMoveX, rawMoveZ = 0.0, 0.0
-        if inputW then rawMoveZ = rawMoveZ + 1.0 end  -- forward (+Z)
-        if inputS then rawMoveZ = rawMoveZ - 1.0 end  -- backward (-Z)
-        if inputA then rawMoveX = rawMoveX + 1.0 end  -- left (+X)
-        if inputD then rawMoveX = rawMoveX - 1.0 end  -- right (-X)
+        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
 
-        -- Normalize diagonal movement
+        -- Raw input direction (before camera transformation)
+        -- axis.x = horizontal (A/D or left stick X)
+        -- axis.y = vertical (W/S or left stick Y)
+        local rawMoveX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
+        local rawMoveZ = axis.y   -- Z is forward/back
+
+        -- Normalize diagonal movement (if needed - axis is already normalized)
         local len = math.sqrt(rawMoveX * rawMoveX + rawMoveZ * rawMoveZ)
-        if len > 0.0001 then
+        if len > 1.0001 then
             rawMoveX = rawMoveX / len
             rawMoveZ = rawMoveZ / len
         end
-        
+
         local hasMovementInput = (len > 0.0001)
 
         -- Transform movement to camera-relative direction
@@ -258,17 +252,12 @@ return Component {
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
         --------------------------------------
-        -- 2) Detect Key Press for Footstep SFX
+        -- 2) Track Movement Start for Footstep SFX
         --------------------------------------
-        local keyJustPressed = (inputW and not self._prevInputW) or
-                            (inputS and not self._prevInputS) or
-                            (inputA and not self._prevInputA) or
-                            (inputD and not self._prevInputD)
-        
-        self._prevInputW = inputW
-        self._prevInputS = inputS
-        self._prevInputA = inputA
-        self._prevInputD = inputD
+        -- Track if movement just started (for initial footstep sound)
+        local wasMoving = self._wasMoving or false
+        local movementJustStarted = hasMovementInput and not wasMoving
+        self._wasMoving = hasMovementInput
 
         --------------------------------------
         -- 3) Jump + Gravity
@@ -277,21 +266,22 @@ return Component {
         local wasInAir = not self._isGrounded
         self._wasGrounded = self._isGrounded
 
-        -- Jump input (Space key) - disabled while attacking
-        local jumpPressed = Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Space)
+        -- Jump input (unified input system) - disabled while attacking
+        local jumpPressed = Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump")
         if self._isGrounded and jumpPressed and not isAttacking then
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
             self._isJumping  = true
-            
-            -- Play jump animation
+
+            -- Trigger jump via state machine
             if animator then
-                animator:PlayClip(self._jumpAnimationClip, false)
+                animator:SetTrigger("Jump")
+                animator:SetBool("IsGrounded", false)
             end
-            
+
             -- Play jump SFX
             playRandomSFX(audio, self.jumpSFXClips)
-            
+
             print("[LUA][PlayerMovement] Jump!")
         end
 
@@ -311,20 +301,16 @@ return Component {
             -- Landing detection
             if not self._isGrounded then
                 self._isGrounded = true
-                
+
                 -- Play landing SFX if we were jumping
                 if self._isJumping then
                     playRandomSFX(audio, self.landingSFXClips)
                     self._isJumping = false
                     print("[LUA][PlayerMovement] Landed!")
-                    
-                    -- Return to idle/walk animation after landing
+
+                    -- Signal grounded state to state machine (it will auto-transition to Idle/Walk)
                     if animator and not isAttacking then
-                        if hasMovementInput then
-                            animator:PlayClip(self._walkAnimationClip or 1, true)
-                        else
-                            animator:PlayClip(self._idleAnimationClip or 0, true)
-                        end
+                        animator:SetBool("IsGrounded", true)
                     end
                 end
             end
@@ -369,22 +355,22 @@ return Component {
         -- Animation state change (only when grounded, not jumping, and not attacking)
         if isWalkingNow ~= self._isWalking and not self._isJumping then
             self._isWalking = isWalkingNow
-            
+
+            -- Update state machine parameter (it will auto-transition Idle<->Walk)
             if animator and not isAttacking then
+                animator:SetBool("IsWalking", isWalkingNow)
                 if isWalkingNow then
-                    animator:PlayClip(self._walkAnimationClip or 1, true)
                     print("[LUA][PlayerMovement] Walking")
                 else
-                    animator:PlayClip(self._idleAnimationClip or 0, true)
                     print("[LUA][PlayerMovement] Idle")
                 end
             end
         end
 
-        -- Footstep SFX: play on key press + timer-based while walking
+        -- Footstep SFX: play when movement starts + timer-based while walking
         if isWalkingNow then
-            -- Play immediately on key press
-            if keyJustPressed then
+            -- Play immediately when movement starts
+            if movementJustStarted then
                 playRandomSFX(audio, self.footstepSFXClips)
                 self._footstepTimer = 0
             end

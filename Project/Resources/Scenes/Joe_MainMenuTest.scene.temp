@@ -272,7 +272,47 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Every": null,
+                                "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene",
+                                "Awake": null,
+                                "StartSafe": null,
+                                "_subscriptions": {},
+                                "fields": {
+                                    "__created_at": 1768415340.0,
+                                    "_subscriptions": {},
+                                    "entityId": 0.0,
+                                    "_private": {},
+                                    "__meta": {},
+                                    "__field_list": {
+                                        "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
+                                    },
+                                    "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
+                                },
+                                "GetComponent": null,
+                                "entityId": 0.0,
+                                "DisableSafe": null,
+                                "AwakeSafe": null,
+                                "_call_lifecycle": null,
+                                "Unsubscribe": null,
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "_private": {},
+                                "OnDisable": null,
+                                "__field_list": {
+                                    "gameplayScenePath": "Resources/Scenes/M3_Gameplay.scene"
+                                },
+                                "UpdateSafe": null,
+                                "Update": null,
+                                "Destroy": null,
+                                "After": null,
+                                "Subscribe": null,
+                                "__created_at": 1768415340.0,
+                                "__meta": {},
+                                "QuitGame": null,
+                                "StartGame": null
+                            }
                         }
                     ]
                 }
@@ -518,8 +558,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a20892fe83-0003ebe4ae00029f",
-                                "002598a26c1098e4-0003ebe4ae000335"
+                                "001b4a9589b5bf40-0003ef19be000007",
+                                "001b4a95e9dadc99-0003ef19be00009d"
                             ]
                         }
                     ]
@@ -581,7 +621,7 @@
         },
         {
             "id": 2,
-            "guid": "002598a20892fe83-0003ebe4ae00029f",
+            "guid": "001b4a9589b5bf40-0003ef19be000007",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Hips"
@@ -731,9 +771,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a22904466c-0003ebe4ae0002a1",
-                                "002598a20b2d6bf5-0003ebe4ae000321",
-                                "002598a25d56eb6e-0003ebe4ae00032b"
+                                "001b4a95a150e173-0003ef19be000009",
+                                "001b4a95fb25f91b-0003ef19be000089",
+                                "001b4a95d84f05fb-0003ef19be000093"
                             ]
                         }
                     ]
@@ -757,7 +797,7 @@
         },
         {
             "id": 3,
-            "guid": "002598a22904466c-0003ebe4ae0002a1",
+            "guid": "001b4a95a150e173-0003ef19be000009",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Spine"
@@ -907,9 +947,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a27e8d88a0-0003ebe4ae0002a3",
-                                "002598a20ff04ad5-0003ebe4ae000311",
-                                "002598a201bb533d-0003ebe4ae000319"
+                                "001b4a95c180976e-0003ef19be00000b",
+                                "001b4a958fd2b274-0003ef19be000079",
+                                "001b4a95abd7ad64-0003ef19be000081"
                             ]
                         }
                     ]
@@ -917,7 +957,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20892fe83-0003ebe4ae00029f"
+                        "001b4a9589b5bf40-0003ef19be000007"
                     ]
                 },
                 "ActiveComponent": {
@@ -933,7 +973,7 @@
         },
         {
             "id": 4,
-            "guid": "002598a27e8d88a0-0003ebe4ae0002a3",
+            "guid": "001b4a95c180976e-0003ef19be00000b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Spine1"
@@ -1083,7 +1123,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26e4c1be4-0003ebe4ae0002a5"
+                                "001b4a95c89f73ae-0003ef19be00000d"
                             ]
                         }
                     ]
@@ -1091,7 +1131,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a22904466c-0003ebe4ae0002a1"
+                        "001b4a95a150e173-0003ef19be000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -1107,7 +1147,7 @@
         },
         {
             "id": 5,
-            "guid": "002598a26e4c1be4-0003ebe4ae0002a5",
+            "guid": "001b4a95c89f73ae-0003ef19be00000d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Spine2"
@@ -1257,9 +1297,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23aa67819-0003ebe4ae0002a7",
-                                "002598a20fcad7fe-0003ebe4ae0002b1",
-                                "002598a21fdfe1bb-0003ebe4ae0002e1"
+                                "001b4a95b62f6624-0003ef19be00000f",
+                                "001b4a9585f7faf2-0003ef19be000019",
+                                "001b4a95c263211d-0003ef19be000049"
                             ]
                         }
                     ]
@@ -1267,7 +1307,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a27e8d88a0-0003ebe4ae0002a3"
+                        "001b4a95c180976e-0003ef19be00000b"
                     ]
                 },
                 "ActiveComponent": {
@@ -1283,7 +1323,7 @@
         },
         {
             "id": 6,
-            "guid": "002598a23aa67819-0003ebe4ae0002a7",
+            "guid": "001b4a95b62f6624-0003ef19be00000f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Neck"
@@ -1433,7 +1473,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25f1d129d-0003ebe4ae0002a9"
+                                "001b4a95e838138c-0003ef19be000011"
                             ]
                         }
                     ]
@@ -1441,7 +1481,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26e4c1be4-0003ebe4ae0002a5"
+                        "001b4a95c89f73ae-0003ef19be00000d"
                     ]
                 },
                 "ActiveComponent": {
@@ -1457,7 +1497,7 @@
         },
         {
             "id": 7,
-            "guid": "002598a25f1d129d-0003ebe4ae0002a9",
+            "guid": "001b4a95e838138c-0003ef19be000011",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Head"
@@ -1607,9 +1647,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2356d67e8-0003ebe4ae0002ab",
-                                "002598a26b718027-0003ebe4ae0002ad",
-                                "002598a24d070cc2-0003ebe4ae0002af"
+                                "001b4a95acd06410-0003ef19be000013",
+                                "001b4a95dba3e283-0003ef19be000015",
+                                "001b4a959cd187d3-0003ef19be000017"
                             ]
                         }
                     ]
@@ -1617,7 +1657,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a23aa67819-0003ebe4ae0002a7"
+                        "001b4a95b62f6624-0003ef19be00000f"
                     ]
                 },
                 "ActiveComponent": {
@@ -1633,7 +1673,7 @@
         },
         {
             "id": 8,
-            "guid": "002598a2356d67e8-0003ebe4ae0002ab",
+            "guid": "001b4a95acd06410-0003ef19be000013",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:HeadTop_End"
@@ -1780,7 +1820,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25f1d129d-0003ebe4ae0002a9"
+                        "001b4a95e838138c-0003ef19be000011"
                     ]
                 },
                 "ActiveComponent": {
@@ -1796,7 +1836,7 @@
         },
         {
             "id": 9,
-            "guid": "002598a26b718027-0003ebe4ae0002ad",
+            "guid": "001b4a95dba3e283-0003ef19be000015",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Leye"
@@ -1943,7 +1983,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25f1d129d-0003ebe4ae0002a9"
+                        "001b4a95e838138c-0003ef19be000011"
                     ]
                 },
                 "ActiveComponent": {
@@ -1959,7 +1999,7 @@
         },
         {
             "id": 10,
-            "guid": "002598a24d070cc2-0003ebe4ae0002af",
+            "guid": "001b4a959cd187d3-0003ef19be000017",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Reye"
@@ -2106,7 +2146,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25f1d129d-0003ebe4ae0002a9"
+                        "001b4a95e838138c-0003ef19be000011"
                     ]
                 },
                 "ActiveComponent": {
@@ -2122,7 +2162,7 @@
         },
         {
             "id": 11,
-            "guid": "002598a20fcad7fe-0003ebe4ae0002b1",
+            "guid": "001b4a9585f7faf2-0003ef19be000019",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftShoulder"
@@ -2272,7 +2312,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23da4dd3a-0003ebe4ae0002b3"
+                                "001b4a95cbe2f4ae-0003ef19be00001b"
                             ]
                         }
                     ]
@@ -2280,7 +2320,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26e4c1be4-0003ebe4ae0002a5"
+                        "001b4a95c89f73ae-0003ef19be00000d"
                     ]
                 },
                 "ActiveComponent": {
@@ -2296,7 +2336,7 @@
         },
         {
             "id": 12,
-            "guid": "002598a23da4dd3a-0003ebe4ae0002b3",
+            "guid": "001b4a95cbe2f4ae-0003ef19be00001b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftArm"
@@ -2446,7 +2486,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25a44935c-0003ebe4ae0002b5"
+                                "001b4a95deb71614-0003ef19be00001d"
                             ]
                         }
                     ]
@@ -2454,7 +2494,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20fcad7fe-0003ebe4ae0002b1"
+                        "001b4a9585f7faf2-0003ef19be000019"
                     ]
                 },
                 "ActiveComponent": {
@@ -2470,7 +2510,7 @@
         },
         {
             "id": 13,
-            "guid": "002598a25a44935c-0003ebe4ae0002b5",
+            "guid": "001b4a95deb71614-0003ef19be00001d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftForeArm"
@@ -2620,7 +2660,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a266fa5d25-0003ebe4ae0002b7"
+                                "001b4a95f648a7cd-0003ef19be00001f"
                             ]
                         }
                     ]
@@ -2628,7 +2668,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a23da4dd3a-0003ebe4ae0002b3"
+                        "001b4a95cbe2f4ae-0003ef19be00001b"
                     ]
                 },
                 "ActiveComponent": {
@@ -2644,7 +2684,7 @@
         },
         {
             "id": 14,
-            "guid": "002598a266fa5d25-0003ebe4ae0002b7",
+            "guid": "001b4a95f648a7cd-0003ef19be00001f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHand"
@@ -2794,11 +2834,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a209f96569-0003ebe4ae0002b9",
-                                "002598a236e4e5bf-0003ebe4ae0002c1",
-                                "002598a22d7eb7a0-0003ebe4ae0002c9",
-                                "002598a2478b4454-0003ebe4ae0002d1",
-                                "002598a221aedae1-0003ebe4ae0002d9"
+                                "001b4a95d91fb869-0003ef19be000021",
+                                "001b4a95b0bdf9ea-0003ef19be000029",
+                                "001b4a95aa44652f-0003ef19be000031",
+                                "001b4a958305f624-0003ef19be000039",
+                                "001b4a95b335a943-0003ef19be000041"
                             ]
                         }
                     ]
@@ -2806,7 +2846,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25a44935c-0003ebe4ae0002b5"
+                        "001b4a95deb71614-0003ef19be00001d"
                     ]
                 },
                 "ActiveComponent": {
@@ -2822,7 +2862,7 @@
         },
         {
             "id": 15,
-            "guid": "002598a209f96569-0003ebe4ae0002b9",
+            "guid": "001b4a95d91fb869-0003ef19be000021",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandThumb1"
@@ -2972,7 +3012,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a279426234-0003ebe4ae0002bb"
+                                "001b4a95a47bd60b-0003ef19be000023"
                             ]
                         }
                     ]
@@ -2980,7 +3020,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a266fa5d25-0003ebe4ae0002b7"
+                        "001b4a95f648a7cd-0003ef19be00001f"
                     ]
                 },
                 "ActiveComponent": {
@@ -2996,7 +3036,7 @@
         },
         {
             "id": 16,
-            "guid": "002598a279426234-0003ebe4ae0002bb",
+            "guid": "001b4a95a47bd60b-0003ef19be000023",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandThumb2"
@@ -3146,7 +3186,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25fdfb9ef-0003ebe4ae0002bd"
+                                "001b4a95b38e69ea-0003ef19be000025"
                             ]
                         }
                     ]
@@ -3154,7 +3194,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a209f96569-0003ebe4ae0002b9"
+                        "001b4a95d91fb869-0003ef19be000021"
                     ]
                 },
                 "ActiveComponent": {
@@ -3170,7 +3210,7 @@
         },
         {
             "id": 17,
-            "guid": "002598a25fdfb9ef-0003ebe4ae0002bd",
+            "guid": "001b4a95b38e69ea-0003ef19be000025",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandThumb3"
@@ -3320,7 +3360,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a22b9668d7-0003ebe4ae0002bf"
+                                "001b4a95fee71622-0003ef19be000027"
                             ]
                         }
                     ]
@@ -3328,7 +3368,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a279426234-0003ebe4ae0002bb"
+                        "001b4a95a47bd60b-0003ef19be000023"
                     ]
                 },
                 "ActiveComponent": {
@@ -3344,7 +3384,7 @@
         },
         {
             "id": 18,
-            "guid": "002598a22b9668d7-0003ebe4ae0002bf",
+            "guid": "001b4a95fee71622-0003ef19be000027",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandThumb4"
@@ -3491,7 +3531,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25fdfb9ef-0003ebe4ae0002bd"
+                        "001b4a95b38e69ea-0003ef19be000025"
                     ]
                 },
                 "ActiveComponent": {
@@ -3507,7 +3547,7 @@
         },
         {
             "id": 19,
-            "guid": "002598a236e4e5bf-0003ebe4ae0002c1",
+            "guid": "001b4a95b0bdf9ea-0003ef19be000029",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandIndex1"
@@ -3657,7 +3697,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a226a56949-0003ebe4ae0002c3"
+                                "001b4a95f845e817-0003ef19be00002b"
                             ]
                         }
                     ]
@@ -3665,7 +3705,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a266fa5d25-0003ebe4ae0002b7"
+                        "001b4a95f648a7cd-0003ef19be00001f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3681,7 +3721,7 @@
         },
         {
             "id": 20,
-            "guid": "002598a226a56949-0003ebe4ae0002c3",
+            "guid": "001b4a95f845e817-0003ef19be00002b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandIndex2"
@@ -3831,7 +3871,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a214f4a2c7-0003ebe4ae0002c5"
+                                "001b4a95bbe39128-0003ef19be00002d"
                             ]
                         }
                     ]
@@ -3839,7 +3879,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a236e4e5bf-0003ebe4ae0002c1"
+                        "001b4a95b0bdf9ea-0003ef19be000029"
                     ]
                 },
                 "ActiveComponent": {
@@ -3855,7 +3895,7 @@
         },
         {
             "id": 21,
-            "guid": "002598a214f4a2c7-0003ebe4ae0002c5",
+            "guid": "001b4a95bbe39128-0003ef19be00002d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandIndex3"
@@ -4005,7 +4045,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23e0eedd8-0003ebe4ae0002c7"
+                                "001b4a95dc0bfe4a-0003ef19be00002f"
                             ]
                         }
                     ]
@@ -4013,7 +4053,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a226a56949-0003ebe4ae0002c3"
+                        "001b4a95f845e817-0003ef19be00002b"
                     ]
                 },
                 "ActiveComponent": {
@@ -4029,7 +4069,7 @@
         },
         {
             "id": 22,
-            "guid": "002598a23e0eedd8-0003ebe4ae0002c7",
+            "guid": "001b4a95dc0bfe4a-0003ef19be00002f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandIndex4"
@@ -4176,7 +4216,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a214f4a2c7-0003ebe4ae0002c5"
+                        "001b4a95bbe39128-0003ef19be00002d"
                     ]
                 },
                 "ActiveComponent": {
@@ -4192,7 +4232,7 @@
         },
         {
             "id": 23,
-            "guid": "002598a22d7eb7a0-0003ebe4ae0002c9",
+            "guid": "001b4a95aa44652f-0003ef19be000031",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandMiddle1"
@@ -4342,7 +4382,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2465cc71e-0003ebe4ae0002cb"
+                                "001b4a95b744c483-0003ef19be000033"
                             ]
                         }
                     ]
@@ -4350,7 +4390,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a266fa5d25-0003ebe4ae0002b7"
+                        "001b4a95f648a7cd-0003ef19be00001f"
                     ]
                 },
                 "ActiveComponent": {
@@ -4366,7 +4406,7 @@
         },
         {
             "id": 24,
-            "guid": "002598a2465cc71e-0003ebe4ae0002cb",
+            "guid": "001b4a95b744c483-0003ef19be000033",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandMiddle2"
@@ -4516,7 +4556,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26bf00d31-0003ebe4ae0002cd"
+                                "001b4a95dfece761-0003ef19be000035"
                             ]
                         }
                     ]
@@ -4524,7 +4564,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a22d7eb7a0-0003ebe4ae0002c9"
+                        "001b4a95aa44652f-0003ef19be000031"
                     ]
                 },
                 "ActiveComponent": {
@@ -4540,7 +4580,7 @@
         },
         {
             "id": 25,
-            "guid": "002598a26bf00d31-0003ebe4ae0002cd",
+            "guid": "001b4a95dfece761-0003ef19be000035",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandMiddle3"
@@ -4690,7 +4730,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26bcc9f62-0003ebe4ae0002cf"
+                                "001b4a95f40a1775-0003ef19be000037"
                             ]
                         }
                     ]
@@ -4698,7 +4738,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2465cc71e-0003ebe4ae0002cb"
+                        "001b4a95b744c483-0003ef19be000033"
                     ]
                 },
                 "ActiveComponent": {
@@ -4714,7 +4754,7 @@
         },
         {
             "id": 26,
-            "guid": "002598a26bcc9f62-0003ebe4ae0002cf",
+            "guid": "001b4a95f40a1775-0003ef19be000037",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandMiddle4"
@@ -4861,7 +4901,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26bf00d31-0003ebe4ae0002cd"
+                        "001b4a95dfece761-0003ef19be000035"
                     ]
                 },
                 "ActiveComponent": {
@@ -4877,7 +4917,7 @@
         },
         {
             "id": 27,
-            "guid": "002598a2478b4454-0003ebe4ae0002d1",
+            "guid": "001b4a958305f624-0003ef19be000039",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandRing1"
@@ -5027,7 +5067,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a27633eb8f-0003ebe4ae0002d3"
+                                "001b4a95efb404fe-0003ef19be00003b"
                             ]
                         }
                     ]
@@ -5035,7 +5075,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a266fa5d25-0003ebe4ae0002b7"
+                        "001b4a95f648a7cd-0003ef19be00001f"
                     ]
                 },
                 "ActiveComponent": {
@@ -5051,7 +5091,7 @@
         },
         {
             "id": 28,
-            "guid": "002598a27633eb8f-0003ebe4ae0002d3",
+            "guid": "001b4a95efb404fe-0003ef19be00003b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandRing2"
@@ -5201,7 +5241,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23b3373d3-0003ebe4ae0002d5"
+                                "001b4a95c30b8df8-0003ef19be00003d"
                             ]
                         }
                     ]
@@ -5209,7 +5249,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2478b4454-0003ebe4ae0002d1"
+                        "001b4a958305f624-0003ef19be000039"
                     ]
                 },
                 "ActiveComponent": {
@@ -5225,7 +5265,7 @@
         },
         {
             "id": 29,
-            "guid": "002598a23b3373d3-0003ebe4ae0002d5",
+            "guid": "001b4a95c30b8df8-0003ef19be00003d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandRing3"
@@ -5375,7 +5415,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a219032cc7-0003ebe4ae0002d7"
+                                "001b4a959c1370d1-0003ef19be00003f"
                             ]
                         }
                     ]
@@ -5383,7 +5423,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a27633eb8f-0003ebe4ae0002d3"
+                        "001b4a95efb404fe-0003ef19be00003b"
                     ]
                 },
                 "ActiveComponent": {
@@ -5399,7 +5439,7 @@
         },
         {
             "id": 30,
-            "guid": "002598a219032cc7-0003ebe4ae0002d7",
+            "guid": "001b4a959c1370d1-0003ef19be00003f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandRing4"
@@ -5546,7 +5586,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a23b3373d3-0003ebe4ae0002d5"
+                        "001b4a95c30b8df8-0003ef19be00003d"
                     ]
                 },
                 "ActiveComponent": {
@@ -5562,7 +5602,7 @@
         },
         {
             "id": 31,
-            "guid": "002598a221aedae1-0003ebe4ae0002d9",
+            "guid": "001b4a95b335a943-0003ef19be000041",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandPinky1"
@@ -5712,7 +5752,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a20a6de8e4-0003ebe4ae0002db"
+                                "001b4a95979641bb-0003ef19be000043"
                             ]
                         }
                     ]
@@ -5720,7 +5760,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a266fa5d25-0003ebe4ae0002b7"
+                        "001b4a95f648a7cd-0003ef19be00001f"
                     ]
                 },
                 "ActiveComponent": {
@@ -5736,7 +5776,7 @@
         },
         {
             "id": 32,
-            "guid": "002598a20a6de8e4-0003ebe4ae0002db",
+            "guid": "001b4a95979641bb-0003ef19be000043",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandPinky2"
@@ -5886,7 +5926,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a253c8a051-0003ebe4ae0002dd"
+                                "001b4a9584f82bed-0003ef19be000045"
                             ]
                         }
                     ]
@@ -5894,7 +5934,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a221aedae1-0003ebe4ae0002d9"
+                        "001b4a95b335a943-0003ef19be000041"
                     ]
                 },
                 "ActiveComponent": {
@@ -5910,7 +5950,7 @@
         },
         {
             "id": 33,
-            "guid": "002598a253c8a051-0003ebe4ae0002dd",
+            "guid": "001b4a9584f82bed-0003ef19be000045",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandPinky3"
@@ -6060,7 +6100,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2338c7460-0003ebe4ae0002df"
+                                "001b4a958ac96692-0003ef19be000047"
                             ]
                         }
                     ]
@@ -6068,7 +6108,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20a6de8e4-0003ebe4ae0002db"
+                        "001b4a95979641bb-0003ef19be000043"
                     ]
                 },
                 "ActiveComponent": {
@@ -6084,7 +6124,7 @@
         },
         {
             "id": 34,
-            "guid": "002598a2338c7460-0003ebe4ae0002df",
+            "guid": "001b4a958ac96692-0003ef19be000047",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftHandPinky4"
@@ -6231,7 +6271,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a253c8a051-0003ebe4ae0002dd"
+                        "001b4a9584f82bed-0003ef19be000045"
                     ]
                 },
                 "ActiveComponent": {
@@ -6247,7 +6287,7 @@
         },
         {
             "id": 35,
-            "guid": "002598a21fdfe1bb-0003ebe4ae0002e1",
+            "guid": "001b4a95c263211d-0003ef19be000049",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightShoulder"
@@ -6397,7 +6437,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a279a1ec21-0003ebe4ae0002e3"
+                                "001b4a95d00a2c23-0003ef19be00004b"
                             ]
                         }
                     ]
@@ -6405,7 +6445,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26e4c1be4-0003ebe4ae0002a5"
+                        "001b4a95c89f73ae-0003ef19be00000d"
                     ]
                 },
                 "ActiveComponent": {
@@ -6421,7 +6461,7 @@
         },
         {
             "id": 36,
-            "guid": "002598a279a1ec21-0003ebe4ae0002e3",
+            "guid": "001b4a95d00a2c23-0003ef19be00004b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightArm"
@@ -6571,7 +6611,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a223963638-0003ebe4ae0002e5"
+                                "001b4a95cb7031eb-0003ef19be00004d"
                             ]
                         }
                     ]
@@ -6579,7 +6619,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a21fdfe1bb-0003ebe4ae0002e1"
+                        "001b4a95c263211d-0003ef19be000049"
                     ]
                 },
                 "ActiveComponent": {
@@ -6595,7 +6635,7 @@
         },
         {
             "id": 37,
-            "guid": "002598a223963638-0003ebe4ae0002e5",
+            "guid": "001b4a95cb7031eb-0003ef19be00004d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightForeArm"
@@ -6745,7 +6785,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a272f75bd7-0003ebe4ae0002e7"
+                                "001b4a95c6765641-0003ef19be00004f"
                             ]
                         }
                     ]
@@ -6753,7 +6793,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a279a1ec21-0003ebe4ae0002e3"
+                        "001b4a95d00a2c23-0003ef19be00004b"
                     ]
                 },
                 "ActiveComponent": {
@@ -6769,7 +6809,7 @@
         },
         {
             "id": 38,
-            "guid": "002598a272f75bd7-0003ebe4ae0002e7",
+            "guid": "001b4a95c6765641-0003ef19be00004f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHand"
@@ -6919,11 +6959,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a232e97bce-0003ebe4ae0002e9",
-                                "002598a22b246261-0003ebe4ae0002f1",
-                                "002598a2391bf878-0003ebe4ae0002f9",
-                                "002598a24ca61f35-0003ebe4ae000301",
-                                "002598a26a09e8a3-0003ebe4ae000309"
+                                "001b4a95c77245dd-0003ef19be000051",
+                                "001b4a959f0c2bd0-0003ef19be000059",
+                                "001b4a95f065f3f3-0003ef19be000061",
+                                "001b4a95aca2b082-0003ef19be000069",
+                                "001b4a95a805574c-0003ef19be000071"
                             ]
                         }
                     ]
@@ -6931,7 +6971,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a223963638-0003ebe4ae0002e5"
+                        "001b4a95cb7031eb-0003ef19be00004d"
                     ]
                 },
                 "ActiveComponent": {
@@ -6947,7 +6987,7 @@
         },
         {
             "id": 39,
-            "guid": "002598a232e97bce-0003ebe4ae0002e9",
+            "guid": "001b4a95c77245dd-0003ef19be000051",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandThumb1"
@@ -7097,7 +7137,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25e2f87ca-0003ebe4ae0002eb"
+                                "001b4a959ad4edef-0003ef19be000053"
                             ]
                         }
                     ]
@@ -7105,7 +7145,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a272f75bd7-0003ebe4ae0002e7"
+                        "001b4a95c6765641-0003ef19be00004f"
                     ]
                 },
                 "ActiveComponent": {
@@ -7121,7 +7161,7 @@
         },
         {
             "id": 40,
-            "guid": "002598a25e2f87ca-0003ebe4ae0002eb",
+            "guid": "001b4a959ad4edef-0003ef19be000053",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandThumb2"
@@ -7271,7 +7311,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2053fc9d8-0003ebe4ae0002ed"
+                                "001b4a95c7fd2fb6-0003ef19be000055"
                             ]
                         }
                     ]
@@ -7279,7 +7319,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a232e97bce-0003ebe4ae0002e9"
+                        "001b4a95c77245dd-0003ef19be000051"
                     ]
                 },
                 "ActiveComponent": {
@@ -7295,7 +7335,7 @@
         },
         {
             "id": 41,
-            "guid": "002598a2053fc9d8-0003ebe4ae0002ed",
+            "guid": "001b4a95c7fd2fb6-0003ef19be000055",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandThumb3"
@@ -7445,7 +7485,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2397d998c-0003ebe4ae0002ef"
+                                "001b4a959c2d041e-0003ef19be000057"
                             ]
                         }
                     ]
@@ -7453,7 +7493,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25e2f87ca-0003ebe4ae0002eb"
+                        "001b4a959ad4edef-0003ef19be000053"
                     ]
                 },
                 "ActiveComponent": {
@@ -7469,7 +7509,7 @@
         },
         {
             "id": 42,
-            "guid": "002598a2397d998c-0003ebe4ae0002ef",
+            "guid": "001b4a959c2d041e-0003ef19be000057",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandThumb4"
@@ -7616,7 +7656,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2053fc9d8-0003ebe4ae0002ed"
+                        "001b4a95c7fd2fb6-0003ef19be000055"
                     ]
                 },
                 "ActiveComponent": {
@@ -7632,7 +7672,7 @@
         },
         {
             "id": 43,
-            "guid": "002598a22b246261-0003ebe4ae0002f1",
+            "guid": "001b4a959f0c2bd0-0003ef19be000059",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandIndex1"
@@ -7782,7 +7822,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2291c4626-0003ebe4ae0002f3"
+                                "001b4a95f1807455-0003ef19be00005b"
                             ]
                         }
                     ]
@@ -7790,7 +7830,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a272f75bd7-0003ebe4ae0002e7"
+                        "001b4a95c6765641-0003ef19be00004f"
                     ]
                 },
                 "ActiveComponent": {
@@ -7806,7 +7846,7 @@
         },
         {
             "id": 44,
-            "guid": "002598a2291c4626-0003ebe4ae0002f3",
+            "guid": "001b4a95f1807455-0003ef19be00005b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandIndex2"
@@ -7956,7 +7996,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a210d3b35e-0003ebe4ae0002f5"
+                                "001b4a95805ef09d-0003ef19be00005d"
                             ]
                         }
                     ]
@@ -7964,7 +8004,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a22b246261-0003ebe4ae0002f1"
+                        "001b4a959f0c2bd0-0003ef19be000059"
                     ]
                 },
                 "ActiveComponent": {
@@ -7980,7 +8020,7 @@
         },
         {
             "id": 45,
-            "guid": "002598a210d3b35e-0003ebe4ae0002f5",
+            "guid": "001b4a95805ef09d-0003ef19be00005d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandIndex3"
@@ -8130,7 +8170,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23dbe2419-0003ebe4ae0002f7"
+                                "001b4a95b4e47863-0003ef19be00005f"
                             ]
                         }
                     ]
@@ -8138,7 +8178,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2291c4626-0003ebe4ae0002f3"
+                        "001b4a95f1807455-0003ef19be00005b"
                     ]
                 },
                 "ActiveComponent": {
@@ -8154,7 +8194,7 @@
         },
         {
             "id": 46,
-            "guid": "002598a23dbe2419-0003ebe4ae0002f7",
+            "guid": "001b4a95b4e47863-0003ef19be00005f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandIndex4"
@@ -8301,7 +8341,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a210d3b35e-0003ebe4ae0002f5"
+                        "001b4a95805ef09d-0003ef19be00005d"
                     ]
                 },
                 "ActiveComponent": {
@@ -8317,7 +8357,7 @@
         },
         {
             "id": 47,
-            "guid": "002598a2391bf878-0003ebe4ae0002f9",
+            "guid": "001b4a95f065f3f3-0003ef19be000061",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandMiddle1"
@@ -8467,7 +8507,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a225d6b878-0003ebe4ae0002fb"
+                                "001b4a95e9b628af-0003ef19be000063"
                             ]
                         }
                     ]
@@ -8475,7 +8515,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a272f75bd7-0003ebe4ae0002e7"
+                        "001b4a95c6765641-0003ef19be00004f"
                     ]
                 },
                 "ActiveComponent": {
@@ -8491,7 +8531,7 @@
         },
         {
             "id": 48,
-            "guid": "002598a225d6b878-0003ebe4ae0002fb",
+            "guid": "001b4a95e9b628af-0003ef19be000063",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandMiddle2"
@@ -8641,7 +8681,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a211835483-0003ebe4ae0002fd"
+                                "001b4a958c5ff99b-0003ef19be000065"
                             ]
                         }
                     ]
@@ -8649,7 +8689,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2391bf878-0003ebe4ae0002f9"
+                        "001b4a95f065f3f3-0003ef19be000061"
                     ]
                 },
                 "ActiveComponent": {
@@ -8665,7 +8705,7 @@
         },
         {
             "id": 49,
-            "guid": "002598a211835483-0003ebe4ae0002fd",
+            "guid": "001b4a958c5ff99b-0003ef19be000065",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandMiddle3"
@@ -8815,7 +8855,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25a6a55a9-0003ebe4ae0002ff"
+                                "001b4a95a3736c73-0003ef19be000067"
                             ]
                         }
                     ]
@@ -8823,7 +8863,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a225d6b878-0003ebe4ae0002fb"
+                        "001b4a95e9b628af-0003ef19be000063"
                     ]
                 },
                 "ActiveComponent": {
@@ -8839,7 +8879,7 @@
         },
         {
             "id": 50,
-            "guid": "002598a25a6a55a9-0003ebe4ae0002ff",
+            "guid": "001b4a95a3736c73-0003ef19be000067",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandMiddle4"
@@ -8986,7 +9026,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a211835483-0003ebe4ae0002fd"
+                        "001b4a958c5ff99b-0003ef19be000065"
                     ]
                 },
                 "ActiveComponent": {
@@ -9002,7 +9042,7 @@
         },
         {
             "id": 51,
-            "guid": "002598a24ca61f35-0003ebe4ae000301",
+            "guid": "001b4a95aca2b082-0003ef19be000069",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandRing1"
@@ -9152,7 +9192,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a219b347f8-0003ebe4ae000303"
+                                "001b4a95f8bd5d59-0003ef19be00006b"
                             ]
                         }
                     ]
@@ -9160,7 +9200,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a272f75bd7-0003ebe4ae0002e7"
+                        "001b4a95c6765641-0003ef19be00004f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9176,7 +9216,7 @@
         },
         {
             "id": 52,
-            "guid": "002598a219b347f8-0003ebe4ae000303",
+            "guid": "001b4a95f8bd5d59-0003ef19be00006b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandRing2"
@@ -9326,7 +9366,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26f5c1d30-0003ebe4ae000305"
+                                "001b4a95b566edac-0003ef19be00006d"
                             ]
                         }
                     ]
@@ -9334,7 +9374,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a24ca61f35-0003ebe4ae000301"
+                        "001b4a95aca2b082-0003ef19be000069"
                     ]
                 },
                 "ActiveComponent": {
@@ -9350,7 +9390,7 @@
         },
         {
             "id": 53,
-            "guid": "002598a26f5c1d30-0003ebe4ae000305",
+            "guid": "001b4a95b566edac-0003ef19be00006d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandRing3"
@@ -9500,7 +9540,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a203c5c4a5-0003ebe4ae000307"
+                                "001b4a95d48667e6-0003ef19be00006f"
                             ]
                         }
                     ]
@@ -9508,7 +9548,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a219b347f8-0003ebe4ae000303"
+                        "001b4a95f8bd5d59-0003ef19be00006b"
                     ]
                 },
                 "ActiveComponent": {
@@ -9524,7 +9564,7 @@
         },
         {
             "id": 54,
-            "guid": "002598a203c5c4a5-0003ebe4ae000307",
+            "guid": "001b4a95d48667e6-0003ef19be00006f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandRing4"
@@ -9671,7 +9711,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26f5c1d30-0003ebe4ae000305"
+                        "001b4a95b566edac-0003ef19be00006d"
                     ]
                 },
                 "ActiveComponent": {
@@ -9687,7 +9727,7 @@
         },
         {
             "id": 55,
-            "guid": "002598a26a09e8a3-0003ebe4ae000309",
+            "guid": "001b4a95a805574c-0003ef19be000071",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandPinky1"
@@ -9837,7 +9877,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2138cee48-0003ebe4ae00030b"
+                                "001b4a95da6ed73d-0003ef19be000073"
                             ]
                         }
                     ]
@@ -9845,7 +9885,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a272f75bd7-0003ebe4ae0002e7"
+                        "001b4a95c6765641-0003ef19be00004f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9861,7 +9901,7 @@
         },
         {
             "id": 56,
-            "guid": "002598a2138cee48-0003ebe4ae00030b",
+            "guid": "001b4a95da6ed73d-0003ef19be000073",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandPinky2"
@@ -10011,7 +10051,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25d0a22b2-0003ebe4ae00030d"
+                                "001b4a95df8f04d0-0003ef19be000075"
                             ]
                         }
                     ]
@@ -10019,7 +10059,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26a09e8a3-0003ebe4ae000309"
+                        "001b4a95a805574c-0003ef19be000071"
                     ]
                 },
                 "ActiveComponent": {
@@ -10035,7 +10075,7 @@
         },
         {
             "id": 57,
-            "guid": "002598a25d0a22b2-0003ebe4ae00030d",
+            "guid": "001b4a95df8f04d0-0003ef19be000075",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandPinky3"
@@ -10185,7 +10225,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2669b53ae-0003ebe4ae00030f"
+                                "001b4a958bd7337f-0003ef19be000077"
                             ]
                         }
                     ]
@@ -10193,7 +10233,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2138cee48-0003ebe4ae00030b"
+                        "001b4a95da6ed73d-0003ef19be000073"
                     ]
                 },
                 "ActiveComponent": {
@@ -10209,7 +10249,7 @@
         },
         {
             "id": 58,
-            "guid": "002598a2669b53ae-0003ebe4ae00030f",
+            "guid": "001b4a958bd7337f-0003ef19be000077",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightHandPinky4"
@@ -10356,7 +10396,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25d0a22b2-0003ebe4ae00030d"
+                        "001b4a95df8f04d0-0003ef19be000075"
                     ]
                 },
                 "ActiveComponent": {
@@ -10372,7 +10412,7 @@
         },
         {
             "id": 59,
-            "guid": "002598a20ff04ad5-0003ebe4ae000311",
+            "guid": "001b4a958fd2b274-0003ef19be000079",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow1"
@@ -10522,7 +10562,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a258333888-0003ebe4ae000313"
+                                "001b4a95d9c07c05-0003ef19be00007b"
                             ]
                         }
                     ]
@@ -10530,7 +10570,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a22904466c-0003ebe4ae0002a1"
+                        "001b4a95a150e173-0003ef19be000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -10546,7 +10586,7 @@
         },
         {
             "id": 60,
-            "guid": "002598a258333888-0003ebe4ae000313",
+            "guid": "001b4a95d9c07c05-0003ef19be00007b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow2"
@@ -10696,7 +10736,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25cdffc1f-0003ebe4ae000315"
+                                "001b4a95a3d8d29a-0003ef19be00007d"
                             ]
                         }
                     ]
@@ -10704,7 +10744,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20ff04ad5-0003ebe4ae000311"
+                        "001b4a958fd2b274-0003ef19be000079"
                     ]
                 },
                 "ActiveComponent": {
@@ -10720,7 +10760,7 @@
         },
         {
             "id": 61,
-            "guid": "002598a25cdffc1f-0003ebe4ae000315",
+            "guid": "001b4a95a3d8d29a-0003ef19be00007d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow3"
@@ -10870,7 +10910,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a21c218083-0003ebe4ae000317"
+                                "001b4a959214bdfa-0003ef19be00007f"
                             ]
                         }
                     ]
@@ -10878,7 +10918,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a258333888-0003ebe4ae000313"
+                        "001b4a95d9c07c05-0003ef19be00007b"
                     ]
                 },
                 "ActiveComponent": {
@@ -10894,7 +10934,7 @@
         },
         {
             "id": 62,
-            "guid": "002598a21c218083-0003ebe4ae000317",
+            "guid": "001b4a959214bdfa-0003ef19be00007f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow4"
@@ -11041,7 +11081,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25cdffc1f-0003ebe4ae000315"
+                        "001b4a95a3d8d29a-0003ef19be00007d"
                     ]
                 },
                 "ActiveComponent": {
@@ -11057,7 +11097,7 @@
         },
         {
             "id": 63,
-            "guid": "002598a201bb533d-0003ebe4ae000319",
+            "guid": "001b4a95abd7ad64-0003ef19be000081",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow5"
@@ -11207,7 +11247,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23d67ccb6-0003ebe4ae00031b"
+                                "001b4a95a7e9fbae-0003ef19be000083"
                             ]
                         }
                     ]
@@ -11215,7 +11255,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a22904466c-0003ebe4ae0002a1"
+                        "001b4a95a150e173-0003ef19be000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -11231,7 +11271,7 @@
         },
         {
             "id": 64,
-            "guid": "002598a23d67ccb6-0003ebe4ae00031b",
+            "guid": "001b4a95a7e9fbae-0003ef19be000083",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow6"
@@ -11381,7 +11421,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2074d2cdb-0003ebe4ae00031d"
+                                "001b4a95dedc56a4-0003ef19be000085"
                             ]
                         }
                     ]
@@ -11389,7 +11429,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a201bb533d-0003ebe4ae000319"
+                        "001b4a95abd7ad64-0003ef19be000081"
                     ]
                 },
                 "ActiveComponent": {
@@ -11405,7 +11445,7 @@
         },
         {
             "id": 65,
-            "guid": "002598a2074d2cdb-0003ebe4ae00031d",
+            "guid": "001b4a95dedc56a4-0003ef19be000085",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow7"
@@ -11555,7 +11595,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a241a8b421-0003ebe4ae00031f"
+                                "001b4a95d3f31bb3-0003ef19be000087"
                             ]
                         }
                     ]
@@ -11563,7 +11603,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a23d67ccb6-0003ebe4ae00031b"
+                        "001b4a95a7e9fbae-0003ef19be000083"
                     ]
                 },
                 "ActiveComponent": {
@@ -11579,7 +11619,7 @@
         },
         {
             "id": 66,
-            "guid": "002598a241a8b421-0003ebe4ae00031f",
+            "guid": "001b4a95d3f31bb3-0003ef19be000087",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:Bow8"
@@ -11726,7 +11766,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2074d2cdb-0003ebe4ae00031d"
+                        "001b4a95dedc56a4-0003ef19be000085"
                     ]
                 },
                 "ActiveComponent": {
@@ -11742,7 +11782,7 @@
         },
         {
             "id": 67,
-            "guid": "002598a20b2d6bf5-0003ebe4ae000321",
+            "guid": "001b4a95fb25f91b-0003ef19be000089",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftUpLeg"
@@ -11892,7 +11932,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a27274ec52-0003ebe4ae000323"
+                                "001b4a95a85209b0-0003ef19be00008b"
                             ]
                         }
                     ]
@@ -11900,7 +11940,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20892fe83-0003ebe4ae00029f"
+                        "001b4a9589b5bf40-0003ef19be000007"
                     ]
                 },
                 "ActiveComponent": {
@@ -11916,7 +11956,7 @@
         },
         {
             "id": 68,
-            "guid": "002598a27274ec52-0003ebe4ae000323",
+            "guid": "001b4a95a85209b0-0003ef19be00008b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftLeg"
@@ -12066,7 +12106,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2430bacda-0003ebe4ae000325"
+                                "001b4a95ca8f1e27-0003ef19be00008d"
                             ]
                         }
                     ]
@@ -12074,7 +12114,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20b2d6bf5-0003ebe4ae000321"
+                        "001b4a95fb25f91b-0003ef19be000089"
                     ]
                 },
                 "ActiveComponent": {
@@ -12090,7 +12130,7 @@
         },
         {
             "id": 69,
-            "guid": "002598a2430bacda-0003ebe4ae000325",
+            "guid": "001b4a95ca8f1e27-0003ef19be00008d",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftFoot"
@@ -12240,7 +12280,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2653a1c7d-0003ebe4ae000327"
+                                "001b4a95ac255b85-0003ef19be00008f"
                             ]
                         }
                     ]
@@ -12248,7 +12288,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a27274ec52-0003ebe4ae000323"
+                        "001b4a95a85209b0-0003ef19be00008b"
                     ]
                 },
                 "ActiveComponent": {
@@ -12264,7 +12304,7 @@
         },
         {
             "id": 70,
-            "guid": "002598a2653a1c7d-0003ebe4ae000327",
+            "guid": "001b4a95ac255b85-0003ef19be00008f",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftToeBase"
@@ -12414,7 +12454,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2390cbd22-0003ebe4ae000329"
+                                "001b4a95e7a7fd3c-0003ef19be000091"
                             ]
                         }
                     ]
@@ -12422,7 +12462,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2430bacda-0003ebe4ae000325"
+                        "001b4a95ca8f1e27-0003ef19be00008d"
                     ]
                 },
                 "ActiveComponent": {
@@ -12438,7 +12478,7 @@
         },
         {
             "id": 71,
-            "guid": "002598a2390cbd22-0003ebe4ae000329",
+            "guid": "001b4a95e7a7fd3c-0003ef19be000091",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:LeftToe_End"
@@ -12585,7 +12625,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2653a1c7d-0003ebe4ae000327"
+                        "001b4a95ac255b85-0003ef19be00008f"
                     ]
                 },
                 "ActiveComponent": {
@@ -12601,7 +12641,7 @@
         },
         {
             "id": 72,
-            "guid": "002598a25d56eb6e-0003ebe4ae00032b",
+            "guid": "001b4a95d84f05fb-0003ef19be000093",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightUpLeg"
@@ -12751,7 +12791,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a24e2622e7-0003ebe4ae00032d"
+                                "001b4a95d864424b-0003ef19be000095"
                             ]
                         }
                     ]
@@ -12759,7 +12799,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a20892fe83-0003ebe4ae00029f"
+                        "001b4a9589b5bf40-0003ef19be000007"
                     ]
                 },
                 "ActiveComponent": {
@@ -12775,7 +12815,7 @@
         },
         {
             "id": 73,
-            "guid": "002598a24e2622e7-0003ebe4ae00032d",
+            "guid": "001b4a95d864424b-0003ef19be000095",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightLeg"
@@ -12925,7 +12965,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a246520cd2-0003ebe4ae00032f"
+                                "001b4a95dd429c7f-0003ef19be000097"
                             ]
                         }
                     ]
@@ -12933,7 +12973,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25d56eb6e-0003ebe4ae00032b"
+                        "001b4a95d84f05fb-0003ef19be000093"
                     ]
                 },
                 "ActiveComponent": {
@@ -12949,7 +12989,7 @@
         },
         {
             "id": 74,
-            "guid": "002598a246520cd2-0003ebe4ae00032f",
+            "guid": "001b4a95dd429c7f-0003ef19be000097",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightFoot"
@@ -13099,7 +13139,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a220d475fe-0003ebe4ae000331"
+                                "001b4a9589d96cfa-0003ef19be000099"
                             ]
                         }
                     ]
@@ -13107,7 +13147,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a24e2622e7-0003ebe4ae00032d"
+                        "001b4a95d864424b-0003ef19be000095"
                     ]
                 },
                 "ActiveComponent": {
@@ -13123,7 +13163,7 @@
         },
         {
             "id": 75,
-            "guid": "002598a220d475fe-0003ebe4ae000331",
+            "guid": "001b4a9589d96cfa-0003ef19be000099",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightToeBase"
@@ -13273,7 +13313,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a202a75b91-0003ebe4ae000333"
+                                "001b4a95ba1c1b3e-0003ef19be00009b"
                             ]
                         }
                     ]
@@ -13281,7 +13321,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a246520cd2-0003ebe4ae00032f"
+                        "001b4a95dd429c7f-0003ef19be000097"
                     ]
                 },
                 "ActiveComponent": {
@@ -13297,7 +13337,7 @@
         },
         {
             "id": 76,
-            "guid": "002598a202a75b91-0003ebe4ae000333",
+            "guid": "001b4a95ba1c1b3e-0003ef19be00009b",
             "components": {
                 "NameComponent": {
                     "name": "mixamorig:RightToe_End"
@@ -13444,7 +13484,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a220d475fe-0003ebe4ae000331"
+                        "001b4a9589d96cfa-0003ef19be000099"
                     ]
                 },
                 "ActiveComponent": {
@@ -13460,7 +13500,7 @@
         },
         {
             "id": 77,
-            "guid": "002598a26c1098e4-0003ebe4ae000335",
+            "guid": "001b4a95e9dadc99-0003ef19be00009d",
             "components": {
                 "NameComponent": {
                     "name": "Kachujin"
@@ -13959,11 +13999,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 400
                                 },
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 512
                                 },
                                 {
                                     "type": "float",
@@ -13976,11 +14016,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -14018,35 +14058,35 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 250
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
                                     "data": 500
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 400
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 512
                                 },
                                 {
                                     "type": "float",
@@ -14084,33 +14124,25 @@
                         }
                     ]
                 },
-                "TextRenderComponent": {
-                    "type": "TextRenderComponent",
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
-                        {
-                            "type": "std::string",
-                            "data": "Settings"
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 48
-                        },
-                        "00602042db559215-00036778be000001",
-                        "00374a2171ad928d-000331fc8200006d",
+                        "00328d6a4e55cb37-0003611882000089",
+                        "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -14123,6 +14155,27 @@
                             "data": [
                                 {
                                     "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
                                     "data": 1
                                 },
                                 {
@@ -14134,28 +14187,32 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
                             "data": false
                         },
                         {
-                            "type": "int",
-                            "data": 0
+                            "type": "bool",
+                            "data": true
                         },
                         {
                             "type": "int",
                             "data": 0
                         },
                         {
-                            "type": "Matrix4x4",
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
                                     "data": 0
                                 },
                                 {
@@ -14165,60 +14222,8 @@
                                 {
                                     "type": "float",
                                     "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
                                 }
                             ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
                         }
                     ]
                 },
@@ -14228,7 +14233,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001186adc2edb969-00036c6ea6000007"
+                                "001186adc2edb969-00036c6ea6000007",
+                                "00101f2435a864ab-0003e695e0000003"
                             ]
                         }
                     ]
@@ -14247,7 +14253,33 @@
                     "data": [
                         {
                             "type": "std::vector<ButtonBinding>",
-                            "data": []
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/SettingButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0054fb434c423092-0003e802a6000003"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickSettingButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
@@ -14281,11 +14313,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 400
                                 },
                                 {
                                     "type": "float",
-                                    "data": 380
+                                    "data": 394
                                 },
                                 {
                                     "type": "float",
@@ -14298,11 +14330,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -14340,7 +14372,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 500
                                 },
                                 {
                                     "type": "float",
@@ -14352,7 +14384,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 400
                                 },
                                 {
                                     "type": "float",
@@ -14360,7 +14392,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -14368,7 +14400,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 380
+                                    "data": 394
                                 },
                                 {
                                     "type": "float",
@@ -14406,33 +14438,25 @@
                         }
                     ]
                 },
-                "TextRenderComponent": {
-                    "type": "TextRenderComponent",
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
-                        {
-                            "type": "std::string",
-                            "data": "Credits"
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 48
-                        },
-                        "00602042db559215-00036778be000001",
-                        "00374a2171ad928d-000331fc8200006d",
+                        "00328d6a4e55cb37-0003611882000089",
+                        "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 380
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -14445,6 +14469,27 @@
                             "data": [
                                 {
                                     "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
                                     "data": 1
                                 },
                                 {
@@ -14456,28 +14501,32 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
                             "data": false
                         },
                         {
-                            "type": "int",
-                            "data": 0
+                            "type": "bool",
+                            "data": true
                         },
                         {
                             "type": "int",
                             "data": 0
                         },
                         {
-                            "type": "Matrix4x4",
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
                                     "data": 0
                                 },
                                 {
@@ -14487,60 +14536,8 @@
                                 {
                                     "type": "float",
                                     "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
                                 }
                             ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
                         }
                     ]
                 },
@@ -14550,7 +14547,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001186adf5042133-00036c6eae000009"
+                                "001186adf5042133-00036c6eae000009",
+                                "002132e8ff855d93-0003ea9a70000005"
                             ]
                         }
                     ]
@@ -15508,7 +15506,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 600
+                                    "data": 300000
                                 },
                                 {
                                     "type": "float",
@@ -15520,7 +15518,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 490
+                                    "data": 120400
                                 },
                                 {
                                     "type": "float",
@@ -15528,7 +15526,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 80
+                                    "data": 8000
                                 },
                                 {
                                     "type": "float",
@@ -15536,7 +15534,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 517
+                                    "data": 2212
                                 },
                                 {
                                     "type": "float",
@@ -15777,7 +15775,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 600
+                                    "data": 300000
                                 },
                                 {
                                     "type": "float",
@@ -15789,7 +15787,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 490
+                                    "data": 120400
                                 },
                                 {
                                     "type": "float",
@@ -15797,7 +15795,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 80
+                                    "data": 8000
                                 },
                                 {
                                     "type": "float",
@@ -15805,7 +15803,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 397
+                                    "data": 2094
                                 },
                                 {
                                     "type": "float",
@@ -16661,9 +16659,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a23253bc51-0003ebe4ae000337",
-                                "002598a2571e46f4-0003ebe4ae00033b",
-                                "002598a20c91f5ff-0003ebe4ae00033d"
+                                "001b4a958c4f6d74-0003ef19be00009f",
+                                "001b4a95b400efcd-0003ef19be0000a3",
+                                "001b4a95ab4e8b1a-0003ef19be0000a5"
                             ]
                         }
                     ]
@@ -16687,7 +16685,7 @@
         },
         {
             "id": 89,
-            "guid": "002598a23253bc51-0003ebe4ae000337",
+            "guid": "001b4a958c4f6d74-0003ef19be00009f",
             "components": {
                 "NameComponent": {
                     "name": "Cobblestone road"
@@ -16837,7 +16835,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a247658cb3-0003ebe4ae000339"
+                                "001b4a95bfb76396-0003ef19be0000a1"
                             ]
                         }
                     ]
@@ -16861,7 +16859,7 @@
         },
         {
             "id": 90,
-            "guid": "002598a247658cb3-0003ebe4ae000339",
+            "guid": "001b4a95bfb76396-0003ef19be0000a1",
             "components": {
                 "NameComponent": {
                     "name": "Plane.001"
@@ -17008,7 +17006,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a23253bc51-0003ebe4ae000337"
+                        "001b4a958c4f6d74-0003ef19be00009f"
                     ]
                 },
                 "ActiveComponent": {
@@ -17024,7 +17022,7 @@
         },
         {
             "id": 91,
-            "guid": "002598a2571e46f4-0003ebe4ae00033b",
+            "guid": "001b4a95b400efcd-0003ef19be0000a3",
             "components": {
                 "NameComponent": {
                     "name": "Light"
@@ -17187,7 +17185,7 @@
         },
         {
             "id": 92,
-            "guid": "002598a20c91f5ff-0003ebe4ae00033d",
+            "guid": "001b4a95ab4e8b1a-0003ef19be0000a5",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -17588,7 +17586,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a230c26762-0003ebe4ae00033f"
+                                "001b4a95fc5de71b-0003ef19be0000a7"
                             ]
                         }
                     ]
@@ -17612,7 +17610,7 @@
         },
         {
             "id": 94,
-            "guid": "002598a230c26762-0003ebe4ae00033f",
+            "guid": "001b4a95fc5de71b-0003ef19be0000a7",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseSmallWall"
@@ -18013,7 +18011,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2239c3a6a-0003ebe4ae000341"
+                                "001b4a958fb8b18d-0003ef19be0000a9"
                             ]
                         }
                     ]
@@ -18037,7 +18035,7 @@
         },
         {
             "id": 96,
-            "guid": "002598a2239c3a6a-0003ebe4ae000341",
+            "guid": "001b4a958fb8b18d-0003ef19be0000a9",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseSmallWall"
@@ -18438,7 +18436,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a240b79651-0003ebe4ae000343"
+                                "001b4a9592043d50-0003ef19be0000ab"
                             ]
                         }
                     ]
@@ -18462,7 +18460,7 @@
         },
         {
             "id": 98,
-            "guid": "002598a240b79651-0003ebe4ae000343",
+            "guid": "001b4a9592043d50-0003ef19be0000ab",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseSmallWall"
@@ -18863,7 +18861,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a217083d8c-0003ebe4ae000345"
+                                "001b4a95d4c2308d-0003ef19be0000ad"
                             ]
                         }
                     ]
@@ -18887,7 +18885,7 @@
         },
         {
             "id": 100,
-            "guid": "002598a217083d8c-0003ebe4ae000345",
+            "guid": "001b4a95d4c2308d-0003ef19be0000ad",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseSmallWall"
@@ -19288,8 +19286,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2552a8506-0003ebe4ae000347",
-                                "002598a247825eae-0003ebe4ae00034b"
+                                "001b4a95d4654c23-0003ef19be0000af",
+                                "001b4a95eb55c6ee-0003ef19be0000b3"
                             ]
                         }
                     ]
@@ -19313,7 +19311,7 @@
         },
         {
             "id": 102,
-            "guid": "002598a2552a8506-0003ebe4ae000347",
+            "guid": "001b4a95d4654c23-0003ef19be0000af",
             "components": {
                 "NameComponent": {
                     "name": "Scan Floor Lion"
@@ -19463,7 +19461,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26c054574-0003ebe4ae000349"
+                                "001b4a95fd3d5175-0003ef19be0000b1"
                             ]
                         }
                     ]
@@ -19487,7 +19485,7 @@
         },
         {
             "id": 103,
-            "guid": "002598a26c054574-0003ebe4ae000349",
+            "guid": "001b4a95fd3d5175-0003ef19be0000b1",
             "components": {
                 "NameComponent": {
                     "name": "model.002"
@@ -19634,7 +19632,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a2552a8506-0003ebe4ae000347"
+                        "001b4a95d4654c23-0003ef19be0000af"
                     ]
                 },
                 "ActiveComponent": {
@@ -19650,7 +19648,7 @@
         },
         {
             "id": 104,
-            "guid": "002598a247825eae-0003ebe4ae00034b",
+            "guid": "001b4a95eb55c6ee-0003ef19be0000b3",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -20051,8 +20049,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a24289267e-0003ebe4ae00034d",
-                                "002598a24f92cb04-0003ebe4ae00034f"
+                                "001b4a95b1d25383-0003ef19be0000b5",
+                                "001b4a95f5c3c1db-0003ef19be0000b7"
                             ]
                         }
                     ]
@@ -20076,7 +20074,7 @@
         },
         {
             "id": 106,
-            "guid": "002598a24289267e-0003ebe4ae00034d",
+            "guid": "001b4a95b1d25383-0003ef19be0000b5",
             "components": {
                 "NameComponent": {
                     "name": "Pedestal"
@@ -20239,7 +20237,7 @@
         },
         {
             "id": 107,
-            "guid": "002598a24f92cb04-0003ebe4ae00034f",
+            "guid": "001b4a95f5c3c1db-0003ef19be0000b7",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -20641,7 +20639,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "001186adcb3bf15e-00036cd578000087",
-                                "002598a232af1ad9-0003ebe4ae000351"
+                                "001b4a95aba6f899-0003ef19be0000b9"
                             ]
                         }
                     ]
@@ -20665,7 +20663,7 @@
         },
         {
             "id": 109,
-            "guid": "002598a232af1ad9-0003ebe4ae000351",
+            "guid": "001b4a95aba6f899-0003ef19be0000b9",
             "components": {
                 "NameComponent": {
                     "name": "Cylinder.003"
@@ -21067,7 +21065,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "001186ad9d4a3355-00036cc07c000067",
-                                "002598a2520aa21a-0003ebe4ae000353"
+                                "001b4a95ac7a473a-0003ef19be0000bb"
                             ]
                         }
                     ]
@@ -21091,7 +21089,7 @@
         },
         {
             "id": 111,
-            "guid": "002598a2520aa21a-0003ebe4ae000353",
+            "guid": "001b4a95ac7a473a-0003ef19be0000bb",
             "components": {
                 "NameComponent": {
                     "name": "Cylinder.003"
@@ -21493,7 +21491,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "001186ad844dbf95-00036cc084000069",
-                                "002598a2589ce2ba-0003ebe4ae000355"
+                                "001b4a95e689b059-0003ef19be0000bd"
                             ]
                         }
                     ]
@@ -21517,7 +21515,7 @@
         },
         {
             "id": 113,
-            "guid": "002598a2589ce2ba-0003ebe4ae000355",
+            "guid": "001b4a95e689b059-0003ef19be0000bd",
             "components": {
                 "NameComponent": {
                     "name": "Cylinder.003"
@@ -21919,7 +21917,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "001186adfe38f266-00036cc08a00006b",
-                                "002598a2626687c3-0003ebe4ae000357"
+                                "001b4a95fcf7382e-0003ef19be0000bf"
                             ]
                         }
                     ]
@@ -21943,7 +21941,7 @@
         },
         {
             "id": 115,
-            "guid": "002598a2626687c3-0003ebe4ae000357",
+            "guid": "001b4a95fcf7382e-0003ef19be0000bf",
             "components": {
                 "NameComponent": {
                     "name": "Cylinder.003"
@@ -23151,7 +23149,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a214688fb9-0003ebe4ae000359"
+                                "001b4a95bef2bfa3-0003ef19be0000c1"
                             ]
                         }
                     ]
@@ -23175,7 +23173,7 @@
         },
         {
             "id": 120,
-            "guid": "002598a214688fb9-0003ebe4ae000359",
+            "guid": "001b4a95bef2bfa3-0003ef19be0000c1",
             "components": {
                 "NameComponent": {
                     "name": "Slate Stone"
@@ -23576,8 +23574,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a22bd728be-0003ebe4ae00035b",
-                                "002598a241a1cc98-0003ebe4ae00035d"
+                                "001b4a95ade5ab7b-0003ef19be0000c3",
+                                "001b4a959d4a7a63-0003ef19be0000c5"
                             ]
                         }
                     ]
@@ -23601,7 +23599,7 @@
         },
         {
             "id": 122,
-            "guid": "002598a22bd728be-0003ebe4ae00035b",
+            "guid": "001b4a95ade5ab7b-0003ef19be0000c3",
             "components": {
                 "NameComponent": {
                     "name": "Pillar brick ruin modern 1"
@@ -23764,7 +23762,7 @@
         },
         {
             "id": 123,
-            "guid": "002598a241a1cc98-0003ebe4ae00035d",
+            "guid": "001b4a959d4a7a63-0003ef19be0000c5",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -24165,8 +24163,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a25ca61a65-0003ebe4ae00035f",
-                                "002598a236c33cb6-0003ebe4ae000363"
+                                "001b4a95f6f167b2-0003ef19be0000c7",
+                                "001b4a95dc446f66-0003ef19be0000cb"
                             ]
                         }
                     ]
@@ -24190,7 +24188,7 @@
         },
         {
             "id": 125,
-            "guid": "002598a25ca61a65-0003ebe4ae00035f",
+            "guid": "001b4a95f6f167b2-0003ef19be0000c7",
             "components": {
                 "NameComponent": {
                     "name": "Ancient Stone Pillar - Low-Poly"
@@ -24340,7 +24338,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a22983729b-0003ebe4ae000361"
+                                "001b4a95ff780e92-0003ef19be0000c9"
                             ]
                         }
                     ]
@@ -24364,7 +24362,7 @@
         },
         {
             "id": 126,
-            "guid": "002598a22983729b-0003ebe4ae000361",
+            "guid": "001b4a95ff780e92-0003ef19be0000c9",
             "components": {
                 "NameComponent": {
                     "name": "Lo"
@@ -24511,7 +24509,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a25ca61a65-0003ebe4ae00035f"
+                        "001b4a95f6f167b2-0003ef19be0000c7"
                     ]
                 },
                 "ActiveComponent": {
@@ -24527,7 +24525,7 @@
         },
         {
             "id": 127,
-            "guid": "002598a236c33cb6-0003ebe4ae000363",
+            "guid": "001b4a95dc446f66-0003ef19be0000cb",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -24928,8 +24926,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2611f765d-0003ebe4ae000365",
-                                "002598a27eb282b5-0003ebe4ae000367"
+                                "001b4a95bdc20e31-0003ef19be0000cd",
+                                "001b4a95d53602cd-0003ef19be0000cf"
                             ]
                         }
                     ]
@@ -24953,7 +24951,7 @@
         },
         {
             "id": 129,
-            "guid": "002598a2611f765d-0003ebe4ae000365",
+            "guid": "001b4a95bdc20e31-0003ef19be0000cd",
             "components": {
                 "NameComponent": {
                     "name": "Pillar brick ruin modern 1"
@@ -25116,7 +25114,7 @@
         },
         {
             "id": 130,
-            "guid": "002598a27eb282b5-0003ebe4ae000367",
+            "guid": "001b4a95d53602cd-0003ef19be0000cf",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -25518,7 +25516,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "001186ade192a9e1-00036cd190000081",
-                                "002598a275b372e9-0003ebe4ae000369"
+                                "001b4a95befacdf6-0003ef19be0000d1"
                             ]
                         }
                     ]
@@ -25542,7 +25540,7 @@
         },
         {
             "id": 132,
-            "guid": "002598a275b372e9-0003ebe4ae000369",
+            "guid": "001b4a95befacdf6-0003ef19be0000d1",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseToriBtm"
@@ -25692,7 +25690,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a200d419e1-0003ebe4ae00036b"
+                                "001b4a95a6b1b927-0003ef19be0000d3"
                             ]
                         }
                     ]
@@ -25716,7 +25714,7 @@
         },
         {
             "id": 133,
-            "guid": "002598a200d419e1-0003ebe4ae00036b",
+            "guid": "001b4a95a6b1b927-0003ef19be0000d3",
             "components": {
                 "NameComponent": {
                     "name": "Bottom"
@@ -25863,7 +25861,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a275b372e9-0003ebe4ae000369"
+                        "001b4a95befacdf6-0003ef19be0000d1"
                     ]
                 },
                 "ActiveComponent": {
@@ -26117,7 +26115,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a201a632d1-0003ebe4ae00036d"
+                                "001b4a959366ec51-0003ef19be0000d5"
                             ]
                         }
                     ]
@@ -26141,7 +26139,7 @@
         },
         {
             "id": 135,
-            "guid": "002598a201a632d1-0003ebe4ae00036d",
+            "guid": "001b4a959366ec51-0003ef19be0000d5",
             "components": {
                 "NameComponent": {
                     "name": "JapaneseToriTop"
@@ -26291,7 +26289,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2632bc49b-0003ebe4ae00036f"
+                                "001b4a95a748542e-0003ef19be0000d7"
                             ]
                         }
                     ]
@@ -26315,7 +26313,7 @@
         },
         {
             "id": 136,
-            "guid": "002598a2632bc49b-0003ebe4ae00036f",
+            "guid": "001b4a95a748542e-0003ef19be0000d7",
             "components": {
                 "NameComponent": {
                     "name": "Top"
@@ -26462,7 +26460,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a201a632d1-0003ebe4ae00036d"
+                        "001b4a959366ec51-0003ef19be0000d5"
                     ]
                 },
                 "ActiveComponent": {
@@ -26716,7 +26714,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a22a83e8f1-0003ebe4ae000371"
+                                "001b4a95dcae79fa-0003ef19be0000d9"
                             ]
                         }
                     ]
@@ -26740,7 +26738,7 @@
         },
         {
             "id": 138,
-            "guid": "002598a22a83e8f1-0003ebe4ae000371",
+            "guid": "001b4a95dcae79fa-0003ef19be0000d9",
             "components": {
                 "NameComponent": {
                     "name": "Slate Stone"
@@ -27141,8 +27139,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a26478b066-0003ebe4ae000373",
-                                "002598a252d27121-0003ebe4ae000377"
+                                "001b4a95fddc0a05-0003ef19be0000db",
+                                "001b4a958fa615f3-0003ef19be0000df"
                             ]
                         }
                     ]
@@ -27166,7 +27164,7 @@
         },
         {
             "id": 140,
-            "guid": "002598a26478b066-0003ebe4ae000373",
+            "guid": "001b4a95fddc0a05-0003ef19be0000db",
             "components": {
                 "NameComponent": {
                     "name": "Ancient Stone Pillar - Low-Poly"
@@ -27316,7 +27314,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a24c2eb7b8-0003ebe4ae000375"
+                                "001b4a95e03cf169-0003ef19be0000dd"
                             ]
                         }
                     ]
@@ -27340,7 +27338,7 @@
         },
         {
             "id": 141,
-            "guid": "002598a24c2eb7b8-0003ebe4ae000375",
+            "guid": "001b4a95e03cf169-0003ef19be0000dd",
             "components": {
                 "NameComponent": {
                     "name": "Lo"
@@ -27487,7 +27485,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002598a26478b066-0003ebe4ae000373"
+                        "001b4a95fddc0a05-0003ef19be0000db"
                     ]
                 },
                 "ActiveComponent": {
@@ -27503,7 +27501,7 @@
         },
         {
             "id": 142,
-            "guid": "002598a252d27121-0003ebe4ae000377",
+            "guid": "001b4a958fa615f3-0003ef19be0000df",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -29643,7 +29641,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002598a2099ad56c-0003ebe4ae000379"
+                                "001b4a95ab06325e-0003ef19be0000e1"
                             ]
                         }
                     ]
@@ -29667,7 +29665,7 @@
         },
         {
             "id": 151,
-            "guid": "002598a2099ad56c-0003ebe4ae000379",
+            "guid": "001b4a95ab06325e-0003ef19be0000e1",
             "components": {
                 "NameComponent": {
                     "name": "Slate Stone"
@@ -29833,7 +29831,7 @@
             "guid": "00032e877a997c98-00036d2b58000001",
             "components": {
                 "NameComponent": {
-                    "name": "Settings"
+                    "name": "SettingsUI"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30240,7 +30238,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 2
                         },
                         {
                             "type": "Vector3D",
@@ -30272,7 +30270,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -30509,7 +30507,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -30541,7 +30539,46 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0054fb434423d354-0003e8028a000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickCloseButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -30757,7 +30794,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Matrix4x4",
@@ -30845,7 +30882,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -31061,7 +31098,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Matrix4x4",
@@ -31149,7 +31186,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -31365,7 +31402,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Matrix4x4",
@@ -31453,7 +31490,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -31464,7 +31501,7 @@
             "guid": "00032e870a1853b1-00036d3022000043",
             "components": {
                 "NameComponent": {
-                    "name": "Bar"
+                    "name": "MasterBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31690,7 +31727,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -31722,7 +31759,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -31733,7 +31770,7 @@
             "guid": "00032e875add228e-00036d30d8000045",
             "components": {
                 "NameComponent": {
-                    "name": "Bar (1)"
+                    "name": "BGMBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31959,7 +31996,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -31991,7 +32028,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -32002,7 +32039,7 @@
             "guid": "00032e870d444bd5-00036d30d8000047",
             "components": {
                 "NameComponent": {
-                    "name": "Bar (1) (1)"
+                    "name": "SFXBar"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32228,7 +32265,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -32260,7 +32297,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -32271,7 +32308,7 @@
             "guid": "00032e87635f619f-00036d310c000049",
             "components": {
                 "NameComponent": {
-                    "name": "Notch"
+                    "name": "MasterNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32290,7 +32327,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1065.4
+                                    "data": 1299.41
                                 },
                                 {
                                     "type": "float",
@@ -32361,7 +32398,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1065.4
+                                    "data": 1299.41
                                 },
                                 {
                                     "type": "float",
@@ -32497,7 +32534,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -32529,7 +32566,46 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0004ff384a651625-0003e80540000003"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -32540,7 +32616,7 @@
             "guid": "00032e8711fa1564-00036d318200004b",
             "components": {
                 "NameComponent": {
-                    "name": "Notch (1)"
+                    "name": "BGMNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32766,7 +32842,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -32798,7 +32874,46 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0049a203976048a4-0003e94a5e000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -32809,7 +32924,7 @@
             "guid": "00032e8708b1a6d1-00036d318400004d",
             "components": {
                 "NameComponent": {
-                    "name": "Notch (1) (1)"
+                    "name": "SFXNotch"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33035,7 +33150,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -33067,7 +33182,46 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0049a203b9f178d6-0003e94a5e000003"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickHoldButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -33625,7 +33779,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 12
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34406,7 +34560,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 13
+                    "siblingIndex": 11
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34924,6 +35078,786 @@
         },
         {
             "id": 171,
+            "guid": "00101f2435a864ab-0003e695e0000003",
+            "components": {
+                "NameComponent": {
+                    "name": "SettingText"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.3
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.173
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 500
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 250
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 494.7
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "TextRenderComponent": {
+                    "type": "TextRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "Setting"
+                        },
+                        {
+                            "type": "unsigned",
+                            "data": 48
+                        },
+                        "00602042db559215-00036778be000001",
+                        "00374a2171ad928d-000331fc8200006d",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 250
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 494.7
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "00328d6a095e2333-00036123ac0000af"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 172,
+            "guid": "002132e8a8f21422-0003ea9626000003",
+            "components": {
+                "NameComponent": {
+                    "name": "HighlightButtons"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 12
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "002132e8aa0fbd5c-0003ea960a000001",
+                            "scriptPath": "../../Resources/Scripts/UI/HoverHighlightButtons.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 173,
+            "guid": "002132e8ff855d93-0003ea9a70000005",
+            "components": {
+                "NameComponent": {
+                    "name": "CreditsText"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 13
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.3
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.196
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 500
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 250
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 374.4
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "TextRenderComponent": {
+                    "type": "TextRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "Credits"
+                        },
+                        {
+                            "type": "unsigned",
+                            "data": 48
+                        },
+                        "00602042db559215-00036778be000001",
+                        "00374a2171ad928d-000331fc8200006d",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 250
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 374.4
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "00328d6a304cce5e-00036124660000b1"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 174,
             "guid": "002ff485dba56b32-0003ea4f9c000009",
             "components": {
                 "NameComponent": {
@@ -35259,7 +36193,7 @@
             }
         },
         {
-            "id": 172,
+            "id": 175,
             "guid": "002ff485d199faea-0003ea4faa00000b",
             "components": {
                 "NameComponent": {
@@ -35525,7 +36459,7 @@
             }
         },
         {
-            "id": 173,
+            "id": 176,
             "guid": "002ff485bc5839fb-0003ea4faa00000d",
             "components": {
                 "NameComponent": {

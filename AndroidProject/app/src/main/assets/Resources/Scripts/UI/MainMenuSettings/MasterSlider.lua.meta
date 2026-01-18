@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0004ff384a651625-0003e80540000003",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua"
+    }
+}

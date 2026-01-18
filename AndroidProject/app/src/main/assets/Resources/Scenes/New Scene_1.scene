@@ -2,7 +2,7 @@
     "entities": [
         {
             "id": 0,
-            "guid": "00734faa5769c5ff-0003683cfc000001",
+            "guid": "006da09e138cbd2b-0003e52a20000001",
             "components": {
                 "NameComponent": {
                     "name": "Main Camera"
@@ -53,6 +53,7 @@
                         { "type": "float", "data": 0.1 },
                         { "type": "float", "data": 1 },
                         { "type": "float", "data": 90 },
+                        { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001b4a95e1e5aaba-0003ef19b4000005",
+        "source": "../../Resources/Sprites/PlayerHUD/WhiteCircle.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/WhiteCircle.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -9,8 +9,9 @@ void SequentialSystemOrchestrator::Update() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Update systems.
-	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+	// Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
+	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+	mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();

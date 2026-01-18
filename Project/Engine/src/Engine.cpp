@@ -13,7 +13,11 @@
 #include "Logging.hpp"
 
 #include <WindowManager.hpp>
-#include <Input/InputManager.hpp>
+#include <Input/InputManager.h>
+#include <Input/DesktopInputManager.h>
+#ifdef ANDROID
+#include <Input/AndroidInputManager.h>
+#endif
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Game AI/BrainSystems.hpp"
@@ -24,7 +28,6 @@
 #include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
-#include "Input/VirtualControls.hpp"
 #endif
 #include <Asset Manager/AssetManager.hpp>
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
@@ -52,7 +55,30 @@ bool Engine::Initialize() {
     ENGINE_PRINT("Engine initializing...");
 
 	// WOON LI TEST CODE
-	InputManager::Initialize();
+	//InputManager::Initialize();
+
+	// Initialize unified input system (NEW)
+	ENGINE_PRINT("[Engine] Initializing unified input system...");
+	#ifdef ANDROID
+		g_inputManager = new AndroidInputManager();
+		ENGINE_PRINT("[Engine] Created AndroidInputManager");
+	#else
+		// Desktop: Pass platform pointer for hardware queries
+		IPlatform* platform = WindowManager::GetPlatform();
+		g_inputManager = new DesktopInputManager(platform);
+		ENGINE_PRINT("[Engine] Created DesktopInputManager");
+	#endif
+
+	// Load input configuration
+	// On Android, this is deferred until after AssetManager is set (called from JNI)
+	#ifndef ANDROID
+	std::string configPath = "Resources/Configs/input_config.json";
+	if (g_inputManager && !g_inputManager->LoadConfig(configPath)) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
+	} else {
+		ENGINE_PRINT("[Engine] Input system initialized successfully");
+	}
+	#endif
 
 	// Initialize AudioManager on desktop now that platform assets are available
 	if (!AudioManager::GetInstance().Initialise()) {
@@ -606,13 +632,22 @@ bool Engine::InitializeGraphicsResources() {
 #endif
 
 #ifdef ANDROID
-    // Initialize virtual controls for Android
-    VirtualControls::Initialize();
-    ENGINE_LOG_INFO("Virtual controls initialized");
+    // Virtual controls are now handled by AndroidInputManager (no separate initialization needed)
+    ENGINE_LOG_INFO("Android input system initialized (virtual controls integrated)");
 #endif
 
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
+}
+
+void Engine::LoadInputConfig() {
+    // Called from JNI on Android after AssetManager is set
+    std::string configPath = "Resources/Configs/input_config.json";
+    if (g_inputManager && !g_inputManager->LoadConfig(configPath)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to load input config from: ", configPath);
+    } else {
+        ENGINE_PRINT("[Engine] Input system initialized successfully");
+    }
 }
 
 bool Engine::InitializeAssets() {
@@ -712,10 +747,12 @@ void Engine::Draw() {
 
     try {
         SceneManager::GetInstance().DrawScene();
-        
-        // Render virtual controls on top of everything (Android only)
-        VirtualControls::Render(surfaceWidth, surfaceHeight);
-        
+
+        // Render unified input system overlay (joysticks, virtual buttons, etc.)
+        if (g_inputManager) {
+            g_inputManager->RenderOverlay(surfaceWidth, surfaceHeight);
+        }
+
     } catch (const std::exception& e) {
         __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
@@ -732,7 +769,12 @@ void Engine::EndDraw() {
 
 	// Only process input if the game should be running (not paused)
 	if (ShouldRunGameLogic()) {
-		InputManager::Update();
+		// Update unified input system (NEW - platform-agnostic)
+		if (g_inputManager) {
+			g_inputManager->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+		}
+
+		//InputManager::Update(); // Legacy input system (still needed for editor)
 	}
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
@@ -746,11 +788,18 @@ void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
 	RunBrainExitSystem(ECSRegistry::GetInstance().GetActiveECSManager());
 	AudioManager::GetInstance().Shutdown();
-    EngineLogging::Shutdown();
+
+	// Cleanup unified input system
+	if (g_inputManager) {
+		delete g_inputManager;
+		g_inputManager = nullptr;
+		ENGINE_LOG_INFO("Unified input system cleaned up");
+	}
+
     SceneManager::GetInstance().ExitScene();
     PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
-    ENGINE_PRINT("[Engine] Shutdown complete\n"); 
+    ENGINE_PRINT("[Engine] Shutdown complete\n");
 }
 
 bool Engine::IsRunning() {

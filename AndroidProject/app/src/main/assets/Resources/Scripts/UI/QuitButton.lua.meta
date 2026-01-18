@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0035d502bb2828d5-00036f66c4000001",
+        "source": "../../Resources/Scripts/UI/QuitButton.lua",
+        "compiled": "../../Resources/Scripts/UI/QuitButton.lua",
+        "android_compiled": "Resources/Scripts/UI/QuitButton.lua"
+    }
+}

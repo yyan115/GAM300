@@ -1,29 +1,101 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include "Reflection/ReflectionBase.hpp"
 #include <tuple>
+
+// ============================================================================
+// VECTOR2D (for 2D values like axis input, pointer position)
+// ============================================================================
+struct Vector2D {
+    REFL_SERIALIZABLE
+
+    float x, y;
+    Vector2D() : x(0), y(0) {}
+    Vector2D(float _x, float _y) : x(_x), y(_y) {}
+};
 
 // ============================================================================
 // INPUT SYSTEM WRAPPERS
 // ============================================================================
 #include "Input/Keys.h"
-#include "Input/InputManager.hpp"
+#include "Input/InputManager.h"
+#include <unordered_map>
+#include <string>
 
-// Wrapper functions to convert int to enum for Input functions
 namespace InputWrappers {
-    inline bool GetKey(int key) {
-        return InputManager::GetKey(static_cast<Input::Key>(key));
+    // Action-based input (platform-agnostic)
+    inline bool IsActionPressed(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionPressed(action);
     }
 
-    inline bool GetKeyDown(int key) {
-        return InputManager::GetKeyDown(static_cast<Input::Key>(key));
+    inline bool IsActionJustPressed(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustPressed(action);
     }
 
-    inline bool GetMouseButton(int button) {
-        return InputManager::GetMouseButton(static_cast<Input::MouseButton>(button));
+    inline bool IsActionJustReleased(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustReleased(action);
     }
 
-    inline bool GetMouseButtonDown(int button) {
-        return InputManager::GetMouseButtonDown(static_cast<Input::MouseButton>(button));
+    // Axis input returns Vector2D (access with .x and .y in Lua)
+    inline Vector2D GetAxis(const std::string& axisName) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 axis = g_inputManager->GetAxis(axisName);
+        return Vector2D(axis.x, axis.y);
+    }
+
+    // Batch API for Lua optimization - returns all action states at once
+    // Lua example: local states = UnifiedInput.GetAllActionStates()
+    //              if states["Jump"] then ... end
+    inline std::unordered_map<std::string, bool> GetAllActionStates() {
+        if (!g_inputManager) return {};
+        return g_inputManager->GetAllActionStates();
+    }
+
+    // Get all axis states at once
+    // Returns map of axis name -> Vector2D with x, y properties
+    inline std::unordered_map<std::string, Vector2D> GetAllAxisStates() {
+        if (!g_inputManager) return {};
+
+        auto axisMap = g_inputManager->GetAllAxisStates();
+        std::unordered_map<std::string, Vector2D> result;
+
+        for (const auto& [name, vec] : axisMap) {
+            result[name] = Vector2D(vec.x, vec.y);
+        }
+
+        return result;
+    }
+
+    // Pointer abstraction (for UI)
+    inline bool IsPointerPressed() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerPressed();
+    }
+
+    inline bool IsPointerJustPressed() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerJustPressed();
+    }
+
+    inline Vector2D GetPointerPosition() {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetPointerPosition();
+        return Vector2D(pos.x, pos.y);
+    }
+
+    // Multi-touch support
+    inline int GetTouchCount() {
+        if (!g_inputManager) return 0;
+        return g_inputManager->GetTouchCount();
+    }
+
+    inline Vector2D GetTouchPosition(int index) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetTouchPosition(index);
+        return Vector2D(pos.x, pos.y);
     }
 }
 
@@ -412,16 +484,55 @@ namespace AudioManagerWrappers {
     inline void StopAll() {
         AudioManager::GetInstance().StopAll();
     }
-    
+
     inline void SetMasterVolume(float volume) {
         AudioManager::GetInstance().SetMasterVolume(volume);
     }
-    
+
     inline float GetMasterVolume() {
         return AudioManager::GetInstance().GetMasterVolume();
     }
-    
+
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
+    }
+}
+
+// ============================================================================
+// PLATFORM WRAPPERS
+// ============================================================================
+
+namespace PlatformWrappers {
+    // Returns true if running on Android, false on desktop
+    inline bool IsAndroid() {
+#ifdef ANDROID
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    // Returns true if running on desktop (Windows/Linux/Mac)
+    inline bool IsDesktop() {
+#ifdef ANDROID
+        return false;
+#else
+        return true;
+#endif
+    }
+
+    // Returns platform name as string
+    inline std::string GetPlatformName() {
+#ifdef ANDROID
+        return "Android";
+#elif defined(_WIN32)
+        return "Windows";
+#elif defined(__linux__)
+        return "Linux";
+#elif defined(__APPLE__)
+        return "macOS";
+#else
+        return "Unknown";
+#endif
     }
 }

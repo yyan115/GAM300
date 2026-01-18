@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001d790d3171b4a9-0003eff7ec000013",
+        "source": "../../Resources/Scripts/GamePlay/GroundIdleState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundIdleState.lua",
+        "android_compiled": "Resources/Scripts/GamePlay/GroundIdleState.lua"
+    }
+}

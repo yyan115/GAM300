@@ -53,19 +53,24 @@ Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject 
         }
         LOGI("FMOD JNI initialized successfully");
 
-        // Initialize Engine (includes AudioManager::Initialise())
+        // Initialize Engine (but NOT input config yet - need AssetManager first)
+        // This creates the platform but doesn't load assets
         Engine::Initialize();
 
-        // Set the AssetManager in the Android platform BEFORE asset loading
+        // Set the AssetManager in the Android platform BEFORE loading input config
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
             androidPlatform->SetAssetManager(nativeAssetManager);
             LOGI("AssetManager set in Android platform");
 
-            // Now initialize assets using Engine method
+            // Initialize assets first (preserve original order)
             Engine::InitializeAssets();
             LOGI("Engine assets initialized");
+
+            // Load input config after assets are initialized
+            Engine::LoadInputConfig();
+            LOGI("Input config loaded");
         }
 
         GameManager::Initialize();

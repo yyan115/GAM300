@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001d790d654428d0-0003eff7ec000019",
+        "source": "../../Resources/Scripts/GamePlay/KnifePool.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/KnifePool.lua",
+        "android_compiled": "Resources/Scripts/GamePlay/KnifePool.lua"
+    }
+}

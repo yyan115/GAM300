@@ -253,6 +253,8 @@ void AnimationComponent::SetClipCount(size_t count)
 
 void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
 {
+    ENGINE_PRINT("[AnimationComponent] LoadClipsFromPaths: Loading ", clipPaths.size(), " clips for entity ", entity, "\n");
+
     // Clear animator's reference before clearing clips to prevent dangling pointer
     if (animator) {
         animator->ClearAnimation();
@@ -261,6 +263,7 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 
     for (const auto& path : clipPaths) {
         if (path.empty()) {
+            ENGINE_PRINT("[AnimationComponent] Skipping empty path\n");
             continue;
         }
         std::string pathToLoad{};
@@ -275,11 +278,17 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 #else
         pathToLoad = path;
 #endif
+        ENGINE_PRINT("[AnimationComponent] Loading clip from: ", pathToLoad, "\n");
         auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {
             clips.emplace_back(std::move(anim));
+            ENGINE_PRINT("[AnimationComponent] Successfully loaded clip, total: ", clips.size(), "\n");
+        } else {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Failed to load clip from: ", pathToLoad, "\n");
         }
     }
+
+    ENGINE_PRINT("[AnimationComponent] Finished loading clips, count: ", clips.size(), "\n");
 
     if (!clips.empty() && activeClip >= clips.size()) {
         activeClip = 0;
@@ -295,11 +304,15 @@ void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entit
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
-	
+
 	// Actually start playing the animation on the animator
 	if (!clips.empty() && clipIndex < clips.size()) {
 		EnsureAnimator();
 		animator->PlayAnimation(clips[clipIndex].get(), entity);
+		ENGINE_PRINT("[AnimationComponent] PlayClip: Playing clip ", clipIndex, " for entity ", entity, "\n");
+	} else {
+		ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AnimationComponent] PlayClip: Cannot play clip ", clipIndex,
+			" - clips.size()=", clips.size(), ", entity=", entity, "\n");
 	}
 }
 

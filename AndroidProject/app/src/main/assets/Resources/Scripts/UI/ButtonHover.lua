@@ -30,8 +30,15 @@ return Component {
     end,
 
     Update = function(self, dt)
-        local mx = Input and Input.GetMouseX and Input.GetMouseX() or 0
-        local my = Input and Input.GetMouseY and Input.GetMouseY() or 0
+        -- Use unified input system
+        local mx, my = 0, 0
+        if Input and Input.GetPointerPosition then
+            local pointerPos = Input.GetPointerPosition()
+            if pointerPos then
+                mx = pointerPos.x
+                my = pointerPos.y
+            end
+        end
 
         local currentlyHovering = self:_isMouseInside(mx, my)
 
