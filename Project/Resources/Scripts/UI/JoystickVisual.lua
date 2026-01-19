@@ -10,7 +10,10 @@
 local M = {
     -- Inspector-editable properties
     innerJoystickName = "(ANDROID)JoystickInner",
-    joystickRadius = 50.0,  -- Radius in game units for direction calculation
+    -- Radius in LOCAL units (parent-relative). Since parent scale affects child position,
+    -- this should be ~0.35 to keep inner circle within outer circle bounds.
+    -- (0.5 = edge of parent, minus ~0.15 for inner circle half-size)
+    joystickRadius = 0.35,
 
     -- Private variables
     _innerTransform = nil,
