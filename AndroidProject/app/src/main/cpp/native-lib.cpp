@@ -162,12 +162,12 @@ Java_com_gam300_game_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_onTouchEvent(JNIEnv* env, jobject /* this */, jint action, jfloat x, jfloat y) {
+Java_com_gam300_game_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* this */, jint action, jint pointerId, jfloat x, jfloat y) {
     if (engineInitialized) {
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
-            androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<float>(x), static_cast<float>(y));
+            androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<int>(pointerId), static_cast<float>(x), static_cast<float>(y));
         }
     }
 }
