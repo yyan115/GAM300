@@ -318,16 +318,21 @@ void SceneManager::SaveScene()
     }
 
 	std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
-    if (FileUtilities::StrictExists(projectRootScenesPath)) {
-        if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
-            ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
-        }
+    if (currentScenePath != projectRootScenesPath.generic_string()) {
+        if (FileUtilities::StrictExists(projectRootScenesPath)) {
+            if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
+                ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+            }
+	    }
         else {
-            ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+		    ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
         }
-	}
+    }
     else {
-		ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
+		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Root Project/Resources/Scenes: " + currentScenePath);
     }
 
 // COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
