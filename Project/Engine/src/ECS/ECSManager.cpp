@@ -37,6 +37,7 @@
 #include "UI/Slider/SliderComponent.hpp"
 #include "UI/Slider/SliderSystem.hpp"
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
+#include "Video/VideoComponent.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -53,6 +54,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ActiveComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<RigidBodyComponent>();
+	RegisterComponent<VideoComponent>();
 	RegisterComponent<LightComponent>();
 	RegisterComponent<DirectionalLightComponent>();
 	RegisterComponent<PointLightComponent>();

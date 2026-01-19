@@ -36,6 +36,7 @@
 #include <chrono>
 #include <glm/glm.hpp>
 #include <FileWatch.hpp>
+#include "Video/VideoComponent.hpp"
 
 // Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
@@ -270,6 +271,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<RigidBodyComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity); }},
 
+		//Video Component
+		{"Video", "VideoComponent",
+			[&]() { return ecs.HasComponent<VideoComponent>(entity) ?
+				(void*)&ecs.GetComponent<VideoComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<VideoComponent>(entity); }},
 		// Camera component
 		{"Camera", "CameraComponent",
 			[&]() { return ecs.HasComponent<CameraComponent>(entity) ?
@@ -934,7 +940,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				{"Scripting", ICON_FA_CODE},
 				{"General", ICON_FA_TAG},
 				{"Scripts", ICON_FA_FILE_CODE},
-				{"UI", ICON_FA_HAND_POINTER}
+				{"UI", ICON_FA_HAND_POINTER},
+				{"Video", ICON_FA_FILE_VIDEO},
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -981,6 +988,10 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<RigidBodyComponent>(entity)) {
 				allComponents.push_back({ "RigidBody", "RigidBodyComponent", "Physics" });
 			}
+			if (!ecsManager.HasComponent<VideoComponent>(entity)) {
+				allComponents.push_back({ "Video", "VideoComponent", "Video" });
+			}
+
 			if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
 				allComponents.push_back({ "Animation Component", "AnimationComponent", "Animation" });
 			}
@@ -1108,7 +1119,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				std::vector<std::string> categoryOrder = {
 					"Rendering", "Audio", "Lighting", "Camera", "Physics",
-					"Animation", "AI", "Scripting", "General", "Scripts", "UI"
+					"Animation", "AI", "Scripting", "General", "Scripts", "UI","Video"
 				};
 
 				for (const auto& category : categoryOrder) {
@@ -1445,6 +1456,20 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "VideoComponent") {
+			VideoComponent component;
+			ecsManager.AddComponent<VideoComponent>(entity, component);
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for VideoComponent" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added VideoComponent to entity " << entity << std::endl;
+			}
+
 		else if (componentType == "TagComponent") {
 			TagComponent component;
 			ecsManager.AddComponent<TagComponent>(entity, component);
@@ -1688,6 +1713,11 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
+		else if (componentType == "VideoComponent") {
+			auto& comp = ecs.GetComponent<VideoComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		}
+
 		else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
@@ -1898,6 +1928,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
 				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "VideoComponent") {
+				ecsManager.RemoveComponent<VideoComponent>(request.entity);
+				std::cout << "[Inspector] Removed VideoComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.RemoveComponent<CameraComponent>(request.entity);
 				std::cout << "[Inspector] Removed CameraComponent from entity " << request.entity << std::endl;
@@ -2011,6 +2045,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.GetComponent<RigidBodyComponent>(request.entity) = RigidBodyComponent{};
 				std::cout << "[Inspector] Reset RigidBodyComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "VideoComponent") {
+				ecsManager.GetComponent<VideoComponent>(request.entity) = VideoComponent{};
+				std::cout << "[Inspector] Reset VideoComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.GetComponent<CameraComponent>(request.entity) = CameraComponent{};
@@ -2149,6 +2187,7 @@ bool InspectorPanel::HasComponent(Entity entity, const std::string& componentTyp
 	if (componentType == "SpotLightComponent") return ecs.HasComponent<SpotLightComponent>(entity);
 	if (componentType == "ColliderComponent") return ecs.HasComponent<ColliderComponent>(entity);
 	if (componentType == "RigidBodyComponent") return ecs.HasComponent<RigidBodyComponent>(entity);
+	if (componentType == "VideoComponent") return ecs.HasComponent<VideoComponent>(entity);
 	if (componentType == "CameraComponent") return ecs.HasComponent<CameraComponent>(entity);
 	if (componentType == "AnimationComponent") return ecs.HasComponent<AnimationComponent>(entity);
 	if (componentType == "BrainComponent") return ecs.HasComponent<BrainComponent>(entity);
@@ -2260,6 +2299,7 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		{"SpotLightComponent", "Spot Light"},
 		{"ColliderComponent", "Collider"},
 		{"RigidBodyComponent", "RigidBody"},
+		{"VideoComponent", "Video"},
 		{"CameraComponent", "Camera"},
 		{"AnimationComponent", "Animation"},
 		{"BrainComponent", "Brain"},
@@ -2308,6 +2348,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	}
 	else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<RigidBodyComponent>(firstEntity);
+	}
+	else if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<VideoComponent>(firstEntity);
 	}
 	else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<CameraComponent>(firstEntity);

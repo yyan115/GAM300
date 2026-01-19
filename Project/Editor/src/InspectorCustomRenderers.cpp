@@ -48,6 +48,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Animation/AnimatorController.hpp"
 #include "Panels/AnimatorEditorWindow.hpp"
 #include <filesystem>
+#include "Video/VideoComponent.hpp"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -738,7 +739,7 @@ void RegisterInspectorCustomRenderers()
         const float labelWidth = EditorComponents::GetLabelWidth();
 
         // --- Motion Type dropdown ---
-        ImGui::Text("Motion");
+        ImGui::Text("Motion"); 
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
@@ -829,6 +830,74 @@ void RegisterInspectorCustomRenderers()
         ImGui::PopID();
         return true; // skip default reflection
     });
+
+    // ==================== VideoComponent COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
+        [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
+        {
+            auto& videoComponent = ecs.GetComponent<VideoComponent>(entity);
+            const float labelWidth = EditorComponents::GetLabelWidth();
+
+            ImGui::PushID("VideoComponent");
+
+            // --- 1. Video File Selection (Drag & Drop) ---
+            ImGui::Text("Video File");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            std::string path = videoComponent.videoPath;
+            std::string displayText = path.empty() ? "None (Video)" : path.substr(path.find_last_of("/\\") + 1);
+
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            if (EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth))
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                {
+                    GUID_128 droppedGuid = *(GUID_128*)payload->Data;
+                    std::string newPath = AssetManager::GetInstance().GetAssetPathFromGUID(droppedGuid);
+
+                    if (videoComponent.videoPath != newPath)
+                    {
+                        videoComponent.videoPath = newPath;
+                        videoComponent.asset_dirty = true;
+                    }
+                }
+            }
+
+            ImGui::Spacing();
+
+            // --- 2. Playback State ---
+            ImGui::Text("Is Playing");
+            ImGui::SameLine(labelWidth);
+            UndoableWidgets::Checkbox("##IsPlaying", &videoComponent.isPlaying);
+
+            ImGui::Text("Loop");
+            ImGui::SameLine(labelWidth); 
+            UndoableWidgets::Checkbox("##Loop", &videoComponent.loop);
+
+            // --- 3. Playback Speed ---
+            ImGui::Text("Speed");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##PlaybackSpeed", &videoComponent.playbackSpeed, 0.05f, 0.0f, 10.0f, "%.2fx");
+
+            // --- 4. Seek Bar ---
+            ImGui::Text("Seek Time");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            // We use a Slider here. If the user interacts with it, we set seek_dirty.
+            if (ImGui::SliderFloat("##CurrentTime", &videoComponent.currentTime, 0.0f, videoComponent.duration, "%.2f s"))
+            {
+                videoComponent.seek_dirty = true;
+            }
+
+            // --- 5. Debug Info (Optional) ---
+            ImGui::TextDisabled("Duration: %.2f s", videoComponent.duration);
+            ImGui::TextDisabled("Texture ID: %u", videoComponent.textureID);
+
+            ImGui::PopID();
+            return true;
+        });
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
