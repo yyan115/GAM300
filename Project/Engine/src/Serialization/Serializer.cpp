@@ -8,6 +8,7 @@
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/Lights/LightingSystem.hpp"
 #include <algorithm>
+#include <Graphics/Model/ModelFactory.hpp>
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -64,7 +65,7 @@ auto extractGUIDString = [](const rapidjson::Value& v) -> std::string {
 
     // Default empty GUID - must be 33 characters (16 hex + hyphen + 16 hex)
     return "0000000000000000-0000000000000000";  // 33 characters total
-};
+    };
 
 // read a Vector3D stored as either [x,y,z] or typed {"type":"Vector3D","data":[{...},{...},{...}]}
 auto readVec3Generic = [](const rapidjson::Value& val, Vector3D& out)->bool {
@@ -363,12 +364,12 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioListenerComponent", v, alloc);
-		}
+        }
         if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
             auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
-		}
+        }
         if (ecs.HasComponent<LightComponent>(entity)) {
             auto& c = ecs.GetComponent<LightComponent>(entity);
             rapidjson::Value v = serializeComponentToValue(c);
@@ -605,9 +606,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         // Ambient mode (enum as int)
         lightingObj.AddMember("ambientMode", static_cast<int>(ecs.lightingSystem->ambientMode), alloc);
 
-        // Ambient intensity
-        lightingObj.AddMember("ambientIntensity", ecs.lightingSystem->ambientIntensity, alloc);
-
         // Ambient sky color
         rapidjson::Value ambientSkyArr(rapidjson::kArrayType);
         ambientSkyArr.PushBack(ecs.lightingSystem->ambientSky.x, alloc);
@@ -761,12 +759,32 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeTransformComponent(newEnt, t);
         }
 
+        // ParentComponent
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(newEnt)) {
+                ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
+            }
+            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
+        }
+
+        // ChildrenComponent
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(newEnt)) {
+                ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
+            }
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
             ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-            DeserializeModelComponent(modelComp, mv);
+            DeserializeModelComponent(modelComp, mv, newEnt);
         }
 
         // SpriteRenderComponent
@@ -833,7 +851,7 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioComponent(audioComp, tv);
         }
 
-		// AudioListenerComponent
+        // AudioListenerComponent
         if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioListenerComponent"];
             ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
@@ -841,7 +859,7 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
-		// AudioReverbZoneComponent
+        // AudioReverbZoneComponent
         if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
             ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
@@ -887,31 +905,15 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             DeserializeActiveComponent(activeComp, tv);
         }
 
-        // ParentComponent
-        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
-            const auto& parentCompJSON = comps["ParentComponent"];
-            ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
-            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
-            DeserializeParentComponent(parentComp, parentCompJSON);
-        }
-
-        // ChildrenComponent
-        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
-            const auto& childrenCompJSON = comps["ChildrenComponent"];
-            ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
-            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
-            DeserializeChildrenComponent(childComp, childrenCompJSON);
-        }
-
         // Script component (engine-side)
-        if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject()) 
+        if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject())
         {
             const rapidjson::Value& sv = comps["ScriptComponent"];
             Serializer::DeserializeScriptComponent(newEnt, sv);
         }
         // BrainComponent
         if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
-            const auto&brainCompJSON = comps["BrainComponent"];
+            const auto& brainCompJSON = comps["BrainComponent"];
             ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
             auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
@@ -933,10 +935,10 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(newEnt)) {
-            ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
+            ecs.AddComponent<TagComponent>(newEnt, TagComponent{ 0 });
         }
         if (!ecs.HasComponent<LayerComponent>(newEnt)) {
-            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
+            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
         }
 
     } // end for entities
@@ -981,11 +983,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         // Ambient mode
         if (lightingObj.HasMember("ambientMode") && lightingObj["ambientMode"].IsInt()) {
             ecs.lightingSystem->ambientMode = static_cast<LightingSystem::AmbientMode>(lightingObj["ambientMode"].GetInt());
-        }
-
-        // Ambient intensity
-        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsNumber()) {
-            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
         }
 
         // Ambient sky color
@@ -1073,7 +1070,7 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
 
         auto entities = ecs.GetAllEntities(); // copy once
         bool entityExists = (existingEntity != static_cast<Entity>(-1)) &&
-                           std::find(entities.begin(), entities.end(), existingEntity) != entities.end();
+            std::find(entities.begin(), entities.end(), existingEntity) != entities.end();
 
         if (!entityExists) {
             Entity newEnt = ecs.CreateEntityWithGUID(entityGuid);
@@ -1086,18 +1083,19 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
                 ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
             }
             if (!ecs.HasComponent<TagComponent>(newEnt)) {
-                ecs.AddComponent<TagComponent>(newEnt, TagComponent{0});
+                ecs.AddComponent<TagComponent>(newEnt, TagComponent{ 0 });
             }
             if (!ecs.HasComponent<LayerComponent>(newEnt)) {
-                ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{0});
+                ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
             }
             if (!ecs.HasComponent<SiblingIndexComponent>(newEnt)) {
-                ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{0});
+                ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{ 0 });
             }
             if (!ecs.HasComponent<Transform>(newEnt)) {
                 ecs.AddComponent<Transform>(newEnt, Transform{});
             }
-        } else {
+        }
+        else {
             currEnt = existingEntity;
         }
 
@@ -1138,6 +1136,27 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeTransformComponent(currEnt, t);
         }
 
+        // ParentComponent
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
+                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
+            }
+            auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
+            DeserializeParentComponent(parentComp, parentCompJSON);
+        }
+
+        // ChildrenComponent
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
+                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
+            }
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
+            childComp.children.clear();
+            DeserializeChildrenComponent(childComp, childrenCompJSON);
+        }
+
         // ModelRenderComponent
         if (comps.HasMember("ModelRenderComponent")) {
             const rapidjson::Value& mv = comps["ModelRenderComponent"];
@@ -1145,7 +1164,7 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
                 ecs.AddComponent<ModelRenderComponent>(currEnt, ModelRenderComponent{});
             }
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
-            DeserializeModelComponent(modelComp, mv);
+            DeserializeModelComponent(modelComp, mv, currEnt);
         }
 
         // SpriteRenderComponent
@@ -1213,18 +1232,18 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeAudioComponent(audioComp, tv);
         }
 
-		// AudioListenerComponent
+        // AudioListenerComponent
         if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioListenerComponent"];
             auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(currEnt);
-			DeserializeAudioListenerComponent(audioListenerComp, tv);
+            DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
 
-		// AudioReverbZoneComponent
+        // AudioReverbZoneComponent
         if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
             auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(currEnt);
-			DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+            DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
         }
 
         // RigidBodyComponent
@@ -1262,26 +1281,6 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
             DeserializeActiveComponent(activeComp, tv);
         }
 
-        // ParentComponent
-        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
-            const auto& parentCompJSON = comps["ParentComponent"];
-            if (!ecs.HasComponent<ParentComponent>(currEnt)) {
-                ecs.AddComponent<ParentComponent>(currEnt, ParentComponent{});
-            }
-            auto& parentComp = ecs.GetComponent<ParentComponent>(currEnt);
-            DeserializeParentComponent(parentComp, parentCompJSON);
-        }
-
-        // ChildrenComponent
-        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
-            const auto& childrenCompJSON = comps["ChildrenComponent"];
-            if (!ecs.HasComponent<ChildrenComponent>(currEnt)) {
-                ecs.AddComponent<ChildrenComponent>(currEnt, ChildrenComponent{});
-            }
-            auto& childComp = ecs.GetComponent<ChildrenComponent>(currEnt);
-            DeserializeChildrenComponent(childComp, childrenCompJSON);
-        }
-
         // ScriptComponent (engine-side) - use DeserializeScriptComponent for consistency
         if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject()) {
             Serializer::DeserializeScriptComponent(currEnt, comps["ScriptComponent"]);
@@ -1311,10 +1310,10 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(currEnt)) {
-            ecs.AddComponent<TagComponent>(currEnt, TagComponent{0});
+            ecs.AddComponent<TagComponent>(currEnt, TagComponent{ 0 });
         }
         if (!ecs.HasComponent<LayerComponent>(currEnt)) {
-            ecs.AddComponent<LayerComponent>(currEnt, LayerComponent{0});
+            ecs.AddComponent<LayerComponent>(currEnt, LayerComponent{ 0 });
         }
 
     } // end for entities
@@ -1419,7 +1418,8 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
                 transform.localRotation = quat;
                 transform.localRotation.Normalize(); // Ensure normalized
             }
-        } else {
+        }
+        else {
             ecs.transformSystem->SetLocalRotation(newEnt, rot); // expects Euler degrees
         }
 
@@ -1435,7 +1435,7 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     }
 }
 
-void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON) {
+void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root) {
     if (modelJSON.IsObject()) {
         if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
             const auto& d = modelJSON["data"];
@@ -1445,39 +1445,45 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
             if (d[0].IsObject() && d[0].HasMember("type")) {
                 if (d[0]["type"].GetString() == std::string("bool")) {
                     // Check if we have complete base class fields
-                    modelComp.isVisible = d[0]["data"].GetBool();
+                    modelComp.isVisible = Serializer::GetBool(d, 0, true);
 
                     // Check second element for renderOrder
                     if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
                         if (d[1]["type"].GetString() == std::string("int")) {
-                            modelComp.renderOrder = d[1]["data"].GetInt();
+                            modelComp.renderOrder = Serializer::GetInt(d, 1, 100);
                             startIdx = 2;
-                        } else {
+                        }
+                        else {
                             // d[1] is not renderOrder, so only isVisible present
                             modelComp.renderOrder = 100;  // default
                             startIdx = 1;
                         }
-                    } else if (d.Size() > 1 && d[1].IsString()) {
+                    }
+                    else if (d.Size() > 1 && d[1].IsString()) {
                         // d[1] is a string (probably GUID), so only isVisible present
                         modelComp.renderOrder = 100;  // default
                         startIdx = 1;
-                    } else {
+                    }
+                    else {
                         // Only one element or d[1] is something else
                         modelComp.renderOrder = 100;  // default
                         startIdx = 1;
                     }
-                } else {
+                }
+                else {
                     // No base class fields - old format from snapshot
                     modelComp.isVisible = true;  // default
                     modelComp.renderOrder = 100;  // default
                     startIdx = 0;
                 }
-            } else if (d[0].IsString()) {
+            }
+            else if (d[0].IsString()) {
                 // Old format - starts with GUID string
                 modelComp.isVisible = true;  // default
                 modelComp.renderOrder = 100;  // default
                 startIdx = 0;
-            } else {
+            }
+            else {
                 modelComp.isVisible = true;  // default
                 modelComp.renderOrder = 100;  // default
                 startIdx = 0;
@@ -1510,6 +1516,15 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                     modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
                 }
             }
+
+            modelComp.childBonesSaved = Serializer::GetBool(d, 5, false);
+
+            if (modelComp.model) {
+                modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
+                if (!modelComp.childBonesSaved) {
+                    ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
+                }
+            }
         }
     }
 }
@@ -1524,36 +1539,42 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             if (d[0].IsObject() && d[0].HasMember("type")) {
                 if (d[0]["type"].GetString() == std::string("bool")) {
                     // Has isVisible field
-                    spriteComp.isVisible = d[0]["data"].GetBool();
+                    spriteComp.isVisible = Serializer::GetBool(d, 0, true);
 
                     // Check second element for renderOrder
                     if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
                         if (d[1]["type"].GetString() == std::string("int")) {
-                            spriteComp.renderOrder = d[1]["data"].GetInt();
+                            spriteComp.renderOrder = Serializer::GetInt(d, 1, 100);
                             startIdx = 2;
-                        } else {
+                        }
+                        else {
                             spriteComp.renderOrder = 100;  // default
                             startIdx = 1;
                         }
-                    } else if (d.Size() > 1 && d[1].IsString()) {
-                        spriteComp.renderOrder = 100;  // default
-                        startIdx = 1;
-                    } else {
+                    }
+                    else if (d.Size() > 1 && d[1].IsString()) {
                         spriteComp.renderOrder = 100;  // default
                         startIdx = 1;
                     }
-                } else {
+                    else {
+                        spriteComp.renderOrder = 100;  // default
+                        startIdx = 1;
+                    }
+                }
+                else {
                     // No base class fields
                     spriteComp.isVisible = true;  // default
                     spriteComp.renderOrder = 100;  // default
                     startIdx = 0;
                 }
-            } else if (d[0].IsString()) {
+            }
+            else if (d[0].IsString()) {
                 // Old format - starts with GUID string
                 spriteComp.isVisible = true;  // default
                 spriteComp.renderOrder = 100;  // default
                 startIdx = 0;
-            } else {
+            }
+            else {
                 spriteComp.isVisible = true;  // default
                 spriteComp.renderOrder = 100;  // default
                 startIdx = 0;
@@ -1584,17 +1605,17 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
             // Sprite scale
             readVec3Generic(d[startIdx + 3], spriteComp.scale);
             // Sprite rotation
-            spriteComp.rotation = d[startIdx + 4]["data"].GetFloat();
+            spriteComp.rotation = Serializer::GetFloat(d, startIdx + 4);
             // Sprite color
             readVec3Generic(d[startIdx + 5], spriteComp.color);
-            spriteComp.alpha = d[startIdx + 6]["data"].GetFloat();
-            spriteComp.is3D = d[startIdx + 7]["data"].GetBool();
-            spriteComp.enableBillboard = d[startIdx + 8]["data"].GetBool();
+            spriteComp.alpha = Serializer::GetFloat(d, startIdx + 6);
+            spriteComp.is3D = Serializer::GetBool(d, startIdx + 7);
+            spriteComp.enableBillboard = Serializer::GetBool(d, startIdx + 8);
 
             // Backward compatibility: old scenes have "layer", new scenes have "sortingLayer" and "sortingOrder"
             if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 9)) {
                 // Load old "layer" field into sortingLayer for backward compatibility
-                spriteComp.sortingLayer = d[startIdx + 9]["data"].GetInt();
+                spriteComp.sortingLayer = Serializer::GetInt(d, startIdx + 9);
             }
             if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10) &&
                 d[startIdx + 10].IsObject() && d[startIdx + 10].HasMember("type")) {
@@ -1602,11 +1623,12 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                 std::string fieldType = d[startIdx + 10]["type"].GetString();
                 if (fieldType == "int") {
                     // New format with sortingOrder
-                    spriteComp.sortingOrder = d[startIdx + 10]["data"].GetInt();
+                    spriteComp.sortingOrder = Serializer::GetInt(d, startIdx + 10);
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
                         readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
                     }
-                } else {
+                }
+                else {
                     // Old format - this is saved3DPosition
                     readVec3Generic(d[startIdx + 10], spriteComp.saved3DPosition);
                 }
@@ -1717,31 +1739,36 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         if (d[0].IsObject() && d[0].HasMember("type")) {
             if (d[0]["type"].GetString() == std::string("bool")) {
                 // Has isVisible field
-                textComp.isVisible = d[0]["data"].GetBool();
+                textComp.isVisible = Serializer::GetBool(d, 0, true);
 
                 // Check second element for renderOrder
                 if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
                     if (d[1]["type"].GetString() == std::string("int")) {
-                        textComp.renderOrder = d[1]["data"].GetInt();
+                        textComp.renderOrder = Serializer::GetInt(d, 1, 100);
                         startIdx = 2;
-                    } else {
+                    }
+                    else {
                         textComp.renderOrder = 100;  // default
                         startIdx = 1;
                     }
-                } else if (d.Size() > 1 && d[1].IsString()) {
-                    textComp.renderOrder = 100;  // default
-                    startIdx = 1;
-                } else {
+                }
+                else if (d.Size() > 1 && d[1].IsString()) {
                     textComp.renderOrder = 100;  // default
                     startIdx = 1;
                 }
-            } else {
+                else {
+                    textComp.renderOrder = 100;  // default
+                    startIdx = 1;
+                }
+            }
+            else {
                 // No base class fields - old format from snapshot
                 textComp.isVisible = true;  // default
                 textComp.renderOrder = 100;  // default
                 startIdx = 0;
             }
-        } else {
+        }
+        else {
             // Unknown format - set defaults
             textComp.isVisible = true;  // default
             textComp.renderOrder = 100;  // default
@@ -1749,8 +1776,8 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         }
 
         // Component-specific fields
-        textComp.text = d[startIdx]["data"].GetString();
-        textComp.fontSize = d[startIdx + 1]["data"].GetUint();
+        textComp.text = Serializer::GetString(d, startIdx);
+        textComp.fontSize = static_cast<unsigned int>(Serializer::GetInt(d, startIdx + 1));
 
         // Use helper function to extract GUIDs
         GUID_string fontGUIDStr = extractGUIDString(d[startIdx + 2]);
@@ -1768,38 +1795,26 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
             d[startIdx + 6]["type"].GetString() == std::string("float")) {
             // OLD format with scale field - read and discard it
             hasOldScaleField = true;
-            float oldScale = d[startIdx + 6]["data"].GetFloat();
-            (void)oldScale; // Suppress unused variable warning
+            // float oldScale = d[startIdx + 6]["data"].GetFloat();
         }
 
         if (hasOldScaleField) {
             // OLD format indices (with scale at 6)
             // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
-                textComp.is3D = d[startIdx + 7]["data"].GetBool();
-            }
+            textComp.is3D = Serializer::GetBool(d, startIdx + 7);
             // sortingLayer and sortingOrder didn't exist in old format - use defaults
             textComp.sortingLayer = 0;
             textComp.sortingOrder = 0;
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
-                textComp.alignmentInt = d[startIdx + 8]["data"].GetInt();
-            }
-        } else {
+            textComp.alignmentInt = Serializer::GetInt(d, startIdx + 8);
+        }
+        else {
             // NEW format indices (without scale)
             // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6)) {
-                textComp.is3D = d[startIdx + 6]["data"].GetBool();
-            }
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 7)) {
-                textComp.sortingLayer = d[startIdx + 7]["data"].GetInt();
-            }
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 8)) {
-                textComp.sortingOrder = d[startIdx + 8]["data"].GetInt();
-            }
+            textComp.is3D = Serializer::GetBool(d, startIdx + 6);
+            textComp.sortingLayer = Serializer::GetInt(d, startIdx + 7);
+            textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
             // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
-            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 10)) {
-                textComp.alignmentInt = d[startIdx + 10]["data"].GetInt();
-            }
+            textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
         }
     }
 }
@@ -1814,39 +1829,45 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
         if (d[0].IsObject() && d[0].HasMember("type")) {
             if (d[0]["type"].GetString() == std::string("bool")) {
                 // Check if we have complete base class fields
-                particleComp.isVisible = d[0]["data"].GetBool();
+                particleComp.isVisible = Serializer::GetBool(d, 0, true);
 
                 // Check second element for renderOrder
                 if (d.Size() > 1 && d[1].IsObject() && d[1].HasMember("type") && d[1].HasMember("data")) {
                     if (d[1]["type"].GetString() == std::string("int")) {
-                        particleComp.renderOrder = d[1]["data"].GetInt();
+                        particleComp.renderOrder = Serializer::GetInt(d, 1, 100);
                         startIdx = 2;
-                    } else {
+                    }
+                    else {
                         // d[1] is not renderOrder, so only isVisible present
                         particleComp.renderOrder = 100;  // default
                         startIdx = 1;
                     }
-                } else if (d.Size() > 1 && d[1].IsString()) {
+                }
+                else if (d.Size() > 1 && d[1].IsString()) {
                     // d[1] is a string (probably GUID), so only isVisible present
                     particleComp.renderOrder = 100;  // default
                     startIdx = 1;
-                } else {
+                }
+                else {
                     // Only one element or d[1] is something else
                     particleComp.renderOrder = 100;  // default
                     startIdx = 1;
                 }
-            } else {
+            }
+            else {
                 // No base class fields - old format from snapshot
                 particleComp.isVisible = true;  // default
                 particleComp.renderOrder = 100;  // default
                 startIdx = 0;
             }
-        } else if (d[0].IsString()) {
+        }
+        else if (d[0].IsString()) {
             // Old format - starts with GUID string
             particleComp.isVisible = true;  // default
             particleComp.renderOrder = 100;  // default
             startIdx = 0;
-        } else {
+        }
+        else {
             particleComp.isVisible = true;  // default
             particleComp.renderOrder = 100;  // default
             startIdx = 0;
@@ -1858,17 +1879,17 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
 
         // Rest of ParticleComponent fields
         readVec3Generic(d[startIdx + 1], particleComp.emitterPosition);
-        particleComp.emissionRate = d[startIdx + 2]["data"].GetFloat();
-        particleComp.maxParticles = d[startIdx + 3]["data"].GetInt();
-        particleComp.particleLifetime = d[startIdx + 4]["data"].GetFloat();
-        particleComp.startSize = d[startIdx + 5]["data"].GetFloat();
-        particleComp.endSize = d[startIdx + 6]["data"].GetFloat();
+        particleComp.emissionRate = Serializer::GetFloat(d, startIdx + 2);
+        particleComp.maxParticles = Serializer::GetInt(d, startIdx + 3);
+        particleComp.particleLifetime = Serializer::GetFloat(d, startIdx + 4);
+        particleComp.startSize = Serializer::GetFloat(d, startIdx + 5);
+        particleComp.endSize = Serializer::GetFloat(d, startIdx + 6);
         readVec3Generic(d[startIdx + 7], particleComp.startColor);
-        particleComp.startColorAlpha = d[startIdx + 8]["data"].GetFloat();
+        particleComp.startColorAlpha = Serializer::GetFloat(d, startIdx + 8);
         readVec3Generic(d[startIdx + 9], particleComp.endColor);
-        particleComp.endColorAlpha = d[startIdx + 10]["data"].GetFloat();
+        particleComp.endColorAlpha = Serializer::GetFloat(d, startIdx + 10);
         readVec3Generic(d[startIdx + 11], particleComp.gravity);
-        particleComp.velocityRandomness = d[startIdx + 12]["data"].GetFloat();
+        particleComp.velocityRandomness = Serializer::GetFloat(d, startIdx + 12);
         readVec3Generic(d[startIdx + 13], particleComp.initialVelocity);
     }
 }
@@ -1878,8 +1899,8 @@ void Serializer::DeserializeDirLightComponent(DirectionalLightComponent& dirLigh
     if (dirLightJSON.HasMember("data") && dirLightJSON["data"].IsArray()) {
         const auto& d = dirLightJSON["data"];
         readVec3Generic(d[0], dirLightComp.color);
-        dirLightComp.intensity = d[1]["data"].GetFloat();
-        dirLightComp.enabled = d[2]["data"].GetBool();
+        dirLightComp.intensity = Serializer::GetFloat(d, 1);
+        dirLightComp.enabled = Serializer::GetBool(d, 2);
         readVec3Generic(d[3], dirLightComp.direction);
         readVec3Generic(d[4], dirLightComp.ambient);
         readVec3Generic(d[5], dirLightComp.diffuse);
@@ -1892,13 +1913,13 @@ void Serializer::DeserializeSpotLightComponent(SpotLightComponent& spotlightComp
     if (spotLightJSON.HasMember("data") && spotLightJSON["data"].IsArray()) {
         const auto& d = spotLightJSON["data"];
         readVec3Generic(d[0], spotlightComp.color);
-        spotlightComp.intensity = d[1]["data"].GetFloat();
-        spotlightComp.enabled = d[2]["data"].GetBool();
+        spotlightComp.intensity = Serializer::GetFloat(d, 1);
+        spotlightComp.enabled = Serializer::GetBool(d, 2);
         readVec3Generic(d[3], spotlightComp.direction);
-        spotlightComp.cutOff = d[4]["data"].GetFloat();
-        spotlightComp.constant = d[5]["data"].GetFloat();
-        spotlightComp.linear = d[6]["data"].GetFloat();
-        spotlightComp.quadratic = d[7]["data"].GetFloat();
+        spotlightComp.cutOff = Serializer::GetFloat(d, 4);
+        spotlightComp.constant = Serializer::GetFloat(d, 5);
+        spotlightComp.linear = Serializer::GetFloat(d, 6);
+        spotlightComp.quadratic = Serializer::GetFloat(d, 7);
         readVec3Generic(d[8], spotlightComp.ambient);
         readVec3Generic(d[9], spotlightComp.diffuse);
         readVec3Generic(d[10], spotlightComp.specular);
@@ -1910,11 +1931,11 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
     if (pointLightJSON.HasMember("data") && pointLightJSON["data"].IsArray()) {
         const auto& d = pointLightJSON["data"];
         readVec3Generic(d[0], pointLightComp.color);
-        pointLightComp.intensity = d[1]["data"].GetFloat();
-        pointLightComp.enabled = d[2]["data"].GetBool();
-        pointLightComp.constant = d[3]["data"].GetFloat();
-        pointLightComp.linear = d[4]["data"].GetFloat();
-        pointLightComp.quadratic = d[5]["data"].GetFloat();
+        pointLightComp.intensity = Serializer::GetFloat(d, 1);
+        pointLightComp.enabled = Serializer::GetBool(d, 2);
+        pointLightComp.constant = Serializer::GetFloat(d, 3);
+        pointLightComp.linear = Serializer::GetFloat(d, 4);
+        pointLightComp.quadratic = Serializer::GetFloat(d, 5);
         readVec3Generic(d[6], pointLightComp.ambient);
         readVec3Generic(d[7], pointLightComp.diffuse);
         readVec3Generic(d[8], pointLightComp.specular);
@@ -1925,25 +1946,25 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
     // typed form: tv.data = [ {type: "bool", data: true}, "GUID_string", {type: "std::string", data: "clip"}, ... ]
     if (audioJSON.HasMember("data") && audioJSON["data"].IsArray()) {
         const auto& d = audioJSON["data"];
-        audioComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
+        audioComp.enabled = Serializer::GetBool(d, 0);
 
         // Use helper function to extract audio GUID
         GUID_string guidStr = extractGUIDString(d[1]);
         audioComp.audioGUID = GUIDUtilities::ConvertStringToGUID128(guidStr);
-		audioComp.Mute = d[2]["data"].GetBool();
-		audioComp.bypassListenerEffects = d[3]["data"].GetBool();
-		audioComp.PlayOnAwake = d[4]["data"].GetBool();
-		audioComp.Loop = d[5]["data"].GetBool();
-		audioComp.Priority = d[6]["data"].GetInt();
-		audioComp.Volume = d[7]["data"].GetFloat();
-		audioComp.Pitch = d[8]["data"].GetFloat();
-		audioComp.StereoPan = d[9]["data"].GetFloat();
-		audioComp.reverbZoneMix = d[10]["data"].GetFloat();
-		audioComp.Spatialize = d[11]["data"].GetBool();
-		audioComp.SpatialBlend = d[12]["data"].GetFloat();
-		audioComp.DopplerLevel = d[13]["data"].GetFloat();
-		audioComp.MinDistance = d[14]["data"].GetFloat();
-		audioComp.MaxDistance = d[15]["data"].GetFloat();
+        audioComp.Mute = Serializer::GetBool(d, 2);
+        audioComp.bypassListenerEffects = Serializer::GetBool(d, 3);
+        audioComp.PlayOnAwake = Serializer::GetBool(d, 4);
+        audioComp.Loop = Serializer::GetBool(d, 5);
+        audioComp.Priority = Serializer::GetInt(d, 6);
+        audioComp.Volume = Serializer::GetFloat(d, 7);
+        audioComp.Pitch = Serializer::GetFloat(d, 8);
+        audioComp.StereoPan = Serializer::GetFloat(d, 9);
+        audioComp.reverbZoneMix = Serializer::GetFloat(d, 10);
+        audioComp.Spatialize = Serializer::GetBool(d, 11);
+        audioComp.SpatialBlend = Serializer::GetFloat(d, 12);
+        audioComp.DopplerLevel = Serializer::GetFloat(d, 13);
+        audioComp.MinDistance = Serializer::GetFloat(d, 14);
+        audioComp.MaxDistance = Serializer::GetFloat(d, 15);
     }
 }
 
@@ -1951,7 +1972,7 @@ void Serializer::DeserializeAudioListenerComponent(AudioListenerComponent& audio
     // typed form: tv.data = [ {type: "bool", data: true} ]
     if (audioListenerJSON.HasMember("data") && audioListenerJSON["data"].IsArray()) {
         const auto& d = audioListenerJSON["data"];
-        audioListenerComp.enabled = d[0]["data"].GetBool();  // d[0] is the enabled object
+        audioListenerComp.enabled = Serializer::GetBool(d, 0);
     }
 }
 
@@ -1959,22 +1980,22 @@ void Serializer::DeserializeAudioReverbZoneComponent(AudioReverbZoneComponent& a
     // typed form: tv.data = [ {type: "bool", data: true}, {type: "float", data: 10.0}, ... ]
     if (audioReverbZoneJSON.HasMember("data") && audioReverbZoneJSON["data"].IsArray()) {
         const auto& d = audioReverbZoneJSON["data"];
-        audioReverbZoneComp.enabled = d[0]["data"].GetBool();
-        audioReverbZoneComp.MinDistance = d[1]["data"].GetFloat();
-        audioReverbZoneComp.MaxDistance = d[2]["data"].GetFloat();
-        audioReverbZoneComp.reverbPresetIndex = d[3]["data"].GetInt();
-        audioReverbZoneComp.decayTime = d[4]["data"].GetFloat();
-        audioReverbZoneComp.earlyDelay = d[5]["data"].GetFloat();
-        audioReverbZoneComp.lateDelay = d[6]["data"].GetFloat();
-        audioReverbZoneComp.hfReference = d[7]["data"].GetFloat();
-        audioReverbZoneComp.hfDecayRatio = d[8]["data"].GetFloat();
-        audioReverbZoneComp.diffusion = d[9]["data"].GetFloat();
-        audioReverbZoneComp.density = d[10]["data"].GetFloat();
-        audioReverbZoneComp.lowShelfFrequency = d[11]["data"].GetFloat();
-        audioReverbZoneComp.lowShelfGain = d[12]["data"].GetFloat();
-        audioReverbZoneComp.highCut = d[13]["data"].GetFloat();
-        audioReverbZoneComp.earlyLateMix = d[14]["data"].GetFloat();
-        audioReverbZoneComp.wetLevel = d[15]["data"].GetFloat();
+        audioReverbZoneComp.enabled = Serializer::GetBool(d, 0);
+        audioReverbZoneComp.MinDistance = Serializer::GetFloat(d, 1);
+        audioReverbZoneComp.MaxDistance = Serializer::GetFloat(d, 2);
+        audioReverbZoneComp.reverbPresetIndex = Serializer::GetInt(d, 3);
+        audioReverbZoneComp.decayTime = Serializer::GetFloat(d, 4);
+        audioReverbZoneComp.earlyDelay = Serializer::GetFloat(d, 5);
+        audioReverbZoneComp.lateDelay = Serializer::GetFloat(d, 6);
+        audioReverbZoneComp.hfReference = Serializer::GetFloat(d, 7);
+        audioReverbZoneComp.hfDecayRatio = Serializer::GetFloat(d, 8);
+        audioReverbZoneComp.diffusion = Serializer::GetFloat(d, 9);
+        audioReverbZoneComp.density = Serializer::GetFloat(d, 10);
+        audioReverbZoneComp.lowShelfFrequency = Serializer::GetFloat(d, 11);
+        audioReverbZoneComp.lowShelfGain = Serializer::GetFloat(d, 12);
+        audioReverbZoneComp.highCut = Serializer::GetFloat(d, 13);
+        audioReverbZoneComp.earlyLateMix = Serializer::GetFloat(d, 14);
+        audioReverbZoneComp.wetLevel = Serializer::GetFloat(d, 15);
     }
 }
 
@@ -1982,9 +2003,9 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
-        rbComp.motionID = d[1]["data"].GetInt();
+        rbComp.motionID = Serializer::GetInt(d, 1);
         rbComp.motion = static_cast<Motion>(rbComp.motionID);
-        rbComp.ccd = d[2]["data"].GetBool();
+        rbComp.ccd = Serializer::GetBool(d, 2);
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
@@ -1995,18 +2016,18 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (colliderJSON.HasMember("data") && colliderJSON["data"].IsArray()) {
         const auto& d = colliderJSON["data"];
-        colliderComp.enabled = d[0]["data"].GetBool();
-        colliderComp.layerID = d[1]["data"].GetInt();
+        colliderComp.enabled = Serializer::GetBool(d, 0);
+        colliderComp.layerID = Serializer::GetInt(d, 1);
         colliderComp.layer = static_cast<JPH::ObjectLayer>(colliderComp.layerID);
-        colliderComp.version = d[2]["data"].GetUint();
-        colliderComp.shapeTypeID = d[3]["data"].GetInt();
+        colliderComp.version = static_cast<unsigned int>(Serializer::GetInt(d, 2));
+        colliderComp.shapeTypeID = Serializer::GetInt(d, 3);
         colliderComp.shapeType = static_cast<ColliderShapeType>(colliderComp.shapeTypeID);
         readVec3Generic(d[4], colliderComp.boxHalfExtents);
-        colliderComp.sphereRadius = d[5]["data"].GetFloat();
-        colliderComp.capsuleRadius = d[6]["data"].GetFloat();
-        colliderComp.capsuleHalfHeight = d[7]["data"].GetFloat();
-        colliderComp.cylinderRadius = d[8]["data"].GetFloat();
-        colliderComp.cylinderHalfHeight = d[9]["data"].GetFloat();
+        colliderComp.sphereRadius = Serializer::GetFloat(d, 5);
+        colliderComp.capsuleRadius = Serializer::GetFloat(d, 6);
+        colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
+        colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
+        colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
     }
 }
 
@@ -2020,7 +2041,7 @@ void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const r
 
 void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& _childJSON) {
     if (_childJSON.HasMember("data")) {
-        childComp.children.clear();
+        //childComp.children.clear();
         const auto& childrenVectorJSON = _childJSON["data"][0]["data"].GetArray();
         for (const auto& childJSON : childrenVectorJSON) {
             // Use helper function to extract child GUIDs
@@ -2053,28 +2074,28 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         const auto& d = cameraJSON["data"];
 
         rapidjson::SizeType idx = 0;
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.enabled = d[idx++]["data"].GetBool();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.isActive = d[idx++]["data"].GetBool();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.priority = d[idx++]["data"].GetInt();
+        cameraComp.enabled = Serializer::GetBool(d, idx++);
+        cameraComp.isActive = Serializer::GetBool(d, idx++);
+        cameraComp.priority = Serializer::GetInt(d, idx++);
 
         // Skip target and up in the old format (they're not in the reflection data array)
         // These are handled separately by custom serialization
 
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.yaw = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.pitch = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.useFreeRotation = d[idx++]["data"].GetBool();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.fov = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.nearPlane = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.farPlane = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.orthoSize = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.movementSpeed = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.mouseSensitivity = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.minZoom = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.maxZoom = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.zoomSpeed = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeIntensity = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeDuration = d[idx++]["data"].GetFloat();
-        if (d.Size() > idx && d[idx].HasMember("data")) cameraComp.shakeFrequency = d[idx++]["data"].GetFloat();
+        cameraComp.yaw = Serializer::GetFloat(d, idx++);
+        cameraComp.pitch = Serializer::GetFloat(d, idx++);
+        cameraComp.useFreeRotation = Serializer::GetBool(d, idx++);
+        cameraComp.fov = Serializer::GetFloat(d, idx++);
+        cameraComp.nearPlane = Serializer::GetFloat(d, idx++);
+        cameraComp.farPlane = Serializer::GetFloat(d, idx++);
+        cameraComp.orthoSize = Serializer::GetFloat(d, idx++);
+        cameraComp.movementSpeed = Serializer::GetFloat(d, idx++);
+        cameraComp.mouseSensitivity = Serializer::GetFloat(d, idx++);
+        cameraComp.minZoom = Serializer::GetFloat(d, idx++);
+        cameraComp.maxZoom = Serializer::GetFloat(d, idx++);
+        cameraComp.zoomSpeed = Serializer::GetFloat(d, idx++);
+        cameraComp.shakeIntensity = Serializer::GetFloat(d, idx++);
+        cameraComp.shakeDuration = Serializer::GetFloat(d, idx++);
+        cameraComp.shakeFrequency = Serializer::GetFloat(d, idx++);
         if (d.Size() > idx) {
             // Use helper function to extract skybox texture GUID
             GUID_string skyboxGUIDStr = extractGUIDString(d[idx]);
@@ -2251,7 +2272,8 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                     size_t resPos = resolvedPath.find("Resources");
                     if (resPos != std::string::npos) {
                         sd.scriptPath = resolvedPath.substr(resPos);
-                    } else {
+                    }
+                    else {
                         sd.scriptPath = resolvedPath;
                     }
                     ENGINE_PRINT("LOAD DEBUG: Resolved scriptPath from GUID: ", sd.scriptPath.c_str(), "\n");
@@ -2366,19 +2388,18 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
 void Serializer::DeserializeActiveComponent(ActiveComponent& activeComp, const rapidjson::Value& activeJSON) {
     if (activeJSON.HasMember("data") && activeJSON["data"].IsArray()) {
         const auto& d = activeJSON["data"];
-        rapidjson::SizeType idx = 0;
-        if (d.Size() > idx && d[idx].HasMember("data")) activeComp.isActive = d[idx++]["data"].GetBool();
+        activeComp.isActive = Serializer::GetBool(d, 0, true);
     }
 }
 
 void Serializer::DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON) {
     if (brainJSON.HasMember("data") && brainJSON["data"].IsArray()) {
         const auto& d = brainJSON["data"];
-        brainComp.kindInt = d[0]["data"].GetInt();
+        brainComp.kindInt = Serializer::GetInt(d, 0);
         brainComp.kind = static_cast<BrainKind>(brainComp.kindInt);
         brainComp.started = false;
-        brainComp.activeState = d[1]["data"].GetString();
-        brainComp.enabled = d[2]["data"].GetBool();
+        brainComp.activeState = Serializer::GetString(d, 1);
+        brainComp.enabled = Serializer::GetBool(d, 2);
     }
 }
 
@@ -2417,7 +2438,8 @@ void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const r
                             binding.functionName = bd[3]["data"].GetString();
                         if (bd[4].HasMember("data") && bd[4]["data"].IsBool())
                             binding.callWithSelf = bd[4]["data"].GetBool();
-                    } else if (bd.Size() >= 4) {
+                    }
+                    else if (bd.Size() >= 4) {
                         // Old format without scriptPath - maintain backward compatibility
                         if (bd[0].HasMember("data") && bd[0]["data"].IsString())
                             binding.targetEntityGuidStr = bd[0]["data"].GetString();
@@ -2434,8 +2456,7 @@ void Serializer::DeserializeButtonComponent(ButtonComponent& buttonComp, const r
             }
         }
 
-        if (d.Size() > 1 && d[1].HasMember("data") && d[1]["data"].IsBool())
-            buttonComp.interactable = d[1]["data"].GetBool();
+        buttonComp.interactable = Serializer::GetBool(d, 1, true);
     }
 }
 
@@ -2475,36 +2496,13 @@ void Serializer::DeserializeSliderComponent(SliderComponent& sliderComp, const r
             }
         }
 
-        // 1: minValue
-        if (d.Size() > 1 && d[1].HasMember("data")) {
-            double v = 0.0;
-            if (getNumberFromValue(d[1], v)) sliderComp.minValue = static_cast<float>(v);
-        }
-        // 2: maxValue
-        if (d.Size() > 2 && d[2].HasMember("data")) {
-            double v = 0.0;
-            if (getNumberFromValue(d[2], v)) sliderComp.maxValue = static_cast<float>(v);
-        }
-        // 3: value
-        if (d.Size() > 3 && d[3].HasMember("data")) {
-            double v = 0.0;
-            if (getNumberFromValue(d[3], v)) sliderComp.value = static_cast<float>(v);
-        }
-        // 4: wholeNumbers
-        if (d.Size() > 4) {
-            bool b = false;
-            if (getBoolFromValue(d[4], b)) sliderComp.wholeNumbers = b;
-        }
-        // 5: interactable
-        if (d.Size() > 5) {
-            bool b = false;
-            if (getBoolFromValue(d[5], b)) sliderComp.interactable = b;
-        }
-        // 6: horizontal
-        if (d.Size() > 6) {
-            bool b = false;
-            if (getBoolFromValue(d[6], b)) sliderComp.horizontal = b;
-        }
+        sliderComp.minValue = Serializer::GetFloat(d, 1);
+        sliderComp.maxValue = Serializer::GetFloat(d, 2);
+        sliderComp.value = Serializer::GetFloat(d, 3);
+        sliderComp.wholeNumbers = Serializer::GetBool(d, 4);
+        sliderComp.interactable = Serializer::GetBool(d, 5);
+        sliderComp.horizontal = Serializer::GetBool(d, 6);
+
         // 7: trackEntityGuid
         if (d.Size() > 7) {
             std::string guidStr = extractGUIDString(d[7]);

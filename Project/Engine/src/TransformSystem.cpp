@@ -196,6 +196,14 @@ void TransformSystem::SetLocalRotation(Entity entity, Vector3D rotation) {
 	SetDirtyRecursive(entity);
 }
 
+void TransformSystem::SetLocalRotation(Entity entity, Quaternion rotation) {
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+
+	transform.localRotation = rotation; // Direct assignment
+	SetDirtyRecursive(entity);
+}
+
 void TransformSystem::SetWorldScale(Entity entity, Vector3D scale) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);

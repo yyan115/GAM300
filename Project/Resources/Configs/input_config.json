@@ -1,0 +1,119 @@
+{
+  "_schema": {
+    "description": "Unified input configuration - define actions/axes once, bind per platform",
+    "coordinates": "All positions are normalized 0.0-1.0 (origin: top-left)",
+    "validKeys": "A-Z, 0-9, SPACE, SHIFT, CTRL, ALT, TAB, ESC, ENTER, BACKSPACE, UP, DOWN, LEFT, RIGHT, F1-F12",
+    "validMouseButtons": "LEFT, RIGHT, MIDDLE",
+    "axisTypes": {
+      "desktop": "keyboard (WASD-style), mouse_delta (camera look)",
+      "android": "virtual_joystick, touch_drag"
+    }
+  },
+
+  "actions": {
+    "Jump": {
+      "description": "Player jump",
+      "desktop": {
+        "keys": ["SPACE"]
+      },
+      "android": {
+        "touchZone": { "x": 0.85, "y": 0.7, "radius": 0.08 }
+      }
+    },
+
+    "Attack": {
+      "description": "Primary attack (left click / screen button)",
+      "desktop": {
+        "keys": ["E"],
+        "mouseButtons": ["LEFT"]
+      },
+      "android": {
+        "touchZone": { "x": 0.9, "y": 0.5, "radius": 0.1 }
+      }
+    },
+
+    "ChainAttack": {
+      "description": "Chain/special attack (right click / screen button)",
+      "desktop": {
+        "mouseButtons": ["RIGHT"]
+      },
+      "android": {
+        "touchZone": { "x": 0.75, "y": 0.6, "radius": 0.08 }
+      }
+    },
+
+    "Interact": {
+      "description": "Interact with objects",
+      "desktop": {
+        "keys": ["F"]
+      },
+      "android": {
+        "touchZone": { "x": 0.5, "y": 0.85, "width": 0.15, "height": 0.1 }
+      }
+    },
+
+    "Dash": {
+      "description": "Player dash/dodge",
+      "desktop": {
+        "keys": ["SHIFT"]
+      },
+      "android": {
+        "gesture": { "type": "double_tap", "maxInterval": 0.3 }
+      }
+    },
+
+    "Pause": {
+      "description": "Pause game / open menu",
+      "desktop": {
+        "keys": ["ESC"]
+      },
+      "android": {
+        "touchZone": { "x": 0.95, "y": 0.05, "radius": 0.04 }
+      }
+    },
+
+    "OpenInventory": {
+      "description": "Open inventory screen",
+      "desktop": {
+        "keys": ["I", "TAB"]
+      },
+      "android": {
+        "gesture": { "type": "swipe_down", "minDistance": 100, "maxTime": 0.5 }
+      }
+    }
+  },
+
+  "axes": {
+    "Movement": {
+      "description": "Player movement (returns x,y from -1 to 1)",
+      "desktop": {
+        "type": "keyboard",
+        "up": ["W", "UP"],
+        "down": ["S", "DOWN"],
+        "left": ["A", "LEFT"],
+        "right": ["D", "RIGHT"]
+      },
+      "android": {
+        "type": "virtual_joystick",
+        "position": { "x": 0.15, "y": 0.75 },
+        "outerRadius": 0.12,
+        "innerRadius": 0.05,
+        "deadZone": 0.02,
+        "alpha": 0.6
+      }
+    },
+
+    "Look": {
+      "description": "Camera look (returns x,y delta)",
+      "desktop": {
+        "type": "mouse_delta",
+        "sensitivity": 1.0
+      },
+      "android": {
+        "type": "touch_drag",
+        "zone": { "x": 0.3, "y": 0.0, "width": 0.7, "height": 1.0 },
+        "sensitivity": 0.5
+      }
+    }
+  }
+}

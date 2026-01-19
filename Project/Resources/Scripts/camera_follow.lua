@@ -122,21 +122,45 @@ return Component {
     end,
 
     _updateMouseLook = function(self, dt)
-        -- Process mouse look for camera rotation
-        if not (Input and Input.GetMouseX and Input.GetMouseY) then return end
-        local xpos, ypos = Input.GetMouseX(), Input.GetMouseY()
-        if self._firstMouse then
-            self._firstMouse = false
-            self._lastMouseX, self._lastMouseY = xpos, ypos
+        -- Process mouse look for camera rotation using unified input
+        if not (Input and Input.GetAxis) then
+            print("[CameraFollow] ERROR: Input.GetAxis not available")
             return
         end
-        local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
-        local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
-        self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   - xoffset  -- Inverted for correct left/right panning
-        self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
-        -- Broadcast camera yaw for camera-relative player movement
+        -- Get mouse delta from "Look" axis (configured as mouse_delta on desktop, touch_drag on Android)
+        local lookAxis = Input.GetAxis("Look")
+        if not lookAxis then
+            print("[CameraFollow] Look axis returned nil")
+            return
+        end
+
+        -- Check platform for sensitivity adjustment
+        -- Android uses normalized coords (0-1), desktop uses pixel delta - need different sensitivity
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local baseSensitivity = self.mouseSensitivity or 0.15
+
+        -- Android touch coords are normalized (0-1), so we need MUCH higher sensitivity
+        -- Desktop mouse delta is in pixels, so lower sensitivity works
+        local sensitivity = isAndroid and 800.0 or baseSensitivity  -- Direct value for Android
+
+        local xoffset = lookAxis.x * sensitivity
+        local yoffset = lookAxis.y * sensitivity
+
+        -- Debug: Log actual values being applied
+        if not self._logCount then self._logCount = 0 end
+        self._logCount = self._logCount + 1
+        if self._logCount % 30 == 1 and (lookAxis.x ~= 0 or lookAxis.y ~= 0) then
+            print("[CameraFollow] SENS=" .. sensitivity .. " offset=(" .. xoffset .. "," .. yoffset .. ") yaw=" .. self._yaw)
+        end
+
+        self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
+        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+
+        -- Store camera yaw in global for player movement (bypass event_bus)
+        _G.CAMERA_YAW = self._yaw
+
+        -- Also publish via event_bus for backwards compatibility
         if event_bus and event_bus.publish then
             event_bus.publish("camera_yaw", self._yaw)
         end
@@ -146,8 +170,8 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
-        -- Toggle cursor lock with Escape
-        if Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Escape) then
+        -- Toggle cursor lock with Escape (unified input system)
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 local isLocked = Screen.IsCursorLocked()
                 Screen.SetCursorLocked(not isLocked)
@@ -155,8 +179,9 @@ return Component {
             end
         end
 
-        -- Re-lock cursor when clicking in game (if unlocked)
-        if Input and Input.GetMouseButtonDown and Input.GetMouseButtonDown(Input.MouseButton.Left) then
+        -- Re-lock cursor when clicking Attack action (for standalone game builds)
+        -- In Editor, this is handled by GamePanel which only re-locks when clicking inside game panel
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 if not Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(true)
@@ -165,8 +190,16 @@ return Component {
             end
         end
 
-        -- Only update camera look when cursor is locked
-        if Screen and Screen.IsCursorLocked and Screen.IsCursorLocked() then
+        -- Only update camera look when cursor is locked (desktop) or always on Android
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
+        -- Debug log once
+        if not self._loggedPlatform then
+            print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
+            self._loggedPlatform = true
+        end
+
+        if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
             self:_updateMouseLook(dt)
         end
 

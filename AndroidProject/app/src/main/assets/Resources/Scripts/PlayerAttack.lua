@@ -119,18 +119,20 @@ return Component {
         Update = function(self, dt)
         self._time = self._time + dt
 
-        -- ---- Input handling ----
+        -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
         local rightDown, rightPressed = false, false
 
-        if Input and Input.GetMouseButton then
-            leftDown  = Input.GetMouseButton(Input.MouseButton.Left)
-            rightDown = Input.GetMouseButton(Input.MouseButton.Right)
+        if Input and Input.IsActionPressed then
+            leftDown  = Input.IsActionPressed("Attack")
+            rightDown = Input.IsActionPressed("ChainAttack")
         end
 
-        -- Edge detect: emulate GetMouseButtonDown for left
-        leftPressed  = (leftDown  and not self._prevLeftDown)
-        rightPressed = (rightDown and not self._prevRightDown)
+        -- Use IsActionJustPressed for edge detection
+        if Input and Input.IsActionJustPressed then
+            leftPressed  = Input.IsActionJustPressed("Attack")
+            rightPressed = Input.IsActionJustPressed("ChainAttack")
+        end
 
         if leftPressed then
             self._lastClickTime = self._time

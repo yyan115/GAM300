@@ -47,9 +47,23 @@ bool AnimationSystem::Initialise()
 				modelComp.SetAnimator(animator);
 
 				if (modelComp.model && !animComp.clipPaths.empty()) {
-					animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
+					animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
+
+					// Play the entry state's animation clip (not just first clip)
 					if (!animComp.GetClips().empty()) {
-						animator->PlayAnimation(animComp.GetClips()[0].get());
+						size_t clipToPlay = 0;
+						AnimationStateMachine* sm = animComp.GetStateMachine();
+						if (sm) {
+							std::string entryState = sm->GetEntryState();
+							const AnimStateConfig* entryConfig = sm->GetState(entryState);
+							if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+								clipToPlay = entryConfig->clipIndex;
+							}
+							// Initialize the state machine to the entry state
+							sm->SetInitialState(entryState, entity);
+						}
+						animComp.SetClip(clipToPlay, entity);
+						animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
 					}
 				}
 
@@ -89,9 +103,9 @@ void AnimationSystem::Update()
 
 		if(auto* fsm = animComp.GetStateMachine())
 		{
-			fsm->Update(dt);
+			fsm->Update(dt, entity);
 		}
 
-		animComp.Update(dt);
+		animComp.Update(dt, entity);
 	}
 }

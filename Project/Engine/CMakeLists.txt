@@ -75,7 +75,7 @@ list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
 # Engine is ALWAYS a shared library
-add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp")
+add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp" "src/Graphics/Model/ModelFactory.cpp")
 
 # Enable precompiled headers for faster compilation (C++ only)
 target_precompile_headers(Engine PRIVATE
@@ -84,6 +84,11 @@ target_precompile_headers(Engine PRIVATE
 
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
+
+# Define ANDROID for Android builds (needed for #ifdef ANDROID in code)
+if(ANDROID)
+    target_compile_definitions(Engine PUBLIC ANDROID)
+endif()
 
 # Define EDITOR for Editor builds (EditorDebug, EditorRelease)
 # Uses generator expression for multi-config generators (Visual Studio)

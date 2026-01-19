@@ -1904,6 +1904,7 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			}
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
+				ecsManager.GetComponent<ModelRenderComponent>(request.entity).SetAnimator(nullptr);
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Brain") {

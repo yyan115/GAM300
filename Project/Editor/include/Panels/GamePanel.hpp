@@ -60,8 +60,4 @@ private:
     float customAspectRatio;
     bool freeAspect;
     float viewportScale;
-
-    // Cursor capture state for game input
-    bool cursorCaptured = false;
-    void SetCursorCaptured(bool captured);
 };

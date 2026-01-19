@@ -7989,7 +7989,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "0024a1dca70dbc8c-000369a380000001",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/EnemyLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/EnemyLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",

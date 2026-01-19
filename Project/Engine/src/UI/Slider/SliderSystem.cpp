@@ -5,7 +5,7 @@
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
-#include "Input/InputManager.hpp"
+#include "Input/InputManager.h"
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
 #include "Transform/TransformComponent.hpp"
@@ -43,21 +43,20 @@ void SliderSystem::Shutdown() {
 }
 
 Vector3D SliderSystem::GetMousePosInGameSpace() const {
-    // Get viewport dimensions (actual render area)
-    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+    if (!g_inputManager) {
+        return Vector3D(0.0f, 0.0f, 0.0f);
+    }
 
     // Get target game resolution (world coordinate space for 2D UI)
     int gameResWidth, gameResHeight;
     GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
 
-    // Get raw mouse position in viewport coordinates
-    float mouseX = static_cast<float>(InputManager::GetMouseX());
-    float mouseY = static_cast<float>(InputManager::GetMouseY());
+    // Get pointer position in normalized coordinates (0-1)
+    glm::vec2 pointerPos = g_inputManager->GetPointerPosition();
 
-    // Map mouse coordinates from viewport space to game resolution space
-    float gameX = (mouseX / viewportWidth) * static_cast<float>(gameResWidth);
-    float gameY = static_cast<float>(gameResHeight) - (mouseY / viewportHeight) * static_cast<float>(gameResHeight);
+    // Convert from normalized (0-1, top-left origin) to game space coordinates
+    float gameX = pointerPos.x * static_cast<float>(gameResWidth);
+    float gameY = (1.0f - pointerPos.y) * static_cast<float>(gameResHeight);  // Flip Y
 
     return Vector3D(gameX, gameY, 0.0f);
 }
@@ -350,10 +349,10 @@ void SliderSystem::InvokeOnValueChanged(Entity sliderEntity, SliderComponent& sl
 }
 
 void SliderSystem::Update() {
-    if (!m_ecs) return;
+    if (!m_ecs || !g_inputManager) return;
 
-    const bool mousePressed = InputManager::GetMouseButtonDown(Input::MouseButton::LEFT);
-    const bool mouseHeld = InputManager::GetMouseButton(Input::MouseButton::LEFT);
+    const bool mousePressed = g_inputManager->IsPointerJustPressed();
+    const bool mouseHeld = g_inputManager->IsPointerPressed();
 
     if (!mouseHeld) {
         m_activeSlider = InvalidEntity();

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001d790d0f919dc3-0003eff7ec00001b",
+        "source": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
+        "compiled": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
+        "android_compiled": "Resources/Scripts/GamePlay/PlayerMovement(Updated).lua"
+    }
+}

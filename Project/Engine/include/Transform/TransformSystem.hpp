@@ -24,6 +24,7 @@ public:
 
 	void ENGINE_API SetWorldRotation(Entity entity, Vector3D rotation);
 	void ENGINE_API SetLocalRotation(Entity entity, Vector3D rotation);
+	void ENGINE_API SetLocalRotation(Entity entity, Quaternion rotation);
 
 	void ENGINE_API SetWorldScale(Entity entity, Vector3D scale);
 	void ENGINE_API SetLocalScale(Entity entity, Vector3D scale);

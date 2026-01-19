@@ -18,26 +18,12 @@ Resources/Audio/InUse/M3_GameLevel/BGM/04.Snow_Day-Night_Cold_Wind_Loop.ogg
 Resources/Audio/InUse/M3_GameLevel/BGM/04.Snow_Day-Night_Cold_Wind_Loop.ogg.meta
 Resources/Audio/InUse/M3_GameLevel/BGM/10Suns_WalkAbout_BGM1_Loop.ogg
 Resources/Audio/InUse/M3_GameLevel/BGM/10Suns_WalkAbout_BGM1_Loop.ogg.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack1.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack10.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack10.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack2.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack2.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack3.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack3.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack4.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack4.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack5.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack5.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack6.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack6.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack7.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack7.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack8.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack8.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack9.wav
-Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack9.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Beast, Voice, Mad, Growling, Pitchdown -24st 08 SND9178.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Beast, Voice, Mad, Growling, Pitchdown -24st 08 SND9178.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Humanoid, Giant, Troll, Reactions, Angry, Grunt, Pain SND134581 6.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Humanoid, Giant, Troll, Reactions, Angry, Grunt, Pain SND134581 6.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Humanoid, Giant, Troll, Reactions, Angry, Grunt, Pain SND134581 7.wav
+Resources/Audio/InUse/M3_GameLevel/Enemy/Creatures, Humanoid, Giant, Troll, Reactions, Angry, Grunt, Pain SND134581 7.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry1.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry1.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyBattleCry2.wav
@@ -72,10 +58,8 @@ Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage6.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav
 Resources/Audio/InUse/M3_GameLevel/Enemy/LightDamage7.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle.wav
-Resources/Audio/InUse/M3_GameLevel/Environment/match-lighting-candle.wav.meta
-Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav
-Resources/Audio/InUse/M3_GameLevel/Environment/SFX_FireSmall_L.wav.meta
+Resources/Audio/InUse/M3_GameLevel/Environment/Fire Ignite reverb_1.wav
+Resources/Audio/InUse/M3_GameLevel/Environment/Fire Ignite reverb_1.wav.meta
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart1.wav
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart1.wav.meta
 Resources/Audio/InUse/M3_GameLevel/FeatherChain/ChainRetractPart2.wav
@@ -134,8 +118,8 @@ Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt2.wav
 Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt2.wav.meta
 Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt3.wav
 Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt3.wav.meta
-Resources/Audio/InUse/MainMenu/MainMenuBGM.wav
-Resources/Audio/InUse/MainMenu/MainMenuBGM.wav.meta
+Resources/Audio/InUse/MainMenu/10Suns_Chinese-Choir_Menu_Loop.wav
+Resources/Audio/InUse/MainMenu/10Suns_Chinese-Choir_Menu_Loop.wav.meta
 Resources/Audio/InUse/MainMenu/MouseClick1.mp3
 Resources/Audio/InUse/MainMenu/MouseClick1.mp3.meta
 Resources/Audio/InUse/MainMenu/MouseClick2.wav
@@ -246,7 +230,6 @@ Resources/Materials/SideWall2_OldConcreto.mat
 Resources/Materials/SideWall2_OldConcreto.mat.meta
 Resources/Materials/sketchfeather_feather_m.mat
 Resources/Materials/sketchfeather_feather_m.mat.meta
-Resources/Materials/Small Stairs.mat.meta
 Resources/Materials/Small Stairs_000000.002.mat
 Resources/Materials/Small Stairs_000000.002.mat.meta
 Resources/Materials/Small Stairs_000000.002.mat
@@ -419,6 +402,8 @@ Resources/Models/Kachujin/Kachujin_specular.png
 Resources/Models/Kachujin/Kachujin_specular.png.meta
 Resources/Scripts/camera_follow.lua
 Resources/Scripts/camera_follow.lua.meta
+Resources/Scripts/CharacterMovementTest.lua
+Resources/Scripts/CharacterMovementTest.lua.meta
 Resources/Scripts/EnemyHealth.lua
 Resources/Scripts/EnemyHealth.lua.meta
 Resources/Scripts/extension/data_asset.lua
@@ -445,12 +430,38 @@ Resources/Scripts/extension/transform_mixin.lua
 Resources/Scripts/extension/transform_mixin.lua.meta
 Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
+Resources/Scripts/ForceTest.lua
+Resources/Scripts/ForceTest.lua.meta
+Resources/Scripts/GamePlay/EnemyAI.lua
+Resources/Scripts/GamePlay/EnemyAI.lua.meta
 Resources/Scripts/GamePlay/EnemyLogic.lua
 Resources/Scripts/GamePlay/EnemyLogic.lua.meta
+Resources/Scripts/GamePlay/FlyingEnemyLogic.lua
+Resources/Scripts/GamePlay/FlyingEnemyLogic.lua.meta
 Resources/Scripts/GamePlay/FlyingKnife.lua
 Resources/Scripts/GamePlay/FlyingKnife.lua.meta
+Resources/Scripts/GamePlay/GroundAttackState.lua
+Resources/Scripts/GamePlay/GroundAttackState.lua.meta
+Resources/Scripts/GamePlay/GroundChaseState.lua
+Resources/Scripts/GamePlay/GroundChaseState.lua.meta
+Resources/Scripts/GamePlay/GroundDeathState.lua
+Resources/Scripts/GamePlay/GroundDeathState.lua.meta
+Resources/Scripts/GamePlay/GroundHookedState.lua
+Resources/Scripts/GamePlay/GroundHookedState.lua.meta
+Resources/Scripts/GamePlay/GroundHurtState.lua
+Resources/Scripts/GamePlay/GroundHurtState.lua.meta
+Resources/Scripts/GamePlay/GroundIdleState.lua
+Resources/Scripts/GamePlay/GroundIdleState.lua.meta
+Resources/Scripts/GamePlay/GroundPatrolState.lua
+Resources/Scripts/GamePlay/GroundPatrolState.lua.meta
 Resources/Scripts/GamePlay/KnifeLogic.lua
 Resources/Scripts/GamePlay/KnifeLogic.lua.meta
+Resources/Scripts/GamePlay/KnifePool.lua
+Resources/Scripts/GamePlay/KnifePool.lua.meta
+Resources/Scripts/GamePlay/PlayerMovement(Updated).lua
+Resources/Scripts/GamePlay/PlayerMovement(Updated).lua.meta
+Resources/Scripts/GamePlay/StateMachine.lua
+Resources/Scripts/GamePlay/StateMachine.lua.meta
 Resources/Scripts/main_menu.lua
 Resources/Scripts/main_menu.lua.meta
 Resources/Scripts/PlayerAttack.lua
@@ -465,6 +476,8 @@ Resources/Scripts/template/CharacterTest.lua
 Resources/Scripts/template/CharacterTest.lua.meta
 Resources/Scripts/template/data_chest.lua
 Resources/Scripts/template/data_chest.lua.meta
+Resources/Scripts/template/DynamicTesting.lua
+Resources/Scripts/template/DynamicTesting.lua.meta
 Resources/Scripts/template/input.lua
 Resources/Scripts/template/input.lua.meta
 Resources/Scripts/template/listener.lua
@@ -487,12 +500,33 @@ Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
 Resources/Scripts/test_audio.lua
 Resources/Scripts/test_audio.lua.meta
+Resources/Scripts/UI/AndroidOnly.lua
+Resources/Scripts/UI/AndroidOnly.lua.meta
 Resources/Scripts/UI/ButtonHover.lua
 Resources/Scripts/UI/ButtonHover.lua.meta
+Resources/Scripts/UI/HoverHighlightButtons.lua
+Resources/Scripts/UI/HoverHighlightButtons.lua.meta
+Resources/Scripts/UI/JoystickVisual.lua
+Resources/Scripts/UI/JoystickVisual.lua.meta
+Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua
+Resources/Scripts/UI/MainMenuSettings/BgmSlider.lua.meta
+Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua
+Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua.meta
+Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua
+Resources/Scripts/UI/MainMenuSettings/MasterSlider.lua.meta
+Resources/Scripts/UI/MainMenuSettings/SettingButton.lua
+Resources/Scripts/UI/MainMenuSettings/SettingButton.lua.meta
+Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua
+Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua.meta
 Resources/Scripts/UI/PlayButton.lua
 Resources/Scripts/UI/PlayButton.lua.meta
+Resources/Scripts/UI/QuitButton.lua
+Resources/Scripts/UI/QuitButton.lua.meta
+Resources/Scripts/UI/SliderTest.lua
+Resources/Scripts/UI/SliderTest.lua.meta
 Resources/Shaders/debug.frag
 Resources/Shaders/debug.meta
+Resources/Shaders/debug.shader
 Resources/Shaders/debug.vert
 Resources/Shaders/debugandroid.frag
 Resources/Shaders/debugandroid.meta
@@ -500,6 +534,7 @@ Resources/Shaders/debugandroid.shader
 Resources/Shaders/debugandroid.vert
 Resources/Shaders/default.frag
 Resources/Shaders/default.meta
+Resources/Shaders/default.shader
 Resources/Shaders/default.vert
 Resources/Shaders/defaultandroid.frag
 Resources/Shaders/defaultandroid.meta
@@ -511,6 +546,7 @@ Resources/Shaders/light.shader
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.frag
 Resources/Shaders/lightandroid.meta
+Resources/Shaders/lightandroid.shader
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.frag
 Resources/Shaders/particle.meta
@@ -522,6 +558,7 @@ Resources/Shaders/particleandroid.shader
 Resources/Shaders/particleandroid.vert
 Resources/Shaders/skybox.frag
 Resources/Shaders/skybox.meta
+Resources/Shaders/skybox.shader
 Resources/Shaders/skybox.vert
 Resources/Shaders/skyboxandroid.frag
 Resources/Shaders/skyboxandroid.meta
@@ -533,21 +570,27 @@ Resources/Shaders/sprite.shader
 Resources/Shaders/sprite.vert
 Resources/Shaders/spriteandroid.frag
 Resources/Shaders/spriteandroid.meta
+Resources/Shaders/spriteandroid.shader
 Resources/Shaders/spriteandroid.vert
 Resources/Shaders/text.frag
 Resources/Shaders/text.meta
+Resources/Shaders/text.shader
 Resources/Shaders/text.vert
 Resources/Shaders/textandroid.frag
 Resources/Shaders/textandroid.meta
+Resources/Shaders/textandroid.shader
 Resources/Shaders/textandroid.vert
 Resources/Shaders/tonemapping.frag
 Resources/Shaders/tonemapping.meta
+Resources/Shaders/tonemapping.shader
 Resources/Shaders/tonemapping.vert
 Resources/Shaders/tonemappingandroid.frag
 Resources/Shaders/tonemappingandroid.meta
+Resources/Shaders/tonemappingandroid.shader
 Resources/Shaders/tonemappingandroid.vert
 Resources/Shaders/virtualcontrolsandroid.frag
 Resources/Shaders/virtualcontrolsandroid.meta
+Resources/Shaders/virtualcontrolsandroid.shader
 Resources/Shaders/virtualcontrolsandroid.vert
 Resources/Sprites/MainMenuUI/barmid_ready.dds
 Resources/Sprites/MainMenuUI/barmid_ready.png
@@ -591,6 +634,9 @@ Resources/Sprites/PlayerHUD/SwordPCicon.png.meta
 Resources/Sprites/PlayerHUD/Underline.dds
 Resources/Sprites/PlayerHUD/Underline.png
 Resources/Sprites/PlayerHUD/Underline.png.meta
+Resources/Sprites/PlayerHUD/WhiteCircle.dds
+Resources/Sprites/PlayerHUD/WhiteCircle.png
+Resources/Sprites/PlayerHUD/WhiteCircle.png.meta
 Resources/Textures/awesomeface.dds
 Resources/Textures/awesomeface.png
 Resources/Textures/awesomeface.png.meta
@@ -690,3 +736,4 @@ Resources/Textures/Wall Pillar.jpg.meta
 Resources/Textures/wooden_container.dds
 Resources/Textures/wooden_container.jpg
 Resources/Textures/wooden_container.jpg.meta
+Resources/Configs/input_config.json

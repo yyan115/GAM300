@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0027b6d5df717b3f-00037ede34000001",
+        "source": "../../Resources/Scripts/template/DynamicTesting.lua",
+        "compiled": "../../Resources/Scripts/template/DynamicTesting.lua",
+        "android_compiled": "Resources/Scripts/template/DynamicTesting.lua"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0054fb434c423092-0003e802a6000003",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/SettingButton.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/SettingButton.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/SettingButton.lua"
+    }
+}

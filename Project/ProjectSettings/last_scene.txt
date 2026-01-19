@@ -1,1 +1,1 @@
-../../Resources/Scenes/WJ_CHAIN.scene
+Resources/Scenes/M3_Gameplay.scene

@@ -20,6 +20,7 @@
 #include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 #include "UI/Button/ButtonSystem.hpp"
 #include "UI/Slider/SliderSystem.hpp"
+#include "UI/Anchor/UIAnchorSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
 class CharacterControllerSystem;
@@ -36,7 +37,7 @@ public:
 
 	void ENGINE_API DestroyEntity(Entity entity);
 
-	void ClearAllEntities();
+	void ENGINE_API ClearAllEntities();
 
 	template <typename T>
 	void RegisterComponent() {
@@ -150,6 +151,7 @@ public:
 	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
 	std::shared_ptr<ButtonSystem> buttonSystem;
 	std::shared_ptr<SliderSystem> sliderSystem;
+	std::shared_ptr<UIAnchorSystem> uiAnchorSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

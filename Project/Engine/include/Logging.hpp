@@ -64,7 +64,7 @@ namespace EngineLogging {
     bool Initialize();
     
     // Shutdown the logging system
-    void Shutdown();
+    ENGINE_API void Shutdown();
     
     // Get the GUI log queue for the editor
     ENGINE_API GuiLogQueue& GetGuiLogQueue();
