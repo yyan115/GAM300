@@ -15,6 +15,19 @@ struct Vector2D {
 };
 
 // ============================================================================
+// TOUCH INFO (for full touch tracking - phases, IDs, etc.)
+// ============================================================================
+struct TouchInfo {
+    int id = -1;                    // Unique finger ID (persists while finger is down)
+    std::string phase = "none";     // "began", "moved", "stationary", "ended"
+    Vector2D position;              // Current position (normalized 0-1)
+    Vector2D startPosition;         // Where the touch started
+    Vector2D delta;                 // Movement since last frame
+    std::string entity = "";        // Entity name if touch is on UI, empty string if none
+    float duration = 0.0f;          // How long the touch has been active (seconds)
+};
+
+// ============================================================================
 // INPUT SYSTEM WRAPPERS
 // ============================================================================
 #include "Input/Keys.h"
@@ -96,6 +109,75 @@ namespace InputWrappers {
         if (!g_inputManager) return Vector2D(0.0f, 0.0f);
         glm::vec2 pos = g_inputManager->GetTouchPosition(index);
         return Vector2D(pos.x, pos.y);
+    }
+
+    // Entity-based touch position (for joysticks - Android)
+    // Returns touch position relative to entity center in game units
+    inline Vector2D GetActionTouchPosition(const std::string& action) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetActionTouchPosition(action);
+        return Vector2D(pos.x, pos.y);
+    }
+
+    // Camera drag support (Android - unhandled touches)
+    inline bool IsDragging() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsDragging();
+    }
+
+    inline Vector2D GetDragDelta() {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 delta = g_inputManager->GetDragDelta();
+        return Vector2D(delta.x, delta.y);
+    }
+
+    // ========== Full Touch System ==========
+
+    // Convert phase enum to string for Lua
+    inline std::string PhaseToString(InputManager::TouchPhase phase) {
+        switch (phase) {
+            case InputManager::TouchPhase::Began: return "began";
+            case InputManager::TouchPhase::Moved: return "moved";
+            case InputManager::TouchPhase::Stationary: return "stationary";
+            case InputManager::TouchPhase::Ended: return "ended";
+            default: return "none";
+        }
+    }
+
+    // Get all touches as a vector of TouchInfo
+    inline std::vector<TouchInfo> GetTouches() {
+        std::vector<TouchInfo> result;
+        if (!g_inputManager) return result;
+
+        auto touches = g_inputManager->GetTouches();
+        for (const auto& t : touches) {
+            TouchInfo info;
+            info.id = t.id;
+            info.phase = PhaseToString(t.phase);
+            info.position = Vector2D(t.position.x, t.position.y);
+            info.startPosition = Vector2D(t.startPosition.x, t.startPosition.y);
+            info.delta = Vector2D(t.delta.x, t.delta.y);
+            info.entity = t.entityName;
+            info.duration = t.duration;
+            result.push_back(info);
+        }
+        return result;
+    }
+
+    // Get a specific touch by ID
+    inline TouchInfo GetTouchById(int touchId) {
+        TouchInfo info;
+        if (!g_inputManager) return info;
+
+        auto t = g_inputManager->GetTouchById(touchId);
+        info.id = t.id;
+        info.phase = PhaseToString(t.phase);
+        info.position = Vector2D(t.position.x, t.position.y);
+        info.startPosition = Vector2D(t.startPosition.x, t.startPosition.y);
+        info.delta = Vector2D(t.delta.x, t.delta.y);
+        info.entity = t.entityName;
+        info.duration = t.duration;
+        return info;
     }
 }
 
