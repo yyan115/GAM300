@@ -147,40 +147,40 @@ void Serializer::SerializeScene(const std::string& scenePath) {
     rapidjson::Document::AllocatorType& alloc = doc.GetAllocator();
     rapidjson::Value entitiesArr(rapidjson::kArrayType);
 
-    // helper lambda to serialize a component instance (via reflection) into a rapidjson::Value
-    auto serializeComponentToValue = [&](auto& compInstance) -> rapidjson::Value {
-        using CompT = std::decay_t<decltype(compInstance)>;
-        rapidjson::Value val; val.SetNull();
+    //// helper lambda to serialize a component instance (via reflection) into a rapidjson::Value
+    //auto SerializeComponentToValue = [&](auto& compInstance) -> rapidjson::Value {
+    //    using CompT = std::decay_t<decltype(compInstance)>;
+    //    rapidjson::Value val; val.SetNull();
 
-        try {
-            TypeDescriptor* td = TypeResolver<CompT>::Get();
-            std::stringstream ss;
-            td->Serialize(&compInstance, ss);
-            std::string s = ss.str();
+    //    try {
+    //        TypeDescriptor* td = TypeResolver<CompT>::Get();
+    //        std::stringstream ss;
+    //        td->Serialize(&compInstance, ss);
+    //        std::string s = ss.str();
 
-            // parse the serialized string to a temporary document
-            rapidjson::Document tmp;
-            if (tmp.Parse(s.c_str()).HasParseError()) {
-                // If parse fails, store the raw string instead
-                rapidjson::Value strVal;
-                strVal.SetString(s.c_str(), static_cast<rapidjson::SizeType>(s.size()), alloc);
-                val = strVal;
-            }
-            else {
-                // copy tmp into val using allocator
-                val.CopyFrom(tmp, alloc);
-            }
-        }
-        catch (const std::exception& ex) {
-            std::cerr << "[SaveScene] reflection serialize exception: " << ex.what() << "\n";
-            // leave val as null
-        }
-        catch (...) {
-            std::cerr << "[SaveScene] unknown exception during component serialization\n";
-        }
+    //        // parse the serialized string to a temporary document
+    //        rapidjson::Document tmp;
+    //        if (tmp.Parse(s.c_str()).HasParseError()) {
+    //            // If parse fails, store the raw string instead
+    //            rapidjson::Value strVal;
+    //            strVal.SetString(s.c_str(), static_cast<rapidjson::SizeType>(s.size()), alloc);
+    //            val = strVal;
+    //        }
+    //        else {
+    //            // copy tmp into val using allocator
+    //            val.CopyFrom(tmp, alloc);
+    //        }
+    //    }
+    //    catch (const std::exception& ex) {
+    //        std::cerr << "[SaveScene] reflection serialize exception: " << ex.what() << "\n";
+    //        // leave val as null
+    //    }
+    //    catch (...) {
+    //        std::cerr << "[SaveScene] unknown exception during component serialization\n";
+    //    }
 
-        return val;
-        };
+    //    return val;
+    //    };
 
     // Get ECS manager (guard in case there's no active manager)
     ECSManager* ecsPtr = nullptr;
@@ -192,388 +192,391 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         return;
     }
     ECSManager& ecs = *ecsPtr;
-    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    //auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
     // Iterate entities
     for (auto entity : ecs.GetAllEntities())
     {
-        rapidjson::Value entObj(rapidjson::kObjectType);
+        //rapidjson::Value entObj(rapidjson::kObjectType);
 
-        // add entity id (assumes entity is integer-like)
-        {
-            rapidjson::Value idv;
-            idv.SetUint64(static_cast<uint64_t>(entity)); // adapt if entity type differs
-            entObj.AddMember("id", idv, alloc);
-            // convert GUID to string
-            GUID_string entityGUIDStr =
-                GUIDUtilities::ConvertGUID128ToString(
-                    guidRegistry.GetGUIDByEntity(static_cast<Entity>(entity)));
+        //// add entity id (assumes entity is integer-like)
+        //{
+        //    rapidjson::Value idv;
+        //    idv.SetUint64(static_cast<uint64_t>(entity)); // adapt if entity type differs
+        //    entObj.AddMember("id", idv, alloc);
+        //    // convert GUID to string
+        //    GUID_string entityGUIDStr =
+        //        GUIDUtilities::ConvertGUID128ToString(
+        //            guidRegistry.GetGUIDByEntity(static_cast<Entity>(entity)));
 
-            // create a RapidJSON string value with allocator
-            rapidjson::Value guidv;
-            guidv.SetString(entityGUIDStr.c_str(),
-                static_cast<rapidjson::SizeType>(entityGUIDStr.length()),
-                alloc);
+        //    // create a RapidJSON string value with allocator
+        //    rapidjson::Value guidv;
+        //    guidv.SetString(entityGUIDStr.c_str(),
+        //        static_cast<rapidjson::SizeType>(entityGUIDStr.length()),
+        //        alloc);
 
-            entObj.AddMember("guid", guidv, alloc);
-        }
-
-        rapidjson::Value compsObj(rapidjson::kObjectType);
-
-        // For each component type, if entity has it, serialize and attach under its name
-        if (ecs.HasComponent<NameComponent>(entity)) {
-            auto& c = ecs.GetComponent<NameComponent>(entity);
-
-            // Build { "name": "<the name>" } object
-            rapidjson::Value nameObj(rapidjson::kObjectType);
-            rapidjson::Value nameStr;
-            nameStr.SetString(c.name.c_str(),
-                static_cast<rapidjson::SizeType>(c.name.size()),
-                alloc);
-            nameObj.AddMember(rapidjson::Value("name", alloc).Move(), nameStr, alloc);
-
-            // Add under "NameComponent" key (ensure key uses allocator)
-            compsObj.AddMember(rapidjson::Value("NameComponent", alloc).Move(),
-                nameObj,
-                alloc);
-        }
-        if (ecs.HasComponent<TagComponent>(entity)) {
-            auto& c = ecs.GetComponent<TagComponent>(entity);
-            rapidjson::Value tagObj(rapidjson::kObjectType);
-            rapidjson::Value indexVal;
-            indexVal.SetInt(c.tagIndex);
-            tagObj.AddMember(rapidjson::Value("tagIndex", alloc).Move(), indexVal, alloc);
-            compsObj.AddMember(rapidjson::Value("TagComponent", alloc).Move(), tagObj, alloc);
-        }
-        if (ecs.HasComponent<LayerComponent>(entity)) {
-            auto& c = ecs.GetComponent<LayerComponent>(entity);
-            rapidjson::Value layerObj(rapidjson::kObjectType);
-            rapidjson::Value indexVal;
-            indexVal.SetInt(c.layerIndex);
-            layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
-            compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
-        }
-        if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
-            auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
-            rapidjson::Value siblingObj(rapidjson::kObjectType);
-            rapidjson::Value indexVal;
-            indexVal.SetInt(c.siblingIndex);
-            siblingObj.AddMember(rapidjson::Value("siblingIndex", alloc).Move(), indexVal, alloc);
-            compsObj.AddMember(rapidjson::Value("SiblingIndexComponent", alloc).Move(), siblingObj, alloc);
-        }
-        if (ecs.HasComponent<Transform>(entity)) {
-            auto& c = ecs.GetComponent<Transform>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("Transform", v, alloc);
-        }
-        if (ecs.HasComponent<ModelRenderComponent>(entity)) {
-            auto& c = ecs.GetComponent<ModelRenderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ModelRenderComponent", v, alloc);
-        }
-        if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
-            auto& c = ecs.GetComponent<SpriteRenderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("SpriteRenderComponent", v, alloc);
-        }
-        if (ecs.HasComponent<SpriteAnimationComponent>(entity)) {
-            auto& c = ecs.GetComponent<SpriteAnimationComponent>(entity);
-
-            // Custom serialization to include UV coordinates
-            rapidjson::Value animValue(rapidjson::kObjectType);
-
-            // Serialize clips array
-            rapidjson::Value clipsArray(rapidjson::kArrayType);
-            for (const auto& clip : c.clips) {
-                rapidjson::Value clipObj(rapidjson::kObjectType);
-                clipObj.AddMember("name", rapidjson::Value(clip.name.c_str(), alloc), alloc);
-                clipObj.AddMember("loop", clip.loop, alloc);
-
-                // Serialize frames with UV coordinates
-                rapidjson::Value framesArray(rapidjson::kArrayType);
-                for (const auto& frame : clip.frames) {
-                    rapidjson::Value frameObj(rapidjson::kObjectType);
-
-                    // Texture GUID
-                    std::string guidStr = GUIDUtilities::ConvertGUID128ToString(frame.textureGUID);
-                    frameObj.AddMember("textureGUID", rapidjson::Value(guidStr.c_str(), alloc), alloc);
-                    frameObj.AddMember("texturePath", rapidjson::Value(frame.texturePath.c_str(), alloc), alloc);
-
-                    // UV coordinates - MANUALLY SERIALIZE
-                    rapidjson::Value uvOffsetArray(rapidjson::kArrayType);
-                    uvOffsetArray.PushBack(frame.uvOffset.x, alloc);
-                    uvOffsetArray.PushBack(frame.uvOffset.y, alloc);
-                    frameObj.AddMember("uvOffset", uvOffsetArray, alloc);
-
-                    rapidjson::Value uvScaleArray(rapidjson::kArrayType);
-                    uvScaleArray.PushBack(frame.uvScale.x, alloc);
-                    uvScaleArray.PushBack(frame.uvScale.y, alloc);
-                    frameObj.AddMember("uvScale", uvScaleArray, alloc);
-
-                    frameObj.AddMember("duration", frame.duration, alloc);
-                    framesArray.PushBack(frameObj, alloc);
-                }
-                clipObj.AddMember("frames", framesArray, alloc);
-                clipsArray.PushBack(clipObj, alloc);
-            }
-            animValue.AddMember("clips", clipsArray, alloc);
-
-            // Other fields
-            animValue.AddMember("currentClipIndex", c.currentClipIndex, alloc);
-            animValue.AddMember("currentFrameIndex", c.currentFrameIndex, alloc);
-            animValue.AddMember("timeInCurrentFrame", c.timeInCurrentFrame, alloc);
-            animValue.AddMember("playbackSpeed", c.playbackSpeed, alloc);
-            animValue.AddMember("playing", c.playing, alloc);
-            animValue.AddMember("enabled", c.enabled, alloc);
-            animValue.AddMember("autoPlay", c.autoPlay, alloc);
-
-            compsObj.AddMember("SpriteAnimationComponent", animValue, alloc);
-        }
-        if (ecs.HasComponent<TextRenderComponent>(entity)) {
-            auto& c = ecs.GetComponent<TextRenderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("TextRenderComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ParticleComponent>(entity)) {
-            auto& c = ecs.GetComponent<ParticleComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ParticleComponent", v, alloc);
-        }
-        //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
-        //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
-        //    rapidjson::Value v = serializeComponentToValue(c);
-        //    compsObj.AddMember("DebugDrawComponent", v, alloc);
+        //    entObj.AddMember("guid", guidv, alloc);
         //}
-        if (ecs.HasComponent<ChildrenComponent>(entity)) {
-            auto& c = ecs.GetComponent<ChildrenComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ChildrenComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ParentComponent>(entity)) {
-            auto& c = ecs.GetComponent<ParentComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ParentComponent", v, alloc);
-        }
 
-        if (ecs.HasComponent<AudioComponent>(entity)) {
-            auto& c = ecs.GetComponent<AudioComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("AudioComponent", v, alloc);
-        }
-        if (ecs.HasComponent<AudioListenerComponent>(entity)) {
-            auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("AudioListenerComponent", v, alloc);
-        }
-        if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
-            auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
-        }
-        if (ecs.HasComponent<LightComponent>(entity)) {
-            auto& c = ecs.GetComponent<LightComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("LightComponent", v, alloc);
-        }
-        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
-            auto& c = ecs.GetComponent<DirectionalLightComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("DirectionalLightComponent", v, alloc);
-        }
-        if (ecs.HasComponent<PointLightComponent>(entity)) {
-            auto& c = ecs.GetComponent<PointLightComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("PointLightComponent", v, alloc);
-        }
-        if (ecs.HasComponent<SpotLightComponent>(entity)) {
-            auto& c = ecs.GetComponent<SpotLightComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("SpotLightComponent", v, alloc);
-        }
-        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
-            auto& c = ecs.GetComponent<RigidBodyComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("RigidBodyComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ColliderComponent>(entity)) {
-            auto& c = ecs.GetComponent<ColliderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ColliderComponent", v, alloc);
-        }
-        if (ecs.HasComponent<CameraComponent>(entity)) {
-            auto& c = ecs.GetComponent<CameraComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
+        //rapidjson::Value compsObj(rapidjson::kObjectType);
 
-            // Add custom serialization for target and up (glm::vec3)
-            rapidjson::Value targetVal(rapidjson::kObjectType);
-            targetVal.AddMember("type", "glm::vec3", alloc);
-            rapidjson::Value targetData(rapidjson::kArrayType);
-            targetData.PushBack(c.target.x, alloc);
-            targetData.PushBack(c.target.y, alloc);
-            targetData.PushBack(c.target.z, alloc);
-            targetVal.AddMember("data", targetData, alloc);
-            v.AddMember("target", targetVal, alloc);
+        //// For each component type, if entity has it, serialize and attach under its name
+        //if (ecs.HasComponent<NameComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<NameComponent>(entity);
 
-            rapidjson::Value upVal(rapidjson::kObjectType);
-            upVal.AddMember("type", "glm::vec3", alloc);
-            rapidjson::Value upData(rapidjson::kArrayType);
-            upData.PushBack(c.up.x, alloc);
-            upData.PushBack(c.up.y, alloc);
-            upData.PushBack(c.up.z, alloc);
-            upVal.AddMember("data", upData, alloc);
-            v.AddMember("up", upVal, alloc);
+        //    // Build { "name": "<the name>" } object
+        //    rapidjson::Value nameObj(rapidjson::kObjectType);
+        //    rapidjson::Value nameStr;
+        //    nameStr.SetString(c.name.c_str(),
+        //        static_cast<rapidjson::SizeType>(c.name.size()),
+        //        alloc);
+        //    nameObj.AddMember(rapidjson::Value("name", alloc).Move(), nameStr, alloc);
 
-            // Add custom serialization for backgroundColor (glm::vec3)
-            rapidjson::Value bgColorVal(rapidjson::kObjectType);
-            bgColorVal.AddMember("type", "glm::vec3", alloc);
-            rapidjson::Value bgColorData(rapidjson::kArrayType);
-            bgColorData.PushBack(c.backgroundColor.x, alloc);
-            bgColorData.PushBack(c.backgroundColor.y, alloc);
-            bgColorData.PushBack(c.backgroundColor.z, alloc);
-            bgColorVal.AddMember("data", bgColorData, alloc);
-            v.AddMember("backgroundColor", bgColorVal, alloc);
+        //    // Add under "NameComponent" key (ensure key uses allocator)
+        //    compsObj.AddMember(rapidjson::Value("NameComponent", alloc).Move(),
+        //        nameObj,
+        //        alloc);
+        //}
+        //if (ecs.HasComponent<TagComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<TagComponent>(entity);
+        //    rapidjson::Value tagObj(rapidjson::kObjectType);
+        //    rapidjson::Value indexVal;
+        //    indexVal.SetInt(c.tagIndex);
+        //    tagObj.AddMember(rapidjson::Value("tagIndex", alloc).Move(), indexVal, alloc);
+        //    compsObj.AddMember(rapidjson::Value("TagComponent", alloc).Move(), tagObj, alloc);
+        //}
+        //if (ecs.HasComponent<LayerComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<LayerComponent>(entity);
+        //    rapidjson::Value layerObj(rapidjson::kObjectType);
+        //    rapidjson::Value indexVal;
+        //    indexVal.SetInt(c.layerIndex);
+        //    layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
+        //    compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
+        //}
+        //if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
+        //    rapidjson::Value siblingObj(rapidjson::kObjectType);
+        //    rapidjson::Value indexVal;
+        //    indexVal.SetInt(c.siblingIndex);
+        //    siblingObj.AddMember(rapidjson::Value("siblingIndex", alloc).Move(), indexVal, alloc);
+        //    compsObj.AddMember(rapidjson::Value("SiblingIndexComponent", alloc).Move(), siblingObj, alloc);
+        //}
+        //if (ecs.HasComponent<Transform>(entity)) {
+        //    auto& c = ecs.GetComponent<Transform>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("Transform", v, alloc);
+        //}
+        //if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ModelRenderComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ModelRenderComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<SpriteRenderComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("SpriteRenderComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<SpriteAnimationComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<SpriteAnimationComponent>(entity);
 
-            // Add custom serialization for clearFlags (enum as int)
-            v.AddMember("clearFlags", static_cast<int>(c.clearFlags), alloc);
+        //    // Custom serialization to include UV coordinates
+        //    rapidjson::Value animValue(rapidjson::kObjectType);
 
-            // Add custom serialization for projectionType (enum as int)
-            v.AddMember("projectionType", static_cast<int>(c.projectionType), alloc);
+        //    // Serialize clips array
+        //    rapidjson::Value clipsArray(rapidjson::kArrayType);
+        //    for (const auto& clip : c.clips) {
+        //        rapidjson::Value clipObj(rapidjson::kObjectType);
+        //        clipObj.AddMember("name", rapidjson::Value(clip.name.c_str(), alloc), alloc);
+        //        clipObj.AddMember("loop", clip.loop, alloc);
 
-            // Add custom serialization for useSkybox
-            v.AddMember("useSkybox", c.useSkybox, alloc);
+        //        // Serialize frames with UV coordinates
+        //        rapidjson::Value framesArray(rapidjson::kArrayType);
+        //        for (const auto& frame : clip.frames) {
+        //            rapidjson::Value frameObj(rapidjson::kObjectType);
 
-            // Add custom serialization for skyboxTexturePath
-            rapidjson::Value skyboxPathVal;
-            skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
-            v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+        //            // Texture GUID
+        //            std::string guidStr = GUIDUtilities::ConvertGUID128ToString(frame.textureGUID);
+        //            frameObj.AddMember("textureGUID", rapidjson::Value(guidStr.c_str(), alloc), alloc);
+        //            frameObj.AddMember("texturePath", rapidjson::Value(frame.texturePath.c_str(), alloc), alloc);
 
-            compsObj.AddMember("CameraComponent", v, alloc);
-        }
-        if (ecs.HasComponent<AnimationComponent>(entity)) {
-            auto& c = ecs.GetComponent<AnimationComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("AnimationComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ActiveComponent>(entity)) {
-            auto& c = ecs.GetComponent<ActiveComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ActiveComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ScriptComponentData>(entity)) {
-            auto& scriptComp = ecs.GetComponent<ScriptComponentData>(entity);
-            rapidjson::Value scriptObj(rapidjson::kObjectType);
+        //            // UV coordinates - MANUALLY SERIALIZE
+        //            rapidjson::Value uvOffsetArray(rapidjson::kArrayType);
+        //            uvOffsetArray.PushBack(frame.uvOffset.x, alloc);
+        //            uvOffsetArray.PushBack(frame.uvOffset.y, alloc);
+        //            frameObj.AddMember("uvOffset", uvOffsetArray, alloc);
 
-            // NEW FORMAT: Save scripts as an array
-            rapidjson::Value scriptsArr(rapidjson::kArrayType);
+        //            rapidjson::Value uvScaleArray(rapidjson::kArrayType);
+        //            uvScaleArray.PushBack(frame.uvScale.x, alloc);
+        //            uvScaleArray.PushBack(frame.uvScale.y, alloc);
+        //            frameObj.AddMember("uvScale", uvScaleArray, alloc);
 
-            for (const auto& sd : scriptComp.scripts) {
-                rapidjson::Value scriptDataObj(rapidjson::kObjectType);
+        //            frameObj.AddMember("duration", frame.duration, alloc);
+        //            framesArray.PushBack(frameObj, alloc);
+        //        }
+        //        clipObj.AddMember("frames", framesArray, alloc);
+        //        clipsArray.PushBack(clipObj, alloc);
+        //    }
+        //    animValue.AddMember("clips", clipsArray, alloc);
 
-                // scriptGuidStr
-                rapidjson::Value sguid;
-                sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
-                scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
+        //    // Other fields
+        //    animValue.AddMember("currentClipIndex", c.currentClipIndex, alloc);
+        //    animValue.AddMember("currentFrameIndex", c.currentFrameIndex, alloc);
+        //    animValue.AddMember("timeInCurrentFrame", c.timeInCurrentFrame, alloc);
+        //    animValue.AddMember("playbackSpeed", c.playbackSpeed, alloc);
+        //    animValue.AddMember("playing", c.playing, alloc);
+        //    animValue.AddMember("enabled", c.enabled, alloc);
+        //    animValue.AddMember("autoPlay", c.autoPlay, alloc);
 
-                // scriptPath
-                rapidjson::Value sp;
-                sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
-                scriptDataObj.AddMember("scriptPath", sp, alloc);
+        //    compsObj.AddMember("SpriteAnimationComponent", animValue, alloc);
+        //}
+        //if (ecs.HasComponent<TextRenderComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<TextRenderComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("TextRenderComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ParticleComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ParticleComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ParticleComponent", v, alloc);
+        //}
+        ////if (ecs.HasComponent<DebugDrawComponent>(entity)) {
+        ////    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
+        ////    rapidjson::Value v = SerializeComponentToValue(c);
+        ////    compsObj.AddMember("DebugDrawComponent", v, alloc);
+        ////}
+        //if (ecs.HasComponent<ChildrenComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ChildrenComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ChildrenComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ParentComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ParentComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ParentComponent", v, alloc);
+        //}
 
-                // enabled
-                scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
+        //if (ecs.HasComponent<AudioComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<AudioComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("AudioComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<AudioListenerComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("AudioListenerComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<LightComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<LightComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("LightComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<DirectionalLightComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("DirectionalLightComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<PointLightComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<PointLightComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("PointLightComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<SpotLightComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<SpotLightComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("SpotLightComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<RigidBodyComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("RigidBodyComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ColliderComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ColliderComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ColliderComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<CameraComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<CameraComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
 
-                // preserveKeys array
-                rapidjson::Value pkArr(rapidjson::kArrayType);
-                for (const auto& k : sd.preserveKeys) {
-                    rapidjson::Value ks;
-                    ks.SetString(k.c_str(), static_cast<rapidjson::SizeType>(k.size()), alloc);
-                    pkArr.PushBack(ks, alloc);
-                }
-                scriptDataObj.AddMember("preserveKeys", pkArr, alloc);
+        //    // Add custom serialization for target and up (glm::vec3)
+        //    rapidjson::Value targetVal(rapidjson::kObjectType);
+        //    targetVal.AddMember("type", "glm::vec3", alloc);
+        //    rapidjson::Value targetData(rapidjson::kArrayType);
+        //    targetData.PushBack(c.target.x, alloc);
+        //    targetData.PushBack(c.target.y, alloc);
+        //    targetData.PushBack(c.target.z, alloc);
+        //    targetVal.AddMember("data", targetData, alloc);
+        //    v.AddMember("target", targetVal, alloc);
 
-                // entryFunction and autoInvokeEntry
-                rapidjson::Value entryVal;
-                entryVal.SetString(sd.entryFunction.c_str(), static_cast<rapidjson::SizeType>(sd.entryFunction.size()), alloc);
-                scriptDataObj.AddMember("entryFunction", entryVal, alloc);
-                scriptDataObj.AddMember("autoInvokeEntry", rapidjson::Value(sd.autoInvokeEntry), alloc);
+        //    rapidjson::Value upVal(rapidjson::kObjectType);
+        //    upVal.AddMember("type", "glm::vec3", alloc);
+        //    rapidjson::Value upData(rapidjson::kArrayType);
+        //    upData.PushBack(c.up.x, alloc);
+        //    upData.PushBack(c.up.y, alloc);
+        //    upData.PushBack(c.up.z, alloc);
+        //    upVal.AddMember("data", upData, alloc);
+        //    v.AddMember("up", upVal, alloc);
 
-                // instance state (best-effort): if runtime exists and instanceId valid, ask Scripting to serialize it
-                bool savedInstanceState = false;
-                if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
-                    try {
-                        if (Scripting::IsValidInstance(sd.instanceId)) {
-                            std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
-                            if (!instJson.empty()) {
-                                rapidjson::Document tmp;
-                                if (!tmp.Parse(instJson.c_str()).HasParseError()) {
-                                    rapidjson::Value instVal;
-                                    instVal.CopyFrom(tmp, alloc);
-                                    scriptDataObj.AddMember("instanceState", instVal, alloc);
-                                    savedInstanceState = true;
-                                }
-                                else {
-                                    // fallback: store as raw string
-                                    rapidjson::Value raw;
-                                    raw.SetString(instJson.c_str(), static_cast<rapidjson::SizeType>(instJson.size()), alloc);
-                                    scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
-                                    savedInstanceState = true;
-                                }
-                            }
-                        }
-                    }
-                    catch (const std::exception& e) {
-                        std::cerr << "[SerializeScene] Scripting::SerializeInstanceToJson failed: " << e.what() << "\n";
-                    }
-                    catch (...) {
-                        std::cerr << "[SerializeScene] unknown exception serializing script instance\n";
-                    }
-                }
+        //    // Add custom serialization for backgroundColor (glm::vec3)
+        //    rapidjson::Value bgColorVal(rapidjson::kObjectType);
+        //    bgColorVal.AddMember("type", "glm::vec3", alloc);
+        //    rapidjson::Value bgColorData(rapidjson::kArrayType);
+        //    bgColorData.PushBack(c.backgroundColor.x, alloc);
+        //    bgColorData.PushBack(c.backgroundColor.y, alloc);
+        //    bgColorData.PushBack(c.backgroundColor.z, alloc);
+        //    bgColorVal.AddMember("data", bgColorData, alloc);
+        //    v.AddMember("backgroundColor", bgColorVal, alloc);
 
-                // If no runtime instance was saved (EDIT mode), save pendingInstanceState instead
-                if (!savedInstanceState && !sd.pendingInstanceState.empty()) {
-                    ENGINE_PRINT("SAVE DEBUG: Saving pendingInstanceState for ", sd.scriptPath.c_str(), " (size=", sd.pendingInstanceState.size(), ")");
-                    rapidjson::Document tmp;
-                    if (!tmp.Parse(sd.pendingInstanceState.c_str()).HasParseError()) {
-                        rapidjson::Value instVal;
-                        instVal.CopyFrom(tmp, alloc);
-                        scriptDataObj.AddMember("instanceState", instVal, alloc);
-                        ENGINE_PRINT("  Saved as JSON object");
-                    }
-                    else {
-                        // fallback: store as raw string
-                        rapidjson::Value raw;
-                        raw.SetString(sd.pendingInstanceState.c_str(), static_cast<rapidjson::SizeType>(sd.pendingInstanceState.size()), alloc);
-                        scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
-                        ENGINE_PRINT("  Saved as raw string (parse error)");
-                    }
-                }
-                else if (!savedInstanceState) {
-                    ENGINE_PRINT("SAVE DEBUG: NOT saving pendingInstanceState for ", sd.scriptPath.c_str(), " (empty=", sd.pendingInstanceState.empty(), ")");
-                }
+        //    // Add custom serialization for clearFlags (enum as int)
+        //    v.AddMember("clearFlags", static_cast<int>(c.clearFlags), alloc);
 
-                scriptsArr.PushBack(scriptDataObj, alloc);
-            }
+        //    // Add custom serialization for projectionType (enum as int)
+        //    v.AddMember("projectionType", static_cast<int>(c.projectionType), alloc);
 
-            scriptObj.AddMember("scripts", scriptsArr, alloc);
-            compsObj.AddMember(rapidjson::Value("ScriptComponent", alloc).Move(), scriptObj, alloc);
-        }
-        if (ecs.HasComponent<BrainComponent>(entity)) {
-            auto& c = ecs.GetComponent<BrainComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("BrainComponent", v, alloc);
-        }
-        if (ecs.HasComponent<ButtonComponent>(entity)) {
-            auto& c = ecs.GetComponent<ButtonComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("ButtonComponent", v, alloc);
-        }
-        if (ecs.HasComponent<SliderComponent>(entity)) {
-            auto& c = ecs.GetComponent<SliderComponent>(entity);
-            rapidjson::Value v = serializeComponentToValue(c);
-            compsObj.AddMember("SliderComponent", v, alloc);
-        }
+        //    // Add custom serialization for useSkybox
+        //    v.AddMember("useSkybox", c.useSkybox, alloc);
 
-        entObj.AddMember("components", compsObj, alloc);
+        //    // Add custom serialization for skyboxTexturePath
+        //    rapidjson::Value skyboxPathVal;
+        //    skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
+        //    v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
+        //    compsObj.AddMember("CameraComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<AnimationComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<AnimationComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("AnimationComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ActiveComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ActiveComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ActiveComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ScriptComponentData>(entity)) {
+        //    auto& scriptComp = ecs.GetComponent<ScriptComponentData>(entity);
+        //    rapidjson::Value scriptObj(rapidjson::kObjectType);
+
+        //    // NEW FORMAT: Save scripts as an array
+        //    rapidjson::Value scriptsArr(rapidjson::kArrayType);
+
+        //    for (const auto& sd : scriptComp.scripts) {
+        //        rapidjson::Value scriptDataObj(rapidjson::kObjectType);
+
+        //        // scriptGuidStr
+        //        rapidjson::Value sguid;
+        //        sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
+        //        scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
+
+        //        // scriptPath
+        //        rapidjson::Value sp;
+        //        sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+        //        scriptDataObj.AddMember("scriptPath", sp, alloc);
+
+        //        // enabled
+        //        scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
+
+        //        // preserveKeys array
+        //        rapidjson::Value pkArr(rapidjson::kArrayType);
+        //        for (const auto& k : sd.preserveKeys) {
+        //            rapidjson::Value ks;
+        //            ks.SetString(k.c_str(), static_cast<rapidjson::SizeType>(k.size()), alloc);
+        //            pkArr.PushBack(ks, alloc);
+        //        }
+        //        scriptDataObj.AddMember("preserveKeys", pkArr, alloc);
+
+        //        // entryFunction and autoInvokeEntry
+        //        rapidjson::Value entryVal;
+        //        entryVal.SetString(sd.entryFunction.c_str(), static_cast<rapidjson::SizeType>(sd.entryFunction.size()), alloc);
+        //        scriptDataObj.AddMember("entryFunction", entryVal, alloc);
+        //        scriptDataObj.AddMember("autoInvokeEntry", rapidjson::Value(sd.autoInvokeEntry), alloc);
+
+        //        // instance state (best-effort): if runtime exists and instanceId valid, ask Scripting to serialize it
+        //        bool savedInstanceState = false;
+        //        if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
+        //            try {
+        //                if (Scripting::IsValidInstance(sd.instanceId)) {
+        //                    std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
+        //                    if (!instJson.empty()) {
+        //                        rapidjson::Document tmp;
+        //                        if (!tmp.Parse(instJson.c_str()).HasParseError()) {
+        //                            rapidjson::Value instVal;
+        //                            instVal.CopyFrom(tmp, alloc);
+        //                            scriptDataObj.AddMember("instanceState", instVal, alloc);
+        //                            savedInstanceState = true;
+        //                        }
+        //                        else {
+        //                            // fallback: store as raw string
+        //                            rapidjson::Value raw;
+        //                            raw.SetString(instJson.c_str(), static_cast<rapidjson::SizeType>(instJson.size()), alloc);
+        //                            scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+        //                            savedInstanceState = true;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (const std::exception& e) {
+        //                std::cerr << "[SerializeScene] Scripting::SerializeInstanceToJson failed: " << e.what() << "\n";
+        //            }
+        //            catch (...) {
+        //                std::cerr << "[SerializeScene] unknown exception serializing script instance\n";
+        //            }
+        //        }
+
+        //        // If no runtime instance was saved (EDIT mode), save pendingInstanceState instead
+        //        if (!savedInstanceState && !sd.pendingInstanceState.empty()) {
+        //            ENGINE_PRINT("SAVE DEBUG: Saving pendingInstanceState for ", sd.scriptPath.c_str(), " (size=", sd.pendingInstanceState.size(), ")");
+        //            rapidjson::Document tmp;
+        //            if (!tmp.Parse(sd.pendingInstanceState.c_str()).HasParseError()) {
+        //                rapidjson::Value instVal;
+        //                instVal.CopyFrom(tmp, alloc);
+        //                scriptDataObj.AddMember("instanceState", instVal, alloc);
+        //                ENGINE_PRINT("  Saved as JSON object");
+        //            }
+        //            else {
+        //                // fallback: store as raw string
+        //                rapidjson::Value raw;
+        //                raw.SetString(sd.pendingInstanceState.c_str(), static_cast<rapidjson::SizeType>(sd.pendingInstanceState.size()), alloc);
+        //                scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+        //                ENGINE_PRINT("  Saved as raw string (parse error)");
+        //            }
+        //        }
+        //        else if (!savedInstanceState) {
+        //            ENGINE_PRINT("SAVE DEBUG: NOT saving pendingInstanceState for ", sd.scriptPath.c_str(), " (empty=", sd.pendingInstanceState.empty(), ")");
+        //        }
+
+        //        scriptsArr.PushBack(scriptDataObj, alloc);
+        //    }
+
+        //    scriptObj.AddMember("scripts", scriptsArr, alloc);
+        //    compsObj.AddMember(rapidjson::Value("ScriptComponent", alloc).Move(), scriptObj, alloc);
+        //}
+        //if (ecs.HasComponent<BrainComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<BrainComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("BrainComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<ButtonComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<ButtonComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("ButtonComponent", v, alloc);
+        //}
+        //if (ecs.HasComponent<SliderComponent>(entity)) {
+        //    auto& c = ecs.GetComponent<SliderComponent>(entity);
+        //    rapidjson::Value v = SerializeComponentToValue(c);
+        //    compsObj.AddMember("SliderComponent", v, alloc);
+        //}
+
+        //entObj.AddMember("components", compsObj, alloc);
+
+        auto entObj = SerializeEntity(entity, alloc);
         entitiesArr.PushBack(entObj, alloc);
     }
 
@@ -672,6 +675,639 @@ void Serializer::SerializeScene(const std::string& scenePath) {
     }
 }
 
+rapidjson::Value Serializer::SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc) {
+    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    rapidjson::Value entObj(rapidjson::kObjectType);
+
+    // add entity id (assumes entity is integer-like)
+    {
+        rapidjson::Value idv;
+        idv.SetUint64(static_cast<uint64_t>(entity)); // adapt if entity type differs
+        entObj.AddMember("id", idv, alloc);
+        // convert GUID to string
+        GUID_string entityGUIDStr =
+            GUIDUtilities::ConvertGUID128ToString(
+                guidRegistry.GetGUIDByEntity(static_cast<Entity>(entity)));
+
+        // create a RapidJSON string value with allocator
+        rapidjson::Value guidv;
+        guidv.SetString(entityGUIDStr.c_str(),
+            static_cast<rapidjson::SizeType>(entityGUIDStr.length()),
+            alloc);
+
+        entObj.AddMember("guid", guidv, alloc);
+    }
+
+    return entObj;
+}
+
+rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc) {
+    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+	auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    rapidjson::Value entObj = SerializeEntityGUID(entity, alloc);
+
+    rapidjson::Value compsObj(rapidjson::kObjectType);
+
+    // For each component type, if entity has it, serialize and attach under its name
+    if (ecs.HasComponent<NameComponent>(entity)) {
+        auto& c = ecs.GetComponent<NameComponent>(entity);
+
+        // Build { "name": "<the name>" } object
+        rapidjson::Value nameObj(rapidjson::kObjectType);
+        rapidjson::Value nameStr;
+        nameStr.SetString(c.name.c_str(),
+            static_cast<rapidjson::SizeType>(c.name.size()),
+            alloc);
+        nameObj.AddMember(rapidjson::Value("name", alloc).Move(), nameStr, alloc);
+
+        // Add under "NameComponent" key (ensure key uses allocator)
+        compsObj.AddMember(rapidjson::Value("NameComponent", alloc).Move(),
+            nameObj,
+            alloc);
+    }
+    if (ecs.HasComponent<TagComponent>(entity)) {
+        auto& c = ecs.GetComponent<TagComponent>(entity);
+        rapidjson::Value tagObj(rapidjson::kObjectType);
+        rapidjson::Value indexVal;
+        indexVal.SetInt(c.tagIndex);
+        tagObj.AddMember(rapidjson::Value("tagIndex", alloc).Move(), indexVal, alloc);
+        compsObj.AddMember(rapidjson::Value("TagComponent", alloc).Move(), tagObj, alloc);
+    }
+    if (ecs.HasComponent<LayerComponent>(entity)) {
+        auto& c = ecs.GetComponent<LayerComponent>(entity);
+        rapidjson::Value layerObj(rapidjson::kObjectType);
+        rapidjson::Value indexVal;
+        indexVal.SetInt(c.layerIndex);
+        layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
+        compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
+    }
+    if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
+        auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
+        rapidjson::Value siblingObj(rapidjson::kObjectType);
+        rapidjson::Value indexVal;
+        indexVal.SetInt(c.siblingIndex);
+        siblingObj.AddMember(rapidjson::Value("siblingIndex", alloc).Move(), indexVal, alloc);
+        compsObj.AddMember(rapidjson::Value("SiblingIndexComponent", alloc).Move(), siblingObj, alloc);
+    }
+    if (ecs.HasComponent<Transform>(entity)) {
+        auto& c = ecs.GetComponent<Transform>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("Transform", v, alloc);
+    }
+    if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+        auto& c = ecs.GetComponent<ModelRenderComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ModelRenderComponent", v, alloc);
+    }
+    if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+        auto& c = ecs.GetComponent<SpriteRenderComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("SpriteRenderComponent", v, alloc);
+    }
+    if (ecs.HasComponent<SpriteAnimationComponent>(entity)) {
+        auto& c = ecs.GetComponent<SpriteAnimationComponent>(entity);
+
+        // Custom serialization to include UV coordinates
+        rapidjson::Value animValue(rapidjson::kObjectType);
+
+        // Serialize clips array
+        rapidjson::Value clipsArray(rapidjson::kArrayType);
+        for (const auto& clip : c.clips) {
+            rapidjson::Value clipObj(rapidjson::kObjectType);
+            clipObj.AddMember("name", rapidjson::Value(clip.name.c_str(), alloc), alloc);
+            clipObj.AddMember("loop", clip.loop, alloc);
+
+            // Serialize frames with UV coordinates
+            rapidjson::Value framesArray(rapidjson::kArrayType);
+            for (const auto& frame : clip.frames) {
+                rapidjson::Value frameObj(rapidjson::kObjectType);
+
+                // Texture GUID
+                std::string guidStr = GUIDUtilities::ConvertGUID128ToString(frame.textureGUID);
+                frameObj.AddMember("textureGUID", rapidjson::Value(guidStr.c_str(), alloc), alloc);
+                frameObj.AddMember("texturePath", rapidjson::Value(frame.texturePath.c_str(), alloc), alloc);
+
+                // UV coordinates - MANUALLY SERIALIZE
+                rapidjson::Value uvOffsetArray(rapidjson::kArrayType);
+                uvOffsetArray.PushBack(frame.uvOffset.x, alloc);
+                uvOffsetArray.PushBack(frame.uvOffset.y, alloc);
+                frameObj.AddMember("uvOffset", uvOffsetArray, alloc);
+
+                rapidjson::Value uvScaleArray(rapidjson::kArrayType);
+                uvScaleArray.PushBack(frame.uvScale.x, alloc);
+                uvScaleArray.PushBack(frame.uvScale.y, alloc);
+                frameObj.AddMember("uvScale", uvScaleArray, alloc);
+
+                frameObj.AddMember("duration", frame.duration, alloc);
+                framesArray.PushBack(frameObj, alloc);
+            }
+            clipObj.AddMember("frames", framesArray, alloc);
+            clipsArray.PushBack(clipObj, alloc);
+        }
+        animValue.AddMember("clips", clipsArray, alloc);
+
+        // Other fields
+        animValue.AddMember("currentClipIndex", c.currentClipIndex, alloc);
+        animValue.AddMember("currentFrameIndex", c.currentFrameIndex, alloc);
+        animValue.AddMember("timeInCurrentFrame", c.timeInCurrentFrame, alloc);
+        animValue.AddMember("playbackSpeed", c.playbackSpeed, alloc);
+        animValue.AddMember("playing", c.playing, alloc);
+        animValue.AddMember("enabled", c.enabled, alloc);
+        animValue.AddMember("autoPlay", c.autoPlay, alloc);
+
+        compsObj.AddMember("SpriteAnimationComponent", animValue, alloc);
+    }
+    if (ecs.HasComponent<TextRenderComponent>(entity)) {
+        auto& c = ecs.GetComponent<TextRenderComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("TextRenderComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ParticleComponent>(entity)) {
+        auto& c = ecs.GetComponent<ParticleComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ParticleComponent", v, alloc);
+    }
+    //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
+    //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
+    //    rapidjson::Value v = SerializeComponentToValue(c);
+    //    compsObj.AddMember("DebugDrawComponent", v, alloc);
+    //}
+    if (ecs.HasComponent<ChildrenComponent>(entity)) {
+        auto& c = ecs.GetComponent<ChildrenComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ChildrenComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ParentComponent>(entity)) {
+        auto& c = ecs.GetComponent<ParentComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ParentComponent", v, alloc);
+    }
+
+    if (ecs.HasComponent<AudioComponent>(entity)) {
+        auto& c = ecs.GetComponent<AudioComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("AudioComponent", v, alloc);
+    }
+    if (ecs.HasComponent<AudioListenerComponent>(entity)) {
+        auto& c = ecs.GetComponent<AudioListenerComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("AudioListenerComponent", v, alloc);
+    }
+    if (ecs.HasComponent<AudioReverbZoneComponent>(entity)) {
+        auto& c = ecs.GetComponent<AudioReverbZoneComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("AudioReverbZoneComponent", v, alloc);
+    }
+    if (ecs.HasComponent<LightComponent>(entity)) {
+        auto& c = ecs.GetComponent<LightComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("LightComponent", v, alloc);
+    }
+    if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+        auto& c = ecs.GetComponent<DirectionalLightComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("DirectionalLightComponent", v, alloc);
+    }
+    if (ecs.HasComponent<PointLightComponent>(entity)) {
+        auto& c = ecs.GetComponent<PointLightComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("PointLightComponent", v, alloc);
+    }
+    if (ecs.HasComponent<SpotLightComponent>(entity)) {
+        auto& c = ecs.GetComponent<SpotLightComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("SpotLightComponent", v, alloc);
+    }
+    if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+        auto& c = ecs.GetComponent<RigidBodyComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("RigidBodyComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ColliderComponent>(entity)) {
+        auto& c = ecs.GetComponent<ColliderComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ColliderComponent", v, alloc);
+    }
+    if (ecs.HasComponent<CameraComponent>(entity)) {
+        auto& c = ecs.GetComponent<CameraComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+
+        // Add custom serialization for target and up (glm::vec3)
+        rapidjson::Value targetVal(rapidjson::kObjectType);
+        targetVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value targetData(rapidjson::kArrayType);
+        targetData.PushBack(c.target.x, alloc);
+        targetData.PushBack(c.target.y, alloc);
+        targetData.PushBack(c.target.z, alloc);
+        targetVal.AddMember("data", targetData, alloc);
+        v.AddMember("target", targetVal, alloc);
+
+        rapidjson::Value upVal(rapidjson::kObjectType);
+        upVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value upData(rapidjson::kArrayType);
+        upData.PushBack(c.up.x, alloc);
+        upData.PushBack(c.up.y, alloc);
+        upData.PushBack(c.up.z, alloc);
+        upVal.AddMember("data", upData, alloc);
+        v.AddMember("up", upVal, alloc);
+
+        // Add custom serialization for backgroundColor (glm::vec3)
+        rapidjson::Value bgColorVal(rapidjson::kObjectType);
+        bgColorVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value bgColorData(rapidjson::kArrayType);
+        bgColorData.PushBack(c.backgroundColor.x, alloc);
+        bgColorData.PushBack(c.backgroundColor.y, alloc);
+        bgColorData.PushBack(c.backgroundColor.z, alloc);
+        bgColorVal.AddMember("data", bgColorData, alloc);
+        v.AddMember("backgroundColor", bgColorVal, alloc);
+
+        // Add custom serialization for clearFlags (enum as int)
+        v.AddMember("clearFlags", static_cast<int>(c.clearFlags), alloc);
+
+        // Add custom serialization for projectionType (enum as int)
+        v.AddMember("projectionType", static_cast<int>(c.projectionType), alloc);
+
+        // Add custom serialization for useSkybox
+        v.AddMember("useSkybox", c.useSkybox, alloc);
+
+        // Add custom serialization for skyboxTexturePath
+        rapidjson::Value skyboxPathVal;
+        skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
+        v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
+        compsObj.AddMember("CameraComponent", v, alloc);
+    }
+    if (ecs.HasComponent<AnimationComponent>(entity)) {
+        auto& c = ecs.GetComponent<AnimationComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("AnimationComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ActiveComponent>(entity)) {
+        auto& c = ecs.GetComponent<ActiveComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ActiveComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ScriptComponentData>(entity)) {
+        auto& scriptComp = ecs.GetComponent<ScriptComponentData>(entity);
+        rapidjson::Value scriptObj(rapidjson::kObjectType);
+
+        // NEW FORMAT: Save scripts as an array
+        rapidjson::Value scriptsArr(rapidjson::kArrayType);
+
+        for (const auto& sd : scriptComp.scripts) {
+            rapidjson::Value scriptDataObj(rapidjson::kObjectType);
+
+            // scriptGuidStr
+            rapidjson::Value sguid;
+            sguid.SetString(sd.scriptGuidStr.c_str(), static_cast<rapidjson::SizeType>(sd.scriptGuidStr.size()), alloc);
+            scriptDataObj.AddMember("scriptGuidStr", sguid, alloc);
+
+            // scriptPath
+            rapidjson::Value sp;
+            sp.SetString(sd.scriptPath.c_str(), static_cast<rapidjson::SizeType>(sd.scriptPath.size()), alloc);
+            scriptDataObj.AddMember("scriptPath", sp, alloc);
+
+            // enabled
+            scriptDataObj.AddMember("enabled", rapidjson::Value(sd.enabled), alloc);
+
+            // preserveKeys array
+            rapidjson::Value pkArr(rapidjson::kArrayType);
+            for (const auto& k : sd.preserveKeys) {
+                rapidjson::Value ks;
+                ks.SetString(k.c_str(), static_cast<rapidjson::SizeType>(k.size()), alloc);
+                pkArr.PushBack(ks, alloc);
+            }
+            scriptDataObj.AddMember("preserveKeys", pkArr, alloc);
+
+            // entryFunction and autoInvokeEntry
+            rapidjson::Value entryVal;
+            entryVal.SetString(sd.entryFunction.c_str(), static_cast<rapidjson::SizeType>(sd.entryFunction.size()), alloc);
+            scriptDataObj.AddMember("entryFunction", entryVal, alloc);
+            scriptDataObj.AddMember("autoInvokeEntry", rapidjson::Value(sd.autoInvokeEntry), alloc);
+
+            // instance state (best-effort): if runtime exists and instanceId valid, ask Scripting to serialize it
+            bool savedInstanceState = false;
+            if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
+                try {
+                    if (Scripting::IsValidInstance(sd.instanceId)) {
+                        std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
+                        if (!instJson.empty()) {
+                            rapidjson::Document tmp;
+                            if (!tmp.Parse(instJson.c_str()).HasParseError()) {
+                                rapidjson::Value instVal;
+                                instVal.CopyFrom(tmp, alloc);
+                                scriptDataObj.AddMember("instanceState", instVal, alloc);
+                                savedInstanceState = true;
+                            }
+                            else {
+                                // fallback: store as raw string
+                                rapidjson::Value raw;
+                                raw.SetString(instJson.c_str(), static_cast<rapidjson::SizeType>(instJson.size()), alloc);
+                                scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+                                savedInstanceState = true;
+                            }
+                        }
+                    }
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "[SerializeScene] Scripting::SerializeInstanceToJson failed: " << e.what() << "\n";
+                }
+                catch (...) {
+                    std::cerr << "[SerializeScene] unknown exception serializing script instance\n";
+                }
+            }
+
+            // If no runtime instance was saved (EDIT mode), save pendingInstanceState instead
+            if (!savedInstanceState && !sd.pendingInstanceState.empty()) {
+                ENGINE_PRINT("SAVE DEBUG: Saving pendingInstanceState for ", sd.scriptPath.c_str(), " (size=", sd.pendingInstanceState.size(), ")");
+                rapidjson::Document tmp;
+                if (!tmp.Parse(sd.pendingInstanceState.c_str()).HasParseError()) {
+                    rapidjson::Value instVal;
+                    instVal.CopyFrom(tmp, alloc);
+                    scriptDataObj.AddMember("instanceState", instVal, alloc);
+                    ENGINE_PRINT("  Saved as JSON object");
+                }
+                else {
+                    // fallback: store as raw string
+                    rapidjson::Value raw;
+                    raw.SetString(sd.pendingInstanceState.c_str(), static_cast<rapidjson::SizeType>(sd.pendingInstanceState.size()), alloc);
+                    scriptDataObj.AddMember("instanceStateRaw", raw, alloc);
+                    ENGINE_PRINT("  Saved as raw string (parse error)");
+                }
+            }
+            else if (!savedInstanceState) {
+                ENGINE_PRINT("SAVE DEBUG: NOT saving pendingInstanceState for ", sd.scriptPath.c_str(), " (empty=", sd.pendingInstanceState.empty(), ")");
+            }
+
+            scriptsArr.PushBack(scriptDataObj, alloc);
+        }
+
+        scriptObj.AddMember("scripts", scriptsArr, alloc);
+        compsObj.AddMember(rapidjson::Value("ScriptComponent", alloc).Move(), scriptObj, alloc);
+    }
+    if (ecs.HasComponent<BrainComponent>(entity)) {
+        auto& c = ecs.GetComponent<BrainComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("BrainComponent", v, alloc);
+    }
+    if (ecs.HasComponent<ButtonComponent>(entity)) {
+        auto& c = ecs.GetComponent<ButtonComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("ButtonComponent", v, alloc);
+    }
+    if (ecs.HasComponent<SliderComponent>(entity)) {
+        auto& c = ecs.GetComponent<SliderComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("SliderComponent", v, alloc);
+    }
+
+    entObj.AddMember("components", compsObj, alloc);
+
+    return entObj;
+}
+
+void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity) {
+	if (!entObj.IsObject()) return;
+
+    Entity newEnt{};
+    if (!isPrefab) {
+        newEnt = CreateEntityViaGUID(entObj);
+    }
+    else newEnt = entity;
+
+    const rapidjson::Value& comps = entObj["components"];
+
+    // NameComponent
+    if (comps.HasMember("NameComponent")) {
+        const rapidjson::Value& nv = comps["NameComponent"];
+        ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
+        auto& nameComp = ecs.GetComponent<NameComponent>(newEnt);
+        DeserializeNameComponent(nameComp, nv);
+    }
+
+    // TagComponent
+    if (comps.HasMember("TagComponent")) {
+        const rapidjson::Value& tv = comps["TagComponent"];
+        ecs.AddComponent<TagComponent>(newEnt, TagComponent{});
+        auto& tagComp = ecs.GetComponent<TagComponent>(newEnt);
+        DeserializeTagComponent(tagComp, tv);
+    }
+
+    // LayerComponent
+    if (comps.HasMember("LayerComponent")) {
+        const rapidjson::Value& lv = comps["LayerComponent"];
+        ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{});
+        auto& layerComp = ecs.GetComponent<LayerComponent>(newEnt);
+        DeserializeLayerComponent(layerComp, lv);
+    }
+
+    // SiblingIndexComponent
+    if (comps.HasMember("SiblingIndexComponent")) {
+        const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+        ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{});
+        auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(newEnt);
+        DeserializeSiblingIndexComponent(siblingComp, sv);
+    }
+
+    // Transform
+    if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
+        const rapidjson::Value& t = comps["Transform"];
+        ecs.AddComponent<Transform>(newEnt, Transform{});
+        DeserializeTransformComponent(newEnt, t);
+    }
+
+    // ParentComponent
+    if (!isPrefab && comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+        const auto& parentCompJSON = comps["ParentComponent"];
+        if (!ecs.HasComponent<ParentComponent>(newEnt)) {
+            ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
+        }
+        auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
+        DeserializeParentComponent(parentComp, parentCompJSON);
+    }
+
+    // ChildrenComponent
+    if (!isPrefab && comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+        const auto& childrenCompJSON = comps["ChildrenComponent"];
+        if (!ecs.HasComponent<ChildrenComponent>(newEnt)) {
+            ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
+        }
+        auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
+        DeserializeChildrenComponent(childComp, childrenCompJSON);
+    }
+
+    // ModelRenderComponent
+    if (comps.HasMember("ModelRenderComponent")) {
+        const rapidjson::Value& mv = comps["ModelRenderComponent"];
+        ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
+        auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
+        DeserializeModelComponent(modelComp, mv, newEnt);
+    }
+
+    // SpriteRenderComponent
+    if (comps.HasMember("SpriteRenderComponent")) {
+        const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+        ecs.AddComponent<SpriteRenderComponent>(newEnt, SpriteRenderComponent{});
+        auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(newEnt);
+        DeserializeSpriteComponent(spriteComp, mv);
+    }
+
+    // SpriteAnimationComponent
+    if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
+        const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+        ecs.AddComponent<SpriteAnimationComponent>(newEnt, SpriteAnimationComponent{});
+        auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(newEnt);
+        DeserializeSpriteAnimationComponent(animComp, mv);
+    }
+
+    // TextRenderComponent
+    if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["TextRenderComponent"];
+        ecs.AddComponent<TextRenderComponent>(newEnt, TextRenderComponent{});
+        auto& textComp = ecs.GetComponent<TextRenderComponent>(newEnt);
+        DeserializeTextComponent(textComp, tv);
+    }
+
+    // ParticleComponent
+    if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["ParticleComponent"];
+        ecs.AddComponent<ParticleComponent>(newEnt, ParticleComponent{});
+        auto& particleComp = ecs.GetComponent<ParticleComponent>(newEnt);
+        DeserializeParticleComponent(particleComp, tv);
+    }
+
+    // DirectionalLightComponent
+    if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["DirectionalLightComponent"];
+        ecs.AddComponent<DirectionalLightComponent>(newEnt, DirectionalLightComponent{});
+        auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(newEnt);
+        DeserializeDirLightComponent(dirLightComp, tv);
+    }
+
+    // SpotLightComponent
+    if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["SpotLightComponent"];
+        ecs.AddComponent<SpotLightComponent>(newEnt, SpotLightComponent{});
+        auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(newEnt);
+        DeserializeSpotLightComponent(spotlightComp, tv);
+    }
+
+    // PointLightComponent
+    if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["PointLightComponent"];
+        ecs.AddComponent<PointLightComponent>(newEnt, PointLightComponent{});
+        auto& pointLightComp = ecs.GetComponent<PointLightComponent>(newEnt);
+        DeserializePointLightComponent(pointLightComp, tv);
+    }
+
+    // AudioComponent
+    if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["AudioComponent"];
+        ecs.AddComponent<AudioComponent>(newEnt, AudioComponent{});
+        auto& audioComp = ecs.GetComponent<AudioComponent>(newEnt);
+        DeserializeAudioComponent(audioComp, tv);
+    }
+
+    // AudioListenerComponent
+    if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["AudioListenerComponent"];
+        ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
+        auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(newEnt);
+        DeserializeAudioListenerComponent(audioListenerComp, tv);
+    }
+
+    // AudioReverbZoneComponent
+    if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+        ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
+        auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(newEnt);
+        DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+    }
+
+    // RigidBodyComponent
+    if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["RigidBodyComponent"];
+        ecs.AddComponent<RigidBodyComponent>(newEnt, RigidBodyComponent{});
+        auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
+        DeserializeRigidBodyComponent(rbComp, tv);
+    }
+    // ColliderComponent
+    if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["ColliderComponent"];
+        ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
+        auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
+        DeserializeColliderComponent(colliderComp, tv);
+    }
+
+    // CameraComponent
+    if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["CameraComponent"];
+        ecs.AddComponent<CameraComponent>(newEnt, CameraComponent{});
+        auto& cameraComp = ecs.GetComponent<CameraComponent>(newEnt);
+        DeserializeCameraComponent(cameraComp, tv);
+    }
+
+	// AnimationComponent
+    if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["AnimationComponent"];
+        AnimationComponent animComp{};
+        TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+        ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+
+		// For prefabs, we need to initialise the animation component after deserialization.
+        if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
+			auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
+            ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, animComp);
+        }
+    }
+
+    // ActiveComponent
+    if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["ActiveComponent"];
+        ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+        auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
+        DeserializeActiveComponent(activeComp, tv);
+    }
+
+    // Script component (engine-side)
+    if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject())
+    {
+        const rapidjson::Value& sv = comps["ScriptComponent"];
+        Serializer::DeserializeScriptComponent(newEnt, sv);
+    }
+    // BrainComponent
+    if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+        const auto& brainCompJSON = comps["BrainComponent"];
+        ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
+        auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
+        DeserializeBrainComponent(brainComp, brainCompJSON);
+    }
+    // ButtonComponent
+    if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+        const auto& buttonCompJSON = comps["ButtonComponent"];
+        ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
+        auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
+        DeserializeButtonComponent(buttonComp, buttonCompJSON);
+    }
+    // SliderComponent
+    if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
+        const auto& sliderCompJSON = comps["SliderComponent"];
+        ecs.AddComponent<SliderComponent>(newEnt, SliderComponent{});
+        auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
+        DeserializeSliderComponent(sliderComp, sliderCompJSON);
+    }
+
+    // Ensure all entities have TagComponent and LayerComponent
+    if (!ecs.HasComponent<TagComponent>(newEnt)) {
+        ecs.AddComponent<TagComponent>(newEnt, TagComponent{ 0 });
+    }
+    if (!ecs.HasComponent<LayerComponent>(newEnt)) {
+        ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
+    }
+}
+
 void Serializer::DeserializeScene(const std::string& scenePath) {
     ENGINE_LOG_INFO("[Serializer] Deserializing scene: " + scenePath);
     using namespace std;
@@ -718,231 +1354,233 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
-        Entity newEnt = CreateEntityViaGUID(entObj);
+        DeserializeEntity(ecs, entObj);
 
-        if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
-        const rapidjson::Value& comps = entObj["components"];
+        //Entity newEnt = CreateEntityViaGUID(entObj);
 
-        // NameComponent
-        if (comps.HasMember("NameComponent")) {
-            const rapidjson::Value& nv = comps["NameComponent"];
-            ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
-            auto& nameComp = ecs.GetComponent<NameComponent>(newEnt);
-            DeserializeNameComponent(nameComp, nv);
-        }
+        //if (!entObj.HasMember("components") || !entObj["components"].IsObject()) continue;
+        //const rapidjson::Value& comps = entObj["components"];
 
-        // TagComponent
-        if (comps.HasMember("TagComponent")) {
-            const rapidjson::Value& tv = comps["TagComponent"];
-            ecs.AddComponent<TagComponent>(newEnt, TagComponent{});
-            auto& tagComp = ecs.GetComponent<TagComponent>(newEnt);
-            DeserializeTagComponent(tagComp, tv);
-        }
+        //// NameComponent
+        //if (comps.HasMember("NameComponent")) {
+        //    const rapidjson::Value& nv = comps["NameComponent"];
+        //    ecs.AddComponent<NameComponent>(newEnt, NameComponent{});
+        //    auto& nameComp = ecs.GetComponent<NameComponent>(newEnt);
+        //    DeserializeNameComponent(nameComp, nv);
+        //}
 
-        // LayerComponent
-        if (comps.HasMember("LayerComponent")) {
-            const rapidjson::Value& lv = comps["LayerComponent"];
-            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{});
-            auto& layerComp = ecs.GetComponent<LayerComponent>(newEnt);
-            DeserializeLayerComponent(layerComp, lv);
-        }
+        //// TagComponent
+        //if (comps.HasMember("TagComponent")) {
+        //    const rapidjson::Value& tv = comps["TagComponent"];
+        //    ecs.AddComponent<TagComponent>(newEnt, TagComponent{});
+        //    auto& tagComp = ecs.GetComponent<TagComponent>(newEnt);
+        //    DeserializeTagComponent(tagComp, tv);
+        //}
 
-        // SiblingIndexComponent
-        if (comps.HasMember("SiblingIndexComponent")) {
-            const rapidjson::Value& sv = comps["SiblingIndexComponent"];
-            ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{});
-            auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(newEnt);
-            DeserializeSiblingIndexComponent(siblingComp, sv);
-        }
+        //// LayerComponent
+        //if (comps.HasMember("LayerComponent")) {
+        //    const rapidjson::Value& lv = comps["LayerComponent"];
+        //    ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{});
+        //    auto& layerComp = ecs.GetComponent<LayerComponent>(newEnt);
+        //    DeserializeLayerComponent(layerComp, lv);
+        //}
 
-        // Transform
-        if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
-            const rapidjson::Value& t = comps["Transform"];
-            ecs.AddComponent<Transform>(newEnt, Transform{});
-            DeserializeTransformComponent(newEnt, t);
-        }
+        //// SiblingIndexComponent
+        //if (comps.HasMember("SiblingIndexComponent")) {
+        //    const rapidjson::Value& sv = comps["SiblingIndexComponent"];
+        //    ecs.AddComponent<SiblingIndexComponent>(newEnt, SiblingIndexComponent{});
+        //    auto& siblingComp = ecs.GetComponent<SiblingIndexComponent>(newEnt);
+        //    DeserializeSiblingIndexComponent(siblingComp, sv);
+        //}
 
-        // ParentComponent
-        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
-            const auto& parentCompJSON = comps["ParentComponent"];
-            if (!ecs.HasComponent<ParentComponent>(newEnt)) {
-                ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
-            }
-            auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
-            DeserializeParentComponent(parentComp, parentCompJSON);
-        }
+        //// Transform
+        //if (comps.HasMember("Transform") && comps["Transform"].IsObject()) {
+        //    const rapidjson::Value& t = comps["Transform"];
+        //    ecs.AddComponent<Transform>(newEnt, Transform{});
+        //    DeserializeTransformComponent(newEnt, t);
+        //}
 
-        // ChildrenComponent
-        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
-            const auto& childrenCompJSON = comps["ChildrenComponent"];
-            if (!ecs.HasComponent<ChildrenComponent>(newEnt)) {
-                ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
-            }
-            auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
-            DeserializeChildrenComponent(childComp, childrenCompJSON);
-        }
+        //// ParentComponent
+        //if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+        //    const auto& parentCompJSON = comps["ParentComponent"];
+        //    if (!ecs.HasComponent<ParentComponent>(newEnt)) {
+        //        ecs.AddComponent<ParentComponent>(newEnt, ParentComponent{});
+        //    }
+        //    auto& parentComp = ecs.GetComponent<ParentComponent>(newEnt);
+        //    DeserializeParentComponent(parentComp, parentCompJSON);
+        //}
 
-        // ModelRenderComponent
-        if (comps.HasMember("ModelRenderComponent")) {
-            const rapidjson::Value& mv = comps["ModelRenderComponent"];
-            ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
-            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-            DeserializeModelComponent(modelComp, mv, newEnt);
-        }
+        //// ChildrenComponent
+        //if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+        //    const auto& childrenCompJSON = comps["ChildrenComponent"];
+        //    if (!ecs.HasComponent<ChildrenComponent>(newEnt)) {
+        //        ecs.AddComponent<ChildrenComponent>(newEnt, ChildrenComponent{});
+        //    }
+        //    auto& childComp = ecs.GetComponent<ChildrenComponent>(newEnt);
+        //    DeserializeChildrenComponent(childComp, childrenCompJSON);
+        //}
 
-        // SpriteRenderComponent
-        if (comps.HasMember("SpriteRenderComponent")) {
-            const rapidjson::Value& mv = comps["SpriteRenderComponent"];
-            ecs.AddComponent<SpriteRenderComponent>(newEnt, SpriteRenderComponent{});
-            auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(newEnt);
-            DeserializeSpriteComponent(spriteComp, mv);
-        }
+        //// ModelRenderComponent
+        //if (comps.HasMember("ModelRenderComponent")) {
+        //    const rapidjson::Value& mv = comps["ModelRenderComponent"];
+        //    ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
+        //    auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
+        //    DeserializeModelComponent(modelComp, mv, newEnt);
+        //}
 
-        // SpriteAnimationComponent
-        if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
-            const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
-            ecs.AddComponent<SpriteAnimationComponent>(newEnt, SpriteAnimationComponent{});
-            auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(newEnt);
-            DeserializeSpriteAnimationComponent(animComp, mv);
-        }
+        //// SpriteRenderComponent
+        //if (comps.HasMember("SpriteRenderComponent")) {
+        //    const rapidjson::Value& mv = comps["SpriteRenderComponent"];
+        //    ecs.AddComponent<SpriteRenderComponent>(newEnt, SpriteRenderComponent{});
+        //    auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(newEnt);
+        //    DeserializeSpriteComponent(spriteComp, mv);
+        //}
 
-        // TextRenderComponent
-        if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["TextRenderComponent"];
-            ecs.AddComponent<TextRenderComponent>(newEnt, TextRenderComponent{});
-            auto& textComp = ecs.GetComponent<TextRenderComponent>(newEnt);
-            DeserializeTextComponent(textComp, tv);
-        }
+        //// SpriteAnimationComponent
+        //if (comps.HasMember("SpriteAnimationComponent") && comps["SpriteAnimationComponent"].IsObject()) {
+        //    const rapidjson::Value& mv = comps["SpriteAnimationComponent"];
+        //    ecs.AddComponent<SpriteAnimationComponent>(newEnt, SpriteAnimationComponent{});
+        //    auto& animComp = ecs.GetComponent<SpriteAnimationComponent>(newEnt);
+        //    DeserializeSpriteAnimationComponent(animComp, mv);
+        //}
 
-        // ParticleComponent
-        if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["ParticleComponent"];
-            ecs.AddComponent<ParticleComponent>(newEnt, ParticleComponent{});
-            auto& particleComp = ecs.GetComponent<ParticleComponent>(newEnt);
-            DeserializeParticleComponent(particleComp, tv);
-        }
+        //// TextRenderComponent
+        //if (comps.HasMember("TextRenderComponent") && comps["TextRenderComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["TextRenderComponent"];
+        //    ecs.AddComponent<TextRenderComponent>(newEnt, TextRenderComponent{});
+        //    auto& textComp = ecs.GetComponent<TextRenderComponent>(newEnt);
+        //    DeserializeTextComponent(textComp, tv);
+        //}
 
-        // DirectionalLightComponent
-        if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["DirectionalLightComponent"];
-            ecs.AddComponent<DirectionalLightComponent>(newEnt, DirectionalLightComponent{});
-            auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(newEnt);
-            DeserializeDirLightComponent(dirLightComp, tv);
-        }
+        //// ParticleComponent
+        //if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["ParticleComponent"];
+        //    ecs.AddComponent<ParticleComponent>(newEnt, ParticleComponent{});
+        //    auto& particleComp = ecs.GetComponent<ParticleComponent>(newEnt);
+        //    DeserializeParticleComponent(particleComp, tv);
+        //}
 
-        // SpotLightComponent
-        if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["SpotLightComponent"];
-            ecs.AddComponent<SpotLightComponent>(newEnt, SpotLightComponent{});
-            auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(newEnt);
-            DeserializeSpotLightComponent(spotlightComp, tv);
-        }
+        //// DirectionalLightComponent
+        //if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["DirectionalLightComponent"];
+        //    ecs.AddComponent<DirectionalLightComponent>(newEnt, DirectionalLightComponent{});
+        //    auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(newEnt);
+        //    DeserializeDirLightComponent(dirLightComp, tv);
+        //}
 
-        // PointLightComponent
-        if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["PointLightComponent"];
-            ecs.AddComponent<PointLightComponent>(newEnt, PointLightComponent{});
-            auto& pointLightComp = ecs.GetComponent<PointLightComponent>(newEnt);
-            DeserializePointLightComponent(pointLightComp, tv);
-        }
+        //// SpotLightComponent
+        //if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["SpotLightComponent"];
+        //    ecs.AddComponent<SpotLightComponent>(newEnt, SpotLightComponent{});
+        //    auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(newEnt);
+        //    DeserializeSpotLightComponent(spotlightComp, tv);
+        //}
 
-        // AudioComponent
-        if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["AudioComponent"];
-            ecs.AddComponent<AudioComponent>(newEnt, AudioComponent{});
-            auto& audioComp = ecs.GetComponent<AudioComponent>(newEnt);
-            DeserializeAudioComponent(audioComp, tv);
-        }
+        //// PointLightComponent
+        //if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["PointLightComponent"];
+        //    ecs.AddComponent<PointLightComponent>(newEnt, PointLightComponent{});
+        //    auto& pointLightComp = ecs.GetComponent<PointLightComponent>(newEnt);
+        //    DeserializePointLightComponent(pointLightComp, tv);
+        //}
 
-        // AudioListenerComponent
-        if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["AudioListenerComponent"];
-            ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
-            auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(newEnt);
-            DeserializeAudioListenerComponent(audioListenerComp, tv);
-        }
+        //// AudioComponent
+        //if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["AudioComponent"];
+        //    ecs.AddComponent<AudioComponent>(newEnt, AudioComponent{});
+        //    auto& audioComp = ecs.GetComponent<AudioComponent>(newEnt);
+        //    DeserializeAudioComponent(audioComp, tv);
+        //}
 
-        // AudioReverbZoneComponent
-        if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
-            ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
-            auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(newEnt);
-            DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
-        }
+        //// AudioListenerComponent
+        //if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["AudioListenerComponent"];
+        //    ecs.AddComponent<AudioListenerComponent>(newEnt, AudioListenerComponent{});
+        //    auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(newEnt);
+        //    DeserializeAudioListenerComponent(audioListenerComp, tv);
+        //}
 
-        // RigidBodyComponent
-        if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["RigidBodyComponent"];
-            ecs.AddComponent<RigidBodyComponent>(newEnt, RigidBodyComponent{});
-            auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
-            DeserializeRigidBodyComponent(rbComp, tv);
-        }
-        // ColliderComponent
-        if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["ColliderComponent"];
-            ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
-            auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
-            DeserializeColliderComponent(colliderComp, tv);
-        }
+        //// AudioReverbZoneComponent
+        //if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+        //    ecs.AddComponent<AudioReverbZoneComponent>(newEnt, AudioReverbZoneComponent{});
+        //    auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(newEnt);
+        //    DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
+        //}
 
-        // CameraComponent
-        if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["CameraComponent"];
-            ecs.AddComponent<CameraComponent>(newEnt, CameraComponent{});
-            auto& cameraComp = ecs.GetComponent<CameraComponent>(newEnt);
-            DeserializeCameraComponent(cameraComp, tv);
-        }
+        //// RigidBodyComponent
+        //if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["RigidBodyComponent"];
+        //    ecs.AddComponent<RigidBodyComponent>(newEnt, RigidBodyComponent{});
+        //    auto& rbComp = ecs.GetComponent<RigidBodyComponent>(newEnt);
+        //    DeserializeRigidBodyComponent(rbComp, tv);
+        //}
+        //// ColliderComponent
+        //if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["ColliderComponent"];
+        //    ecs.AddComponent<ColliderComponent>(newEnt, ColliderComponent{});
+        //    auto& colliderComp = ecs.GetComponent<ColliderComponent>(newEnt);
+        //    DeserializeColliderComponent(colliderComp, tv);
+        //}
 
-        if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["AnimationComponent"];
-            AnimationComponent animComp{};
-            TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
-            ecs.AddComponent<AnimationComponent>(newEnt, animComp);
-        }
+        //// CameraComponent
+        //if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["CameraComponent"];
+        //    ecs.AddComponent<CameraComponent>(newEnt, CameraComponent{});
+        //    auto& cameraComp = ecs.GetComponent<CameraComponent>(newEnt);
+        //    DeserializeCameraComponent(cameraComp, tv);
+        //}
 
-        // ActiveComponent
-        if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
-            const rapidjson::Value& tv = comps["ActiveComponent"];
-            ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
-            auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
-            DeserializeActiveComponent(activeComp, tv);
-        }
+        //if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["AnimationComponent"];
+        //    AnimationComponent animComp{};
+        //    TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+        //    ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        //}
 
-        // Script component (engine-side)
-        if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject())
-        {
-            const rapidjson::Value& sv = comps["ScriptComponent"];
-            Serializer::DeserializeScriptComponent(newEnt, sv);
-        }
-        // BrainComponent
-        if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
-            const auto& brainCompJSON = comps["BrainComponent"];
-            ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
-            auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
-            DeserializeBrainComponent(brainComp, brainCompJSON);
-        }
-        // ButtonComponent
-        if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
-            const auto& buttonCompJSON = comps["ButtonComponent"];
-            ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
-            auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
-            DeserializeButtonComponent(buttonComp, buttonCompJSON);
-        }
-        // SliderComponent
-        if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
-            const auto& sliderCompJSON = comps["SliderComponent"];
-            ecs.AddComponent<SliderComponent>(newEnt, SliderComponent{});
-            auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
-            DeserializeSliderComponent(sliderComp, sliderCompJSON);
-        }
+        //// ActiveComponent
+        //if (comps.HasMember("ActiveComponent") && comps["ActiveComponent"].IsObject()) {
+        //    const rapidjson::Value& tv = comps["ActiveComponent"];
+        //    ecs.AddComponent<ActiveComponent>(newEnt, ActiveComponent{});
+        //    auto& activeComp = ecs.GetComponent<ActiveComponent>(newEnt);
+        //    DeserializeActiveComponent(activeComp, tv);
+        //}
 
-        // Ensure all entities have TagComponent and LayerComponent
-        if (!ecs.HasComponent<TagComponent>(newEnt)) {
-            ecs.AddComponent<TagComponent>(newEnt, TagComponent{ 0 });
-        }
-        if (!ecs.HasComponent<LayerComponent>(newEnt)) {
-            ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
-        }
+        //// Script component (engine-side)
+        //if (comps.HasMember("ScriptComponent") && comps["ScriptComponent"].IsObject())
+        //{
+        //    const rapidjson::Value& sv = comps["ScriptComponent"];
+        //    Serializer::DeserializeScriptComponent(newEnt, sv);
+        //}
+        //// BrainComponent
+        //if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
+        //    const auto& brainCompJSON = comps["BrainComponent"];
+        //    ecs.AddComponent<BrainComponent>(newEnt, BrainComponent{});
+        //    auto& brainComp = ecs.GetComponent<BrainComponent>(newEnt);
+        //    DeserializeBrainComponent(brainComp, brainCompJSON);
+        //}
+        //// ButtonComponent
+        //if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
+        //    const auto& buttonCompJSON = comps["ButtonComponent"];
+        //    ecs.AddComponent<ButtonComponent>(newEnt, ButtonComponent{});
+        //    auto& buttonComp = ecs.GetComponent<ButtonComponent>(newEnt);
+        //    DeserializeButtonComponent(buttonComp, buttonCompJSON);
+        //}
+        //// SliderComponent
+        //if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
+        //    const auto& sliderCompJSON = comps["SliderComponent"];
+        //    ecs.AddComponent<SliderComponent>(newEnt, SliderComponent{});
+        //    auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
+        //    DeserializeSliderComponent(sliderComp, sliderCompJSON);
+        //}
+
+        //// Ensure all entities have TagComponent and LayerComponent
+        //if (!ecs.HasComponent<TagComponent>(newEnt)) {
+        //    ecs.AddComponent<TagComponent>(newEnt, TagComponent{ 0 });
+        //}
+        //if (!ecs.HasComponent<LayerComponent>(newEnt)) {
+        //    ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
+        //}
 
     } // end for entities
 
@@ -1352,12 +1990,20 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
 }
 
-Entity Serializer::CreateEntityViaGUID(const rapidjson::Value& entityJSON) {
+GUID_128 Serializer::DeserializeEntityGUID(const rapidjson::Value& entityJSON) {
     if (entityJSON.HasMember("guid")) {
         GUID_string guidStr = entityJSON["guid"].GetString();
         GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        return guid;
+    }
+
+    return GUID_128{};
+}
+
+Entity Serializer::CreateEntityViaGUID(const rapidjson::Value& entityJSON) {
+    GUID_128 guid = DeserializeEntityGUID(entityJSON);
+    if (guid != GUID_128{}) {
         Entity newEnt = ECSRegistry::GetInstance().GetActiveECSManager().CreateEntityWithGUID(guid);
-        ENGINE_LOG_INFO("Entity " + std::to_string(newEnt) + " created with GUID " + guidStr);
         return newEnt;
     }
     else {
@@ -2039,22 +2685,46 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
     }
 }
 
-void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON) {
+void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const rapidjson::Value& parentJSON, std::unordered_map<GUID_128, GUID_128>* guidRemap) {
     const auto& d = parentJSON["data"];
 
     // Use helper function to extract parent GUID
     GUID_string parentGUIDStr = extractGUIDString(d[0]);
-    parentComp.parent = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
+	GUID_128 parentGUID = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
+
+    if (guidRemap == nullptr) {
+        parentComp.parent = parentGUID;
+    }
+    else {
+        if (guidRemap->find(parentGUID) != guidRemap->end()) {
+			parentComp.parent = (*guidRemap)[parentGUID];
+        }
+        else {
+            ENGINE_LOG_WARN("[Serializer] Parent GUID not found in remap during deserialization: ", parentGUIDStr);
+        }
+    }
 }
 
-void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& _childJSON) {
+void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, const rapidjson::Value& _childJSON, std::unordered_map<GUID_128, GUID_128>* guidRemap) {
     if (_childJSON.HasMember("data")) {
         //childComp.children.clear();
         const auto& childrenVectorJSON = _childJSON["data"][0]["data"].GetArray();
         for (const auto& childJSON : childrenVectorJSON) {
             // Use helper function to extract child GUIDs
             GUID_string childGUIDStr = extractGUIDString(childJSON);
-            childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
+			GUID_128 childGUID = GUIDUtilities::ConvertStringToGUID128(childGUIDStr);
+
+            if (guidRemap == nullptr) {
+                childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
+            }
+            else {
+                if (guidRemap->find(childGUID) != guidRemap->end()) {
+                    childComp.children.push_back((*guidRemap)[childGUID]);
+                }
+                else {
+                    ENGINE_LOG_WARN("[Serializer] Child GUID not found in remap during deserialization: ", childGUIDStr);
+				}
+            }
         }
     }
 }
