@@ -158,6 +158,7 @@ void SceneInstance::InitializePhysics()
 	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Physics system initialized");
+	ecsManager.physicsSystem->PostInitialize(ecsManager);
 }
 
 void SceneInstance::Update(double dt)

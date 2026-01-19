@@ -180,7 +180,9 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
     FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
     FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
-    FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
+    FUNCTION("DestroyByEntity", CharacterControllerWrappers::DestroyByEntity)
+    FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
+    FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
 END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
@@ -235,6 +237,15 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
+END_SYSTEM()
+
+
+
+// ============================================================================
+// NAV SYSTEM
+// ============================================================================
+BEGIN_SYSTEM("Nav")
+    FUNCTION("RequestPathXZ", NavWrappers::RequestPathXZ)
 END_SYSTEM()
 
 
