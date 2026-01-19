@@ -63,6 +63,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Script/ScriptComponentData.hpp"
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
+#include "UI/Anchor/UIAnchorComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -4402,6 +4403,155 @@ void RegisterInspectorCustomRenderers()
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
     ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "handleEntityGuid",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+
+    // ==================== UI ANCHOR COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("UIAnchorComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    {
+        UIAnchorComponent& anchor = *static_cast<UIAnchorComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Anchor Preset dropdown
+        ImGui::Text("Preset");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* presetNames[] = {
+            "Custom", "Top Left", "Top Center", "Top Right",
+            "Middle Left", "Center", "Middle Right",
+            "Bottom Left", "Bottom Center", "Bottom Right"
+        };
+        int currentPreset = static_cast<int>(anchor.GetCurrentPreset());
+        if (ImGui::Combo("##AnchorPreset", &currentPreset, presetNames, IM_ARRAYSIZE(presetNames))) {
+            anchor.SetPreset(static_cast<UIAnchorPreset>(currentPreset));
+            SnapshotManager::GetInstance().TakeSnapshot("Change Anchor Preset");
+        }
+
+        ImGui::Separator();
+
+        // Anchor position
+        ImGui::Text("Anchor X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::SliderFloat("##AnchorX", &anchor.anchorX, 0.0f, 1.0f, "%.2f")) {
+            // Value changed
+        }
+
+        ImGui::Text("Anchor Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::SliderFloat("##AnchorY", &anchor.anchorY, 0.0f, 1.0f, "%.2f")) {
+            // Value changed
+        }
+
+        ImGui::Separator();
+
+        // Offset
+        ImGui::Text("Offset X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##OffsetX", &anchor.offsetX, 1.0f, -10000.0f, 10000.0f, "%.1f");
+
+        ImGui::Text("Offset Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##OffsetY", &anchor.offsetY, 1.0f, -10000.0f, 10000.0f, "%.1f");
+
+        ImGui::Separator();
+
+        // Size Mode dropdown
+        ImGui::Text("Size Mode");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* sizeModeNames[] = {
+            "Fixed", "Stretch X", "Stretch Y", "Stretch Both", "Scale Uniform"
+        };
+        int currentSizeMode = static_cast<int>(anchor.sizeMode);
+        if (ImGui::Combo("##SizeMode", &currentSizeMode, sizeModeNames, IM_ARRAYSIZE(sizeModeNames))) {
+            anchor.sizeMode = static_cast<UISizeMode>(currentSizeMode);
+            SnapshotManager::GetInstance().TakeSnapshot("Change Size Mode");
+        }
+
+        // Show margins for stretch modes
+        if (anchor.sizeMode == UISizeMode::StretchX ||
+            anchor.sizeMode == UISizeMode::StretchY ||
+            anchor.sizeMode == UISizeMode::StretchBoth) {
+
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Margins");
+
+            ImGui::Text("Left");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginLeft", &anchor.marginLeft, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Right");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginRight", &anchor.marginRight, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Top");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginTop", &anchor.marginTop, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Bottom");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginBottom", &anchor.marginBottom, 1.0f, 0.0f, 10000.0f, "%.0f");
+        }
+
+        // Show reference resolution for ScaleUniform mode
+        if (anchor.sizeMode == UISizeMode::ScaleUniform) {
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Reference Resolution");
+
+            ImGui::Text("Width");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##RefWidth", &anchor.referenceWidth, 1.0f, 1.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Height");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##RefHeight", &anchor.referenceHeight, 1.0f, 1.0f, 10000.0f, "%.0f");
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide UIAnchorComponent fields from default rendering
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "anchorX",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "anchorY",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "offsetX",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "offsetY",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginLeft",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginRight",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginTop",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginBottom",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "referenceWidth",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "referenceHeight",
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
