@@ -609,9 +609,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         // Ambient mode (enum as int)
         lightingObj.AddMember("ambientMode", static_cast<int>(ecs.lightingSystem->ambientMode), alloc);
 
-        // Ambient intensity
-        lightingObj.AddMember("ambientIntensity", ecs.lightingSystem->ambientIntensity, alloc);
-
         // Ambient sky color
         rapidjson::Value ambientSkyArr(rapidjson::kArrayType);
         ambientSkyArr.PushBack(ecs.lightingSystem->ambientSky.x, alloc);
@@ -1624,11 +1621,6 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         // Ambient mode
         if (lightingObj.HasMember("ambientMode") && lightingObj["ambientMode"].IsInt()) {
             ecs.lightingSystem->ambientMode = static_cast<LightingSystem::AmbientMode>(lightingObj["ambientMode"].GetInt());
-        }
-
-        // Ambient intensity
-        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsNumber()) {
-            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
         }
 
         // Ambient sky color

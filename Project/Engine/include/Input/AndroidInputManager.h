@@ -10,15 +10,18 @@
 /**
  * @brief Android implementation of InputManager
  *
- * Maps touch inputs, gestures, and virtual controls to logical actions.
- * Supports:
- * - Touch zones (virtual buttons on screen)
- * - Virtual joysticks (on-screen analog stick)
- * - Gesture detection (swipes, double-tap, pinch)
- * - Touch drag for camera look
+ * Uses entity-based touch detection: config references entity names,
+ * engine looks up their transforms to determine hit areas.
  *
- * Loads configuration from JSON defining positions, sizes, and visual properties
- * of all virtual controls.
+ * Supports:
+ * - Entity-based touch zones (buttons bound to scene sprites)
+ * - Gesture detection (swipes, double-tap)
+ * - Unhandled touch drag (for camera rotation)
+ *
+ * Game code flow:
+ * 1. Check if action is pressed: Input.IsActionPressed("Attack")
+ * 2. For joysticks, get touch position: Input.GetActionTouchPosition("Movement")
+ * 3. For camera, check unhandled drag: Input.IsDragging(), Input.GetDragDelta()
  */
 class AndroidInputManager : public InputManager {
 public:
@@ -29,7 +32,11 @@ public:
     bool IsActionPressed(const std::string& action) override;
     bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
+    glm::vec2 GetActionTouchPosition(const std::string& action) override;
     glm::vec2 GetAxis(const std::string& axisName) override;
+
+    bool IsDragging() override;
+    glm::vec2 GetDragDelta() override;
 
     bool IsPointerPressed() override;
     bool IsPointerJustPressed() override;
@@ -37,6 +44,9 @@ public:
 
     int GetTouchCount() override;
     glm::vec2 GetTouchPosition(int index) override;
+
+    std::vector<Touch> GetTouches() override;
+    Touch GetTouchById(int touchId) override;
 
     void Update(float deltaTime) override;
     bool LoadConfig(const std::string& path) override;
@@ -71,62 +81,21 @@ private:
     // ========== Internal Types ==========
 
     /**
-     * @brief Virtual button (touch zone on screen)
+     * @brief Action bound to an entity (button/joystick)
      */
-    struct TouchZone {
-        std::string action;           // Action name this zone triggers
-        glm::vec2 position;          // Normalized position (0-1)
-        float radius;                // Circle radius (normalized)
-        bool isCircle;               // Circle or rectangle
-        glm::vec2 rectSize;          // Rectangle size if not circle
+    struct EntityAction {
+        std::string actionName;      // Action name (e.g., "Attack", "Movement")
+        std::string entityName;      // Entity name to look up (e.g., "(ANDROID)AttackButton")
 
-        // Visual properties
-        std::string normalImage;
-        std::string pressedImage;
-        float alpha;
+        // Cached entity data (updated each frame)
+        bool entityFound = false;
+        glm::vec2 entityCenter;      // Screen position (normalized 0-1)
+        glm::vec2 entitySize;        // Size (normalized)
 
-        // State
+        // Touch state
         bool isPressed = false;
-        int activeTouchId = -1;      // Which touch is pressing this zone
-    };
-
-    /**
-     * @brief Virtual joystick (on-screen analog stick)
-     */
-    struct VirtualJoystick {
-        std::string axisName;        // Axis name (e.g., "Movement")
-        glm::vec2 basePosition;      // Center position (normalized)
-        float outerRadius;           // Outer circle radius
-        float innerRadius;           // Inner stick radius
-        float deadZone;              // Dead zone threshold
-
-        // Visual properties
-        std::string outerImage;
-        std::string innerImage;
-        float alpha;
-
-        // State
-        bool isActive = false;
         int activeTouchId = -1;
-        glm::vec2 stickOffset;       // Current stick displacement from center
-        glm::vec2 normalizedValue;   // Output value (-1 to 1)
-    };
-
-    /**
-     * @brief Touch drag zone for camera look
-     */
-    struct TouchDragZone {
-        std::string axisName;        // Axis name (e.g., "Look")
-        glm::vec2 zonePosition;      // Zone top-left (normalized)
-        glm::vec2 zoneSize;          // Zone dimensions (normalized)
-        float sensitivity;
-
-        // State
-        bool isActive = false;
-        int activeTouchId = -1;
-        glm::vec2 previousPosition;
-        glm::vec2 delta;             // Current frame delta
-        bool movedThisFrame = false; // Track if movement occurred this frame
+        glm::vec2 touchPositionRelative;  // Touch position relative to entity center
     };
 
     /**
@@ -151,36 +120,44 @@ private:
         float maxTime;               // Maximum swipe duration
 
         // For double-tap
-        float maxTimeBetweenTaps;
-        float maxTapDistance;        // Max movement during tap
-
-        // Zone (optional - can limit gesture to screen region)
-        bool hasZone;
-        glm::vec2 zonePosition;
-        glm::vec2 zoneSize;
+        float maxTimeBetweenTaps = 0.3f;
+        float maxTapDistance = 50.0f;        // Max movement during tap
     };
 
     /**
-     * @brief Active touch point
+     * @brief Active touch point with full tracking
      */
     struct TouchPoint {
         int id;
         glm::vec2 position;
         glm::vec2 startPosition;
+        glm::vec2 previousPosition;
+        glm::vec2 delta;             // Movement this frame
         float startTime;
-        bool consumed;               // If handled by touch zone/joystick
+        float duration;              // Time since touch started
+        TouchPhase phase;            // Current phase (began, moved, stationary, ended)
+        std::string entityName;      // Which entity this touch is on ("" if none)
+        bool isHandled;              // If handled by an entity action
     };
+
+    // Touches that ended this frame (kept for one frame with Ended phase)
+    std::vector<TouchPoint> m_endedTouches;
 
     // ========== State ==========
 
-    // Virtual controls (loaded from config)
-    std::vector<TouchZone> m_touchZones;
-    std::vector<VirtualJoystick> m_joysticks;
-    std::vector<TouchDragZone> m_dragZones;
+    // Entity-based actions (loaded from config)
+    std::vector<EntityAction> m_entityActions;
+
+    // Gesture bindings (loaded from config)
     std::vector<GestureBinding> m_gestures;
 
     // Active touches
     std::unordered_map<int, TouchPoint> m_activeTouches;
+
+    // Unhandled touch for camera drag
+    int m_dragTouchId = -1;
+    glm::vec2 m_dragDelta;
+    bool m_isDragging = false;
 
     // Action state tracking
     std::unordered_set<std::string> m_currentActions;
@@ -197,29 +174,14 @@ private:
     // ========== Helper Methods ==========
 
     /**
-     * @brief Check if a point is inside a touch zone
+     * @brief Look up all entity transforms and cache their positions/sizes
      */
-    bool IsTouchInsideZone(const TouchZone& zone, glm::vec2 touchPos);
+    void UpdateEntityTransforms();
 
     /**
-     * @brief Check if a point is inside a rectangle
+     * @brief Check if a touch point is inside an entity's bounds
      */
-    bool IsPointInRect(glm::vec2 point, glm::vec2 rectPos, glm::vec2 rectSize);
-
-    /**
-     * @brief Update touch zone states
-     */
-    void UpdateTouchZones();
-
-    /**
-     * @brief Update virtual joystick states
-     */
-    void UpdateJoysticks();
-
-    /**
-     * @brief Update touch drag zones (for camera look)
-     */
-    void UpdateDragZones();
+    bool IsTouchInsideEntity(const EntityAction& entity, glm::vec2 touchPos);
 
     /**
      * @brief Detect and trigger gestures

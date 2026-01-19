@@ -13,6 +13,7 @@ void ParallelSystemOrchestrator::Update() {
     mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
     mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
+    mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
 
 	// Then update the other systems in parallel.
     frameChannel.Submit([&] {

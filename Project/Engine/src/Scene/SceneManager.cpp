@@ -43,22 +43,29 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) {
-    if (currentScene && (callingFromLua || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
+void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
+    // Check if we need to defer the load (scene not synchronized or called from Lua/script)
+    // Skip deferral check if we're already executing a deferred load
+    bool isDeferredExecution = isExecutingDeferredLoad;
+
+    if (!isDeferredExecution && currentScene &&
+        (fromGameCode || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
 		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
 		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
-		// If calling from Lua, defer loading to the next frame to allow the Lua function call to be returned properly
+		// If calling from Lua/game code, defer loading to the next frame to allow the function call to be returned properly
 		// before shutting down the scripting system in currentScene->Exit().
         loadSceneNextFrame = true;
         sceneToLoadNextFrame = scenePath;
+        deferredSceneFromLua = fromGameCode;  // Remember if this was from game code
         return;
     }
 
 #if 1
 #ifdef EDITOR
-	// Reset game state to edit mode when loading a new scene
-	// This ensures play/pause state is cleared
-	if (Engine::IsPlayMode() || Engine::IsPaused()) {
+	// Only reset to edit mode if loading scene from editor UI (not from game code)
+	// When game code transitions scenes (e.g., main menu to game), we should stay in play mode
+	if (!fromGameCode && (Engine::IsPlayMode() || Engine::IsPaused())) {
+		// This is a manual scene load from editor while playing - exit play mode
 		Engine::SetGameState(GameState::EDIT_MODE);
 	}
 
@@ -253,10 +260,18 @@ void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) 
 void SceneManager::UpdateScene(double dt) {
     if (loadSceneNextFrame && currentScene->updateSynchronized && currentScene->drawSynchronized) {
 		ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
-        LoadScene(sceneToLoadNextFrame);
+        std::string pathToLoad = sceneToLoadNextFrame;
+        bool wasFromGameCode = deferredSceneFromLua;  // Save before clearing
+
+        // Clear deferred state
         loadSceneNextFrame = false;
         sceneToLoadNextFrame = "";
+        deferredSceneFromLua = false;
 
+        // Set flag to prevent re-deferral during this execution
+        isExecutingDeferredLoad = true;
+        LoadScene(pathToLoad, wasFromGameCode);
+        isExecutingDeferredLoad = false;
     }
 	if (currentScene) {
 		currentScene->Update(dt);
@@ -303,16 +318,21 @@ void SceneManager::SaveScene()
     }
 
 	std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
-    if (FileUtilities::StrictExists(projectRootScenesPath)) {
-        if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
-            ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
-        }
+    if (currentScenePath != projectRootScenesPath.generic_string()) {
+        if (FileUtilities::StrictExists(projectRootScenesPath)) {
+            if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
+                ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+            }
+	    }
         else {
-            ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
+		    ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
         }
-	}
+    }
     else {
-		ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
+		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Root Project/Resources/Scenes: " + currentScenePath);
     }
 
 // COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.

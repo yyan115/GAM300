@@ -31,6 +31,22 @@ bool DesktopInputManager::IsActionJustReleased(const std::string& action) {
            m_previousActions.count(action) > 0;
 }
 
+glm::vec2 DesktopInputManager::GetActionTouchPosition(const std::string& action) {
+    // Desktop doesn't use touch - return (0,0)
+    (void)action;
+    return glm::vec2(0.0f);
+}
+
+bool DesktopInputManager::IsDragging() {
+    // Desktop uses mouse delta for camera, not touch drag
+    return false;
+}
+
+glm::vec2 DesktopInputManager::GetDragDelta() {
+    // Desktop uses mouse delta for camera, not touch drag
+    return glm::vec2(0.0f);
+}
+
 glm::vec2 DesktopInputManager::GetAxis(const std::string& axisName) {
     auto it = m_axisBindings.find(axisName);
     if (it == m_axisBindings.end()) {
@@ -77,6 +93,38 @@ glm::vec2 DesktopInputManager::GetTouchPosition(int index) {
         return GetMousePositionNormalized();
     }
     return glm::vec2(0.0f);
+}
+
+std::vector<InputManager::Touch> DesktopInputManager::GetTouches() {
+    // Desktop simulates single touch with mouse
+    std::vector<Touch> touches;
+    if (m_pointerPressed) {
+        Touch t;
+        t.id = 0;
+        t.phase = m_pointerPreviouslyPressed ? TouchPhase::Moved : TouchPhase::Began;
+        t.position = GetMousePositionNormalized();
+        t.startPosition = t.position;  // Desktop doesn't track start
+        t.delta = m_mouseDelta;
+        t.entityName = "";  // Desktop doesn't do entity hit detection
+        t.duration = 0.0f;
+        touches.push_back(t);
+    }
+    return touches;
+}
+
+InputManager::Touch DesktopInputManager::GetTouchById(int touchId) {
+    if (touchId == 0 && m_pointerPressed) {
+        Touch t;
+        t.id = 0;
+        t.phase = m_pointerPreviouslyPressed ? TouchPhase::Moved : TouchPhase::Began;
+        t.position = GetMousePositionNormalized();
+        t.startPosition = t.position;
+        t.delta = m_mouseDelta;
+        t.entityName = "";
+        t.duration = 0.0f;
+        return t;
+    }
+    return Touch{};  // Return empty touch with id=-1
 }
 
 void DesktopInputManager::Update(float deltaTime) {

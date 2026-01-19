@@ -73,28 +73,42 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public boolean onTouchEvent(MotionEvent event) {
         if (engineReady) {
             int action = event.getActionMasked();
-            float x = event.getX();
-            float y = event.getY();
-            
-            // Convert to Android action constants that match our C++ code
-            int actionCode;
+            int pointerIndex = event.getActionIndex();
+            int pointerId = event.getPointerId(pointerIndex);
+
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
-                    actionCode = 0; // ACTION_DOWN
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    // A finger went down
+                    onTouchEventWithId(0, pointerId, event.getX(pointerIndex), event.getY(pointerIndex));
                     break;
+
                 case MotionEvent.ACTION_UP:
-                    actionCode = 1; // ACTION_UP
+                case MotionEvent.ACTION_POINTER_UP:
+                    // A finger went up
+                    onTouchEventWithId(1, pointerId, event.getX(pointerIndex), event.getY(pointerIndex));
                     break;
+
                 case MotionEvent.ACTION_MOVE:
-                    actionCode = 2; // ACTION_MOVE
+                    // One or more fingers moved - send all pointer positions
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        int id = event.getPointerId(i);
+                        onTouchEventWithId(2, id, event.getX(i), event.getY(i));
+                    }
                     break;
+
+                case MotionEvent.ACTION_CANCEL:
+                    // All fingers cancelled - release all
+                    for (int i = 0; i < event.getPointerCount(); i++) {
+                        int id = event.getPointerId(i);
+                        onTouchEventWithId(1, id, event.getX(i), event.getY(i));
+                    }
+                    break;
+
                 default:
                     return super.onTouchEvent(event);
             }
-            
-            // Call native method
-            onTouchEvent(actionCode, x, y);
-            Log.d(TAG, "Touch event: action=" + action + ", pos=(" + x + ", " + y + ")");
+
             return true;
         }
         return super.onTouchEvent(event);
@@ -204,6 +218,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public native void destroyEngine();
     
     // Input handling native methods
-    public native void onTouchEvent(int action, float x, float y);
+    public native void onTouchEventWithId(int action, int pointerId, float x, float y);
     public native void onKeyEvent(int keyCode, int action);
 }

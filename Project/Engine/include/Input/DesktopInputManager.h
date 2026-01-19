@@ -44,7 +44,11 @@ public:
     bool IsActionPressed(const std::string& action) override;
     bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
+    glm::vec2 GetActionTouchPosition(const std::string& action) override;
     glm::vec2 GetAxis(const std::string& axisName) override;
+
+    bool IsDragging() override;
+    glm::vec2 GetDragDelta() override;
 
     bool IsPointerPressed() override;
     bool IsPointerJustPressed() override;
@@ -52,6 +56,9 @@ public:
 
     int GetTouchCount() override;
     glm::vec2 GetTouchPosition(int index) override;
+
+    std::vector<Touch> GetTouches() override;
+    Touch GetTouchById(int touchId) override;
 
     void Update(float deltaTime) override;
     bool LoadConfig(const std::string& path) override;

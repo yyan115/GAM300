@@ -28,10 +28,25 @@
 // local axis = Input.GetAxis("Movement")
 // player:Move(axis.x, axis.y)
 //
-// -- Batch API (for performance - call once per frame)
-// local states = UnifiedInput.GetAllActionStates()
-// if states["Jump"] then player:Jump() end
-// if states["Attack"] then player:Attack() end
+// -- Full touch system (phases, IDs, entities)
+// local touches = Input.GetTouches()
+// for i, touch in ipairs(touches) do
+//     print(touch.id, touch.phase, touch.entity)
+//     -- touch.phase: "began", "moved", "stationary", "ended"
+//     -- touch.entity: entity name if on UI, "" if not
+// end
+
+// Register TouchInfo class for Lua
+luabridge::getGlobalNamespace(L)
+    .beginClass<TouchInfo>("TouchInfo")
+        .addProperty("id", &TouchInfo::id)
+        .addProperty("phase", &TouchInfo::phase)
+        .addProperty("position", &TouchInfo::position)
+        .addProperty("startPosition", &TouchInfo::startPosition)
+        .addProperty("delta", &TouchInfo::delta)
+        .addProperty("entity", &TouchInfo::entity)
+        .addProperty("duration", &TouchInfo::duration)
+    .endClass();
 
 BEGIN_SYSTEM("Input")
     // Actions
@@ -41,6 +56,20 @@ BEGIN_SYSTEM("Input")
 
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
+
+    // Entity-based touch position (Android joysticks)
+    // Returns touch position relative to entity center - use for calculating joystick direction
+    // Example: local pos = Input.GetActionTouchPosition("Movement")
+    //          local dir = { x = pos.x / radius, y = pos.y / radius }
+    FUNCTION("GetActionTouchPosition", InputWrappers::GetActionTouchPosition)
+
+    // Camera drag (Android - unhandled touches become camera drag)
+    // Example: if Input.IsDragging() then
+    //              local delta = Input.GetDragDelta()
+    //              camera:Rotate(delta.x, delta.y)
+    //          end
+    FUNCTION("IsDragging", InputWrappers::IsDragging)
+    FUNCTION("GetDragDelta", InputWrappers::GetDragDelta)
 
     // Batch API (for Lua optimization)
     FUNCTION("GetAllActionStates", InputWrappers::GetAllActionStates)
@@ -54,6 +83,11 @@ BEGIN_SYSTEM("Input")
     // Multi-touch (Android - for advanced touch handling)
     FUNCTION("GetTouchCount", InputWrappers::GetTouchCount)
     FUNCTION("GetTouchPosition", InputWrappers::GetTouchPosition)
+
+    // Full touch system (phases, IDs, entities)
+    // Returns array of TouchInfo objects with: id, phase, position, startPosition, delta, entity, duration
+    FUNCTION("GetTouches", InputWrappers::GetTouches)
+    FUNCTION("GetTouchById", InputWrappers::GetTouchById)
 END_SYSTEM()
 
 // ============================================================================

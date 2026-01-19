@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <glm/glm.hpp>
 #include "Keys.h"  // For Input::Key and Input::MouseButton enums
@@ -52,6 +53,25 @@ public:
     virtual bool IsActionJustReleased(const std::string& action) = 0;
 
     /**
+     * @brief Get touch position relative to action entity center (Android)
+     * @param action Action name from config
+     * @return Position relative to entity center (normalized by entity size)
+     *         For joysticks: divide by radius to get -1 to 1 range
+     *         Returns (0,0) if action not pressed or on desktop
+     *
+     * @example
+     * // In Lua game code:
+     * if Input.IsActionPressed("Movement") then
+     *     local pos = Input.GetActionTouchPosition("Movement")
+     *     -- pos.x and pos.y are relative to joystick center
+     *     local axisX = pos.x / joystickRadius
+     *     local axisY = pos.y / joystickRadius
+     *     player:Move(axisX, axisY)
+     * end
+     */
+    virtual glm::vec2 GetActionTouchPosition(const std::string& action) = 0;
+
+    /**
      * @brief Get 2D axis value for movement/look controls
      * @param axisName Axis name from config (e.g., "Movement", "Look")
      * @return Normalized vector (-1 to 1 on each axis)
@@ -60,6 +80,30 @@ public:
      * Android: Virtual joystick or touch drag
      */
     virtual glm::vec2 GetAxis(const std::string& axisName) = 0;
+
+    // ========== Unhandled Touch / Camera Drag (Android) ==========
+
+    /**
+     * @brief Check if there's an unhandled touch being dragged (Android)
+     * @return true if a touch not on any UI entity is being dragged
+     *
+     * Use this for camera rotation - if no UI was touched, dragging = camera
+     */
+    virtual bool IsDragging() = 0;
+
+    /**
+     * @brief Get drag delta for unhandled touches (Android)
+     * @return Delta movement this frame (normalized screen coordinates)
+     *         Returns (0,0) on desktop or if not dragging
+     *
+     * @example
+     * // In Lua game code:
+     * if Input.IsDragging() then
+     *     local delta = Input.GetDragDelta()
+     *     camera:Rotate(delta.x * sensitivity, delta.y * sensitivity)
+     * end
+     */
+    virtual glm::vec2 GetDragDelta() = 0;
 
     // ========== Pointer Abstraction (Scene UI Buttons) ==========
 
@@ -97,6 +141,44 @@ public:
      * @return Normalized screen position (0-1)
      */
     virtual glm::vec2 GetTouchPosition(int index) = 0;
+
+    // ========== Full Touch System (phases, IDs, entities) ==========
+
+    /**
+     * @brief Touch phase enumeration
+     */
+    enum class TouchPhase {
+        Began,      // Finger just touched screen
+        Moved,      // Finger moved this frame
+        Stationary, // Finger is down but didn't move
+        Ended       // Finger just lifted
+    };
+
+    /**
+     * @brief Full touch data structure
+     */
+    struct Touch {
+        int id = -1;                    // Unique finger ID (persists while finger down)
+        TouchPhase phase = TouchPhase::Ended;
+        glm::vec2 position;             // Current position (normalized 0-1)
+        glm::vec2 startPosition;        // Where touch began
+        glm::vec2 delta;                // Movement this frame
+        std::string entityName = "";    // Entity this touch is on ("" if none)
+        float duration = 0.0f;          // Time since touch began (seconds)
+    };
+
+    /**
+     * @brief Get all active touches with full data
+     * @return Vector of Touch structs
+     */
+    virtual std::vector<Touch> GetTouches() = 0;
+
+    /**
+     * @brief Get a specific touch by its unique ID
+     * @param touchId The finger ID
+     * @return Touch data, or empty Touch with id=-1 if not found
+     */
+    virtual Touch GetTouchById(int touchId) = 0;
 
     // ========== System Lifecycle ==========
 
