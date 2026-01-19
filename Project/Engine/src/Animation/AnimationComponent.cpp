@@ -5,6 +5,7 @@
 #include "Animation/AnimationComponent.hpp"
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
+#include "Graphics/Model/Model.h"
 
 #pragma region Reflection
 REFL_REGISTER_START(AnimationComponent)
@@ -126,7 +127,9 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
     importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
         aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
 
-    const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), aiProcess_Triangulate | aiProcess_FlipUVs, "fbx");
+    unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
+
+    const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
 
     if (!scene) {
         ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
@@ -141,6 +144,28 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
     if (scene->mNumAnimations == 0) {
         ENGINE_PRINT("[Anim] File has NO animations: ", path, "\n");
         return nullptr;
+    }
+
+    float scaleFactor = Model::CalculateAutoScale(scene);
+
+    // 3. MANUAL FIX: Iterate and multiply translation keys
+    if (std::abs(scaleFactor - 1.0f) > 0.001f)
+    {
+        ENGINE_LOG_INFO("[AnimationComponent] Auto-scaling animation by " + std::to_string(scaleFactor));
+
+        // Free the current scene
+        importer.FreeScene();
+
+        // Re-import with GlobalScale
+        importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
+        postProcessFlags |= aiProcess_GlobalScale;
+
+        scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+
+        if (!scene || !scene->mRootNode || scene->mNumAnimations == 0) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Re-import with scaling failed\n");
+            return nullptr;
+        }
     }
 
     aiAnimation* aiAnim = scene->mAnimations[0];

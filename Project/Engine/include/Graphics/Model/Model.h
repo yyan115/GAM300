@@ -81,6 +81,10 @@ public:
     Model(std::shared_ptr<AssetMeta> modelMeta);
 	virtual ~Model() = default;
 	//Model(const std::string& filePath);
+
+    static float GetMaxExtent(const aiScene* scene);
+    static float CalculateAutoScale(const aiScene* scene);
+
     std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
 	std::string CompileToMesh(const std::string& modelPath, std::vector<Mesh>& meshesToCompile, bool forAndroid = false);
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
