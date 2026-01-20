@@ -17,10 +17,10 @@
 //Separate initialise with ctor -> cannot guaranteed exist before that e.g components like rigidbody + collider
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
     : mPhysicsSystem(physicsSystem),
-      mCharacter(nullptr),
-      mVelocity(JPH::Vec3::sZero()),
-      mCharacterLayer(Layers::CHARACTER),
-      collider_offsetY(0.0f)
+    mCharacter(nullptr),
+    mVelocity(JPH::Vec3::sZero()),
+    mCharacterLayer(Layers::CHARACTER),
+    collider_offsetY(0.0f)
 {}
 
 
@@ -35,8 +35,6 @@ CharacterController::~CharacterController()
 
 bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
-    std::cout << "[CharacterController] mPhysicsSystem = " << mPhysicsSystem << std::endl;
-
     if (!mPhysicsSystem) {
         std::cerr << "[CharacterController] ERROR: PhysicsSystem is NULL!" << std::endl;
         return false;
@@ -46,14 +44,16 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
 
+    //std::cout << "calculation for new offset Y is " << ((collider.capsuleHalfHeight + collider.capsuleRadius) * transform.localScale.y) << std::endl;
+    collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 
     std::cout << "[CharacterController] Collider offset Y: " << collider_offsetY << std::endl;
-    std::cout << "[CharacterController] Transform position: (" 
-              << transform.localPosition.x << ", " 
-              << transform.localPosition.y << ", " 
-              << transform.localPosition.z << ")" << std::endl;
+    std::cout << "[CharacterController] Transform position: ("
+        << transform.localPosition.x << ", "
+        << transform.localPosition.y << ", "
+        << transform.localPosition.z << ")" << std::endl;
 
     std::cout << "Capsule radius=" << collider.capsuleRadius
         << " halfHeight=" << collider.capsuleHalfHeight << std::endl;
@@ -68,7 +68,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     // Create character settings
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
     settings->mShape = capsule;
-    settings->mMass = 70.0f;   
+    settings->mMass = 70.0f;
     settings->mMaxStrength = 100.0f;
 
     // ADD THESE CRITICAL SETTINGS:
@@ -82,21 +82,22 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mCharacterPadding = 0.02f;
     settings->mMaxNumHits = 256;
     settings->mHitReductionCosMaxAngle = 0.999f;
+    settings->mEnhancedInternalEdgeRemoval = true;      //in-edge smoothing
 
 
     // CRITICAL FIX: Add the offset when creating the character
     // Transform position = feet position
     // Physics needs the capsule CENTER position, which is offset upward
     JPH::RVec3 physicsPosition(
-        transform.localPosition.x, 
+        transform.localPosition.x,
         transform.localPosition.y,
         transform.localPosition.z
     );
 
-    std::cout << "[CharacterController] Creating character at physics position: (" 
-              << physicsPosition.GetX() << ", " 
-              << physicsPosition.GetY() << ", " 
-              << physicsPosition.GetZ() << ")" << std::endl;
+    std::cout << "[CharacterController] Creating character at physics position: ("
+        << physicsPosition.GetX() << ", "
+        << physicsPosition.GetY() << ", "
+        << physicsPosition.GetZ() << ")" << std::endl;
 
     // CREATE VIRTUAL CHARACTER at the correct physics position
     mCharacter = new JPH::CharacterVirtual(
@@ -127,6 +128,27 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 
     return true;
 }
+
+
+CharacterController* CharacterController::CreateController(ColliderComponent& collider, Transform& transform)
+{
+    if (!mPhysicsSystem) {
+        std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
+        return nullptr;
+    }
+
+    CharacterController* controller = new CharacterController(mPhysicsSystem);
+
+    if (!controller->Initialise(collider, transform)) {
+        std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
+        delete controller;
+        return nullptr;
+    }
+    return controller;
+}
+
+
+
 
 void CharacterController::Update(float deltaTime) {
     if (!mCharacter || !mPhysicsSystem)
@@ -187,10 +209,10 @@ void CharacterController::Update(float deltaTime) {
     else {
         // In air: Apply gravity to current velocity
         newVelocity = currentVelocity + gravity * deltaTime;
-        
+
         // Add player input (allows air control)
         newVelocity += JPH::Vec3(mVelocity.GetX(), mVelocity.GetY(), mVelocity.GetZ()) * deltaTime;
-        
+
         //std::cout << "[C++] In air - applying gravity" << std::endl;
     }
 
@@ -205,7 +227,6 @@ void CharacterController::Update(float deltaTime) {
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.5f, 0);
     updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0);
-
     // Perform the character update
     mCharacter->ExtendedUpdate(
         deltaTime,
@@ -227,13 +248,13 @@ void CharacterController::Update(float deltaTime) {
         JPH::Vec3 groundNormal = mCharacter->GetGroundNormal();
         JPH::Vec3 groundVelocity = mCharacter->GetGroundVelocity();
         JPH::BodyID groundBodyID = mCharacter->GetGroundBodyID();
-        
+
         //std::cout << "[C++] ON GROUND! Normal: (" << groundNormal.GetX() << ", " 
         //          << groundNormal.GetY() << ", " << groundNormal.GetZ() << ")" << std::endl;
         //std::cout << "[C++] Ground Body ID: " << groundBodyID.GetIndex() << std::endl;
         //std::cout << "[C++] Ground Velocity: " << groundVelocity.GetY() << std::endl;
     }
-    
+
     //std::cout << "===================================" << std::endl;
 
     // Clear player input velocity after applying it
@@ -265,17 +286,30 @@ Vector3D CharacterController::GetPosition() const
     {
         // Physics returns the capsule CENTER position
         JPH::Vec3 physicsPosition = mCharacter->GetPosition();
-        
+
         // Subtract offset to get the feet position (matches Transform convention)
         Vector3D feetPosition(
-            physicsPosition.GetX(), 
+            physicsPosition.GetX(),
             physicsPosition.GetY() - collider_offsetY,
             physicsPosition.GetZ()
-        );        
+        );
         return feetPosition;
     }
     return Vector3D(0, 0, 0);
 }
+void CharacterController::SetPosition(Transform transform)
+{
+    JPH::RVec3 newPosition(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+
+    mCharacter->SetPosition(newPosition);
+    mCharacter->SetLinearVelocity(JPH::Vec3::sZero());
+    mVelocity = JPH::Vec3::sZero();
+}
+
+
+
+
+
 
 void CharacterController::SetVelocity(const Vector3D vel)
 {
@@ -318,4 +352,4 @@ Vector3D CharacterController::GetGravity() const
 void CharacterController::SetGravity(Vector3D gravity)
 {
     mPhysicsSystem->SetGravity(ToJoltVec3(gravity));
-} 
+}

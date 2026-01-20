@@ -441,6 +441,8 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 }
 
 std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
+	if (guid == GUID_128{}) return "";
+
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
 #ifndef ANDROID
@@ -509,6 +511,21 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		}
 	}
 
+	// Copy config files to Android resources.
+	if (std::filesystem::exists(rootAssetDirectory + "/Configs")) {
+		for (auto p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Configs")) {
+			if (std::filesystem::is_regular_file(p)) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
+					ENGINE_LOG_INFO("Copied config file to Android Resources: " + p.path().generic_string());
+				}
+			}
+		}
+	}
+
 	// Output the asset manifest for Android.
 	std::filesystem::path manifestFileP(GetAndroidResourcesPath() / "asset_manifest.txt");
 	std::ofstream out(manifestFileP.generic_string());
@@ -527,6 +544,19 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
 			path = newPath.generic_string();
 			out << path << "\n";
+		}
+	}
+
+	// Add config files to manifest
+	if (std::filesystem::exists(rootAssetDirectory + "/Configs")) {
+		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Configs")) {
+			if (std::filesystem::is_regular_file(p)) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				out << path << "\n";
+			}
 		}
 	}
 

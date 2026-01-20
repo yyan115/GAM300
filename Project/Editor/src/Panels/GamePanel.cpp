@@ -225,7 +225,7 @@ void GamePanel::OnImGuiRender() {
 
                 // Feed raw position directly to InputManager for camera rotation
                 // The camera script uses mouse delta, so absolute position works
-                InputManager::SetGamePanelMousePos((float)glfwMouseX, (float)glfwMouseY);
+                g_inputManager->SetGamePanelMousePos((float)glfwMouseX, (float)glfwMouseY);
             } else {
                 // Normal mode - only update when inside panel
                 ImVec2 mousePos = ImGui::GetMousePos();
@@ -244,7 +244,7 @@ void GamePanel::OnImGuiRender() {
                     float gameY = relY * scaleY;
 
                     // Feed into InputManager (game-space coordinates)
-                    InputManager::SetGamePanelMousePos(gameX, gameY);
+                    g_inputManager->SetGamePanelMousePos(gameX, gameY);
                 }
             }
 

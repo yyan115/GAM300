@@ -20,7 +20,7 @@ public:
     // Destructor
     ~CharacterController();
 
-    bool Initialise(ColliderComponent &collider, Transform &transform);
+    bool Initialise(ColliderComponent& collider, Transform& transform);
 
     // Called each frame
     void Update(float deltaTime);
@@ -29,15 +29,20 @@ public:
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }
 
 
+    CharacterController* CreateController(ColliderComponent& collider, Transform& transform);
+
+
     //GETTER FUNCTIONS
     Vector3D GetPosition() const;
     Vector3D GetVelocity() const;
+
+    void SetPosition(Transform position);
 
     // Set/Get velocity
     void SetVelocity(const Vector3D vel);
 
 
-   // BASIC MOVEMENT FUNCTIONS 
+    // BASIC MOVEMENT FUNCTIONS 
     void Move(float x, float y, float z);   // Set Move Velocity, Position updated in "Update", change name to clearer?
     void Jump(float height);                // Jump
 

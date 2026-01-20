@@ -23,7 +23,7 @@ uniform mat4 lightSpaceMatrix;  // NEW: Light's view-projection matrix
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
-uniform bool isAnimated;
+uniform bool hasBones;
 
 void main()
 {
@@ -32,7 +32,7 @@ void main()
     vec3 nrm = aNormal;
     vec3 tan = aTangent;
 
-    if (isAnimated)
+    if (hasBones)
     {
         // LBS skinning
         mat4 skin = mat4(0.0);

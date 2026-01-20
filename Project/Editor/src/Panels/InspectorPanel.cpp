@@ -65,6 +65,10 @@ extern std::string DraggedFontPath;
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
+#include "UI/Slider/SliderComponent.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "Hierarchy/ParentComponent.hpp"
+#include "Hierarchy/ChildrenComponent.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -293,6 +297,10 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<ButtonComponent>(entity) ?
 				(void*)&ecs.GetComponent<ButtonComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ButtonComponent>(entity); }},
+		{"Slider", "SliderComponent",
+			[&]() { return ecs.HasComponent<SliderComponent>(entity) ?
+				(void*)&ecs.GetComponent<SliderComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<SliderComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -393,6 +401,9 @@ void InspectorPanel::OnImGuiRender() {
 				cachedMaterialPath.clear();
 			}
 
+			// Check for multi-entity selection
+			const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
+
 			if (displayEntity == static_cast<Entity>(-1)) {
 				ImGui::Text("No object selected");
 
@@ -425,6 +436,10 @@ void InspectorPanel::OnImGuiRender() {
 				if (inspectorLocked) {
 					ImGui::Text("Inspector is locked but no valid content is selected.");
 				}
+			}
+			else if (selectedEntities.size() > 1 && !inspectorLocked) {
+				// Multi-entity selection mode
+				DrawMultiEntityInspector(selectedEntities);
 			}
 			else {
 				try {
@@ -984,6 +999,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<ButtonComponent>(entity)) {
 				allComponents.push_back({ "Button", "ButtonComponent", "UI" });
 			}
+			if (!ecsManager.HasComponent<SliderComponent>(entity)) {
+				allComponents.push_back({ "Slider", "SliderComponent", "UI" });
+			}
 
 		// Cache scripts to avoid filesystem scanning every frame
 		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
@@ -1495,6 +1513,90 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<ButtonComponent>(entity, component);
 			std::cout << "[Inspector] Added ButtonComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "SliderComponent") {
+			// Ensure entity has Transform component for UI positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				transform.localScale = Vector3D(200.0f, 20.0f, 1.0f);
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for Slider" << std::endl;
+			}
+
+			SliderComponent component;
+			component.minValue = 0.0f;
+			component.maxValue = 1.0f;
+			component.value = 0.0f;
+			component.interactable = true;
+			component.horizontal = true;
+			component.wholeNumbers = false;
+
+			auto createSliderSpriteChild = [&](const std::string& childName, int sortingOrder) -> Entity {
+				Entity child = ecsManager.CreateEntity();
+				ecsManager.GetComponent<NameComponent>(child).name = childName;
+
+				GUID_128 spriteShaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"));
+				std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteShaderGUID);
+				auto shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteShaderGUID, shaderPath);
+
+				SpriteRenderComponent sprite;
+				sprite.shader = shader;
+				sprite.shaderGUID = spriteShaderGUID;
+				sprite.texture = nullptr;
+				sprite.is3D = false;
+				sprite.isVisible = true;
+				sprite.sortingOrder = sortingOrder;
+				ecsManager.AddComponent<SpriteRenderComponent>(child, sprite);
+
+				return child;
+			};
+
+			auto attachChild = [&](Entity parent, Entity child) {
+				auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+				GUID_128 parentGuid = guidRegistry.GetGUIDByEntity(parent);
+				GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+
+				if (!ecsManager.HasComponent<ParentComponent>(child)) {
+					ecsManager.AddComponent<ParentComponent>(child, ParentComponent{ parentGuid });
+				}
+
+				if (!ecsManager.HasComponent<ChildrenComponent>(parent)) {
+					ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
+				}
+
+				auto& children = ecsManager.GetComponent<ChildrenComponent>(parent).children;
+				if (std::find(children.begin(), children.end(), childGuid) == children.end()) {
+					children.push_back(childGuid);
+				}
+			};
+
+			Entity trackEntity = createSliderSpriteChild("Slider_Track", 0);
+			Entity handleEntity = createSliderSpriteChild("Slider_Handle", 1);
+
+			component.trackEntityGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(trackEntity);
+			component.handleEntityGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(handleEntity);
+
+			attachChild(entity, trackEntity);
+			attachChild(entity, handleEntity);
+
+			// Set default transforms for children
+			if (ecsManager.HasComponent<Transform>(entity)) {
+				auto& parentTransform = ecsManager.GetComponent<Transform>(entity);
+				auto& trackTransform = ecsManager.GetComponent<Transform>(trackEntity);
+				auto& handleTransform = ecsManager.GetComponent<Transform>(handleEntity);
+
+				trackTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+				trackTransform.localScale = parentTransform.localScale;
+				trackTransform.isDirty = true;
+
+				float handleSize = std::max(10.0f, parentTransform.localScale.y);
+				handleTransform.localPosition = Vector3D(0.0f, 0.0f, 0.0f);
+				handleTransform.localScale = Vector3D(handleSize, handleSize, 1.0f);
+				handleTransform.isDirty = true;
+			}
+
+			ecsManager.AddComponent<SliderComponent>(entity, component);
+			std::cout << "[Inspector] Added SliderComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1802,6 +1904,7 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			}
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
+				ecsManager.GetComponent<ModelRenderComponent>(request.entity).SetAnimator(nullptr);
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Brain") {
@@ -1815,6 +1918,29 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "ButtonComponent") {
 				ecsManager.RemoveComponent<ButtonComponent>(request.entity);
 				std::cout << "[Inspector] Removed ButtonComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "SliderComponent") {
+				if (ecsManager.HasComponent<SliderComponent>(request.entity)) {
+					auto& sliderComp = ecsManager.GetComponent<SliderComponent>(request.entity);
+					Entity trackEntity = static_cast<Entity>(-1);
+					Entity handleEntity = static_cast<Entity>(-1);
+					if (sliderComp.trackEntityGuid.high != 0 || sliderComp.trackEntityGuid.low != 0) {
+						trackEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sliderComp.trackEntityGuid);
+					}
+					if (sliderComp.handleEntityGuid.high != 0 || sliderComp.handleEntityGuid.low != 0) {
+						handleEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sliderComp.handleEntityGuid);
+					}
+
+					if (trackEntity != static_cast<Entity>(-1)) {
+						ecsManager.DestroyEntity(trackEntity);
+					}
+					if (handleEntity != static_cast<Entity>(-1)) {
+						ecsManager.DestroyEntity(handleEntity);
+					}
+				}
+
+				ecsManager.RemoveComponent<SliderComponent>(request.entity);
+				std::cout << "[Inspector] Removed SliderComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -1902,6 +2028,15 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				ecsManager.GetComponent<ButtonComponent>(request.entity) = ButtonComponent{};
 				std::cout << "[Inspector] Reset ButtonComponent on entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "SliderComponent") {
+				auto& sliderComp = ecsManager.GetComponent<SliderComponent>(request.entity);
+				GUID_128 trackGuid = sliderComp.trackEntityGuid;
+				GUID_128 handleGuid = sliderComp.handleEntityGuid;
+				sliderComp = SliderComponent{};
+				sliderComp.trackEntityGuid = trackGuid;
+				sliderComp.handleEntityGuid = handleGuid;
+				std::cout << "[Inspector] Reset SliderComponent on entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values
 				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
@@ -1987,5 +2122,347 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 	}
 	catch (const std::exception& e) {
 		std::cerr << "[Inspector] Error applying model to entity " << entity << ": " << e.what() << std::endl;
+	}
+}
+
+// ============================================================================
+// Multi-Entity Editing Functions
+// ============================================================================
+
+bool InspectorPanel::HasComponent(Entity entity, const std::string& componentType) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	if (componentType == "Transform") return ecs.HasComponent<Transform>(entity);
+	if (componentType == "NameComponent") return ecs.HasComponent<NameComponent>(entity);
+	if (componentType == "TagComponent") return ecs.HasComponent<TagComponent>(entity);
+	if (componentType == "LayerComponent") return ecs.HasComponent<LayerComponent>(entity);
+	if (componentType == "ModelRenderComponent") return ecs.HasComponent<ModelRenderComponent>(entity);
+	if (componentType == "SpriteRenderComponent") return ecs.HasComponent<SpriteRenderComponent>(entity);
+	if (componentType == "SpriteAnimationComponent") return ecs.HasComponent<SpriteAnimationComponent>(entity);
+	if (componentType == "TextRenderComponent") return ecs.HasComponent<TextRenderComponent>(entity);
+	if (componentType == "ParticleComponent") return ecs.HasComponent<ParticleComponent>(entity);
+	if (componentType == "AudioComponent") return ecs.HasComponent<AudioComponent>(entity);
+	if (componentType == "AudioListenerComponent") return ecs.HasComponent<AudioListenerComponent>(entity);
+	if (componentType == "AudioReverbZoneComponent") return ecs.HasComponent<AudioReverbZoneComponent>(entity);
+	if (componentType == "DirectionalLightComponent") return ecs.HasComponent<DirectionalLightComponent>(entity);
+	if (componentType == "PointLightComponent") return ecs.HasComponent<PointLightComponent>(entity);
+	if (componentType == "SpotLightComponent") return ecs.HasComponent<SpotLightComponent>(entity);
+	if (componentType == "ColliderComponent") return ecs.HasComponent<ColliderComponent>(entity);
+	if (componentType == "RigidBodyComponent") return ecs.HasComponent<RigidBodyComponent>(entity);
+	if (componentType == "CameraComponent") return ecs.HasComponent<CameraComponent>(entity);
+	if (componentType == "AnimationComponent") return ecs.HasComponent<AnimationComponent>(entity);
+	if (componentType == "BrainComponent") return ecs.HasComponent<BrainComponent>(entity);
+	if (componentType == "ScriptComponentData") return ecs.HasComponent<ScriptComponentData>(entity);
+	if (componentType == "ButtonComponent") return ecs.HasComponent<ButtonComponent>(entity);
+
+	return false;
+}
+
+std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vector<Entity>& entities) {
+	if (entities.empty()) return {};
+
+	// List of all possible component types
+	std::vector<std::string> allComponentTypes = {
+		"Transform",
+		"ModelRenderComponent",
+		"SpriteRenderComponent",
+		"SpriteAnimationComponent",
+		"TextRenderComponent",
+		"ParticleComponent",
+		"AudioComponent",
+		"AudioListenerComponent",
+		"AudioReverbZoneComponent",
+		"DirectionalLightComponent",
+		"PointLightComponent",
+		"SpotLightComponent",
+		"ColliderComponent",
+		"RigidBodyComponent",
+		"CameraComponent",
+		"AnimationComponent",
+		"BrainComponent",
+		"ScriptComponentData",
+		"ButtonComponent"
+	};
+
+	std::vector<std::string> sharedComponents;
+
+	// Check each component type to see if ALL selected entities have it
+	for (const auto& componentType : allComponentTypes) {
+		bool allHave = true;
+		for (Entity entity : entities) {
+			if (!HasComponent(entity, componentType)) {
+				allHave = false;
+				break;
+			}
+		}
+		if (allHave) {
+			sharedComponents.push_back(componentType);
+		}
+	}
+
+	return sharedComponents;
+}
+
+void InspectorPanel::DrawSharedComponentsHeader(const std::vector<Entity>& entities) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	// Display selection info
+	ImGui::Text("%zu entities selected", entities.size());
+	ImGui::Separator();
+
+	// Show entity names
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+	std::string entityNames;
+	for (size_t i = 0; i < std::min(entities.size(), size_t(5)); ++i) {
+		if (ecs.HasComponent<NameComponent>(entities[i])) {
+			if (!entityNames.empty()) entityNames += ", ";
+			entityNames += ecs.GetComponent<NameComponent>(entities[i]).name;
+		}
+	}
+	if (entities.size() > 5) {
+		entityNames += ", ...";
+	}
+	ImGui::TextWrapped("%s", entityNames.c_str());
+	ImGui::PopStyleColor();
+	ImGui::Separator();
+}
+
+void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entities, const std::string& componentType) {
+	if (entities.empty()) return;
+
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	// Get type descriptor from reflection system
+	auto& lookup = TypeDescriptor::type_descriptor_lookup();
+	auto it = lookup.find(componentType);
+	if (it == lookup.end()) {
+		return;
+	}
+
+	TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+	if (!typeDesc) {
+		return;
+	}
+
+	// Get display name for the component
+	static const std::unordered_map<std::string, std::string> componentDisplayNames = {
+		{"Transform", "Transform"},
+		{"ModelRenderComponent", "Model Renderer"},
+		{"SpriteRenderComponent", "Sprite Renderer"},
+		{"SpriteAnimationComponent", "Sprite Animation"},
+		{"TextRenderComponent", "Text Renderer"},
+		{"ParticleComponent", "Particle System"},
+		{"AudioComponent", "Audio Source"},
+		{"AudioListenerComponent", "Audio Listener"},
+		{"AudioReverbZoneComponent", "Audio Reverb Zone"},
+		{"DirectionalLightComponent", "Directional Light"},
+		{"PointLightComponent", "Point Light"},
+		{"SpotLightComponent", "Spot Light"},
+		{"ColliderComponent", "Collider"},
+		{"RigidBodyComponent", "RigidBody"},
+		{"CameraComponent", "Camera"},
+		{"AnimationComponent", "Animation"},
+		{"BrainComponent", "Brain"},
+		{"ScriptComponentData", "Script"},
+		{"ButtonComponent", "Button"}
+	};
+
+	std::string displayName = componentType;
+	auto nameIt = componentDisplayNames.find(componentType);
+	if (nameIt != componentDisplayNames.end()) {
+		displayName = nameIt->second;
+	}
+
+	// Draw collapsing header for the component
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.28f, 0.28f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.32f, 0.32f, 0.32f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+
+	ImGui::Spacing();
+
+	std::string headerLabel = displayName + " (Multi-Edit)";
+	bool isOpen = ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
+	ImGui::PopStyleColor(3);
+
+	if (!isOpen) return;
+
+	ImGui::Spacing();
+
+	// Get members from the first entity to determine structure
+	Entity firstEntity = entities[0];
+	void* firstComponentPtr = nullptr;
+
+	// Get component pointer for the first entity
+	if (componentType == "Transform" && ecs.HasComponent<Transform>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<Transform>(firstEntity);
+	}
+	else if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<ModelRenderComponent>(firstEntity);
+	}
+	else if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<SpriteRenderComponent>(firstEntity);
+	}
+	else if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<ColliderComponent>(firstEntity);
+	}
+	else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<RigidBodyComponent>(firstEntity);
+	}
+	else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<CameraComponent>(firstEntity);
+	}
+	else if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<DirectionalLightComponent>(firstEntity);
+	}
+	else if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<PointLightComponent>(firstEntity);
+	}
+	else if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<SpotLightComponent>(firstEntity);
+	}
+	else if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<AudioComponent>(firstEntity);
+	}
+	else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<ParticleComponent>(firstEntity);
+	}
+	else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<AnimationComponent>(firstEntity);
+	}
+
+	if (!firstComponentPtr) {
+		ImGui::TextDisabled("Cannot edit this component type in multi-edit mode");
+		return;
+	}
+
+	// For Transform component, provide a simplified multi-edit interface
+	if (componentType == "Transform") {
+		ImGui::TextDisabled("Transform editing applies offset to all selected entities");
+		ImGui::Spacing();
+
+		static Vector3D positionOffset(0.0f, 0.0f, 0.0f);
+		static Vector3D rotationOffset(0.0f, 0.0f, 0.0f);
+		static Vector3D scaleMultiplier(1.0f, 1.0f, 1.0f);
+
+		// Position offset
+		ImGui::Text("Position Offset:");
+		float pos[3] = { positionOffset.x, positionOffset.y, positionOffset.z };
+		if (ImGui::DragFloat3("##PosOffset", pos, 0.1f)) {
+			Vector3D newOffset(pos[0], pos[1], pos[2]);
+			Vector3D delta = newOffset - positionOffset;
+			positionOffset = newOffset;
+
+			// Apply delta to all entities
+			for (Entity entity : entities) {
+				if (ecs.HasComponent<Transform>(entity)) {
+					Transform& transform = ecs.GetComponent<Transform>(entity);
+					transform.localPosition = transform.localPosition + delta;
+					transform.isDirty = true;
+				}
+			}
+		}
+
+		// Rotation offset (in Euler degrees)
+		ImGui::Text("Rotation Offset:");
+		float rot[3] = { rotationOffset.x, rotationOffset.y, rotationOffset.z };
+		if (ImGui::DragFloat3("##RotOffset", rot, 0.5f)) {
+			Vector3D newOffset(rot[0], rot[1], rot[2]);
+			Vector3D delta = newOffset - rotationOffset;
+			rotationOffset = newOffset;
+
+			// Apply delta rotation to all entities
+			// Convert delta from Euler degrees to quaternion
+			Quaternion deltaQuat = Quaternion::FromEulerDegrees(delta);
+
+			for (Entity entity : entities) {
+				if (ecs.HasComponent<Transform>(entity)) {
+					Transform& transform = ecs.GetComponent<Transform>(entity);
+					// Compose rotations: apply delta rotation to current rotation
+					transform.localRotation = deltaQuat * transform.localRotation;
+					transform.isDirty = true;
+				}
+			}
+		}
+
+		// Scale multiplier
+		ImGui::Text("Scale Multiplier:");
+		float scl[3] = { scaleMultiplier.x, scaleMultiplier.y, scaleMultiplier.z };
+		if (ImGui::DragFloat3("##ScaleMultiplier", scl, 0.01f, 0.01f, 100.0f)) {
+			Vector3D newMultiplier(scl[0], scl[1], scl[2]);
+
+			// Calculate ratio
+			Vector3D ratio(
+				scaleMultiplier.x > 0.001f ? newMultiplier.x / scaleMultiplier.x : 1.0f,
+				scaleMultiplier.y > 0.001f ? newMultiplier.y / scaleMultiplier.y : 1.0f,
+				scaleMultiplier.z > 0.001f ? newMultiplier.z / scaleMultiplier.z : 1.0f
+			);
+			scaleMultiplier = newMultiplier;
+
+			// Apply ratio to all entities
+			for (Entity entity : entities) {
+				if (ecs.HasComponent<Transform>(entity)) {
+					Transform& transform = ecs.GetComponent<Transform>(entity);
+					transform.localScale.x *= ratio.x;
+					transform.localScale.y *= ratio.y;
+					transform.localScale.z *= ratio.z;
+					transform.isDirty = true;
+				}
+			}
+		}
+
+		// Reset button
+		if (ImGui::Button("Reset Offsets")) {
+			positionOffset = Vector3D(0.0f, 0.0f, 0.0f);
+			rotationOffset = Vector3D(0.0f, 0.0f, 0.0f);
+			scaleMultiplier = Vector3D(1.0f, 1.0f, 1.0f);
+		}
+	}
+	else {
+		// For other components, just show the first entity's component with a note
+		ImGui::TextDisabled("Showing values from first selected entity");
+		ImGui::TextDisabled("Editing will apply to all selected entities");
+		ImGui::Spacing();
+
+		// Render using reflection (changes will be applied to first entity only for now)
+		ImGui::PushID(firstComponentPtr);
+		try {
+			ReflectionRenderer::RenderComponent(firstComponentPtr, typeDesc, firstEntity, ecs);
+		}
+		catch (const std::exception& e) {
+			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());
+		}
+		ImGui::PopID();
+	}
+}
+
+void InspectorPanel::DrawMultiEntityInspector(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	try {
+		// Draw header with entity count and names
+		DrawSharedComponentsHeader(entities);
+
+		// Get list of shared components
+		std::vector<std::string> sharedComponents = GetSharedComponentTypes(entities);
+
+		if (sharedComponents.empty()) {
+			ImGui::TextDisabled("No shared components between selected entities");
+			return;
+		}
+
+		// Display info about shared components
+		ImGui::Text("Shared Components:");
+		ImGui::SameLine();
+		ImGui::TextDisabled("(%zu)", sharedComponents.size());
+		ImGui::Separator();
+
+		// Draw each shared component
+		for (const auto& componentType : sharedComponents) {
+			DrawSharedComponentGeneric(entities, componentType);
+		}
+	}
+	catch (const std::exception& e) {
+		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());
 	}
 }

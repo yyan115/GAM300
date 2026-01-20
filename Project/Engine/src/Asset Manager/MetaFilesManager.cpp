@@ -163,8 +163,16 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 #ifdef EDITOR
 		ENGINE_PRINT("[MetaFilesManager] Editor recompiling ", assetPath, "...", "\n");
 		if (MetaFileExists(assetPath)) {
+			ENGINE_PRINT("[MetaFilesManager] .meta exists for: ", assetPath, ". Re-compiling...", "\n");
+			ENGINE_PRINT("[MetaFilesManager] Extension: ", extension, "\n");
 			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-				assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+				std::string shaderAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+
+				GUID_128 guid128 = GetGUID128FromAssetFile(shaderAssetPath);
+				AddGUID128Mapping(shaderAssetPath, guid128);
+				auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(shaderAssetPath);
+				AssetManager::GetInstance().CompileAsset(assetPath, true);
+				continue;
 			}
 			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
 			AddGUID128Mapping(assetPath, guid128);
@@ -172,6 +180,11 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			AssetManager::GetInstance().CompileAsset(assetMeta, true);
 		}
 		else {
+			ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
+			ENGINE_PRINT("[MetaFilesManager] Extension: ", extension, "\n");
+			//if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+			//	assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+			//}
 			AssetManager::GetInstance().CompileAsset(assetPath, true);
 		}
 //#if !defined(EDITOR) && !defined(ANDROID) 
@@ -428,6 +441,7 @@ void MetaFilesManager::CleanupUnusedMetaFiles() {
 		std::string extension = metaPathObj.extension().string();
 
 		if (AssetManager::GetInstance().IsExtensionMetaFile(extension)) {
+			//ENGINE_PRINT("Checking meta file: ", metaPath);
 			// Check if the source file is still present. If not, the meta file is orphaned and should be deleted.
 			std::ifstream ifs(metaPath);
 			std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -444,10 +458,12 @@ void MetaFilesManager::CleanupUnusedMetaFiles() {
 			if (assetMetaData.HasMember("source")) {
 				std::string sourceFilePath = assetMetaData["source"].GetString();
 				ifs.close();
+				//ENGINE_PRINT("Checking source from meta file: ", sourceFilePath);
 				std::string vertFilePath = sourceFilePath + ".vert";
 				std::string fragFilePath = sourceFilePath + ".frag";
-				bool keepMeta = std::filesystem::exists(vertFilePath) || std::filesystem::exists(fragFilePath) || std::filesystem::exists(sourceFilePath);
+				bool keepMeta = FileUtilities::StrictExists(vertFilePath) || FileUtilities::StrictExists(fragFilePath) || FileUtilities::StrictExists(sourceFilePath);
 				if (!keepMeta) {
+					//ENGINE_PRINT("Source from meta file ", sourceFilePath, " doesn't exist. Deleting file...");
 					FileUtilities::RemoveFile(metaPath);
 				}
 			}

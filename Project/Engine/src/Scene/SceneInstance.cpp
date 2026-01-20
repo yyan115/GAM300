@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <Scene/SceneInstance.hpp>
-#include <Input/InputManager.hpp>
+#include <Input/InputManager.h>
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
 #include <cmath>
@@ -14,6 +14,7 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <Graphics/Lights/LightComponent.hpp>
 #include "Serialization/Serializer.hpp"
 #include "Sound/AudioComponent.hpp"
@@ -31,6 +32,7 @@
 #include <Animation/AnimationComponent.hpp>
 #include <Animation/AnimationSystem.hpp>
 #include <UI/Button/ButtonComponent.hpp>
+#include <UI/Slider/SliderComponent.hpp>
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
@@ -88,7 +90,7 @@ void SceneInstance::Initialize()
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 	
 	// Any test code
-	testing(ecsManager);
+	//testing(ecsManager);
 
 
 	// Initialize systems.
@@ -126,6 +128,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
+	ecsManager.sliderSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Slider system initialized");
+	ecsManager.sliderSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Slider system initialized");
 
 	if (!multithreadSystems)
 	{
@@ -250,6 +256,7 @@ void SceneInstance::Exit()
 	// Exit systems.
 	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
 	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown();
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
@@ -336,15 +343,16 @@ void SceneInstance::processInput(float deltaTime)
 		camera->ProcessKeyboard(RIGHT, 0.004f);
 	}*/
 
+	// TODO: Migrate debug camera controls to new input system action bindings
 	// Zoom with keys (N to zoom out, M to zoom in)
-	if (InputManager::GetKey(Input::Key::N))
-		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
-	if (InputManager::GetKey(Input::Key::M))
-		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
+	//if (InputManager::GetKey(Input::Key::N))
+	//	mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
+	//if (InputManager::GetKey(Input::Key::M))
+	//	mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
 
 	// Test camera shake with Spacebar
-	if (InputManager::GetKeyDown(Input::Key::SPACE))
-		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
+	//if (InputManager::GetKeyDown(Input::Key::SPACE))
+	//	mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
 	//// MADE IT so that you must drag to look around
 	////
@@ -391,12 +399,13 @@ void SceneInstance::processInput(float deltaTime)
 	//	firstMouse = true;
 	//}
 
-	if (InputManager::GetKeyDown(Input::Key::H))
-	{
-		auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
-		hdr->SetEnabled(!hdr->IsEnabled());
-		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
-	}
+	// TODO: Migrate debug toggle to new input system action bindings
+	//if (InputManager::GetKeyDown(Input::Key::H))
+	//{
+	//	auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
+	//	hdr->SetEnabled(!hdr->IsEnabled());
+	//	ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
+	//}
 	// Sync camera state back to component and transform
 	camComp.fov = camera->Zoom;
 	camComp.yaw = camera->Yaw;

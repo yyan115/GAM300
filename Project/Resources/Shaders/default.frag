@@ -75,7 +75,6 @@ uniform int ambientMode;
 uniform vec3 ambientSky;
 uniform vec3 ambientEquator;
 uniform vec3 ambientGround;
-uniform float ambientIntensity;
 
 // Shadow mapping uniforms
 uniform sampler2D shadowMap;
@@ -125,7 +124,7 @@ vec3 calculateAmbient(vec3 normal) {
         ambient = ambientSky;
     }
 
-    return ambient * ambientIntensity;
+    return ambient;
 }
 
 vec3 getNormalFromMap() {

@@ -19,12 +19,13 @@
 class FileUtilities {
 public:
 	ENGINE_API static bool RemoveFile(const std::string& filePath);
-	ENGINE_API static const std::filesystem::path& GetSolutionRootDir();
-	ENGINE_API static bool RemoveFromSolutionRootDir(const std::string& filePath);
+	//ENGINE_API static const std::filesystem::path& GetSolutionRootDir(); ! spoilt function - don't use it
+	//ENGINE_API static bool RemoveFromSolutionRootDir(const std::string& filePath); ! spoilt function - don't use it
 	ENGINE_API static bool CopyFile(const std::string& srcPath, const std::string& dstPath);
 	// Windows compatibility alias - Windows.h macros map CopyFile to CopyFileW
 	ENGINE_API static bool CopyFileW(const std::string& srcPath, const std::string& dstPath);
 	static std::filesystem::path SanitizePathForAndroid(const std::filesystem::path& input);
+	static bool StrictExists(const std::filesystem::path& p);
 
 private:
 	static std::filesystem::path solutionRootDir;

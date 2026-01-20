@@ -6,6 +6,11 @@
 // Value-like types (Math types)
 // ============================================================================
 
+BEGIN_COMPONENT(Vector2D, "Vector2D")
+    PROPERTY("x", &Vector2D::x)
+    PROPERTY("y", &Vector2D::y)
+END_COMPONENT()
+
 BEGIN_COMPONENT(Vector3D, "Vector3D")
     PROPERTY("x", &Vector3D::x)
     PROPERTY("y", &Vector3D::y)
@@ -27,6 +32,9 @@ BEGIN_COMPONENT(Transform, "Transform")
     PROPERTY("localPosition", &Transform::localPosition)
     PROPERTY("localScale", &Transform::localScale)
     PROPERTY("localRotation", &Transform::localRotation)
+    PROPERTY("worldPosition", &Transform::worldPosition)
+    PROPERTY("worldRotation", &Transform::worldRotation)
+    PROPERTY("worldScale", &Transform::worldScale)
     PROPERTY("isDirty", &Transform::isDirty)
 END_COMPONENT()
 
@@ -90,6 +98,24 @@ BEGIN_COMPONENT(SpriteAnimationComponent, "SpriteAnimationComponent")
     METHOD("Stop", &SpriteAnimationComponent::Stop)
     METHOD("Resume", &SpriteAnimationComponent::Resume)
 END_COMPONENT()
+
+// ============================================================================
+// Sprite Animation Component
+// ============================================================================
+
+BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
+    // Properties
+    PROPERTY("isVisible", &SpriteRenderComponent::isVisible)
+    PROPERTY("position", &SpriteRenderComponent::position)
+    PROPERTY("scale", &SpriteRenderComponent::scale)
+    PROPERTY("rotation", &SpriteRenderComponent::rotation)
+    PROPERTY("color", &SpriteRenderComponent::color)
+    PROPERTY("alpha", &SpriteRenderComponent::alpha)
+END_COMPONENT()
+
+
+
+
 
 // ============================================================================
 // AI/Brain Components
@@ -287,6 +313,9 @@ BEGIN_COMPONENT(RigidBodyComponent, "RigidBodyComponent")
     PROPERTY("collider_seen_version", &RigidBodyComponent::collider_seen_version)
     METHOD("SetEnabled", &RigidBodyComponent::SetEnabled)
     METHOD("IsEnabled", &RigidBodyComponent::IsEnabled)
+    METHOD("AddForce", &RigidBodyComponent::AddForce)
+    METHOD("AddTorque", &RigidBodyComponent::AddTorque)
+    METHOD("AddImpulse", &RigidBodyComponent::AddImpulse)
 END_COMPONENT()
 
 // ============================================================================
@@ -359,6 +388,19 @@ BEGIN_COMPONENT(AudioReverbZoneComponent, "AudioReverbZoneComponent")
 END_COMPONENT()
 
 // ============================================================================
+// UI Components
+// ============================================================================
+
+BEGIN_COMPONENT(SliderComponent, "SliderComponent")
+    PROPERTY("minValue", &SliderComponent::minValue)
+    PROPERTY("maxValue", &SliderComponent::maxValue)
+    PROPERTY("value", &SliderComponent::value)
+    PROPERTY("wholeNumbers", &SliderComponent::wholeNumbers)
+    PROPERTY("interactable", &SliderComponent::interactable)
+    PROPERTY("horizontal", &SliderComponent::horizontal)
+END_COMPONENT()
+
+// ============================================================================
 // Tag and Layer Components
 // ============================================================================
 
@@ -378,6 +420,18 @@ BEGIN_COMPONENT(LayerComponent, "LayerComponent")
     METHOD("IsInLayer", &LayerComponent::IsInLayer)
     METHOD("GetLayerMask", &LayerComponent::GetLayerMask)
 END_COMPONENT()
+
+BEGIN_COMPONENT(ButtonComponent, "ButtonComponent")
+    PROPERTY("interactable", &ButtonComponent::interactable)
+END_COMPONENT()
+
+BEGIN_COMPONENT(ActiveComponent, "ActiveComponent")
+    PROPERTY("isActive", &ActiveComponent::isActive)
+END_COMPONENT()
+
+
+
+
 
 // ============================================================================
 // Hierarchy Components (read-only for Lua - managed by engine)

@@ -29,6 +29,12 @@ public:
      */
     void MarkForRefresh();
 
+    // Public methods for global keyboard shortcuts
+    void CopySelectedEntities();
+    void PasteEntities();
+    std::vector<Entity> DuplicateEntities(const std::vector<Entity>& sourceEntities);
+    void DeleteSelectedEntities();
+
 private:
     void DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren = false);
     void ReparentEntity(Entity draggedEntity, Entity targetParent);
@@ -53,8 +59,19 @@ private:
     Entity CreateCubeEntity();
     Entity CreateCameraEntity();
 
-    // Entity duplication
-    Entity DuplicateEntity(Entity sourceEntity);
+    // Entity duplication (takeSnapshot = true for single entity, false when called from DuplicateEntities)
+    Entity DuplicateEntity(Entity sourceEntity, bool takeSnapshot = true);
+
+    // Entity clipboard (for copy/paste) - private helpers
+
+    // Range selection helper
+    void SelectRange(Entity fromEntity, Entity toEntity);
+    int GetEntityDisplayIndex(Entity entity, const std::vector<Entity>& flatList);
+    std::vector<Entity> GetFlatEntityList();
+    void CollectEntitiesRecursive(Entity entity, std::vector<Entity>& flatList);
+
+    // Last clicked entity for shift-click range selection
+    Entity lastClickedEntity = static_cast<Entity>(-1);
 
     // Rename functionality
     Entity renamingEntity = static_cast<Entity>(-1);

@@ -2,15 +2,16 @@
 #include "Multi-threading/SequentialSystemOrchestrator.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <Physics/PhysicsSystem.hpp>
-#include <Physics/Kinematics/CharacterController.hpp>
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <TimeManager.hpp>
 
 void SequentialSystemOrchestrator::Update() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Update systems.
-	mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-	mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime());
+	// Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
+	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+	mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
 	mainECS.transformSystem->Update();
 
 	mainECS.animationSystem->Update();
@@ -19,6 +20,7 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
 	mainECS.buttonSystem->Update();
+	mainECS.sliderSystem->Update();
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

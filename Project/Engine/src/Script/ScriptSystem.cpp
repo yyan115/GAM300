@@ -9,6 +9,7 @@
 #include <LuaBridge.h>
 #include "Logging.hpp"
 #include <TimeManager.hpp>
+#include <Animation/LuaAnimationComponent.hpp>
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
@@ -117,6 +118,44 @@ static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 }
 
 
+static Entity Lua_FindEntityByName(const std::string& name)
+{
+    if (!g_ecsManager) return -1; 
+    ECSManager& ecs = *g_ecsManager;
+
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            return e;
+        }
+    }
+
+    return -1; // Not found
+}
+
+static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
+{
+    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
+    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+    
+    int gameResWidth, gameResHeight;
+    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
+    
+    // Map mouse coordinates from viewport space to game resolution space
+    float gameX = (mouseX / viewportWidth) * static_cast<float>(gameResWidth);
+    float gameY = static_cast<float>(gameResHeight) - (mouseY / viewportHeight) * static_cast<float>(gameResHeight);
+    
+    return std::make_tuple(gameX, gameY);
+}
+
+
 
 
 //TEMP FUNCTION TO BE CHANGED
@@ -208,6 +247,23 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #undef BEGIN_COMPONENT
             #undef PROPERTY
             #undef END_COMPONENT
+
+            // REGISTER THE PROXY CLASS SPECIALLY FOR ANIMATION COMPONENT
+            luabridge::getGlobalNamespace(L)
+                .beginClass<LuaAnimationComponent>("LuaAnimationComponent")
+                .addConstructor<void(*)(Entity)>()
+                .addFunction("Play", &LuaAnimationComponent::Play)
+                .addFunction("Stop", &LuaAnimationComponent::Stop)
+                .addFunction("Pause", &LuaAnimationComponent::Pause)
+                .addFunction("PlayClip", &LuaAnimationComponent::PlayClip)
+                .addFunction("SetSpeed", &LuaAnimationComponent::SetSpeed)
+                .addFunction("SetBool", &LuaAnimationComponent::SetBool)
+                .addFunction("SetTrigger", &LuaAnimationComponent::SetTrigger)
+                .addFunction("SetFloat", &LuaAnimationComponent::SetFloat)
+                .addFunction("SetInt", &LuaAnimationComponent::SetInt)
+                .addFunction("GetCurrentState", &LuaAnimationComponent::GetCurrentState)
+                .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
+                .endClass();
 
             // ---- Second pass: Components metadata table ----
             lua_newtable(L);
@@ -318,6 +374,15 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             {
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not found on entity ", entityId, " (getter returned null)");
                 lua_pushnil(L);
+                return true;
+            }
+
+            // [NEW] SPECIAL CASE: ANIMATION PROXY
+            if (compName == "AnimationComponent")
+            {
+                // Create the proxy on the stack
+                LuaAnimationComponent proxy(static_cast<Entity>(entityId));
+                luabridge::push(L, proxy);
                 return true;
             }
 
@@ -983,6 +1048,54 @@ bool ScriptSystem::CallStandaloneScriptFunction(const std::string& scriptPath, c
             "[ScriptSystem] Successfully called standalone function: ", funcName.c_str(),
             " on script ", scriptPath.c_str());
     }
+
+    return success;
+}
+
+// Create a fresh ephemeral instance from file, bind it to targetEntity, call the function, then destroy it.
+// This is useful for UI callbacks that need entity context (instance:GetComponent).
+bool ScriptSystem::CallStandaloneScriptFunctionWithEntity(const std::string& scriptPath, const std::string& scriptGuidStr, const std::string& funcName, Entity targetEntity)
+{
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] CallStandaloneScriptFunctionWithEntity START: script=", scriptPath, " fn=", funcName);
+    if (scriptPath.empty() || funcName.empty()) {
+        return false;
+    }
+
+    if (!Scripting::GetLuaState()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot call standalone function with entity: Lua runtime not available");
+        return false;
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] Creating ephemeral instance from file");
+    int instRef = Scripting::CreateInstanceFromFile(scriptPath);
+    if (instRef == LUA_NOREF) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Cannot create ephemeral instance for ", scriptPath.c_str());
+        return false;
+    }
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] Created ephemeral instance: instRef=", instRef);
+
+    // Bind instance to target entity so that instance:GetComponent works
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] Binding instance to entity ", targetEntity);
+    if (!Scripting::BindInstanceToEntity(instRef, static_cast<uint32_t>(targetEntity))) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Failed to bind ephemeral instance to entity ", targetEntity);
+        // proceed anyway
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] Calling function: ", funcName);
+    bool success = Scripting::CallInstanceFunction(instRef, funcName);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] Function call completed: success=", success);
+
+    if (!success) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
+            "[ScriptSystem] Ephemeral call failed: ", funcName.c_str(), " on script ", scriptPath.c_str());
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] About to destroy ephemeral instance");
+    Scripting::DestroyInstance(instRef);
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] CallStandaloneScriptFunctionWithEntity END");
 
     return success;
 }

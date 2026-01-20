@@ -265,15 +265,17 @@ void TypeDescriptor_Struct::Deserialize(void* obj, const rapidjson::Value& value
 
     const auto& arr = value["data"].GetArray();
     const TypeDescriptor_Struct_Impl* impl = SImplConst(this);
+
     size_t expected = impl ? impl->members.size() : 0;
 
-    // Size mismatch -> fail fast with clear message
+    // Size mismatch -> throw warning (don't throw runtime error).
     if (static_cast<size_t>(arr.Size()) != expected)
     {
         std::stringstream ss;
         ss << "Array size mismatch while deserializing struct '" << (GetName() ? GetName() : "")
             << "' : expected " << expected << " got " << arr.Size();
-        throw std::runtime_error(ss.str());
+        ENGINE_LOG_WARN(ss.str());
+        //throw std::runtime_error(ss.str());
     }
 
     // Nothing to do if no members

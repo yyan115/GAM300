@@ -403,9 +403,9 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Draw the model with entity material
 	if (item.HasAnimation())
-		item.model->Draw(*item.shader, *currentCamera, item.material, item.animator);
+		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
 	else
-		item.model->Draw(*item.shader, *currentCamera, item.material);
+		item.model->Draw(*item.shader, *currentCamera, item.material, item);
 
 	//std::cout << "rendered model\n";
 }

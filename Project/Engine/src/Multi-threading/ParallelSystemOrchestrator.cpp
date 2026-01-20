@@ -2,13 +2,16 @@
 #include <TimeManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Physics/PhysicsSystem.hpp"
+#include <Physics/Kinematics/CharacterControllerSystem.hpp>
 
 void ParallelSystemOrchestrator::Update() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"UpdateChannel">, scheduler };
 
     // Update physics and transform systems sequentially first.
+    // Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
-    mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+    mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+    mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
 
 	// Then update the other systems in parallel.
@@ -41,6 +44,13 @@ void ParallelSystemOrchestrator::Update() {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running ButtonJob");
         ecs.buttonSystem->Update();
+        });
+    frameChannel.Submit([&] {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        //ENGINE_LOG_DEBUG("Running SliderJob");
+        if (ecs.sliderSystem) {
+            ecs.sliderSystem->Update();
+        }
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();

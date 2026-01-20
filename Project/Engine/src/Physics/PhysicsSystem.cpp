@@ -102,14 +102,14 @@ bool PhysicsSystem::InitialiseJolt() {
 #ifdef JPH_OBJECT_LAYER_BITS
         //JPH_OBJECT_LAYER_BITS
 #else
-        16  // default
+        //16  // default
 #endif
         //);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
 #ifdef JPH_ENABLE_ASSERTS
             //1
 #else
-            0
+            //0
 #endif
             //);
 #endif
@@ -207,7 +207,8 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         JPH::RVec3 updatedPos = pos + offsetInWorld;
 
         // --- Set proper collision layer ---
-        if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+        //if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+        if (rb.motion == Motion::Static)
             col.layer = Layers::NON_MOVING;
         else
             col.layer = Layers::MOVING;
@@ -297,11 +298,14 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 JPH::EMotionType::Dynamic;
 
             // Create body creation settings
-            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
+            //JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
+            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
 
-            // --- Apply CCD according to component ---
             if (motionType == JPH::EMotionType::Dynamic)
+            {
+                // --- Apply CCD according to component ---
                 bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+            }
 
             //// IMPORTANT: Also enable CCD for kinematic bodies if they move fast
             //if (motionType == JPH::EMotionType::Kinematic)
@@ -458,9 +462,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
 
-        //// Read back velocities from physics engine
-        //rb.angularVel = FromJoltVec3(bi.GetAngularVelocity(body Id));
-        //rb.linearVel = FromJoltVec3(bi.GetLinearVelocity(bodyId));
 
         if (rb.motion == Motion::Dynamic)
         {

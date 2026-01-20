@@ -22,7 +22,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <android/asset_manager.h>
 #include <android/log.h>
 #include <EGL/egl.h>
-#include "Input/VirtualControls.hpp"
 
 class AndroidPlatform : public IPlatform {
 private:

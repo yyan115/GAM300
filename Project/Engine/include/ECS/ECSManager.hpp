@@ -19,9 +19,10 @@
 #include <Animation/AnimationSystem.hpp>
 #include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 #include "UI/Button/ButtonSystem.hpp"
+#include "UI/Slider/SliderSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
-class CharacterController;
+class CharacterControllerSystem;
 
 class ECSManager {
 public:
@@ -35,7 +36,7 @@ public:
 
 	void ENGINE_API DestroyEntity(Entity entity);
 
-	void ClearAllEntities();
+	void ENGINE_API ClearAllEntities();
 
 	template <typename T>
 	void RegisterComponent() {
@@ -138,7 +139,7 @@ public:
 	std::shared_ptr<TextRenderingSystem> textSystem;
 	std::shared_ptr<DebugDrawSystem> debugDrawSystem;
 	std::shared_ptr<PhysicsSystem> physicsSystem;
-	std::shared_ptr<CharacterController> characterControllerSystem;
+	std::shared_ptr<CharacterControllerSystem> characterControllerSystem;
 	std::shared_ptr<LightingSystem> lightingSystem;
 	std::shared_ptr<SpriteSystem> spriteSystem;
 	std::shared_ptr<ParticleSystem> particleSystem;
@@ -148,6 +149,7 @@ public:
 	std::shared_ptr<ScriptSystem> scriptSystem;
 	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
 	std::shared_ptr<ButtonSystem> buttonSystem;
+	std::shared_ptr<SliderSystem> sliderSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {
