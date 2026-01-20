@@ -59,10 +59,10 @@ USAGE:
 
 CONFIGURATION:
     Edit COMBO_TREE in Awake() to add/modify combos
-    Edit SPECIAL_INPUTS in Awake() for complex input sequences
+    Edit fields (DefaultComboWindow, HeavyChargeTime, DashDuration) in editor
 
 DEPENDENCIES:
-    - Requires InputInterpreter component on same entity
+    - Requires InputInterpreter (accessed via _G.InputInterpreter singleton)
     - Requires AnimationComponent for attack animations
     - Uses event_bus for broadcasting combat events
 
@@ -95,7 +95,7 @@ local event_bus = _G.event_bus
 
 return Component {
     fields = {
-        -- Global combo settings (can be overridden per-state)
+        -- Global combo settings (editable in editor)
         DefaultComboWindow = 0.5,    -- Default time to continue combo
         HeavyChargeTime = 0.8,       -- Time to fully charge heavy
         DashDuration = 0.3,          -- Dash length
@@ -306,9 +306,10 @@ return Component {
     end,
 
     Start = function(self)
-        self._inputInterpreter = self:GetComponent("InputInterpreter")
+        -- Get InputInterpreter from global singleton
+        self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
-            print("[ComboManager] ERROR: InputInterpreter not found!")
+            print("[ComboManager] ERROR: InputInterpreter not found! Make sure it's on an entity that loads before ComboManager.")
         end
 
         self._animator = self:GetComponent("AnimationComponent")
@@ -417,10 +418,10 @@ return Component {
         end
 
         -- Play animation
-        if self._animator and newState.anim then
-            local loop = (stateId == "idle" or stateId == "heavy_charge")
-            self._animator:PlayClip(newState.anim, loop)
-        end
+     --   if self._animator and newState.anim then
+     --       local loop = (stateId == "idle" or stateId == "heavy_charge")
+     --      self._animator:PlayClip(newState.anim, loop)
+     -- end
 
         -- Broadcast state change
         if event_bus then
@@ -429,6 +430,9 @@ return Component {
                 comboChain = self._comboChain
             })
         end
+
+        -- Debug: Print current attack state
+        print("[ComboManager] Current Attack: " .. stateId .. " (Anim ID: " .. tostring(newState.anim) .. ")")
 
         -- Call onEnter callback
         if newState.onEnter then

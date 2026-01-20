@@ -830,6 +830,22 @@
                                 "_currentRotY": 0.0,
                                 "_walkAnimationClip": 1.0
                             }
+                        },
+                        {
+                            "scriptGuidStr": "00119ad172aaf64b-0003f4fa9a000003",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/InputInterpreter.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        },
+                        {
+                            "scriptGuidStr": "00119ad17fab42b8-0003f4fa9a000001",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/ComboManager.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }

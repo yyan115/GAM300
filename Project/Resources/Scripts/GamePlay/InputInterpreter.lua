@@ -59,7 +59,7 @@ NOTES:
     - Consumable buffers prevent buffered input from triggering multiple actions
     - Hold detection threshold should match game feel (0.2s = fast, 0.5s = deliberate)
 
-AUTHOR: [Your Name]
+AUTHOR: Soh Wei Jie
 VERSION: 1.0
 ================================================================================
 --]]
@@ -76,6 +76,9 @@ return Component {
     },
 
     Awake = function(self)
+        -- Register as global singleton (only one player input system)
+        _G.InputInterpreter = self
+        
         -- Current frame states (updated every frame)
         self._currentFrame = {
             attack = false,
