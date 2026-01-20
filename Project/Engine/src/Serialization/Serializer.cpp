@@ -2692,7 +2692,7 @@ void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const r
 			parentComp.parent = (*guidRemap)[parentGUID];
         }
         else {
-            ENGINE_LOG_WARN("[Serializer] Parent GUID not found in remap during deserialization: ", parentGUIDStr);
+            ENGINE_LOG_WARN("[Serializer] Parent GUID not found in remap during deserialization: " + parentGUIDStr);
         }
     }
 }
@@ -2714,7 +2714,7 @@ void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, cons
                     childComp.children.push_back((*guidRemap)[childGUID]);
                 }
                 else {
-                    ENGINE_LOG_WARN("[Serializer] Child GUID not found in remap during deserialization: ", childGUIDStr);
+                    ENGINE_LOG_WARN("[Serializer] Child GUID not found in remap during deserialization: " + childGUIDStr);
 				}
             }
         }

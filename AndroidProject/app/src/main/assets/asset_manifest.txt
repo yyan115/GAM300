@@ -136,6 +136,10 @@ Resources/Fonts/Kenney Mini.ttf.meta
 Resources/Inter.font
 Resources/Inter.ttf
 Resources/Inter.ttf.meta
+Resources/Materials/1MeterCube_Mat.mat
+Resources/Materials/1MeterCube_Mat.mat.meta
+Resources/Materials/1MeterCube_MAT_Text_01.mat
+Resources/Materials/1MeterCube_MAT_Text_01.mat.meta
 Resources/Materials/backpack_Scene_-_Root.mat
 Resources/Materials/backpack_Scene_-_Root.mat.meta
 Resources/Materials/Candle1_Candle1.mat
@@ -244,6 +248,9 @@ Resources/Materials/Wall Pillar.mat
 Resources/Materials/Wall Pillar.mat.meta
 Resources/Materials/Wall Pillar_ruin_brick_pillar_1.mat
 Resources/Materials/Wall Pillar_ruin_brick_pillar_1.mat.meta
+Resources/Models/1MeterCube.fbx
+Resources/Models/1MeterCube.fbx.meta
+Resources/Models/1MeterCube.mesh
 Resources/Models/backpack/ao.dds
 Resources/Models/backpack/ao.jpg
 Resources/Models/backpack/ao.jpg.meta
@@ -333,6 +340,7 @@ Resources/Models/Environment/InUse/Coffin.mesh
 Resources/Models/Environment/InUse/Creeper.fbx
 Resources/Models/Environment/InUse/Creeper.fbx.meta
 Resources/Models/Environment/InUse/Creeper.mesh
+Resources/Models/Environment/InUse/FloorMainModel-1.mesh
 Resources/Models/Environment/InUse/JapaneseSmallWall.mesh
 Resources/Models/Environment/InUse/JapaneseSmallWall.obj
 Resources/Models/Environment/InUse/JapaneseSmallWall.obj.meta
@@ -432,36 +440,36 @@ Resources/Scripts/extension/ui_helpers.lua
 Resources/Scripts/extension/ui_helpers.lua.meta
 Resources/Scripts/ForceTest.lua
 Resources/Scripts/ForceTest.lua.meta
-Resources/Scripts/GamePlay/EnemyAI.lua
-Resources/Scripts/GamePlay/EnemyAI.lua.meta
-Resources/Scripts/GamePlay/EnemyLogic.lua
-Resources/Scripts/GamePlay/EnemyLogic.lua.meta
-Resources/Scripts/GamePlay/FlyingEnemyLogic.lua
-Resources/Scripts/GamePlay/FlyingEnemyLogic.lua.meta
-Resources/Scripts/GamePlay/FlyingKnife.lua
-Resources/Scripts/GamePlay/FlyingKnife.lua.meta
-Resources/Scripts/GamePlay/GroundAttackState.lua
-Resources/Scripts/GamePlay/GroundAttackState.lua.meta
-Resources/Scripts/GamePlay/GroundChaseState.lua
-Resources/Scripts/GamePlay/GroundChaseState.lua.meta
-Resources/Scripts/GamePlay/GroundDeathState.lua
-Resources/Scripts/GamePlay/GroundDeathState.lua.meta
-Resources/Scripts/GamePlay/GroundHookedState.lua
-Resources/Scripts/GamePlay/GroundHookedState.lua.meta
-Resources/Scripts/GamePlay/GroundHurtState.lua
-Resources/Scripts/GamePlay/GroundHurtState.lua.meta
-Resources/Scripts/GamePlay/GroundIdleState.lua
-Resources/Scripts/GamePlay/GroundIdleState.lua.meta
-Resources/Scripts/GamePlay/GroundPatrolState.lua
-Resources/Scripts/GamePlay/GroundPatrolState.lua.meta
-Resources/Scripts/GamePlay/KnifeLogic.lua
-Resources/Scripts/GamePlay/KnifeLogic.lua.meta
-Resources/Scripts/GamePlay/KnifePool.lua
-Resources/Scripts/GamePlay/KnifePool.lua.meta
-Resources/Scripts/GamePlay/PlayerMovement(Updated).lua
-Resources/Scripts/GamePlay/PlayerMovement(Updated).lua.meta
-Resources/Scripts/GamePlay/StateMachine.lua
-Resources/Scripts/GamePlay/StateMachine.lua.meta
+Resources/Scripts/Gameplay/EnemyAI.lua
+Resources/Scripts/Gameplay/EnemyAI.lua.meta
+Resources/Scripts/Gameplay/EnemyLogic.lua
+Resources/Scripts/Gameplay/EnemyLogic.lua.meta
+Resources/Scripts/Gameplay/FlyingEnemyLogic.lua
+Resources/Scripts/Gameplay/FlyingEnemyLogic.lua.meta
+Resources/Scripts/Gameplay/FlyingKnife.lua
+Resources/Scripts/Gameplay/FlyingKnife.lua.meta
+Resources/Scripts/Gameplay/GroundAttackState.lua
+Resources/Scripts/Gameplay/GroundAttackState.lua.meta
+Resources/Scripts/Gameplay/GroundChaseState.lua
+Resources/Scripts/Gameplay/GroundChaseState.lua.meta
+Resources/Scripts/Gameplay/GroundDeathState.lua
+Resources/Scripts/Gameplay/GroundDeathState.lua.meta
+Resources/Scripts/Gameplay/GroundHookedState.lua
+Resources/Scripts/Gameplay/GroundHookedState.lua.meta
+Resources/Scripts/Gameplay/GroundHurtState.lua
+Resources/Scripts/Gameplay/GroundHurtState.lua.meta
+Resources/Scripts/Gameplay/GroundIdleState.lua
+Resources/Scripts/Gameplay/GroundIdleState.lua.meta
+Resources/Scripts/Gameplay/GroundPatrolState.lua
+Resources/Scripts/Gameplay/GroundPatrolState.lua.meta
+Resources/Scripts/Gameplay/KnifeLogic.lua
+Resources/Scripts/Gameplay/KnifeLogic.lua.meta
+Resources/Scripts/Gameplay/KnifePool.lua
+Resources/Scripts/Gameplay/KnifePool.lua.meta
+Resources/Scripts/Gameplay/PlayerMovement(Updated).lua
+Resources/Scripts/Gameplay/PlayerMovement(Updated).lua.meta
+Resources/Scripts/Gameplay/StateMachine.lua
+Resources/Scripts/Gameplay/StateMachine.lua.meta
 Resources/Scripts/main_menu.lua
 Resources/Scripts/main_menu.lua.meta
 Resources/Scripts/PlayerAttack.lua
@@ -691,6 +699,7 @@ Resources/Textures/japaneseWallNormal.png.meta
 Resources/Textures/Nightshade_diffuse.dds
 Resources/Textures/Nightshade_diffuse.png
 Resources/Textures/Nightshade_diffuse.png.meta
+Resources/Textures/photo_2026-01-19_18-04-42.dds
 Resources/Textures/Pillar 2.dds
 Resources/Textures/Pillar 2.png
 Resources/Textures/Pillar 2.png.meta
@@ -730,6 +739,7 @@ Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.png.meta
 Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.dds
 Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.png
 Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.png.meta
+Resources/Textures/UV_Grid_Sm.dds
 Resources/Textures/Wall Pillar.dds
 Resources/Textures/Wall Pillar.jpg
 Resources/Textures/Wall Pillar.jpg.meta

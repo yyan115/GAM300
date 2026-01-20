@@ -179,7 +179,8 @@ return Component {
             end
         end
 
-        -- Re-lock cursor when clicking Attack action (if unlocked)
+        -- Re-lock cursor when clicking Attack action (for standalone game builds)
+        -- In Editor, this is handled by GamePanel which only re-locks when clicking inside game panel
         if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 if not Screen.IsCursorLocked() then

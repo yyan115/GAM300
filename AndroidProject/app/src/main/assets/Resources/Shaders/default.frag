@@ -83,7 +83,6 @@ uniform int ambientMode;
 uniform vec3 ambientSky;
 uniform vec3 ambientEquator;
 uniform vec3 ambientGround;
-uniform float ambientIntensity;
 
 out vec4 FragColor;
 in vec3 Normal;
@@ -128,7 +127,7 @@ vec3 calculateAmbient(vec3 normal) {
         ambient = ambientSky;
     }
 
-    return ambient * ambientIntensity;
+    return ambient;
 }
 
 vec3 getNormalFromMap()

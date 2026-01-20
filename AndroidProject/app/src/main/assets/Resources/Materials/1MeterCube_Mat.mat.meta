@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003c2588c461358c-0003f3938c000005",
+        "source": "../../Resources/Materials/1MeterCube_Mat.mat",
+        "compiled": "../../Resources/Materials/1MeterCube_Mat.mat",
+        "android_compiled": "Resources/Materials/1MeterCube_Mat_android.mat"
+    }
+}
