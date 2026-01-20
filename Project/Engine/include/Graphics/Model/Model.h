@@ -87,9 +87,9 @@ public:
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 	
-	void Draw(Shader& shader, const Camera& camera);
-	void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial);
-    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator);
+    void Draw(Shader& shader, const Camera& camera, const ModelRenderComponent* modelComp = nullptr);
+    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp);
+    void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator);
     void DrawDepthOnly();
 
 	// Helper functions for Bones

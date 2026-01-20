@@ -1085,7 +1085,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		depthShader.setBool("isAnimated", modelItem->HasAnimation());
 		if (modelItem->HasAnimation() && modelItem->animator)
 		{
-			auto transforms = modelItem->animator->GetFinalBoneMatrices();
+			const auto& transforms = modelItem->mFinalBoneMatrices;
 			for (size_t i = 0; i < transforms.size(); ++i)
 			{
 				depthShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
