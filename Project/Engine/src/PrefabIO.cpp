@@ -22,6 +22,7 @@
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
+#include <Serialization/Serializer.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -154,28 +155,79 @@ static void ApplyOne(ECSManager& ecs,
     std::cerr << "[PrefabIO] No applier for component '" << typeName << "'\n";
 }
 
-// ============ INSTANTIATE (new entity) ============
+// ============ INSTANTIATE (new entity) ============ 
+Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
+    std::unordered_map<GUID_128, GUID_128> guidRemap;
+    std::vector<Entity> newEntities;
+
+    // First pass: Create entities and generate new GUIDs for each entity.
+    for (rapidjson::SizeType i = 0; i < ents.Size(); ++i) {
+        const rapidjson::Value& entObj = ents[i];
+        if (!entObj.IsObject()) {
+            ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " Prefab member is not an object.");
+            continue;
+        }
+
+        GUID_128 oldGUID = Serializer::DeserializeEntityGUID(entObj);
+
+        // Generate a new GUID for the new entity instance.
+        GUID_string newGUIDStr = GUIDUtilities::GenerateGUIDString();
+        GUID_128 newGUID = GUIDUtilities::ConvertStringToGUID128(newGUIDStr);
+
+        // Create a new entity with the new GUID.
+        Entity newEntity = ecs.CreateEntityWithGUID(newGUID);
+
+        // Store the old -> new GUID mapping.
+        guidRemap[oldGUID] = newGUID;
+        newEntities.push_back(newEntity);
+    }
+
+
+    // Second pass: Deserialize components for each new entity and fix parent/child references.
+    for (size_t i = 0; i < newEntities.size(); ++i) {
+        Entity entity = newEntities[i];
+        const rapidjson::Value& entObj = ents[i];
+        if (!entObj.IsObject()) {
+            ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " Prefab member is not an object.");
+            continue;
+        }
+
+        // Deserialize standard non-prefab components.
+        Serializer::DeserializeEntity(ecs, entObj, true, entity);
+
+		// Fix parent/child references based on the GUID remapping.
+        const rapidjson::Value& comps = entObj["components"];
+        if (comps.HasMember("ParentComponent") && comps["ParentComponent"].IsObject()) {
+            const auto& parentCompJSON = comps["ParentComponent"];
+            if (!ecs.HasComponent<ParentComponent>(entity)) {
+                ecs.AddComponent<ParentComponent>(entity, ParentComponent{});
+            }
+            auto& parentComp = ecs.GetComponent<ParentComponent>(entity);
+            Serializer::DeserializeParentComponent(parentComp, parentCompJSON, &guidRemap);
+        }
+
+        if (comps.HasMember("ChildrenComponent") && comps["ChildrenComponent"].IsObject()) {
+            const auto& childrenCompJSON = comps["ChildrenComponent"];
+            if (!ecs.HasComponent<ChildrenComponent>(entity)) {
+                ecs.AddComponent<ChildrenComponent>(entity, ChildrenComponent{});
+            }
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
+            Serializer::DeserializeChildrenComponent(childComp, childrenCompJSON, &guidRemap);
+        }
+    }
+
+	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
+}
+
 ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
 {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-    Entity intoEntity = ecs.CreateEntity();
 
     std::error_code ec;
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
     if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
-
-    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
-    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
-        if (!ecs.HasComponent<PrefabLinkComponent>(intoEntity))
-            ecs.AddComponent<PrefabLinkComponent>(intoEntity, PrefabLinkComponent{});
-
-        auto& link = ecs.GetComponent<PrefabLinkComponent>(intoEntity);
-        link.prefabPath = tryPath; // canonical path (same normalization PrefabEditor uses)
-    }
-
-    EnsurePrefabLinkOn(ecs, intoEntity, tryPath);
 
     std::ifstream f(tryPath, std::ios::binary);
     if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
@@ -187,13 +239,14 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
         std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return false;
     }
     if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << tryPath << "\n"; return true; }
-
-    for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it) {
-        const char* typeName = it->name.GetString();
-        try { ApplyOne(ecs, intoEntity, typeName, it->value, /*fromPrefabUpdate*/false, /*resolveAssets*/true); }
-        catch (const std::exception& ex) { std::cerr << "[PrefabIO] Exception applying '" << typeName << "': " << ex.what() << "\n"; }
-        catch (...) { std::cerr << "[PrefabIO] Unknown error applying '" << typeName << "'\n"; }
+    if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
+        ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " has no prefab_entities array.");
+        return false;
     }
+
+    const rapidjson::Value& ents = doc["prefab_entities"];
+    Entity prefab = SpawnPrefab(ents, ecs);
+    EnsurePrefabLinkOn(ecs, prefab, tryPath);
 
     return true;
 }
@@ -291,6 +344,18 @@ static void TryWrite(ECSManager& ecs, Entity e, const char* typeName, rapidjson:
     doc.AddMember(key, outVal, doc.GetAllocator());
 }
 
+void SaveEntityRecursive(ECSManager& ecs, Entity e, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& prefabEntitiesArr) {
+    auto entObj = Serializer::SerializeEntity(e, alloc);
+    prefabEntitiesArr.PushBack(entObj, alloc);
+
+	if (ecs.HasComponent<ChildrenComponent>(e)) {
+        const auto& childrenComp = ecs.GetComponent<ChildrenComponent>(e);
+        for (auto& child : childrenComp.children) {
+            SaveEntityRecursive(ecs, EntityGUIDRegistry::GetInstance().GetEntityByGUID(child), alloc, prefabEntitiesArr);
+        }
+	}
+}
+
 ENGINE_API bool SaveEntityToPrefabFile(
     ECSManager& ecs,
     AssetManager& /*assets*/,
@@ -299,18 +364,19 @@ ENGINE_API bool SaveEntityToPrefabFile(
 {
     rapidjson::Document doc;
     doc.SetObject();
+    rapidjson::Document::AllocatorType& alloc = doc.GetAllocator();
+    rapidjson::Value prefabEntitiesArr(rapidjson::kArrayType);
 
-    TryWrite<NameComponent>(ecs, e, "NameComponent", doc);
-    TryWrite<TagComponent>(ecs, e, "TagComponent", doc);
-    TryWrite<LayerComponent>(ecs, e, "LayerComponent", doc);
-    TryWrite<Transform>(ecs, e, "Transform", doc);
-    TryWrite<ModelRenderComponent>(ecs, e, "ModelRenderComponent", doc);
+	// Recursively save the prefab entity and its children.
+    SaveEntityRecursive(ecs, e, alloc, prefabEntitiesArr);
+
+    doc.AddMember("prefab_entities", prefabEntitiesArr, alloc);
 
     if (doc.ObjectEmpty()) { std::cerr << "[PrefabIO] Prefab has no components (empty): " << outPath << "\n"; return false; }
 
     rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> wr(sb);
-    doc.Accept(wr);
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
+    doc.Accept(writer);
 
     std::filesystem::create_directories(std::filesystem::path(outPath).parent_path());
     std::ofstream f(outPath, std::ios::binary);

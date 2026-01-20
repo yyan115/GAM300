@@ -2,12 +2,12 @@
     "name": "Player Controller",
     "entryState": "Idle",
     "entryNodePosition": {
-        "x": -250.0,
-        "y": 0.0
+        "x": -200.0,
+        "y": -100.0
     },
     "anyStatePosition": {
-        "x": -250.0,
-        "y": 150.0
+        "x": -200.0,
+        "y": 0.0
     },
     "parameters": [
         {
@@ -18,7 +18,7 @@
         {
             "name": "IsGrounded",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "Jump",
@@ -32,7 +32,7 @@
             "clipIndex": 0,
             "loop": true,
             "speed": 1.0,
-            "crossfadeDuration": 0.1,
+            "crossfadeDuration": 0.10000000149011612,
             "nodePosition": {
                 "x": 0.0,
                 "y": 0.0
@@ -43,7 +43,7 @@
             "clipIndex": 1,
             "loop": true,
             "speed": 1.0,
-            "crossfadeDuration": 0.1,
+            "crossfadeDuration": 0.10000000149011612,
             "nodePosition": {
                 "x": 200.0,
                 "y": 0.0
@@ -54,7 +54,7 @@
             "clipIndex": 2,
             "loop": false,
             "speed": 1.0,
-            "crossfadeDuration": 0.05,
+            "crossfadeDuration": 0.05000000074505806,
             "nodePosition": {
                 "x": 100.0,
                 "y": -150.0
@@ -68,7 +68,7 @@
             "anyState": false,
             "hasExitTime": false,
             "exitTime": 1.0,
-            "transitionDuration": 0.1,
+            "transitionDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "paramName": "IsWalking",
@@ -83,7 +83,7 @@
             "anyState": false,
             "hasExitTime": false,
             "exitTime": 1.0,
-            "transitionDuration": 0.1,
+            "transitionDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "paramName": "IsWalking",
@@ -98,7 +98,7 @@
             "anyState": false,
             "hasExitTime": false,
             "exitTime": 1.0,
-            "transitionDuration": 0.05,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Jump",
@@ -113,7 +113,7 @@
             "anyState": false,
             "hasExitTime": false,
             "exitTime": 1.0,
-            "transitionDuration": 0.05,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Jump",
@@ -127,8 +127,8 @@
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9,
-            "transitionDuration": 0.1,
+            "exitTime": 0.8999999761581421,
+            "transitionDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
@@ -147,8 +147,8 @@
             "to": "Walk",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9,
-            "transitionDuration": 0.1,
+            "exitTime": 0.8999999761581421,
+            "transitionDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "paramName": "IsGrounded",

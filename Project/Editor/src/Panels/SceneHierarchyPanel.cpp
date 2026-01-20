@@ -890,7 +890,7 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
         // Load the cube model using direct file path
-        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/cube.obj";
+        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/1MeterCube.fbx";
         cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
         cubeRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(modelPath);
 
@@ -916,9 +916,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         // Set cube scale to 0.1,0.1,0.1
         if (ecsManager.HasComponent<Transform>(cubeEntity)) {
             Transform& transform = ecsManager.GetComponent<Transform>(cubeEntity);
-            transform.localScale = Vector3D(0.1f, 0.1f, 0.1f);
+            transform.localScale = Vector3D(1.0f, 1.0f, 1.0f);
             transform.isDirty = true; // Mark for update
-            std::cout << "[SceneHierarchy] Set cube scale to 0.1,0.1,0.1" << std::endl;
+            std::cout << "[SceneHierarchy] Set cube scale to 1.0,1.0,1.0" << std::endl;
         }
 
         std::cout << "[SceneHierarchy] Created cube entity with ID " << cubeEntity << std::endl;

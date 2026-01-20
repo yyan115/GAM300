@@ -372,7 +372,7 @@ bool AndroidPlatform::FileExists(const std::string& path) {
 }
 
 // Input handling implementation
-void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
+void AndroidPlatform::HandleTouchEvent(int action, int pointerId, float x, float y) {
     // Convert pixel coordinates to normalized (0-1) coordinates
     float normalizedX = x / static_cast<float>(windowWidth);
     float normalizedY = y / static_cast<float>(windowHeight);
@@ -380,9 +380,6 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
     // Forward touch events to AndroidInputManager for virtual controls
     AndroidInputManager* androidInput = dynamic_cast<AndroidInputManager*>(g_inputManager);
     if (androidInput) {
-        // Use pointer ID 0 for single-touch (multi-touch would need actual pointer IDs from JNI)
-        int pointerId = 0;
-
         switch (action) {
             case 0: // ACTION_DOWN
                 androidInput->OnTouchDown(pointerId, normalizedX, normalizedY);
@@ -396,30 +393,32 @@ void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
         }
     }
 
-    // Also update mouse position for legacy/fallback systems
-    mouseX = static_cast<double>(x);
-    mouseY = static_cast<double>(y);
+    // Also update mouse position for legacy/fallback systems (use first touch only)
+    if (pointerId == 0) {
+        mouseX = static_cast<double>(x);
+        mouseY = static_cast<double>(y);
 
-    // Map touch actions to mouse button events
-    Input::MouseButton button = Input::MouseButton::LEFT;
-    int buttonIndex = static_cast<int>(button);
+        // Map touch actions to mouse button events (primary touch only)
+        Input::MouseButton button = Input::MouseButton::LEFT;
+        int buttonIndex = static_cast<int>(button);
 
-    switch (action) {
-        case 0: // ACTION_DOWN
-            if (buttonIndex >= 0 && buttonIndex < 8) {
-                mouseButtonStates[buttonIndex] = true;
-            }
-            break;
+        switch (action) {
+            case 0: // ACTION_DOWN
+                if (buttonIndex >= 0 && buttonIndex < 8) {
+                    mouseButtonStates[buttonIndex] = true;
+                }
+                break;
 
-        case 1: // ACTION_UP
-            if (buttonIndex >= 0 && buttonIndex < 8) {
-                mouseButtonStates[buttonIndex] = false;
-            }
-            break;
+            case 1: // ACTION_UP
+                if (buttonIndex >= 0 && buttonIndex < 8) {
+                    mouseButtonStates[buttonIndex] = false;
+                }
+                break;
 
-        case 2: // ACTION_MOVE
-            // Just update position, button state unchanged
-            break;
+            case 2: // ACTION_MOVE
+                // Just update position, button state unchanged
+                break;
+        }
     }
 }
 

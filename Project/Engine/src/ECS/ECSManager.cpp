@@ -231,7 +231,7 @@ Entity ECSManager::CreateEntity() {
 Entity ECSManager::CreateEntityWithGUID(const GUID_128& guid) {
 	Entity entity = entityManager->CreateEntity();
 	EntityGUIDRegistry::GetInstance().Register(entity, guid);
-	ENGINE_PRINT("[ECSManager] Created entity ", entity, ". Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
+	//ENGINE_PRINT("[ECSManager] Created entity ", entity, ". Total active entities: ", entityManager->GetActiveEntityCount(), "\n");
 
 	// Add default components here (e.g. Name, Transform, etc.)
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();

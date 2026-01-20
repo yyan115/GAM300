@@ -1,12 +1,16 @@
 #include "pch.h"
 #include "Input/AndroidInputManager.h"
 #include "Platform/IPlatform.h"
+#include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/NameComponent.hpp"
+#include "Transform/TransformComponent.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include <WindowManager.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <iostream>
 #include <cmath>
-#include <chrono>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -20,7 +24,7 @@
 // ========== Constructor ==========
 
 AndroidInputManager::AndroidInputManager() {
-    LOGI("[AndroidInputManager] Initialized");
+    LOGI("[AndroidInputManager] Initialized (entity-based with full touch tracking)");
 }
 
 // ========== IInputSystem Interface Implementation ==========
@@ -39,28 +43,94 @@ bool AndroidInputManager::IsActionJustReleased(const std::string& action) {
            m_previousActions.count(action) > 0;
 }
 
-glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
-    // Check joysticks
-    for (const auto& joystick : m_joysticks) {
-        if (joystick.axisName == axisName) {
-            return joystick.normalizedValue;
+glm::vec2 AndroidInputManager::GetActionTouchPosition(const std::string& action) {
+    // Find the entity action and return its relative touch position
+    for (const auto& entityAction : m_entityActions) {
+        if (entityAction.actionName == action && entityAction.isPressed) {
+            return entityAction.touchPositionRelative;
         }
     }
+    return glm::vec2(0.0f);
+}
 
-    // Check drag zones (for camera look)
-    for (const auto& dragZone : m_dragZones) {
-        if (dragZone.axisName == axisName) {
-            return dragZone.delta * dragZone.sensitivity;
+glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
+    // Movement axis: return normalized joystick direction (-1 to 1)
+    if (axisName == "Movement") {
+        for (const auto& entityAction : m_entityActions) {
+            if (entityAction.actionName == "Movement" && entityAction.isPressed && entityAction.entityFound) {
+                // Normalize by entity half-size to get -1 to 1 range
+                float halfWidth = entityAction.entitySize.x / 2.0f;
+                float halfHeight = entityAction.entitySize.y / 2.0f;
+
+                if (halfWidth > 0.001f && halfHeight > 0.001f) {
+                    float normX = entityAction.touchPositionRelative.x / halfWidth;
+                    float normY = entityAction.touchPositionRelative.y / halfHeight;
+
+                    // Clamp to -1 to 1
+                    normX = glm::clamp(normX, -1.0f, 1.0f);
+                    normY = glm::clamp(normY, -1.0f, 1.0f);
+
+                    // Debug log periodically
+                    static int moveLogCount = 0;
+                    if (++moveLogCount % 30 == 1) {
+                        LOGI("[AndroidInput] GetAxis(Movement) = (%.2f, %.2f) relPos=(%.1f,%.1f) halfSize=(%.1f,%.1f)",
+                             normX, normY, entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y,
+                             halfWidth, halfHeight);
+                    }
+
+                    return glm::vec2(normX, normY);
+                }
+            }
         }
+        return glm::vec2(0.0f);
+    }
+
+    // Look axis: return drag delta from non-UI touches (for camera rotation)
+    if (axisName == "Look") {
+        // Return the delta from the drag touch (touch not on any UI entity)
+        if (m_isDragging && m_dragTouchId != -1) {
+            auto it = m_activeTouches.find(m_dragTouchId);
+            if (it != m_activeTouches.end()) {
+                // Return pixel delta - Lua script handles sensitivity
+                // Normalize by viewport for consistent behavior across resolutions
+                float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
+                float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+
+                if (viewportWidth <= 0) viewportWidth = 1920.0f;
+                if (viewportHeight <= 0) viewportHeight = 1080.0f;
+
+                // Normalize delta to 0-1 range (relative to viewport)
+                float normDeltaX = m_dragDelta.x / viewportWidth;
+                float normDeltaY = m_dragDelta.y / viewportHeight;
+
+                // Debug log periodically
+                static int lookLogCount = 0;
+                if ((normDeltaX != 0 || normDeltaY != 0) && ++lookLogCount % 30 == 1) {
+                    LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) dragDelta=(%.1f,%.1f)",
+                         normDeltaX, normDeltaY, m_dragDelta.x, m_dragDelta.y);
+                }
+
+                return glm::vec2(normDeltaX, normDeltaY);
+            }
+        }
+        return glm::vec2(0.0f);
     }
 
     return glm::vec2(0.0f);
 }
 
+bool AndroidInputManager::IsDragging() {
+    return m_isDragging;
+}
+
+glm::vec2 AndroidInputManager::GetDragDelta() {
+    return m_dragDelta;
+}
+
 bool AndroidInputManager::IsPointerPressed() {
-    // Pointer = primary touch (first non-consumed touch)
+    // Pointer = any non-handled touch
     for (const auto& [id, touch] : m_activeTouches) {
-        if (!touch.consumed) {
+        if (!touch.isHandled) {
             return true;
         }
     }
@@ -68,23 +138,19 @@ bool AndroidInputManager::IsPointerPressed() {
 }
 
 bool AndroidInputManager::IsPointerJustPressed() {
-    // Check if any non-consumed touch was just pressed
+    // Check if any non-handled touch just began
     for (const auto& [id, touch] : m_activeTouches) {
-        if (!touch.consumed) {
-            // Check if this touch is new (started this frame)
-            float timeSinceStart = m_currentTime - touch.startTime;
-            if (timeSinceStart < 0.05f) {  // Within 50ms = just pressed
-                return true;
-            }
+        if (!touch.isHandled && touch.phase == TouchPhase::Began) {
+            return true;
         }
     }
     return false;
 }
 
 glm::vec2 AndroidInputManager::GetPointerPosition() {
-    // Return position of first non-consumed touch
+    // Return position of first non-handled touch
     for (const auto& [id, touch] : m_activeTouches) {
-        if (!touch.consumed) {
+        if (!touch.isHandled) {
             return touch.position;
         }
     }
@@ -92,17 +158,92 @@ glm::vec2 AndroidInputManager::GetPointerPosition() {
 }
 
 int AndroidInputManager::GetTouchCount() {
-    return static_cast<int>(m_activeTouches.size());
+    return static_cast<int>(m_activeTouches.size()) + static_cast<int>(m_endedTouches.size());
 }
 
 glm::vec2 AndroidInputManager::GetTouchPosition(int index) {
-    if (index < 0 || index >= static_cast<int>(m_activeTouches.size())) {
-        return glm::vec2(0.0f);
+    if (index < 0) return glm::vec2(0.0f);
+
+    // First check active touches
+    if (index < static_cast<int>(m_activeTouches.size())) {
+        auto it = m_activeTouches.begin();
+        std::advance(it, index);
+        return it->second.position;
     }
 
-    auto it = m_activeTouches.begin();
-    std::advance(it, index);
-    return it->second.position;
+    // Then check ended touches
+    int endedIndex = index - static_cast<int>(m_activeTouches.size());
+    if (endedIndex < static_cast<int>(m_endedTouches.size())) {
+        return m_endedTouches[endedIndex].position;
+    }
+
+    return glm::vec2(0.0f);
+}
+
+std::vector<InputManager::Touch> AndroidInputManager::GetTouches() {
+    std::vector<Touch> result;
+
+    // Add active touches
+    for (const auto& [id, tp] : m_activeTouches) {
+        Touch t;
+        t.id = tp.id;
+        t.phase = tp.phase;
+        t.position = tp.position;
+        t.startPosition = tp.startPosition;
+        t.delta = tp.delta;
+        t.entityName = tp.entityName;
+        t.duration = tp.duration;
+        result.push_back(t);
+    }
+
+    // Add ended touches (available for one frame)
+    for (const auto& tp : m_endedTouches) {
+        Touch t;
+        t.id = tp.id;
+        t.phase = TouchPhase::Ended;
+        t.position = tp.position;
+        t.startPosition = tp.startPosition;
+        t.delta = tp.delta;
+        t.entityName = tp.entityName;
+        t.duration = tp.duration;
+        result.push_back(t);
+    }
+
+    return result;
+}
+
+InputManager::Touch AndroidInputManager::GetTouchById(int touchId) {
+    // Check active touches
+    auto it = m_activeTouches.find(touchId);
+    if (it != m_activeTouches.end()) {
+        const auto& tp = it->second;
+        Touch t;
+        t.id = tp.id;
+        t.phase = tp.phase;
+        t.position = tp.position;
+        t.startPosition = tp.startPosition;
+        t.delta = tp.delta;
+        t.entityName = tp.entityName;
+        t.duration = tp.duration;
+        return t;
+    }
+
+    // Check ended touches
+    for (const auto& tp : m_endedTouches) {
+        if (tp.id == touchId) {
+            Touch t;
+            t.id = tp.id;
+            t.phase = TouchPhase::Ended;
+            t.position = tp.position;
+            t.startPosition = tp.startPosition;
+            t.delta = tp.delta;
+            t.entityName = tp.entityName;
+            t.duration = tp.duration;
+            return t;
+        }
+    }
+
+    return Touch{};  // Return empty touch with id=-1
 }
 
 void AndroidInputManager::Update(float deltaTime) {
@@ -112,13 +253,50 @@ void AndroidInputManager::Update(float deltaTime) {
     m_previousActions = m_currentActions;
     m_currentActions.clear();
 
-    // Update all virtual controls
-    UpdateTouchZones();
-    UpdateJoysticks();
-    UpdateDragZones();
+    // Clear ended touches from last frame
+    m_endedTouches.clear();
+
+    // Reset drag delta (will be set in OnTouchMove if dragging)
+    m_dragDelta = glm::vec2(0.0f);
+
+    // Update entity transforms (look up from ECS)
+    UpdateEntityTransforms();
+
+    // Update touch phases and durations
+    for (auto& [id, touch] : m_activeTouches) {
+        touch.duration = m_currentTime - touch.startTime;
+
+        // Transition Began -> Moved or Stationary
+        if (touch.phase == TouchPhase::Began) {
+            // After first frame, check if moved
+            if (glm::length(touch.delta) > 0.001f) {
+                touch.phase = TouchPhase::Moved;
+            } else {
+                touch.phase = TouchPhase::Stationary;
+            }
+        }
+        // For subsequent frames, delta is reset each frame
+        // Phase will be updated in OnTouchMove
+    }
+
+    // Update action states based on current touches
+    for (auto& entityAction : m_entityActions) {
+        if (entityAction.isPressed) {
+            m_currentActions.insert(entityAction.actionName);
+        }
+    }
 
     // Detect gestures
     DetectGestures(deltaTime);
+
+    // Reset delta for all touches (will be set in OnTouchMove)
+    for (auto& [id, touch] : m_activeTouches) {
+        // If not moved this frame, it's stationary
+        if (touch.phase != TouchPhase::Began && touch.delta == glm::vec2(0.0f)) {
+            touch.phase = TouchPhase::Stationary;
+        }
+        touch.delta = glm::vec2(0.0f);
+    }
 }
 
 bool AndroidInputManager::LoadConfig(const std::string& path) {
@@ -130,10 +308,6 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
         LOGE("[AndroidInputManager] ERROR: Platform is null!");
         return false;
     }
-
-    // Try to read directly without FileExists check (FileExists may have issues)
-    // Log what we're attempting
-    LOGI("[AndroidInputManager] Attempting to read config file directly...");
 
     // Load file using platform
     std::vector<uint8_t> configData = platform->ReadAsset(path);
@@ -154,8 +328,7 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
         return false;
     }
 
-    // ===== Load Actions (Touch Zones and Gestures) =====
-    // New format: actions at root level, with "android" nested inside each action
+    // ===== Load Actions (Entity Bindings and Gestures) =====
     if (doc.HasMember("actions") && doc["actions"].IsObject()) {
         const auto& actions = doc["actions"];
 
@@ -171,45 +344,18 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
 
             const auto& androidBinding = actionData["android"];
 
-            // Load touch zone (single object, not array)
-            if (androidBinding.HasMember("touchZone") && androidBinding["touchZone"].IsObject()) {
-                const auto& zoneData = androidBinding["touchZone"];
+            // Load entity binding (buttons, joysticks)
+            if (androidBinding.HasMember("entity") && androidBinding["entity"].IsString()) {
+                EntityAction entityAction;
+                entityAction.actionName = actionName;
+                entityAction.entityName = androidBinding["entity"].GetString();
 
-                TouchZone zone;
-                zone.action = actionName;
-
-                // Parse position
-                if (zoneData.HasMember("x") && zoneData.HasMember("y")) {
-                    zone.position.x = zoneData["x"].GetFloat();
-                    zone.position.y = zoneData["y"].GetFloat();
-                }
-
-                // Parse size - determine circle vs rect based on presence of radius
-                if (zoneData.HasMember("radius")) {
-                    zone.isCircle = true;
-                    zone.radius = zoneData["radius"].GetFloat();
-                } else if (zoneData.HasMember("width") && zoneData.HasMember("height")) {
-                    zone.isCircle = false;
-                    zone.rectSize.x = zoneData["width"].GetFloat();
-                    zone.rectSize.y = zoneData["height"].GetFloat();
-                }
-
-                // Parse visuals (optional)
-                if (zoneData.HasMember("normalImage") && zoneData["normalImage"].IsString()) {
-                    zone.normalImage = zoneData["normalImage"].GetString();
-                }
-                if (zoneData.HasMember("pressedImage") && zoneData["pressedImage"].IsString()) {
-                    zone.pressedImage = zoneData["pressedImage"].GetString();
-                }
-                if (zoneData.HasMember("alpha")) {
-                    zone.alpha = zoneData["alpha"].GetFloat();
-                }
-
-                m_touchZones.push_back(zone);
-                LOGI("[AndroidInputManager] Loaded touch zone for action: %s", actionName.c_str());
+                m_entityActions.push_back(entityAction);
+                LOGI("[AndroidInputManager] Loaded entity action: %s -> %s",
+                     actionName.c_str(), entityAction.entityName.c_str());
             }
 
-            // Load gesture (single object, not array)
+            // Load gesture binding
             if (androidBinding.HasMember("gesture") && androidBinding["gesture"].IsObject()) {
                 const auto& gestureData = androidBinding["gesture"];
 
@@ -223,7 +369,6 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                         type == "swipe_up" || type == "swipe_down") {
                         gesture.type = GestureType::SWIPE;
 
-                        // Parse direction
                         if (type == "swipe_right") gesture.direction = glm::vec2(1.0f, 0.0f);
                         else if (type == "swipe_left") gesture.direction = glm::vec2(-1.0f, 0.0f);
                         else if (type == "swipe_up") gesture.direction = glm::vec2(0.0f, -1.0f);
@@ -251,96 +396,8 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
         }
     }
 
-    // ===== Load Axes (Joysticks and Drag Zones) =====
-    // New format: axes at root level, with "android" nested inside each axis
-    if (doc.HasMember("axes") && doc["axes"].IsObject()) {
-        const auto& axes = doc["axes"];
-
-        for (auto it = axes.MemberBegin(); it != axes.MemberEnd(); ++it) {
-            std::string axisName = it->name.GetString();
-            const auto& axisData = it->value;
-
-            // Skip if no android binding
-            if (!axisData.HasMember("android") || !axisData["android"].IsObject()) {
-                LOGI("[AndroidInputManager] Skipping axis '%s' (no android binding)", axisName.c_str());
-                continue;
-            }
-
-            const auto& androidBinding = axisData["android"];
-
-            if (!androidBinding.HasMember("type") || !androidBinding["type"].IsString()) {
-                continue;
-            }
-
-            std::string type = androidBinding["type"].GetString();
-
-            if (type == "virtual_joystick") {
-                VirtualJoystick joystick;
-                joystick.axisName = axisName;
-
-                // Parse position (new format uses nested "position" object)
-                if (androidBinding.HasMember("position") && androidBinding["position"].IsObject()) {
-                    const auto& pos = androidBinding["position"];
-                    if (pos.HasMember("x")) joystick.basePosition.x = pos["x"].GetFloat();
-                    if (pos.HasMember("y")) joystick.basePosition.y = pos["y"].GetFloat();
-                }
-
-                // Parse radii
-                if (androidBinding.HasMember("outerRadius")) {
-                    joystick.outerRadius = androidBinding["outerRadius"].GetFloat();
-                }
-                if (androidBinding.HasMember("innerRadius")) {
-                    joystick.innerRadius = androidBinding["innerRadius"].GetFloat();
-                }
-                if (androidBinding.HasMember("deadZone")) {
-                    joystick.deadZone = androidBinding["deadZone"].GetFloat();
-                } else {
-                    joystick.deadZone = 0.1f;  // Default
-                }
-
-                // Parse visuals (optional)
-                if (androidBinding.HasMember("outerImage") && androidBinding["outerImage"].IsString()) {
-                    joystick.outerImage = androidBinding["outerImage"].GetString();
-                }
-                if (androidBinding.HasMember("innerImage") && androidBinding["innerImage"].IsString()) {
-                    joystick.innerImage = androidBinding["innerImage"].GetString();
-                }
-                if (androidBinding.HasMember("alpha")) {
-                    joystick.alpha = androidBinding["alpha"].GetFloat();
-                }
-
-                m_joysticks.push_back(joystick);
-                LOGI("[AndroidInputManager] Loaded virtual joystick: %s", axisName.c_str());
-            }
-            else if (type == "touch_drag") {
-                TouchDragZone dragZone;
-                dragZone.axisName = axisName;
-
-                // Parse zone
-                if (androidBinding.HasMember("zone") && androidBinding["zone"].IsObject()) {
-                    const auto& zone = androidBinding["zone"];
-
-                    if (zone.HasMember("x")) dragZone.zonePosition.x = zone["x"].GetFloat();
-                    if (zone.HasMember("y")) dragZone.zonePosition.y = zone["y"].GetFloat();
-                    if (zone.HasMember("width")) dragZone.zoneSize.x = zone["width"].GetFloat();
-                    if (zone.HasMember("height")) dragZone.zoneSize.y = zone["height"].GetFloat();
-                }
-
-                // Parse sensitivity
-                if (androidBinding.HasMember("sensitivity")) {
-                    dragZone.sensitivity = androidBinding["sensitivity"].GetFloat();
-                } else {
-                    dragZone.sensitivity = 1.0f;
-                }
-
-                m_dragZones.push_back(dragZone);
-                LOGI("[AndroidInputManager] Loaded touch drag zone: %s", axisName.c_str());
-            }
-        }
-    }
-
-    LOGI("[AndroidInputManager] Config loaded: %zu touch zones, %zu joysticks, %zu drag zones, %zu gestures",
-         m_touchZones.size(), m_joysticks.size(), m_dragZones.size(), m_gestures.size());
+    LOGI("[AndroidInputManager] Config loaded: %zu entity actions, %zu gestures",
+         m_entityActions.size(), m_gestures.size());
 
     return true;
 }
@@ -356,121 +413,97 @@ std::unordered_map<std::string, bool> AndroidInputManager::GetAllActionStates() 
 }
 
 std::unordered_map<std::string, glm::vec2> AndroidInputManager::GetAllAxisStates() {
-    std::unordered_map<std::string, glm::vec2> states;
-
-    for (const auto& joystick : m_joysticks) {
-        states[joystick.axisName] = joystick.normalizedValue;
-    }
-
-    for (const auto& dragZone : m_dragZones) {
-        states[dragZone.axisName] = dragZone.delta * dragZone.sensitivity;
-    }
-
-    return states;
+    return {};
 }
 
 void AndroidInputManager::RenderOverlay(int screenWidth, int screenHeight) {
-    // TODO: Implement rendering using your rendering system
-    // This is a placeholder showing what needs to be rendered
-
-    // Render touch zones
-    for (const auto& zone : m_touchZones) {
-        glm::vec2 screenPos(
-            zone.position.x * screenWidth,
-            zone.position.y * screenHeight
-        );
-
-        const std::string& imagePath = zone.isPressed ? zone.pressedImage : zone.normalImage;
-
-        // TODO: Call your renderer
-        // Renderer::DrawSprite(imagePath, screenPos, zone.radius * screenWidth, zone.alpha);
-    }
-
-    // Render joysticks
-    for (const auto& joystick : m_joysticks) {
-        glm::vec2 screenPos(
-            joystick.basePosition.x * screenWidth,
-            joystick.basePosition.y * screenHeight
-        );
-
-        // Draw outer circle
-        // TODO: Renderer::DrawSprite(joystick.outerImage, screenPos, outerRadius * screenWidth, alpha);
-
-        // Draw inner stick
-        if (joystick.isActive) {
-            glm::vec2 stickScreenPos(
-                (joystick.basePosition.x + joystick.stickOffset.x) * screenWidth,
-                (joystick.basePosition.y + joystick.stickOffset.y) * screenHeight
-            );
-            // TODO: Renderer::DrawSprite(joystick.innerImage, stickScreenPos, innerRadius * screenWidth, alpha);
-        }
-    }
+    // Entity-based system doesn't need to render overlays
 }
 
 // ========== Touch Event Handlers ==========
 
 void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
-    glm::vec2 normalizedPos(x, y);
+    // x, y are NORMALIZED (0-1) from AndroidPlatform::HandleTouchEvent
+    // Convert to viewport pixel coords for consistency with desktop (ButtonSystem expects pixels)
+    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
+    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+
+    // Fallback if viewport not ready
+    if (viewportWidth <= 0) viewportWidth = 1920.0f;
+    if (viewportHeight <= 0) viewportHeight = 1080.0f;
+
+    glm::vec2 pixelPos(x * viewportWidth, y * viewportHeight);
 
     TouchPoint touch;
     touch.id = pointerId;
-    touch.position = normalizedPos;
-    touch.startPosition = normalizedPos;
+    touch.position = pixelPos;  // Store as pixels for GetPointerPosition compatibility
+    touch.startPosition = pixelPos;
+    touch.previousPosition = pixelPos;
+    touch.delta = glm::vec2(0.0f);
     touch.startTime = GetCurrentTime();
-    touch.consumed = false;
+    touch.duration = 0.0f;
+    touch.phase = TouchPhase::Began;
+    touch.entityName = "";
+    touch.isHandled = false;
 
-    // Check if touch hits any zone (priority: zones > joysticks > drag zones)
-    for (auto& zone : m_touchZones) {
-        if (IsTouchInsideZone(zone, normalizedPos)) {
-            zone.isPressed = true;
-            zone.activeTouchId = pointerId;
-            touch.consumed = true;
-            m_currentActions.insert(zone.action);
-            break;  // Only one zone per touch
+    // Convert pixel coordinates to game coordinates for entity hit testing
+    int gameResWidth, gameResHeight;
+    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
+
+    // pixel -> game coordinates, with Y flipped (screen Y=0 is top, game Y=0 is bottom)
+    float gameX = (pixelPos.x / viewportWidth) * static_cast<float>(gameResWidth);
+    float gameY = static_cast<float>(gameResHeight) - (pixelPos.y / viewportHeight) * static_cast<float>(gameResHeight);
+    glm::vec2 gamePos(gameX, gameY);
+
+    LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
+         pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
+
+    // Check if touch hits any entity action
+    for (auto& entityAction : m_entityActions) {
+        if (!entityAction.entityFound) {
+            LOGI("[AndroidInput]   Skipping '%s' - entity not found", entityAction.entityName.c_str());
+            continue;
+        }
+        if (entityAction.isPressed) {
+            LOGI("[AndroidInput]   Skipping '%s' - already pressed", entityAction.entityName.c_str());
+            continue;
+        }
+
+        // Check if touch is inside entity bounds
+        float halfWidth = entityAction.entitySize.x / 2.0f;
+        float halfHeight = entityAction.entitySize.y / 2.0f;
+        float minX = entityAction.entityCenter.x - halfWidth;
+        float maxX = entityAction.entityCenter.x + halfWidth;
+        float minY = entityAction.entityCenter.y - halfHeight;
+        float maxY = entityAction.entityCenter.y + halfHeight;
+
+        LOGI("[AndroidInput]   Checking '%s': bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
+             entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
+
+        if (gamePos.x >= minX && gamePos.x <= maxX &&
+            gamePos.y >= minY && gamePos.y <= maxY) {
+
+            entityAction.isPressed = true;
+            entityAction.activeTouchId = pointerId;
+            entityAction.touchPositionRelative = gamePos - entityAction.entityCenter;
+
+            touch.isHandled = true;
+            touch.entityName = entityAction.entityName;
+            m_currentActions.insert(entityAction.actionName);
+
+            LOGI("[AndroidInput] HIT! Touch %d on entity '%s' for action '%s' relPos=(%.1f,%.1f)",
+                 pointerId, entityAction.entityName.c_str(), entityAction.actionName.c_str(),
+                 entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y);
+            break;
         }
     }
 
-    // Check if touch hits joystick
-    if (!touch.consumed) {
-        for (auto& joystick : m_joysticks) {
-            float dist = glm::distance(joystick.basePosition, normalizedPos);
-            if (dist <= joystick.outerRadius) {
-                joystick.isActive = true;
-                joystick.activeTouchId = pointerId;
-                touch.consumed = true;
-
-                // Calculate initial offset on touch down (not just on move)
-                glm::vec2 offset = normalizedPos - joystick.basePosition;
-                float distance = glm::length(offset);
-
-                if (distance < joystick.deadZone) {
-                    joystick.normalizedValue = glm::vec2(0.0f);
-                    joystick.stickOffset = glm::vec2(0.0f);
-                } else {
-                    if (distance > joystick.outerRadius) {
-                        offset = glm::normalize(offset) * joystick.outerRadius;
-                        distance = joystick.outerRadius;
-                    }
-                    joystick.normalizedValue = offset / joystick.outerRadius;
-                    joystick.stickOffset = offset;
-                }
-                break;
-            }
-        }
-    }
-
-    // Check if touch is in drag zone
-    if (!touch.consumed) {
-        for (auto& dragZone : m_dragZones) {
-            if (IsPointInRect(normalizedPos, dragZone.zonePosition, dragZone.zoneSize)) {
-                LOGI("[AndroidInputManager] Touch in drag zone '%s' at (%.2f, %.2f)",
-                     dragZone.axisName.c_str(), normalizedPos.x, normalizedPos.y);
-                dragZone.isActive = true;
-                dragZone.activeTouchId = pointerId;
-                dragZone.previousPosition = normalizedPos;
-                touch.consumed = true;
-                break;
-            }
+    // If touch wasn't handled by any entity, it's available for camera/other use
+    if (!touch.isHandled) {
+        if (m_dragTouchId == -1) {
+            m_dragTouchId = pointerId;
+            m_isDragging = true;
+            LOGI("[AndroidInput] Touch %d BEGAN - no entity hit, using for camera drag", pointerId);
         }
     }
 
@@ -481,78 +514,71 @@ void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
-    glm::vec2 normalizedPos(x, y);
-    it->second.position = normalizedPos;
+    // x, y are NORMALIZED (0-1) - convert to pixel coords
+    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
+    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
 
-    // Update joysticks
-    for (auto& joystick : m_joysticks) {
-        if (joystick.isActive && joystick.activeTouchId == pointerId) {
-            // Calculate offset from joystick center
-            glm::vec2 offset = normalizedPos - joystick.basePosition;
-            float distance = glm::length(offset);
+    if (viewportWidth <= 0) viewportWidth = 1920.0f;
+    if (viewportHeight <= 0) viewportHeight = 1080.0f;
 
-            // Apply dead zone
-            if (distance < joystick.deadZone) {
-                joystick.normalizedValue = glm::vec2(0.0f);
-                joystick.stickOffset = glm::vec2(0.0f);
-            } else {
-                // Clamp to outer radius
-                if (distance > joystick.outerRadius) {
-                    offset = glm::normalize(offset) * joystick.outerRadius;
-                    distance = joystick.outerRadius;
-                }
+    glm::vec2 pixelPos(x * viewportWidth, y * viewportHeight);
+    glm::vec2 previousPos = it->second.position;
 
-                // Normalize to -1..1 range
-                joystick.normalizedValue = offset / joystick.outerRadius;
-                joystick.stickOffset = offset;
-            }
+    it->second.delta = pixelPos - previousPos;
+    it->second.previousPosition = it->second.position;
+    it->second.position = pixelPos;
+    it->second.phase = TouchPhase::Moved;
+
+    // Convert pixel to game coordinates
+    int gameResWidth, gameResHeight;
+    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
+
+    float gameX = (pixelPos.x / viewportWidth) * static_cast<float>(gameResWidth);
+    float gameY = static_cast<float>(gameResHeight) - (pixelPos.y / viewportHeight) * static_cast<float>(gameResHeight);
+    glm::vec2 gamePos(gameX, gameY);
+
+    // Update entity action touch positions
+    for (auto& entityAction : m_entityActions) {
+        if (entityAction.isPressed && entityAction.activeTouchId == pointerId) {
+            entityAction.touchPositionRelative = gamePos - entityAction.entityCenter;
             break;
         }
     }
 
-    // Update drag zones
-    for (auto& dragZone : m_dragZones) {
-        if (dragZone.isActive && dragZone.activeTouchId == pointerId) {
-            dragZone.delta = normalizedPos - dragZone.previousPosition;
-            dragZone.previousPosition = normalizedPos;
-            dragZone.movedThisFrame = true;
-            // Log non-zero deltas
-            if (dragZone.delta.x != 0.0f || dragZone.delta.y != 0.0f) {
-                LOGI("[AndroidInputManager] Drag '%s' delta: (%.4f, %.4f)",
-                     dragZone.axisName.c_str(), dragZone.delta.x, dragZone.delta.y);
-            }
-            break;
-        }
+    // Update drag delta if this is the drag touch
+    if (pointerId == m_dragTouchId) {
+        m_dragDelta = it->second.delta;
     }
 }
 
 void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
-    // Release touch zones
-    for (auto& zone : m_touchZones) {
-        if (zone.activeTouchId == pointerId) {
-            zone.isPressed = false;
-            zone.activeTouchId = -1;
-            m_currentActions.erase(zone.action);
+    auto it = m_activeTouches.find(pointerId);
+    if (it == m_activeTouches.end()) return;
+
+    // Copy touch to ended list before removing
+    TouchPoint endedTouch = it->second;
+    endedTouch.phase = TouchPhase::Ended;
+    endedTouch.duration = m_currentTime - endedTouch.startTime;
+    m_endedTouches.push_back(endedTouch);
+
+    LOGI("[AndroidInputManager] Touch %d ENDED on entity '%s' (duration: %.2fs)",
+         pointerId, endedTouch.entityName.c_str(), endedTouch.duration);
+
+    // Release entity actions
+    for (auto& entityAction : m_entityActions) {
+        if (entityAction.activeTouchId == pointerId) {
+            entityAction.isPressed = false;
+            entityAction.activeTouchId = -1;
+            entityAction.touchPositionRelative = glm::vec2(0.0f);
+            m_currentActions.erase(entityAction.actionName);
         }
     }
 
-    // Release joysticks
-    for (auto& joystick : m_joysticks) {
-        if (joystick.activeTouchId == pointerId) {
-            joystick.isActive = false;
-            joystick.activeTouchId = -1;
-            joystick.normalizedValue = glm::vec2(0.0f);
-            joystick.stickOffset = glm::vec2(0.0f);
-        }
-    }
-
-    // Release drag zones
-    for (auto& dragZone : m_dragZones) {
-        if (dragZone.activeTouchId == pointerId) {
-            dragZone.isActive = false;
-            dragZone.activeTouchId = -1;
-            dragZone.delta = glm::vec2(0.0f);
-        }
+    // Release camera drag
+    if (pointerId == m_dragTouchId) {
+        m_dragTouchId = -1;
+        m_isDragging = false;
+        m_dragDelta = glm::vec2(0.0f);
     }
 
     // Remove from active touches
@@ -561,31 +587,70 @@ void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
 
 // ========== Private Helper Methods ==========
 
-void AndroidInputManager::UpdateTouchZones() {
-    // Touch zones are updated in OnTouchDown/OnTouchUp
-    // This method is for any per-frame logic
-}
+void AndroidInputManager::UpdateEntityTransforms() {
+    ECSManager* ecs = nullptr;
+    try {
+        ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
+    } catch (...) {
+        return;
+    }
 
-void AndroidInputManager::UpdateJoysticks() {
-    // Joysticks are updated in OnTouchMove
-    // Reset delta for inactive joysticks
-    for (auto& joystick : m_joysticks) {
-        if (!joystick.isActive) {
-            joystick.normalizedValue = glm::vec2(0.0f);
+    if (!ecs) return;
+
+    const auto& entities = ecs->GetActiveEntities();
+
+    // Debug: log entity search periodically
+    static int entityLogCount = 0;
+    bool shouldLog = (++entityLogCount % 300 == 1);  // Log every ~5 seconds at 60fps
+
+    for (auto& entityAction : m_entityActions) {
+        bool wasFound = entityAction.entityFound;
+        entityAction.entityFound = false;
+
+        for (Entity e : entities) {
+            if (!ecs->HasComponent<NameComponent>(e)) continue;
+
+            auto& nameComp = ecs->GetComponent<NameComponent>(e);
+            if (nameComp.name != entityAction.entityName) continue;
+
+            if (!ecs->HasComponent<Transform>(e)) continue;
+
+            auto& transform = ecs->GetComponent<Transform>(e);
+
+            entityAction.entityCenter = glm::vec2(transform.localPosition.x, transform.localPosition.y);
+            entityAction.entitySize = glm::vec2(transform.localScale.x, transform.localScale.y);
+            entityAction.entityFound = true;
+
+            // Log when entity is first found or periodically
+            if (!wasFound || shouldLog) {
+                LOGI("[AndroidInput] Entity '%s' for action '%s': center=(%.1f,%.1f) size=(%.1f,%.1f)",
+                     entityAction.entityName.c_str(), entityAction.actionName.c_str(),
+                     entityAction.entityCenter.x, entityAction.entityCenter.y,
+                     entityAction.entitySize.x, entityAction.entitySize.y);
+            }
+            break;
+        }
+
+        // Log if entity not found
+        if (!entityAction.entityFound && wasFound) {
+            LOGI("[AndroidInput] Entity '%s' for action '%s' NOT FOUND",
+                 entityAction.entityName.c_str(), entityAction.actionName.c_str());
         }
     }
 }
 
-void AndroidInputManager::UpdateDragZones() {
-    // Reset delta for drag zones that didn't move this frame
-    // This ensures delta is 0 when finger is stationary
-    for (auto& dragZone : m_dragZones) {
-        if (!dragZone.movedThisFrame) {
-            dragZone.delta = glm::vec2(0.0f);
-        }
-        // Reset the flag for next frame
-        dragZone.movedThisFrame = false;
-    }
+bool AndroidInputManager::IsTouchInsideEntity(const EntityAction& entity, glm::vec2 touchPos) {
+    if (!entity.entityFound) return false;
+
+    float halfWidth = entity.entitySize.x / 2.0f;
+    float halfHeight = entity.entitySize.y / 2.0f;
+    float minX = entity.entityCenter.x - halfWidth;
+    float maxX = entity.entityCenter.x + halfWidth;
+    float minY = entity.entityCenter.y - halfHeight;
+    float maxY = entity.entityCenter.y + halfHeight;
+
+    return touchPos.x >= minX && touchPos.x <= maxX &&
+           touchPos.y >= minY && touchPos.y <= maxY;
 }
 
 void AndroidInputManager::DetectGestures(float deltaTime) {
@@ -594,15 +659,9 @@ void AndroidInputManager::DetectGestures(float deltaTime) {
 }
 
 void AndroidInputManager::DetectSwipes() {
-    // Check each touch that just ended
-    // (In a real implementation, you'd track touches ending this frame)
-    // For now, this is a simplified version
-
     for (const auto& gesture : m_gestures) {
         if (gesture.type != GestureType::SWIPE) continue;
-
-        // Check all ending touches
-        // TODO: Implement proper swipe detection with touch tracking
+        // TODO: Implement swipe detection using ended touches
     }
 }
 
@@ -610,14 +669,11 @@ void AndroidInputManager::DetectDoubleTap() {
     for (const auto& gesture : m_gestures) {
         if (gesture.type != GestureType::DOUBLE_TAP) continue;
 
-        // Check if any touch just started
         for (const auto& [id, touch] : m_activeTouches) {
-            float timeSinceStart = m_currentTime - touch.startTime;
-            if (timeSinceStart < 0.05f) {  // Just started
+            if (touch.phase == TouchPhase::Began) {
                 float timeSinceLastTap = m_currentTime - m_lastTapTime;
 
                 if (timeSinceLastTap < gesture.maxTimeBetweenTaps) {
-                    // Double tap detected!
                     m_currentActions.insert(gesture.action);
                     m_tapCount = 0;
                 } else {
@@ -630,30 +686,11 @@ void AndroidInputManager::DetectDoubleTap() {
     }
 }
 
-bool AndroidInputManager::IsTouchInsideZone(const TouchZone& zone, glm::vec2 touchPos) {
-    if (zone.isCircle) {
-        float dist = glm::distance(zone.position, touchPos);
-        return dist <= zone.radius;
-    } else {
-        return IsPointInRect(touchPos, zone.position - zone.rectSize * 0.5f, zone.rectSize);
-    }
-}
-
-bool AndroidInputManager::IsPointInRect(glm::vec2 point, glm::vec2 rectPos, glm::vec2 rectSize) {
-    return point.x >= rectPos.x &&
-           point.x <= rectPos.x + rectSize.x &&
-           point.y >= rectPos.y &&
-           point.y <= rectPos.y + rectSize.y;
-}
-
 float AndroidInputManager::GetCurrentTime() {
     return m_currentTime;
 }
 
-// ========== Editor Support ==========
-
 void AndroidInputManager::SetGamePanelMousePos(float newX, float newY) {
-    // Not used on Android
     (void)newX;
     (void)newY;
 }

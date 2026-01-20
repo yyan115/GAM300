@@ -23,7 +23,7 @@ Entity ModelFactory::SpawnModelHierarchy(const Model& model, const std::string& 
 		Transform& transform = ecs.GetComponent<Transform>(root);
 		transform.localPosition = position;
 		transform.localRotation = Quaternion{};
-		transform.localScale = Vector3D{ 0.1f, 0.1f, 0.1f };
+		transform.localScale = Vector3D{ 1.f, 1.f, 1.f };
 		transform.isDirty = true;
 	}
 
