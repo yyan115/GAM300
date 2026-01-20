@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e79ecd01d8b5c-0003f51b0c00001f",
+        "source": "../../Resources/Shaders/shadow_depthandroid",
+        "compiled": "../../Resources/Shaders/shadow_depthandroid.shader"
+    }
+}
