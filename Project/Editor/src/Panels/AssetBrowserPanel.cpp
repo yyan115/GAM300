@@ -60,6 +60,11 @@ std::string DraggedFontPath;
 GUID_128 DraggedScriptGuid = {0, 0};
 std::string DraggedScriptPath;
 
+// Global drag-drop state for cross-window script dragging
+GUID_128 DraggedTextGuid = { 0, 0 };
+std::string DraggedTextPath;
+
+
 // Global fallback GUID to file path mapping for assets without proper meta files
 static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 
@@ -650,9 +655,10 @@ void AssetBrowserPanel::RenderAssetGrid()
             bool isPrefab = (lowerExt == ".prefab");
             bool isScript = (lowerExt == ".lua");
             bool isAnimator = (lowerExt == ".animator");
+            bool isText = (lowerExt == ".txt");
 
             // Handle drag-drop for various asset types
-            if ((isMaterial || isTexture || isModel || isAudio || isFont || isScript || isAnimator) && ImGui::BeginDragDropSource()) {
+            if ((isMaterial || isTexture || isModel || isAudio || isFont || isScript || isAnimator || isText) && ImGui::BeginDragDropSource()) {
                 if (isMaterial) {
                     // Store drag data globally for cross-window transfer
                     DraggedMaterialGuid = asset.guid;
@@ -701,6 +707,10 @@ void AssetBrowserPanel::RenderAssetGrid()
                     // Send animator controller path directly
                     ImGui::SetDragDropPayload("ANIMATOR_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
                     ImGui::Text("Dragging Animator: %s", asset.fileName.c_str());
+                }
+                else if (isText) {
+                    ImGui::SetDragDropPayload("TEXT_PAYLOAD", asset.filePath.c_str(), asset.filePath.size() + 1);
+                    ImGui::Text("Dragging Text: %s", asset.fileName.c_str());
                 }
 
                 ImGui::EndDragDropSource();
@@ -847,7 +857,7 @@ void AssetBrowserPanel::RenderAssetGrid()
             bool isDraggableAsset = (lowerExtCheck == ".obj" || lowerExtCheck == ".fbx" ||
                                     lowerExtCheck == ".dae" || lowerExtCheck == ".3ds" ||
                                     lowerExtCheck == ".mat" || lowerExtCheck == ".prefab" ||
-                                    lowerExtCheck == ".animator");
+                                    lowerExtCheck == ".animator" || lowerExtCheck == ".txt");
 
             ImU32 iconColor = isDraggableAsset ? IM_COL32(100, 180, 255, 255) : IM_COL32(220, 220, 220, 255);
             dl->AddText(font, fontSize, iconPos, iconColor, icon.c_str());
@@ -1217,6 +1227,9 @@ AssetBrowserPanel::AssetType AssetBrowserPanel::GetAssetTypeFromExtension(const 
     else if (lowerExt == ".lua") {
         return AssetType::Scripts;
     }
+    else if (lowerExt == ".txt") {
+        return AssetType::Text;
+    }
 
     return AssetType::All;
 }
@@ -1471,6 +1484,7 @@ bool AssetBrowserPanel::IsValidAssetFile(const std::string& extension) const {
         ".scene",                                          // Scenes
         ".lua",                                            // Scripts
         ".animator",                                       // Animator Controllers
+        ".txt",                                            // Configuration for cutscene
     };
 
     return VALID_EXTENSIONS.count(lowerExt) > 0;
@@ -1690,6 +1704,9 @@ std::string AssetBrowserPanel::GetAssetIcon(const AssetInfo& asset) const {
     else if (lowerExt == ".lua") {
         return ICON_FA_FILE_CODE;
     }
+    else if (lowerExt == ".txt") {
+        return ICON_FA_FILE;
+    }
 
     return ICON_FA_FILE; // Default file icon
 }
@@ -1796,7 +1813,7 @@ void AssetBrowserPanel::OpenImportDialog() {
     ofn.hwndOwner = nullptr;  // Set to a valid window handle if available (e.g., from GLFW or Win32)
     ofn.lpstrFile = filename;
     ofn.nMaxFile = sizeof(filename);
-    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.flac;*.ttf;*.otf;*.mat;*.prefab;*.scene\0All Files\0*.*\0";
+    ofn.lpstrFilter = "All Supported Files\0*.png;*.jpg;*.jpeg;*.bmp;*.tga;*.dds;*.obj;*.fbx;*.dae;*.3ds;*.vert;*.frag;*.glsl;*.hlsl;*.wav;*.mp3;*.ogg;*.flac;*.ttf;*.otf;*.mat;*.prefab;*.scene;*.txt\0All Files\0*.*\0";
     ofn.nFilterIndex = 1;
     ofn.lpstrInitialDir = currentDirectory.c_str();  // Start in the current directory
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_NOCHANGEDIR;  // Added OFN_NOCHANGEDIR

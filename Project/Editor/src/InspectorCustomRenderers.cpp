@@ -98,9 +98,12 @@ extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
 extern GUID_128 DraggedScriptGuid;
 extern std::string DraggedScriptPath;
+extern GUID_128 DraggedTextGuid;
+extern std::string DraggedTextPath;
+
 
 // Helper function to determine asset type from field name
-enum class AssetType { None, Audio, Model, Texture, Material, Font, Script };
+enum class AssetType { None, Audio, Model, Texture, Material, Font, Script, Text };
 AssetType GetAssetTypeFromFieldName(const std::string& fieldName) {
     std::string lowerName = fieldName;
     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
@@ -123,6 +126,13 @@ AssetType GetAssetTypeFromFieldName(const std::string& fieldName) {
     if (lowerName.find("script") != std::string::npos) {
         return AssetType::Script;
     }
+    if (lowerName.find("text") != std::string::npos ||
+        lowerName.find("config") != std::string::npos ||
+        lowerName.find("cutscene") != std::string::npos ||
+        lowerName.find("data") != std::string::npos) {
+        return AssetType::Text;
+    }
+
     return AssetType::None;
 }
 
@@ -179,6 +189,12 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             displayText = path.empty() ? "None (Script)" : path.substr(path.find_last_of("/\\") + 1);
             break;
         }
+        case AssetType::Text: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Text)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
         default:
             return false;
     }
@@ -196,6 +212,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             case AssetType::Material: payloadType = "MATERIAL_DRAG"; break;
             case AssetType::Font: payloadType = "FONT_DRAG"; break;
             case AssetType::Script: payloadType = "SCRIPT_PAYLOAD"; break;
+            case AssetType::Text: payloadType = "TEXT_PAYLOAD"; break;
             default: break;
         }
         
@@ -215,6 +232,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
                     case AssetType::Material: newGuid = DraggedMaterialGuid; break;
                     case AssetType::Font: newGuid = DraggedFontGuid; break;
                     case AssetType::Script: newGuid = DraggedScriptGuid; break;
+                    case AssetType::Text: newGuid = DraggedTextGuid; break;
                     default: break;
                 }
             }
@@ -835,68 +853,52 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
         [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
         {
-            auto& videoComponent = ecs.GetComponent<VideoComponent>(entity);
+            ecs;
+            GUID_128* guid = static_cast<GUID_128*>(ptr);
             const float labelWidth = EditorComponents::GetLabelWidth();
 
-            ImGui::PushID("VideoComponent");
-
-            // --- 1. Video File Selection (Drag & Drop) ---
-            ImGui::Text("Video File");
+            ImGui::Text("Configuration File");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
 
-            std::string path = videoComponent.videoPath;
-            std::string displayText = path.empty() ? "None (Video)" : path.substr(path.find_last_of("/\\") + 1);
+            std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+            std::string displayText = texPath.empty() ? "None (Text)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
             float buttonWidth = ImGui::GetContentRegionAvail().x;
-            if (EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth))
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget())
             {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                ImGui::SetTooltip("Drop text file here");
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
                 {
-                    GUID_128 droppedGuid = *(GUID_128*)payload->Data;
-                    std::string newPath = AssetManager::GetInstance().GetAssetPathFromGUID(droppedGuid);
+                    // Take snapshot before changing texture
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Text");
 
-                    if (videoComponent.videoPath != newPath)
-                    {
-                        videoComponent.videoPath = newPath;
-                        videoComponent.asset_dirty = true;
-                    }
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    GUID_128 textGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    *guid = textGUID;
+
+                    //// Load texture immediately
+                    //auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
+                    //std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+                    //spriteComp.texturePath = newTexturePath;
+                    //spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
+                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
+                    std::string CutscenePath = AssetManager::GetInstance().GetAssetPathFromGUID(textGUID);
+                    videoComp.videoPath = CutscenePath;
+                    std::cout << "video path here is " << videoComp.videoPath << std::endl;
+                    EditorComponents::EndDragDropTarget();
+                    return true; // Field was modified
                 }
+                EditorComponents::EndDragDropTarget();
             }
 
-            ImGui::Spacing();
-
-            // --- 2. Playback State ---
-            ImGui::Text("Is Playing");
-            ImGui::SameLine(labelWidth);
-            UndoableWidgets::Checkbox("##IsPlaying", &videoComponent.isPlaying);
-
-            ImGui::Text("Loop");
-            ImGui::SameLine(labelWidth); 
-            UndoableWidgets::Checkbox("##Loop", &videoComponent.loop);
-
-            // --- 3. Playback Speed ---
-            ImGui::Text("Speed");
-            ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##PlaybackSpeed", &videoComponent.playbackSpeed, 0.05f, 0.0f, 10.0f, "%.2fx");
-
-            // --- 4. Seek Bar ---
-            ImGui::Text("Seek Time");
-            ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
-            // We use a Slider here. If the user interacts with it, we set seek_dirty.
-            if (ImGui::SliderFloat("##CurrentTime", &videoComponent.currentTime, 0.0f, videoComponent.duration, "%.2f s"))
-            {
-                videoComponent.seek_dirty = true;
-            }
-
-            // --- 5. Debug Info (Optional) ---
-            ImGui::TextDisabled("Duration: %.2f s", videoComponent.duration);
-            ImGui::TextDisabled("Texture ID: %u", videoComponent.textureID);
-
-            ImGui::PopID();
-            return true;
+            return false;
         });
 
     // ==================== CAMERA COMPONENT ====================

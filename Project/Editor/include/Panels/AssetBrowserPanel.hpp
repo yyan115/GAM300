@@ -59,7 +59,8 @@ private:
         Audio,
         Fonts,
         Materials,
-        Scripts
+        Scripts,
+        Text
     };
 
     // UI state
