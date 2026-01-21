@@ -79,13 +79,13 @@ end
 
 local function _dumpPath(self, tag)
     if not self._path then
-        print("[Nav] " .. tag .. " path=nil")
+        --print("[Nav] " .. tag .. " path=nil")
         return
     end
-    print(string.format("[Nav] %s pathLen=%d", tag, #self._path))
+    --print(string.format("[Nav] %s pathLen=%d", tag, #self._path))
     for i = 1, math.min(#self._path, 12) do
         local p = self._path[i]
-        print(string.format("  [%d] (%.2f, %.2f, %.2f)", i, p.x or 0, p.y or 0, p.z or 0))
+        --print(string.format("  [%d] (%.2f, %.2f, %.2f)", i, p.x or 0, p.y or 0, p.z or 0))
     end
 end
 
@@ -99,7 +99,7 @@ return Component {
         AttackRange          = 3.0,   -- actually allowed to shoot
         --AttackEngageRange    = 3.5,   -- enter attack state
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
-        AttackCooldown = 1.0,
+        AttackCooldown = 3.0,
         HurtDuration   = 2.0,
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
@@ -241,8 +241,8 @@ return Component {
         -- self._spawnX, self._spawnY, self._spawnZ,
         -- self._patrolA.x, self._patrolA.z,
         -- self._patrolB.x, self._patrolB.z))
-        print(string.format("[EnemyAI][Start] A=(%.2f,%.2f) B=(%.2f,%.2f)",
-        self._patrolA.x, self._patrolA.z, self._patrolB.x, self._patrolB.z))
+        -- print(string.format("[EnemyAI][Start] A=(%.2f,%.2f) B=(%.2f,%.2f)",
+        -- self._patrolA.x, self._patrolA.z, self._patrolB.x, self._patrolB.z))
 
         self.fsm:Change("Idle", self.states.Idle)
     end,
@@ -336,8 +336,8 @@ return Component {
         if self._dbgMoveT > 1.0 then
             self._dbgMoveT = 0
             local p = CharacterController.GetPosition(self._controller)
-            print(string.format("[EnemyAI] MoveCC vx=%.3f vz=%.3f pos=(%.3f,%.3f,%.3f)",
-                vx or 0, vz or 0, p.x, p.y, p.z))
+            -- print(string.format("[EnemyAI] MoveCC vx=%.3f vz=%.3f pos=(%.3f,%.3f,%.3f)",
+            --     vx or 0, vz or 0, p.x, p.y, p.z))
         end
 
         CharacterController.Move(self._controller, vx or 0, 0, vz or 0)
@@ -389,12 +389,12 @@ return Component {
         _dumpPath(self, "RECEIVED")
 
         if path and #path >= 1 then
-            print(string.format("[Nav] PATH OK len=%d", #path))
+            --print(string.format("[Nav] PATH OK len=%d", #path))
             self:SetPath(path, goalX, goalZ)
             return true
         end
 
-        print("[Nav] PATH FAIL -> fallback direct movement ENABLED")
+        --print("[Nav] PATH FAIL -> fallback direct movement ENABLED")
         self:ClearPath()
         return false
     end,
@@ -459,10 +459,10 @@ return Component {
         local arriveR = self.PathWaypointRadius or 0.6
         local arriveR2 = arriveR * arriveR
 
-        print(string.format("[Nav] following idx=%d / %d target=(%.2f, %.2f, %.2f)",
-            self._pathIndex or 1, #self._path,
-            node.x, node.y or 0, node.z
-        ))
+        -- print(string.format("[Nav] following idx=%d / %d target=(%.2f, %.2f, %.2f)",
+        --     self._pathIndex or 1, #self._path,
+        --     node.x, node.y or 0, node.z
+        -- ))
 
         -- Advance waypoint if close enough
         if d2 <= arriveR2 then
@@ -617,21 +617,71 @@ return Component {
     end,
 
     SpawnKnife = function(self)
-        local knife = KnifePool.Request()
-        if not knife then return end
+        local knives = KnifePool.RequestMany(3)
+        if not knives then
+            return false
+        end
 
-        local ex, ey, ez = self:GetPosition()
         local tr = self._playerTr
-        if not tr then return end
+        if not tr then
+            for i=1,#knives do
+                knives[i].reserved = false
+                knives[i]._reservedToken = nil
+            end
+            return false
+        end
+
+        -- Unique token per volley
+        self._knifeVolleyId = (self._knifeVolleyId or 0) + 1
+        local token = tostring(self.entityId) .. ":" .. tostring(self._knifeVolleyId)
+
+        -- stamp token onto reserved knives
+        for i=1,3 do
+            knives[i]._reservedToken = token
+            knives[i].reserved = true
+        end
+
+        local ex, ey, ez
+        if self._controller then
+            local pos = CharacterController.GetPosition(self._controller)
+            if pos then ex, ey, ez = pos.x, pos.y, pos.z end
+        end
+        if not ex then
+            ex, ey, ez = self:GetPosition()
+        end
 
         local pp = Engine.GetTransformPosition(tr)
         local px, py, pz = pp[1], pp[2] + 0.5, pp[3]
 
-        local spawnX = ex - 0.5
-        local spawnY = ey + 1.0
-        local spawnZ = ez
+        local spawnX, spawnY, spawnZ = ex, ey + 1.0, ez
 
-        knife:Launch(spawnX, spawnY, spawnZ, px, py, pz)
+        local dx, dz = (px - ex), (pz - ez)
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len < 1e-6 then len = 1 end
+        dx, dz = dx / len, dz / len
+
+        local rx, rz = -dz, dx
+        local spread = 1.0
+
+        local t0x, t0y, t0z = px, py, pz
+        local t1x, t1y, t1z = px - rx * spread, py, pz - rz * spread
+        local t2x, t2y, t2z = px + rx * spread, py, pz + rz * spread
+
+        local ok1 = knives[1]:Launch(spawnX, spawnY, spawnZ, t0x, t0y, t0z, token, "C")
+        local ok2 = knives[2]:Launch(spawnX, spawnY, spawnZ, t1x, t1y, t1z, token, "L")
+        local ok3 = knives[3]:Launch(spawnX, spawnY, spawnZ, t2x, t2y, t2z, token, "R")
+
+        if not (ok1 and ok2 and ok3) then
+            -- If anything failed, free all three so we never “lose” a side knife.
+            for i=1,3 do
+                if knives[i] then knives[i]:Reset() end
+            end
+            -- print(string.format("[EnemyAI] SpawnKnife FAIL tok=%s ok=(%s,%s,%s)",
+            --     token, tostring(ok1), tostring(ok2), tostring(ok3)))
+            return false
+        end
+
+        return true
     end,
 
     ApplyHit = function(self, dmg, hitType)

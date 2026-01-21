@@ -41,10 +41,10 @@ local function switchTarget(ai)
 end
 
 function PatrolState:Enter(ai)
-    print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
-    tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
-    tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
-    tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
+    -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
+    -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
+    -- tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
+    -- tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
 
     ai._patrolWaitT  = 0
     ai._switchLockT  = 0
@@ -64,7 +64,7 @@ function PatrolState:Enter(ai)
     -- Patrol points must be set by EnemyAI.Start (authoritative).
     -- If they're missing, bail out safely.
     if not ai._patrolA or not ai._patrolB then
-        print("[Patrol] Missing patrol points (_patrolA/_patrolB). Did Start run?")
+        --print("[Patrol] Missing patrol points (_patrolA/_patrolB). Did Start run?")
         ai._patrolWaitT = 0.2
         stop(ai)
         return

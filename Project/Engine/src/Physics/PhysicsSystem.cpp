@@ -233,15 +233,15 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         {
             col.layer = Layers::NAV_GROUND;
 
-            if (ecsManager.HasComponent<NameComponent>(e))
-                std::cout << "[Physics] NAV_GROUND body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";
+            /*if (ecsManager.HasComponent<NameComponent>(e))
+                std::cout << "[Physics] NAV_GROUND body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
         }
         else if (ecsLayerIndex == obstacleIdx)
         {
             col.layer = Layers::NAV_OBSTACLE;
 
-            if (ecsManager.HasComponent<NameComponent>(e))
-                std::cout << "[Physics] NAV_OBSTACLE body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";
+            /*if (ecsManager.HasComponent<NameComponent>(e))
+                std::cout << "[Physics] NAV_OBSTACLE body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
         }
         else
         {
@@ -905,7 +905,7 @@ PhysicsSystem::RaycastResult PhysicsSystem::RaycastGround(
     if (!ok)
     {
         if (debugLog)
-            std::cout << "[RaycastGround] no hit\n";
+            //std::cout << "[RaycastGround] no hit\n";
         return result;
     }
 
@@ -930,11 +930,11 @@ PhysicsSystem::RaycastResult PhysicsSystem::RaycastGround(
         if ((int)e != 0 && ecs.HasComponent<NameComponent>(e))
             nm = ecs.GetComponent<NameComponent>(e).name.c_str();
 
-        std::cout << "[RaycastGround] HIT ent=" << (int)e
+        /*std::cout << "[RaycastGround] HIT ent=" << (int)e
             << " name=" << nm
             << " ecsLayer=" << layer
             << " hitY=" << result.hitPoint.y
-            << "\n";
+            << "\n";*/
     }
 
     return result;

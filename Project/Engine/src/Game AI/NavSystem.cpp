@@ -19,11 +19,11 @@ std::vector<Vector3D> NavSystem::RequestPathXZ(float sx, float sz, float gx, flo
     auto [sr, sc] = grid.WorldToCell(sx, sz);
     auto [gr, gc] = grid.WorldToCell(gx, gz);
 
-    std::cout << "[Nav] start cell r=" << sr << " c=" << sc
+    /*std::cout << "[Nav] start cell r=" << sr << " c=" << sc
         << " walkable=" << grid.Walkable(sr, sc) << "\n";
 
     std::cout << "[Nav] goal  cell r=" << gr << " c=" << gc
-        << " walkable=" << grid.Walkable(gr, gc) << "\n";
+        << " walkable=" << grid.Walkable(gr, gc) << "\n";*/
 
     return astar.FindPath(grid, sx, sz, gx, gz);
 }

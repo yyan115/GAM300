@@ -22,9 +22,9 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
 
     if (!grid.Walkable(goal.row, goal.col))
     {
-        std::cout
+        /*std::cout
             << "[AStar] Goal cell is NOT walkable: ("
-            << goal.row << ", " << goal.col << ")\n";
+            << goal.row << ", " << goal.col << ")\n";*/
         return {};
     }
 
