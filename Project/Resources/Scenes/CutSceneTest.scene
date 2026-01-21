@@ -271,7 +271,7 @@
             "guid": "0079f1e1f84fe5f9-0003f658200000b9",
             "components": {
                 "NameComponent": {
-                    "name": "Sprite Image"
+                    "name": "Cutscene"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -328,7 +328,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3175e-10
+                                    "data": 9.31753e-10
                                 },
                                 {
                                     "type": "float",
@@ -336,7 +336,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3175e-10
+                                    "data": 9.31753e-10
                                 }
                             ]
                         },
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000505962
+                                    "data": 0.00000505963
                                 },
                                 {
                                     "type": "float",
@@ -385,7 +385,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000284603
+                                    "data": 0.00000284604
                                 },
                                 {
                                     "type": "float",
@@ -422,7 +422,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "00541dd3dff1c818-0003f659be000001",
+                        "00541dd3dcd31542-0003f659be000019",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -552,7 +552,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "../../Resources/Cutscenes/TESTING_TEXT.txt"
                         }
                     ]
                 }

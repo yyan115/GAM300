@@ -40,4 +40,8 @@ private:
     // Internal helper to handle the transitions between Pre-time -> Duration -> Post-time
     void AdvanceCutsceneState(VideoComponent& component, const Asset::CutsceneInfo& info, float dt);
     ECSManager* m_ecs = nullptr;
+
+    std::string rootDirectory = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
+
+    std::string ConstructNewPath(VideoComponent& videoComp);
 };

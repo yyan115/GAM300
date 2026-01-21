@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0037ed6de2a8f1da-0003f91b9e000015",
+        "source": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png",
+        "compiled": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

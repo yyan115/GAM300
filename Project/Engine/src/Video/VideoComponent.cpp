@@ -12,6 +12,9 @@ REFL_REGISTER_START(VideoComponent)
 REFL_REGISTER_END
 #pragma endregion
 
+
+
+//Called once 
 bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	if (resourcePath.empty()) return false;
 
@@ -23,14 +26,31 @@ bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	auto it = data.cutscenes.begin();
 	const Asset::CutsceneInfo& info = it->second;
 
+	//it->first		//"Board"
+	////cutSceneName -> it->first + "_info.framestart pad with 0s" 
+
+	//std::string numResult = "_" + PadNumber(info.frameStart);
+
+	//std::string cutSceneName = it->first + numResult + ".png";
+
 	// Populate component fields
-	this->cutSceneName = it->first;
-	this->frameStart = info.frameStart;
-	this->frameEnd = info.frameEnd;
-	this->preTime = info.preTime;
-	this->duration = info.duration;
-	this->postTime = info.postTime;
-	this->videoPath = resourcePath;
+	this->cutSceneName	= it->first;
+	this->frameStart	= info.frameStart;
+	this->frameEnd		= info.frameEnd;
+	this->activeFrame	= info.frameStart;
+	this->preTime		= info.preTime;
+	this->duration		= info.duration;
+	this->postTime		= info.postTime;
+	this->videoPath		= resourcePath;
 
 	return true;
 }
+
+std::string VideoComponent::PadNumber(int num)
+{
+	std::ostringstream oss;
+	oss << std::setw(5) << std::setfill('0') << num;
+
+	return oss.str();
+}
+

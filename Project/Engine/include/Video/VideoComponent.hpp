@@ -4,7 +4,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Video/cutscene.hpp"
 
-//std::string newCutscenePath = "../../Resources/Cutscenes/Kusane_OpeningCutscene_WIP/" + videoComp.cutSceneName;
+//std::string newCutscenePath = "../../Resources/Cutscenes/Kusane_OpeningCutscene/" + videoComp.cutSceneName;
 
 
 
@@ -25,9 +25,11 @@ struct ENGINE_API VideoComponent {
 	std::string videoPath = ""; // Path to the video file (.mp4, .webm, etc.)
 	int frameStart = 0;   ///< Starting frame
 	int frameEnd = 0;     ///< Ending frame
-	float preTime = 0.0f;  ///< Delay before playback starts
+	int activeFrame = 0;
+
+	float preTime = 0.0f;  ///< Delay before first frame starts
 	float duration = 0.0f; ///< Active playback time
-	float postTime = 0.0f; ///< Delay/Hold after playback ends
+	float postTime = 0.0f; ///< Delay after last frame reached
 
 	std::string cutSceneName = "";
 	// --- Rendering Data ---
@@ -42,4 +44,7 @@ struct ENGINE_API VideoComponent {
 	~VideoComponent() = default;
 
 	bool ProcessMetaData(std::string resourcePath);
+
+	std::string PadNumber(int num);
+
 };

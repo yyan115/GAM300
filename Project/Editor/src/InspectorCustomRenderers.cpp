@@ -881,20 +881,6 @@ void RegisterInspectorCustomRenderers()
                     videoComp.ProcessMetaData(pathStr);     //split path accordingly.
                     videoComp.asset_dirty = true; // Mark for reload        //dont think this is necessary anymore?
 
-                    //GET SPRITE COMPONENT AND LOAD THE FIRST CUTSCENE
-                    auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
-
-                    std::string newCutscenePath = "../../Resources/Cutscenes/Kusane_OpeningCutscene_WIP/" + videoComp.cutSceneName;          //TEMP FOR TESTING
-
-                    std::cout << "newCutScenePath is " << newCutscenePath << std::endl;
-                    auto& assetMgr = AssetManager::GetInstance();
-                    //GET GUID FROM PATH
-                    GUID_128 targetGUID = assetMgr.GetGUID128FromAssetMeta(newCutscenePath);
-
-                    spriteComp.texture     = assetMgr.LoadByGUID<Texture>(targetGUID);        //Updating the actual texture
-                    spriteComp.textureGUID = targetGUID;      //for saving
-                    spriteComp.texturePath = newCutscenePath;     //for display purpose
-
                     EditorComponents::EndDragDropTarget();
                     return true;
                 }
