@@ -15,7 +15,7 @@ public:
 	void Initialise();
 
 	void Update();
-	void UpdateTransform(Entity entity);
+	void ENGINE_API UpdateTransform(Entity entity);
 	void TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform);
 	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
 
@@ -35,4 +35,7 @@ public:
 
 	void SetDirtyRecursive(Entity entity);
 	Transform& GetRootParentTransform(Entity currentEntity);
+
+	std::vector<Entity> ENGINE_API GetAllChildEntitiesVector(Entity parentEntity);
+	std::set<Entity> ENGINE_API GetAllChildEntitiesSet(Entity parentEntity);
 };

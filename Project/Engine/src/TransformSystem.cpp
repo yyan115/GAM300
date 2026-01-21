@@ -270,3 +270,39 @@ Transform& TransformSystem::GetRootParentTransform(Entity currentEntity) {
 		return GetRootParentTransform(parent);
 	}
 }
+
+std::vector<Entity> TransformSystem::GetAllChildEntitiesVector(Entity parentEntity) {
+	std::vector<Entity> allChildEntities;
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
+		for (const auto& childGUID : childrenComp.children) {
+			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			allChildEntities.push_back(child);
+			// Recursively get grandchildren
+			auto grandchildren = GetAllChildEntitiesVector(child);
+			allChildEntities.insert(allChildEntities.end(), grandchildren.begin(), grandchildren.end());
+		}
+	}
+
+	return allChildEntities;
+}
+
+std::set<Entity> TransformSystem::GetAllChildEntitiesSet(Entity parentEntity) {
+	std::set<Entity> allChildEntities;
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
+		for (const auto& childGUID : childrenComp.children) {
+			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			allChildEntities.insert(child);
+			// Recursively get grandchildren
+			auto grandchildren = GetAllChildEntitiesSet(child);
+			allChildEntities.insert(grandchildren.begin(), grandchildren.end());
+		}
+	}
+
+	return allChildEntities;
+}

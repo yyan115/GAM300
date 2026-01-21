@@ -220,7 +220,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
 }
 
-ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
 {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -228,21 +228,21 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
-    if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
+    if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return MAX_ENTITIES; }
 
     std::ifstream f(tryPath, std::ios::binary);
-    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
+    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return MAX_ENTITIES; }
     const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return false;
+        std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return MAX_ENTITIES;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << tryPath << "\n"; return true; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << tryPath << "\n"; return MAX_ENTITIES; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return false;
+        return MAX_ENTITIES;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
@@ -255,7 +255,7 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
         ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
     }
 
-    return true;
+    return prefab;
 }
 
 // ============ INSTANTIATE INTO EXISTING (propagate/update) ============

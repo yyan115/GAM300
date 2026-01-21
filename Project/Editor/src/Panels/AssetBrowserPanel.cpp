@@ -68,6 +68,7 @@ static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 #include <shellapi.h>
 #include <commdlg.h>
 #endif
+#include <Panels/ScenePanel.hpp>
 
 // Thumbnail/grid
 static constexpr float THUMBNAILBASESIZE = 96.0f;
@@ -729,10 +730,14 @@ void AssetBrowserPanel::RenderAssetGrid()
                 std::string lowerExt = asset.extension;
                 std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
                 if (lowerExt == ".prefab") {
-                    GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+                    Entity prefab = InstantiatePrefabFromFile(asset.filePath);
+                    GUIManager::SetSelectedEntity(prefab);
+                    PrefabEditor::StartEditingPrefab(prefab, asset.filePath);
 
-                    // Open the prefab editor
-                    PrefabEditor::Open(asset.filePath);
+                    //GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+
+                    //// Open the prefab editor
+                    //PrefabEditor::Open(asset.filePath);
                     // Early return so the rest of this frame doesn't re-use selection state
                     ImGui::PopID();
                     ImGui::EndGroup();

@@ -31,6 +31,7 @@
 #include "SnapshotManager.hpp"
 #include "UndoableWidgets.hpp"
 #include <algorithm>
+#include <Panels/PrefabEditorPanel.hpp>
 
 // Entity clipboard for copy/paste functionality
 // Uses GUIDs instead of Entity IDs so clipboard persists across undo/redo
@@ -263,8 +264,8 @@ void SceneHierarchyPanel::OnImGuiRender() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
-                    const bool ok = InstantiatePrefabFromFile(prefabPath);
-                    if (!ok) {
+                    const Entity entity = InstantiatePrefabFromFile(prefabPath);
+                    if (entity == MAX_ENTITIES) {
                         std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
                     }
                     else {
@@ -1131,27 +1132,33 @@ int SceneHierarchyPanel::GetNextRootSiblingIndex() {
 
 std::vector<Entity> SceneHierarchyPanel::GetSortedRootEntities() {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
     std::vector<Entity> rootEntities;
+
+    if (PrefabEditor::IsInPrefabEditorMode()) {
+		// In prefab editing mode, only return the root entity of the prefab being edited.
+		rootEntities.push_back(PrefabEditor::GetSandboxEntity());
+	}
+    else {
+        std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
     
-    // Collect root entities (no parent)
-    for (Entity entity : allEntities) {
-        if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
-            // Ensure the entity has a sibling index
-            EnsureSiblingIndex(entity);
-            rootEntities.push_back(entity);
+        // Collect root entities (no parent)
+        for (Entity entity : allEntities) {
+            if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+                // Ensure the entity has a sibling index
+                EnsureSiblingIndex(entity);
+                rootEntities.push_back(entity);
+            }
         }
+        // Sort by sibling index
+        std::sort(rootEntities.begin(), rootEntities.end(), 
+            [&ecsManager](Entity a, Entity b) {
+                int idxA = ecsManager.HasComponent<SiblingIndexComponent>(a) 
+                           ? ecsManager.GetComponent<SiblingIndexComponent>(a).siblingIndex : 0;
+                int idxB = ecsManager.HasComponent<SiblingIndexComponent>(b) 
+                           ? ecsManager.GetComponent<SiblingIndexComponent>(b).siblingIndex : 0;
+                return idxA < idxB;
+            });
     }
-    
-    // Sort by sibling index
-    std::sort(rootEntities.begin(), rootEntities.end(), 
-        [&ecsManager](Entity a, Entity b) {
-            int idxA = ecsManager.HasComponent<SiblingIndexComponent>(a) 
-                       ? ecsManager.GetComponent<SiblingIndexComponent>(a).siblingIndex : 0;
-            int idxB = ecsManager.HasComponent<SiblingIndexComponent>(b) 
-                       ? ecsManager.GetComponent<SiblingIndexComponent>(b).siblingIndex : 0;
-            return idxA < idxB;
-        });
     
     return rootEntities;
 }
