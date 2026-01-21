@@ -1110,6 +1110,11 @@ void RegisterInspectorCustomRenderers()
         return false;
     });
 
+    // Hide childBonesSaved from ModelRenderComponent (should not be modified in editor).
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "childBonesSaved",
+        [](const char*, void*, Entity, ECSManager&)
+        { return true; });
+
     // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
                                               [](const char *, void *, Entity, ECSManager &)

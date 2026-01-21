@@ -1256,7 +1256,8 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
 		// For prefabs, we need to initialise the animation component after deserialization.
         if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
 			auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-            ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, animComp);
+            auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
+            ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, actualAnimComp);
         }
     }
 

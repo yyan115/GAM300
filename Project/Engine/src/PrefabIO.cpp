@@ -23,6 +23,7 @@
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <Serialization/Serializer.hpp>
+#include <Graphics/Model/ModelFactory.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -247,6 +248,12 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
     const rapidjson::Value& ents = doc["prefab_entities"];
     Entity prefab = SpawnPrefab(ents, ecs);
     EnsurePrefabLinkOn(ecs, prefab, tryPath);
+
+    // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
+    if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
+        auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+    }
 
     return true;
 }
