@@ -49,7 +49,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Panels/AnimatorEditorWindow.hpp"
 #include <filesystem>
 #include "Video/VideoComponent.hpp"
-
 #ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
@@ -849,19 +848,19 @@ void RegisterInspectorCustomRenderers()
         return true; // skip default reflection
     });
 
-    // ==================== VideoComponent COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
         [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
         {
-            ecs;
-            GUID_128* guid = static_cast<GUID_128*>(ptr);
+            // 1. Cast to the actual component type
+            auto& videoComp = *static_cast<VideoComponent*>(ptr);
             const float labelWidth = EditorComponents::GetLabelWidth();
 
             ImGui::Text("Configuration File");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
 
-            std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(*guid);
+            // 2. Use the path stored in the component to show the display text
+            std::string texPath = videoComp.videoPath;
             std::string displayText = texPath.empty() ? "None (Text)" : texPath.substr(texPath.find_last_of("/\\") + 1);
 
             float buttonWidth = ImGui::GetContentRegionAvail().x;
@@ -869,38 +868,41 @@ void RegisterInspectorCustomRenderers()
 
             if (EditorComponents::BeginDragDropTarget())
             {
-                ImGui::SetTooltip("Drop text file here");
-
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
                 {
-                    // Take snapshot before changing texture
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Text");
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Cutscene File");
 
-                    const char* texturePath = (const char*)payload->Data;
-                    std::string pathStr(texturePath, payload->DataSize);
+                    const char* payloadPath = (const char*)payload->Data;
+                    std::string pathStr(payloadPath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    GUID_128 textGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
-                    *guid = textGUID;
+                    // 3. Update the component directly
 
-                    //// Load texture immediately
-                    //auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
-                    //std::string newTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
-                    //spriteComp.texturePath = newTexturePath;
-                    //spriteComp.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, newTexturePath);
-                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
-                    std::string CutscenePath = AssetManager::GetInstance().GetAssetPathFromGUID(textGUID);
-                    videoComp.videoPath = CutscenePath;
-                    std::cout << "video path here is " << videoComp.videoPath << std::endl;
+                    videoComp.ProcessMetaData(pathStr);     //split path accordingly.
+                    videoComp.asset_dirty = true; // Mark for reload        //dont think this is necessary anymore?
+
+                    //GET SPRITE COMPONENT AND LOAD THE FIRST CUTSCENE
+                    auto& spriteComp = ecs.GetComponent<SpriteRenderComponent>(entity);
+
+                    std::string newCutscenePath = "../../Resources/Cutscenes/Kusane_OpeningCutscene_WIP/" + videoComp.cutSceneName;          //TEMP FOR TESTING
+
+                    std::cout << "newCutScenePath is " << newCutscenePath << std::endl;
+                    auto& assetMgr = AssetManager::GetInstance();
+                    //GET GUID FROM PATH
+                    GUID_128 targetGUID = assetMgr.GetGUID128FromAssetMeta(newCutscenePath);
+
+                    spriteComp.texture     = assetMgr.LoadByGUID<Texture>(targetGUID);        //Updating the actual texture
+                    spriteComp.textureGUID = targetGUID;      //for saving
+                    spriteComp.texturePath = newCutscenePath;     //for display purpose
+
                     EditorComponents::EndDragDropTarget();
-                    return true; // Field was modified
+                    return true;
                 }
                 EditorComponents::EndDragDropTarget();
             }
 
             return false;
         });
-
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
 
@@ -1172,6 +1174,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                std::cout << "PathStr is " << pathStr << std::endl;
                 *guid = textureGUID;
 
                 // Load texture immediately

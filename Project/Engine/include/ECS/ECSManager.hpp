@@ -20,6 +20,7 @@
 #include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 #include "UI/Button/ButtonSystem.hpp"
 #include "UI/Slider/SliderSystem.hpp"
+#include "Video/VideoSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
 class CharacterControllerSystem;
@@ -150,6 +151,7 @@ public:
 	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
 	std::shared_ptr<ButtonSystem> buttonSystem;
 	std::shared_ptr<SliderSystem> sliderSystem;
+	std::shared_ptr<VideoSystem> videoSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

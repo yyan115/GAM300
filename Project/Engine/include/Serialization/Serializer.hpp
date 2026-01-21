@@ -32,6 +32,7 @@
 #include <Game AI/BrainComponent.hpp>
 #include <UI/Button/ButtonComponent.hpp>
 #include <UI/Slider/SliderComponent.hpp>
+#include <Video/VideoComponent.hpp>
 
 class Serializer {
 public:
@@ -66,7 +67,7 @@ public:
 	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
 	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
-
+    static void DeserializeVideoComponent(VideoComponent & videoComp, const rapidjson::Value& sliderJSON);
     // ==================================================================================
     // Boolean Helper
     // Handles: [true] OR [{"type": "bool", "data": true}]

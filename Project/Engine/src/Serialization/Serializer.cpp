@@ -572,6 +572,13 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             rapidjson::Value v = serializeComponentToValue(c);
             compsObj.AddMember("SliderComponent", v, alloc);
         }
+        
+        if (ecs.HasComponent<VideoComponent>(entity)) {
+            auto& c = ecs.GetComponent<VideoComponent>(entity);
+            rapidjson::Value v = serializeComponentToValue(c);
+            compsObj.AddMember("VideoComponent", v, alloc);
+        }
+
 
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
@@ -935,6 +942,15 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
             DeserializeSliderComponent(sliderComp, sliderCompJSON);
         }
+
+        // VideoComponent
+        if (comps.HasMember("VideoComponent") && comps["VideoComponent"].IsObject()) {
+            const auto& videoCompJSON = comps["VideoComponent"];
+            ecs.AddComponent<VideoComponent>(newEnt, VideoComponent{});
+            auto& videoComp = ecs.GetComponent<VideoComponent>(newEnt);
+            DeserializeVideoComponent(videoComp, videoCompJSON);
+        }
+
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(newEnt)) {
@@ -1315,6 +1331,16 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
                 DeserializeSliderComponent(sliderComp, sliderCompJSON);
             }
         }
+
+        //VideoComponent
+        if (comps.HasMember("VideoComponent") && comps["VideoComponent"].IsObject()) {
+            const auto& videoCompJSON = comps["VideoComponent"];
+            if (ecs.HasComponent<VideoComponent>(currEnt)) {
+                auto& videoComp = ecs.GetComponent<VideoComponent>(currEnt);
+                DeserializeVideoComponent(videoComp, videoCompJSON);
+            }
+        }
+
 
         // Ensure all entities have TagComponent and LayerComponent
         if (!ecs.HasComponent<TagComponent>(currEnt)) {
@@ -2521,5 +2547,39 @@ void Serializer::DeserializeSliderComponent(SliderComponent& sliderComp, const r
             std::string guidStr = extractGUIDString(d[8]);
             if (!guidStr.empty()) sliderComp.handleEntityGuid = GUIDUtilities::ConvertStringToGUID128(guidStr);
         }
+    }
+}
+
+void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapidjson::Value& videoJSON) {
+    if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
+        const auto& d = videoJSON["data"];
+
+        // State & Configuration
+        videoComp.enabled = Serializer::GetBool(d, 0);
+        videoComp.isPlaying = Serializer::GetBool(d, 1);
+        videoComp.loop = Serializer::GetBool(d, 2);
+
+        // Playback Properties
+        videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
+        videoComp.currentTime = Serializer::GetFloat(d, 4);
+        videoComp.duration = Serializer::GetFloat(d, 5);
+
+        // Asset Management
+        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
+            videoComp.videoPath = d[6]["data"].GetString();
+
+            if (videoComp.videoPath.find("../../Resources") == 0) {
+                videoComp.videoPath = videoComp.videoPath.substr(6);
+            }
+        }
+
+        // Rendering Data
+        if (d.Size() > 7 && d[7].HasMember("data") && d[7]["data"].IsUint()) {
+            videoComp.textureID = d[7]["data"].GetUint();
+        }
+
+        // Synchronization Flags
+        videoComp.asset_dirty = Serializer::GetBool(d, 8);
+        videoComp.seek_dirty = Serializer::GetBool(d, 9);
     }
 }

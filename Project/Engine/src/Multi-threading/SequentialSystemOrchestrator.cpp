@@ -20,6 +20,7 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.scriptSystem->Update();
 	mainECS.buttonSystem->Update();
 	mainECS.sliderSystem->Update();
+	mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime());
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

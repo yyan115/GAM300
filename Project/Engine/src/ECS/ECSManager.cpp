@@ -38,6 +38,7 @@
 #include "UI/Slider/SliderSystem.hpp"
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include "Video/VideoComponent.hpp"
+#include "Video/VideoSystem.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -207,6 +208,15 @@ void ECSManager::Initialize() {
 		signature.set(GetComponentID<SliderComponent>());
 		SetSystemSignature<SliderSystem>(signature);
 	}
+
+	videoSystem = RegisterSystem<VideoSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<VideoSystem>());
+		SetSystemSignature<VideoSystem>(signature);
+	}
+
+
 
 }
 

@@ -328,7 +328,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31739e-10
+                                    "data": 9.3175e-10
                                 },
                                 {
                                     "type": "float",
@@ -336,7 +336,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31739e-10
+                                    "data": 9.3175e-10
                                 }
                             ]
                         },
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000505956
+                                    "data": 0.00000505962
                                 },
                                 {
                                     "type": "float",
@@ -385,7 +385,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.000002846
+                                    "data": 0.00000284603
                                 },
                                 {
                                     "type": "float",
@@ -524,6 +524,35 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "VideoComponent": {
+                    "type": "VideoComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "std::string",
+                            "data": ""
                         }
                     ]
                 }

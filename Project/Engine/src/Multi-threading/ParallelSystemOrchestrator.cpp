@@ -57,6 +57,13 @@ void ParallelSystemOrchestrator::Update() {
         ecs.spriteAnimationSystem->Update();
 		});
 
+    frameChannel.Submit([&] {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        //ENGINE_LOG_DEBUG("Running VideoJob");
+        ecs.videoSystem->Update((float)TimeManager::GetDeltaTime());
+        });
+
+
     // Synchronize
     frameChannel.join();
     //ENGINE_LOG_DEBUG("Update Synchronized\n");

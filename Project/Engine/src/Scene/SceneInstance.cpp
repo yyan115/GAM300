@@ -132,6 +132,9 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.sliderSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Slider system initialized");
+	ecsManager.videoSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Video system initialized");
+
 
 	if (!multithreadSystems)
 	{

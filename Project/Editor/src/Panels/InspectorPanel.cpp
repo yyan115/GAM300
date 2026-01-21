@@ -1459,6 +1459,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 		else if (componentType == "VideoComponent") {
 			VideoComponent component;
 			ecsManager.AddComponent<VideoComponent>(entity, component);
+			if (!ecsManager.HasComponent<SpriteRenderComponent>(entity))
+			{
+				SpriteRenderComponent spriteRenderComp;
+				ecsManager.AddComponent<SpriteRenderComponent>(entity, spriteRenderComp);
+			}
 
 			// Ensure entity has Transform component
 			if (!ecsManager.HasComponent<Transform>(entity)) {
