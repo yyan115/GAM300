@@ -28,9 +28,18 @@ bool PointShadowMap::Initialize(int res)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    // Attach cubemap to framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
+#ifdef __ANDROID__
+    // On Android/ES, we attach one face at a time during rendering
+    // Just verify framebuffer can be created
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X, depthCubemap, 0);
+#else
+    // On desktop, attach entire cubemap (for geometry shader approach)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+#endif
+
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 
@@ -44,7 +53,14 @@ bool PointShadowMap::Initialize(int res)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Load shader
+#ifdef __ANDROID__
+    // Android uses simple vertex/fragment shader (no geometry shader)
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth_point_es");
+#else
+    // Desktop uses geometry shader for single-pass rendering
     std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth_point");
+#endif
+
     depthShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
 
     if (!depthShader)
@@ -116,12 +132,45 @@ void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::func
     // Get light space matrices for all 6 faces
     std::vector<glm::mat4> shadowTransforms = GetLightSpaceMatrices(lightPos, 0.1f, farPlane);
 
-    // Bind and clear shadow map
+    // Bind framebuffer and set viewport
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glViewport(0, 0, resolution, resolution);
+
+#ifdef __ANDROID__
+    // ========================================================================
+    // ANDROID: 6-Pass Rendering (no geometry shader)
+    // Render scene once for each cubemap face
+    // ========================================================================
+
+    depthShader->Activate();
+    depthShader->setVec3("lightPos", lightPos);
+    depthShader->setFloat("farPlane", farPlane);
+
+    // Render each face separately
+    for (int face = 0; face < 6; ++face)
+    {
+        // Attach this face of the cubemap to the framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, depthCubemap, 0);
+
+        // Clear depth buffer for this face
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        // Set the light space matrix for this face
+        depthShader->setMat4("lightSpaceMatrix", shadowTransforms[face]);
+
+        // Render scene
+        renderCallback(*depthShader);
+    }
+
+#else
+    // ========================================================================
+    // DESKTOP: Single-Pass Rendering (with geometry shader)
+    // Geometry shader duplicates geometry to all 6 faces
+    // ========================================================================
+
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    // Set up shader
     depthShader->Activate();
     for (int i = 0; i < 6; ++i)
     {
@@ -130,8 +179,10 @@ void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::func
     depthShader->setVec3("lightPos", lightPos);
     depthShader->setFloat("farPlane", farPlane);
 
-    // Render scene
+    // Render scene once - geometry shader handles all 6 faces
     renderCallback(*depthShader);
+
+#endif
 
     // Restore state
     glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);

@@ -13,7 +13,7 @@ class LightingSystem : public System {
 public:
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
-    static const int MAX_POINT_LIGHT_SHADOWS = 4;
+    static const int MAX_POINT_LIGHT_SHADOWS = 8;
 
     LightingSystem() = default;
     ~LightingSystem() = default;
@@ -43,6 +43,8 @@ public:
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
         shadowRenderCallback = callback;
     }
+
+    int GetActiveShadowCasterCount() const { return activeShadowCasterCount; }
 
     // ========================================================================
     // AMBIENT LIGHTING
@@ -115,4 +117,6 @@ private:
     // Callback to render scene for shadow pass (set by GraphicsManager)
     std::function<void(Shader&)> shadowRenderCallback;
 
+    // Track active shadow casters for editor warnings
+    int activeShadowCasterCount = 0;
 };

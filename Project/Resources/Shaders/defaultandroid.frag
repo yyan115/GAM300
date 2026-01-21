@@ -2,9 +2,21 @@
 precision highp float;
 precision highp int;
 precision highp sampler2D;
+precision highp samplerCube;
 
+// ============================================================================
+// Point Light Shadow Uniforms
+// NOTE: Point light shadows limited to 4 on mobile for performance
+// ============================================================================
+#define MAX_POINT_LIGHT_SHADOWS 4
+uniform samplerCube pointShadowMaps[MAX_POINT_LIGHT_SHADOWS];
+uniform float pointShadowFarPlane;
+
+// ============================================================================
+// Material
+// OpenGL ES requires samplers outside of structs
+// ============================================================================
 struct Material {
-    // Basic properties
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -13,13 +25,15 @@ struct Material {
     float opacity;
 };
 
+uniform Material material;
+
 // Samplers must be declared outside structs in OpenGL ES
 uniform sampler2D diffuseMap;
 uniform sampler2D specularMap;
 uniform sampler2D normalMap;
 uniform sampler2D emissiveMap;
 
-// Texture availability flags
+// Texture availability flags (separate from struct for ES compatibility)
 uniform bool hasDiffuseMap;
 uniform bool hasSpecularMap;
 uniform bool hasNormalMap;
@@ -31,9 +45,9 @@ in vec3 Normal;
 in vec3 Tangent;
 in vec4 FragPosLightSpace;
 
-uniform Material material;
-
-// Lighting structures
+// ============================================================================
+// Lighting Structures
+// ============================================================================
 struct DirectionLight {
     vec3 direction;
     vec3 ambient;
@@ -52,8 +66,9 @@ struct PointLight {
     float linear;
     float quadratic;   
     float intensity;
+    int shadowIndex;
 };
-// Reduced for mobile performance - adjust as needed
+// Reduced for mobile performance
 #define NR_POINT_LIGHTS 16
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform int numPointLights;
@@ -71,7 +86,7 @@ struct Spotlight {
     float quadratic;
     float intensity;
 };
-// Reduced for mobile performance - adjust as needed
+// Reduced for mobile performance
 #define NR_SPOT_LIGHTS 8
 uniform Spotlight spotLights[NR_SPOT_LIGHTS];
 uniform int numSpotLights;
@@ -80,15 +95,16 @@ uniform int ambientMode;
 uniform vec3 ambientSky;
 uniform vec3 ambientEquator;
 uniform vec3 ambientGround;
+uniform float ambientIntensity;
 
-// Shadow mapping uniforms
+// Directional shadow mapping uniforms
 uniform sampler2D shadowMap;
 uniform bool shadowsEnabled;
 uniform float shadowBias;
 uniform float shadowNormalBias;
 uniform float shadowSoftness;
 
-// Shadow map resolution (pass from CPU since textureSize can be slow on some devices)
+// Shadow map texel size (pass from CPU - textureSize can be slow on mobile)
 uniform vec2 shadowMapTexelSize;
 
 out vec4 FragColor;
@@ -132,7 +148,7 @@ vec3 calculateAmbient(vec3 normal) {
         ambient = ambientSky;
     }
 
-    return ambient;
+    return ambient * ambientIntensity;
 }
 
 vec3 getNormalFromMap() {
@@ -152,8 +168,8 @@ vec3 getNormalFromMap() {
 }
 
 // ============================================================================
-// Shadow calculation with PCF (Percentage Closer Filtering)
-// Reduced kernel size for mobile performance
+// Directional Shadow Calculation (PCF)
+// Smaller kernel for mobile performance
 // ============================================================================
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
@@ -169,11 +185,10 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     float currentDepth = projCoords.z;
     float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
     
-    // Smaller PCF kernel for mobile (3x3 instead of 7x7)
     float shadow = 0.0;
     vec2 texelSize = shadowMapTexelSize;
     
-    // 3x3 kernel for mobile performance
+    // 3x3 PCF kernel for mobile performance (instead of 7x7)
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(float(x), float(y)) * texelSize).r;
@@ -186,21 +201,57 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 }
 
 // ============================================================================
-// Lighting calculations
+// Point Light Shadow Calculation
+// ============================================================================
+
+float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
+{
+    // No shadow if index is invalid
+    if (shadowIndex < 0 || shadowIndex >= MAX_POINT_LIGHT_SHADOWS)
+    {
+        return 0.0;
+    }
+    
+    // Direction from light to fragment (for cubemap sampling)
+    vec3 fragToLight = fragPos - lightPos;
+    
+    // Current distance from light
+    float currentDepth = length(fragToLight);
+    
+    // Sample the appropriate cubemap
+    float closestDepth;
+    if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], fragToLight).r;
+    else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], fragToLight).r;
+    else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], fragToLight).r;
+    else                       closestDepth = texture(pointShadowMaps[3], fragToLight).r;
+    
+    // Convert from [0,1] to world space distance
+    closestDepth *= pointShadowFarPlane;
+    
+    // Bias to prevent shadow acne
+    float bias = 0.15;
+    
+    // Shadow test
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    
+    return shadow;
+}
+
+// ============================================================================
+// Lighting Calculations
 // ============================================================================
 
 vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 viewDir, float shadow)
 {
     vec3 lightDir = normalize(-light.direction);
     
-    // Diffuse shading
+    // Diffuse
     float diff = max(dot(normal, lightDir), 0.0);
     
-    // Specular shading (Blinn-Phong)
+    // Specular (Blinn-Phong)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
     
-    // Combine components
     vec3 ambient  = light.ambient * getMaterialAmbient();
     vec3 diffuse  = light.diffuse * diff * getMaterialDiffuse();
     vec3 specular = light.specular * spec * getMaterialSpecular();
@@ -213,10 +264,10 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
 {
     vec3 lightDir = normalize(light.position - fragPos);
     
-    // Diffuse shading
+    // Diffuse
     float diff = max(dot(normal, lightDir), 0.0);
     
-    // Specular shading
+    // Specular
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     
@@ -224,7 +275,9 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));    
     
-    // Combine results
+    // Calculate point shadow
+    float shadow = calculatePointShadow(light.shadowIndex, fragPos, light.position);
+    
     vec3 ambient  = light.ambient * getMaterialAmbient();
     vec3 diffuse  = light.diffuse * diff * getMaterialDiffuse();
     vec3 specular = light.specular * spec * getMaterialSpecular();
@@ -233,7 +286,8 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
     diffuse  *= attenuation;
     specular *= attenuation;
     
-    return (ambient + diffuse + specular) * light.intensity;
+    // Apply shadow to diffuse and specular only
+    return (ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity;
 }
 
 vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -251,7 +305,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 viewDir
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
     
-    // Spotlight intensity
+    // Spotlight cone
     float theta = dot(lightDir, normalize(-light.direction));
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
@@ -273,6 +327,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 viewDir
 
 void main()
 {
+    // Alpha test
     if (hasDiffuseMap && texture(diffuseMap, TexCoords).a < 0.5) {
         discard;
     }
@@ -281,33 +336,39 @@ void main()
     vec3 viewDir = normalize(cameraPos - FragPos);
     vec3 lightDir = normalize(-dirLight.direction);
     
-    float shadow = 0.0;
+    // Directional shadow
+    float dirShadow = 0.0;
     if (shadowsEnabled) {
-        shadow = calculateShadow(FragPosLightSpace, norm, lightDir);
+        dirShadow = calculateShadow(FragPosLightSpace, norm, lightDir);
     }
 
+    // Start with ambient
     vec3 result = calculateAmbient(norm) * getMaterialDiffuse() * 0.5;
-    result += calculateDirectionLight(dirLight, norm, viewDir, shadow);
     
-    // Clamp loop to actual count for better performance
+    // Add directional light
+    result += calculateDirectionLight(dirLight, norm, viewDir, dirShadow);
+    
+    // Add point lights (clamped to mobile limit)
     int pointCount = min(numPointLights, NR_POINT_LIGHTS);
     for (int i = 0; i < pointCount; i++) {
         result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
     }
     
+    // Add spot lights (clamped to mobile limit)
     int spotCount = min(numSpotLights, NR_SPOT_LIGHTS);
     for (int i = 0; i < spotCount; i++) {
         result += calculateSpotlight(spotLights[i], norm, FragPos, viewDir);
     }
 
+    // Emissive
     if (hasEmissiveMap) {
         result += vec3(texture(emissiveMap, TexCoords)) * material.emissive;
     } else {
         result += material.emissive;
     }
     
-    // Apply shadow directly to final result
-    result *= (1.0 - shadow * 0.7);
+    // Apply directional shadow to overall result
+    result *= (1.0 - dirShadow * 0.7);
     
     FragColor = vec4(result, material.opacity);
 }

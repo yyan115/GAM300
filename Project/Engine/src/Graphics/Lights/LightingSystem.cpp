@@ -190,6 +190,7 @@ void LightingSystem::CollectLightData()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     int pointShadowCount = 0;
+    int requestedShadowCasters = 0;
     pointLightData.shadowIndex.clear();
 
     // Clear previous frame data
@@ -278,15 +279,25 @@ void LightingSystem::CollectLightData()
                     pointLightData.quadratic.push_back(light.quadratic);
                     pointLightData.intensity.push_back(light.intensity);
 
-                    // Assign shadow index if we have available shadow maps
-                    if (pointShadowCount < MAX_POINT_LIGHT_SHADOWS)
+                    // Only assign shadow if designer enabled castShadows AND we have slots available
+                    if (light.castShadows)
                     {
-                        pointLightData.shadowIndex.push_back(pointShadowCount);
-                        pointShadowCount++;
+                        requestedShadowCasters++;
+
+                        if (pointShadowCount < MAX_POINT_LIGHT_SHADOWS)
+                        {
+                            pointLightData.shadowIndex.push_back(pointShadowCount);
+                            pointShadowCount++;
+                        }
+                        else
+                        {
+                            // Designer wanted shadow but we're at limit
+                            pointLightData.shadowIndex.push_back(-1);
+                        }
                     }
                     else
                     {
-                        pointLightData.shadowIndex.push_back(-1);  // No shadow for this light
+                        pointLightData.shadowIndex.push_back(-1);  // No shadow requested
                     }
                 }
                 else
@@ -346,4 +357,6 @@ void LightingSystem::CollectLightData()
             }
         }
     }
+    // Update active shadow caster count for editor
+    activeShadowCasterCount = pointShadowCount;
 }

@@ -3,7 +3,7 @@
 // ============================================================================
 // Point Light Shadow Uniforms
 // ============================================================================
-#define MAX_POINT_LIGHT_SHADOWS 4
+#define MAX_POINT_LIGHT_SHADOWS 8
 uniform samplerCube pointShadowMaps[MAX_POINT_LIGHT_SHADOWS];
 uniform float pointShadowFarPlane;
 
@@ -214,12 +214,16 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
     if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], fragToLight).r;
     else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], fragToLight).r;
     else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], fragToLight).r;
-    else                       closestDepth = texture(pointShadowMaps[3], fragToLight).r;
+    else if (shadowIndex == 3) closestDepth = texture(pointShadowMaps[3], fragToLight).r;
+    else if (shadowIndex == 4) closestDepth = texture(pointShadowMaps[4], fragToLight).r;
+    else if (shadowIndex == 5) closestDepth = texture(pointShadowMaps[5], fragToLight).r;
+    else if (shadowIndex == 6) closestDepth = texture(pointShadowMaps[6], fragToLight).r;
+    else                       closestDepth = texture(pointShadowMaps[7], fragToLight).r;
     
     // Convert from [0,1] to world space distance
     closestDepth *= pointShadowFarPlane;
     
-    // Bias to prevent shadow acne (larger for point lights)
+    // Bias to prevent shadow acne
     float bias = 0.15;
     
     // Shadow test
@@ -336,7 +340,7 @@ void main()
     // Add directional light
     result += calculateDirectionLight(dirLight, norm, viewDir, dirShadow);
     
-    // Add point lights (with shadows for first 4)
+    // Add point lights (with shadows for those that have castShadows enabled)
     for (int i = 0; i < numPointLights; i++) {
         result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
     }
@@ -353,7 +357,7 @@ void main()
         result += material.emissive;
     }
     
-    // Apply directional shadow to overall result (optional darkening)
+    // Apply directional shadow to overall result
     result *= (1.0 - dirShadow * 0.7);
     
     FragColor = vec4(result, material.opacity);
