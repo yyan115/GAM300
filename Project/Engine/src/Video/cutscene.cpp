@@ -1,21 +1,3 @@
-/////////////////////////////////////////////////////////////////////////////
-// WLVERSE [https://wlverse.web.app]
-// cutscene.cpp
-//
-// Implements the Cutscene constructor defined in cutscene.h. This function
-// reads metadata from the provided file and parses cutscene frame ranges and
-// timing information. It supports lines formatted as:
-// Cutscene_01_WakingUp, frames:00000-00023, time:(1.0f,0.6f,1.0f)
-// The parser extracts the cutscene name, frame start/end, and timing values
-// (preTime, duration, postTime), and stores them in an unordered_map for quick access.
-//
-// AUTHORS
-// [100%] Soh Wei Jie (weijie.soh\@digipen.edu)
-//   - Main Author
-//
-// Copyright (c) 2025 DigiPen, All rights reserved.
-/////////////////////////////////////////////////////////////////////////////
-
 #include "pch.h"
 #include "Video/cutscene.hpp"
 #include <fstream>

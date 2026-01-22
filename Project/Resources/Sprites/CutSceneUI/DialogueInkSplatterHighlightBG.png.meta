@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001e43b5627b9487-0003fa76d2000005",
+        "source": "../../Resources/Sprites/CutSceneUI/DialogueInkSplatterHighlightBG.png",
+        "compiled": "../../Resources/Sprites/CutSceneUI/DialogueInkSplatterHighlightBG.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

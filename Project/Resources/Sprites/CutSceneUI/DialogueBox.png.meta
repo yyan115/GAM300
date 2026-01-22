@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001e43b5515bef14-0003fa76d2000001",
+        "source": "../../Resources/Sprites/CutSceneUI/DialogueBox.png",
+        "compiled": "../../Resources/Sprites/CutSceneUI/DialogueBox.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -9,7 +9,10 @@
         "GameController",
         "Enemy",
         "NPC",
-        "Collectible"
+        "Collectible",
+        "DialogueText",
+        "DialogueBox",
+        "BlackScreen"
     ],
     "layers": [
         {

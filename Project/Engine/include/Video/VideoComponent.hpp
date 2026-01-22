@@ -21,7 +21,7 @@ struct ENGINE_API VideoComponent {
 	float currentTime = 0.0f;   // Current seek position in seconds		
 	float playbackduration = 0.0f;      // Total length (usually set by the Engine/Decoder)
 	
-	// --- Asset Management ---
+	// --- CUTSCENE Asset Management ---
 	std::string videoPath = ""; // Path to the video file (.mp4, .webm, etc.)
 	int frameStart = 0;   ///< Starting frame
 	int frameEnd = 0;     ///< Ending frame
@@ -30,8 +30,9 @@ struct ENGINE_API VideoComponent {
 	float preTime = 0.0f;  ///< Delay before first frame starts
 	float duration = 0.0f; ///< Active playback time
 	float postTime = 0.0f; ///< Delay after last frame reached
-
 	std::string cutSceneName = "";
+
+
 	// --- Rendering Data ---
 	// This ID links to the Engine's VideoSystem texture/resource
 	uint32_t textureID = 0;     
@@ -45,6 +46,15 @@ struct ENGINE_API VideoComponent {
 
 	bool ProcessMetaData(std::string resourcePath);
 
+	bool ProcessDialogueData(std::string dialoguePath);
+
 	std::string PadNumber(int num);
+
+
+	//DIALOGUE ASSET MANAGEMENT
+	std::string dialoguePath = "";		//For reference/display purposes
+
+	std::unordered_map<int, std::string> dialogueMap;
+
 
 };

@@ -4,7 +4,7 @@
 #include "ECS/System.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Video/cutscene.hpp"
-
+#include "Video/cutscenelayer.hpp"
 //#include "Video/VideoComponent.hpp" 
 
 struct VideoComponent;
@@ -36,12 +36,25 @@ public:
      */
     bool IsFinished(const VideoComponent& component, const Asset::CutsceneInfo& info) const;
 
+    void FadeInTransition(SpriteRenderComponent& blackScreen, float dt);
+
+
 private:
-    // Internal helper to handle the transitions between Pre-time -> Duration -> Post-time
-    void AdvanceCutsceneState(VideoComponent& component, const Asset::CutsceneInfo& info, float dt);
     ECSManager* m_ecs = nullptr;
 
     std::string rootDirectory = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
 
     std::string ConstructNewPath(VideoComponent& videoComp);
+
+    DialogueManager m_dialogueManager;
+
+    bool foundDialogueText = false;
+    bool foundDialogueBox = false;
+    bool foundBlackScreen = false;
+    bool isTransitioning = false;
+
+    Entity dialogueText_Entity = -1;
+    Entity dialogueBox_Entity = -1;
+    Entity blackScreen_Entity = -1;
+
 };

@@ -879,7 +879,39 @@ void RegisterInspectorCustomRenderers()
                     // 3. Update the component directly
 
                     videoComp.ProcessMetaData(pathStr);     //split path accordingly.
-                    videoComp.asset_dirty = true; // Mark for reload        //dont think this is necessary anymore?
+                    videoComp.asset_dirty = true; // Mark for reload      
+
+                    EditorComponents::EndDragDropTarget();
+                    return true;
+                }
+                EditorComponents::EndDragDropTarget();
+            }
+
+            ImGui::Spacing(); // Add some space between the two inputs
+
+            // --- 2. DIALOGUE FILE (New) ---
+            ImGui::Text("Dialogue File");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            // Assuming you add 'dialoguePath' to your VideoComponent
+            std::string diagPath = videoComp.dialoguePath;
+            std::string diagDisplay = diagPath.empty() ? "None (Dialogue)" : diagPath.substr(diagPath.find_last_of("/\\") + 1);
+
+            EditorComponents::DrawDragDropButton(diagDisplay.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
+                    const char* payloadPath = (const char*)payload->Data;
+                    std::string pathStr(payloadPath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    // Store the path and trigger the parser you wrote in the DialogueManager
+                    videoComp.dialoguePath = pathStr;   
+                    videoComp.ProcessDialogueData(pathStr);
 
                     EditorComponents::EndDragDropTarget();
                     return true;
@@ -889,6 +921,7 @@ void RegisterInspectorCustomRenderers()
 
             return false;
         });
+
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
 
