@@ -21,6 +21,11 @@ public:
 		}
 	}
 
+	void Clear() {
+		guidToEntityMap.clear();
+		entityToGuidMap.clear();
+	}
+
 	Entity GetEntityByGUID(const GUID_128& guid) const {
 		auto it = guidToEntityMap.find(guid);
 		if (it != guidToEntityMap.end()) {
