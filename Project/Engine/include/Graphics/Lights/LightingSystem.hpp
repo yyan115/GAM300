@@ -35,9 +35,9 @@ public:
 
     // Shadow settings
     bool shadowsEnabled = true;
-    int shadowMapResolution = 4096;
+    int shadowMapResolution = 2048;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
-    int pointShadowMapResolution = 1024;
+    int pointShadowMapResolution = 512;
     float pointLightShadowFarPlane = 25.0f;
 
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
