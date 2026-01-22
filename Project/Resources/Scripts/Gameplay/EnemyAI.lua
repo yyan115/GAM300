@@ -97,9 +97,9 @@ return Component {
 
         DetectionRange = 4.0,
         AttackRange          = 3.0,   -- actually allowed to shoot
-        --AttackEngageRange    = 3.5,   -- enter attack state
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown = 3.0,
+
         HurtDuration   = 2.0,
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
@@ -219,6 +219,23 @@ return Component {
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
 
+        -- === Damage event subscription ===
+        self._damageSub = nil
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._damageSub = _G.event_bus.subscribe("enemy_damage", function(payload)
+                if not payload then return end
+
+                -- Correct key: DamageZone sends payload.entityId
+                if payload.entityId ~= nil and payload.entityId ~= self.entityId then
+                    return
+                end
+
+                local dmg = payload.dmg or 1
+                local hitType = payload.hitType or payload.src or "MELEE"
+                self:ApplyHit(dmg, hitType)
+            end)
+        end
+
         -- If you're using CC, do NOT run your old kinematic grounding system
         self.UseKinematicGrounding = false
 
@@ -286,6 +303,15 @@ return Component {
             if pos then
                 self:SetPosition(pos.x, pos.y, pos.z)
             end
+        end
+
+        -- broadcast enemy position (for DamageZone / melee test)
+        if _G.event_bus and _G.event_bus.publish then
+            local x, y, z = self:GetPosition()
+            _G.event_bus.publish("enemy_position", {
+                entityId = self.entityId,
+                x = x, y = y, z = z
+            })
         end
     end,
 
@@ -748,6 +774,13 @@ return Component {
         pcall(function()
             if self.Unsubscribe then self:Unsubscribe() end
         end)
+
+        if _G.event_bus and _G.event_bus.unsubscribe and self._damageSub then
+            pcall(function()
+                _G.event_bus.unsubscribe(self._damageSub)
+            end)
+            self._damageSub = nil
+        end
     end,
 
     OnDestroy = function(self)
@@ -758,6 +791,12 @@ return Component {
                 CharacterController.DestroyByEntity(self.entityId)
             end)
             self._controller = nil
+        end
+        if _G.event_bus and _G.event_bus.unsubscribe and self._damageSub then
+            pcall(function()
+                _G.event_bus.unsubscribe(self._damageSub)
+            end)
+            self._damageSub = nil
         end
     end,
 }
