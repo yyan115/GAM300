@@ -103,10 +103,10 @@ function PatrolState:Update(ai, dt)
         return
     end
 
-    -- chase if player enters detection band
-    local attackR, diseng = ai:GetRanges()
+    local detect = (ai.config and ai.config.DetectionRange) or ai.DetectionRange or 4.0
     local d2 = ai:GetPlayerDistanceSq()
-    if d2 <= (diseng * diseng) and d2 > (attackR * attackR) then
+
+    if d2 <= (detect * detect) then
         stop(ai)
         ai.fsm:Change("Chase", ai.states.Chase)
         return

@@ -95,10 +95,15 @@ return Component {
     fields = {
         MaxHealth = 5,
 
-        DetectionRange = 4.0,
+        DetectionRange       = 4.0,
         AttackRange          = 3.0,   -- actually allowed to shoot
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
-        AttackCooldown = 3.0,
+        AttackCooldown       = 3.0,
+        IsMelee              = false,
+        MeleeSpeed           = 0.9,
+        MeleeRange           = 1.2,
+        MeleeDamage          = 1,
+        MeleeAttackCooldown  = 5.0,
 
         HurtDuration   = 2.0,
         HitIFrame      = 0.2,
@@ -140,6 +145,20 @@ return Component {
     },
 
     Awake = function(self)
+        -- self.AttackRange          = (self.AttackRange          ~= nil) and self.AttackRange          or 3.0
+        -- self.AttackDisengageRange = (self.AttackDisengageRange ~= nil) and self.AttackDisengageRange or 4.0
+        -- self.AttackCooldown       = (self.AttackCooldown       ~= nil) and self.AttackCooldown       or 3.0
+
+        -- self.IsMelee              = (self.IsMelee              ~= nil) and self.IsMelee              or false
+        -- self.MeleeSpeed           = (self.MeleeSpeed           ~= nil) and self.MeleeSpeed           or 0.9
+        -- self.MeleeRange           = (self.MeleeRange           ~= nil) and self.MeleeRange           or 1.2
+        -- self.MeleeDamage          = (self.MeleeDamage          ~= nil) and self.MeleeDamage          or 1
+        -- self.MeleeAttackCooldown  = (self.MeleeAttackCooldown  ~= nil) and self.MeleeAttackCooldown  or 5.0
+
+        -- self.HurtDuration         = (self.HurtDuration         ~= nil) and self.HurtDuration         or 2.0
+        -- self.HitIFrame            = (self.HitIFrame            ~= nil) and self.HitIFrame            or 0.2
+        -- self.HookedDuration       = (self.HookedDuration       ~= nil) and self.HookedDuration       or 4.0
+
         self.dead = false
         self.health = self.MaxHealth
         self._hitLockTimer = 0
@@ -164,19 +183,21 @@ return Component {
         }
 
         self.config = {
-            DetectionRange = self.DetectionRange,
+            DetectionRange       = self.DetectionRange,
             AttackRange          = self.AttackRange,
-            AttackEngageRange    = self.AttackEngageRange,
             AttackDisengageRange = self.AttackDisengageRange,
             ChaseSpeed           = self.ChaseSpeed,
-            AttackCooldown = self.AttackCooldown,
-            HurtDuration   = self.HurtDuration,
-            HitIFrame      = self.HitIFrame,
-            HookedDuration = self.HookedDuration,
-            PatrolSpeed    = self.PatrolSpeed,
-            PatrolDistance = self.PatrolDistance,
-            PatrolWait     = self.PatrolWait,
-            EnablePatrol   = self.EnablePatrol,
+            AttackCooldown       = self.AttackCooldown,
+            MeleeRange           = self.MeleeRange,
+            MeleeDamage          = self.MeleeDamage,
+            MeleeAttackCooldown  = self.MeleeAttackCooldown,
+            HurtDuration         = self.HurtDuration,
+            HitIFrame            = self.HitIFrame,
+            HookedDuration       = self.HookedDuration,
+            PatrolSpeed          = self.PatrolSpeed,
+            PatrolDistance       = self.PatrolDistance,
+            PatrolWait           = self.PatrolWait,
+            EnablePatrol         = self.EnablePatrol,
         }
 
         -- fixed-step accumulator for kinematic grounding
@@ -317,11 +338,12 @@ return Component {
 
     GetRanges = function(self)
         local attackR = (self.config and self.config.AttackRange) or self.AttackRange or 3.0
+        local meleeR = (self.config and self.config.MeleeRange) or self.MeleeRange or 1.2
         local diseng  = (self.config and self.config.AttackDisengageRange) or self.AttackDisengageRange or 4.0
 
         -- safety: enforce diseng >= attack
         if diseng < attackR then diseng = attackR + 0.25 end
-        return attackR, diseng
+        return attackR, meleeR, diseng
     end,
 
     GetPlayerDistanceSq = function(self)

@@ -21,7 +21,7 @@ function AttackState:Update(ai, dt)
 
     ai:FacePlayer()
 
-    local attackR, diseng = ai:GetRanges()
+    local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
     if d2 > (diseng * diseng) then
@@ -30,23 +30,48 @@ function AttackState:Update(ai, dt)
         return
     end
 
-    if d2 >= (attackR * attackR) then
-        if ai.MoveCC then ai:MoveCC(0, 0) end
-        ai.fsm:Change("Chase", ai.states.Chase)
-        return
+    if ai.IsMelee then
+        if d2 > (meleeR * meleeR) then
+            if ai.MoveCC then ai:MoveCC(0, 0) end
+            ai.fsm:Change("Chase", ai.states.Chase)
+            return
+        end
+    else
+        if d2 >= (attackR * attackR) then
+            if ai.MoveCC then ai:MoveCC(0, 0) end
+            ai.fsm:Change("Chase", ai.states.Chase)
+            return
+        end
     end
 
     if ai.MoveCC then ai:MoveCC(0, 0) end
 
-    -- === Cooldown ===
-    ai.attackTimer = (ai.attackTimer or 0) + dtSec
-    if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
-        local ok = ai:SpawnKnife()
-        if ok then
+    if ai.IsMelee then
+        ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
+        if ai.attackTimer >= cd then
             ai.attackTimer = 0
-        else
-            -- keep the timer capped so we retry soon but not spam every frame
-            ai.attackTimer = (ai.config.AttackCooldown or 3.0)
+
+            print(string.format("Melee Attack!"))
+            -- MELEE HIT: emit event (keeps consistent with your event-bus approach)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("player_damage", {
+                    dmg = (ai.MeleeDamage or 1),
+                    src = "GroundEnemy",
+                    enemyEntityId = ai.entityId,
+                })
+            end
+        end
+    else
+        -- RANGED
+        ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
+            local ok = ai:SpawnKnife()
+            if ok then
+                ai.attackTimer = 0
+            else
+                ai.attackTimer = (ai.config.AttackCooldown or 3.0)
+            end
         end
     end
 end

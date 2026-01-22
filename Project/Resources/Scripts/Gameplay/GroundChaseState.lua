@@ -14,7 +14,7 @@ function ChaseState:Update(ai, dt)
     if dtSec > 0.05 then dtSec = 0.05 end
 
     local chaseSpd = ai.config.ChaseSpeed or 1.8
-    local attackR, diseng = ai:GetRanges()
+    local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
     -- Too far -> Patrol
@@ -24,11 +24,18 @@ function ChaseState:Update(ai, dt)
         return
     end
 
-    -- Close enough -> Attack
-    if d2 <= (attackR * attackR) then
-        ai:StopCC()
-        ai.fsm:Change("Attack", ai.states.Attack)
-        return
+    if ai.IsMelee then
+        if d2 < (meleeR * meleeR) then
+            ai:StopCC()
+            ai.fsm:Change("Attack", ai.states.Attack)
+            return
+        end
+    else
+        if d2 <= (attackR * attackR) then
+            ai:StopCC()
+            ai.fsm:Change("Attack", ai.states.Attack)
+            return
+        end
     end
 
     local tr = ai._playerTr
