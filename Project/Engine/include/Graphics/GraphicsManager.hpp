@@ -178,4 +178,6 @@ private:
 
     // Multi-threading mutex
     std::mutex renderQueueMutex;
+
+    void RenderSceneForShadows(Shader& depthShader);
 };

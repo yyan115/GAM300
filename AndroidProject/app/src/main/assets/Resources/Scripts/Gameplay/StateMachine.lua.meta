@@ -1,9 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001d790d280b36c6-0003eff7ec00001d",
-        "source": "../../Resources/Scripts/GamePlay/StateMachine.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/StateMachine.lua",
-        "android_compiled": "Resources/Scripts/GamePlay/StateMachine.lua"
+        "guid": "00404b70d59433b2-0003f51b0400001d",
+        "source": "../../Resources/Scripts/Gameplay/StateMachine.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/StateMachine.lua"
     }
 }

@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0019de916dbf5a1c-0003bb3cfa000001",
+        "source": "../../Resources/Shaders/shadow_depth",
+        "compiled": "../../Resources/Shaders/shadow_depth.shader"
+    }
+}

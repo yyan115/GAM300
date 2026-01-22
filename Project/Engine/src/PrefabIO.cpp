@@ -164,7 +164,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
     for (rapidjson::SizeType i = 0; i < ents.Size(); ++i) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) {
-            ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " Prefab member is not an object.");
+            ENGINE_LOG_WARN("[PrefabIO] Prefab member is not an object.");
             continue;
         }
 
@@ -188,7 +188,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
         Entity entity = newEntities[i];
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) {
-            ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " Prefab member is not an object.");
+            ENGINE_LOG_WARN("[PrefabIO] Prefab member is not an object.");
             continue;
         }
 
@@ -240,7 +240,7 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
     }
     if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << tryPath << "\n"; return true; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
-        ENGINE_LOG_WARN("[PrefabIO] ", tryPath, " has no prefab_entities array.");
+        ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
         return false;
     }
 

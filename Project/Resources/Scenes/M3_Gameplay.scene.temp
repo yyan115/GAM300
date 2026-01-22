@@ -14136,6 +14136,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -14392,6 +14396,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -14645,6 +14653,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },
@@ -34951,6 +34963,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -35207,6 +35223,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -35463,6 +35483,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -35719,6 +35743,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -35975,6 +36003,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -56515,6 +56547,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -56774,6 +56810,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -57033,6 +57073,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -57292,6 +57336,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -57551,6 +57599,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -57810,6 +57862,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -58069,6 +58125,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -58328,6 +58388,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -58587,6 +58651,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -58846,6 +58914,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -65727,7 +65799,7 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "001d790d3d382f4f-0003eff7ec000001",
+                            "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
                             "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
                             "enabled": true,
                             "preserveKeys": [],
