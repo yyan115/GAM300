@@ -40,8 +40,13 @@ bool PointShadowMap::Initialize(int res)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
 #endif
 
+#ifdef __ANDROID__
+    GLenum drawBuffers = GL_NONE;
+    glDrawBuffers(1, &drawBuffers);
+#else
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+#endif
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {

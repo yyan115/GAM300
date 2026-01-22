@@ -131,6 +131,7 @@ bool Shader::SetupShader(const std::string& path) {
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
 
+#ifndef __ANDROID__
 	// NEW: Try to read geometry shader (optional)
 	std::string geometryCode;
 	bool hasGeometryShader = false;
@@ -141,9 +142,6 @@ bool Shader::SetupShader(const std::string& path) {
 		hasGeometryShader = !geometryCode.empty();
 		if (hasGeometryShader) {
 			ENGINE_LOG_INFO("Found geometry shader: " + geometryFile);
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "Found geometry shader: %s (%d bytes)", geometryFile.c_str(), (int)geometryCode.size());
-#endif
 		}
 		else {
 			ENGINE_PRINT("[SHADER] Warning: Geometry shader file exists but is empty: ", geometryFile, "\n");
@@ -153,6 +151,7 @@ bool Shader::SetupShader(const std::string& path) {
 		// Geometry shader is optional - not an error if it doesn't exist
 		ENGINE_LOG_INFO("No geometry shader found at: " + geometryFile + " (optional)");
 	}
+#endif
 
 	// Convert the shader source strings into character arrays
 	const char* vertexSource = vertexCode.c_str();
@@ -194,6 +193,7 @@ bool Shader::SetupShader(const std::string& path) {
 	// ========================================================================
 	// GEOMETRY SHADER (NEW - OPTIONAL)
 	// ========================================================================
+#ifndef __ANDROID__
 	GLuint geometryShader = 0;
 	if (hasGeometryShader)
 	{
@@ -234,6 +234,7 @@ bool Shader::SetupShader(const std::string& path) {
 
 		ENGINE_PRINT("[SHADER] Geometry shader compiled successfully\n");
 	}
+#endif
 
 	// ========================================================================
 	// FRAGMENT SHADER
@@ -265,7 +266,9 @@ bool Shader::SetupShader(const std::string& path) {
 			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED - No error log available", "\n");
 		}
 		glDeleteShader(vertexShader);
+#ifndef __ANDROID__
 		if (hasGeometryShader) glDeleteShader(geometryShader);
+#endif
 		glDeleteShader(fragmentShader);
 		return false;
 	}
@@ -278,9 +281,11 @@ bool Shader::SetupShader(const std::string& path) {
 
 	// Attach all shaders
 	glAttachShader(ID, vertexShader);
+#ifndef __ANDROID__
 	if (hasGeometryShader) {
 		glAttachShader(ID, geometryShader);
 	}
+#endif
 	glAttachShader(ID, fragmentShader);
 
 	// Link the program
@@ -307,21 +312,21 @@ bool Shader::SetupShader(const std::string& path) {
 #endif
 		}
 		glDeleteShader(vertexShader);
+#ifndef __ANDROID__
 		if (hasGeometryShader) glDeleteShader(geometryShader);
+#endif
 		glDeleteShader(fragmentShader);
 		return false;
 	}
 
 	// Clean up shader objects
 	glDeleteShader(vertexShader);
+#ifndef __ANDROID__
 	if (hasGeometryShader) {
 		glDeleteShader(geometryShader);
 	}
+#endif
 	glDeleteShader(fragmentShader);
-
-	if (hasGeometryShader) {
-		ENGINE_PRINT("[SHADER] Successfully compiled and linked shader with geometry stage: ", path, "\n");
-	}
 
 	return true;
 }
