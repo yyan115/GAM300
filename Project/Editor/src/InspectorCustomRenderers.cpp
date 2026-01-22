@@ -1957,6 +1957,10 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
+        ImGui::Text("Cast Shadow");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##CastShadow", &light.castShadows);
+
         return true; // Return true to skip default field rendering
     });
 
