@@ -2673,6 +2673,7 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
         audioComp.DopplerLevel = Serializer::GetFloat(d, 13);
         audioComp.MinDistance = Serializer::GetFloat(d, 14);
         audioComp.MaxDistance = Serializer::GetFloat(d, 15);
+        audioComp.OutputAudioMixerGroup = Serializer::GetString(d, 16);
     }
 }
 

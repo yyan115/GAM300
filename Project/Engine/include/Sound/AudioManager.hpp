@@ -101,6 +101,7 @@ public:
     // Bus (channel group) management
     FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
     void SetBusVolume(const std::string& busName, float volume);
+    float GetBusVolume(const std::string& busName);
     void SetBusPaused(const std::string& busName, bool paused);
 
     // Global audio settings
