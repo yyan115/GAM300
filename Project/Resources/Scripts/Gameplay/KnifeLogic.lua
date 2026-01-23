@@ -3,7 +3,7 @@ require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local KnifePool = require("Gameplay.KnifePool")
+local KnifePool = require("GamePlay.KnifePool")
 
 local function atan2(y, x)
     local ok, v = pcall(math.atan, y, x) -- 2-arg if supported

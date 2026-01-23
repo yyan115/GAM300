@@ -762,7 +762,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d0f919dc3-0003eff7ec00001b",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -65712,7 +65712,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/EnemyAI.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -78278,7 +78278,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d5637a235-0003eff7ec000005",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingEnemyLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/FlyingEnemyLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -90686,7 +90686,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -91448,7 +91448,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d4f79f92f-0003eff7ec000007",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/FlyingKnife.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/FlyingKnife.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -92210,7 +92210,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -92930,7 +92930,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -93650,7 +93650,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d338e11af-0003eff7ec000017",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/KnifeLogic.lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
