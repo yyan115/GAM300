@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003bd413e3fb69e2-0003fa8748000011",
-        "source": "../../Resources/Scripts/GamePlay/GroundHurtState.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/GroundHurtState.lua"
+        "guid": "003e6c55dcf30f07-0003fdeece000013",
+        "source": "../../Resources/Scripts/Gameplay/GroundHurtState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/GroundHurtState.lua"
     }
 }

@@ -6,6 +6,7 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 #include "Graphics/Model/Model.h"
+#include "Asset Manager/AssetManager.hpp"
 
 #pragma region Reflection
 REFL_REGISTER_START(AnimationComponent)
@@ -180,7 +181,9 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
     clips.emplace_back(std::move(anim));
 
     clipPaths.push_back(path);
-    clipGUIDs.push_back({0, 0});
+    // Store the GUID for cross-machine compatibility
+    GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(path);
+    clipGUIDs.push_back(guid);
     clipCount = static_cast<int>(clipPaths.size());
 
     if(clips.size() == 1)
@@ -286,23 +289,39 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     }
     clips.clear();
 
-    for (const auto& path : clipPaths) {
-        if (path.empty()) {
+    for (size_t i = 0; i < clipPaths.size(); ++i) {
+        const auto& path = clipPaths[i];
+        std::string pathToLoad{};
+
+        // First try to use GUID to get the correct local path (handles cross-machine scenarios)
+        if (i < clipGUIDs.size() && (clipGUIDs[i].high != 0 || clipGUIDs[i].low != 0)) {
+            std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(clipGUIDs[i]);
+            if (!guidPath.empty()) {
+                pathToLoad = guidPath;
+                ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
+            }
+        }
+
+        // Fall back to path if GUID lookup failed
+        if (pathToLoad.empty() && !path.empty()) {
+#ifndef EDITOR
+            // Safely extract path from "Resources" onwards for game build
+            size_t resPos = path.find("Resources");
+            if (resPos != std::string::npos) {
+                pathToLoad = path.substr(resPos);
+            } else {
+                pathToLoad = path;  // Use as-is if "Resources" not found
+            }
+#else
+            pathToLoad = path;
+#endif
+        }
+
+        if (pathToLoad.empty()) {
             ENGINE_PRINT("[AnimationComponent] Skipping empty path\n");
             continue;
         }
-        std::string pathToLoad{};
-#ifndef EDITOR
-        // Safely extract path from "Resources" onwards
-        size_t resPos = path.find("Resources");
-        if (resPos != std::string::npos) {
-            pathToLoad = path.substr(resPos);
-        } else {
-            pathToLoad = path;  // Use as-is if "Resources" not found
-        }
-#else
-        pathToLoad = path;
-#endif
+
         ENGINE_PRINT("[AnimationComponent] Loading clip from: ", pathToLoad, "\n");
         auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {

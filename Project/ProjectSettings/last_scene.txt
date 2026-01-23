@@ -1,1 +1,1 @@
-../../Resources/Scenes/M3_Gameplay.scene
+../../Resources/Scenes/New Scene_2.scene

@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003bd413871f4276-0003fa8748000003",
-        "source": "../../Resources/Scripts/GamePlay/EnemyLogic.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/EnemyLogic.lua"
+        "guid": "003e6c559116d978-0003fdeece000005",
+        "source": "../../Resources/Scripts/Gameplay/EnemyLogic.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/EnemyLogic.lua"
     }
 }
