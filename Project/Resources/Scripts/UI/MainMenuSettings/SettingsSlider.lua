@@ -49,8 +49,14 @@ return Component {
         local notchEntity = Engine.GetEntityByName(notchName)
         self._sliderTransform = GetComponent(notchEntity, "Transform")
 
+        -- Cache audio component for click SFX (prefer notch, fallback to bar)
+        self._audio = GetComponent(notchEntity, "AudioComponent")
+
         local barEntity = Engine.GetEntityByName(barName)
         self._barTransform = GetComponent(barEntity, "Transform")
+        if not self._audio then
+            self._audio = GetComponent(barEntity, "AudioComponent")
+        end
 
         if not self._sliderTransform or not self._barTransform then
             print("[SettingsSlider] Warning: Could not find slider entities for " .. self._settingType)
@@ -108,6 +114,10 @@ return Component {
                 if gameX >= self._minSliderX and gameX <= self._maxSliderX and
                    gameY >= self._minSliderY and gameY <= self._maxSliderY then
                     self._isDragging = true
+
+                    if self._audio then
+                        self._audio:Play()
+                    end
                 end
             end
         end
