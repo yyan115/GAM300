@@ -21,8 +21,8 @@ return Component {
         NumberOfLinks = 10,
         ChainSpeed = 10.0,
         MaxLength = 0.0,
-        TriggerKey = "E",
-        PlayerName = "Player",
+        TriggerKey = "G",
+        PlayerName = "mixamorig:LeftHand",
         SimulatedHitDistance = 0.0,
         EnableLogs = false,  -- Default off for performance
         AutoStart = false,
@@ -264,28 +264,29 @@ return Component {
         -- Cache player transform
         if not self.playerTransform then
             self.playerTransform = Engine.FindTransformByName(self.PlayerName)
+
         end
 
         -- Update chain's start position to follow player
         if self.playerTransform then
             local px, py, pz
-            local ok, a, b, c = pcall(function() return Engine.GetTransformPosition(self.playerTransform) end)
+            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self.playerTransform) end)
             if ok then
                 px, py, pz = self:_unpack_pos(a, b, c)
             else
                 px, py, pz = self:_read_transform_position(self.playerTransform)
             end
-            
+
             -- Update the component's own position to match player
             if self.SetPosition then
                 self:SetPosition(px, py, pz)
             end
             
             -- Only update endPosition if chain is NOT extended (completely retracted)
-            if self.m_CurrentLength <= 0 and not self.m_IsExtending then
-                -- Completely retracted: end follows start exactly
-                self.endPosition[1], self.endPosition[2], self.endPosition[3] = px, py, pz
-            end
+         --   if self.m_CurrentLength <= 0 and not self.m_IsExtending then
+         --       -- Completely retracted: end follows start exactly
+         --       self.endPosition[1], self.endPosition[2], self.endPosition[3] = px, py, pz
+         --  end
             -- When extending or chain exists with length > 0, endPosition stays fixed in world space
             -- This allows the chain to extend from the moving player to a fixed point
         end
@@ -886,7 +887,7 @@ return Component {
                 end
                 if self.playerTransform then
                     local px, py, pz
-                    local ok, a, b, c = pcall(function() return Engine.GetTransformPosition(self.playerTransform) end)
+                    local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self.playerTransform) end)
                     if ok then
                         px, py, pz = self:_unpack_pos(a, b, c)
                     else

@@ -105,6 +105,19 @@ static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
     return std::make_tuple(p.x, p.y, p.z);
 }
 
+static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* t)
+{
+    if (!t)
+    {
+        // Return something reasonable; Lua will get three numbers
+        return std::make_tuple(0.0f, 0.0f, 0.0f);
+    }
+
+    const auto& p = t->worldPosition; // or global/world position if you have it
+    return std::make_tuple(p.x, p.y, p.z);
+}
+
+
 static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 {
     if (!t)
