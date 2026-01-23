@@ -267,7 +267,7 @@
             }
         },
         {
-            "id": 56,
+            "id": 1,
             "guid": "0018c622a6777e62-0003f62ce800000f",
             "components": {
                 "NameComponent": {
@@ -533,31 +533,36 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "std::vector<std::string>",
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Kachujin\\Animation\\Slash.fbx"
+                                    "data": "Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Test\\KusaneTest3.fbx"
+                                    "data": "Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx"
                                 }
                             ]
                         },
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0000000000000000-0000000000000000",
-                                "0000000000000000-0000000000000000"
+                                "004e92db961a1354-00036a0aa4000003",
+                                "0009550cc76b3c56-000336feaa0000ff",
+                                "004e92dbddf51b33-00036a0aa4000005"
                             ]
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "C:\\Users\\growt\\Desktop\\GAM300\\Project\\Resources\\Animations\\PlayerController.animator"
                         }
                     ]
                 },
@@ -573,7 +578,7 @@
             }
         },
         {
-            "id": 57,
+            "id": 2,
             "guid": "00419db729f59fec-0003f63896000009",
             "components": {
                 "NameComponent": {
@@ -736,7 +741,7 @@
             }
         },
         {
-            "id": 58,
+            "id": 3,
             "guid": "00419db76703ac5f-0003f6389600000b",
             "components": {
                 "NameComponent": {
@@ -910,7 +915,7 @@
             }
         },
         {
-            "id": 59,
+            "id": 4,
             "guid": "00419db758f1227b-0003f6389600000d",
             "components": {
                 "NameComponent": {
@@ -1086,7 +1091,7 @@
             }
         },
         {
-            "id": 60,
+            "id": 5,
             "guid": "00419db750c59d31-0003f6389600000f",
             "components": {
                 "NameComponent": {
@@ -1260,7 +1265,7 @@
             }
         },
         {
-            "id": 61,
+            "id": 6,
             "guid": "00419db76e8c2555-0003f63896000011",
             "components": {
                 "NameComponent": {
@@ -1434,7 +1439,7 @@
             }
         },
         {
-            "id": 62,
+            "id": 7,
             "guid": "00419db70e3a070e-0003f63896000013",
             "components": {
                 "NameComponent": {
@@ -1608,7 +1613,7 @@
             }
         },
         {
-            "id": 63,
+            "id": 8,
             "guid": "00419db767dde343-0003f63896000015",
             "components": {
                 "NameComponent": {
@@ -1782,7 +1787,7 @@
             }
         },
         {
-            "id": 64,
+            "id": 9,
             "guid": "00419db7657d0efb-0003f63896000017",
             "components": {
                 "NameComponent": {
@@ -1889,7 +1894,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.654562
+                                    "data": 0.654561
                                 },
                                 {
                                     "type": "float",
@@ -1945,7 +1950,7 @@
             }
         },
         {
-            "id": 65,
+            "id": 10,
             "guid": "00419db7388d34bd-0003f63896000019",
             "components": {
                 "NameComponent": {
@@ -2119,7 +2124,7 @@
             }
         },
         {
-            "id": 66,
+            "id": 11,
             "guid": "00419db74a955ace-0003f6389600001b",
             "components": {
                 "NameComponent": {
@@ -2293,7 +2298,7 @@
             }
         },
         {
-            "id": 67,
+            "id": 12,
             "guid": "00419db73f9ec224-0003f6389600001d",
             "components": {
                 "NameComponent": {
@@ -2467,7 +2472,7 @@
             }
         },
         {
-            "id": 68,
+            "id": 13,
             "guid": "00419db77ff637fd-0003f6389600001f",
             "components": {
                 "NameComponent": {
@@ -2641,7 +2646,7 @@
             }
         },
         {
-            "id": 69,
+            "id": 14,
             "guid": "00419db731ac5215-0003f63896000021",
             "components": {
                 "NameComponent": {
@@ -2748,7 +2753,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.763182
+                                    "data": 0.763181
                                 },
                                 {
                                     "type": "float",
@@ -2804,7 +2809,7 @@
             }
         },
         {
-            "id": 70,
+            "id": 15,
             "guid": "00419db742ad7c33-0003f63896000023",
             "components": {
                 "NameComponent": {
@@ -2978,7 +2983,7 @@
             }
         },
         {
-            "id": 71,
+            "id": 16,
             "guid": "00419db7744c91d0-0003f63896000025",
             "components": {
                 "NameComponent": {
@@ -3152,7 +3157,7 @@
             }
         },
         {
-            "id": 72,
+            "id": 17,
             "guid": "00419db755b3d784-0003f63896000027",
             "components": {
                 "NameComponent": {
@@ -3328,7 +3333,7 @@
             }
         },
         {
-            "id": 73,
+            "id": 18,
             "guid": "00419db716fd7f6e-0003f63896000029",
             "components": {
                 "NameComponent": {
@@ -3502,7 +3507,7 @@
             }
         },
         {
-            "id": 74,
+            "id": 19,
             "guid": "00419db7655c8827-0003f6389600002b",
             "components": {
                 "NameComponent": {
@@ -3676,7 +3681,7 @@
             }
         },
         {
-            "id": 75,
+            "id": 20,
             "guid": "00419db767cf2d75-0003f6389600002d",
             "components": {
                 "NameComponent": {
@@ -3850,7 +3855,7 @@
             }
         },
         {
-            "id": 76,
+            "id": 21,
             "guid": "00419db70b81a2e3-0003f6389600002f",
             "components": {
                 "NameComponent": {
@@ -4024,7 +4029,7 @@
             }
         },
         {
-            "id": 77,
+            "id": 22,
             "guid": "00419db75d4affc9-0003f63896000031",
             "components": {
                 "NameComponent": {
@@ -4187,7 +4192,7 @@
             }
         },
         {
-            "id": 78,
+            "id": 23,
             "guid": "00419db752f2e422-0003f63896000033",
             "components": {
                 "NameComponent": {
@@ -4361,7 +4366,7 @@
             }
         },
         {
-            "id": 79,
+            "id": 24,
             "guid": "00419db769bef7a8-0003f63896000035",
             "components": {
                 "NameComponent": {
@@ -4535,7 +4540,7 @@
             }
         },
         {
-            "id": 80,
+            "id": 25,
             "guid": "00419db743eec3d1-0003f63896000037",
             "components": {
                 "NameComponent": {
@@ -4709,7 +4714,7 @@
             }
         },
         {
-            "id": 81,
+            "id": 26,
             "guid": "00419db71c0dc2e7-0003f63896000039",
             "components": {
                 "NameComponent": {
@@ -4883,7 +4888,7 @@
             }
         },
         {
-            "id": 82,
+            "id": 27,
             "guid": "00419db735c3dace-0003f6389600003b",
             "components": {
                 "NameComponent": {
@@ -5046,7 +5051,7 @@
             }
         },
         {
-            "id": 83,
+            "id": 28,
             "guid": "00419db71efd5410-0003f6389600003d",
             "components": {
                 "NameComponent": {
@@ -5220,7 +5225,7 @@
             }
         },
         {
-            "id": 84,
+            "id": 29,
             "guid": "00419db72308581a-0003f6389600003f",
             "components": {
                 "NameComponent": {
@@ -5394,7 +5399,7 @@
             }
         },
         {
-            "id": 85,
+            "id": 30,
             "guid": "00419db71c0fd284-0003f63896000041",
             "components": {
                 "NameComponent": {
