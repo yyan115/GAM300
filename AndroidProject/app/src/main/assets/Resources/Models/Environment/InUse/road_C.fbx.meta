@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "0009550cb04a699c-0003350ab2000011",
-        "source": "../../Resources/Models/Environment/_InUse/road_C.fbx",
-        "compiled": "../../Resources/Models/Environment/_InUse/road_C.mesh",
-        "android_compiled": "Resources/Models/Environment/InUse/road_C_android.mesh"
-    }
-}

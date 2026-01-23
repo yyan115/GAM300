@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00596c26209daff7-0003602b46000037",
-        "source": "../../Resources/Models/Environment/_InUse/Small Stairs.fbx",
-        "compiled": "../../Resources/Models/Environment/_InUse/Small Stairs.mesh",
-        "android_compiled": "Resources/Models/Environment/InUse/Small Stairs_android.mesh"
-    }
-}
