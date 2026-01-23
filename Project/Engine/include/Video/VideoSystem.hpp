@@ -53,11 +53,12 @@ private:
     bool foundDialogueText = false;
     bool foundDialogueBox = false;
     bool foundBlackScreen = false;
+    bool foundSkipButton = false;
     bool isTransitioning = false;
     bool cutSceneEnded = false;
 
     Entity dialogueText_Entity = -1;
     Entity dialogueBox_Entity = -1;
     Entity blackScreen_Entity = -1;
-
+    Entity skipButton_Entity = -1;
 };

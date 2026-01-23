@@ -166,7 +166,7 @@
                         },
                         {
                             "type": "float",
-                            "data": -90
+                            "data": 90
                         },
                         {
                             "type": "float",
@@ -328,7 +328,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31863e-10
+                                    "data": 9.31864e-10
                                 },
                                 {
                                     "type": "float",
@@ -336,7 +336,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31863e-10
+                                    "data": 9.31864e-10
                                 }
                             ]
                         },
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000506023
+                                    "data": 0.00000506024
                                 },
                                 {
                                     "type": "float",
@@ -548,7 +548,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 70.5916
                         },
                         {
                             "type": "std::string",
@@ -1118,7 +1118,76 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "GetComponent": null,
+                                "Every": null,
+                                "highlightSprite": null,
+                                "AwakeSafe": null,
+                                "_private": {},
+                                "DisableSafe": null,
+                                "DeserializeFields": null,
+                                "StartSafe": null,
+                                "_subscriptions": {},
+                                "UpdateSafe": null,
+                                "Subscribe": null,
+                                "SerializeFields": null,
+                                "buttonBounds": {},
+                                "defaultSprite": null,
+                                "After": null,
+                                "minY": 912.3670043945313,
+                                "Unsubscribe": null,
+                                "maxX": 1846.0899658203125,
+                                "minX": 1621.0899658203125,
+                                "entityId": 3.0,
+                                "__field_list": {},
+                                "__meta": {},
+                                "maxY": 1042.3670043945313,
+                                "__created_at": 1769156017.0,
+                                "Destroy": null,
+                                "Start": null,
+                                "_call_lifecycle": null,
+                                "Update": null
+                            }
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }
@@ -1436,7 +1505,7 @@
                     "name": "HoverSkip"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 13
                 },
                 "LayerComponent": {
                     "layerIndex": 0

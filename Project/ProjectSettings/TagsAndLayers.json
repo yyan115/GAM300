@@ -12,7 +12,8 @@
         "Collectible",
         "DialogueText",
         "DialogueBox",
-        "BlackScreen"
+        "BlackScreen",
+        "SkipButton"
     ],
     "layers": [
         {

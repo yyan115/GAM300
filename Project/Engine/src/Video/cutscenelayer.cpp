@@ -9,7 +9,10 @@ void DialogueManager::HandleTextRender(float deltaTime, TextRenderComponent& tex
 {
     auto it = dialogueMap.find(currentFrame);
     if (it == dialogueMap.end())
-    {return;}
+    {
+        textComp.text = "";
+        return;
+    }
     std::string fullText = it->second;
 
     if (currentFrame != lastFrame)

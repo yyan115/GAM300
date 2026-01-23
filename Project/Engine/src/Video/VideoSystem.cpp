@@ -34,6 +34,9 @@ void VideoSystem::Update(float dt) {
     int dialogueTagIndex = TagManager::GetInstance().GetTagIndex("DialogueText");
     int dialogueBoxTagIndex = TagManager::GetInstance().GetTagIndex("DialogueBox");
     int blackScreenIndex = TagManager::GetInstance().GetTagIndex("BlackScreen");
+    int skipButtonIndex = TagManager::GetInstance().GetTagIndex("SkipButton");
+
+
     //GET ENTITY VIA TAG
     for (const auto& entity : entities)
     {
@@ -73,15 +76,26 @@ void VideoSystem::Update(float dt) {
             blackScreen_Entity = entity;
         }
 
+        if (!foundSkipButton &&
+            m_ecs->HasComponent<SpriteRenderComponent>(entity) &&
+            m_ecs->GetComponent<TagComponent>(entity).tagIndex == skipButtonIndex)
+        {
+            foundSkipButton = true;
+            skipButton_Entity = entity;
+        }
+
+
     }
     //ITS FINE IF CANNOT FIND, BUT NEED MAKE SURE NOT TO ACCESS IT (DIALOGUE BOX + DIALOGUE TEXT)
    //but for now we just assume its found.
 
 
-    //GET RESPECTIVE COMPONENT FOR DIALOGUE BOX AND TEXT
+    //GET RESPECTIVE COMPONENT
     auto& textComp      = m_ecs->GetComponent<TextRenderComponent>(dialogueText_Entity);
     auto& textTransform = m_ecs->GetComponent<Transform>(dialogueText_Entity);
     auto& blackScreenSprite = m_ecs->GetComponent<SpriteRenderComponent>(blackScreen_Entity);
+    auto& skipButtonSprite = m_ecs->GetComponent<SpriteRenderComponent>(skipButton_Entity);
+
 
     //GET THE VIDEO COMP AND SPRITE COMPONENT FROM THE ENTITY
     for (const auto& entity : entities)
@@ -149,6 +163,15 @@ void VideoSystem::Update(float dt) {
             }
         }
 
+        //SKIP BUTTON INPUT
+        if (skipButtonSprite.isVisible && InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
+        {
+            cutSceneEnded = true;
+            isTransitioning = true;
+        }
+
+
+
 
         //BLOCK INPUT IF SCENE IS OVER / TRANSITITION STATE
         if (cutSceneEnded)
@@ -206,7 +229,6 @@ void VideoSystem::SwapCutscene(SpriteRenderComponent& comp, std::string newCutsc
     //GET GUID FROM PATH
     GUID_128 targetGUID = assetMgr.GetGUID128FromAssetMeta(newCutscenePath);
 
-
     comp.texture = assetMgr.LoadByGUID<Texture>(targetGUID);        //Updating the actual texture
     comp.textureGUID = targetGUID;      //for saving
     comp.texturePath = newCutscenePath;     //for display purpose
@@ -242,18 +264,8 @@ void VideoSystem::FadeOutTransition(SpriteRenderComponent& blackScreen, float dt
     blackScreen.alpha = lerp(blackScreen.alpha,endTransparency, lerpSpeed* dt);
 }
 
-
-
-
-//LERP SPRITE COMPONENT ALPHA, -> TRANSITION
 /*
-TODO: MAKE TEXT FILE SAVEABLE
-TEXT CONSTRAINT INTO THE DIALOGUE BOX
-FADE IN/ FADE OUT
-SKIP BUTTON + INSTANT TEXT RENDER
-DELAY SWITCH?
-
-ADD DELAY FOR 
-
-
+THINGS TO BE FIXED:
+TEXT DIALOGUE (ENSURE TEXT FITS IN DIALOGUE BOX)
+PROPER LOADING OF ASSETS (SOMETIMES NEED TO GO INTO THE FOLDER OPEN UP THEN LOAD PROPERLY)
 */
