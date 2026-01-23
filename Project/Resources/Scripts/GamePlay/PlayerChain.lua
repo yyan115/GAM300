@@ -24,7 +24,6 @@ return Component {
         TriggerKey = "E",
         PlayerName = "Player",
         SimulatedHitDistance = 0.0,
-        ForwardOverride = nil,
         EnableLogs = false,  -- Default off for performance
         AutoStart = false,
         DumpEveryFrame = false,
