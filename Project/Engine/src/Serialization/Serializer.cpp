@@ -579,7 +579,6 @@ void Serializer::SerializeScene(const std::string& scenePath) {
             compsObj.AddMember("VideoComponent", v, alloc);
         }
 
-
         entObj.AddMember("components", compsObj, alloc);
         entitiesArr.PushBack(entObj, alloc);
     }
@@ -2554,32 +2553,46 @@ void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapi
     if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
         const auto& d = videoJSON["data"];
 
-        // State & Configuration
+        // Index 0: enabled
         videoComp.enabled = Serializer::GetBool(d, 0);
+
+        // Index 1: isPlaying
         videoComp.isPlaying = Serializer::GetBool(d, 1);
+
+        // Index 2: loop
         videoComp.loop = Serializer::GetBool(d, 2);
 
-        // Playback Properties
+        // Index 3: playbackSpeed
         videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
+
+        // Index 4: currentTime
         videoComp.currentTime = Serializer::GetFloat(d, 4);
-        videoComp.duration = Serializer::GetFloat(d, 5);
 
-        // Asset Management
-        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
-            videoComp.videoPath = d[6]["data"].GetString();
-
+        // Index 5: videoPath
+        if (d.Size() > 5 && d[5].HasMember("data") && d[5]["data"].IsString()) {
+            videoComp.videoPath = d[5]["data"].GetString();
             if (videoComp.videoPath.find("../../Resources") == 0) {
                 videoComp.videoPath = videoComp.videoPath.substr(6);
             }
+
+            // IMPORTANT: Process the configuration file after loading the path
+            if (!videoComp.videoPath.empty()) {
+                videoComp.ProcessMetaData(videoComp.videoPath);
+                videoComp.asset_dirty = true;
+            }
         }
 
-        // Rendering Data
-        if (d.Size() > 7 && d[7].HasMember("data") && d[7]["data"].IsUint()) {
-            videoComp.textureID = d[7]["data"].GetUint();
-        }
+        // Index 6: dialoguePath
+        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
+            videoComp.dialoguePath = d[6]["data"].GetString();
+            if (videoComp.dialoguePath.find("../../Resources") == 0) {
+                videoComp.dialoguePath = videoComp.dialoguePath.substr(6);
+            }
 
-        // Synchronization Flags
-        videoComp.asset_dirty = Serializer::GetBool(d, 8);
-        videoComp.seek_dirty = Serializer::GetBool(d, 9);
+            // IMPORTANT: Process the dialogue file after loading the path
+            if (!videoComp.dialoguePath.empty()) {
+                videoComp.ProcessDialogueData(videoComp.dialoguePath);
+            }
+        }
     }
 }

@@ -328,7 +328,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31837e-10
+                                    "data": 9.31863e-10
                                 },
                                 {
                                     "type": "float",
@@ -336,7 +336,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31837e-10
+                                    "data": 9.31863e-10
                                 }
                             ]
                         },
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000506009
+                                    "data": 0.00000506023
                                 },
                                 {
                                     "type": "float",
@@ -385,7 +385,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0000028463
+                                    "data": 0.00000284638
                                 },
                                 {
                                     "type": "float",
@@ -536,11 +536,11 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "float",
@@ -552,7 +552,11 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "../../Resources/Cutscenes/TESTING_TEXT.txt"
+                            "data": "Resources/Cutscenes/TESTING_TEXT.txt"
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "Resources/Cutscenes/Dialogue_test.txt"
                         }
                     ]
                 }

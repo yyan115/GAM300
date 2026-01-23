@@ -36,15 +36,15 @@ public:
      */
     bool IsFinished(const VideoComponent& component, const Asset::CutsceneInfo& info) const;
 
-    void FadeInTransition(SpriteRenderComponent& blackScreen, float dt);
-    void FadeOutTransition(SpriteRenderComponent& blackScreen, float dt);
+    void FadeInTransition(SpriteRenderComponent& blackScreen, float dt, float preTime);
+    void FadeOutTransition(SpriteRenderComponent& blackScreen, float dt, float postTime);
 
 
 private:
     ECSManager* m_ecs = nullptr;
 
     std::string rootDirectory   = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
-    std::string sceneToLoad     = "Resources/Scenes/M3_Gameplay.scene";
+    std::string sceneToLoad     = "Resources/Scenes/M3_Gameplay.scene";     //PROBABLY MAKE THIS A FIELD INSTEAD, DRAG SCENE TO BE LOADED
 
     std::string ConstructNewPath(VideoComponent& videoComp);
 

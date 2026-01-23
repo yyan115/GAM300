@@ -9,6 +9,7 @@ REFL_REGISTER_START(VideoComponent)
 	REFL_REGISTER_PROPERTY(playbackSpeed)
 	REFL_REGISTER_PROPERTY(currentTime)
 	REFL_REGISTER_PROPERTY(videoPath)
+	REFL_REGISTER_PROPERTY(dialoguePath)
 REFL_REGISTER_END
 #pragma endregion
 
@@ -42,8 +43,6 @@ bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	this->preTime		= info.preTime;
 	this->duration		= info.duration;
 	this->postTime		= info.postTime;
-	this->videoPath		= resourcePath;
-
 	return true;
 }
 
