@@ -12,6 +12,7 @@
 #include "ECS/TagManager.hpp"
 #include "ECS/TagComponent.hpp"
 #include "Video/cutscenelayer.hpp"
+#include "Scene/SceneManager.hpp"
 
 //HELPER FUNCTIONS
 float lerp(float start, float end, float time)
@@ -82,6 +83,34 @@ void VideoSystem::Update(float dt) {
     auto& textTransform = m_ecs->GetComponent<Transform>(dialogueText_Entity);
     auto& blackScreenSprite = m_ecs->GetComponent<SpriteRenderComponent>(blackScreen_Entity);
 
+    //HANDLE TRANSITION
+    if (isTransitioning)
+    {
+        if (cutSceneEnded)
+        {
+            std::cout << "BlackScreenALpha here for fade out is " << blackScreenSprite.alpha << std::endl;
+            FadeOutTransition(blackScreenSprite, dt);
+            if (blackScreenSprite.alpha >= 0.99f)
+            {
+                blackScreenSprite.alpha = 1.0f;
+                isTransitioning = false;
+                // Logic for what happens after the screen is black:
+                // e.g., ChangeScene("MainMenu");
+                //CHANGE SCENE TO PLAY
+                SceneManager::GetInstance().LoadScene(sceneToLoad);
+            }
+        }
+        else
+        {
+            std::cout << "BlackScreenALpha here is " << blackScreenSprite.alpha << std::endl;
+            FadeInTransition(blackScreenSprite, dt);
+            if (blackScreenSprite.alpha <= 0.01)
+            {
+                blackScreenSprite.alpha = 0;
+                isTransitioning = false;
+            }
+        }
+    }
 
     //GET THE VIDEO COMP AND SPRITE COMPONENT FROM THE ENTITY
     for (const auto& entity : entities)
@@ -104,20 +133,9 @@ void VideoSystem::Update(float dt) {
             std::string firstPath = ConstructNewPath(videoComp);
             m_dialogueManager.Reset();
             SwapCutscene(spriteComp, firstPath);
-            
             isTransitioning = true;
+            cutSceneEnded = false;
         }
-
-        if (isTransitioning)
-        {
-            FadeInTransition(blackScreenSprite, dt);
-            if (blackScreenSprite.alpha <= 0)
-            {
-                blackScreenSprite.alpha = 0;
-                isTransitioning = false;
-            }
-        }
-
         videoComp.currentTime += dt;
 
 //LOGIC TO CHANGE SCENE
@@ -146,8 +164,17 @@ void VideoSystem::Update(float dt) {
             if (goNext)
             {
                 videoComp.activeFrame += 1;
-                std::string newCutScenePath = ConstructNewPath(videoComp);
-                SwapCutscene(spriteComp, newCutScenePath);
+                if (videoComp.activeFrame > videoComp.frameEnd)
+                {
+                    videoComp.activeFrame = videoComp.frameEnd; //just to fix it in place
+                    cutSceneEnded = true;
+                    isTransitioning = true;     //for fade out transition
+                }
+                else
+                {
+                    std::string newCutScenePath = ConstructNewPath(videoComp);
+                    SwapCutscene(spriteComp, newCutScenePath);
+                }
             }
             else //Render text immediately
             {
@@ -163,6 +190,7 @@ void VideoSystem::Update(float dt) {
 
         // MAYBE CAN HAVE A AUTO UI SO IF CLICKED ON -> JUST AUTO LET IT PLAY OUT
     }
+
 }
 
 void VideoSystem::SwapCutscene(SpriteRenderComponent& comp, std::string newCutscenePath)
@@ -197,6 +225,17 @@ void VideoSystem::FadeInTransition(SpriteRenderComponent& blackScreen, float dt)
     int endTransparency = 0;
 
     blackScreen.alpha = lerp(blackScreen.alpha, endTransparency, lerpSpeed * dt);
+    std::cout << "FADE IN TRANSITION HAPPENING" << std::endl;
+}
+
+void VideoSystem::FadeOutTransition(SpriteRenderComponent& blackScreen, float dt)
+{
+    //SET BLACK SCREEN SORTING ORDER TO HIGHEST (MAYBE SET LIKE 10)
+    // SET TRANSPARENCY 255.
+    //LERP TRANSPARENCY FROM 255 TO 0 
+    float lerpSpeed = 1.0f;
+    int endTransparency = 1;
+    blackScreen.alpha = lerp(blackScreen.alpha,endTransparency, lerpSpeed* dt);
 }
 
 

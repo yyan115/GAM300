@@ -328,7 +328,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31829e-10
+                                    "data": 9.31836e-10
                                 },
                                 {
                                     "type": "float",
@@ -336,7 +336,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31829e-10
+                                    "data": 9.31836e-10
                                 }
                             ]
                         },
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000506005
+                                    "data": 0.00000506008
                                 },
                                 {
                                     "type": "float",
@@ -385,7 +385,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00000284628
+                                    "data": 0.0000028463
                                 },
                                 {
                                     "type": "float",
@@ -552,7 +552,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "../../Resources/Cutscenes/TESTING_TEXT.txt"
                         }
                     ]
                 }
@@ -2497,7 +2497,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 10
                         },
                         {
                             "type": "Vector3D",

@@ -37,12 +37,14 @@ public:
     bool IsFinished(const VideoComponent& component, const Asset::CutsceneInfo& info) const;
 
     void FadeInTransition(SpriteRenderComponent& blackScreen, float dt);
+    void FadeOutTransition(SpriteRenderComponent& blackScreen, float dt);
 
 
 private:
     ECSManager* m_ecs = nullptr;
 
-    std::string rootDirectory = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
+    std::string rootDirectory   = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
+    std::string sceneToLoad     = "Resources/Scenes/M3_Gameplay.scene";
 
     std::string ConstructNewPath(VideoComponent& videoComp);
 
@@ -52,6 +54,7 @@ private:
     bool foundDialogueBox = false;
     bool foundBlackScreen = false;
     bool isTransitioning = false;
+    bool cutSceneEnded = false;
 
     Entity dialogueText_Entity = -1;
     Entity dialogueBox_Entity = -1;

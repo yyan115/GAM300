@@ -1,1 +1,1 @@
-../../Resources/Scenes/CutSceneTest.scene
+Resources/Scenes/M3_Gameplay.scene
