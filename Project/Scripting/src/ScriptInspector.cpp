@@ -14,6 +14,7 @@ extern "C" {
 #include <sstream>
 #include <cstdarg>
 #include <cstdio>
+#include <unordered_set>
 
 using namespace Scripting;
 
@@ -80,6 +81,7 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
 }
 
 // Inspect a table once (no caching). Rules:
+// - If table.__field_list exists (from mono_helper), only inspect fields declared there
 // - If table.__editor exists and is a table, it can contain per-field metadata:
 //      __editor = { fieldName = { displayName="...", tooltip="...", editorHint="..." }, ... }
 // - Else we expose public fields by convention: keys that are strings and do not start with '_' are public.
@@ -127,6 +129,26 @@ std::vector<FieldInfo> ScriptInspector::InspectTableOnce(lua_State* L, int absTa
     }
     lua_pop(L, 1); // pop __editor entry
 
+    // Check if __field_list exists (from mono_helper) - if so, only inspect declared fields
+    // This prevents serialization of runtime properties like fsm, states, etc. that contain
+    // circular references or functions and cause spam warnings
+    std::unordered_set<std::string> declaredFields;
+    bool hasFieldList = false;
+    lua_getfield(L, absTableIndex, "__field_list");
+    if (lua_istable(L, -1)) {
+        hasFieldList = true;
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            if (lua_type(L, -2) == LUA_TSTRING) {
+                size_t klen = 0;
+                const char* key = lua_tolstring(L, -2, &klen);
+                declaredFields.insert(std::string(key, klen));
+            }
+            lua_pop(L, 1); // pop value, keep key
+        }
+    }
+    lua_pop(L, 1); // pop __field_list
+
     // Iterate all keys in the instance table
     lua_pushnil(L);
     while (lua_next(L, absTableIndex) != 0) {
@@ -137,6 +159,11 @@ std::vector<FieldInfo> ScriptInspector::InspectTableOnce(lua_State* L, int absTa
             std::string name(key, klen);
             // convention: skip fields starting with '_' (private)
             if (!name.empty() && name[0] == '_') {
+                lua_pop(L, 1);
+                continue;
+            }
+            // If __field_list exists, only process fields declared there
+            if (hasFieldList && declaredFields.find(name) == declaredFields.end()) {
                 lua_pop(L, 1);
                 continue;
             }
