@@ -149,6 +149,10 @@ BEGIN_SYSTEM("Audio")
     FUNCTION("SetMasterVolume", AudioManagerWrappers::SetMasterVolume)
     FUNCTION("GetMasterVolume", AudioManagerWrappers::GetMasterVolume)
     FUNCTION("SetGlobalPaused", AudioManagerWrappers::SetGlobalPaused)
+    // Bus/AudioMixerGroup controls (BGM, SFX, Master, etc.)
+    FUNCTION("SetBusVolume", AudioManagerWrappers::SetBusVolume)
+    FUNCTION("GetBusVolume", AudioManagerWrappers::GetBusVolume)
+    FUNCTION("SetBusPaused", AudioManagerWrappers::SetBusPaused)
 END_SYSTEM()
 
 // ============================================================================

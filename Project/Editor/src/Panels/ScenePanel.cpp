@@ -1865,6 +1865,9 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
                 ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
             }
 
+            // Take snapshot BEFORE spawning so undo can restore to pre-spawn state
+            SnapshotManager::GetInstance().TakeSnapshot("Spawn Model");
+
             // Then spawn the real entity
             Entity realEntity = SpawnModelEntity(previewPosition);
             if (realEntity != static_cast<Entity>(-1)) {

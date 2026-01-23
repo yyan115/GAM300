@@ -65,8 +65,7 @@ return Component {
                 newVolume = 1.0
             end
 
-            -- Audio.SetMasterVolume(newVolume)    --Persist through states
-            --Call function to set SFX Volume
+            Audio.SetBusVolume("SFX", newVolume)    --Persist through states
 
         end
     end,

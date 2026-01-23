@@ -65,10 +65,7 @@ return Component {
                 newVolume = 1.0
             end
 
-            -- Audio.SetMasterVolume(newVolume)    --Persist through states
-            --Call function to set BGM VOLUME
-
-            
+            Audio.SetBusVolume("BGM", newVolume)    --Persist through states
 
         end
     end,

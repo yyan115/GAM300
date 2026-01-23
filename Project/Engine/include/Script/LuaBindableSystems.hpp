@@ -579,6 +579,19 @@ namespace AudioManagerWrappers {
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
     }
+
+    // Bus/AudioMixerGroup controls (for BGM, SFX, Master buses)
+    inline void SetBusVolume(const std::string& busName, float volume) {
+        AudioManager::GetInstance().SetBusVolume(busName, volume);
+    }
+
+    inline float GetBusVolume(const std::string& busName) {
+        return AudioManager::GetInstance().GetBusVolume(busName);
+    }
+
+    inline void SetBusPaused(const std::string& busName, bool paused) {
+        AudioManager::GetInstance().SetBusPaused(busName, paused);
+    }
 }
 
 // ============================================================================

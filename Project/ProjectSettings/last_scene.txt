@@ -1,1 +1,1 @@
-../../Resources/Scenes/WJ_CHAIN.scene
+../../Resources/Scenes/Joe_MainMenuTest.scene

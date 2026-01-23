@@ -1065,7 +1065,7 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
     return entObj;
 }
 
-void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity) {
+void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
 	if (!entObj.IsObject()) return;
 
     Entity newEnt{};
@@ -1140,7 +1140,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         const rapidjson::Value& mv = comps["ModelRenderComponent"];
         ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-        DeserializeModelComponent(modelComp, mv, newEnt);
+        DeserializeModelComponent(modelComp, mv, newEnt, skipSpawnChildren);
     }
 
     // SpriteRenderComponent
@@ -1351,6 +1351,8 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
+        // Use default skipSpawnChildren=false for DeserializeScene to maintain backwards
+        // compatibility with older scene files where children might not be serialized
         DeserializeEntity(ecs, entObj);
 
         //Entity newEnt = CreateEntityViaGUID(entObj);
@@ -1802,7 +1804,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
                 ecs.AddComponent<ModelRenderComponent>(currEnt, ModelRenderComponent{});
             }
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(currEnt);
-            DeserializeModelComponent(modelComp, mv, currEnt);
+            // Pass true to skip spawning children - all entities including bone children
+            // are already in the snapshot and will be created by this ReloadScene loop
+            DeserializeModelComponent(modelComp, mv, currEnt, true);
         }
 
         // SpriteRenderComponent
@@ -1838,6 +1842,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ParticleComponent
         if (comps.HasMember("ParticleComponent") && comps["ParticleComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["ParticleComponent"];
+            if (!ecs.HasComponent<ParticleComponent>(currEnt)) {
+                ecs.AddComponent<ParticleComponent>(currEnt, ParticleComponent{});
+            }
             auto& particleComp = ecs.GetComponent<ParticleComponent>(currEnt);
             DeserializeParticleComponent(particleComp, tv);
         }
@@ -1845,6 +1852,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // DirectionalLightComponent
         if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["DirectionalLightComponent"];
+            if (!ecs.HasComponent<DirectionalLightComponent>(currEnt)) {
+                ecs.AddComponent<DirectionalLightComponent>(currEnt, DirectionalLightComponent{});
+            }
             auto& dirLightComp = ecs.GetComponent<DirectionalLightComponent>(currEnt);
             DeserializeDirLightComponent(dirLightComp, tv);
         }
@@ -1852,6 +1862,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // SpotLightComponent
         if (comps.HasMember("SpotLightComponent") && comps["SpotLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["SpotLightComponent"];
+            if (!ecs.HasComponent<SpotLightComponent>(currEnt)) {
+                ecs.AddComponent<SpotLightComponent>(currEnt, SpotLightComponent{});
+            }
             auto& spotlightComp = ecs.GetComponent<SpotLightComponent>(currEnt);
             DeserializeSpotLightComponent(spotlightComp, tv);
         }
@@ -1859,6 +1872,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // PointLightComponent
         if (comps.HasMember("PointLightComponent") && comps["PointLightComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["PointLightComponent"];
+            if (!ecs.HasComponent<PointLightComponent>(currEnt)) {
+                ecs.AddComponent<PointLightComponent>(currEnt, PointLightComponent{});
+            }
             auto& pointLightComp = ecs.GetComponent<PointLightComponent>(currEnt);
             DeserializePointLightComponent(pointLightComp, tv);
         }
@@ -1866,6 +1882,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // AudioComponent
         if (comps.HasMember("AudioComponent") && comps["AudioComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioComponent"];
+            if (!ecs.HasComponent<AudioComponent>(currEnt)) {
+                ecs.AddComponent<AudioComponent>(currEnt, AudioComponent{});
+            }
             auto& audioComp = ecs.GetComponent<AudioComponent>(currEnt);
             DeserializeAudioComponent(audioComp, tv);
         }
@@ -1873,6 +1892,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // AudioListenerComponent
         if (comps.HasMember("AudioListenerComponent") && comps["AudioListenerComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioListenerComponent"];
+            if (!ecs.HasComponent<AudioListenerComponent>(currEnt)) {
+                ecs.AddComponent<AudioListenerComponent>(currEnt, AudioListenerComponent{});
+            }
             auto& audioListenerComp = ecs.GetComponent<AudioListenerComponent>(currEnt);
             DeserializeAudioListenerComponent(audioListenerComp, tv);
         }
@@ -1880,6 +1902,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // AudioReverbZoneComponent
         if (comps.HasMember("AudioReverbZoneComponent") && comps["AudioReverbZoneComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AudioReverbZoneComponent"];
+            if (!ecs.HasComponent<AudioReverbZoneComponent>(currEnt)) {
+                ecs.AddComponent<AudioReverbZoneComponent>(currEnt, AudioReverbZoneComponent{});
+            }
             auto& audioReverbZoneComp = ecs.GetComponent<AudioReverbZoneComponent>(currEnt);
             DeserializeAudioReverbZoneComponent(audioReverbZoneComp, tv);
         }
@@ -1887,6 +1912,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // RigidBodyComponent
         if (comps.HasMember("RigidBodyComponent") && comps["RigidBodyComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["RigidBodyComponent"];
+            if (!ecs.HasComponent<RigidBodyComponent>(currEnt)) {
+                ecs.AddComponent<RigidBodyComponent>(currEnt, RigidBodyComponent{});
+            }
             auto& rbComp = ecs.GetComponent<RigidBodyComponent>(currEnt);
             DeserializeRigidBodyComponent(rbComp, tv);
         }
@@ -1894,6 +1922,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // ColliderComponent
         if (comps.HasMember("ColliderComponent") && comps["ColliderComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["ColliderComponent"];
+            if (!ecs.HasComponent<ColliderComponent>(currEnt)) {
+                ecs.AddComponent<ColliderComponent>(currEnt, ColliderComponent{});
+            }
             auto& colliderComp = ecs.GetComponent<ColliderComponent>(currEnt);
             DeserializeColliderComponent(colliderComp, tv);
         }
@@ -1901,6 +1932,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // CameraComponent
         if (comps.HasMember("CameraComponent") && comps["CameraComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["CameraComponent"];
+            if (!ecs.HasComponent<CameraComponent>(currEnt)) {
+                ecs.AddComponent<CameraComponent>(currEnt, CameraComponent{});
+            }
             auto& cameraComp = ecs.GetComponent<CameraComponent>(currEnt);
             DeserializeCameraComponent(cameraComp, tv);
         }
@@ -1908,6 +1942,9 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // AnimationComponent
         if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
             const rapidjson::Value& tv = comps["AnimationComponent"];
+            if (!ecs.HasComponent<AnimationComponent>(currEnt)) {
+                ecs.AddComponent<AnimationComponent>(currEnt, AnimationComponent{});
+            }
             auto& animComp = ecs.GetComponent<AnimationComponent>(currEnt);
             TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
         }
@@ -1926,24 +1963,29 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         // BrainComponent
         if (comps.HasMember("BrainComponent") && comps["BrainComponent"].IsObject()) {
             const auto& brainCompJSON = comps["BrainComponent"];
+            if (!ecs.HasComponent<BrainComponent>(currEnt)) {
+                ecs.AddComponent<BrainComponent>(currEnt, BrainComponent{});
+            }
             auto& brainComp = ecs.GetComponent<BrainComponent>(currEnt);
             DeserializeBrainComponent(brainComp, brainCompJSON);
         }
         // ButtonComponent
         if (comps.HasMember("ButtonComponent") && comps["ButtonComponent"].IsObject()) {
             const auto& buttonCompJSON = comps["ButtonComponent"];
-            if (ecs.HasComponent<ButtonComponent>(currEnt)) {
-                auto& buttonComp = ecs.GetComponent<ButtonComponent>(currEnt);
-                DeserializeButtonComponent(buttonComp, buttonCompJSON);
+            if (!ecs.HasComponent<ButtonComponent>(currEnt)) {
+                ecs.AddComponent<ButtonComponent>(currEnt, ButtonComponent{});
             }
+            auto& buttonComp = ecs.GetComponent<ButtonComponent>(currEnt);
+            DeserializeButtonComponent(buttonComp, buttonCompJSON);
         }
         // SliderComponent
         if (comps.HasMember("SliderComponent") && comps["SliderComponent"].IsObject()) {
             const auto& sliderCompJSON = comps["SliderComponent"];
-            if (ecs.HasComponent<SliderComponent>(currEnt)) {
-                auto& sliderComp = ecs.GetComponent<SliderComponent>(currEnt);
-                DeserializeSliderComponent(sliderComp, sliderCompJSON);
+            if (!ecs.HasComponent<SliderComponent>(currEnt)) {
+                ecs.AddComponent<SliderComponent>(currEnt, SliderComponent{});
             }
+            auto& sliderComp = ecs.GetComponent<SliderComponent>(currEnt);
+            DeserializeSliderComponent(sliderComp, sliderCompJSON);
         }
 
         // Ensure all entities have TagComponent and LayerComponent
@@ -1955,6 +1997,20 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         }
 
     } // end for entities
+
+    // Rebuild boneNameToEntityMap for all ModelRenderComponents after all entities are created
+    // This is necessary because when skipSpawnChildren is true, the map isn't populated during
+    // DeserializeModelComponent, but we need it for animation and rendering to work correctly
+    for (const auto& entity : ecs.GetAllEntities()) {
+        if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+            if (modelComp.model) {
+                modelComp.boneNameToEntityMap.clear();
+                modelComp.boneNameToEntityMap[modelComp.model->modelName] = entity;
+                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+            }
+        }
+    }
 
     // Deserialize tags
     if (doc.HasMember("tags") && doc["tags"].IsArray()) {
@@ -2081,7 +2137,7 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     }
 }
 
-void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root) {
+void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root, bool skipSpawnChildren) {
     if (modelJSON.IsObject()) {
         if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
             const auto& d = modelJSON["data"];
@@ -2167,7 +2223,12 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
 
             if (modelComp.model) {
                 modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
-                if (!modelComp.childBonesSaved) {
+                // Only spawn children if:
+                // 1. childBonesSaved is false (children weren't serialized)
+                // 2. We're not in ReloadScene mode (skipSpawnChildren is false)
+                // During ReloadScene, all entities including children are in the JSON,
+                // so we must not spawn them here to avoid duplication.
+                if (!modelComp.childBonesSaved && !skipSpawnChildren) {
                     ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
                 }
             }
@@ -2612,6 +2673,7 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
         audioComp.DopplerLevel = Serializer::GetFloat(d, 13);
         audioComp.MinDistance = Serializer::GetFloat(d, 14);
         audioComp.MaxDistance = Serializer::GetFloat(d, 15);
+        audioComp.OutputAudioMixerGroup = Serializer::GetString(d, 16);
     }
 }
 

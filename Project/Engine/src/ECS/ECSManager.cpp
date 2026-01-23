@@ -289,10 +289,13 @@ void ECSManager::DestroyEntity(Entity entity) {
 }
 
 void ECSManager::ClearAllEntities() {
+	// CRITICAL: Clear the GUID registry first to prevent duplicate entities during undo/redo
+	EntityGUIDRegistry::GetInstance().Clear();
+
 	entityManager->DestroyAllEntities();
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
-	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
+	ENGINE_PRINT("[ECSManager] Cleared all entities and GUID registry. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
 }
 
 bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {

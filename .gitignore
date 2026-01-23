@@ -7,7 +7,7 @@
 # Ignore build folder
 Project/Build
 /Project/.claude
-
+CLAUDE.md
 # Ignore claude
 .claude
 

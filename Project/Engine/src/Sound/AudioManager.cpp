@@ -456,6 +456,18 @@ void AudioManager::SetBusVolume(const std::string& busName, float volume) {
     FMOD_ChannelGroup_SetVolume(it->second, volume);
 }
 
+float AudioManager::GetBusVolume(const std::string& busName) {
+    if (ShuttingDown.load()) return 1.0f;
+
+    std::shared_lock<std::shared_mutex> lock(Mutex);
+    auto it = BusMap.find(busName);
+    if (it == BusMap.end() || !it->second) return 1.0f;
+
+    float volume = 1.0f;
+    FMOD_ChannelGroup_GetVolume(it->second, &volume);
+    return volume;
+}
+
 void AudioManager::SetBusPaused(const std::string& busName, bool paused) {
     if (ShuttingDown.load()) return;
 

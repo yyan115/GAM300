@@ -193,7 +193,9 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
         }
 
         // Deserialize standard non-prefab components.
-        Serializer::DeserializeEntity(ecs, entObj, true, entity);
+        // Pass true for skipSpawnChildren since all entities (including bone children)
+        // were created in the first pass above and shouldn't be spawned again
+        Serializer::DeserializeEntity(ecs, entObj, true, entity, true);
 
 		// Fix parent/child references based on the GUID remapping.
         const rapidjson::Value& comps = entObj["components"];
