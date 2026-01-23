@@ -26,6 +26,7 @@
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "Settings/GameSettings.hpp"
 
 #ifdef ANDROID
 #endif
@@ -87,6 +88,11 @@ bool Engine::Initialize() {
 		ENGINE_PRINT("[Engine] AudioManager initialized\n");
 	}
 
+	// Initialize GameSettings (loads saved settings and applies to audio/graphics)
+	// Note: This is called early but ApplySettings() for graphics is deferred
+	// until PostProcessingManager is initialized (in InitializeGraphicsResources)
+	GameSettingsManager::GetInstance().Initialize();
+	ENGINE_PRINT("[Engine] GameSettings initialized\n");
 
 	// Android: Asset initialization happens in JNI after AssetManager is set
 
@@ -636,6 +642,10 @@ bool Engine::InitializeGraphicsResources() {
     ENGINE_LOG_INFO("Android input system initialized (virtual controls integrated)");
 #endif
 
+	// Re-apply GameSettings now that PostProcessingManager is initialized
+	// This ensures saved gamma/exposure values are applied to the HDR effect
+	GameSettingsManager::GetInstance().ApplySettings();
+
 	ENGINE_LOG_INFO("Graphics resources initialized successfully");
 	return true;
 }
@@ -786,6 +796,10 @@ void Engine::EndDraw() {
 void Engine::Shutdown() {
 
 	ENGINE_LOG_INFO("Engine shutdown started");
+
+	// Shutdown GameSettings first (saves any dirty settings)
+	GameSettingsManager::GetInstance().Shutdown();
+
 	RunBrainExitSystem(ECSRegistry::GetInstance().GetActiveECSManager());
 	AudioManager::GetInstance().Shutdown();
 

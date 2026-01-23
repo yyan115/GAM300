@@ -443,6 +443,13 @@ FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
     }
 
     BusMap[busName] = group;
+
+    // Apply any pending volume that was set before the bus was created
+    auto pendingIt = PendingBusVolumes.find(busName);
+    if (pendingIt != PendingBusVolumes.end()) {
+        FMOD_ChannelGroup_SetVolume(group, pendingIt->second);
+    }
+
     return group;
 }
 
@@ -450,6 +457,10 @@ void AudioManager::SetBusVolume(const std::string& busName, float volume) {
     if (ShuttingDown.load()) return;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
+
+    // Always store the pending volume so it gets applied when bus is created
+    PendingBusVolumes[busName] = volume;
+
     auto it = BusMap.find(busName);
     if (it == BusMap.end() || !it->second) return;
 
