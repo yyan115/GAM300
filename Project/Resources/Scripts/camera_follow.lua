@@ -64,6 +64,7 @@ return Component {
         actionModePitch     = 25.0,
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
+        actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
         -- Camera rotation lock
         lockCameraRotation  = false,
     },
@@ -237,12 +238,10 @@ return Component {
         end
 
         if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
-        
             -- Check if rotation should be locked (either always locked OR locked during action mode)
             local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
-
-            -- Only update mouse look if rotation is not locked
-            if not self.lockCameraRotation then
+            
+            if not shouldLockRotation then
                 self:_updateMouseLook(dt)
             end
         end
