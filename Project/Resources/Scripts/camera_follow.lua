@@ -58,6 +58,14 @@ return Component {
         collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
         collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
         collisionLerpOut = 5.0,    -- Slower ease when wall clears
+        -- Action mode settings
+        actionModeEnabled   = true,
+        actionModeKey       = "Attack",
+        actionModePitch     = 25.0,
+        actionModeDistance  = 3.5,
+        actionModeTransition = 8.0,
+        -- Camera rotation lock
+        lockCameraRotation  = false,
     },
 
     Awake = function(self)
@@ -71,6 +79,12 @@ return Component {
         self._lastMouseY = 0.0
         self._firstMouse = true
         self._currentCollisionDist = nil  -- Track current collision-adjusted distance
+        
+        -- Action mode state
+        self._actionModeActive = false
+        self._normalPitch = 15.0
+        self._normalDistance = 2.0
+        self._toggleCooldown = 0.0
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -111,8 +125,12 @@ return Component {
         local scrollY = Input.GetScrollY()
         if scrollY ~= 0 then
             local zoomSpeed = self.zoomSpeed or 1.0
-            self.followDistance = self.followDistance - scrollY * zoomSpeed
-            self.followDistance = clamp(self.followDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+            self._normalDistance = self._normalDistance - scrollY * zoomSpeed
+            self._normalDistance = clamp(self._normalDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+            
+            if not self._actionModeActive then
+                self.followDistance = self._normalDistance
+            end
 
             -- Consume scroll so it doesn't accumulate
             if Input.ConsumeScroll then
@@ -156,6 +174,11 @@ return Component {
 
         self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
         self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+        
+        -- Track normal pitch when not in action mode
+        if not self._actionModeActive then
+            self._normalPitch = self._pitch
+        end
 
         -- Store camera yaw in global for player movement (bypass event_bus)
         _G.CAMERA_YAW = self._yaw
@@ -169,6 +192,20 @@ return Component {
     Update = function(self, dt)
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
+
+        -- Cooldown timer
+        if self._toggleCooldown > 0 then
+            self._toggleCooldown = self._toggleCooldown - dt
+        end
+
+        -- Action mode toggle
+        if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
+            if self._toggleCooldown <= 0 then
+                self._actionModeActive = not self._actionModeActive
+                self._toggleCooldown = 0.25
+                print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
+            end
+        end
 
         -- Toggle cursor lock with Escape (unified input system)
         if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
@@ -200,11 +237,27 @@ return Component {
         end
 
         if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
-            self:_updateMouseLook(dt)
+        
+            -- Check if rotation should be locked (either always locked OR locked during action mode)
+            local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
+
+            -- Only update mouse look if rotation is not locked
+            if not self.lockCameraRotation then
+                self:_updateMouseLook(dt)
+            end
         end
 
         -- Update scroll zoom
         self:_updateScrollZoom()
+
+        -- Action mode smooth transition
+        local targetPitch = self._actionModeActive and self.actionModePitch or self._normalPitch
+        local targetDistance = self._actionModeActive and self.actionModeDistance or self._normalDistance
+        local transitionSpeed = self.actionModeTransition or 8.0
+        local t = 1.0 - math.exp(-transitionSpeed * dt)
+        
+        self._pitch = self._pitch + (targetPitch - self._pitch) * t
+        self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
 
         local radius = self.followDistance or 5.0
         local pitchRad = math.rad(self._pitch)
