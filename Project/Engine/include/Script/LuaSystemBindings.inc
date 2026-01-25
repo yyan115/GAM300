@@ -257,6 +257,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
+    FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
 END_SYSTEM()
 
 

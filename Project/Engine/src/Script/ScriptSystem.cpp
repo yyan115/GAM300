@@ -131,6 +131,159 @@ static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 }
 
 
+static void Lua_CreateEntityDup(const std::string& source_name, const std::string& base_name, int numofdupes)
+{
+    if (!g_ecsManager) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] ECSManager is null");
+        return;
+    }
+
+    ECSManager& ecs = *g_ecsManager;
+
+    // Find source entity by name
+    Entity sourceEntity = static_cast<Entity>(-1);
+    for (const auto& entity : ecs.GetActiveEntities()) {
+        if (ecs.HasComponent<NameComponent>(entity)) {
+            if (ecs.GetComponent<NameComponent>(entity).name == source_name) {
+                sourceEntity = entity;
+                break;
+            }
+        }
+    }
+
+    if (sourceEntity == static_cast<Entity>(-1)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Source entity '" + source_name + "' not found");
+        return;
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Duplicating '" + source_name + "' " + std::to_string(numofdupes) + " times");
+
+    // Create duplicates
+    for (int i = 0; i < numofdupes; ++i) {
+        try {
+            // Generate unique name
+            std::string newName = base_name;
+            int counter = i + 1;
+            bool nameExists = true;
+
+            while (nameExists) {
+                newName = base_name + std::to_string(counter);
+                nameExists = false;
+
+                // Check if name already exists
+                for (const auto& entity : ecs.GetActiveEntities()) {
+                    if (ecs.HasComponent<NameComponent>(entity)) {
+                        if (ecs.GetComponent<NameComponent>(entity).name == newName) {
+                            nameExists = true;
+                            counter++;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Create new entity
+            Entity newEntity = ecs.CreateEntity();
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Creating entity '" + newName + "' (ID: " + std::to_string(newEntity) + ")");
+
+            // Set name
+            if (ecs.HasComponent<NameComponent>(newEntity)) {
+                ecs.GetComponent<NameComponent>(newEntity).name = newName;
+            }
+
+            // Copy Transform
+            if (ecs.HasComponent<Transform>(sourceEntity)) {
+                Transform sourceTransform = ecs.GetComponent<Transform>(sourceEntity);
+                if (ecs.HasComponent<Transform>(newEntity)) {
+                    ecs.GetComponent<Transform>(newEntity) = sourceTransform;
+                }
+                else {
+                    ecs.AddComponent<Transform>(newEntity, sourceTransform);
+                }
+            }
+
+            // Copy ActiveComponent
+            if (ecs.HasComponent<ActiveComponent>(sourceEntity)) {
+                ActiveComponent sourceActive = ecs.GetComponent<ActiveComponent>(sourceEntity);
+                ecs.AddComponent<ActiveComponent>(newEntity, sourceActive);
+            }
+
+            // Copy ModelRenderComponent
+            if (ecs.HasComponent<ModelRenderComponent>(sourceEntity)) {
+                ModelRenderComponent sourceModel = ecs.GetComponent<ModelRenderComponent>(sourceEntity);
+                ecs.AddComponent<ModelRenderComponent>(newEntity, sourceModel);
+            }
+
+            // Copy SpriteRenderComponent
+            if (ecs.HasComponent<SpriteRenderComponent>(sourceEntity)) {
+                SpriteRenderComponent sourceSprite = ecs.GetComponent<SpriteRenderComponent>(sourceEntity);
+                ecs.AddComponent<SpriteRenderComponent>(newEntity, sourceSprite);
+            }
+
+            // Copy TextRenderComponent
+            if (ecs.HasComponent<TextRenderComponent>(sourceEntity)) {
+                TextRenderComponent sourceText = ecs.GetComponent<TextRenderComponent>(sourceEntity);
+                ecs.AddComponent<TextRenderComponent>(newEntity, sourceText);
+            }
+
+            // Copy LightComponent
+            if (ecs.HasComponent<LightComponent>(sourceEntity)) {
+                LightComponent sourceLight = ecs.GetComponent<LightComponent>(sourceEntity);
+                ecs.AddComponent<LightComponent>(newEntity, sourceLight);
+            }
+
+            // Copy CameraComponent
+            if (ecs.HasComponent<CameraComponent>(sourceEntity)) {
+                CameraComponent sourceCam = ecs.GetComponent<CameraComponent>(sourceEntity);
+                // Don't copy active status for cameras (Unity-like)
+                sourceCam.isActive = false;
+                ecs.AddComponent<CameraComponent>(newEntity, sourceCam);
+            }
+
+            // Copy AudioComponent
+            if (ecs.HasComponent<AudioComponent>(sourceEntity)) {
+                AudioComponent sourceAudio = ecs.GetComponent<AudioComponent>(sourceEntity);
+                ecs.AddComponent<AudioComponent>(newEntity, sourceAudio);
+            }
+
+            // Copy AnimationComponent
+            if (ecs.HasComponent<AnimationComponent>(sourceEntity)) {
+                AnimationComponent sourceAnim = ecs.GetComponent<AnimationComponent>(sourceEntity);
+                ecs.AddComponent<AnimationComponent>(newEntity, sourceAnim);
+
+                // Re-link animator to model if both exist
+                if (ecs.HasComponent<ModelRenderComponent>(newEntity)) {
+                    auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEntity);
+                    auto& animComp = ecs.GetComponent<AnimationComponent>(newEntity);
+                    if (modelComp.model && !animComp.clipPaths.empty()) {
+                        Animator* animator = animComp.EnsureAnimator();
+                        modelComp.SetAnimator(animator);
+                        animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), newEntity);
+                    }
+                }
+            }
+
+            // Copy RigidBodyComponent
+            if (ecs.HasComponent<RigidBodyComponent>(sourceEntity)) {
+                RigidBodyComponent sourceRB = ecs.GetComponent<RigidBodyComponent>(sourceEntity);
+                ecs.AddComponent<RigidBodyComponent>(newEntity, sourceRB);
+            }
+
+            // Copy ColliderComponent
+            if (ecs.HasComponent<ColliderComponent>(sourceEntity)) {
+                ColliderComponent sourceCollider = ecs.GetComponent<ColliderComponent>(sourceEntity);
+                ecs.AddComponent<ColliderComponent>(newEntity, sourceCollider);
+            }
+
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Successfully created duplicate '" + newName + "'");
+        }
+        catch (const std::exception& e) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Failed to create duplicate " + std::to_string(i) + ": " + std::string(e.what()));
+        }
+    }
+}
+
+
 static Entity Lua_FindEntityByName(const std::string& name)
 {
     if (!g_ecsManager) return -1; 

@@ -18,11 +18,12 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        NumberOfLinks = 10,
+        NumberOfLinks = 100,
         ChainSpeed = 10.0,
         MaxLength = 0.0,
         TriggerKey = "G",
         PlayerName = "mixamorig:LeftHand",
+        LinkName = "Link",
         SimulatedHitDistance = 0.0,
         EnableLogs = false,  -- Default off for performance
         AutoStart = false,
@@ -35,7 +36,7 @@ return Component {
 
         -- New: Elasticity control
         IsElastic = true,               -- If false, chain cannot stretch beyond LinkMaxDistance per segment
-        LinkMaxDistance = 0.15,          -- Maximum allowed distance between adjacent links when IsElastic == false
+        LinkMaxDistance = 0.025,          -- Maximum allowed distance between adjacent links when IsElastic == false
 
         -- Read-only status fields (for editor display) - these are authoritative for external scripts
         m_CurrentState = "COMPLETELY_LAX",
@@ -160,6 +161,12 @@ return Component {
 
         if type(Input) ~= "table" then
             self._input_missing = true
+        end
+
+        -- Create the links of the chain
+        if self.NumberOfLinks > 0 then
+            print("[PlayerChain] Creating " .. self.NumberOfLinks .. " links")
+            Engine.CreateEntityDup(self.LinkName, self.LinkName, self.NumberOfLinks)
         end
 
         -- Authoritative state uses m_ fields (avoid redundant copies)
@@ -887,7 +894,7 @@ return Component {
                 end
                 if self.playerTransform then
                     local px, py, pz
-                    local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self.playerTransform) end)
+                    local ok, a, b, c = pcall(function() return Engine.GetTransformPosition(self.playerTransform) end)
                     if ok then
                         px, py, pz = self:_unpack_pos(a, b, c)
                     else
