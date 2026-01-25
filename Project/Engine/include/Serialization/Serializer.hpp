@@ -142,8 +142,6 @@ public:
 
     static void UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 newGUID);
     static void RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
-    static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES);
-
     static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
 
     static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);

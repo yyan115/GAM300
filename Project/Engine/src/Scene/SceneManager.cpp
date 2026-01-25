@@ -489,6 +489,8 @@ void SceneManager::ReloadTempScene() {
         // Re-initialise/reload required systems.
         ecs.cameraSystem->Initialise();
         ecs.modelSystem->Initialise();
+        ecs.textSystem->Initialise();
+        ecs.spriteAnimationSystem->Initialise();
         ecs.animationSystem->Initialise();
         ecs.scriptSystem->ReloadSystem();
 
