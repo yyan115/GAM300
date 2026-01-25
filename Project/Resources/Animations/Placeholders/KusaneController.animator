@@ -1,6 +1,6 @@
 {
     "name": "New Controller",
-    "entryState": "New State",
+    "entryState": "Idle",
     "entryNodePosition": {
         "x": -200.0,
         "y": -100.0
@@ -18,14 +18,14 @@
     ],
     "states": [
         {
-            "id": "New State",
+            "id": "Idle",
             "clipIndex": 9,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -61.62212371826172,
-                "y": -33.93909454345703
+                "x": -12.0,
+                "y": -75.5
             }
         }
     ],
@@ -40,6 +40,7 @@
         "../../Resources/Animations/PlayerSlamChain.fbx",
         "../../Resources/Animations/PlayerRetractChain.fbx",
         "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx",
-        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle.fbx"
+        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle.fbx",
+        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle_NEWNEW.fbx"
     ]
 }
