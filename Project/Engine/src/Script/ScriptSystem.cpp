@@ -282,7 +282,62 @@ static void Lua_CreateEntityDup(const std::string& source_name, const std::strin
         }
     }
 }
+static void Lua_DestroyEntityDup(const std::string& base_name, int numToDestroy)
+{
+    if (!g_ecsManager) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] ECSManager is null");
+        return;
+    }
 
+    ECSManager& ecs = *g_ecsManager;
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroying up to " + std::to_string(numToDestroy) + " entities with base name '" + base_name + "'");
+
+    std::vector<Entity> entitiesToDestroy;
+
+    // Find all entities matching the pattern
+    for (const auto& entity : ecs.GetActiveEntities()) {
+        if (ecs.HasComponent<NameComponent>(entity)) {
+            std::string entityName = ecs.GetComponent<NameComponent>(entity).name;
+
+            // Check if name starts with base_name and has a number
+            if (entityName.find(base_name) == 0) {
+                // Try to extract the number suffix
+                std::string suffix = entityName.substr(base_name.length());
+
+                // Check if suffix is a valid number
+                if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), ::isdigit)) {
+                    entitiesToDestroy.push_back(entity);
+                }
+            }
+        }
+    }
+
+    // Destroy the requested number of entities
+    int destroyedCount = 0;
+    int toDestroy = (numToDestroy <= 0) ? entitiesToDestroy.size() : std::min(numToDestroy, static_cast<int>(entitiesToDestroy.size()));
+
+    for (int i = 0; i < toDestroy; ++i) {
+        Entity entity = entitiesToDestroy[i];
+
+        try {
+            std::string entityName = "Unknown";
+            if (ecs.HasComponent<NameComponent>(entity)) {
+                entityName = ecs.GetComponent<NameComponent>(entity).name;
+            }
+
+            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroying entity '" + entityName + "' (ID: " + std::to_string(entity) + ")");
+
+            ecs.DestroyEntity(entity);
+            destroyedCount++;
+        }
+        catch (const std::exception& e) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Failed to destroy entity: " + std::string(e.what()));
+        }
+    }
+
+    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroyed " + std::to_string(destroyedCount) + " entities");
+}
 
 static Entity Lua_FindEntityByName(const std::string& name)
 {
@@ -667,8 +722,6 @@ void ScriptSystem::Shutdown()
 {
     std::lock_guard<std::mutex> lk(m_mutex);
 
-	g_ecsManager = nullptr;
-
     // best-effort: call OnDisable and release runtime objects
     for (auto& p : m_runtimeMap) {
         auto& scriptVec = p.second;
@@ -681,6 +734,7 @@ void ScriptSystem::Shutdown()
     }
     m_runtimeMap.clear();
 
+    g_ecsManager = nullptr;
     // Clean up standalone instances (used by ButtonComponent)
     for (auto& p : m_standaloneInstances) {
         if (p.second && Scripting::GetLuaState()) {

@@ -346,6 +346,12 @@ return Component {
         end
     end,
 
+    OnDisable = function(self, dt)
+        if self.NumberOfLinks > 0 then
+            print("Deleting chain links")
+            Engine.DestroyEntityDup(self.LinkName, self.NumberOfLinks)
+        end
+    end,
     -------------------------------------------------------------------------
     -- PUBLIC API - Exposed for external scripts
     -------------------------------------------------------------------------

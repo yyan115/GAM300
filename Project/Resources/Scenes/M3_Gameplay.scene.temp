@@ -97496,10 +97496,13 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "MaxLength": 2.0,
+                                "NumberOfLinks": 200.0,
                                 "AutoStart": true,
-                                "NumberOfLinks": 100.0,
-                                "LinkName": "Link"
+                                "VerletGravity": 0.5,
+                                "IsElastic": true,
+                                "MaxLength": 2.0,
+                                "LinkName": "Link",
+                                "ConstraintIterations": 20.0
                             }
                         }
                     ]
