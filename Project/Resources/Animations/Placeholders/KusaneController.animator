@@ -19,7 +19,7 @@
     "states": [
         {
             "id": "New State",
-            "clipIndex": 8,
+            "clipIndex": 9,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -39,6 +39,7 @@
         "../../Resources/Animations/PlayerSlashAround.fbx",
         "../../Resources/Animations/PlayerSlamChain.fbx",
         "../../Resources/Animations/PlayerRetractChain.fbx",
-        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx"
+        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx",
+        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle.fbx"
     ]
 }
