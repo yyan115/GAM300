@@ -1,6 +1,6 @@
  #include "pch.h"
-#include "PrefabIO.hpp"
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabIO.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -23,6 +23,7 @@
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include <Serialization/Serializer.hpp>
+#include <Graphics/Model/ModelFactory.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -37,7 +38,7 @@ template <typename T> inline bool IsOverriddenFromPrefab(const T& t) {
     else                                return false;
 }
 
-static inline void EnsurePrefabLinkOn(ECSManager& ecs, Entity e, const std::string& canonicalPath)
+void EnsurePrefabLinkOn(ECSManager& ecs, Entity e, const std::string& canonicalPath)
 {
     if (!ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) return;
 
@@ -221,7 +222,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
 }
 
-ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
 {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -229,93 +230,227 @@ ENGINE_API bool InstantiatePrefabFromFile(const std::string& prefabPath)
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
-    if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
+    // Save the prefab path as a relative path from the current working directory
+    // If in editor, this should be "../../Resources/..."
+    std::filesystem::path p(tryPath);
+    std::error_code relEc;
 
-    std::ifstream f(tryPath, std::ios::binary);
-    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
+    // Calculates 'p' relative to std::filesystem::current_path()
+    std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
+    std::string finalRelativePath;
+
+    if (!relEc) {
+        // Success: Convert to generic string (forward slashes)
+        finalRelativePath = relativePath.generic_string();
+    }
+    else {
+        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
+        finalRelativePath = tryPath;
+    }
+
+    if (!std::filesystem::exists(finalRelativePath)) { std::cerr << "[PrefabIO] Prefab file does not exist: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+
+    std::ifstream f(finalRelativePath, std::ios::binary);
+    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
     const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return false;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << tryPath << "\n"; return true; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return false;
+        return MAX_ENTITIES;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
     Entity prefab = SpawnPrefab(ents, ecs);
-    EnsurePrefabLinkOn(ecs, prefab, tryPath);
+    EnsurePrefabLinkOn(ecs, prefab, finalRelativePath);
 
-    return true;
+    // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
+    if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
+        auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+    }
+
+    // Ensure the root prefab object has no parent component.
+    if (ecs.HasComponent<ParentComponent>(prefab)) {
+        ecs.RemoveComponent<ParentComponent>(prefab);
+    }
+
+    return prefab;
 }
 
-// ============ INSTANTIATE INTO EXISTING (propagate/update) ============
-// NOTE: added 'resolveAssets' parameter (default it in the header).
-ENGINE_API bool InstantiatePrefabIntoEntity(
-    ECSManager& ecs,
-    AssetManager& /*assets*/,
-    const std::string& prefabPath,
-    Entity intoEntity,
-    bool keepExistingPosition,
-    bool resolveAssets)
-{
+ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Entity intoEntity) {
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
     std::error_code ec;
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
-    if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
+    // Save the prefab path as a relative path from the current working directory
+    // If in editor, this should be "../../Resources/..."
+    std::filesystem::path p(tryPath);
+    std::error_code relEc;
 
-    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
-    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
-        if (!ecs.HasComponent<PrefabLinkComponent>(intoEntity))
-            ecs.AddComponent<PrefabLinkComponent>(intoEntity, PrefabLinkComponent{});
+    // Calculates 'p' relative to std::filesystem::current_path()
+    std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
+    std::string finalRelativePath;
 
-        auto& link = ecs.GetComponent<PrefabLinkComponent>(intoEntity);
-        link.prefabPath = tryPath; // canonical path (same normalization PrefabEditor uses)
+    if (!relEc) {
+        // Success: Convert to generic string (forward slashes)
+        finalRelativePath = relativePath.generic_string();
+    }
+    else {
+        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
+        finalRelativePath = tryPath;
     }
 
-    EnsurePrefabLinkOn(ecs, intoEntity, tryPath);
+    if (!std::filesystem::exists(finalRelativePath)) { std::cerr << "[PrefabIO] File does not exist: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
 
-    std::string json;
-    {
-        std::ifstream f(tryPath, std::ios::binary);
-        if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
-        json.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-    }
+    std::ifstream f(finalRelativePath, std::ios::binary);
+    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
-    if (doc.HasParseError() || !doc.IsObject()) { std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return false; }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab empty: " << tryPath << "\n"; return true; }
-
-    Vector3D prevLocalPos{};
-    bool hadPrevTransform = false;
-    if (keepExistingPosition && ecs.HasComponent<Transform>(intoEntity)) {
-        prevLocalPos = ecs.GetComponent<Transform>(intoEntity).localPosition;
-        hadPrevTransform = true;
+    if (doc.HasParseError() || !doc.IsObject()) {
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+    }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
+        ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
+        return MAX_ENTITIES;
     }
 
-    SpawnGuard guard(keepExistingPosition, intoEntity);
+    const rapidjson::Value& ents = doc["prefab_entities"];
 
-    for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it) {
-        const char* typeName = it->name.GetString();
-        try { ApplyOne(ecs, intoEntity, typeName, it->value, /*fromPrefabUpdate*/true, resolveAssets); }
-        catch (const std::exception& ex) { std::cerr << "[PrefabIO] Exception applying '" << typeName << "': " << ex.what() << "\n"; }
-        catch (...) { std::cerr << "[PrefabIO] Unknown error applying '" << typeName << "'\n"; }
+    // Before deleting the existing prefab instance, store a copy of its transform to restore its original values later.
+	Transform prevTransform = ecs.GetComponent<Transform>(intoEntity);
+    std::string prevName = ecs.GetComponent<NameComponent>(intoEntity).name;
+
+    // Capture Parent Info
+    Entity parentEntity = static_cast<Entity>(-1);
+    if (ecs.HasComponent<ParentComponent>(intoEntity)) {
+        parentEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecs.GetComponent<ParentComponent>(intoEntity).parent);
     }
 
-    if (keepExistingPosition && hadPrevTransform && ecs.HasComponent<Transform>(intoEntity)) {
-        auto& t = ecs.GetComponent<Transform>(intoEntity);
-        t.localPosition = prevLocalPos;
-        t.isDirty = true;
+	// Delete the existing prefab instance entity and spawn a new one in its place.
+    ecs.DestroyEntity(intoEntity);
+
+    Entity prefab = SpawnPrefab(ents, ecs);
+    EnsurePrefabLinkOn(ecs, prefab, finalRelativePath);
+
+    // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
+    if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
+        auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
     }
 
-    return true;
+    // Ensure the root prefab object has no parent component.
+    if (ecs.HasComponent<ParentComponent>(prefab)) {
+        ecs.RemoveComponent<ParentComponent>(prefab);
+    }
+
+	// Restore the previous transform values to keep the same position and rotation.
+    if (ecs.HasComponent<Transform>(prefab)) {
+		auto& transform = ecs.GetComponent<Transform>(prefab);
+        transform.localPosition = prevTransform.localPosition;
+        transform.localRotation = prevTransform.localRotation;
+		transform.isDirty = true; // Mark for update
+    }
+
+    // Restore the previous name.
+    if (ecs.HasComponent<NameComponent>(prefab)) {
+        auto& nameComp = ecs.GetComponent<NameComponent>(prefab);
+        nameComp.name = prevName;
+    }
+
+    // Restore Parent Link
+    if (parentEntity != static_cast<Entity>(-1)) {
+        // 1. Add ParentComponent to the new entity
+        if (!ecs.HasComponent<ParentComponent>(prefab)) {
+            ecs.AddComponent<ParentComponent>(prefab, ParentComponent{});
+        }
+        ecs.GetComponent<ParentComponent>(prefab).parent = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(parentEntity);
+
+        // 2. Add new entity GUID to the Parent's ChildrenComponent
+        if (!ecs.HasComponent<ChildrenComponent>(parentEntity)) {
+            ecs.AddComponent<ChildrenComponent>(parentEntity, ChildrenComponent{});
+        }
+        auto& parentChildren = ecs.GetComponent<ChildrenComponent>(parentEntity);
+        GUID_128 newGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(prefab);
+        parentChildren.children.push_back(newGUID);
+    }
+
+    return prefab;
 }
+
+//// ============ INSTANTIATE INTO EXISTING (propagate/update) ============
+//// NOTE: added 'resolveAssets' parameter (default it in the header).
+//ENGINE_API bool InstantiatePrefabIntoEntity(
+//    ECSManager& ecs,
+//    AssetManager& /*assets*/,
+//    const std::string& prefabPath,
+//    Entity intoEntity,
+//    bool keepExistingPosition,
+//    bool resolveAssets)
+//{
+//    std::error_code ec;
+//    std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
+//    const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
+//
+//    if (!std::filesystem::exists(tryPath)) { std::cerr << "[PrefabIO] File does not exist: " << tryPath << "\n"; return false; }
+//
+//    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
+//    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
+//        if (!ecs.HasComponent<PrefabLinkComponent>(intoEntity))
+//            ecs.AddComponent<PrefabLinkComponent>(intoEntity, PrefabLinkComponent{});
+//
+//        auto& link = ecs.GetComponent<PrefabLinkComponent>(intoEntity);
+//        link.prefabPath = tryPath; // canonical path (same normalization PrefabEditor uses)
+//    }
+//
+//    EnsurePrefabLinkOn(ecs, intoEntity, tryPath);
+//
+//    std::string json;
+//    {
+//        std::ifstream f(tryPath, std::ios::binary);
+//        if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << tryPath << "\n"; return false; }
+//        json.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+//    }
+//
+//    rapidjson::Document doc;
+//    doc.Parse(json.c_str());
+//    if (doc.HasParseError() || !doc.IsObject()) { std::cerr << "[PrefabIO] Invalid JSON in " << tryPath << "\n"; return false; }
+//    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab empty: " << tryPath << "\n"; return true; }
+//
+//    Vector3D prevLocalPos{};
+//    bool hadPrevTransform = false;
+//    if (keepExistingPosition && ecs.HasComponent<Transform>(intoEntity)) {
+//        prevLocalPos = ecs.GetComponent<Transform>(intoEntity).localPosition;
+//        hadPrevTransform = true;
+//    }
+//
+//    SpawnGuard guard(keepExistingPosition, intoEntity);
+//
+//    for (auto it = doc.MemberBegin(); it != doc.MemberEnd(); ++it) {
+//        const char* typeName = it->name.GetString();
+//        try { ApplyOne(ecs, intoEntity, typeName, it->value, /*fromPrefabUpdate*/true, resolveAssets); }
+//        catch (const std::exception& ex) { std::cerr << "[PrefabIO] Exception applying '" << typeName << "': " << ex.what() << "\n"; }
+//        catch (...) { std::cerr << "[PrefabIO] Unknown error applying '" << typeName << "'\n"; }
+//    }
+//
+//    if (keepExistingPosition && hadPrevTransform && ecs.HasComponent<Transform>(intoEntity)) {
+//        auto& t = ecs.GetComponent<Transform>(intoEntity);
+//        t.localPosition = prevLocalPos;
+//        t.isDirty = true;
+//    }
+//
+//    return true;
+//}
 
 // ============ SAVE ============
 template <typename T>

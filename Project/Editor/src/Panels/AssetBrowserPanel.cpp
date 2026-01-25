@@ -22,7 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "GUIManager.hpp"
 #include "EditorComponents.hpp"
 #include "Prefab.hpp"
-#include "PrefabIO.hpp"
+#include "Prefab/PrefabIO.hpp"
 #include "PrefabComponent.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include <rapidjson/writer.h>
@@ -68,6 +68,8 @@ static std::unordered_map<uint64_t, std::string> FallbackGuidToPath;
 #include <shellapi.h>
 #include <commdlg.h>
 #endif
+#include <Panels/ScenePanel.hpp>
+#include <Prefab/PrefabLinkComponent.hpp>
 
 // Thumbnail/grid
 static constexpr float THUMBNAILBASESIZE = 96.0f;
@@ -708,8 +710,27 @@ void AssetBrowserPanel::RenderAssetGrid()
             else if (isPrefab && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
-                    ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
-                        static_cast<int>(absPath.size()) + 1);
+
+                    // Set the prefab path as a relative path from the current working directory
+                    // If in editor, this should be "../../Resources/..."
+                    std::filesystem::path p(absPath);
+                    std::error_code relEc;
+
+                    // Calculates 'p' relative to std::filesystem::current_path()
+                    std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
+                    std::string finalRelativePath;
+
+                    if (!relEc) {
+                        // Success: Convert to generic string (forward slashes)
+                        finalRelativePath = relativePath.generic_string();
+                    }
+                    else {
+                        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
+                        finalRelativePath = absPath;
+                    }
+
+                    ImGui::SetDragDropPayload("PREFAB_PATH", finalRelativePath.c_str(),
+                        static_cast<int>(finalRelativePath.size()) + 1);
                     ImGui::Text("Prefab: %s", asset.fileName.c_str());
                     ImGui::EndDragDropSource();
                 }
@@ -729,10 +750,30 @@ void AssetBrowserPanel::RenderAssetGrid()
                 std::string lowerExt = asset.extension;
                 std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
                 if (lowerExt == ".prefab") {
-                    GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+                    // Set the prefab path as a relative path from the current working directory
+                    // If in editor, this should be "../../Resources/..."
+                    std::filesystem::path p(asset.filePath);
+                    std::error_code relEc;
 
-                    // Open the prefab editor
-                    PrefabEditor::Open(asset.filePath);
+                    // Calculates 'p' relative to std::filesystem::current_path()
+                    std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
+                    std::string finalRelativePath;
+
+                    if (!relEc) {
+                        // Success: Convert to generic string (forward slashes)
+                        finalRelativePath = relativePath.generic_string();
+                    }
+                    else {
+                        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
+                        finalRelativePath = asset.filePath;
+                    }
+
+                    PrefabEditor::StartEditingPrefab(finalRelativePath);
+
+                    //GUIManager::SetSelectedAsset(GUID_128{ 0, 0 });
+
+                    //// Open the prefab editor
+                    //PrefabEditor::Open(asset.filePath);
                     // Early return so the rest of this frame doesn't re-use selection state
                     ImGui::PopID();
                     ImGui::EndGroup();
@@ -1052,6 +1093,42 @@ void AssetBrowserPanel::RenderAssetGrid()
 
                     if (ok) ENGINE_PRINT("[AssetBrowserPanel] Saved prefab: ", absDst, "\n");
                     else ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Failed to save: " , absDst, "\n");
+
+                    // Set the dragged entity as a prefab.
+                    std::error_code ec;
+                    std::filesystem::path canon = std::filesystem::weakly_canonical(absDst, ec);
+                    std::string tryPath = (ec ? std::filesystem::path(absDst) : canon).generic_string();
+
+                    // Save the prefab path as a relative path from the current working directory
+					// If in editor, this should be "../../Resources/..."
+                    std::filesystem::path p(tryPath);
+                    std::error_code relEc;
+
+                    // Calculates 'p' relative to std::filesystem::current_path()
+                    std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
+					std::string finalRelativePath;
+
+                    if (!relEc) {
+                        // Success: Convert to generic string (forward slashes)
+                        finalRelativePath = relativePath.generic_string();
+                    }
+                    else {
+                        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
+                        finalRelativePath = tryPath;
+                    }
+
+                    if (!std::filesystem::exists(finalRelativePath)) { std::cerr << "[AssetBrowserPanel] Prefab file does not exist: " << finalRelativePath << "\n"; }
+
+                    // Ensure the instance carries a PrefabLinkComponent pointing to this prefab
+                    if (ecs.IsComponentTypeRegistered<PrefabLinkComponent>()) {
+                        if (!ecs.HasComponent<PrefabLinkComponent>(dropped))
+                            ecs.AddComponent<PrefabLinkComponent>(dropped, PrefabLinkComponent{});
+
+                        auto& link = ecs.GetComponent<PrefabLinkComponent>(dropped);
+                        link.prefabPath = finalRelativePath;
+                    }
+
+                    EnsurePrefabLinkOn(ecs, dropped, finalRelativePath);
 
                     RefreshAssets();
                 }

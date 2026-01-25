@@ -115,9 +115,11 @@ public:
 		return entityManager->GetActiveEntities();
 	}
 
-	std::vector<Entity> GetAllEntities() const {
+	std::vector<Entity> ENGINE_API GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
+
+	std::vector<Entity> GetAllRootEntities();
 
 	/**
 	 * @brief Check if an entity is active considering its entire parent hierarchy.

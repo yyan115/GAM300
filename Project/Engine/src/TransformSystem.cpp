@@ -8,6 +8,7 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Math/Matrix3x3.hpp>
 #include "Performance/PerformanceProfiler.hpp"
+#include <ECS/NameComponent.hpp>
 
 void TransformSystem::Initialise() {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -81,6 +82,13 @@ void TransformSystem::UpdateTransform(Entity entity) {
 		// If the entity has a parent
 		if (parentCompOpt.has_value()) {
 			auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+			GUID_128 parentGUID = parentCompOpt->get().parent;
+			Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
+			if (parentEntity == static_cast<Entity>(-1)) {
+				std::cerr << "[TransformSystem] ERROR: Entity '" << ecsManager.GetComponent<NameComponent>(entity).name
+					<< "' (" << entity << ") has invalid parent GUID: "
+					<< GUIDUtilities::ConvertGUID128ToString(parentGUID) << "\n";
+			}
 			auto& parentTransform = ecsManager.GetComponent<Transform>(guidRegistry.GetEntityByGUID(parentCompOpt->get().parent));
 			//auto& rootParentTransform = GetRootParentTransform(entity);
 			//transform.worldMatrix = parentTransform.worldMatrix * CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
@@ -113,16 +121,25 @@ void TransformSystem::UpdateTransform(Entity entity) {
 }
 
 void TransformSystem::TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform) {
-	// Update its own transform first.
 	updateTransform(entity);
 
-	// Then traverse children.
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
 		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
+
+		std::string entityName = ecsManager.HasComponent<NameComponent>(entity)
+			? ecsManager.GetComponent<NameComponent>(entity).name
+			: "Unnamed";
+
 		for (const auto& childGUID : childrenComp.children) {
 			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			if (child == static_cast<Entity>(-1)) {
+				std::cerr << "[TransformSystem] ERROR: Entity '" << entityName
+					<< "' (" << entity << ") has invalid child GUID: "
+					<< GUIDUtilities::ConvertGUID128ToString(childGUID) << "\n";
+				continue; // Skip this invalid child
+			}
 			TraverseHierarchy(child, updateTransform);
 		}
 	}
@@ -247,7 +264,19 @@ Vector3D& TransformSystem::GetWorldScale(Entity entity) {
 }
 
 void TransformSystem::SetDirtyRecursive(Entity entity) {
-	ECSManager & ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	//// --- DEBUG LOG START: Current Entity ---
+	//std::string entityName = "Unnamed";
+	//if (ecsManager.HasComponent<NameComponent>(entity)) {
+	//	entityName = ecsManager.GetComponent<NameComponent>(entity).name;
+	//}
+
+	//// Print: [TransformSystem] Setting Dirty: EntityID 5 [Goblin_Root]
+	//std::cout << "[TransformSystem] Setting Dirty: EntityID " << static_cast<uint64_t>(entity)
+	//	<< " [" << entityName << "]" << std::endl;
+	//// --- DEBUG LOG END ---
+
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
 	transform.isDirty = true;
 
@@ -255,6 +284,19 @@ void TransformSystem::SetDirtyRecursive(Entity entity) {
 		auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
 		for (const auto& childGUID : children) {
 			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+
+			//// --- DEBUG LOG START: Recursion Info ---
+			//std::string childName = "Unnamed";
+			//if (ecsManager.HasComponent<NameComponent>(child)) {
+			//	childName = ecsManager.GetComponent<NameComponent>(child).name;
+			//}
+
+			//// Print with indentation to show hierarchy depth
+			////     -> Recursing to Child: EntityID 6 [Goblin_Arm]
+			//std::cout << "    -> Recursing to Child: EntityID " << static_cast<uint64_t>(child)
+			//	<< " [" << childName << "]" << std::endl;
+			//// --- DEBUG LOG END ---
+
 			SetDirtyRecursive(child);
 		}
 	}
@@ -269,4 +311,40 @@ Transform& TransformSystem::GetRootParentTransform(Entity currentEntity) {
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(currentEntity).parent);
 		return GetRootParentTransform(parent);
 	}
+}
+
+std::vector<Entity> TransformSystem::GetAllChildEntitiesVector(Entity parentEntity) {
+	std::vector<Entity> allChildEntities;
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
+		for (const auto& childGUID : childrenComp.children) {
+			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			allChildEntities.push_back(child);
+			// Recursively get grandchildren
+			auto grandchildren = GetAllChildEntitiesVector(child);
+			allChildEntities.insert(allChildEntities.end(), grandchildren.begin(), grandchildren.end());
+		}
+	}
+
+	return allChildEntities;
+}
+
+std::set<Entity> TransformSystem::GetAllChildEntitiesSet(Entity parentEntity) {
+	std::set<Entity> allChildEntities;
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
+		for (const auto& childGUID : childrenComp.children) {
+			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			allChildEntities.insert(child);
+			// Recursively get grandchildren
+			auto grandchildren = GetAllChildEntitiesSet(child);
+			allChildEntities.insert(grandchildren.begin(), grandchildren.end());
+		}
+	}
+
+	return allChildEntities;
 }
