@@ -53,19 +53,24 @@ Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject 
         }
         LOGI("FMOD JNI initialized successfully");
 
-        // Initialize Engine (includes AudioManager::Initialise())
+        // Initialize Engine (but NOT input config yet - need AssetManager first)
+        // This creates the platform but doesn't load assets
         Engine::Initialize();
 
-        // Set the AssetManager in the Android platform BEFORE asset loading
+        // Set the AssetManager in the Android platform BEFORE loading input config
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
             androidPlatform->SetAssetManager(nativeAssetManager);
             LOGI("AssetManager set in Android platform");
 
-            // Now initialize assets using Engine method
+            // Initialize assets first (preserve original order)
             Engine::InitializeAssets();
             LOGI("Engine assets initialized");
+
+            // Load input config after assets are initialized
+            Engine::LoadInputConfig();
+            LOGI("Input config loaded");
         }
 
         GameManager::Initialize();
@@ -157,12 +162,12 @@ Java_com_gam300_game_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_onTouchEvent(JNIEnv* env, jobject /* this */, jint action, jfloat x, jfloat y) {
+Java_com_gam300_game_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* this */, jint action, jint pointerId, jfloat x, jfloat y) {
     if (engineInitialized) {
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
-            androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<float>(x), static_cast<float>(y));
+            androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<int>(pointerId), static_cast<float>(x), static_cast<float>(y));
         }
     }
 }

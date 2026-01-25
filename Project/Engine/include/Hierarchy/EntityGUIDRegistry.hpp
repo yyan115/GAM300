@@ -21,6 +21,19 @@ public:
 		}
 	}
 
+	void Unregister(const GUID_128& guid) {
+		auto it = guidToEntityMap.find(guid);
+		if (it != guidToEntityMap.end()) {
+			entityToGuidMap.erase(it->second);
+			guidToEntityMap.erase(it);
+		}
+	}
+	
+	void Clear() {
+		guidToEntityMap.clear();
+		entityToGuidMap.clear();
+	}
+
 	Entity GetEntityByGUID(const GUID_128& guid) const {
 		auto it = guidToEntityMap.find(guid);
 		if (it != guidToEntityMap.end()) {
@@ -39,6 +52,11 @@ public:
 
 		std::cerr << "[EntityGUIDRegistry] ERROR: Entity ID not found in registry." << std::endl;
 		return GUID_128{ 0, 0 }; // or some invalid GUID value
+	}
+
+	void Reset() {
+		guidToEntityMap.clear();
+		entityToGuidMap.clear();
 	}
 
 private:

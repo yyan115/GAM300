@@ -234,7 +234,6 @@ bool ScriptSerializer::LuaValueToJson(lua_State* L, int idx,
             out->CopyFrom(tmp, *alloc);
             return true;
         }
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer: userdata at stack index %d not serializable", absIdx);
         out->SetNull();
         return true;
     }

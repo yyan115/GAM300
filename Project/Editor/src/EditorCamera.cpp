@@ -4,7 +4,7 @@
 
 EditorCamera::EditorCamera(glm::vec3 target, float distance)
     : Target(target), Distance(distance), Yaw(0.0f), Pitch(20.0f),
-      Zoom(45.0f), MinDistance(1.0f), MaxDistance(50.0f),
+      Zoom(45.0f), MinDistance(0.01f), MaxDistance(10000.0f),
       OrbitSensitivity(0.5f), ZoomSensitivity(2.0f), PanSensitivity(0.03f),
       OrthoZoomLevel(1.0f)
 {
@@ -127,14 +127,25 @@ void EditorCamera::ProcessInput(float deltaTime, bool isWindowHovered,
 
     // Zoom with scroll wheel
     if (scrollDelta != 0.0f) {
-        // In 2D mode, zoom affects orthographic scale instead of distance
-        // We could check EditorState here, but for simplicity, always update both
-        Distance -= scrollDelta * ZoomSensitivity;
+        // Use proportional zoom - zoom speed scales with current distance
+        // This makes zooming feel natural: slower when close, faster when far
+        float zoomFactor = 0.15f;  // 15% per scroll step
+        if (scrollDelta > 0) {
+            // Zoom in - multiply by (1 - factor)
+            Distance *= (1.0f - zoomFactor);
+        } else {
+            // Zoom out - multiply by (1 + factor)
+            Distance *= (1.0f + zoomFactor);
+        }
         Distance = std::clamp(Distance, MinDistance, MaxDistance);
 
-        // For 2D orthographic zoom: scroll up = zoom in (smaller zoom level)
-        OrthoZoomLevel -= scrollDelta * 0.1f;
-        OrthoZoomLevel = std::clamp(OrthoZoomLevel, 0.1f, 5.0f);
+        // For 2D orthographic zoom: use same proportional approach
+        if (scrollDelta > 0) {
+            OrthoZoomLevel *= (1.0f - zoomFactor);
+        } else {
+            OrthoZoomLevel *= (1.0f + zoomFactor);
+        }
+        OrthoZoomLevel = std::clamp(OrthoZoomLevel, 0.001f, 100.0f);
 
         UpdateCameraVectors();
     }

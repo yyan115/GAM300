@@ -22,6 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <sstream>
 #include <iomanip>
 #include <cctype>
+#include <Panels/PrefabEditorPanel.hpp>
 
 // Initialize static registries
 std::unordered_map<std::string, ReflectionRenderer::CustomFieldRenderer>&
@@ -74,7 +75,7 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
     if (componentRenderers.find(componentType) != componentRenderers.end()) {
         bool skipDefaultRendering = componentRenderers[componentType](componentPtr, typeDesc, entity, ecsManager);
         if (skipDefaultRendering) {
-            return true;  // Custom renderer handled everything, skip default field rendering
+            return false;  // Custom renderer handled everything, skip default field rendering
         }
         // If it returns false, continue with default field rendering below
     }
@@ -119,6 +120,11 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
 
         // Render using type-based renderer (has its own snapshot handling in RenderField)
         modified |= RenderField(member.name, fieldPtr, member.type, entity, ecsManager);
+    }
+
+    if (modified && PrefabEditor::IsInPrefabEditorMode()) {
+        std::cout << "[ReflectionRenderer] Modified prefab component, saving prefab changes..." << std::endl;
+		PrefabEditor::SaveEditedPrefab();
     }
 
     return modified;

@@ -70,7 +70,7 @@ public:
     void SetLoop(bool shouldLoop);
     void SetMute(bool shouldMute);
     void ENGINE_API SetSpatialBlend(float blend);
-    void SetOutputAudioMixerGroup(const std::string& groupName);
+    void ENGINE_API SetOutputAudioMixerGroup(const std::string& groupName);
     void SetMinDistance(float distance);
     void SetMaxDistance(float distance);
     

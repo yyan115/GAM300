@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <Scene/SceneInstance.hpp>
-#include <Input/InputManager.hpp>
+#include <Input/InputManager.h>
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
 #include <cmath>
@@ -126,10 +126,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
+	ecsManager.uiAnchorSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("UI Anchor system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
-	ecsManager.sliderSystem->Initialise(ecsManager);
-	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.sliderSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Slider system initialized");
 
@@ -344,15 +344,16 @@ void SceneInstance::processInput(float deltaTime)
 		camera->ProcessKeyboard(RIGHT, 0.004f);
 	}*/
 
+	// TODO: Migrate debug camera controls to new input system action bindings
 	// Zoom with keys (N to zoom out, M to zoom in)
-	if (InputManager::GetKey(Input::Key::N))
-		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
-	if (InputManager::GetKey(Input::Key::M))
-		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
+	//if (InputManager::GetKey(Input::Key::N))
+	//	mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
+	//if (InputManager::GetKey(Input::Key::M))
+	//	mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
 
 	// Test camera shake with Spacebar
-	if (InputManager::GetKeyDown(Input::Key::SPACE))
-		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
+	//if (InputManager::GetKeyDown(Input::Key::SPACE))
+	//	mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
 	//// MADE IT so that you must drag to look around
 	////
@@ -399,12 +400,13 @@ void SceneInstance::processInput(float deltaTime)
 	//	firstMouse = true;
 	//}
 
-	if (InputManager::GetKeyDown(Input::Key::H))
-	{
-		auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
-		hdr->SetEnabled(!hdr->IsEnabled());
-		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
-	}
+	// TODO: Migrate debug toggle to new input system action bindings
+	//if (InputManager::GetKeyDown(Input::Key::H))
+	//{
+	//	auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
+	//	hdr->SetEnabled(!hdr->IsEnabled());
+	//	ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
+	//}
 	// Sync camera state back to component and transform
 	camComp.fov = camera->Zoom;
 	camComp.yaw = camera->Yaw;

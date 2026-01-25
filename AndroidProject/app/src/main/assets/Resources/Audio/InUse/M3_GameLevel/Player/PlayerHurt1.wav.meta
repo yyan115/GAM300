@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00300b8214cce4cb-00035fcbf200002f",
-        "source": "../../Resources/Audio/_InUse/M3_GameLevel/Player/PlayerHurt1.wav",
-        "compiled": "../../Resources/Audio/_InUse/M3_GameLevel/Player/PlayerHurt1.wav",
-        "android_compiled": "Resources/Audio/InUse/M3_GameLevel/Player/PlayerHurt1.wav"
-    }
-}

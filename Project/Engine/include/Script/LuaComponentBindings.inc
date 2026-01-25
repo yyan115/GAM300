@@ -6,6 +6,11 @@
 // Value-like types (Math types)
 // ============================================================================
 
+BEGIN_COMPONENT(Vector2D, "Vector2D")
+    PROPERTY("x", &Vector2D::x)
+    PROPERTY("y", &Vector2D::y)
+END_COMPONENT()
+
 BEGIN_COMPONENT(Vector3D, "Vector3D")
     PROPERTY("x", &Vector3D::x)
     PROPERTY("y", &Vector3D::y)
@@ -93,6 +98,24 @@ BEGIN_COMPONENT(SpriteAnimationComponent, "SpriteAnimationComponent")
     METHOD("Stop", &SpriteAnimationComponent::Stop)
     METHOD("Resume", &SpriteAnimationComponent::Resume)
 END_COMPONENT()
+
+// ============================================================================
+// Sprite Animation Component
+// ============================================================================
+
+BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
+    // Properties
+    PROPERTY("isVisible", &SpriteRenderComponent::isVisible)
+    PROPERTY("position", &SpriteRenderComponent::position)
+    PROPERTY("scale", &SpriteRenderComponent::scale)
+    PROPERTY("rotation", &SpriteRenderComponent::rotation)
+    PROPERTY("color", &SpriteRenderComponent::color)
+    PROPERTY("alpha", &SpriteRenderComponent::alpha)
+END_COMPONENT()
+
+
+
+
 
 // ============================================================================
 // AI/Brain Components
@@ -397,6 +420,18 @@ BEGIN_COMPONENT(LayerComponent, "LayerComponent")
     METHOD("IsInLayer", &LayerComponent::IsInLayer)
     METHOD("GetLayerMask", &LayerComponent::GetLayerMask)
 END_COMPONENT()
+
+BEGIN_COMPONENT(ButtonComponent, "ButtonComponent")
+    PROPERTY("interactable", &ButtonComponent::interactable)
+END_COMPONENT()
+
+BEGIN_COMPONENT(ActiveComponent, "ActiveComponent")
+    PROPERTY("isActive", &ActiveComponent::isActive)
+END_COMPONENT()
+
+
+
+
 
 // ============================================================================
 // Hierarchy Components (read-only for Lua - managed by engine)

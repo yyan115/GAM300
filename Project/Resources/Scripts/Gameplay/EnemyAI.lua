@@ -3,16 +3,16 @@ require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local StateMachine       = require("Gameplay.StateMachine")
-local GroundIdleState    = require("Gameplay.GroundIdleState")
-local GroundAttackState  = require("Gameplay.GroundAttackState")
-local GroundHurtState    = require("Gameplay.GroundHurtState")
-local GroundDeathState   = require("Gameplay.GroundDeathState")
-local GroundHookedState  = require("Gameplay.GroundHookedState")
-local GroundPatrolState  = require("Gameplay.GroundPatrolState")
-local GroundChaseState = require("Gameplay.GroundChaseState")
+local StateMachine       = require("GamePlay.StateMachine")
+local GroundIdleState    = require("GamePlay.GroundIdleState")
+local GroundAttackState  = require("GamePlay.GroundAttackState")
+local GroundHurtState    = require("GamePlay.GroundHurtState")
+local GroundDeathState   = require("GamePlay.GroundDeathState")
+local GroundHookedState  = require("GamePlay.GroundHookedState")
+local GroundPatrolState  = require("GamePlay.GroundPatrolState")
+local GroundChaseState = require("GamePlay.GroundChaseState")
 
-local KnifePool = require("Gameplay.KnifePool")
+local KnifePool = require("GamePlay.KnifePool")
 local Input = _G.Input
 local Time  = _G.Time
 local Physics = _G.Physics
@@ -256,8 +256,17 @@ return Component {
 
         self._motionID = self._rb and self._rb.motionID or nil
 
-        if Input.GetKeyDown(Input.Key.H) then self:ApplyHit(1) end
-        if Input.GetKeyDown(Input.Key.J) then self:ApplyHook(4.0) end
+        -- DEBUG print less spammy
+        -- self._dbgT = (self._dbgT or 0) + dt
+        -- if self._dbgT > 1.0 then
+        --     self._dbgT = 0
+        --     print("[EnemyRB] motionID=", tostring(self._motionID),
+        --         "gravityFactor=", tostring(self._rb and self._rb.gravityFactor))
+        -- end
+
+        -- DEBUG (disabled for unified input - no debug keys mapped)
+        -- if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
+        -- if Input.IsActionJustPressed("DebugHook") then self:ApplyHook(4.0) end
 
         -- TEMP DEBUG: press K to force a small move step
         if Input.GetKeyDown(Input.Key.K) then
@@ -307,6 +316,7 @@ return Component {
         if not tr then return math.huge end
 
         local pp = Engine.GetTransformPosition(tr)
+        if not pp then return math.huge end
         local px, pz = pp[1], pp[3]
 
         -- enemy position MUST be current (controller-based if available)
@@ -317,6 +327,9 @@ return Component {
             local x, _, z = self:GetPosition()
             ex, ez = x, z
         end
+
+        -- Safety check: if position is nil, return huge distance
+        if ex == nil or ez == nil then return math.huge end
 
         local dx, dz = px - ex, pz - ez
         return dx*dx + dz*dz
@@ -560,9 +573,12 @@ return Component {
         if not tr then return end
 
         local pp = Engine.GetTransformPosition(tr)
+        if not pp then return end
         local px, pz = pp[1], pp[3]
 
         local ex, ez = self:GetEnemyPosXZ()
+        -- Safety check: if position is nil, skip facing
+        if ex == nil or ez == nil then return end
         local dx, dz = px - ex, pz - ez
 
         local q = { yawQuatFromDir(dx, dz) }
@@ -589,6 +605,7 @@ return Component {
         if not tr then return false end
 
         local pp = Engine.GetTransformPosition(tr)
+        if not pp then return false end
         local px, pz = pp[1], pp[3]
 
         local ex, ez
@@ -603,6 +620,9 @@ return Component {
             ex, ez = x, z
         end
 
+        -- Safety check: if position is nil, return false (not in range)
+        if ex == nil or ez == nil then return false end
+
         local dx, dz = (px - ex), (pz - ez)
         return (dx*dx + dz*dz) <= (range * range)
     end,
@@ -613,6 +633,7 @@ return Component {
             if pos then return pos.x, pos.z end
         end
         local x, _, z = self:GetPosition()
+        -- Return nil if position is not available (caller should handle)
         return x, z
     end,
 
@@ -621,10 +642,14 @@ return Component {
         if not knife then return end
 
         local ex, ey, ez = self:GetPosition()
+        -- Safety check: if position is nil, skip spawning
+        if ex == nil or ey == nil or ez == nil then return end
+
         local tr = self._playerTr
         if not tr then return end
 
         local pp = Engine.GetTransformPosition(tr)
+        if not pp then return end
         local px, py, pz = pp[1], pp[2] + 0.5, pp[3]
 
         local spawnX = ex - 0.5
