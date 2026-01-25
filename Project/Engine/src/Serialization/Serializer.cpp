@@ -1146,13 +1146,12 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
     }
 }
 
-void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity) {
+void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
     if (!entObj.IsObject()) return;
 
     // 1. Check: Is this a Prefab Instance?
     // (Assuming you saved "PrefabPath" at the top level of your entity JSON)
-    if (entObj.HasMember("PrefabPath"))
-    {
+    if (entObj.HasMember("PrefabPath")) {
         std::string path = entObj["PrefabPath"].GetString();
 
         // A. SPAWN (Creates Random GUIDs)
@@ -1297,7 +1296,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         const rapidjson::Value& mv = comps["ModelRenderComponent"];
         ecs.AddComponent<ModelRenderComponent>(newEnt, ModelRenderComponent{});
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
-        DeserializeModelComponent(modelComp, mv, newEnt);
+        DeserializeModelComponent(modelComp, mv, newEnt, skipSpawnChildren);
     }
 
     // SpriteRenderComponent
@@ -1685,6 +1684,8 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         const rapidjson::Value& entObj = ents[i];
         if (!entObj.IsObject()) continue;
 
+        // Use default skipSpawnChildren=false for DeserializeScene to maintain backwards
+        // compatibility with older scene files where children might not be serialized
         DeserializeEntity(ecs, entObj);
     }
 
@@ -2087,6 +2088,20 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
 
     } // end for entities
 
+    // Rebuild boneNameToEntityMap for all ModelRenderComponents after all entities are created
+    // This is necessary because when skipSpawnChildren is true, the map isn't populated during
+    // DeserializeModelComponent, but we need it for animation and rendering to work correctly
+    for (const auto& entity : ecs.GetAllEntities()) {
+        if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+            if (modelComp.model) {
+                modelComp.boneNameToEntityMap.clear();
+                modelComp.boneNameToEntityMap[modelComp.model->modelName] = entity;
+                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+            }
+        }
+    }
+
     // Deserialize tags
     if (doc.HasMember("tags") && doc["tags"].IsArray()) {
         const auto& tags = doc["tags"];
@@ -2209,7 +2224,7 @@ void Serializer::DeserializeTransformComponent(Entity newEnt, const rapidjson::V
     }
 }
 
-void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root) {
+void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root, bool skipSpawnChildren) {
     if (modelJSON.IsObject()) {
         if (modelJSON.HasMember("data") && modelJSON["data"].IsArray() && modelJSON["data"].Size() > 0) {
             const auto& d = modelJSON["data"];
@@ -2295,7 +2310,12 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
 
             if (modelComp.model) {
                 modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
-                if (!modelComp.childBonesSaved) {
+                // Only spawn children if:
+                // 1. childBonesSaved is false (children weren't serialized)
+                // 2. We're not in ReloadScene mode (skipSpawnChildren is false)
+                // During ReloadScene, all entities including children are in the JSON,
+                // so we must not spawn them here to avoid duplication.
+                if (!modelComp.childBonesSaved && !skipSpawnChildren) {
                     ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
                 }
             }
@@ -2713,6 +2733,7 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
         readVec3Generic(d[6], pointLightComp.ambient);
         readVec3Generic(d[7], pointLightComp.diffuse);
         readVec3Generic(d[8], pointLightComp.specular);
+        pointLightComp.castShadows = Serializer::GetBool(d, 9);
     }
 }
 
@@ -2739,6 +2760,7 @@ void Serializer::DeserializeAudioComponent(AudioComponent& audioComp, const rapi
         audioComp.DopplerLevel = Serializer::GetFloat(d, 13);
         audioComp.MinDistance = Serializer::GetFloat(d, 14);
         audioComp.MaxDistance = Serializer::GetFloat(d, 15);
+        audioComp.OutputAudioMixerGroup = Serializer::GetString(d, 16);
     }
 }
 

@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00197849f94a9067-00035fdd22000017",
-        "source": "../../Resources/Models/Environment/_InUse/SquarePedestral.fbx",
-        "compiled": "../../Resources/Models/Environment/_InUse/SquarePedestral.mesh",
-        "android_compiled": "Resources/Models/Environment/InUse/SquarePedestral_android.mesh"
-    }
-}

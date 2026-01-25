@@ -26,6 +26,9 @@ return Component {
         self.UIState = {}
         self._lockedState = false
 
+        -- Cache audio component for hover SFX
+        self._audio = self:GetComponent("AudioComponent")
+
         --GET ALL THE MIN MAX X Y FOR EACH BUTTON AND STORE IT
         for index, value in ipairs(targetButtons) do
             local targetEntity = Engine.GetEntityByName(value)
@@ -113,6 +116,11 @@ Update = function(self, dt)
                     oldButtonHighlight.isVisible = false
                     newButtonHighlight.isVisible = true
                     self.lastState = index  --update state
+
+                    -- Play hover SFX
+                    if self._audio then
+                        self._audio:Play()
+                    end
                 end
         end
     end

@@ -146,6 +146,7 @@ public:
 
     static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
 
+    static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
 	static void ENGINE_API DeserializeScene(const std::string& scenePath);
 	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 
@@ -153,7 +154,7 @@ public:
 	static Entity CreateEntityViaGUID(const rapidjson::Value& entityJSON);
 	static void DeserializeNameComponent(NameComponent& nameComp, const rapidjson::Value& nameJSON);
 	static void DeserializeTransformComponent(Entity newEnt, const rapidjson::Value& t);
-	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root);
+	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root, bool skipSpawnChildren = false);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
 	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);

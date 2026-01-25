@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "001186ad98b38227-00036c7dde000013",
-        "source": "../../Resources/Scripts/UI/ButtonHover.lua",
-        "compiled": "../../Resources/Scripts/UI/ButtonHover.lua",
-        "android_compiled": "Resources/Scripts/UI/ButtonHover.lua"
-    }
-}

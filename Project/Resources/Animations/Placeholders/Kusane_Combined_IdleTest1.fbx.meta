@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007113e20b0cde26-000400b98e00000d",
+        "source": "../../Resources/Animations/Placeholders/Kusane_Combined_IdleTest1.fbx",
+        "compiled": "../../Resources/Animations/Placeholders/Kusane_Combined_IdleTest1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

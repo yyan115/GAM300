@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002322958aa27fc9-0003e82f52000005",
+        "source": "../../Resources/Textures/Chain Link_standardSurface1_BaseColor.png",
+        "compiled": "../../Resources/Textures/Chain Link_standardSurface1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
