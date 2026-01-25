@@ -23,7 +23,7 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
@@ -75,7 +75,7 @@ extern std::string DraggedFontPath;
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>
 #include <Panels/PrefabEditorPanel.hpp>
-#include <PrefabIO.hpp>
+#include <Prefab/PrefabIO.hpp>
 
 // Component clipboard for copy/paste functionality (Unity-style)
 namespace {
@@ -160,10 +160,7 @@ void InspectorPanel::DrawComponentGeneric(void* componentPtr, const char* compon
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 	ImGui::PushID(componentPtr);
 	try {
-		bool modified = ReflectionRenderer::RenderComponent(componentPtr, typeDesc, entity, ecs);
-		if (PrefabEditor::IsInPrefabEditorMode() && modified) {
-			PrefabEditor::SetUnsavedChanges(true);
-		}
+		ReflectionRenderer::RenderComponent(componentPtr, typeDesc, entity, ecs);
 	}
 	catch (const std::exception& e) {
 		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error rendering component: %s", e.what());
@@ -485,13 +482,7 @@ void InspectorPanel::OnImGuiRender() {
 					}
 					else {
 						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-						const char* fmtString = PrefabEditor::HasUnsavedChanges() ? "Editing Prefab: %s *" : "Editing Prefab: %s";
-						ImGui::Text(fmtString, ecs.GetComponent<NameComponent>(displayEntity).name);
-						// Save button on the same line
-						ImGui::SameLine(ImGui::GetWindowWidth() - 42);
-						if (ImGui::Button(ICON_FA_FLOPPY_DISK, ImVec2(30, 0))) {
-							PrefabEditor::SaveEditedPrefab();
-						}
+						ImGui::Text("Editing Prefab:");
 						ImGui::Separator();
 					}
 

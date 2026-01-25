@@ -25,7 +25,7 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include "EditorState.hpp"
-#include "PrefabIO.hpp"
+#include "Prefab/PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>

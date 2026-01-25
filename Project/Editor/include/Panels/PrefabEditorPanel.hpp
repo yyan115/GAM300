@@ -14,11 +14,11 @@ public:
     //void OnImGuiRender() override;
 
 	static bool IsInPrefabEditorMode() { return isInPrefabEditorMode; }
-	static bool HasUnsavedChanges() { return hasUnsavedChanges; }
-	static void SetUnsavedChanges(bool unsaved) { hasUnsavedChanges = unsaved; }
+	//static bool HasUnsavedChanges() { return hasUnsavedChanges; }
+	//static void SetUnsavedChanges(bool unsaved) { hasUnsavedChanges = unsaved; }
 
 	static Entity GetSandboxEntity() { return sandboxEntity; }
-    static void StartEditingPrefab(Entity prefab, const std::string& _prefabPath);
+    static void StartEditingPrefab(const std::string& _prefabPath);
     static void StopEditingPrefab();
     static void SaveEditedPrefab();
 
@@ -26,7 +26,7 @@ private:
     // Loads prefab into the sandbox ECS (isolated from the live scene)
     void LoadPrefabSandbox();
     // Pushes saved prefab to live instances (uses active ECS)
-    void PropagateToInstances();
+    static void PropagateToInstances();
 
     // --- sandbox "Prefab Mode" state ---
     ECSManager sandboxECS{};                   // isolated world just for editing
@@ -34,9 +34,9 @@ private:
 
     static std::string prefabPath;
     static bool isInPrefabEditorMode;
-	static bool hasUnsavedChanges;
+	//static bool hasUnsavedChanges;
 
-	static std::vector<Entity> previouslyActiveEntities;
+	//static std::vector<Entity> previouslyActiveEntities;
 };
 
 //// ---- helper API (no PanelManager changes needed) ----

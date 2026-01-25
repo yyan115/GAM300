@@ -14,23 +14,24 @@
 #include <ECS/ECSRegistry.hpp>
 #include <ECS/ECSManager.hpp>
 #include "PrefabComponent.hpp"
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 #include <ECS/NameComponent.hpp>
 #include <Transform/TransformComponent.hpp>
 #include <Graphics/Model/ModelRenderComponent.hpp>
 #include "GUIManager.hpp"
-#include "PrefabIO.hpp"
+#include "Prefab/PrefabIO.hpp"
 #include "Logging.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include <Panels/InspectorPanel.hpp>
 #include <Panels/ScenePanel.hpp>
 #include <ECS/ActiveComponent.hpp>
+#include <Scene/SceneManager.hpp>
 
 bool PrefabEditor::isInPrefabEditorMode = false;
-bool PrefabEditor::hasUnsavedChanges = false;
+//bool PrefabEditor::hasUnsavedChanges = false;
 Entity PrefabEditor::sandboxEntity = static_cast<Entity>(-1);
 std::string PrefabEditor::prefabPath{};
-std::vector<Entity> PrefabEditor::previouslyActiveEntities{};
+//std::vector<Entity> PrefabEditor::previouslyActiveEntities{};
 
 // trait: does T have .overrideFromPrefab ?
 template <typename, typename = void> struct has_override_flag : std::false_type {};
@@ -75,14 +76,31 @@ namespace {
 //    LoadPrefabSandbox();
 //}
 
-void PrefabEditor::StartEditingPrefab(Entity prefab, const std::string& _prefabPath)
+void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
 {
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    // Save the current scene state to a temp file. It will be restored back when we stop editing the prefab.
+    if (!IsInPrefabEditorMode()) {
+        SceneManager::GetInstance().SaveTempScene();
+    }
+
+    // Clear all entities in the current scene.
+    ecs.ClearAllEntities();
+
+    // Instantiate the prefab to edit.
+    Entity prefab = InstantiatePrefabFromFile(_prefabPath);
+    GUIManager::SetSelectedEntity(prefab);
+
+    //if (sandboxEntity != static_cast<Entity>(-1)) {
+    //    ecs.DestroyEntity(sandboxEntity);
+    //}
 
     sandboxEntity = prefab;
     prefabPath = _prefabPath;
     isInPrefabEditorMode = true;
 
+    // Frame the prefab in the scene camera
     if (ecs.HasComponent<Transform>(sandboxEntity)) {
         Transform& transform = ecs.GetComponent<Transform>(sandboxEntity);
         ecs.transformSystem->UpdateTransform(sandboxEntity);
@@ -121,7 +139,6 @@ void PrefabEditor::StartEditingPrefab(Entity prefab, const std::string& _prefabP
             GraphicsManager::GetInstance().SetViewMode(gfxMode);
         }
 
-        // Frame the entity in the scene camera
         auto scenePanelPtr = GUIManager::GetPanelManager().GetPanel("Scene");
         if (scenePanelPtr) {
             auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
@@ -131,38 +148,50 @@ void PrefabEditor::StartEditingPrefab(Entity prefab, const std::string& _prefabP
         }
     }
 
-    std::set<Entity> prefabEntities({ prefab });
-	const auto& prefabChildEntities = ecs.transformSystem->GetAllChildEntitiesSet(prefab);
-    prefabEntities.insert(prefabChildEntities.begin(), prefabChildEntities.end());
+ //   std::set<Entity> prefabEntities({ prefab });
+	//const auto& prefabChildEntities = ecs.transformSystem->GetAllChildEntitiesSet(prefab);
+ //   prefabEntities.insert(prefabChildEntities.begin(), prefabChildEntities.end());
 
-	previouslyActiveEntities = ecs.GetActiveEntities();
+	//previouslyActiveEntities = ecs.GetActiveEntities();
 
-    // Set all other entities as inactive.
-    for (const auto& e : ecs.GetActiveEntities()) {
-        if (prefabEntities.find(e) == prefabEntities.end()) {
-            ecs.GetComponent<ActiveComponent>(e).isActive = false;
-        }
-	}
+ //   // Set all other entities as inactive.
+ //   for (const auto& e : ecs.GetActiveEntities()) {
+ //       if (prefabEntities.find(e) == prefabEntities.end()) {
+ //           ecs.GetComponent<ActiveComponent>(e).isActive = false;
+ //       }
+	//}
 }
 
 void PrefabEditor::StopEditingPrefab() {
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
+
+    //// Propagate changes to all prefab instances.
+    //PropagateToInstances();
+
+	ecs.DestroyEntity(sandboxEntity);
+
 	sandboxEntity = static_cast<Entity>(-1);
     prefabPath = "";
 	isInPrefabEditorMode = false;
 
-    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-    // Restore previously active entities.
-    for (const auto& e : previouslyActiveEntities) {
-        ecs.GetComponent<ActiveComponent>(e).isActive = true;
-    }
-	previouslyActiveEntities.clear();
-	SetUnsavedChanges(false);
+	// Restore the previous scene state from the temp file.
+	SceneManager::GetInstance().ReloadTempScene();
+
+ //   // Restore previously active entities.
+ //   for (const auto& e : previouslyActiveEntities) {
+ //       if (ecs.HasComponent<ActiveComponent>(e))
+ //           ecs.GetComponent<ActiveComponent>(e).isActive = true;
+ //   }
+	//previouslyActiveEntities.clear();
+	//SetUnsavedChanges(false);
+
+    GUIManager::ClearSelectedEntities();
 }
 
 void PrefabEditor::SaveEditedPrefab() {
-    if (SaveEntityToPrefabFile(ECSRegistry::GetInstance().GetActiveECSManager(), AssetManager::GetInstance(), sandboxEntity, prefabPath)) {
-
-    }
+    std::cout << "[PrefabEditor] Saving prefab..." << std::endl;
+    SaveEntityToPrefabFile(ECSRegistry::GetInstance().GetActiveECSManager(), AssetManager::GetInstance(), sandboxEntity, prefabPath);
 }
 
 //void PrefabEditorPanel::OnImGuiRender()
@@ -253,17 +282,15 @@ void PrefabEditor::PropagateToInstances()
     const std::string myPath = CanonicalPrefabPath(prefabPath);
     const std::string myNorm = NormalizePath(myPath);
 
-    for (Entity e : liveECS.GetActiveEntities())
-    {
-        if (!liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
+    auto sandboxEntities = liveECS.transformSystem->GetAllChildEntitiesSet(sandboxEntity);
+
+    for (Entity e : liveECS.GetAllEntities()) {
+        if (e == sandboxEntity || sandboxEntities.contains(e) || !liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
         const auto& link = liveECS.GetComponent<PrefabLinkComponent>(e);
         const std::string refNorm = NormalizePath(CanonicalPrefabPath(link.prefabPath));
         if (refNorm != myNorm) continue;
 
-        (void)InstantiatePrefabIntoEntity(
-            liveECS, AssetManager::GetInstance(), myPath, e,
-            /*keepExistingPosition=*/true,
-            /*resolveAssets=*/true);
+        InstantiatePrefabIntoEntity(prefabPath, e);
     }
 }
 #endif

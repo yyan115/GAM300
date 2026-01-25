@@ -10,7 +10,7 @@
 #include "ECS/SiblingIndexComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
-#include <PrefabIO.hpp>
+#include <Prefab/PrefabIO.hpp>
 #include <imgui_internal.h>
 #include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
@@ -32,6 +32,7 @@
 #include "UndoableWidgets.hpp"
 #include <algorithm>
 #include <Panels/PrefabEditorPanel.hpp>
+#include <Prefab/PrefabLinkComponent.hpp>
 
 // Entity clipboard for copy/paste functionality
 // Uses GUIDs instead of Entity IDs so clipboard persists across undo/redo
@@ -131,14 +132,38 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
+        // Get the active ECS manager
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-        std::string sceneName = SceneManager::GetInstance().GetSceneName();
-        std::string sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
+		std::string sceneDisplayName;
+        if (!PrefabEditor::IsInPrefabEditorMode()) {
+            std::string sceneName = SceneManager::GetInstance().GetSceneName();
+            sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
 
-        // Add visual separation: MUCH darker background for scene header (like Unity)
-        ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
+            // Add visual separation: MUCH darker background for scene header (like Unity)
+            ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
+        }
+        else {
+            bool goBack = false;
+            if (ImGui::Button(ICON_FA_ARROW_LEFT)) {
+                // TODO: Handle your back button logic here
+                PrefabEditor::StopEditingPrefab();
+                goBack = true;
+            }
+
+            ImGui::SameLine();
+
+            if (!goBack) {
+			    std::string prefabName = ecsManager.GetComponent<NameComponent>(PrefabEditor::GetSandboxEntity()).name;
+                sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab: " + prefabName;
+            }
+            // Add visual separation: MUCH darker background for scene header (like Unity)
+            ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
+        }
 
         ImGuiTreeNodeFlags sceneFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
         bool sceneExpanded = ImGui::TreeNodeEx("##SceneRoot", sceneFlags, "%s", sceneDisplayName.c_str());
@@ -159,9 +184,6 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
         if (sceneExpanded) {
             try {
-                // Get the active ECS manager
-                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
                 // Get sorted root entities (by sibling index)
                 std::vector<Entity> rootEntities = GetSortedRootEntities();
 
@@ -271,6 +293,15 @@ void SceneHierarchyPanel::OnImGuiRender() {
                     else {
                         std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath << std::endl;
                     }
+
+                    // Set SiblingIndexComponent's siblingIndex to MAX_ENTITIES to place at end by default.
+                    if (ecsManager.HasComponent<SiblingIndexComponent>(entity)) {
+                        auto& siblingComp = ecsManager.GetComponent<SiblingIndexComponent>(entity);
+                        siblingComp.siblingIndex = MAX_ENTITIES; // Put at end by default
+                    }
+
+                    // Select the dragged prefab.
+                    GUIManager::SetSelectedEntity(entity);
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -365,10 +396,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
     else
     {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         // Check if entity is inactive (grayed out like Unity)
         bool isEntityActive = true;
         try {
-            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
             if (ecsManager.HasComponent<ActiveComponent>(entityId)) {
                 auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entityId);
                 isEntityActive = activeComp.isActive;
@@ -387,7 +418,15 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
         
-        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+		// Draw the Blue prefab icon for prefab instances.
+        if (ecsManager.HasComponent<PrefabLinkComponent>(entityId)) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.8f, 0.95f, 1.0f)); // R, G, B, A (Sky Blue)
+            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+            ImGui::PopStyleColor();
+        }
+        else {
+            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+        }
 
         // Pop color if we pushed it
         if (!isEntityActive) {
