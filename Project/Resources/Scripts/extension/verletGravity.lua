@@ -214,23 +214,17 @@ function M.VerletStep(component, dt)
         end
 
         -- Re-apply anchors after each constraint iteration
-        if component.IsElastic then
-            -- Elastic: start link is always the anchor
-            rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
-            rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
-        else
-            -- Inelastic: when fully extended, END link becomes the dominant anchor
-            if isFullyExtended and component.endPosition then
-                rt.p[lastIdx][1] = component.endPosition[1]
-                rt.p[lastIdx][2] = component.endPosition[2]
-                rt.p[lastIdx][3] = component.endPosition[3]
-                rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
-                    rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
-            else
-                -- still extending: start stays anchored
-                rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
-                rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
-            end
+        -- ALWAYS anchor start link to player
+        rt.p[1][1], rt.p[1][2], rt.p[1][3] = sx, sy, sz
+        rt.pprev[1][1], rt.pprev[1][2], rt.pprev[1][3] = sx, sy, sz
+
+        -- When inelastic and fully extended, ALSO anchor end link
+        if not component.IsElastic and isFullyExtended and component.endPosition then
+            rt.p[lastIdx][1] = component.endPosition[1]
+            rt.p[lastIdx][2] = component.endPosition[2]
+            rt.p[lastIdx][3] = component.endPosition[3]
+            rt.pprev[lastIdx][1], rt.pprev[lastIdx][2], rt.pprev[lastIdx][3] =
+                rt.p[lastIdx][1], rt.p[lastIdx][2], rt.p[lastIdx][3]
         end
     end
 

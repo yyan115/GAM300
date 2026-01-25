@@ -18,11 +18,12 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        NumberOfLinks = 10,
+        NumberOfLinks = 100,
         ChainSpeed = 10.0,
         MaxLength = 0.0,
-        TriggerKey = "E",
-        PlayerName = "Player",
+        TriggerKey = "G",
+        PlayerName = "mixamorig:LeftHand",
+        LinkName = "Link",
         SimulatedHitDistance = 0.0,
         EnableLogs = false,  -- Default off for performance
         AutoStart = false,
@@ -35,7 +36,7 @@ return Component {
 
         -- New: Elasticity control
         IsElastic = true,               -- If false, chain cannot stretch beyond LinkMaxDistance per segment
-        LinkMaxDistance = 0.15,          -- Maximum allowed distance between adjacent links when IsElastic == false
+        LinkMaxDistance = 0.025,          -- Maximum allowed distance between adjacent links when IsElastic == false
 
         -- Read-only status fields (for editor display) - these are authoritative for external scripts
         m_CurrentState = "COMPLETELY_LAX",
@@ -162,6 +163,12 @@ return Component {
             self._input_missing = true
         end
 
+        -- Create the links of the chain
+        if self.NumberOfLinks > 0 then
+            print("[PlayerChain] Creating " .. self.NumberOfLinks .. " links")
+            Engine.CreateEntityDup(self.LinkName, self.LinkName, self.NumberOfLinks)
+        end
+
         -- Authoritative state uses m_ fields (avoid redundant copies)
         self.currentState = COMPLETELY_LAX                         -- numeric internal state for fast branching
         self.m_CurrentState = "COMPLETELY_LAX"
@@ -264,6 +271,31 @@ return Component {
         -- Cache player transform
         if not self.playerTransform then
             self.playerTransform = Engine.FindTransformByName(self.PlayerName)
+
+        end
+
+        -- Update chain's start position to follow player
+        if self.playerTransform then
+            local px, py, pz
+            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self.playerTransform) end)
+            if ok then
+                px, py, pz = self:_unpack_pos(a, b, c)
+            else
+                px, py, pz = self:_read_transform_position(self.playerTransform)
+            end
+
+            -- Update the component's own position to match player
+            if self.SetPosition then
+                self:SetPosition(px, py, pz)
+            end
+            
+            -- Only update endPosition if chain is NOT extended (completely retracted)
+         --   if self.m_CurrentLength <= 0 and not self.m_IsExtending then
+         --       -- Completely retracted: end follows start exactly
+         --       self.endPosition[1], self.endPosition[2], self.endPosition[3] = px, py, pz
+         --  end
+            -- When extending or chain exists with length > 0, endPosition stays fixed in world space
+            -- This allows the chain to extend from the moving player to a fixed point
         end
 
         -- Handle input
@@ -314,6 +346,12 @@ return Component {
         end
     end,
 
+    OnDisable = function(self, dt)
+        if self.NumberOfLinks > 0 then
+            print("Deleting chain links")
+            Engine.DestroyEntityDup(self.LinkName, self.NumberOfLinks)
+        end
+    end,
     -------------------------------------------------------------------------
     -- PUBLIC API - Exposed for external scripts
     -------------------------------------------------------------------------

@@ -294,10 +294,13 @@ END_SYSTEM()
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
+    FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
+    FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
+    FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
 END_SYSTEM()
 
 
