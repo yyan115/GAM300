@@ -1,0 +1,44 @@
+{
+    "name": "New Controller",
+    "entryState": "New State",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [
+        {
+            "name": "IsWalking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        }
+    ],
+    "states": [
+        {
+            "id": "New State",
+            "clipIndex": 8,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -61.62212371826172,
+                "y": -33.93909454345703
+            }
+        }
+    ],
+    "transitions": [],
+    "clipPaths": [
+        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx",
+        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
+        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx",
+        "../../Resources/Animations/PlayerSlashInward.fbx",
+        "../../Resources/Animations/PlayerSlashOutward.fbx",
+        "../../Resources/Animations/PlayerSlashAround.fbx",
+        "../../Resources/Animations/PlayerSlamChain.fbx",
+        "../../Resources/Animations/PlayerRetractChain.fbx",
+        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx"
+    ]
+}

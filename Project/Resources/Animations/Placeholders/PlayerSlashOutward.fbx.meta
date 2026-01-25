@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0039a371ffba2494-000400444e00000b",
+        "source": "../../Resources/Animations/Placeholders/PlayerSlashOutward.fbx",
+        "compiled": "../../Resources/Animations/Placeholders/PlayerSlashOutward.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

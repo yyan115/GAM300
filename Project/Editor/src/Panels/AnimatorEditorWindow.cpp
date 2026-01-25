@@ -8,6 +8,7 @@
 #include "Logging.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Asset Manager/AssetManager.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -1748,7 +1749,12 @@ void AnimatorEditorWindow::ApplyToAnimationComponent()
 
     m_AnimComponent->clipPaths = ctrlClipPaths;
     m_AnimComponent->clipCount = static_cast<int>(ctrlClipPaths.size());
-    m_AnimComponent->clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+    // Store GUIDs for cross-machine compatibility
+    m_AnimComponent->clipGUIDs.clear();
+    for (const auto& clipPath : ctrlClipPaths) {
+        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+        m_AnimComponent->clipGUIDs.push_back(guid);
+    }
 
     // Apply state machine configuration
     AnimationStateMachine* sm = m_AnimComponent->EnsureStateMachine();

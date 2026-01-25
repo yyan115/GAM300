@@ -2166,7 +2166,12 @@ void RegisterInspectorCustomRenderers()
                     const auto& ctrlClipPaths = controller.GetClipPaths();
                     animComp.clipPaths = ctrlClipPaths;
                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                    // Store GUIDs for cross-machine compatibility
+                    animComp.clipGUIDs.clear();
+                    for (const auto& clipPath : ctrlClipPaths) {
+                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                        animComp.clipGUIDs.push_back(guid);
+                    }
 
                     // Load clips from controller paths if model is available
                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
@@ -2238,7 +2243,12 @@ void RegisterInspectorCustomRenderers()
                                     const auto& ctrlClipPaths = controller.GetClipPaths();
                                     animComp.clipPaths = ctrlClipPaths;
                                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                                    // Store GUIDs for cross-machine compatibility
+                                    animComp.clipGUIDs.clear();
+                                    for (const auto& clipPath : ctrlClipPaths) {
+                                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                                        animComp.clipGUIDs.push_back(guid);
+                                    }
 
                                     // Load clips from controller paths if model is available
                                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {

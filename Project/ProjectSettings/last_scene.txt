@@ -1,1 +1,1 @@
-C:\Users\ASUS\Downloads\Year 3 Tri 2\CSD3451 Game 350\GAM350\Project\Resources\Scenes\M3_Gameplay.scene
+../../Resources/Scenes/04_GameLevel.scene

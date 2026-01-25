@@ -7,7 +7,7 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        gameplayScenePath = "Resources/Scenes/M3_Gameplay.scene",  -- Path to gameplay scene
+        gameplayScenePath = "Resources/Scenes/04_GameLevel.scene",  -- Path to gameplay scene
     },
 
     Awake = function(self)
