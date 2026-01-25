@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001c115713188b7f-000402884c000017",
-        "source": "../../Resources/Scripts/GamePlay/GroundPatrolState.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/GroundPatrolState.lua"
+        "guid": "006d00af1db6413d-0004032a32000017",
+        "source": "../../Resources/Scripts/Gameplay/GroundPatrolState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/GroundPatrolState.lua"
     }
 }

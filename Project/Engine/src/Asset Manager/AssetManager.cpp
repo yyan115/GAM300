@@ -325,10 +325,27 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 }
 
 GUID_128 AssetManager::GetGUID128FromAssetMeta(const std::string& assetPath) {
-	std::string relativeAssetPath = assetPath.substr(assetPath.find("Resources"));
+	// Helper lambda to normalize a path: extract from "Resources" onwards and use forward slashes
+	auto normalizePath = [](const std::string& path) -> std::string {
+		size_t resPos = path.find("Resources");
+		if (resPos == std::string::npos) {
+			return "";  // "Resources" not found
+		}
+		std::string relative = path.substr(resPos);
+		// Normalize separators to forward slashes
+		std::replace(relative.begin(), relative.end(), '\\', '/');
+		return relative;
+	};
+
+	std::string normalizedAssetPath = normalizePath(assetPath);
+	if (normalizedAssetPath.empty()) {
+		std::cerr << "[AssetManager] ERROR: Path does not contain 'Resources': " << assetPath << std::endl;
+		return GUID_128{};
+	}
+
 	for (const auto& pair : assetMetaMap) {
-		std::string relativeSourcePath = pair.second->sourceFilePath.substr(pair.second->sourceFilePath.find("Resources"));
-		if (relativeSourcePath == relativeAssetPath) {
+		std::string normalizedSourcePath = normalizePath(pair.second->sourceFilePath);
+		if (!normalizedSourcePath.empty() && normalizedSourcePath == normalizedAssetPath) {
 			return pair.first;
 		}
 	}

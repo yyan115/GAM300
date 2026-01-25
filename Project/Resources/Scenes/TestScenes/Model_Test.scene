@@ -394,7 +394,7 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Test\\KusaneTest3.fbx"
+                                    "data": "Resources/Models/Test/KusaneTest3.fbx"
                                 }
                             ]
                         },
@@ -406,7 +406,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Kusane\\Animation\\Kusane Controller.animator"
+                            "data": "Resources/Models/Kusane/Animation/Kusane Controller.animator"
                         }
                     ]
                 },
@@ -3577,7 +3577,7 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Test\\KusaneTest3.fbx"
+                                    "data": "Resources/Models/Test/KusaneTest3.fbx"
                                 }
                             ]
                         },
@@ -3589,7 +3589,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "C:\\Users\\Brownies\\Desktop\\GAM300\\Project\\Resources\\Models\\Kusane\\Animation\\Kusane Controller.animator"
+                            "data": "Resources/Models/Kusane/Animation/Kusane Controller.animator"
                         }
                     ]
                 },
@@ -12171,15 +12171,15 @@
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx"
+                                    "data": "Resources/Animations/Placeholders/Kusane_Combined_IdleTest1.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle.fbx"
+                                    "data": "Resources/Animations/Kusane@Idle.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle_NEWNEW.fbx"
+                                    "data": "Resources/Animations/Kusane@Idle.fbx"
                                 }
                             ]
                         },

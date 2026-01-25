@@ -304,17 +304,14 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 
         // Fall back to path if GUID lookup failed
         if (pathToLoad.empty() && !path.empty()) {
-#ifndef EDITOR
-            // Safely extract path from "Resources" onwards for game build
+            // Try to extract path from "Resources" onwards (handles cross-machine absolute paths)
             size_t resPos = path.find("Resources");
             if (resPos != std::string::npos) {
                 pathToLoad = path.substr(resPos);
+                ENGINE_PRINT("[AnimationComponent] Resolved relative path: ", pathToLoad, "\n");
             } else {
                 pathToLoad = path;  // Use as-is if "Resources" not found
             }
-#else
-            pathToLoad = path;
-#endif
         }
 
         if (pathToLoad.empty()) {

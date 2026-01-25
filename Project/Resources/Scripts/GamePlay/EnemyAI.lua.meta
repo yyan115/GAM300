@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001c115723ea3742-000402884c000003",
-        "source": "../../Resources/Scripts/GamePlay/EnemyAI.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/EnemyAI.lua"
+        "guid": "006d00af0cc429a2-0004032a32000003",
+        "source": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/EnemyAI.lua"
     }
 }

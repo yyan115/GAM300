@@ -19,7 +19,7 @@
     "states": [
         {
             "id": "Idle",
-            "clipIndex": 9,
+            "clipIndex": 0,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -31,16 +31,6 @@
     ],
     "transitions": [],
     "clipPaths": [
-        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Idle.fbx",
-        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
-        "../../Resources/Models/Kachujin/Animation/Kachujin G Rosales@Sword And Shield Jump.fbx",
-        "../../Resources/Animations/PlayerSlashInward.fbx",
-        "../../Resources/Animations/PlayerSlashOutward.fbx",
-        "../../Resources/Animations/PlayerSlashAround.fbx",
-        "../../Resources/Animations/PlayerSlamChain.fbx",
-        "../../Resources/Animations/PlayerRetractChain.fbx",
-        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Placeholders\\Kusane_Combined_IdleTest1.fbx",
-        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle.fbx",
-        "C:\\Users\\kahlo\\Desktop\\GAM300\\Project\\Resources\\Animations\\Kusane@Idle_NEWNEW.fbx"
+        "Resources/Animations/Kusane@Idle.fbx"
     ]
 }
