@@ -483,6 +483,24 @@ void SceneManager::ReloadTempScene() {
 	std::string tempScenePath = currentScenePath + ".temp";
 	if (std::filesystem::exists(tempScenePath)) {
 		Serializer::ReloadScene(tempScenePath, currentScenePath);
+
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Re-initialise/reload required systems.
+        ecs.cameraSystem->Initialise();
+        ecs.modelSystem->Initialise();
+        ecs.textSystem->Initialise();
+        ecs.spriteAnimationSystem->Initialise();
+        ecs.animationSystem->Initialise();
+        ecs.scriptSystem->ReloadSystem();
+
+        // Reset all animation preview states to 0 (fresh editor state)
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<AnimationComponent>(ent)) {
+                AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
+                animComp.ResetPreview(ent);
+            }
+        }
 	}
 	else {
 		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)

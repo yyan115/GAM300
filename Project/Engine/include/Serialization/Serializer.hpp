@@ -32,12 +32,18 @@
 #include <Game AI/BrainComponent.hpp>
 #include <UI/Button/ButtonComponent.hpp>
 #include <UI/Slider/SliderComponent.hpp>
+#include <Prefab/PrefabLinkComponent.hpp>
 
 class Serializer {
 public:
 	static void ENGINE_API SerializeScene(const std::string& scenePath);
     static rapidjson::Value SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc);
-    static rapidjson::Value SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc);
+    static rapidjson::Value& SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entObj);
+
+	// Save an entity and its children recursively.
+    static void SerializeEntityRecursively(Entity rootEntity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entitiesArr);
+    static rapidjson::Value SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc, Entity prefabReferenceEntity = static_cast<Entity>(-1));
+
     template <typename T>
     static rapidjson::Value SerializeComponentToValue(T& compInstance, rapidjson::Document::AllocatorType& alloc) {
         using CompT = std::decay_t<T>;
@@ -81,6 +87,63 @@ public:
         return val;
     }
 
+    // Helper: Checks if a component differs between Instance and Baseline.
+    // If different (or if Instance has it and Baseline doesn't), it serializes the Instance's version.
+    template <typename T, typename SerializerFunc>
+    static void CheckAndSerializeDelta(
+        const char* compName,
+        ECSManager& sceneECS, Entity instanceEnt, Entity baselineEnt,
+        rapidjson::Document::AllocatorType& alloc,
+        rapidjson::Value& outComponentsArray,
+        SerializerFunc serializer)
+    {
+        bool hasInst = sceneECS.HasComponent<T>(instanceEnt);
+        bool hasBase = sceneECS.HasComponent<T>(baselineEnt);
+
+        // 1. If neither has it, skip
+        if (!hasInst && !hasBase) return;
+
+        // 2. Serialize both to compare
+        // (We use a temporary document for the baseline to keep the allocators independent/clean)
+        rapidjson::Value valInst;
+        if (hasInst) {
+            valInst = serializer(sceneECS.GetComponent<T>(instanceEnt), alloc);
+        }
+
+        rapidjson::Value valBase;
+        if (hasBase) {
+            // We use the same allocator for comparison speed, but strictly 
+            // we're only keeping valInst if they differ.
+            valBase = serializer(sceneECS.GetComponent<T>(baselineEnt), alloc);
+        }
+
+        // 3. Compare: If they are different, we save the Instance version as an override
+        // Note: If hasInst is false (component removed on instance), this logic currently 
+        // doesn't record a "RemoveComponent" command. It simply omits it. 
+        // To support removal, you'd need a separate "RemovedComponents" list.
+        if (hasInst && valInst != valBase) {
+            rapidjson::Value wrapper(rapidjson::kObjectType);
+            wrapper.AddMember(rapidjson::StringRef(compName), valInst, alloc);
+            outComponentsArray.PushBack(wrapper, alloc);
+        }
+    }
+
+    static void SerializePrefabInstanceDelta(
+        ECSManager& sceneECS, Entity instanceEnt, Entity baselineEnt,
+        rapidjson::Document::AllocatorType& alloc,
+        rapidjson::Value& outComponentsArray);
+
+    static void SerializePrefabOverridesRecursive(
+        ECSManager& sceneECS, Entity instanceEnt, Entity baselineEnt,
+        rapidjson::Document::AllocatorType& alloc,
+        rapidjson::Value& outEntityNode);
+
+	// ============ DESERIALIZATION FUNCTIONS ============
+
+    static void UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 newGUID);
+    static void RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
+    static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
+
     static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
 	static void ENGINE_API DeserializeScene(const std::string& scenePath);
 	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
@@ -113,6 +176,7 @@ public:
 	static void DeserializeBrainComponent(BrainComponent& brainComp, const rapidjson::Value& brainJSON);
 	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
 	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
+	static void DeserializePrefabLinkComponent(PrefabLinkComponent& prefabComp, const rapidjson::Value& prefabJSON);
 
     // ==================================================================================
     // Boolean Helper
