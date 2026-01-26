@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007f7ae3c031397b-00040593a600000f",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsUI/BackButtonPressed.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsUI/BackButtonPressed.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

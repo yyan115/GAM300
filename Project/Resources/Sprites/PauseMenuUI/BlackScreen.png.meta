@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ff4898d32d305-000405d112000003",
+        "source": "../../Resources/Sprites/PauseMenuUI/BlackScreen.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/BlackScreen.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

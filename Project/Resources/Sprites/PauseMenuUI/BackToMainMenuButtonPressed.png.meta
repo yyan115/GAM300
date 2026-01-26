@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ba6c351f42b00-000405323c000003",
+        "source": "../../Resources/Sprites/PauseMenuUI/BackToMainMenuButtonPressed.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/BackToMainMenuButtonPressed.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
