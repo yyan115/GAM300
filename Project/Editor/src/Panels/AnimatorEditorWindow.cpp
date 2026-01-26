@@ -155,6 +155,7 @@ void AnimatorEditorWindow::OnImGuiRender()
         DrawInspectorPanel();
         ImGui::EndChild();
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     // Handle close button click (after ImGui::End so the window is properly closed)
@@ -162,7 +163,10 @@ void AnimatorEditorWindow::OnImGuiRender()
         SetOpen(false);
     }
 
-    HandleKeyboardShortcuts();
+    // Only handle keyboard shortcuts when this window is focused
+    if (IsFocused()) {
+        HandleKeyboardShortcuts();
+    }
 }
 
 void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* animComponent)
@@ -170,11 +174,13 @@ void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* anim
     m_CurrentEntity = entity;
     m_AnimComponent = animComponent;
     SetOpen(true);  // Use base class method
-    m_ControllerFilePath.clear();
     m_HasUnsavedChanges = false;
 
     // Extract state machine data if exists
     if (animComponent) {
+        // Use the controller path from the animation component for saving
+        m_ControllerFilePath = animComponent->controllerPath;
+
         AnimationStateMachine* sm = animComponent->GetStateMachine();
         if (sm) {
             m_Controller->ExtractFromStateMachine(sm);
@@ -184,6 +190,8 @@ void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* anim
 
         // Copy clip paths from animation component
         m_Controller->GetClipPaths() = animComponent->clipPaths;
+    } else {
+        m_ControllerFilePath.clear();
     }
 
     // Reset view
@@ -1025,7 +1033,10 @@ void AnimatorEditorWindow::DrawStateInspector()
     }
 
     // Speed
-    if (ImGui::SliderFloat("Speed", &config->speed, 0.0f, 3.0f, "%.2f")) {
+    ImGui::Text("Speed");
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputFloat("##Speed", &config->speed, 0.1f, 1.0f, "%.3f")) {
+        if (config->speed < 0.0f) config->speed = 0.0f;  // Prevent negative speed
         m_HasUnsavedChanges = true;
         ApplyToAnimationComponent();
     }
@@ -1453,7 +1464,7 @@ void AnimatorEditorWindow::CreateNewState(const ImVec2& position)
     std::string stateName = GenerateUniqueStateName();
     AnimStateConfig config;
     config.nodePosition = glm::vec2(position.x, position.y);
-    config.clipIndex = 0;
+    config.clipIndex = SIZE_MAX;  // No clip assigned by default
     config.loop = true;
     config.speed = 1.0f;
 
@@ -1599,6 +1610,12 @@ void AnimatorEditorWindow::SaveController()
 
     if (m_Controller->SaveToFile(m_ControllerFilePath)) {
         m_HasUnsavedChanges = false;
+
+        // Also update the AnimationComponent so changes persist when reopening
+        if (m_AnimComponent) {
+            m_AnimComponent->controllerPath = m_ControllerFilePath;
+            ApplyToAnimationComponent();
+        }
     }
 }
 
@@ -1678,6 +1695,12 @@ void AnimatorEditorWindow::SaveControllerAs()
         if (m_Controller->SaveToFile(m_ControllerFilePath)) {
             m_HasUnsavedChanges = false;
             ENGINE_LOG_INFO("[AnimatorEditor] Saved controller to: {}", m_ControllerFilePath);
+
+            // Also update the AnimationComponent so changes persist when reopening
+            if (m_AnimComponent) {
+                m_AnimComponent->controllerPath = m_ControllerFilePath;
+                ApplyToAnimationComponent();
+            }
         }
     }
 }

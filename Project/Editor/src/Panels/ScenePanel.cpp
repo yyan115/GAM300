@@ -626,28 +626,8 @@ void ScenePanel::HandleKeyboardInput() {
         }
     }
 
-    // Handle Delete key for deleting selected entity (when scene is focused)
-    if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-        Entity selectedEntity = GUIManager::GetSelectedEntity();
-        if (selectedEntity != static_cast<Entity>(-1)) {
-            try {
-                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                std::string entityName = ecsManager.GetComponent<NameComponent>(selectedEntity).name;
-
-                ENGINE_PRINT("[ScenePanel] Deleting entity: ", entityName, " (ID: ", selectedEntity, ")\n");
-
-                // Clear selection before deleting
-                GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
-
-                // Delete the entity
-                ecsManager.DestroyEntity(selectedEntity);
-
-                ENGINE_PRINT("[ScenePanel] Entity deleted successfully\n");
-            } catch (const std::exception& e) {
-                ENGINE_PRINT("[ScenePanel] Failed to delete entity: ", e.what(), "\n");
-            }
-        }
-    }
+    // NOTE: Delete key handling is done globally in GUIManager::HandleKeyboardShortcuts()
+    // to ensure proper focus checking and avoid double deletion
 
     // Handle 'F' key to focus on selected entity (Frame Selected - like Unity)
     if (ImGui::IsKeyPressed(ImGuiKey_F) && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
@@ -1260,6 +1240,7 @@ void ScenePanel::OnImGuiRender()
 
         ImGui::PopID(); // <--- NEW
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     ImGui::PopStyleColor(2);
