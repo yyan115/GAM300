@@ -94,7 +94,7 @@ public:
 	const std::vector<std::string>& GetClipPaths() const { return mClipPaths; }
 
 private:
-	std::string mName = "New Controller";
+	std::string mName = "New Animator";
 	AnimStateID mEntryState;
 
 	std::unordered_map<AnimStateID, AnimStateConfig> mStates;

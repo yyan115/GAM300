@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "Animation/Animator.hpp"
-#include "Animation/AnimationSystem.hpp"
 #include "Animation/AnimationStateMachine.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include "Utilities/GUID.hpp"
@@ -31,18 +30,18 @@ public:
     AnimationComponent& operator=(AnimationComponent&&) noexcept = default;
 
     // Per-frame from your engine/editor
-    void Update(float dt);           // advances Animator if playing
+    void Update(float dt, Entity entity);           // advances Animator if playing
 
     // Editor-facing controls
-    void Play();
+    void Play(Entity entity);
     void Pause();
-    void Stop();                     // reset to start
+    void Stop(Entity entity);                     // reset to start
     void SetLooping(bool v);
     void SetSpeed(float s);
-    void SetClip(size_t index);      // choose a different clip
+    void SetClip(size_t index, Entity entity);      // choose a different clip
 
 	// Load Animation from file and add to clips
-	void AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+	void AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity);
 
     // Access for systems that need it
     Animator& GetAnimator();
@@ -56,11 +55,11 @@ public:
     const std::vector<std::unique_ptr<Animation>>& GetClips() const;
     size_t GetActiveClipIndex() const;
 
-    void LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+    void LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity);
     void SetClipCount(size_t count);
 
-    void PlayClip(std::size_t clipIndex, bool loop);
-	void PlayOnce(std::size_t clipIndex);
+    void PlayClip(std::size_t clipIndex, bool loop, Entity entity);
+	void PlayOnce(std::size_t clipIndex, Entity entity);
     bool IsPlaying() const;
 
     bool  enabled = true;
@@ -78,8 +77,8 @@ public:
     float editorPreviewTime = 0.0f;  // Separate time for inspector preview
 
     // Runtime control
-    void ResetForPlay();  // Reset animator to 0 for fresh game start
-    void ResetPreview();  // Reset preview time to 0
+    void ResetForPlay(Entity entity);  // Reset animator to 0 for fresh game start
+    void ResetPreview(Entity entity);  // Reset preview time to 0
 
 
 	// StateMachine
@@ -111,6 +110,6 @@ private:
 
 	std::unique_ptr<AnimationStateMachine> stateMachine;
 
-    void SyncAnimatorToActiveClip();
+    void SyncAnimatorToActiveClip(Entity entity);
     std::unique_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
 };

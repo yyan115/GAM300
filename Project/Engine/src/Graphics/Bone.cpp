@@ -1,6 +1,8 @@
 #include <pch.h>
 #include "Graphics/Bone.hpp"
 #include <Logging.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
     : mName(name),
@@ -83,10 +85,10 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
    tranformations*/
 void Bone::Update(float animationTime)
 {
-    glm::mat4 translation = InterpolatePosition(animationTime);
-    glm::mat4 rotation = InterpolateRotation(animationTime);
-    glm::mat4 scale = InterpolateScaling(animationTime);
-    mLocalTransform = translation * rotation * scale;
+    mLocalTranslation = InterpolatePosition(animationTime);
+    mLocalRotation = InterpolateRotation(animationTime);
+    mLocalScale = InterpolateScaling(animationTime);
+    mLocalTransform = glm::translate(glm::mat4(1.0f), mLocalTranslation) * glm::toMat4(mLocalRotation) * glm::scale(glm::mat4(1.0f), mLocalScale);
 
     //// Log for key bones at start of animation
     //if ((mName == "mixamorig:Hips" || mName == "mixamorig:Spine") && animationTime < 0.5f) {
@@ -148,10 +150,10 @@ float Bone::GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float anima
 
 /*figures out which position keys to interpolate b/w and performs the interpolation
 	and returns the translation matrix*/
-glm::mat4 Bone::InterpolatePosition(float animationTime)
+glm::vec3 Bone::InterpolatePosition(float animationTime)
 {
 	if (1 == mNumPositions)
-		return glm::translate(glm::mat4(1.0f), mPositions[0].position);
+		return mPositions[0].position;
 
 	int p0Index = GetPositionIndex(animationTime);
 	int p1Index = p0Index + 1;
@@ -159,17 +161,16 @@ glm::mat4 Bone::InterpolatePosition(float animationTime)
 	float scaleFactor = GetScaleFactor(mPositions[p0Index].timeStamp, mPositions[p1Index].timeStamp, animationTime);
 	glm::vec3 finalPosition = glm::mix(mPositions[p0Index].position, mPositions[p1Index].position, scaleFactor);
 
-	return glm::translate(glm::mat4(1.0f), finalPosition);
+	return finalPosition;
 }
 
 /*figures out which rotations keys to interpolate b/w and performs the interpolation
 	and returns the rotation matrix*/
-glm::mat4 Bone::InterpolateRotation(float animationTime)
+glm::quat Bone::InterpolateRotation(float animationTime)
 {
 	if (1 == mNumRotations)
 	{
-		auto rotation = glm::normalize(mRotations[0].orientation);
-		return glm::mat4_cast(rotation);
+		return glm::normalize(mRotations[0].orientation);
 	}
 
 	int r0Index = GetRotationIndex(animationTime);
@@ -179,15 +180,15 @@ glm::mat4 Bone::InterpolateRotation(float animationTime)
 
 	finalRotation = glm::normalize(finalRotation);
 	
-	return glm::mat4_cast(finalRotation);
+    return finalRotation;
 }
 
 /*figures out which scaling keys to interpolate b/w and performs the interpolation
 	and returns the scale matrix*/
-glm::mat4 Bone::InterpolateScaling(float animationTime)
+glm::vec3 Bone::InterpolateScaling(float animationTime)
 {
 	if (1 == mNumScalings)
-		return glm::scale(glm::mat4(1.0f), mScales[0].scale);
+		return mScales[0].scale;
 
 	int s0Index = GetScaleIndex(animationTime);
 	int s1Index = s0Index + 1;
@@ -195,5 +196,5 @@ glm::mat4 Bone::InterpolateScaling(float animationTime)
 	float scaleFactor = GetScaleFactor(mScales[s0Index].timeStamp, mScales[s1Index].timeStamp, animationTime);
 	glm::vec3 finalScale = glm::mix(mScales[s0Index].scale, mScales[s1Index].scale, scaleFactor);
 
-	return glm::scale(glm::mat4(1.0f), finalScale);
+	return finalScale;
 }

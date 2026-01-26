@@ -26,6 +26,15 @@ public:
     Vector3D transformScale{ 1.0f, 1.0f, 1.0f }; // Scale from Transform component (not serialized, runtime only)
     GUID_128 lastLoadedFontGUID{}; // Track which font is currently loaded (not serialized, runtime only)
 
+    // LINE WRAPPING PROPERTIES
+    bool wordWrap = false;        // Enable/disable word wrapping
+    float maxWidth = 0.0f;        // Maximum width in pixels (0 = no limit). For 3D text, this is in world units.
+    float lineSpacing = 1.2f;     // Line height multiplier (1.0 = single spacing, 1.5 = 1.5x line height)
+
+    // Cached wrapped lines (runtime only, not serialized)
+    // These are populated by TextRenderingSystem before submission
+    std::vector<std::string> wrappedLines;
+
     std::shared_ptr<Font> font;
     std::shared_ptr<Shader> shader;
 
@@ -46,7 +55,7 @@ public:
     
     // Copy constructor for when we need to create copies for submission
     TextRenderComponent(const TextRenderComponent& other)
-        : IRenderComponent(other), // Copy base class members (isVisible, renderOrder)
+        : IRenderComponent(other),
         text(other.text),
         fontSize(other.fontSize),
         fontGUID(other.fontGUID),
@@ -59,6 +68,10 @@ public:
         transform(other.transform),
         transformScale(other.transformScale),
         lastLoadedFontGUID(other.lastLoadedFontGUID),
+        wordWrap(other.wordWrap),           // ADD THIS
+        maxWidth(other.maxWidth),           // ADD THIS
+        lineSpacing(other.lineSpacing),     // ADD THIS
+        wrappedLines(other.wrappedLines),   // ADD THIS
         alignment(other.alignment),
         alignmentInt(other.alignmentInt),
         font(other.font),
@@ -83,6 +96,10 @@ public:
             transform = other.transform;
             transformScale = other.transformScale;
             lastLoadedFontGUID = other.lastLoadedFontGUID;
+            wordWrap = other.wordWrap;           // ADD THIS
+            maxWidth = other.maxWidth;           // ADD THIS
+            lineSpacing = other.lineSpacing;     // ADD THIS
+            wrappedLines = other.wrappedLines;   // ADD THIS
             alignment = other.alignment;
             alignmentInt = other.alignmentInt;
         }

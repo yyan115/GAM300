@@ -41,4 +41,26 @@ public:
     static void SetScreenAnchor(TextRenderComponent& comp, int screenWidth, int screenHeight,
         float anchorX, float anchorY); // 0.0-1.0 values
     static Vector3D GetTextDimensions(const TextRenderComponent& comp);
+
+    // =========================================================================
+    // LINE WRAPPING UTILITIES
+    // =========================================================================
+
+    // Enable/disable word wrapping
+    static void SetWordWrap(TextRenderComponent& comp, bool enabled);
+    static bool GetWordWrap(const TextRenderComponent& comp);
+
+    // Set maximum width for line wrapping (in pixels for 2D, world units for 3D)
+    static void SetMaxWidth(TextRenderComponent& comp, float maxWidth);
+    static float GetMaxWidth(const TextRenderComponent& comp);
+
+    // Set line spacing multiplier (1.0 = single spacing, 1.5 = 1.5x, 2.0 = double)
+    static void SetLineSpacing(TextRenderComponent& comp, float spacing);
+    static float GetLineSpacing(const TextRenderComponent& comp);
+
+    // Convenience: Enable word wrap with a specific max width
+    static void EnableWordWrap(TextRenderComponent& comp, float maxWidth, float lineSpacing = 1.2f);
+
+    // Convenience: Disable word wrap
+    static void DisableWordWrap(TextRenderComponent& comp);
 };

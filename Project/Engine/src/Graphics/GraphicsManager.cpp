@@ -46,6 +46,18 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	// Initialize skybox
 	InitializeSkybox();
 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.lightingSystem)
+	{
+		ecsManager.lightingSystem->Initialise();
+
+		ecsManager.lightingSystem->SetShadowRenderCallback(
+			[this](Shader& depthShader) {
+				RenderSceneForShadows(depthShader);
+			}
+		);
+	}
+
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
 }
@@ -76,6 +88,11 @@ void GraphicsManager::Shutdown()
 void GraphicsManager::BeginFrame()
 {
 	renderQueue.clear();
+
+	// Reset state tracking
+	m_currentShader = nullptr;
+	m_currentMaterial = nullptr;
+	m_sortingStats.Reset();
 }
 
 void GraphicsManager::EndFrame()
@@ -208,127 +225,99 @@ void GraphicsManager::Render()
 
 	currentFrameViewport = GetCurrentViewport();
 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.lightingSystem)
+	{
+		ecsManager.lightingSystem->RenderShadowMaps();
+	}
+
 	// Render skybox first (before other objects)
 	RenderSkybox();
 
-	// Sort render queue - Unity-like sorting for 2D elements
-	// For 2D elements: sort by sortingLayer then sortingOrder (higher = on top = renders later)
-	// 3D objects render based on renderOrder
-	std::sort(renderQueue.begin(), renderQueue.end(),
-		[](const std::unique_ptr<IRenderComponent>& a, const std::unique_ptr<IRenderComponent>& b) {
-			// Helper to check if component is 2D
-			auto is2D = [](const IRenderComponent* comp) -> bool {
-				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
-					return !text->is3D;
-				}
-				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
-					return !sprite->is3D;
-				}
-				return false;
-			};
+	// Separate models from other render items
+	std::vector<IRenderComponent*> modelItems;
+	std::vector<IRenderComponent*> otherItems;
 
-			// Helper to get sortingLayer ORDER (for rendering priority)
-			auto getSortingLayer = [](const IRenderComponent* comp) -> int {
-				int layerID = 0;
-				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
-					layerID = text->sortingLayer;
-				}
-				else if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
-					layerID = sprite->sortingLayer;
-				}
+	for (auto& item : renderQueue) {
+		if (dynamic_cast<ModelRenderComponent*>(item.get())) {
+			modelItems.push_back(item.get());
+		}
+		else {
+			otherItems.push_back(item.get());
+		}
+	}
 
-				// Get the order from the sorting layer manager
-				// Lower order = rendered first (behind), higher order = rendered last (on top)
-				int order = SortingLayerManager::GetInstance().GetLayerOrder(layerID);
-				if (order == -1) {
-					// Invalid layer ID, use default (0)
-					return 0;
-				}
-				return order;
-			};
+	// Sort models by state (shader -> material -> mesh)
+	std::sort(modelItems.begin(), modelItems.end(),
+		[this](IRenderComponent* a, IRenderComponent* b) {
+			auto* modelA = static_cast<ModelRenderComponent*>(a);
+			auto* modelB = static_cast<ModelRenderComponent*>(b);
 
-			// Helper to get sortingOrder
-			auto getSortingOrder = [](const IRenderComponent* comp) -> int {
-				if (auto text = dynamic_cast<const TextRenderComponent*>(comp)) {
-					return text->sortingOrder;
-				}
-				if (auto sprite = dynamic_cast<const SpriteRenderComponent*>(comp)) {
-					return sprite->sortingOrder;
-				}
-				return 0;
-			};
+			// Build sort keys
+			RenderLayer::Type layerA = modelA->material && modelA->material->GetOpacity() < 1.0f
+				? RenderLayer::Type::LAYER_TRANSPARENT
+				: RenderLayer::Type::LAYER_OPAQUE;
+			RenderLayer::Type layerB = modelB->material && modelB->material->GetOpacity() < 1.0f
+				? RenderLayer::Type::LAYER_TRANSPARENT
+				: RenderLayer::Type::LAYER_OPAQUE;
 
-			bool aIs2D = is2D(a.get());
-			bool bIs2D = is2D(b.get());
+			RenderSortKey keyA(layerA,
+				m_idCache.GetShaderId(modelA->shader.get()),
+				m_idCache.GetMaterialId(modelA->material.get()),
+				m_idCache.GetModelId(modelA->model.get()));
 
-			// If both are 2D or both are 3D, use appropriate sorting
-			if (aIs2D && bIs2D) {
-				// Both 2D - sort by sortingLayer then sortingOrder (Unity-like)
-				int layerA = getSortingLayer(a.get());
-				int layerB = getSortingLayer(b.get());
-				if (layerA != layerB) {
-					return layerA < layerB; // Higher layer = on top = renders later
-				}
-				int orderA = getSortingOrder(a.get());
-				int orderB = getSortingOrder(b.get());
-				return orderA < orderB; // Higher order = on top = renders later
-			}
-			else if (!aIs2D && !bIs2D) {
-				// Both 3D - sort by renderOrder
-				return a->renderOrder < b->renderOrder;
-			}
-			else {
-				// Mixed 2D and 3D - render 3D first, then 2D on top
-				return !aIs2D; // 3D (false) < 2D (true), so 3D renders first
-			}
+			RenderSortKey keyB(layerB,
+				m_idCache.GetShaderId(modelB->shader.get()),
+				m_idCache.GetMaterialId(modelB->material.get()),
+				m_idCache.GetModelId(modelB->model.get()));
+
+			return keyA < keyB;
 		});
 
-	// Render all items in the queue
-	for (const auto& renderItem : renderQueue) 
-	{
-		// Cast to different component types
-		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
-		const TextRenderComponent* textItem = dynamic_cast<const TextRenderComponent*>(renderItem.get());
-		const SpriteRenderComponent* spriteItem = dynamic_cast<const SpriteRenderComponent*>(renderItem.get());
-		const DebugDrawComponent* debugItem = dynamic_cast<const DebugDrawComponent*>(renderItem.get());
-		const ParticleComponent* particleItem = dynamic_cast<const ParticleComponent*>(renderItem.get());
+	// Sort other items by their existing sorting logic (sprites, text, etc.)
+	std::sort(otherItems.begin(), otherItems.end(),
+		[](IRenderComponent* a, IRenderComponent* b) {
+			// Keep your existing 2D sorting logic here
+			return a->renderOrder < b->renderOrder;
+		});
 
-		if (modelItem)
-		{
-//#ifdef ANDROID
-//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderModel");
-//#endif
-			RenderModel(*modelItem);
-		}
-		else if (textItem)
-		{
-//#ifdef ANDROID
-//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderText");
-//#endif
+	// =========================================================================
+	// Render models with state tracking
+	// =========================================================================
+	for (IRenderComponent* item : modelItems) {
+		ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+		RenderModelOptimized(*modelItem);  // New optimized render method
+	}
+
+	// =========================================================================
+	// Render other items (sprites, text, particles, debug)
+	// =========================================================================
+	for (IRenderComponent* item : otherItems) {
+		// ... your existing rendering logic for sprites, text, etc. ...
+		if (auto* textItem = dynamic_cast<TextRenderComponent*>(item)) {
 			RenderText(*textItem);
 		}
-		else if (spriteItem)
-		{
-//#ifdef ANDROID
-//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderSprite");
-//#endif
+		else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item)) {
 			RenderSprite(*spriteItem);
 		}
-		else if (debugItem)
-		{
-//#ifdef ANDROID
-//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderDebugDraw");
-//#endif
+		else if (auto* debugItem = dynamic_cast<DebugDrawComponent*>(item)) {
 			RenderDebugDraw(*debugItem);
 		}
-		else if (particleItem)
-		{
-//#ifdef ANDROID
-//			__android_log_print(ANDROID_LOG_INFO, "GAM300", "RenderParticles");
-//#endif
+		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
 			RenderParticles(*particleItem);
 		}
 	}
+
+	// Debug output (optional - remove in release)
+#ifdef _DEBUG
+	static int frameCount = 0;
+	if (++frameCount % 300 == 0) {  // Every 5 seconds at 60fps
+		std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
+			<< " DrawCalls: " << m_sortingStats.drawCalls
+			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
+			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
+	}
+#endif
 }
 
 void GraphicsManager::RenderModel(const ModelRenderComponent& item)
@@ -371,14 +360,23 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	if (ecsManager.lightingSystem) 
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
+		ecsManager.lightingSystem->ApplyShadows(*item.shader);
+
+		// Temporary debug - remove later
+		static bool once = false;
+		if (!once) 
+		{
+			std::cout << "[Debug] ApplyShadows called" << std::endl;
+			once = true;
+		}
 	}
 
 
 	// Draw the model with entity material
 	if (item.HasAnimation())
-		item.model->Draw(*item.shader, *currentCamera, item.material, item.animator);
+		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
 	else
-		item.model->Draw(*item.shader, *currentCamera, item.material);
+		item.model->Draw(*item.shader, *currentCamera, item.material, item);
 
 	//std::cout << "rendered model\n";
 }
@@ -467,12 +465,10 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Configure depth testing based on 2D/3D mode
 	if (item.is3D) {
-		// 3D text: enable depth testing
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+		glDepthMask(GL_FALSE);
 	}
 	else {
-		// 2D text: disable depth testing so render order determines what's on top 
 		glDisable(GL_DEPTH_TEST);
 	}
 
@@ -487,33 +483,27 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
 	{
-		// 3D text rendering - use normal 3D matrices
-		// 3D text uses Transform component scale (in model matrix)
 		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
 		SetupMatrices(*item.shader, modelMatrix);
 	}
 	else
 	{
-		// 2D screen space text rendering
 		if (IsRenderingForEditor() && Is2DMode()) {
-			// Use the editor camera's view/projection matrices
-			// Don't apply scale to model matrix - we'll apply it per-character for proper axis control
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
 			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
 			SetupMatrices(*item.shader, modelMatrix);
-		} else {
-			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
-			// Don't apply scale to matrices - we'll apply it per-character for proper axis control
+		}
+		else {
 			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), 1.0f, 1.0f);
 		}
 	}
 
-	// Bind VAO and render each character
+	// Bind VAO and render
 	glActiveTexture(GL_TEXTURE0);
 	VAO* fontVAO = item.font->GetVAO();
 	VBO* fontVBO = item.font->GetVBO();
 
-	if (!fontVAO || !fontVBO) 
+	if (!fontVAO || !fontVBO)
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
 		glDisable(GL_BLEND);
@@ -522,72 +512,81 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	fontVAO->Bind();
 
-	float x = 0.0f;
-	float y = 0.0f;
-
-	// For 3D text, scale down from pixels to world units (1 pixel = 0.01 units)
-	// For 2D text, apply Transform scale per-axis for Unity-like behavior
-	// Note: fontSize controls the font resolution (glyphs are loaded at that size)
-	// Transform scale then scales those glyphs for final visual size
+	// Calculate scale factors
 	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
 	float scaleX = item.is3D ? worldScaleFactor : (item.transformScale.x * worldScaleFactor);
 	float scaleY = item.is3D ? worldScaleFactor : (item.transformScale.y * worldScaleFactor);
 
-	// Calculate starting position based on alignment
-	if (item.alignment == TextRenderComponent::Alignment::CENTER)
-	{
-		x = -item.font->GetTextWidth(item.text, scaleX) / 2.0f;
-	}
-	else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
-	{
-		x = -item.font->GetTextWidth(item.text, scaleX);
-	}
+	// Get line height for multi-line rendering
+	float lineHeight = item.font->GetTextHeight(scaleY) * item.lineSpacing;
 
-	// Iterate through all characters
-	for (char c : item.text)
+	// Use pre-computed wrapped lines from TextRenderingSystem
+	// If empty (shouldn't happen), fall back to single line
+	const std::vector<std::string>& lines = item.wrappedLines.empty()
+		? std::vector<std::string>{item.text}
+	: item.wrappedLines;
+
+	// Starting Y position (top of text block)
+	float startY = 0.0f;
+
+	// Render each line
+	for (size_t lineIndex = 0; lineIndex < lines.size(); ++lineIndex)
 	{
-		const Character& ch = item.font->GetCharacter(c);
-		if (ch.textureID == 0) {
-			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
-			continue;
+		const std::string& line = lines[lineIndex];
+
+		// Calculate X starting position based on alignment for this line
+		float x = 0.0f;
+		float lineWidth = item.font->GetTextWidth(line, scaleX);
+
+		if (item.alignment == TextRenderComponent::Alignment::CENTER)
+		{
+			x = -lineWidth / 2.0f;
+		}
+		else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
+		{
+			x = -lineWidth;
 		}
 
-		// Apply scaleX to horizontal metrics, scaleY to vertical metrics (Unity-like behavior)
-		float xpos = x + ch.bearing.x * scaleX;
-		float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
+		// Calculate Y position for this line (line 0 at top, goes down)
+		float y = startY - (lineIndex * lineHeight);
 
-		float w = ch.size.x * scaleX;
-		float h = ch.size.y * scaleY;
+		// Render each character in the line
+		for (char c : line)
+		{
+			const Character& ch = item.font->GetCharacter(c);
+			if (ch.textureID == 0) {
+				continue;
+			}
 
-		// Update VBO for each character
-		float vertices[6][4] = {
-			{ xpos,     ypos + h,   0.0f, 0.0f },
-			{ xpos,     ypos,       0.0f, 1.0f },
-			{ xpos + w, ypos,       1.0f, 1.0f },
+			float xpos = x + ch.bearing.x * scaleX;
+			float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
 
-			{ xpos,     ypos + h,   0.0f, 0.0f },
-			{ xpos + w, ypos,       1.0f, 1.0f },
-			{ xpos + w, ypos + h,   1.0f, 0.0f }
-		};
+			float w = ch.size.x * scaleX;
+			float h = ch.size.y * scaleY;
 
-		// Render glyph texture over quad
-		glBindTexture(GL_TEXTURE_2D, ch.textureID);
+			float vertices[6][4] = {
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos,     ypos,       0.0f, 1.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
 
-		// Update content of VBO memory using your extended VBO class
-		fontVBO->UpdateData(vertices, sizeof(vertices));
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
+				{ xpos + w, ypos + h,   1.0f, 0.0f }
+			};
 
-		// Render quad
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+			glBindTexture(GL_TEXTURE_2D, ch.textureID);
+			fontVBO->UpdateData(vertices, sizeof(vertices));
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		x += (ch.advance >> 6) * scaleX; // Bitshift by 6 to get value in pixels (2^6 = 64), use scaleX for horizontal spacing
+			x += (ch.advance >> 6) * scaleX;
+		}
 	}
 
 	fontVAO->Unbind();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE); // Restore depth writing
-	glEnable(GL_DEPTH_TEST); // Restore depth testing for 3D objects
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
 }
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
@@ -1032,6 +1031,51 @@ void GraphicsManager::InitializeSkybox()
 	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
 }
 
+void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
+{
+	static int frameCount = 0;
+	frameCount++;
+	if (frameCount <= 5) {
+		std::cout << "[Shadow] RenderSceneForShadows called - frame " << frameCount
+			<< ", queue size: " << renderQueue.size() << std::endl;
+	}
+
+	int count = 0;
+	for (const auto& renderItem : renderQueue)
+	{
+		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+		if (!modelItem || !modelItem->isVisible || !modelItem->model)
+			continue;
+
+		count++;
+
+		// Set model matrix
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+		depthShader.setMat4("model", modelMatrix);
+
+		// Handle animation
+		depthShader.setBool("isAnimated", modelItem->HasAnimation());
+		if (modelItem->HasAnimation() && modelItem->animator)
+		{
+			const auto& transforms = modelItem->mFinalBoneMatrices;
+			for (size_t i = 0; i < transforms.size(); ++i)
+			{
+				depthShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+			}
+		}
+
+		// Draw model geometry only (no materials)
+		modelItem->model->DrawDepthOnly();
+	}
+
+	// Debug
+	static bool once = false;
+	if (!once) {
+		std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
+		once = true;
+	}
+}
+
 void GraphicsManager::RenderSkybox()
 {
 	static bool checkedOnce = false;
@@ -1140,3 +1184,70 @@ void GraphicsManager::SetFrontFace(FrontFace face)
 	glFrontFace(glFace);
 }
 
+void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
+{
+	if (!item.isVisible || !item.model || !item.shader) {
+		return;
+	}
+
+	m_sortingStats.totalObjects++;
+
+	// Frustum culling (your existing code)
+	glm::mat4 modelMatrix = item.transform.ConvertToGLM();
+
+	if (frustumCullingEnabled && currentCamera) {
+		AABB worldBBox = item.model->GetBoundingBox().Transform(modelMatrix);
+		if (!viewFrustum.IsBoxVisible(worldBBox, 0.5f)) {
+			return;
+		}
+	}
+
+	// =========================================================================
+	// OPTIMIZED STATE MANAGEMENT - only switch if different
+	// =========================================================================
+
+	Shader* shader = item.shader.get();
+	Material* material = item.material.get();
+
+	// Switch shader only if different
+	if (shader != m_currentShader) {
+		shader->Activate();
+		m_currentShader = shader;
+		m_sortingStats.shaderSwitches++;
+
+		// Set view/projection (only need to do this on shader switch)
+		SetupMatrices(*shader, modelMatrix, true);
+
+		// Apply lighting (only on shader switch)
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		if (ecsManager.lightingSystem) {
+			ecsManager.lightingSystem->ApplyLighting(*shader);
+			ecsManager.lightingSystem->ApplyShadows(*shader);
+		}
+	}
+	else {
+		// Same shader - just update model matrix
+		shader->setMat4("model", modelMatrix);
+		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+		shader->setMat3("normalMatrix", normalMatrix);
+	}
+
+	// Switch material only if different
+	if (material != m_currentMaterial) {
+		if (material) {
+			material->ApplyToShader(*shader);
+		}
+		m_currentMaterial = material;
+		m_sortingStats.materialSwitches++;
+	}
+
+	// Draw the model
+	if (item.HasAnimation()) {
+		item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
+	}
+	else {
+		item.model->Draw(*shader, *currentCamera, item.material, item);
+	}
+
+	m_sortingStats.drawCalls++;
+}

@@ -66,6 +66,9 @@ public:
     static bool IsCursorLockRequested();       // Check if game code requested cursor lock
     static void UpdateCursorState();           // Called each frame to enforce cursor state (after ImGui)
     static void ForceUnlockCursor();           // Force unlock (called when game stops, etc.)
+    static void PauseCursorLock();             // User pressed ESC to temporarily unlock
+    static void ResumeCursorLock();            // User clicked back in game to re-lock
+    static bool IsCursorPausedByUser();        // Check if user paused cursor lock
 
     // Platform access
     static class IPlatform* GetPlatform();

@@ -39,6 +39,8 @@ private:
     static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
     // Helper functions for input mapping
+    static int EngineKeyToGLFWKey(Input::Key key);
+    static int EngineButtonToGLFWButton(Input::MouseButton button);
     static Input::Key GLFWKeyToEngineKey(int glfwKey);
     static Input::MouseButton GLFWButtonToEngineButton(int glfwButton);
     static Input::KeyAction GLFWActionToEngineAction(int glfwAction);

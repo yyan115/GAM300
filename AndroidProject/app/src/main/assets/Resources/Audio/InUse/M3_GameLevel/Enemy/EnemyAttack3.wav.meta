@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00204b0ccf12b20f-00035fc46200000f",
-        "source": "../../Resources/Audio/_InUse/M3_GameLevel/Enemy/EnemyAttack3.wav",
-        "compiled": "../../Resources/Audio/_InUse/M3_GameLevel/Enemy/EnemyAttack3.wav",
-        "android_compiled": "Resources/Audio/InUse/M3_GameLevel/Enemy/EnemyAttack3.wav"
-    }
-}

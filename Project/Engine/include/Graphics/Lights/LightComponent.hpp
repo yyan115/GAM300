@@ -39,6 +39,8 @@ struct PointLightComponent : public LightComponent
 	Vector3D diffuse = Vector3D(0.8f, 0.8f, 0.8f);
 	Vector3D specular = Vector3D::Ones();
 
+	bool castShadows = false;
+
 	PointLightComponent() = default;
 };
 

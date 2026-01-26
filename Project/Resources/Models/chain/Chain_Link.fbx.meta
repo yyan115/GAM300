@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021cfe6d321d6d9-00040555f8000007",
+        "source": "../../Resources/Models/Chain/Chain_Link.fbx",
+        "compiled": "../../Resources/Models/Chain/Chain_Link.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

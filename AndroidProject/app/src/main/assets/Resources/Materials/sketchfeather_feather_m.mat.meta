@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "00272a0f5fb5b4fd-00036c6c0a000005",
-        "source": "../../Resources/Materials/sketchfeather_feather_m.mat",
-        "compiled": "../../Resources/Materials/sketchfeather_feather_m.mat",
-        "android_compiled": "Resources/Materials/sketchfeather_feather_m_android.mat"
-    }
-}

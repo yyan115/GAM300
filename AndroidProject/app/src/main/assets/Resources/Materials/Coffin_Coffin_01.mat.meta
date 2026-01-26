@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "005fad5345471c1b-00036c947c00001f",
-        "source": "../../Resources/Materials/Coffin_Coffin_01.mat",
-        "compiled": "../../Resources/Materials/Coffin_Coffin_01.mat",
-        "android_compiled": "Resources/Materials/Coffin_Coffin_01_android.mat"
-    }
-}

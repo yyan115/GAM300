@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00574d315c8ed53a-0004006aaa000001",
+        "source": "../../Resources/Animations/Placeholders/Kachujin G Rosales@Sword And Shield Idle.fbx",
+        "compiled": "../../Resources/Animations/Placeholders/Kachujin G Rosales@Sword And Shield Idle.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
