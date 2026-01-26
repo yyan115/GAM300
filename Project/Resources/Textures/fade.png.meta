@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00697d86061488c2-0003fe13f0000023",
+        "source": "../../Resources/Textures/fade.png",
+        "compiled": "../../Resources/Textures/fade.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -241,9 +241,13 @@ bool WindowManager::IsWindowFocused() {
 // Static state tracking
 static bool s_cursorLockRequested = false;   // What game code wants
 static bool s_cursorActuallyLocked = false;  // Current actual state
+static bool s_cursorPausedByUser = false;    // User pressed ESC to temporarily unlock
 
 void WindowManager::SetCursorLocked(bool locked) {
     s_cursorLockRequested = locked;
+    // Note: We do NOT clear s_cursorPausedByUser here.
+    // If user pressed ESC to pause, only clicking in game panel (ResumeCursorLock) can resume.
+    // This prevents Lua scripts from overriding user's ESC.
     // Actual locking happens in UpdateCursorState() each frame
 }
 
@@ -258,20 +262,46 @@ bool WindowManager::IsCursorLockRequested() {
 void WindowManager::ForceUnlockCursor() {
     s_cursorLockRequested = false;
     s_cursorActuallyLocked = false;
+    s_cursorPausedByUser = false;
     if (platform) {
         platform->SetCursorLocked(false);
     }
 }
 
+void WindowManager::PauseCursorLock() {
+    // User temporarily paused cursor lock (e.g., pressed ESC in Editor)
+    s_cursorPausedByUser = true;
+    s_cursorActuallyLocked = false;
+    if (platform) {
+        platform->SetCursorLocked(false);
+    }
+}
+
+void WindowManager::ResumeCursorLock() {
+    // User clicked back in game panel to resume cursor lock
+    if (s_cursorLockRequested) {
+        s_cursorPausedByUser = false;
+        s_cursorActuallyLocked = true;
+        if (platform) {
+            platform->SetCursorLocked(true);
+        }
+    }
+}
+
+bool WindowManager::IsCursorPausedByUser() {
+    return s_cursorPausedByUser;
+}
+
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
-    bool shouldLock = s_cursorLockRequested;
+    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser;
 
 #ifdef EDITOR
     // In Editor, only actually lock cursor if game is playing
     if (!Engine::ShouldRunGameLogic()) {
         shouldLock = false;
+        s_cursorPausedByUser = false; // Reset pause when game stops
     }
 #endif
 
@@ -279,12 +309,6 @@ void WindowManager::UpdateCursorState() {
     if (shouldLock != s_cursorActuallyLocked) {
         platform->SetCursorLocked(shouldLock);
         s_cursorActuallyLocked = shouldLock;
-    }
-
-    // Re-enforce every frame in case ImGui or something else changed it
-    // This is the key to making it robust - we always re-apply our desired state
-    if (s_cursorActuallyLocked) {
-        platform->SetCursorLocked(true);
     }
 }
 

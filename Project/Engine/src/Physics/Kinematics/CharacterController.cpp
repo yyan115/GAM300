@@ -297,6 +297,19 @@ Vector3D CharacterController::GetPosition() const
     }
     return Vector3D(0, 0, 0);
 }
+void CharacterController::SetPosition(Transform transform)
+{
+    JPH::RVec3 newPosition(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+
+    mCharacter->SetPosition(newPosition);
+    mCharacter->SetLinearVelocity(JPH::Vec3::sZero());
+    mVelocity = JPH::Vec3::sZero();
+}
+
+
+
+
+
 
 void CharacterController::SetVelocity(const Vector3D vel)
 {

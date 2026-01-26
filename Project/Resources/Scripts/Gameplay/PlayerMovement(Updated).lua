@@ -45,7 +45,6 @@ return Component {
 
     fields = {
         Speed = 1.5,
-        -- Speed = 8, --HERE FOR TESTING
         JumpHeight = 1.2,
     },
 
@@ -55,18 +54,20 @@ return Component {
         self._currentRotY = 0
         self._currentRotZ = 0
 
-        -- ===============================
-        -- CAMERA STATE (MERGED)
-        -- ===============================
+        -- Camera state
         self._cameraYaw = 180.0
         self._cameraYawSub = nil
 
         if event_bus and event_bus.subscribe then
+            print("[PlayerMovement] Subscribing to camera_yaw")
             self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
                 if yaw then
                     self._cameraYaw = yaw
                 end
             end)
+            print("[PlayerMovement] Subscription token: " .. tostring(self._cameraYawSub))
+        else
+            print("[PlayerMovement] ERROR: event_bus not available!")
         end
     end,
 
@@ -75,9 +76,16 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
 
+        print("transform here is ", self._transform.localPosition.x)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        self._animator:PlayClip(IDLE, true)
+        -- Use PlayClip directly (state machine approach doesn't work)
+        if self._animator then
+            print("[PlayerMovement] Animator found, playing IDLE clip")
+            self._animator:PlayClip(IDLE, true)
+        else
+            print("[PlayerMovement] ERROR: Animator is nil!")
+        end
 
         self._isRunning = false
         self._isJumping = false
@@ -88,30 +96,23 @@ return Component {
         if not self._collider or not self._transform or not self._controller then
             return
         end
-        
-        -- print(self.entityId)
 
         -- ===============================
-        -- RAW INPUT (LOCAL SPACE)
+        -- RAW INPUT (LOCAL SPACE) - Using new unified input system
         -- ===============================
-        local rawX, rawZ = 0, 0
-        if Input.GetKey(Input.Key.W) then rawZ = rawZ + 1 end
-        if Input.GetKey(Input.Key.S) then rawZ = rawZ - 1 end
-        if Input.GetKey(Input.Key.A) then rawX = rawX + 1 end
-        if Input.GetKey(Input.Key.D) then rawX = rawX - 1 end
-
-        local len = math.sqrt(rawX*rawX + rawZ*rawZ)
-        if len > 1 then
-            rawX = rawX / len
-            rawZ = rawZ / len
-        end
+        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local rawX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
+        local rawZ = axis.y   -- Z is forward/back
 
         -- ===============================
         -- CAMERA-RELATIVE MOVEMENT (MERGED)
         -- ===============================
+        -- Read camera yaw from global (set by camera_follow.lua) - bypasses event_bus
+        local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+
         local moveX, moveZ = 0, 0
         if rawX ~= 0 or rawZ ~= 0 then
-            local yawRad = math.rad(self._cameraYaw)
+            local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
 
@@ -127,7 +128,7 @@ return Component {
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping = false
 
-        if Input.GetKeyDown(Input.Key.Space) and isGrounded then
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
         end
@@ -144,10 +145,11 @@ return Component {
             )
         end
 
-        -- ANIMATION
+        -- ANIMATION (using PlayClip directly)
         if not isGrounded then
             if not self._isJumping then
                 -- Start jump animation
+                print("[PlayerMovement] PlayClip(JUMP=" .. JUMP .. ")")
                 self._animator:PlayClip(JUMP, false)
                 self._isJumping = true
                 self._isRunning = false
@@ -158,16 +160,20 @@ return Component {
                 self._isJumping = false
                 -- Resume proper state based on movement
                 if isMoving then
+                    print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
                     self._animator:PlayClip(RUN, true)
                     self._isRunning = true
                 else
+                    print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
                     self._animator:PlayClip(IDLE, true)
                     self._isRunning = false
                 end
             elseif isMoving and not self._isRunning then
+                print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
                 self._animator:PlayClip(RUN, true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
+                print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
                 self._animator:PlayClip(IDLE, true)
                 self._isRunning = false
             end

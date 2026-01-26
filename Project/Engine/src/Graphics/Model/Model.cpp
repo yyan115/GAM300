@@ -15,6 +15,8 @@
 #include "Logging.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
+#include "Math/Matrix4x4.hpp"
+#include <Graphics/Model/ModelRenderComponent.hpp>
 
 #ifdef EDITOR
 #include <meshoptimizer.h>
@@ -77,8 +79,15 @@
 //         << "\n";
 // }
 
-
-
+inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
+{
+    glm::mat4 to;
+    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+    return to;
+}
 
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
@@ -91,6 +100,77 @@ Model::Model(std::shared_ptr<AssetMeta> modelMeta) {
 
 // Forward declaration for get_file_contents
 std::string get_file_contents(const char* filename);
+
+float Model::GetMaxExtent(const aiScene* scene) {
+    float maxVal = 0.0f;
+
+    // STRATEGY 1: Check Geometry (Preferred for Models)
+    if (scene->mNumMeshes > 0)
+    {
+        // Check a few meshes to find the bounds
+        for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+        {
+            aiMesh* mesh = scene->mMeshes[m];
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+                aiVector3D v = mesh->mVertices[i];
+                maxVal = std::max(maxVal, std::abs(v.x));
+                maxVal = std::max(maxVal, std::abs(v.y));
+                maxVal = std::max(maxVal, std::abs(v.z));
+
+                // Optimization: If we already found huge values, we know it's Centimeters.
+                if (maxVal > 10.0f) return maxVal;
+            }
+        }
+    }
+    // STRATEGY 2: Check Animation Keys (Fallback for Animation-Only files)
+    else if (scene->mNumAnimations > 0)
+    {
+        // Iterate through animations to find translation values
+        for (unsigned int i = 0; i < scene->mNumAnimations; i++)
+        {
+            aiAnimation* anim = scene->mAnimations[i];
+
+            // Iterate through bones (channels)
+            for (unsigned int c = 0; c < anim->mNumChannels; c++)
+            {
+                aiNodeAnim* channel = anim->mChannels[c];
+
+                // Check position keys
+                // We don't need to check every single keyframe; checking the first few is usually enough
+                // to catch a "Hip" bone at height 90.0 (cm) vs 0.9 (m).
+                unsigned int step = 1;
+                if (channel->mNumPositionKeys > 10) step = channel->mNumPositionKeys / 10; // Check ~10 samples per bone
+
+                for (unsigned int k = 0; k < channel->mNumPositionKeys; k += step)
+                {
+                    aiVector3D pos = channel->mPositionKeys[k].mValue;
+                    maxVal = std::max(maxVal, std::abs(pos.x));
+                    maxVal = std::max(maxVal, std::abs(pos.y));
+                    maxVal = std::max(maxVal, std::abs(pos.z));
+
+                    // Optimization: Found evidence of Centimeters? Return immediately.
+                    if (maxVal > 10.0f) return maxVal;
+                }
+            }
+        }
+    }
+
+    return maxVal;
+}
+
+// Determine scale factor based on heuristic
+float Model::CalculateAutoScale(const aiScene* scene) {
+    float maxExtent = GetMaxExtent(scene);
+
+    // Heuristic: If the model is huge (> 50 units), it's likely Centimeters.
+    // A 1.8m character would be 180 units.
+    if (maxExtent > 10.0f) {
+        return 0.5f; // Convert cm -> m
+    }
+
+    // If it's reasonable (0.1 to 10), assume it's already Meters
+    return 1.0f;
+}
 
 std::string Model::CompileToResource(const std::string& assetPath, bool forAndroid)
 {
@@ -128,8 +208,8 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#endif
         return std::string{};
 	}
+    // HANDLE ANIMATION FILES
     else if (scene->mNumMeshes == 0 && scene->mNumAnimations > 0) {
-        // This is an animation file, just return its own path (no compilation required).
         if (!forAndroid) {
             return assetPath;
         }
@@ -206,16 +286,40 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //
 //#endif
 
+	float scaleFactor = CalculateAutoScale(scene);
+
+    // Re-import if scaling is needed(The "Baking" Step)
+    if (std::abs(scaleFactor - 1.0f) > 0.001f)
+    {
+        ENGINE_LOG_DEBUG("[Model] Auto-scaling model by " + std::to_string(scaleFactor));
+
+        // Configure Assimp to bake the scale for us
+        importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
+
+        // Add the GlobalScale flag
+        postProcessFlags |= aiProcess_GlobalScale;
+
+        // Re-read the file. This destroys the old 'scene' and creates a new one 
+        // with vertices, bones, and animations already scaled.
+        scene = importer.ReadFile(assetPath, postProcessFlags);
+
+        if (!scene || !scene->mRootNode) {
+            ENGINE_PRINT("ERROR:ASSIMP:: Re-import failed: ", importer.GetErrorString(), "\n");
+            return std::string{};
+        }
+    }
+
     std::filesystem::path p(assetPath);
     modelPath = assetPath;
     modelName = p.stem().generic_string();
-	// Recursive function
-	ProcessNode(scene->mRootNode, scene);
+
+	// Recursive function to process and copy Assimp nodes.
+	ProcessNode(scene->mRootNode, rootNode, scene);
 
 	return CompileToMesh(assetPath, meshes, forAndroid);
 }
 
-void Model::ProcessNode(aiNode* node, const aiScene* scene)
+void Model::ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene)
 {
 //#ifdef __ANDROID__
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] ProcessNode called - node:%s meshCount:%u childrenCount:%u",
@@ -228,12 +332,17 @@ void Model::ProcessNode(aiNode* node, const aiScene* scene)
 		meshes.emplace_back(ProcessMesh(mesh, scene));
 	}
 
+    // Store node info
+	dest.name = node->mName.C_Str();
+	dest.localTransform = Matrix4x4::ConvertToMatrix4x4(aiMatrix4x4ToGlm(node->mTransformation));
+
 	// Process children nodes
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		ProcessNode(node->mChildren[i], scene);
+        ModelNode newChild;
+		ProcessNode(node->mChildren[i], newChild, scene);
+        dest.children.push_back(newChild);
 	}
-
 }
 
 Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
@@ -497,32 +606,6 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
 			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             std::string meshName = mesh.material->GetName();
             meshFile.write(meshName.data(), nameLength); // Writes actual characters
-
-
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAmbient()), sizeof(mesh.material->GetAmbient()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetDiffuse()), sizeof(mesh.material->GetDiffuse()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetSpecular()), sizeof(mesh.material->GetSpecular()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetEmissive()), sizeof(mesh.material->GetEmissive()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetShininess()), sizeof(mesh.material->GetShininess()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetOpacity()), sizeof(mesh.material->GetOpacity()));
-
-   //         // Write PBR properties to the file as binary data.
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetMetallic()), sizeof(mesh.material->GetMetallic()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetRoughness()), sizeof(mesh.material->GetRoughness()));
-		 //   meshFile.write(reinterpret_cast<const char*>(&mesh.material->GetAO()), sizeof(mesh.material->GetAO()));
-
-   //         // Write texture info to the file as binary data.
-			//size_t textureCount = mesh.material->GetAllTextureInfo().size();
-			//meshFile.write(reinterpret_cast<const char*>(&textureCount), sizeof(textureCount));
-   //         auto& allTextureInfo = mesh.material->GetAllTextureInfo();
-   //         for (auto it = allTextureInfo.begin(); it != allTextureInfo.end(); ++it) {
-   //             // Write texture type
-			//	meshFile.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
-			//	// Write texture path length and path
-			//	size_t pathLength = it->second->filePath.size();
-			//	meshFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
-   //             meshFile.write(it->second->filePath.data(), pathLength);
-   //         }
         }
 
         // Write BoneInfo map for the model
@@ -560,12 +643,32 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
 			mBoneCounter = 0;
         }
 
+        // Write ModelNode hierarchy for the model
+        {
+			WriteModelNode(meshFile, rootNode);
+        }
 
 		meshFile.close();
         return meshPath;
     }
 
     return std::string{};
+}
+
+void Model::WriteModelNode(std::ofstream& meshFile, const ModelNode& node) {
+    // Write node name
+    size_t nameLength = node.name.size();
+    meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
+    meshFile.write(node.name.data(), nameLength);
+    // Write local transform
+    meshFile.write(reinterpret_cast<const char*>(&node.localTransform), sizeof(node.localTransform));
+    // Write number of children
+    size_t childCount = node.children.size();
+    meshFile.write(reinterpret_cast<const char*>(&childCount), sizeof(childCount));
+    // Recursively write each child node
+    for (const ModelNode& child : node.children) {
+        WriteModelNode(meshFile, child);
+    }
 }
 
 bool Model::LoadResource(const std::string& resourcePath, const std::string& assetPath)
@@ -648,105 +751,6 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             materialPath = newPath.generic_string();
             // Load the material
             auto material = ResourceManager::GetInstance().GetResource<Material>(materialPath);
-            //            material->SetName(meshName);
-            //            // Ambient
-            //            glm::vec3 ambient;
-            //            std::memcpy(&ambient, buffer.data() + offset, sizeof(ambient));
-            //            offset += sizeof(ambient);
-            //            material->SetAmbient(ambient);
-            //            // Diffuse
-            //            glm::vec3 diffuse;
-            //            std::memcpy(&diffuse, buffer.data() + offset, sizeof(diffuse));
-            //            offset += sizeof(diffuse);
-            //            material->SetDiffuse(diffuse);
-            //            // Specular
-            //            glm::vec3 specular;
-            //            std::memcpy(&specular, buffer.data() + offset, sizeof(specular));
-            //            offset += sizeof(specular);
-            //            material->SetSpecular(specular);
-            //            // Emissive
-            //            glm::vec3 emissive;
-            //            std::memcpy(&emissive, buffer.data() + offset, sizeof(emissive));
-            //            offset += sizeof(emissive);
-            //            material->SetEmissive(emissive);
-            //            // Shininess
-            //            float shininess;
-            //            std::memcpy(&shininess, buffer.data() + offset, sizeof(shininess));
-            //            offset += sizeof(shininess);
-            //            material->SetShininess(shininess);
-            //            // Opacity
-            //            float opacity;
-            //            std::memcpy(&opacity, buffer.data() + offset, sizeof(opacity));
-            //            offset += sizeof(opacity);
-            //            material->SetOpacity(opacity);
-            //            // Metallic
-            //            float metallic;
-            //            std::memcpy(&metallic, buffer.data() + offset, sizeof(metallic));
-            //            offset += sizeof(metallic);
-            //            material->SetMetallic(metallic);
-            //            // Roughness
-            //            float roughness;
-            //            std::memcpy(&roughness, buffer.data() + offset, sizeof(roughness));
-            //            offset += sizeof(roughness);
-            //            material->SetRoughness(roughness);
-            //            // AO
-            //            float ao;
-            //            std::memcpy(&ao, buffer.data() + offset, sizeof(ao));
-            //            offset += sizeof(ao);
-            //            material->SetAO(ao);
-            //
-            //            // Read texture paths from the file.
-            //            size_t textureCount;
-            //            std::vector<std::shared_ptr<Texture>> textures;
-            //            std::memcpy(&textureCount, buffer.data() + offset, sizeof(textureCount));
-            //            offset += sizeof(textureCount);
-            //            for (size_t j = 0; j < textureCount; ++j) {
-            //                Material::TextureType texType;
-            //                std::memcpy(&texType, buffer.data() + offset, sizeof(texType));
-            //                offset += sizeof(texType);
-            //                size_t pathLength;
-            //                std::memcpy(&pathLength, buffer.data() + offset, sizeof(pathLength));
-            //                offset += sizeof(pathLength);
-            //                std::string texturePath(buffer.data() + offset, buffer.data() + offset + pathLength);
-            //                // strip trailing nulls
-            //                texturePath.erase(std::find(texturePath.begin(), texturePath.end(), '\0'), texturePath.end());
-            //                offset += pathLength;
-            //
-            //                // Load texture via Resource Manager
-            //#ifndef ANDROID
-            //                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-            //#else
-            //                texturePath = texturePath.substr(texturePath.find("Resources"));
-            //                std::shared_ptr<Texture> texture = ResourceManager::GetInstance().GetResource<Texture>(texturePath);
-            //#endif
-            //                if (texture) {
-            //                    std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, texture);
-            //                    material->SetTexture(texType, std::move(textureInfo));
-            //
-            //                    // Assign the texture type
-            //                    switch (texType) {
-            //                    case Material::TextureType::DIFFUSE:
-            //                        texture->GetType() = "diffuse";
-            //                        break;
-            //                    case Material::TextureType::SPECULAR:
-            //                        texture->GetType() = "specular";
-            //                        break;
-            //                    case Material::TextureType::NORMAL:
-            //                        texture->GetType() = "normal";
-            //                        break;
-            //                    case Material::TextureType::EMISSIVE:
-            //                        texture->GetType() = "emissive";
-            //                        break;
-            //                        // Add other cases as needed
-            //                    default:
-            //                        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[MODEL] Warning: Unhandled texture type in model loading.\n");
-            //                        texture->GetType() = "unknown";
-            //                        break;
-            //                    }
-            //                }
-            //
-            //                textures.push_back(texture);
-            //            }
 
             Mesh newMesh(vertices, indices, material);
             newMesh.CalculateBoundingBox();
@@ -804,11 +808,43 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             //}
         }
 
+        // Read ModelNode hierarchy
+        {
+            ReadModelNode(buffer, offset, rootNode);
+        }
+
         CalculateBoundingBox();
         return true;
     }
 
     return false;
+}
+
+void Model::ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node) {
+    // Read node name
+    size_t nameLength;
+    std::memcpy(&nameLength, buffer.data() + offset, sizeof(nameLength));
+    offset += sizeof(nameLength);
+    std::string nodeName(nameLength, '\0');
+    std::memcpy(&nodeName[0], buffer.data() + offset, nameLength);
+    offset += nameLength;
+    node.name = nodeName;
+
+    // Read local transform
+    std::memcpy(&node.localTransform, buffer.data() + offset, sizeof(node.localTransform));
+    offset += sizeof(node.localTransform);
+
+    // Read number of children
+    size_t childCount;
+    std::memcpy(&childCount, buffer.data() + offset, sizeof(childCount));
+    offset += sizeof(childCount);
+
+    // Recursively read each child node
+    // Important: Reserve memory to prevent reallocations while reading
+    node.children.resize(childCount);
+    for (size_t i = 0; i < childCount; ++i) {
+        ReadModelNode(buffer, offset, node.children[i]);
+    }
 }
 
 bool Model::ReloadResource(const std::string& resourcePath, const std::string& assetPath)
@@ -855,7 +891,7 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
     return newMetaData;
 }
 
-void Model::Draw(Shader& shader, const Camera& camera)
+void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponent* modelComp)
 {
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
@@ -882,6 +918,21 @@ void Model::Draw(Shader& shader, const Camera& camera)
 		return;
 	}
 #endif
+
+    if (!modelComp) return;
+
+    bool hasBones = !modelComp->mFinalBoneMatrices.empty();
+    shader.setBool("hasBones", hasBones);
+
+    if (hasBones)
+    {
+        constexpr size_t MAX_BONES = 100;
+        const auto& t = modelComp->mFinalBoneMatrices;
+        const size_t n = std::min(t.size(), MAX_BONES);
+        // Upload as you already do (or via one glUniformMatrix4fv with [0])
+        for (size_t i = 0; i < n; ++i)
+            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+    }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
@@ -911,16 +962,25 @@ void Model::Draw(Shader& shader, const Camera& camera)
 #endif
 }
 
-void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial)
+void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp)
 {
 //#ifdef ANDROID
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw with entity material - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 //#endif
 
 
-    bool isAnim = false;
+    bool hasBones = !modelComp.mFinalBoneMatrices.empty();
+	shader.setBool("hasBones", hasBones);
 
-	shader.setBool("isAnimated", isAnim);
+    if (hasBones)
+    {
+        constexpr size_t MAX_BONES = 100;
+        const auto& t = modelComp.mFinalBoneMatrices;
+        const size_t n = std::min(t.size(), MAX_BONES);
+        // Upload as you already do (or via one glUniformMatrix4fv with [0])
+        for (size_t i = 0; i < n; ++i)
+            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+    }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
 	{
@@ -952,33 +1012,20 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 }
 
-void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const Animator* animator)
+void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator)
 {
-    bool isAnim = false;
-    const std::vector<glm::mat4>* finalBoneMatrices = nullptr;
+    bool hasBones = animator && !modelComp.mFinalBoneMatrices.empty();
+	shader.setBool("hasBones", hasBones);
 
-    if (animator)
-    {
-        const auto& mats = animator->GetFinalBoneMatrices();
-        if (!mats.empty()) 
-        {
-            isAnim = true;
-            finalBoneMatrices = &mats;
-        }
-    }
-
-	shader.setBool("isAnimated", isAnim);
-
-    if (isAnim) 
+    if (hasBones)
     {
         constexpr size_t MAX_BONES = 100;
-        const auto& t = *finalBoneMatrices;
+        const auto& t = modelComp.mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
         // Upload as you already do (or via one glUniformMatrix4fv with [0])
         for (size_t i = 0; i < n; ++i)
             shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
     }
-
 
     for (size_t i = 0; i < meshes.size(); ++i)
     {
@@ -996,6 +1043,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         }
     }
 
+}
+
+void Model::DrawDepthOnly()
+{
+    for (auto& mesh : meshes)
+    {
+        mesh.DrawDepthOnly();
+    }
 }
 
 #ifdef __ANDROID__
@@ -1121,17 +1176,6 @@ void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
     if (weight > vertex.mWeights[minI]) { vertex.mBoneIDs[minI] = boneID; vertex.mWeights[minI] = weight; }
 }
 
-
-inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
-{
-    glm::mat4 to;
-    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
-    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
-    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
-    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
-    return to;
-}
-
 void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 {
     scene;
@@ -1181,5 +1225,3 @@ void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* 
         }
     }
 }
-
-

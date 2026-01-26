@@ -7,7 +7,7 @@
     },
     "TextureMetaData": {
         "type": "normal",
-        "flipUVs": false,
+        "flipUVs": true,
         "generateMipmaps": true
     }
 }

@@ -58,6 +58,15 @@ return Component {
         collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
         collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
         collisionLerpOut = 5.0,    -- Slower ease when wall clears
+        -- Action mode settings
+        actionModeEnabled   = true,
+        actionModeKey       = "Attack",
+        actionModePitch     = 25.0,
+        actionModeDistance  = 3.5,
+        actionModeTransition = 8.0,
+        actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
+        -- Camera rotation lock
+        lockCameraRotation  = false,
     },
 
     Awake = function(self)
@@ -71,6 +80,12 @@ return Component {
         self._lastMouseY = 0.0
         self._firstMouse = true
         self._currentCollisionDist = nil  -- Track current collision-adjusted distance
+        
+        -- Action mode state
+        self._actionModeActive = false
+        self._normalPitch = 15.0
+        self._normalDistance = 2.0
+        self._toggleCooldown = 0.0
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -111,8 +126,12 @@ return Component {
         local scrollY = Input.GetScrollY()
         if scrollY ~= 0 then
             local zoomSpeed = self.zoomSpeed or 1.0
-            self.followDistance = self.followDistance - scrollY * zoomSpeed
-            self.followDistance = clamp(self.followDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+            self._normalDistance = self._normalDistance - scrollY * zoomSpeed
+            self._normalDistance = clamp(self._normalDistance, self.minZoom or 2.0, self.maxZoom or 15.0)
+            
+            if not self._actionModeActive then
+                self.followDistance = self._normalDistance
+            end
 
             -- Consume scroll so it doesn't accumulate
             if Input.ConsumeScroll then
@@ -122,21 +141,50 @@ return Component {
     end,
 
     _updateMouseLook = function(self, dt)
-        -- Process mouse look for camera rotation
-        if not (Input and Input.GetMouseX and Input.GetMouseY) then return end
-        local xpos, ypos = Input.GetMouseX(), Input.GetMouseY()
-        if self._firstMouse then
-            self._firstMouse = false
-            self._lastMouseX, self._lastMouseY = xpos, ypos
+        -- Process mouse look for camera rotation using unified input
+        if not (Input and Input.GetAxis) then
+            print("[CameraFollow] ERROR: Input.GetAxis not available")
             return
         end
-        local xoffset = (xpos - self._lastMouseX) * (self.mouseSensitivity or 0.15)
-        local yoffset = (self._lastMouseY - ypos) * (self.mouseSensitivity or 0.15)
-        self._lastMouseX, self._lastMouseY = xpos, ypos
-        self._yaw   = self._yaw   - xoffset  -- Inverted for correct left/right panning
-        self._pitch = clamp(self._pitch - yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
 
-        -- Broadcast camera yaw for camera-relative player movement
+        -- Get mouse delta from "Look" axis (configured as mouse_delta on desktop, touch_drag on Android)
+        local lookAxis = Input.GetAxis("Look")
+        if not lookAxis then
+            print("[CameraFollow] Look axis returned nil")
+            return
+        end
+
+        -- Check platform for sensitivity adjustment
+        -- Android uses normalized coords (0-1), desktop uses pixel delta - need different sensitivity
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local baseSensitivity = self.mouseSensitivity or 0.15
+
+        -- Android touch coords are normalized (0-1), so we need MUCH higher sensitivity
+        -- Desktop mouse delta is in pixels, so lower sensitivity works
+        local sensitivity = isAndroid and 800.0 or baseSensitivity  -- Direct value for Android
+
+        local xoffset = lookAxis.x * sensitivity
+        local yoffset = lookAxis.y * sensitivity
+
+        -- Debug: Log actual values being applied
+        if not self._logCount then self._logCount = 0 end
+        self._logCount = self._logCount + 1
+        if self._logCount % 30 == 1 and (lookAxis.x ~= 0 or lookAxis.y ~= 0) then
+            print("[CameraFollow] SENS=" .. sensitivity .. " offset=(" .. xoffset .. "," .. yoffset .. ") yaw=" .. self._yaw)
+        end
+
+        self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
+        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+        
+        -- Track normal pitch when not in action mode
+        if not self._actionModeActive then
+            self._normalPitch = self._pitch
+        end
+
+        -- Store camera yaw in global for player movement (bypass event_bus)
+        _G.CAMERA_YAW = self._yaw
+
+        -- Also publish via event_bus for backwards compatibility
         if event_bus and event_bus.publish then
             event_bus.publish("camera_yaw", self._yaw)
         end
@@ -146,8 +194,22 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
-        -- Toggle cursor lock with Escape
-        if Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Escape) then
+        -- Cooldown timer
+        if self._toggleCooldown > 0 then
+            self._toggleCooldown = self._toggleCooldown - dt
+        end
+
+        -- Action mode toggle
+        if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
+            if self._toggleCooldown <= 0 then
+                self._actionModeActive = not self._actionModeActive
+                self._toggleCooldown = 0.25
+                print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
+            end
+        end
+
+        -- Toggle cursor lock with Escape (unified input system)
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 local isLocked = Screen.IsCursorLocked()
                 Screen.SetCursorLocked(not isLocked)
@@ -155,8 +217,9 @@ return Component {
             end
         end
 
-        -- Re-lock cursor when clicking in game (if unlocked)
-        if Input and Input.GetMouseButtonDown and Input.GetMouseButtonDown(Input.MouseButton.Left) then
+        -- Re-lock cursor when clicking Attack action (for standalone game builds)
+        -- In Editor, this is handled by GamePanel which only re-locks when clicking inside game panel
+        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 if not Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(true)
@@ -165,13 +228,35 @@ return Component {
             end
         end
 
-        -- Only update camera look when cursor is locked
-        if Screen and Screen.IsCursorLocked and Screen.IsCursorLocked() then
-            self:_updateMouseLook(dt)
+        -- Only update camera look when cursor is locked (desktop) or always on Android
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
+        -- Debug log once
+        if not self._loggedPlatform then
+            print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
+            self._loggedPlatform = true
+        end
+
+        if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
+            -- Check if rotation should be locked (either always locked OR locked during action mode)
+            local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
+            
+            if not shouldLockRotation then
+                self:_updateMouseLook(dt)
+            end
         end
 
         -- Update scroll zoom
         self:_updateScrollZoom()
+
+        -- Action mode smooth transition
+        local targetPitch = self._actionModeActive and self.actionModePitch or self._normalPitch
+        local targetDistance = self._actionModeActive and self.actionModeDistance or self._normalDistance
+        local transitionSpeed = self.actionModeTransition or 8.0
+        local t = 1.0 - math.exp(-transitionSpeed * dt)
+        
+        self._pitch = self._pitch + (targetPitch - self._pitch) * t
+        self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
 
         local radius = self.followDistance or 5.0
         local pitchRad = math.rad(self._pitch)

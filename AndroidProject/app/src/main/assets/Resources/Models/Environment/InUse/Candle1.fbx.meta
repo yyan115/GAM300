@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "002f741371fa8061-000361c8e400001b",
-        "source": "../../Resources/Models/Environment/_InUse/Candle1.fbx",
-        "compiled": "../../Resources/Models/Environment/_InUse/Candle1.mesh",
-        "android_compiled": "Resources/Models/Environment/InUse/Candle1_android.mesh"
-    }
-}

@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "005330ffb75ae0fb-00036c7f64000003",
-        "source": "../../Resources/Materials/Nightshade_MAT.mat",
-        "compiled": "../../Resources/Materials/Nightshade_MAT.mat",
-        "android_compiled": "Resources/Materials/Nightshade_MAT_android.mat"
-    }
-}

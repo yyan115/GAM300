@@ -104,6 +104,16 @@ void GUIManager::Render() {
 	// Start ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
+
+	// When cursor is actually locked (not paused), disable ImGui mouse input
+	// This prevents clicking on editor elements while playing with cursor captured
+	ImGuiIO& ioPreFrame = ImGui::GetIO();
+	if (WindowManager::IsCursorLocked()) {
+		ioPreFrame.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	} else {
+		ioPreFrame.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
+
 	ImGui::NewFrame();
 	
 	// Initialize ImGuizmo for this frame

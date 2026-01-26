@@ -23,7 +23,7 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
@@ -66,6 +66,7 @@ extern std::string DraggedFontPath;
 #include <Panels/AssetInspector.hpp>
 #include "ReflectionRenderer.hpp"
 #include "UI/Slider/SliderComponent.hpp"
+#include "UI/Anchor/UIAnchorComponent.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Hierarchy/ParentComponent.hpp"
 #include "Hierarchy/ChildrenComponent.hpp"
@@ -73,6 +74,8 @@ extern std::string DraggedFontPath;
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>
+#include <Panels/PrefabEditorPanel.hpp>
+#include <Prefab/PrefabIO.hpp>
 
 // Component clipboard for copy/paste functionality (Unity-style)
 namespace {
@@ -114,6 +117,8 @@ static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
 	return ecs.HasComponent<PrefabLinkComponent>(e);
 }
 
+std::vector<InspectorPanel::ComponentRemovalRequest> InspectorPanel::pendingComponentRemovals;
+std::vector<InspectorPanel::ComponentResetRequest> InspectorPanel::pendingComponentResets;
 
 InspectorPanel::InspectorPanel()
 	: EditorPanel("Inspector", true) {
@@ -301,6 +306,10 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<SliderComponent>(entity) ?
 				(void*)&ecs.GetComponent<SliderComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<SliderComponent>(entity); }},
+		{"UI Anchor", "UIAnchorComponent",
+			[&]() { return ecs.HasComponent<UIAnchorComponent>(entity) ?
+				(void*)&ecs.GetComponent<UIAnchorComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<UIAnchorComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -443,33 +452,39 @@ void InspectorPanel::OnImGuiRender() {
 			}
 			else {
 				try {
-					ImGui::Text("Entity ID: %u", displayEntity);
-
-					// Lock button on the same line
-					ImGui::SameLine(ImGui::GetWindowWidth() - 42);
-					if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
-						inspectorLocked = !inspectorLocked;
-						if (inspectorLocked) {
-							// Lock to current content (entity or asset)
-							if (selectedAsset.high != 0 || selectedAsset.low != 0) {
-								lockedAsset = selectedAsset;
-								lockedEntity = static_cast<Entity>(-1);
+					if (!PrefabEditor::IsInPrefabEditorMode()) {
+						ImGui::Text("Entity ID: %u", displayEntity);
+						// Lock button on the same line
+						ImGui::SameLine(ImGui::GetWindowWidth() - 42);
+						if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+							inspectorLocked = !inspectorLocked;
+							if (inspectorLocked) {
+								// Lock to current content (entity or asset)
+								if (selectedAsset.high != 0 || selectedAsset.low != 0) {
+									lockedAsset = selectedAsset;
+									lockedEntity = static_cast<Entity>(-1);
+								}
+								else {
+									lockedEntity = GUIManager::GetSelectedEntity();
+									lockedAsset = { 0, 0 };
+								}
 							}
 							else {
-								lockedEntity = GUIManager::GetSelectedEntity();
+								// Unlock
+								lockedEntity = static_cast<Entity>(-1);
 								lockedAsset = { 0, 0 };
 							}
 						}
-						else {
-							// Unlock
-							lockedEntity = static_cast<Entity>(-1);
-							lockedAsset = { 0, 0 };
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
 						}
+						ImGui::Separator();
 					}
-					if (ImGui::IsItemHovered()) {
-						ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+					else {
+						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+						ImGui::Text("Editing Prefab:");
+						ImGui::Separator();
 					}
-					ImGui::Separator();
 
 					// All components (Name, Tag, Layer, Transform, etc.) are now rendered via reflection
 					// See DrawComponentsViaReflection() which uses custom renderers for special UI
@@ -483,9 +498,11 @@ void InspectorPanel::OnImGuiRender() {
 					// ===================================================================
 					DrawComponentsViaReflection(displayEntity);
 
-					// Add Component button
-					ImGui::Separator();
-					DrawAddComponentButton(displayEntity);
+					if (!PrefabEditor::IsInPrefabEditorMode()) {
+						// Add Component button
+						ImGui::Separator();
+						DrawAddComponentButton(displayEntity);
+					}
 
 				}
 				catch (const std::exception& e) {
@@ -1001,6 +1018,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			}
 			if (!ecsManager.HasComponent<SliderComponent>(entity)) {
 				allComponents.push_back({ "Slider", "SliderComponent", "UI" });
+			}
+			if (!ecsManager.HasComponent<UIAnchorComponent>(entity)) {
+				allComponents.push_back({ "UI Anchor", "UIAnchorComponent", "UI" });
 			}
 
 		// Cache scripts to avoid filesystem scanning every frame
@@ -1597,6 +1617,26 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<SliderComponent>(entity, component);
 			std::cout << "[Inspector] Added SliderComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "UIAnchorComponent") {
+			UIAnchorComponent component;
+			// Default to center anchor
+			component.anchorX = 0.5f;
+			component.anchorY = 0.5f;
+			component.offsetX = 0.0f;
+			component.offsetY = 0.0f;
+			component.sizeMode = UISizeMode::Fixed;
+
+			ecsManager.AddComponent<UIAnchorComponent>(entity, component);
+
+			// Ensure entity has a Transform component for positioning
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for UI Anchor" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added UIAnchorComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -1904,6 +1944,7 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			}
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
+				ecsManager.GetComponent<ModelRenderComponent>(request.entity).SetAnimator(nullptr);
 				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Brain") {
@@ -1940,6 +1981,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 
 				ecsManager.RemoveComponent<SliderComponent>(request.entity);
 				std::cout << "[Inspector] Removed SliderComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "UIAnchorComponent") {
+				ecsManager.RemoveComponent<UIAnchorComponent>(request.entity);
+				std::cout << "[Inspector] Removed UIAnchorComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -2035,6 +2080,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				sliderComp.trackEntityGuid = trackGuid;
 				sliderComp.handleEntityGuid = handleGuid;
 				std::cout << "[Inspector] Reset SliderComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "UIAnchorComponent") {
+				ecsManager.GetComponent<UIAnchorComponent>(request.entity) = UIAnchorComponent{};
+				std::cout << "[Inspector] Reset UIAnchorComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values
@@ -2153,6 +2202,7 @@ bool InspectorPanel::HasComponent(Entity entity, const std::string& componentTyp
 	if (componentType == "BrainComponent") return ecs.HasComponent<BrainComponent>(entity);
 	if (componentType == "ScriptComponentData") return ecs.HasComponent<ScriptComponentData>(entity);
 	if (componentType == "ButtonComponent") return ecs.HasComponent<ButtonComponent>(entity);
+	if (componentType == "UIAnchorComponent") return ecs.HasComponent<UIAnchorComponent>(entity);
 
 	return false;
 }
@@ -2180,7 +2230,8 @@ std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vect
 		"AnimationComponent",
 		"BrainComponent",
 		"ScriptComponentData",
-		"ButtonComponent"
+		"ButtonComponent",
+		"UIAnchorComponent"
 	};
 
 	std::vector<std::string> sharedComponents;
@@ -2263,7 +2314,8 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		{"AnimationComponent", "Animation"},
 		{"BrainComponent", "Brain"},
 		{"ScriptComponentData", "Script"},
-		{"ButtonComponent", "Button"}
+		{"ButtonComponent", "Button"},
+		{"UIAnchorComponent", "UI Anchor"}
 	};
 
 	std::string displayName = componentType;

@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "0060f444e1e8808c-000337e664000011",
-        "source": "../../Resources/Shaders/default",
-        "compiled": "../../Resources/Shaders/default.shader",
-        "android_compiled": "Resources/Shaders/default.shader"
-    }
-}

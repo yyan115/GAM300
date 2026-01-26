@@ -121,6 +121,7 @@ bool Shader::SetupShader(const std::string& path) {
 	std::string genericPath = (p.parent_path() / p.stem()).generic_string();
 	std::string vertexFile = genericPath + ".vert";
 	std::string fragmentFile = genericPath + ".frag";
+	std::string geometryFile = genericPath + ".geom";  // NEW: Geometry shader path
 
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading shader files: %s and %s", vertexFile.c_str(), fragmentFile.c_str());
@@ -130,38 +131,50 @@ bool Shader::SetupShader(const std::string& path) {
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
 
+#ifndef __ANDROID__
+	// NEW: Try to read geometry shader (optional)
+	std::string geometryCode;
+	bool hasGeometryShader = false;
+
+	// Check if geometry shader file exists before trying to load
+	if (std::filesystem::exists(geometryFile)) {
+		geometryCode = get_file_contents(geometryFile.c_str());
+		hasGeometryShader = !geometryCode.empty();
+		if (hasGeometryShader) {
+			ENGINE_LOG_INFO("Found geometry shader: " + geometryFile);
+		}
+		else {
+			ENGINE_PRINT("[SHADER] Warning: Geometry shader file exists but is empty: ", geometryFile, "\n");
+		}
+	}
+	else {
+		// Geometry shader is optional - not an error if it doesn't exist
+		ENGINE_LOG_INFO("No geometry shader found at: " + geometryFile + " (optional)");
+	}
+#endif
+
 	// Convert the shader source strings into character arrays
 	const char* vertexSource = vertexCode.c_str();
 	const char* fragmentSource = fragmentCode.c_str();
 
-	// Create Vertex Shader Object and get its reference
+	// ========================================================================
+	// VERTEX SHADER
+	// ========================================================================
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	// Attach Vertex Shader source to the Vertex Shader Object
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling vertex shader with %d chars", (int)strlen(vertexSource));
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Vertex shader source (first 200 chars): %.200s", vertexSource);
 #endif
-	// Compile the Vertex Shader into machine code
 	glCompileShader(vertexShader);
-
-	// Force flush any pending OpenGL commands
 	glFlush();
 
-	// check for shader compile errors
 	GLint success = GL_FALSE;
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-#ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Vertex shader compile status: %d (GL_TRUE=%d)", success, GL_TRUE);
-#endif
 
 	if (success != GL_TRUE)
 	{
 		GLint logLength = 0;
 		glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &logLength);
-#ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Vertex shader compilation failed! Log length: %d", logLength);
-#endif
 
 		if (logLength > 1) {
 			std::vector<char> errorLog(logLength + 1);
@@ -169,55 +182,78 @@ bool Shader::SetupShader(const std::string& path) {
 			glGetShaderInfoLog(vertexShader, logLength, &actualLength, &errorLog[0]);
 			errorLog[actualLength] = '\0';
 			ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n", &errorLog[0], "\n");
-
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Vertex shader compilation failed (length %d, actual %d): %s", logLength, actualLength, &errorLog[0]);
-#endif
-		} else {
-			ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED - No error log available", "\n");
-
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Vertex shader compilation failed - No error log available");
-			// Check OpenGL ES context version and capabilities
-			const char* version = (const char*)glGetString(GL_VERSION);
-			const char* glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-			GLenum error = glGetError();
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL version: %s", version ? version : "NULL");
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "GLSL version: %s", glslVersion ? glslVersion : "NULL");
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error state: %d", error);
-#endif
 		}
+		else {
+			ENGINE_PRINT("ERROR::SHADER::VERTEX::COMPILATION_FAILED - No error log available", "\n");
+		}
+		glDeleteShader(vertexShader);
 		return false;
 	}
 
-	// Create Fragment Shader Object and get its reference
+	// ========================================================================
+	// GEOMETRY SHADER (NEW - OPTIONAL)
+	// ========================================================================
+#ifndef __ANDROID__
+	GLuint geometryShader = 0;
+	if (hasGeometryShader)
+	{
+		const char* geometrySource = geometryCode.c_str();
+		geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+		glShaderSource(geometryShader, 1, &geometrySource, NULL);
+#ifdef __ANDROID__
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling geometry shader with %d chars", (int)strlen(geometrySource));
+#endif
+		glCompileShader(geometryShader);
+		glFlush();
+
+		GLint geomSuccess = GL_FALSE;
+		glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &geomSuccess);
+
+		if (geomSuccess != GL_TRUE)
+		{
+			GLint logLength = 0;
+			glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &logLength);
+
+			if (logLength > 1) {
+				std::vector<char> errorLog(logLength + 1);
+				GLsizei actualLength = 0;
+				glGetShaderInfoLog(geometryShader, logLength, &actualLength, &errorLog[0]);
+				errorLog[actualLength] = '\0';
+				ENGINE_PRINT("ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n", &errorLog[0], "\n");
+#ifdef __ANDROID__
+				__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Geometry shader compilation failed: %s", &errorLog[0]);
+#endif
+			}
+			else {
+				ENGINE_PRINT("ERROR::SHADER::GEOMETRY::COMPILATION_FAILED - No error log available", "\n");
+			}
+			glDeleteShader(vertexShader);
+			glDeleteShader(geometryShader);
+			return false;
+		}
+
+		ENGINE_PRINT("[SHADER] Geometry shader compiled successfully\n");
+	}
+#endif
+
+	// ========================================================================
+	// FRAGMENT SHADER
+	// ========================================================================
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	// Attach Fragment Shader source to the Fragment Shader Object
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling fragment shader with %d chars", (int)strlen(fragmentSource));
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Fragment shader source (first 300 chars): %.300s", fragmentSource);
 #endif
-	// Compile the Fragment Shader into machine code
 	glCompileShader(fragmentShader);
-
-	// Force flush any pending OpenGL commands
 	glFlush();
 
-	// check for shader compile errors
 	GLint fragmentSuccess = GL_FALSE;
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fragmentSuccess);
-#ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Fragment shader compile status: %d (GL_TRUE=%d)", fragmentSuccess, GL_TRUE);
-#endif
 
 	if (fragmentSuccess != GL_TRUE)
 	{
 		GLint logLength = 0;
 		glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &logLength);
-#ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Fragment shader compilation failed! Log length: %d", logLength);
-#endif
 
 		if (logLength > 1) {
 			std::vector<char> errorLog(logLength + 1);
@@ -225,38 +261,43 @@ bool Shader::SetupShader(const std::string& path) {
 			glGetShaderInfoLog(fragmentShader, logLength, &actualLength, &errorLog[0]);
 			errorLog[actualLength] = '\0';
 			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n", &errorLog[0], "\n");
-
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Fragment shader compilation failed (length %d, actual %d): %s", logLength, actualLength, &errorLog[0]);
-#endif
-		} else {
-			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED - No error log available", "\n");
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Fragment shader compilation failed - No error log available");
-			GLenum error = glGetError();
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error state: %d", error);
-#endif
 		}
+		else {
+			ENGINE_PRINT("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED - No error log available", "\n");
+		}
+		glDeleteShader(vertexShader);
+#ifndef __ANDROID__
+		if (hasGeometryShader) glDeleteShader(geometryShader);
+#endif
+		glDeleteShader(fragmentShader);
 		return false;
 	}
 
-	// Create Shader Program Object and get its reference
+	// ========================================================================
+	// SHADER PROGRAM LINKING
+	// ========================================================================
 	ID = glCreateProgram();
-
-	// Enable the retrievable binary flag (for compiling of shader).
 	glProgramParameteri(ID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
 
-	// Attach the Vertex and Fragment Shaders to the Shader Program
+	// Attach all shaders
 	glAttachShader(ID, vertexShader);
+#ifndef __ANDROID__
+	if (hasGeometryShader) {
+		glAttachShader(ID, geometryShader);
+	}
+#endif
 	glAttachShader(ID, fragmentShader);
-	// Wrap-up/Link all the shaders together into the Shader Program
+
+	// Link the program
 	glLinkProgram(ID);
-	// check for linking errors
+
+	// Check for linking errors
 	GLint linkSuccess = GL_FALSE;
 	glGetProgramiv(ID, GL_LINK_STATUS, &linkSuccess);
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Link status: %d (GL_TRUE=%d)", linkSuccess, GL_TRUE);
 #endif
+
 	if (linkSuccess != GL_TRUE) {
 		GLint logLength = 0;
 		glGetProgramiv(ID, GL_INFO_LOG_LENGTH, &logLength);
@@ -265,22 +306,26 @@ bool Shader::SetupShader(const std::string& path) {
 			GLsizei actualLength = 0;
 			glGetProgramInfoLog(ID, logLength, &actualLength, &infoLog[0]);
 			infoLog[actualLength] = '\0';
-
 			ENGINE_PRINT("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", &infoLog[0], "\n");
-
 #ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed (length %d, actual %d): %s", logLength, actualLength, &infoLog[0]);
-#endif
-		} else {
-#ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed - No error log available");
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed: %s", &infoLog[0]);
 #endif
 		}
+		glDeleteShader(vertexShader);
+#ifndef __ANDROID__
+		if (hasGeometryShader) glDeleteShader(geometryShader);
+#endif
+		glDeleteShader(fragmentShader);
 		return false;
 	}
 
-	// Delete the now useless Vertex and Fragment Shader objects
+	// Clean up shader objects
 	glDeleteShader(vertexShader);
+#ifndef __ANDROID__
+	if (hasGeometryShader) {
+		glDeleteShader(geometryShader);
+	}
+#endif
 	glDeleteShader(fragmentShader);
 
 	return true;

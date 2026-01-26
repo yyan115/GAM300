@@ -1,0 +1,30 @@
+{
+    "name": "New Animator",
+    "entryState": "New State",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [],
+    "states": [
+        {
+            "id": "New State",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -74.0,
+                "y": -118.0
+            }
+        }
+    ],
+    "transitions": [],
+    "clipPaths": [
+        "Resources/Models/Test/KusaneTest3.fbx"
+    ]
+}
