@@ -114,3 +114,55 @@ Vector3D TextUtils::GetTextDimensions(const TextRenderComponent& comp)
 {
     return Vector3D(GetEstimatedWidth(comp), GetEstimatedHeight(comp), 0);
 }
+
+void TextUtils::SetWordWrap(TextRenderComponent& comp, bool enabled)
+{
+    if (comp.wordWrap != enabled)
+    {
+        comp.wordWrap = enabled;
+        comp.wrappedLines.clear();
+    }
+}
+
+bool TextUtils::GetWordWrap(const TextRenderComponent& comp)
+{
+    return comp.wordWrap;
+}
+
+void TextUtils::SetMaxWidth(TextRenderComponent& comp, float maxWidth)
+{
+    if (comp.maxWidth != maxWidth)
+    {
+        comp.maxWidth = maxWidth;
+        comp.wrappedLines.clear();
+    }
+}
+
+float TextUtils::GetMaxWidth(const TextRenderComponent& comp)
+{
+    return comp.maxWidth;
+}
+
+void TextUtils::SetLineSpacing(TextRenderComponent& comp, float spacing)
+{
+    comp.lineSpacing = spacing;
+}
+
+float TextUtils::GetLineSpacing(const TextRenderComponent& comp)
+{
+    return comp.lineSpacing;
+}
+
+void TextUtils::EnableWordWrap(TextRenderComponent& comp, float maxWidth, float lineSpacing)
+{
+    comp.wordWrap = true;
+    comp.maxWidth = maxWidth;
+    comp.lineSpacing = lineSpacing;
+    comp.wrappedLines.clear();
+}
+
+void TextUtils::DisableWordWrap(TextRenderComponent& comp)
+{
+    comp.wordWrap = false;
+    comp.wrappedLines.clear();
+}

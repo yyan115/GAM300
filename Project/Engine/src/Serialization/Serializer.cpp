@@ -2461,6 +2461,17 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
             textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
             // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
+
+            // LINE WRAPPING PROPERTIES (indices 11, 12, 13)
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
+                textComp.wordWrap = Serializer::GetBool(d, startIdx + 11, false);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                textComp.maxWidth = Serializer::GetFloat(d, startIdx + 12, 0.0f);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 13, 1.2f);
+            }
         }
     }
 }

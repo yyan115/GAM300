@@ -465,12 +465,10 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Configure depth testing based on 2D/3D mode
 	if (item.is3D) {
-		// 3D text: enable depth testing
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE); // Don't write to depth buffer (allow text to overlay)
+		glDepthMask(GL_FALSE);
 	}
 	else {
-		// 2D text: disable depth testing so render order determines what's on top 
 		glDisable(GL_DEPTH_TEST);
 	}
 
@@ -485,33 +483,27 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
 	{
-		// 3D text rendering - use normal 3D matrices
-		// 3D text uses Transform component scale (in model matrix)
 		glm::mat4 modelMatrix = item.transform.ConvertToGLM();
 		SetupMatrices(*item.shader, modelMatrix);
 	}
 	else
 	{
-		// 2D screen space text rendering
 		if (IsRenderingForEditor() && Is2DMode()) {
-			// Use the editor camera's view/projection matrices
-			// Don't apply scale to model matrix - we'll apply it per-character for proper axis control
 			glm::mat4 modelMatrix = glm::mat4(1.0f);
 			modelMatrix = glm::translate(modelMatrix, item.position.ConvertToGLM());
 			SetupMatrices(*item.shader, modelMatrix);
-		} else {
-			// Normal 2D screen-space rendering for game/runtime (uses window pixel coordinates)
-			// Don't apply scale to matrices - we'll apply it per-character for proper axis control
+		}
+		else {
 			Setup2DTextMatrices(*item.shader, item.position.ConvertToGLM(), 1.0f, 1.0f);
 		}
 	}
 
-	// Bind VAO and render each character
+	// Bind VAO and render
 	glActiveTexture(GL_TEXTURE0);
 	VAO* fontVAO = item.font->GetVAO();
 	VBO* fontVBO = item.font->GetVBO();
 
-	if (!fontVAO || !fontVBO) 
+	if (!fontVAO || !fontVBO)
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
 		glDisable(GL_BLEND);
@@ -520,72 +512,81 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	fontVAO->Bind();
 
-	float x = 0.0f;
-	float y = 0.0f;
-
-	// For 3D text, scale down from pixels to world units (1 pixel = 0.01 units)
-	// For 2D text, apply Transform scale per-axis for Unity-like behavior
-	// Note: fontSize controls the font resolution (glyphs are loaded at that size)
-	// Transform scale then scales those glyphs for final visual size
+	// Calculate scale factors
 	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
 	float scaleX = item.is3D ? worldScaleFactor : (item.transformScale.x * worldScaleFactor);
 	float scaleY = item.is3D ? worldScaleFactor : (item.transformScale.y * worldScaleFactor);
 
-	// Calculate starting position based on alignment
-	if (item.alignment == TextRenderComponent::Alignment::CENTER)
-	{
-		x = -item.font->GetTextWidth(item.text, scaleX) / 2.0f;
-	}
-	else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
-	{
-		x = -item.font->GetTextWidth(item.text, scaleX);
-	}
+	// Get line height for multi-line rendering
+	float lineHeight = item.font->GetTextHeight(scaleY) * item.lineSpacing;
 
-	// Iterate through all characters
-	for (char c : item.text)
+	// Use pre-computed wrapped lines from TextRenderingSystem
+	// If empty (shouldn't happen), fall back to single line
+	const std::vector<std::string>& lines = item.wrappedLines.empty()
+		? std::vector<std::string>{item.text}
+	: item.wrappedLines;
+
+	// Starting Y position (top of text block)
+	float startY = 0.0f;
+
+	// Render each line
+	for (size_t lineIndex = 0; lineIndex < lines.size(); ++lineIndex)
 	{
-		const Character& ch = item.font->GetCharacter(c);
-		if (ch.textureID == 0) {
-			ENGINE_PRINT(EngineLogging::LogLevel::Error, "Character '" , c , "' has no texture!\n");
-			continue;
+		const std::string& line = lines[lineIndex];
+
+		// Calculate X starting position based on alignment for this line
+		float x = 0.0f;
+		float lineWidth = item.font->GetTextWidth(line, scaleX);
+
+		if (item.alignment == TextRenderComponent::Alignment::CENTER)
+		{
+			x = -lineWidth / 2.0f;
+		}
+		else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
+		{
+			x = -lineWidth;
 		}
 
-		// Apply scaleX to horizontal metrics, scaleY to vertical metrics (Unity-like behavior)
-		float xpos = x + ch.bearing.x * scaleX;
-		float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
+		// Calculate Y position for this line (line 0 at top, goes down)
+		float y = startY - (lineIndex * lineHeight);
 
-		float w = ch.size.x * scaleX;
-		float h = ch.size.y * scaleY;
+		// Render each character in the line
+		for (char c : line)
+		{
+			const Character& ch = item.font->GetCharacter(c);
+			if (ch.textureID == 0) {
+				continue;
+			}
 
-		// Update VBO for each character
-		float vertices[6][4] = {
-			{ xpos,     ypos + h,   0.0f, 0.0f },
-			{ xpos,     ypos,       0.0f, 1.0f },
-			{ xpos + w, ypos,       1.0f, 1.0f },
+			float xpos = x + ch.bearing.x * scaleX;
+			float ypos = y - (ch.size.y - ch.bearing.y) * scaleY;
 
-			{ xpos,     ypos + h,   0.0f, 0.0f },
-			{ xpos + w, ypos,       1.0f, 1.0f },
-			{ xpos + w, ypos + h,   1.0f, 0.0f }
-		};
+			float w = ch.size.x * scaleX;
+			float h = ch.size.y * scaleY;
 
-		// Render glyph texture over quad
-		glBindTexture(GL_TEXTURE_2D, ch.textureID);
+			float vertices[6][4] = {
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos,     ypos,       0.0f, 1.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
 
-		// Update content of VBO memory using your extended VBO class
-		fontVBO->UpdateData(vertices, sizeof(vertices));
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
+				{ xpos + w, ypos + h,   1.0f, 0.0f }
+			};
 
-		// Render quad
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+			glBindTexture(GL_TEXTURE_2D, ch.textureID);
+			fontVBO->UpdateData(vertices, sizeof(vertices));
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-		x += (ch.advance >> 6) * scaleX; // Bitshift by 6 to get value in pixels (2^6 = 64), use scaleX for horizontal spacing
+			x += (ch.advance >> 6) * scaleX;
+		}
 	}
 
 	fontVAO->Unbind();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE); // Restore depth writing
-	glEnable(GL_DEPTH_TEST); // Restore depth testing for 3D objects
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
 }
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
