@@ -342,9 +342,25 @@ namespace CharacterControllerWrappers {
             controller->SetGravity(Vector3D(x, y, z));
     }
 
-    inline void Destroy(CharacterController* controller) {
-        if (controller)
-            delete controller;
+    inline void DestroyByEntity(Entity id)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->RemoveController(id);
+    }
+
+    inline void UpdateAll(float dt)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->Update(dt, ecsManager);
+    }
+
+    inline void ClearAll()
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->Shutdown();
     }
 }
 
@@ -722,5 +738,44 @@ namespace GameSettingsWrappers {
 
     inline float GetDefaultExposure() {
         return GameSettingsManager::GetDefaultExposure();
+    }
+}
+
+// ============================================================================
+// NAV SYSTEM WRAPPERS
+// ============================================================================
+#include "Game AI/NavSystem.hpp"
+
+namespace NavWrappers {
+
+    inline int RequestPathXZ(lua_State* L)
+    {
+        // Expect 5 numbers on the stack
+        float sx = (float)luaL_checknumber(L, 1);
+        float sz = (float)luaL_checknumber(L, 2);
+        float gx = (float)luaL_checknumber(L, 3);
+        float gz = (float)luaL_checknumber(L, 4);
+        Entity e = (Entity)luaL_checknumber(L, 5);
+
+        const auto path = NavSystem::Get().RequestPathXZ(sx, sz, gx, gz, e);
+
+        lua_newtable(L); // push result table
+
+        int i = 1;
+        for (const auto& p : path)
+        {
+            lua_newtable(L);               // point table
+            lua_pushnumber(L, p.x); lua_setfield(L, -2, "x");
+            lua_pushnumber(L, p.y); lua_setfield(L, -2, "y");
+            lua_pushnumber(L, p.z); lua_setfield(L, -2, "z");
+
+            lua_rawseti(L, -2, i++);       // result[i] = point
+        }
+
+        return 1; // returning 1 value (the table)
+    }
+
+    inline float GetGroundY(Entity entity) {
+        return NavSystem::Get().GetGroundY(entity);
     }
 }

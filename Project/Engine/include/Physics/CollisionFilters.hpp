@@ -14,6 +14,8 @@ public:
         mObjectToBroadPhase[Layers::CHARACTER] = BroadPhaseLayers::CHARACTER;
         mObjectToBroadPhase[Layers::SENSOR] = BroadPhaseLayers::MOVING;
         mObjectToBroadPhase[Layers::DEBRIS] = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::NAV_GROUND] = BroadPhaseLayers::NON_MOVING;
+        mObjectToBroadPhase[Layers::NAV_OBSTACLE] = BroadPhaseLayers::NON_MOVING;
     }
 
     ~MyBroadPhaseLayerInterface() override = default;
@@ -48,6 +50,8 @@ public:
     bool ShouldCollide(JPH::ObjectLayer layer, JPH::BroadPhaseLayer bp) const override {
         switch (layer) {
         case Layers::NON_MOVING:
+        case Layers::NAV_GROUND:
+        case Layers::NAV_OBSTACLE:
             return bp == BroadPhaseLayers::MOVING || bp == BroadPhaseLayers::CHARACTER || bp == BroadPhaseLayers::NON_MOVING;
 
         case Layers::MOVING:

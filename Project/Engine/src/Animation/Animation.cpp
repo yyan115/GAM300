@@ -170,9 +170,9 @@ void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::
 
 static inline std::string NormalizeFbxName(std::string n)
 {
-	const char* tag = "_$AssimpFbx$";
-	size_t p = n.find(tag);
-	if (p != std::string::npos) n.erase(p);  // strip suffix, keep "mixamorig:Spine"
+	//const char* tag = "_$AssimpFbx$";
+	//size_t p = n.find(tag);
+	//if (p != std::string::npos) n.erase(p);  // strip suffix, keep "mixamorig:Spine"
 	return n;
 }
 

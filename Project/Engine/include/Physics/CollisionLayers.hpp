@@ -9,7 +9,9 @@ namespace Layers {
     static constexpr JPH::ObjectLayer CHARACTER = 2;
     static constexpr JPH::ObjectLayer SENSOR = 3;
     static constexpr JPH::ObjectLayer DEBRIS = 4;
-    static constexpr JPH::uint        COUNT = 5;
+    static constexpr JPH::ObjectLayer NAV_GROUND = 5;
+    static constexpr JPH::ObjectLayer NAV_OBSTACLE = 6;
+    static constexpr JPH::uint        COUNT = 7;
 }
 
 namespace BroadPhaseLayers {
