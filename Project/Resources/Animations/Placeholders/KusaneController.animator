@@ -24,13 +24,13 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -12.0,
-                "y": -75.5
+                "x": -26.0,
+                "y": -32.5
             }
         }
     ],
     "transitions": [],
     "clipPaths": [
-        "Resources/Animations/Kusane@Idle.fbx"
+        "Resources/Animations/KusaneIdle.fbx"
     ]
 }
