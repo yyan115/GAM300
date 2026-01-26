@@ -57,6 +57,4 @@ private:
 
 	bool loadSceneNextFrame = false;
 	std::string sceneToLoadNextFrame{};
-	bool deferredSceneFromLua = false;  // Track if deferred load was from Lua/game code
-	bool isExecutingDeferredLoad = false;  // Prevent re-deferral during deferred execution
 };

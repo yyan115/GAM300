@@ -1,7 +1,7 @@
 #include "Animation/AnimationStateMachine.hpp"
 #include "Animation/AnimationComponent.hpp"
 
-void AnimationStateMachine::Update(float dt, Entity entity)
+void AnimationStateMachine::Update(float dt)
 {
 	mStateTime += dt;
 
@@ -39,7 +39,7 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 
 	if (found)
 	{
-		EnterState(nextState, entity);
+		EnterState(nextState);
 	}
 }
 
@@ -54,7 +54,7 @@ bool AnimationStateMachine::EvaluateTransitionConditions(const AnimTransition& t
 	return true;
 }
 
-void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
+void AnimationStateMachine::EnterState(const AnimStateID& id)
 {
 	mCurrentState = id;
 	mStateTime = 0.0f;
@@ -74,9 +74,9 @@ void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
 	mOwner->SetSpeed(config.speed);
 
 	if (config.loop)
-		mOwner->PlayClip(config.clipIndex, true, entity);
+		mOwner->PlayClip(config.clipIndex, true);
 	else
-		mOwner->PlayOnce(config.clipIndex, entity);
+		mOwner->PlayOnce(config.clipIndex);
 }
 
 void AnimationStateMachine::RemoveState(const AnimStateID& id)
@@ -149,14 +149,14 @@ const AnimTransition* AnimationStateMachine::GetTransition(size_t index) const
 	return index < mTransitions.size() ? &mTransitions[index] : nullptr;
 }
 
-void AnimationStateMachine::Reset(Entity entity)
+void AnimationStateMachine::Reset()
 {
 	mCurrentState = mEntryState;
 	mStateTime = 0.0f;
-	//if (!mEntryState.empty())
-	//{
-	//	EnterState(mEntryState, entity);
-	//}
+	if (!mEntryState.empty())
+	{
+		EnterState(mEntryState);
+	}
 }
 
 void AnimationStateMachine::Clear()

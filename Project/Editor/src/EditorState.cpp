@@ -58,7 +58,7 @@ void EditorState::Play() {
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<AnimationComponent>(ent)) {
                 AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
-                animComp.ResetForPlay(ent); // Reset animator to time 0 for fresh start
+                animComp.ResetForPlay(); // Reset animator to time 0 for fresh start
             }
         }
 
@@ -132,7 +132,7 @@ void EditorState::Stop() {
     for (auto ent : ecsAfterReload.GetActiveEntities()) {
         if (ecsAfterReload.HasComponent<AnimationComponent>(ent)) {
             AnimationComponent& animComp = ecsAfterReload.GetComponent<AnimationComponent>(ent);
-            animComp.ResetPreview(ent);
+            animComp.ResetPreview();
         }
     }
 

@@ -25,7 +25,7 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include "EditorState.hpp"
-#include "Prefab/PrefabIO.hpp"
+#include "PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
@@ -36,7 +36,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
-#include <Graphics/Model/ModelFactory.hpp>
 
 // External globals for model drag-drop from AssetBrowserPanel
 extern GUID_128 DraggedModelGuid;
@@ -1865,9 +1864,6 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
                 ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
             }
 
-            // Take snapshot BEFORE spawning so undo can restore to pre-spawn state
-            SnapshotManager::GetInstance().TakeSnapshot("Spawn Model");
-
             // Then spawn the real entity
             Entity realEntity = SpawnModelEntity(previewPosition);
             if (realEntity != static_cast<Entity>(-1)) {
@@ -1952,51 +1948,48 @@ Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
         std::filesystem::path modelPath(previewModelPath);
         std::string entityName = modelPath.stem().string();
 
-		Model& model = *ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-        Entity newEntity = ModelFactory::SpawnModelHierarchy(model, previewModelPath, Vector3D::ConvertGLMToVector3D(position));
+        Entity newEntity = ecsManager.CreateEntity();
 
-        //Entity newEntity = ecsManager.CreateEntity();
+        // Update the existing name component (CreateEntity already adds one)
+        if (ecsManager.TryGetComponent<NameComponent>(newEntity).has_value()) {
+            ecsManager.GetComponent<NameComponent>(newEntity).name = entityName;
+        }
 
-        //// Update the existing name component (CreateEntity already adds one)
-        //if (ecsManager.TryGetComponent<NameComponent>(newEntity).has_value()) {
-        //    ecsManager.GetComponent<NameComponent>(newEntity).name = entityName;
-        //}
+        // Set position from raycast (CreateEntity already adds Transform component)
+        if (ecsManager.TryGetComponent<Transform>(newEntity).has_value()) {
+            Transform& transform = ecsManager.GetComponent<Transform>(newEntity);
+            transform.localPosition = Vector3D(position.x, position.y, position.z);
+            transform.localScale = Vector3D(0.1f, 0.1f, 0.1f); // Same as cube
+            transform.isDirty = true;
+        }
 
-        //// Set position from raycast (CreateEntity already adds Transform component)
-        //if (ecsManager.TryGetComponent<Transform>(newEntity).has_value()) {
-        //    Transform& transform = ecsManager.GetComponent<Transform>(newEntity);
-        //    transform.localPosition = Vector3D(position.x, position.y, position.z);
-        //    transform.localScale = Vector3D(0.1f, 0.1f, 0.1f); // Same as cube
-        //    transform.isDirty = true;
-        //}
+        // Add ModelRenderComponent
+        if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
+            ModelRenderComponent modelRenderer;
+            modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
+            modelRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(previewModelPath);
+            modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
+            modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
+            if (modelRenderer.model->meshes[0].material) {
+                modelRenderer.material = modelRenderer.model->meshes[0].material;
+                std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
+                modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
+            }
 
-        //// Add ModelRenderComponent
-        //if (!ecsManager.TryGetComponent<ModelRenderComponent>(newEntity).has_value()) {
-        //    ModelRenderComponent modelRenderer;
-        //    modelRenderer.model = ResourceManager::GetInstance().GetResource<Model>(previewModelPath);
-        //    modelRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(previewModelPath);
-        //    modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
-        //    modelRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(ResourceManager::GetPlatformShaderPath("default"));
-        //    if (modelRenderer.model->meshes[0].material) {
-        //        modelRenderer.material = modelRenderer.model->meshes[0].material;
-        //        std::string materialPath = AssetManager::GetInstance().GetAssetPathFromAssetName(modelRenderer.material->GetName() + ".mat");
-        //        modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(materialPath);
-        //    }
+            if (modelRenderer.model && modelRenderer.shader) {
+                ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);
 
-        //    if (modelRenderer.model && modelRenderer.shader) {
-        //        ecsManager.AddComponent<ModelRenderComponent>(newEntity, modelRenderer);
+                // Select the newly created entity
+                GUIManager::SetSelectedEntity(newEntity);
 
-        //        // Select the newly created entity
-        //        GUIManager::SetSelectedEntity(newEntity);
-
-        //        ENGINE_PRINT("[ScenePanel] Spawned model entity ", entityName, " (ID: ", newEntity, ")\n");
-        //        return newEntity;
-        //    } else {
-        //        ENGINE_PRINT("[ScenePanel] Failed to load model or shader for spawned entity\n");
-        //        ecsManager.DestroyEntity(newEntity);
-        //        return static_cast<Entity>(-1);
-        //    }
-        //}
+                ENGINE_PRINT("[ScenePanel] Spawned model entity ", entityName, " (ID: ", newEntity, ")\n");
+                return newEntity;
+            } else {
+                ENGINE_PRINT("[ScenePanel] Failed to load model or shader for spawned entity\n");
+                ecsManager.DestroyEntity(newEntity);
+                return static_cast<Entity>(-1);
+            }
+        }
 
         // Entity already has ModelRenderComponent (shouldn't happen for new entities)
         GUIManager::SetSelectedEntity(newEntity);

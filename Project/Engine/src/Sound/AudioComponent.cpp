@@ -24,7 +24,6 @@ REFL_REGISTER_START(AudioComponent)
     REFL_REGISTER_PROPERTY(DopplerLevel)
     REFL_REGISTER_PROPERTY(MinDistance)
     REFL_REGISTER_PROPERTY(MaxDistance)
-    REFL_REGISTER_PROPERTY(OutputAudioMixerGroup)
 REFL_REGISTER_END
 #pragma endregion
 

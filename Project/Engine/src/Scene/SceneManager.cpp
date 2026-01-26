@@ -20,7 +20,6 @@
 	#pragma comment(lib, "ole32.lib")
 	#pragma comment(lib, "shell32.lib")
 #endif
-#include <Asset Manager/AssetManager.hpp>
 
 SceneManager::~SceneManager() {
 	//ExitScene();
@@ -43,29 +42,22 @@ void SceneManager::LoadTestScene() {
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
-void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
-    // Check if we need to defer the load (scene not synchronized or called from Lua/script)
-    // Skip deferral check if we're already executing a deferred load
-    bool isDeferredExecution = isExecutingDeferredLoad;
-
-    if (!isDeferredExecution && currentScene &&
-        (fromGameCode || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
+void SceneManager::LoadScene(const std::string& scenePath, bool callingFromLua) {
+    if (currentScene && (callingFromLua || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
 		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
 		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
-		// If calling from Lua/game code, defer loading to the next frame to allow the function call to be returned properly
+		// If calling from Lua, defer loading to the next frame to allow the Lua function call to be returned properly
 		// before shutting down the scripting system in currentScene->Exit().
         loadSceneNextFrame = true;
         sceneToLoadNextFrame = scenePath;
-        deferredSceneFromLua = fromGameCode;  // Remember if this was from game code
         return;
     }
 
 #if 1
 #ifdef EDITOR
-	// Only reset to edit mode if loading scene from editor UI (not from game code)
-	// When game code transitions scenes (e.g., main menu to game), we should stay in play mode
-	if (!fromGameCode && (Engine::IsPlayMode() || Engine::IsPaused())) {
-		// This is a manual scene load from editor while playing - exit play mode
+	// Reset game state to edit mode when loading a new scene
+	// This ensures play/pause state is cleared
+	if (Engine::IsPlayMode() || Engine::IsPaused()) {
 		Engine::SetGameState(GameState::EDIT_MODE);
 	}
 
@@ -260,18 +252,10 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 void SceneManager::UpdateScene(double dt) {
     if (loadSceneNextFrame && currentScene->updateSynchronized && currentScene->drawSynchronized) {
 		ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
-        std::string pathToLoad = sceneToLoadNextFrame;
-        bool wasFromGameCode = deferredSceneFromLua;  // Save before clearing
-
-        // Clear deferred state
+        LoadScene(sceneToLoadNextFrame);
         loadSceneNextFrame = false;
         sceneToLoadNextFrame = "";
-        deferredSceneFromLua = false;
 
-        // Set flag to prevent re-deferral during this execution
-        isExecutingDeferredLoad = true;
-        LoadScene(pathToLoad, wasFromGameCode);
-        isExecutingDeferredLoad = false;
     }
 	if (currentScene) {
 		currentScene->Update(dt);
@@ -297,43 +281,6 @@ void SceneManager::ExitScene() {
 void SceneManager::SaveScene() 
 {
     Serializer::SerializeScene(currentScenePath);
-
-    // Save to BOTH the Editor/Resources/Scenes folder and the ROOT PROJECT Resources/Scenes folder to ensure ALL scene files are synced when saved.
-    std::filesystem::path editorScenesPath(currentScenePath.substr(currentScenePath.find("Resources")));
-    if (currentScenePath != editorScenesPath.generic_string()) {
-        if (FileUtilities::StrictExists(editorScenesPath)) {
-            if (FileUtilities::CopyFile(currentScenePath, editorScenesPath.generic_string())) {
-                ENGINE_LOG_INFO("[SceneManager] Scene saved to Editor/Resources/Scenes: " + editorScenesPath.generic_string());
-            }
-            else {
-                ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Editor/Resources/Scenes: " + editorScenesPath.generic_string());
-            }
-        }
-        else {
-            ENGINE_LOG_WARN("[SceneManager] Editor/Resources/Scenes path does not exist: " + editorScenesPath.generic_string());
-        }
-    }
-    else {
-		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Editor/Resources/Scenes: " + currentScenePath);
-    }
-
-	std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
-    if (currentScenePath != projectRootScenesPath.generic_string()) {
-        if (FileUtilities::StrictExists(projectRootScenesPath)) {
-            if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
-                ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
-            }
-            else {
-                ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
-            }
-	    }
-        else {
-		    ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
-        }
-    }
-    else {
-		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Root Project/Resources/Scenes: " + currentScenePath);
-    }
 
 // COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
 //    namespace fs = std::filesystem;
@@ -483,24 +430,6 @@ void SceneManager::ReloadTempScene() {
 	std::string tempScenePath = currentScenePath + ".temp";
 	if (std::filesystem::exists(tempScenePath)) {
 		Serializer::ReloadScene(tempScenePath, currentScenePath);
-
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-
-        // Re-initialise/reload required systems.
-        ecs.cameraSystem->Initialise();
-        ecs.modelSystem->Initialise();
-        ecs.textSystem->Initialise();
-        ecs.spriteAnimationSystem->Initialise();
-        ecs.animationSystem->Initialise();
-        ecs.scriptSystem->ReloadSystem();
-
-        // Reset all animation preview states to 0 (fresh editor state)
-        for (auto ent : ecs.GetActiveEntities()) {
-            if (ecs.HasComponent<AnimationComponent>(ent)) {
-                AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
-                animComp.ResetPreview(ent);
-            }
-        }
 	}
 	else {
 		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)
@@ -672,7 +601,6 @@ void SceneManager::CreateNewScene(const std::string& directory, bool loadAfterCr
                         { "type": "float", "data": 0.1 },
                         { "type": "float", "data": 1 },
                         { "type": "float", "data": 90 },
-                        { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },
                         { "type": "float", "data": 0 },

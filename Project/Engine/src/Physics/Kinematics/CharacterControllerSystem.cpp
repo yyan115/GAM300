@@ -14,12 +14,8 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
     ColliderComponent& collider,
     Transform& transform)
 {
-
-    //IF ALREADY CREATED, JUST RESET THE TRANSFORM AND RETURN
     if (m_controllers.contains(id)) {
         std::cerr << "[WARN] Entity " << id << " already has a controller\n";
-        CharacterController* existingController = GetController(id);
-        existingController->SetPosition(transform);     //Reset Character Position
         return m_controllers[id].get();
     }
 

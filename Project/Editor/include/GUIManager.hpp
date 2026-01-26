@@ -103,7 +103,7 @@ public:
 	 * @brief Set the currently selected asset.
 	 * @param assetGuid The asset GUID to select.
 	 */
-	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; if (assetGuid != GUID_128{ 0, 0 }) selectedEntities.clear(); }
+	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; selectedEntities.clear(); }
 
 private:
 	/**

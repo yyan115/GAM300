@@ -1,11 +1,8 @@
 #include "pch.h"
 #include "SnapshotManager.hpp"
 #include "EditorState.hpp"
-#include "GUIManager.hpp"
 #include "Scene/SceneManager.hpp"
 #include "Serialization/Serializer.hpp"
-#include "ECS/ECSRegistry.hpp"
-#include "ECS/NameComponent.hpp"
 #include "Logging.hpp"
 #include <fstream>
 #include <sstream>
@@ -170,11 +167,6 @@ bool SnapshotManager::DeserializeScene(const std::string& sceneData) {
         // Get current scene path to restore it after deserialization
         std::string currentScenePath = SceneManager::GetInstance().GetCurrentScenePath();
 
-        // CRITICAL: Clear all existing entities before restoring snapshot
-        // Without this, duplicated/pasted entities would persist after undo
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        ecs.ClearAllEntities();
-
         // Deserialize from temp file using ReloadScene which preserves the scene path
         Serializer::ReloadScene(tempPath, currentScenePath);
 
@@ -205,25 +197,14 @@ SnapshotManager::Snapshot SnapshotManager::CaptureCurrentState(const std::string
 }
 
 void SnapshotManager::RestoreSnapshot(const Snapshot& snapshot) {
-    // Clear multi-selection before restoring (prevents stale entity references)
-    GUIManager::ClearSelectedEntities();
-
     // Deserialize scene data
     if (!DeserializeScene(snapshot.sceneData)) {
         ENGINE_LOG_ERROR("[SnapshotManager] Failed to restore snapshot");
         return;
     }
 
-    // Restore selected entity (single selection)
+    // Restore selected entity
     EditorState::GetInstance().SetSelectedEntity(snapshot.selectedEntity);
-
-    // Also update GUIManager selection if the entity is valid
-    if (snapshot.selectedEntity != 0 && snapshot.selectedEntity != static_cast<Entity>(-1)) {
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        if (ecs.TryGetComponent<NameComponent>(snapshot.selectedEntity).has_value()) {
-            GUIManager::SetSelectedEntity(snapshot.selectedEntity);
-        }
-    }
 
     ENGINE_LOG_INFO("[SnapshotManager] Snapshot restored: " + snapshot.description);
 }

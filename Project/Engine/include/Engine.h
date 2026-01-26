@@ -27,7 +27,6 @@ enum class GameState {
 class ENGINE_API Engine {
 public:
     static bool Initialize();
-    static void LoadInputConfig(); // Called after AssetManager is set on Android
     static bool InitializeAssets(); // Android-specific delayed asset loading
     static bool InitializeGraphicsResources();
     static void Update();

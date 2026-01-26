@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <Scene/SceneInstance.hpp>
-#include <Input/InputManager.h>
+#include <Input/InputManager.hpp>
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
 #include <cmath>
@@ -126,10 +126,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Script system initialized");
 	ecsManager.spriteAnimationSystem->Initialise();
 	ENGINE_LOG_INFO("Sprite Animation system initialized");
-	ecsManager.uiAnchorSystem->Initialise(ecsManager);
-	ENGINE_LOG_INFO("UI Anchor system initialized");
 	ecsManager.buttonSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Button system initialized");
+	ecsManager.sliderSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.sliderSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Slider system initialized");
 
@@ -344,16 +344,15 @@ void SceneInstance::processInput(float deltaTime)
 		camera->ProcessKeyboard(RIGHT, 0.004f);
 	}*/
 
-	// TODO: Migrate debug camera controls to new input system action bindings
 	// Zoom with keys (N to zoom out, M to zoom in)
-	//if (InputManager::GetKey(Input::Key::N))
-	//	mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
-	//if (InputManager::GetKey(Input::Key::M))
-	//	mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
+	if (InputManager::GetKey(Input::Key::N))
+		mainECS.cameraSystem->ZoomCamera(activeCam, deltaTime); // Zoom out
+	if (InputManager::GetKey(Input::Key::M))
+		mainECS.cameraSystem->ZoomCamera(activeCam, -deltaTime); // Zoom in
 
 	// Test camera shake with Spacebar
-	//if (InputManager::GetKeyDown(Input::Key::SPACE))
-	//	mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
+	if (InputManager::GetKeyDown(Input::Key::SPACE))
+		mainECS.cameraSystem->ShakeCamera(activeCam, 0.3f, 0.5f); // intensity=0.3, duration=0.5
 
 	//// MADE IT so that you must drag to look around
 	////
@@ -400,13 +399,12 @@ void SceneInstance::processInput(float deltaTime)
 	//	firstMouse = true;
 	//}
 
-	// TODO: Migrate debug toggle to new input system action bindings
-	//if (InputManager::GetKeyDown(Input::Key::H))
-	//{
-	//	auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
-	//	hdr->SetEnabled(!hdr->IsEnabled());
-	//	ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
-	//}
+	if (InputManager::GetKeyDown(Input::Key::H))
+	{
+		auto *hdr = PostProcessingManager::GetInstance().GetHDREffect();
+		hdr->SetEnabled(!hdr->IsEnabled());
+		ENGINE_PRINT("[HDR] Toggled: ", hdr->IsEnabled(), "\n");
+	}
 	// Sync camera state back to component and transform
 	camComp.fov = camera->Zoom;
 	camComp.yaw = camera->Yaw;
@@ -521,27 +519,6 @@ void SceneInstance::CreateDefaultCamera(ECSManager &ecsManager)
 
 void testing(ECSManager& ecsManager)
 {
-	// ===== TEXT WRAPPING TEST =====
-	Entity textEntity = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
-
-	GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
-	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
-
-	// Add component first
-	TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
-	textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
-	textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
-	ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
-
-	// Now get reference and set wrap properties
-	auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
-	text.wordWrap = true;
-	text.maxWidth = 300.0f;
-	text.lineSpacing = 1.2f;
-
-	std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
-
 	Entity sAnim = ecsManager.CreateEntity();
 	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
 	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());

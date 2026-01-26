@@ -5,8 +5,6 @@
 #include "Animation/AnimationComponent.hpp"
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
-#include "Graphics/Model/Model.h"
-#include "Asset Manager/AssetManager.hpp"
 
 #pragma region Reflection
 REFL_REGISTER_START(AnimationComponent)
@@ -93,13 +91,13 @@ void swap(AnimationComponent& a, AnimationComponent& b) noexcept
     swap(a.animator, b.animator);
 }
 
-void AnimationComponent::Update(float dt, Entity entity)
+void AnimationComponent::Update(float dt)
 {
 	if (!animator) return;
 
     if (isPlay && !clips.empty() && activeClip < clips.size())
     {
-        animator->UpdateAnimation(dt * speed, isLoop, entity);
+        animator->UpdateAnimation(dt * speed, isLoop);
         if (!isLoop)
         {
             if (clips[activeClip]) {
@@ -128,9 +126,7 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
     importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
         aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
 
-    unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
-
-    const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+    const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), aiProcess_Triangulate | aiProcess_FlipUVs, "fbx");
 
     if (!scene) {
         ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
@@ -147,33 +143,11 @@ std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::strin
         return nullptr;
     }
 
-    float scaleFactor = Model::CalculateAutoScale(scene);
-
-    // 3. MANUAL FIX: Iterate and multiply translation keys
-    if (std::abs(scaleFactor - 1.0f) > 0.001f)
-    {
-        ENGINE_LOG_INFO("[AnimationComponent] Auto-scaling animation by " + std::to_string(scaleFactor));
-
-        // Free the current scene
-        importer.FreeScene();
-
-        // Re-import with GlobalScale
-        importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
-        postProcessFlags |= aiProcess_GlobalScale;
-
-        scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
-
-        if (!scene || !scene->mRootNode || scene->mNumAnimations == 0) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Re-import with scaling failed\n");
-            return nullptr;
-        }
-    }
-
     aiAnimation* aiAnim = scene->mAnimations[0];
     return std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
 }
 
-void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
+void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
     auto anim = LoadClipFromPath(path, boneInfoMap, boneCount);
     if (!anim) return;
@@ -181,47 +155,45 @@ void AnimationComponent::AddClipFromFile(const std::string& path, const std::map
     clips.emplace_back(std::move(anim));
 
     clipPaths.push_back(path);
-    // Store the GUID for cross-machine compatibility
-    GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(path);
-    clipGUIDs.push_back(guid);
+    clipGUIDs.push_back({0, 0});
     clipCount = static_cast<int>(clipPaths.size());
 
     if(clips.size() == 1)
     {
         activeClip = 0;
         EnsureAnimator();
-        animator->PlayAnimation(clips[0].get(), entity);
+        animator->PlayAnimation(clips[0].get());
     }
 }
 
 
-void AnimationComponent::Play(Entity entity)
+void AnimationComponent::Play()
 {
     isPlay = true;
     if (!clips.empty() && activeClip < clips.size())
     {
 		EnsureAnimator();
-		animator->PlayAnimation(clips[activeClip].get(), entity);
+		animator->PlayAnimation(clips[activeClip].get());
     }
 }
 void AnimationComponent::Pause() { isPlay = false; }
 
-void AnimationComponent::Stop(Entity entity)
+void AnimationComponent::Stop()
 {
     isPlay = false;
     if(!clips.empty() && activeClip < clips.size() && animator)
-        animator->PlayAnimation(clips[activeClip].get(), entity);
+        animator->PlayAnimation(clips[activeClip].get());
 }
 
 void AnimationComponent::SetLooping(bool v) { isLoop = v; }
 void AnimationComponent::SetSpeed(float s) { speed = std::max(0.0f, s); }
 
 
-void AnimationComponent::SetClip(size_t index, Entity entity)
+void AnimationComponent::SetClip(size_t index)
 {
     if (index >= clips.size() || index == activeClip) return;
     activeClip = index;
-    SyncAnimatorToActiveClip(entity);
+    SyncAnimatorToActiveClip();
 }
 
 Animator& AnimationComponent::GetAnimator() { return *animator; }
@@ -263,13 +235,13 @@ size_t AnimationComponent::GetActiveClipIndex() const
 }
 
 
-void AnimationComponent::SyncAnimatorToActiveClip(Entity entity)
+void AnimationComponent::SyncAnimatorToActiveClip()
 {
     if (clips.empty() || activeClip >= clips.size() || !clips[activeClip] || !animator) {
         return;
     }
     Animation* clip = clips[activeClip].get();
-    animator->PlayAnimation(clip, entity);
+    animator->PlayAnimation(clip);
 }
 
 void AnimationComponent::SetClipCount(size_t count)
@@ -279,57 +251,35 @@ void AnimationComponent::SetClipCount(size_t count)
     clipGUIDs.resize(count);
 }
 
-void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
+void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
-    ENGINE_PRINT("[AnimationComponent] LoadClipsFromPaths: Loading ", clipPaths.size(), " clips for entity ", entity, "\n");
-
     // Clear animator's reference before clearing clips to prevent dangling pointer
     if (animator) {
         animator->ClearAnimation();
     }
     clips.clear();
 
-    for (size_t i = 0; i < clipPaths.size(); ++i) {
-        const auto& path = clipPaths[i];
-        std::string pathToLoad{};
-
-        // First try to use GUID to get the correct local path (handles cross-machine scenarios)
-        if (i < clipGUIDs.size() && (clipGUIDs[i].high != 0 || clipGUIDs[i].low != 0)) {
-            std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(clipGUIDs[i]);
-            if (!guidPath.empty()) {
-                pathToLoad = guidPath;
-                ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
-            }
-        }
-
-        // Fall back to path if GUID lookup failed
-        if (pathToLoad.empty() && !path.empty()) {
-            // Try to extract path from "Resources" onwards (handles cross-machine absolute paths)
-            size_t resPos = path.find("Resources");
-            if (resPos != std::string::npos) {
-                pathToLoad = path.substr(resPos);
-                ENGINE_PRINT("[AnimationComponent] Resolved relative path: ", pathToLoad, "\n");
-            } else {
-                pathToLoad = path;  // Use as-is if "Resources" not found
-            }
-        }
-
-        if (pathToLoad.empty()) {
-            ENGINE_PRINT("[AnimationComponent] Skipping empty path\n");
+    for (const auto& path : clipPaths) {
+        if (path.empty()) {
             continue;
         }
-
-        ENGINE_PRINT("[AnimationComponent] Loading clip from: ", pathToLoad, "\n");
+        std::string pathToLoad{};
+#ifndef EDITOR
+        // Safely extract path from "Resources" onwards
+        size_t resPos = path.find("Resources");
+        if (resPos != std::string::npos) {
+            pathToLoad = path.substr(resPos);
+        } else {
+            pathToLoad = path;  // Use as-is if "Resources" not found
+        }
+#else
+        pathToLoad = path;
+#endif
         auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {
             clips.emplace_back(std::move(anim));
-            ENGINE_PRINT("[AnimationComponent] Successfully loaded clip, total: ", clips.size(), "\n");
-        } else {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Failed to load clip from: ", pathToLoad, "\n");
         }
     }
-
-    ENGINE_PRINT("[AnimationComponent] Finished loading clips, count: ", clips.size(), "\n");
 
     if (!clips.empty() && activeClip >= clips.size()) {
         activeClip = 0;
@@ -337,46 +287,42 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 
     if (!clips.empty()) {
         EnsureAnimator();
-        SyncAnimatorToActiveClip(entity);
+        SyncAnimatorToActiveClip();
     }
 }
 
-void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entity) {
+void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop) {
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
-
+	
 	// Actually start playing the animation on the animator
 	if (!clips.empty() && clipIndex < clips.size()) {
 		EnsureAnimator();
-		animator->PlayAnimation(clips[clipIndex].get(), entity);
-		ENGINE_PRINT("[AnimationComponent] PlayClip: Playing clip ", clipIndex, " for entity ", entity, "\n");
-	} else {
-		ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AnimationComponent] PlayClip: Cannot play clip ", clipIndex,
-			" - clips.size()=", clips.size(), ", entity=", entity, "\n");
+		animator->PlayAnimation(clips[clipIndex].get());
 	}
 }
 
-void AnimationComponent::PlayOnce(std::size_t clipIndex, Entity entity) {
-	PlayClip(clipIndex, false, entity);
+void AnimationComponent::PlayOnce(std::size_t clipIndex) {
+	PlayClip(clipIndex, false);
 }
 
 bool AnimationComponent::IsPlaying() const {
 	return isPlay;
 }
 
-void AnimationComponent::ResetForPlay(Entity entity) {
+void AnimationComponent::ResetForPlay() {
 	// Reset animator to beginning for fresh game start
 	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
-		animator->PlayAnimation(clips[activeClip].get(), entity);
+		animator->PlayAnimation(clips[activeClip].get());
 	}
 }
 
-void AnimationComponent::ResetPreview(Entity entity) {
+void AnimationComponent::ResetPreview() {
 	// Reset editor preview time to 0
 	editorPreviewTime = 0.0f;
 	if (!clips.empty() && animator && activeClip < clips.size() && clips[activeClip]) {
-		animator->PlayAnimation(clips[activeClip].get(), entity);
+		animator->PlayAnimation(clips[activeClip].get());
 	}
 }
 

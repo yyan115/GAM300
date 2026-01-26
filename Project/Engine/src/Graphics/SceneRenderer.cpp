@@ -175,11 +175,6 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Mark that we're rendering for the editor (for view mode filtering)
         gfxManager.SetRenderingForEditor(true);
 
-        // Update UI anchors before transform (sets local positions based on viewport)
-        if (mainECS.uiAnchorSystem)
-        {
-            mainECS.uiAnchorSystem->Update();
-        }
         mainECS.transformSystem->Update();
 
         // Set the static editor camera (this won't be updated by input)

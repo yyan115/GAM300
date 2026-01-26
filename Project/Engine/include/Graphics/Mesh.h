@@ -28,7 +28,6 @@ public:
 
 	ENGINE_API ~Mesh();
 	void Draw(Shader& shader, const Camera& camera);
-	void DrawDepthOnly();
 
 	Mesh(const Mesh& other)
 		: vertices(other.vertices),

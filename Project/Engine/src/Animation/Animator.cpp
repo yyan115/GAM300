@@ -1,19 +1,14 @@
 #include <pch.h>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/matrix_decompose.hpp>
 #include "Animation/Animator.hpp"
-#include <ECS/ECSRegistry.hpp>
-#include <Hierarchy/ParentComponent.hpp>
-#include <Hierarchy/EntityGUIDRegistry.hpp>
-#include <ECS/NameComponent.hpp>
 
 Animator::Animator(Animation* animation)
 {
 	mCurrentTime = 0.0f;
 	mCurrentAnimation = animation;
+	mFinalBoneMatrices.assign(100, glm::mat4(1.0f));
 }
 
-void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
+void Animator::UpdateAnimation(float dt, bool isLoop)
 {
 	if (!mCurrentAnimation) return; // No animation to play
 	
@@ -33,7 +28,7 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
 			mCurrentTime = duration;
 	}
 
-	CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f), entity);
+	CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 	//int n = std::min<int>(3, mFinalBoneMatrices.size());
 	//for (int i = 0; i < n; ++i)
 	//{
@@ -50,110 +45,101 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
 	//}
 }
 
-void Animator::PlayAnimation(Animation* pAnimation, Entity entity)
+void Animator::PlayAnimation(Animation* pAnimation)
 {
 	mCurrentAnimation = pAnimation;
 	mCurrentTime = 0.0f;
 	if (pAnimation)
 	{
 		size_t n = pAnimation->GetBoneIDMap().size();
-		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-        if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
-		    ecsManager.GetComponent<ModelRenderComponent>(entity).mFinalBoneMatrices.assign(n ? n : 1, glm::mat4(1.0f));
-		    CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f), entity);
-        }
+		mFinalBoneMatrices.assign(n ? n : 1, glm::mat4(1.0f));
+
+		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 	}
 }
 
-void Animator::SetCurrentTime(float time, Entity entity)
+void Animator::SetCurrentTime(float time)
 {
 	mCurrentTime = time;
 	// Update bone transforms for the new time
 	if (mCurrentAnimation) {
-		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f), entity);
+		CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 	}
 }
 
-void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent)
+void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
 {
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::string nodeName = node->name;
+    glm::mat4 nodeTransform = node->transformation;
 
-    bool isRoot = (node == &mCurrentAnimation->GetRootNode());
-    
-    std::string nodeName{};
-    if (isRoot) {
-        nodeName = ecsManager.GetComponent<NameComponent>(entity).name;
-    }
-    else {
-        nodeName = node->name;
-    }
+    Bone* Bone = mCurrentAnimation->FindBone(nodeName);
 
-    glm::mat4 nodeTransform = node->transformation; // Default Bind Pose
+    //bool isKeyBone = (nodeName == "mixamorig:Hips" || nodeName == "mixamorig:Spine");
 
-    // 1. Calculate Animation Matrix
-    Bone* bone = mCurrentAnimation->FindBone(nodeName);
-    if (bone)
+    if (Bone)
     {
-        bone->Update(mCurrentTime);
-        nodeTransform = bone->GetLocalTransform();
+        Bone->Update(mCurrentTime);
+        nodeTransform = Bone->GetLocalTransform();
+
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' ANIMATED at time " + std::to_string(mCurrentTime) + "\n");
+        //    ENGINE_LOG_DEBUG("  LocalTransform[3]: [" +
+        //        std::to_string(nodeTransform[3][0]) + ", " +
+        //        std::to_string(nodeTransform[3][1]) + ", " +
+        //        std::to_string(nodeTransform[3][2]) + "]\n");
+        //}
     }
+    //else {
+    //    if (isKeyBone) {
+    //        ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' NOT ANIMATED (using hierarchy transform)\n");
+    //        ENGINE_LOG_DEBUG("  HierarchyTransform[3]: [" +
+    //            std::to_string(nodeTransform[3][0]) + ", " +
+    //            std::to_string(nodeTransform[3][1]) + ", " +
+    //            std::to_string(nodeTransform[3][2]) + "]\n");
+    //    }
+    //}
 
-    // 3. Update ECS Entity
-    auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-    if (modelComp.boneNameToEntityMap.find(nodeName) != modelComp.boneNameToEntityMap.end())
-    {
-        Entity boneEntity = modelComp.boneNameToEntityMap[nodeName];
-        if (boneEntity != MAX_ENTITIES && ecsManager.HasComponent<Transform>(boneEntity))
-        {
-            if (!isRoot)
-            {
-                // [CHILD STRATEGY]
-                glm::mat4 matrixToApply = nodeTransform;
-
-                // CRITICAL FIX: If the parent was the Root (and we forced it to identity),
-                // we must "Bake" the parent's transform into this child so the motion isn't lost.
-                if (bakeParent)
-                {
-                    // parentTransform here IS the Root's animation transform
-                    matrixToApply = parentTransform * nodeTransform;
-                }
-
-                // Decompose and Apply
-                glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-                glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
-
-                ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
-
-                // Use (w, x, y, z) matching your struct
-                Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-                ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-
-                ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
-            }
-        }
-    }
-
-    // 4. Calculate Global Transform for Recursion & Shader
     glm::mat4 globalTransformation = parentTransform * nodeTransform;
-
-    // 5. Update Shader Matrices (Standard Logic - Unchanged)
     auto boneInfoMap = mCurrentAnimation->GetBoneIDMap();
+
     if (boneInfoMap.find(nodeName) != boneInfoMap.end())
     {
         int index = boneInfoMap[nodeName].id;
         glm::mat4 offset = boneInfoMap[nodeName].offset;
         glm::mat4 globalInverse = mCurrentAnimation->GetGlobalInverse();
-        ecsManager.GetComponent<ModelRenderComponent>(entity).mFinalBoneMatrices[index] =
-            globalInverse * globalTransformation * offset;
+
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("[CalcBone] '" + nodeName + "' matrix calculation:\n");
+        //    ENGINE_LOG_DEBUG("  ParentTransform[3]: [" +
+        //        std::to_string(parentTransform[3][0]) + ", " +
+        //        std::to_string(parentTransform[3][1]) + ", " +
+        //        std::to_string(parentTransform[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  GlobalTransform[3]: [" +
+        //        std::to_string(globalTransformation[3][0]) + ", " +
+        //        std::to_string(globalTransformation[3][1]) + ", " +
+        //        std::to_string(globalTransformation[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  Offset[3]: [" +
+        //        std::to_string(offset[3][0]) + ", " +
+        //        std::to_string(offset[3][1]) + ", " +
+        //        std::to_string(offset[3][2]) + "]\n");
+        //    ENGINE_LOG_DEBUG("  GlobalInverse[3]: [" +
+        //        std::to_string(globalInverse[3][0]) + ", " +
+        //        std::to_string(globalInverse[3][1]) + ", " +
+        //        std::to_string(globalInverse[3][2]) + "]\n");
+        //}
+
+        mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
+
+        //if (isKeyBone) {
+        //    ENGINE_LOG_DEBUG("  FinalMatrix[3]: [" +
+        //        std::to_string(mFinalBoneMatrices[index][3][0]) + ", " +
+        //        std::to_string(mFinalBoneMatrices[index][3][1]) + ", " +
+        //        std::to_string(mFinalBoneMatrices[index][3][2]) + "]\n");
+        //}
     }
 
-    // 6. Recurse
     for (int i = 0; i < node->childrenCount; i++)
     {
-        // If WE are the root, tell our children to bake our transform.
-        // If we are NOT the root, pass 'false' (children behave normally).
-        bool shouldChildBake = isRoot;
-
-        CalculateBoneTransform(&node->children[i], globalTransformation, entity, shouldChildBake);
+        CalculateBoneTransform(&node->children[i], globalTransformation);
     }
 }

@@ -3,7 +3,7 @@
 #include "ECS/System.hpp"
 #include <Performance/PerformanceProfiler.hpp>
 #include <Graphics/GraphicsManager.hpp>
-#include <Input/InputManager.h>
+#include <Input/InputManager.hpp>
 class ECSManager;
 using Entity = unsigned int;
 
@@ -22,6 +22,6 @@ public:
 private:
     void ProcessButtonClick(Entity buttonEntity);
     void UpdateButtonStates();
-    void HandlePointerClick(Entity buttonEntity, Vector3D pointerPos);
+    void HandleMouseClick(Entity buttonEntity, Vector3D mousePos);
     ECSManager* m_ecs = nullptr;
 };

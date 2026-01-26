@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad5318925c48-00036c92d8000015",
+        "source": "../../Resources/Textures/Carpet.jpg",
+        "compiled": "../../Resources/Textures/Carpet.dds",
+        "android_compiled": "Resources/Textures/Carpet_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

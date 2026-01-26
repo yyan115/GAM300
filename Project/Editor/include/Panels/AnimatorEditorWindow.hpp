@@ -143,7 +143,6 @@ private:
     // Utility
     std::string GenerateUniqueStateName(const std::string& baseName = "New State");
     std::string GenerateUniqueParamName(const std::string& baseName = "New Parameter");
-    void CleanupUnusedClips();
     bool IsPointInNode(const ImVec2& point, const ImVec2& nodePos, const ImVec2& nodeSize) const;
     std::optional<std::string> GetStateAtPosition(const ImVec2& screenPos) const;
     std::string OpenAnimationFileDialog();

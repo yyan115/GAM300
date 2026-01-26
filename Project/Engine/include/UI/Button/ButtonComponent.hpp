@@ -15,29 +15,11 @@ struct ButtonBinding
     bool callWithSelf = true;      // prefer calling as method (instance:func) - editor toggle
 };
 
-/**
- * @brief Button collision shape type
- */
-enum class ButtonShape
-{
-    RECT,    // Rectangle collision (uses Transform scale)
-    CIRCLE   // Circle collision (uses circleRadius)
-};
-
 struct ButtonComponent
 {
     REFL_SERIALIZABLE
         std::vector<ButtonBinding> bindings;
     bool interactable = true;
-
-    // ===== Shape and Collision (NEW) =====
-    ButtonShape shape = ButtonShape::RECT;
-    float circleRadius = 0.5f;  // Circle radius in local space (used when shape == CIRCLE)
-
-    // ===== Visual States (NEW - Optional) =====
-    std::string normalImage;    // Image path when button is normal
-    std::string pressedImage;   // Image path when button is pressed
-    std::string disabledImage;  // Image path when button is disabled
 };
 
 class ButtonController

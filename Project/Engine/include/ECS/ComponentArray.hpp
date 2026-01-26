@@ -27,7 +27,7 @@ class ComponentArray : public IComponentArray {
 public:
     inline void InsertComponent(Entity entity, T component) {
         if (entityToIndexMap.find(entity) != entityToIndexMap.end()) {
-            //ENGINE_PRINT(EngineLogging::LogLevel::Error, "Component added to same entity more than once.\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Component added to same entity more than once.\n");
             return;
         }
 

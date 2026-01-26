@@ -9,7 +9,6 @@
 #include <LuaBridge.h>
 #include "Logging.hpp"
 #include <TimeManager.hpp>
-#include <Animation/LuaAnimationComponent.hpp>
 
 #include "Scripting.h"          // for public glue functions used
 #include "ECS/NameComponent.hpp"    // or wherever NameComponent is defined
@@ -105,19 +104,6 @@ static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
     return std::make_tuple(p.x, p.y, p.z);
 }
 
-static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* t)
-{
-    if (!t)
-    {
-        // Return something reasonable; Lua will get three numbers
-        return std::make_tuple(0.0f, 0.0f, 0.0f);
-    }
-
-    const auto& p = t->worldPosition; // or global/world position if you have it
-    return std::make_tuple(p.x, p.y, p.z);
-}
-
-
 static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 {
     if (!t)
@@ -128,252 +114,6 @@ static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 
     const auto& p = t->localRotation; // or global/world position if you have it
     return std::make_tuple(p.x, p.y, p.z);
-}
-
-
-static void Lua_CreateEntityDup(const std::string& source_name, const std::string& base_name, int numofdupes)
-{
-    if (!g_ecsManager) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] ECSManager is null");
-        return;
-    }
-
-    ECSManager& ecs = *g_ecsManager;
-
-    // Find source entity by name
-    Entity sourceEntity = static_cast<Entity>(-1);
-    for (const auto& entity : ecs.GetActiveEntities()) {
-        if (ecs.HasComponent<NameComponent>(entity)) {
-            if (ecs.GetComponent<NameComponent>(entity).name == source_name) {
-                sourceEntity = entity;
-                break;
-            }
-        }
-    }
-
-    if (sourceEntity == static_cast<Entity>(-1)) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Source entity '" + source_name + "' not found");
-        return;
-    }
-
-    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Duplicating '" + source_name + "' " + std::to_string(numofdupes) + " times");
-
-    // Create duplicates
-    for (int i = 0; i < numofdupes; ++i) {
-        try {
-            // Generate unique name
-            std::string newName = base_name;
-            int counter = i + 1;
-            bool nameExists = true;
-
-            while (nameExists) {
-                newName = base_name + std::to_string(counter);
-                nameExists = false;
-
-                // Check if name already exists
-                for (const auto& entity : ecs.GetActiveEntities()) {
-                    if (ecs.HasComponent<NameComponent>(entity)) {
-                        if (ecs.GetComponent<NameComponent>(entity).name == newName) {
-                            nameExists = true;
-                            counter++;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Create new entity
-            Entity newEntity = ecs.CreateEntity();
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Creating entity '" + newName + "' (ID: " + std::to_string(newEntity) + ")");
-
-            // Set name
-            if (ecs.HasComponent<NameComponent>(newEntity)) {
-                ecs.GetComponent<NameComponent>(newEntity).name = newName;
-            }
-
-            // Copy Transform
-            if (ecs.HasComponent<Transform>(sourceEntity)) {
-                Transform sourceTransform = ecs.GetComponent<Transform>(sourceEntity);
-                if (ecs.HasComponent<Transform>(newEntity)) {
-                    ecs.GetComponent<Transform>(newEntity) = sourceTransform;
-                }
-                else {
-                    ecs.AddComponent<Transform>(newEntity, sourceTransform);
-                }
-            }
-
-            // Copy ActiveComponent
-            if (ecs.HasComponent<ActiveComponent>(sourceEntity)) {
-                ActiveComponent sourceActive = ecs.GetComponent<ActiveComponent>(sourceEntity);
-                ecs.AddComponent<ActiveComponent>(newEntity, sourceActive);
-            }
-
-            // Copy ModelRenderComponent
-            if (ecs.HasComponent<ModelRenderComponent>(sourceEntity)) {
-                ModelRenderComponent sourceModel = ecs.GetComponent<ModelRenderComponent>(sourceEntity);
-                ecs.AddComponent<ModelRenderComponent>(newEntity, sourceModel);
-            }
-
-            // Copy SpriteRenderComponent
-            if (ecs.HasComponent<SpriteRenderComponent>(sourceEntity)) {
-                SpriteRenderComponent sourceSprite = ecs.GetComponent<SpriteRenderComponent>(sourceEntity);
-                ecs.AddComponent<SpriteRenderComponent>(newEntity, sourceSprite);
-            }
-
-            // Copy TextRenderComponent
-            if (ecs.HasComponent<TextRenderComponent>(sourceEntity)) {
-                TextRenderComponent sourceText = ecs.GetComponent<TextRenderComponent>(sourceEntity);
-                ecs.AddComponent<TextRenderComponent>(newEntity, sourceText);
-            }
-
-            // Copy LightComponent
-            if (ecs.HasComponent<LightComponent>(sourceEntity)) {
-                LightComponent sourceLight = ecs.GetComponent<LightComponent>(sourceEntity);
-                ecs.AddComponent<LightComponent>(newEntity, sourceLight);
-            }
-
-            // Copy CameraComponent
-            if (ecs.HasComponent<CameraComponent>(sourceEntity)) {
-                CameraComponent sourceCam = ecs.GetComponent<CameraComponent>(sourceEntity);
-                // Don't copy active status for cameras (Unity-like)
-                sourceCam.isActive = false;
-                ecs.AddComponent<CameraComponent>(newEntity, sourceCam);
-            }
-
-            // Copy AudioComponent
-            if (ecs.HasComponent<AudioComponent>(sourceEntity)) {
-                AudioComponent sourceAudio = ecs.GetComponent<AudioComponent>(sourceEntity);
-                ecs.AddComponent<AudioComponent>(newEntity, sourceAudio);
-            }
-
-            // Copy AnimationComponent
-            if (ecs.HasComponent<AnimationComponent>(sourceEntity)) {
-                AnimationComponent sourceAnim = ecs.GetComponent<AnimationComponent>(sourceEntity);
-                ecs.AddComponent<AnimationComponent>(newEntity, sourceAnim);
-
-                // Re-link animator to model if both exist
-                if (ecs.HasComponent<ModelRenderComponent>(newEntity)) {
-                    auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEntity);
-                    auto& animComp = ecs.GetComponent<AnimationComponent>(newEntity);
-                    if (modelComp.model && !animComp.clipPaths.empty()) {
-                        Animator* animator = animComp.EnsureAnimator();
-                        modelComp.SetAnimator(animator);
-                        animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), newEntity);
-                    }
-                }
-            }
-
-            // Copy RigidBodyComponent
-            if (ecs.HasComponent<RigidBodyComponent>(sourceEntity)) {
-                RigidBodyComponent sourceRB = ecs.GetComponent<RigidBodyComponent>(sourceEntity);
-                ecs.AddComponent<RigidBodyComponent>(newEntity, sourceRB);
-            }
-
-            // Copy ColliderComponent
-            if (ecs.HasComponent<ColliderComponent>(sourceEntity)) {
-                ColliderComponent sourceCollider = ecs.GetComponent<ColliderComponent>(sourceEntity);
-                ecs.AddComponent<ColliderComponent>(newEntity, sourceCollider);
-            }
-
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Successfully created duplicate '" + newName + "'");
-        }
-        catch (const std::exception& e) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Failed to create duplicate " + std::to_string(i) + ": " + std::string(e.what()));
-        }
-    }
-}
-static void Lua_DestroyEntityDup(const std::string& base_name, int numToDestroy)
-{
-    if (!g_ecsManager) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] ECSManager is null");
-        return;
-    }
-
-    ECSManager& ecs = *g_ecsManager;
-
-    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroying up to " + std::to_string(numToDestroy) + " entities with base name '" + base_name + "'");
-
-    std::vector<Entity> entitiesToDestroy;
-
-    // Find all entities matching the pattern
-    for (const auto& entity : ecs.GetActiveEntities()) {
-        if (ecs.HasComponent<NameComponent>(entity)) {
-            std::string entityName = ecs.GetComponent<NameComponent>(entity).name;
-
-            // Check if name starts with base_name and has a number
-            if (entityName.find(base_name) == 0) {
-                // Try to extract the number suffix
-                std::string suffix = entityName.substr(base_name.length());
-
-                // Check if suffix is a valid number
-                if (!suffix.empty() && std::all_of(suffix.begin(), suffix.end(), ::isdigit)) {
-                    entitiesToDestroy.push_back(entity);
-                }
-            }
-        }
-    }
-
-    // Destroy the requested number of entities
-    int destroyedCount = 0;
-    int toDestroy = (numToDestroy <= 0) ? entitiesToDestroy.size() : std::min(numToDestroy, static_cast<int>(entitiesToDestroy.size()));
-
-    for (int i = 0; i < toDestroy; ++i) {
-        Entity entity = entitiesToDestroy[i];
-
-        try {
-            std::string entityName = "Unknown";
-            if (ecs.HasComponent<NameComponent>(entity)) {
-                entityName = ecs.GetComponent<NameComponent>(entity).name;
-            }
-
-            ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroying entity '" + entityName + "' (ID: " + std::to_string(entity) + ")");
-
-            ecs.DestroyEntity(entity);
-            destroyedCount++;
-        }
-        catch (const std::exception& e) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Failed to destroy entity: " + std::string(e.what()));
-        }
-    }
-
-    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Destroyed " + std::to_string(destroyedCount) + " entities");
-}
-
-static Entity Lua_FindEntityByName(const std::string& name)
-{
-    if (!g_ecsManager) return -1; 
-    ECSManager& ecs = *g_ecsManager;
-
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            return e;
-        }
-    }
-
-    return -1; // Not found
-}
-
-static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
-{
-    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
-    
-    int gameResWidth, gameResHeight;
-    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
-    
-    // Map mouse coordinates from viewport space to game resolution space
-    float gameX = (mouseX / viewportWidth) * static_cast<float>(gameResWidth);
-    float gameY = static_cast<float>(gameResHeight) - (mouseY / viewportHeight) * static_cast<float>(gameResHeight);
-    
-    return std::make_tuple(gameX, gameY);
 }
 
 
@@ -468,23 +208,6 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             #undef BEGIN_COMPONENT
             #undef PROPERTY
             #undef END_COMPONENT
-
-            // REGISTER THE PROXY CLASS SPECIALLY FOR ANIMATION COMPONENT
-            luabridge::getGlobalNamespace(L)
-                .beginClass<LuaAnimationComponent>("LuaAnimationComponent")
-                .addConstructor<void(*)(Entity)>()
-                .addFunction("Play", &LuaAnimationComponent::Play)
-                .addFunction("Stop", &LuaAnimationComponent::Stop)
-                .addFunction("Pause", &LuaAnimationComponent::Pause)
-                .addFunction("PlayClip", &LuaAnimationComponent::PlayClip)
-                .addFunction("SetSpeed", &LuaAnimationComponent::SetSpeed)
-                .addFunction("SetBool", &LuaAnimationComponent::SetBool)
-                .addFunction("SetTrigger", &LuaAnimationComponent::SetTrigger)
-                .addFunction("SetFloat", &LuaAnimationComponent::SetFloat)
-                .addFunction("SetInt", &LuaAnimationComponent::SetInt)
-                .addFunction("GetCurrentState", &LuaAnimationComponent::GetCurrentState)
-                .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
-                .endClass();
 
             // ---- Second pass: Components metadata table ----
             lua_newtable(L);
@@ -595,15 +318,6 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             {
                 ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not found on entity ", entityId, " (getter returned null)");
                 lua_pushnil(L);
-                return true;
-            }
-
-            // [NEW] SPECIAL CASE: ANIMATION PROXY
-            if (compName == "AnimationComponent")
-            {
-                // Create the proxy on the stack
-                LuaAnimationComponent proxy(static_cast<Entity>(entityId));
-                luabridge::push(L, proxy);
                 return true;
             }
 
@@ -722,6 +436,8 @@ void ScriptSystem::Shutdown()
 {
     std::lock_guard<std::mutex> lk(m_mutex);
 
+	g_ecsManager = nullptr;
+
     // best-effort: call OnDisable and release runtime objects
     for (auto& p : m_runtimeMap) {
         auto& scriptVec = p.second;
@@ -734,7 +450,6 @@ void ScriptSystem::Shutdown()
     }
     m_runtimeMap.clear();
 
-    g_ecsManager = nullptr;
     // Clean up standalone instances (used by ButtonComponent)
     for (auto& p : m_standaloneInstances) {
         if (p.second && Scripting::GetLuaState()) {

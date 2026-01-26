@@ -10,7 +10,7 @@
 #include "ECS/SiblingIndexComponent.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include <Hierarchy/ParentComponent.hpp>
-#include <Prefab/PrefabIO.hpp>
+#include <PrefabIO.hpp>
 #include <imgui_internal.h>
 #include "Scene/SceneManager.hpp"
 #include <Transform/TransformComponent.hpp>
@@ -31,8 +31,6 @@
 #include "SnapshotManager.hpp"
 #include "UndoableWidgets.hpp"
 #include <algorithm>
-#include <Panels/PrefabEditorPanel.hpp>
-#include <Prefab/PrefabLinkComponent.hpp>
 
 // Entity clipboard for copy/paste functionality
 // Uses GUIDs instead of Entity IDs so clipboard persists across undo/redo
@@ -132,38 +130,14 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        // Get the active ECS manager
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-		std::string sceneDisplayName;
-        if (!PrefabEditor::IsInPrefabEditorMode()) {
-            std::string sceneName = SceneManager::GetInstance().GetSceneName();
-            sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
+        std::string sceneName = SceneManager::GetInstance().GetSceneName();
+        std::string sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
 
-            // Add visual separation: MUCH darker background for scene header (like Unity)
-            ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
-        }
-        else {
-            bool goBack = false;
-            if (ImGui::Button(ICON_FA_ARROW_LEFT)) {
-                // TODO: Handle your back button logic here
-                PrefabEditor::StopEditingPrefab();
-                goBack = true;
-            }
-
-            ImGui::SameLine();
-
-            if (!goBack) {
-			    std::string prefabName = ecsManager.GetComponent<NameComponent>(PrefabEditor::GetSandboxEntity()).name;
-                sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab: " + prefabName;
-            }
-            // Add visual separation: MUCH darker background for scene header (like Unity)
-            ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
-        }
+        // Add visual separation: MUCH darker background for scene header (like Unity)
+        ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, EditorComponents::PANEL_BG_SCENE_HEADER);
 
         ImGuiTreeNodeFlags sceneFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
         bool sceneExpanded = ImGui::TreeNodeEx("##SceneRoot", sceneFlags, "%s", sceneDisplayName.c_str());
@@ -184,6 +158,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
         if (sceneExpanded) {
             try {
+                // Get the active ECS manager
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
                 // Get sorted root entities (by sibling index)
                 std::vector<Entity> rootEntities = GetSortedRootEntities();
 
@@ -286,22 +263,13 @@ void SceneHierarchyPanel::OnImGuiRender() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
-                    const Entity entity = InstantiatePrefabFromFile(prefabPath);
-                    if (entity == MAX_ENTITIES) {
+                    const bool ok = InstantiatePrefabFromFile(prefabPath);
+                    if (!ok) {
                         std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
                     }
                     else {
                         std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath << std::endl;
                     }
-
-                    // Set SiblingIndexComponent's siblingIndex to MAX_ENTITIES to place at end by default.
-                    if (ecsManager.HasComponent<SiblingIndexComponent>(entity)) {
-                        auto& siblingComp = ecsManager.GetComponent<SiblingIndexComponent>(entity);
-                        siblingComp.siblingIndex = MAX_ENTITIES; // Put at end by default
-                    }
-
-                    // Select the dragged prefab.
-                    GUIManager::SetSelectedEntity(entity);
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -396,10 +364,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
     else
     {
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         // Check if entity is inactive (grayed out like Unity)
         bool isEntityActive = true;
         try {
+            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
             if (ecsManager.HasComponent<ActiveComponent>(entityId)) {
                 auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entityId);
                 isEntityActive = activeComp.isActive;
@@ -418,15 +386,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
         
-		// Draw the Blue prefab icon for prefab instances.
-        if (ecsManager.HasComponent<PrefabLinkComponent>(entityId)) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.8f, 0.95f, 1.0f)); // R, G, B, A (Sky Blue)
-            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
-            ImGui::PopStyleColor();
-        }
-        else {
-            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
-        }
+        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
 
         // Pop color if we pushed it
         if (!isEntityActive) {
@@ -930,7 +890,7 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         ModelRenderComponent cubeRenderer; // Uses default constructor
 
         // Load the cube model using direct file path
-        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/1MeterCube.fbx";
+        std::string modelPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Models/cube.obj";
         cubeRenderer.model = ResourceManager::GetInstance().GetResource<Model>(modelPath);
         cubeRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(modelPath);
 
@@ -956,9 +916,9 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         // Set cube scale to 0.1,0.1,0.1
         if (ecsManager.HasComponent<Transform>(cubeEntity)) {
             Transform& transform = ecsManager.GetComponent<Transform>(cubeEntity);
-            transform.localScale = Vector3D(1.0f, 1.0f, 1.0f);
+            transform.localScale = Vector3D(0.1f, 0.1f, 0.1f);
             transform.isDirty = true; // Mark for update
-            std::cout << "[SceneHierarchy] Set cube scale to 1.0,1.0,1.0" << std::endl;
+            std::cout << "[SceneHierarchy] Set cube scale to 0.1,0.1,0.1" << std::endl;
         }
 
         std::cout << "[SceneHierarchy] Created cube entity with ID " << cubeEntity << std::endl;
@@ -1017,7 +977,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
     }
 }
 
-Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapshot) {
+Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity) {
     try {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -1025,11 +985,6 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
         std::string sourceName = "Entity";
         if (ecsManager.HasComponent<NameComponent>(sourceEntity)) {
             sourceName = ecsManager.GetComponent<NameComponent>(sourceEntity).name;
-        }
-
-        // Take snapshot BEFORE duplication (for undo) - only if requested
-        if (takeSnapshot) {
-            SnapshotManager::GetInstance().TakeSnapshot("Duplicate Entity: " + sourceName);
         }
 
         // Generate unique name (Entity (1), Entity (2), etc.)
@@ -1126,10 +1081,13 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
                 if (modelComp.model && !animComp.clipPaths.empty()) {
                     Animator* animator = animComp.EnsureAnimator();
                     modelComp.SetAnimator(animator);
-                    animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), newEntity);
+                    animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount());
                 }
             }
         }
+
+        // Take snapshot after duplication (for undo)
+        SnapshotManager::GetInstance().TakeSnapshot("Duplicate Entity: " + sourceName);
 
         std::cout << "[SceneHierarchy] Successfully duplicated entity (ID: " << newEntity << ")" << std::endl;
         return newEntity;
@@ -1171,33 +1129,27 @@ int SceneHierarchyPanel::GetNextRootSiblingIndex() {
 
 std::vector<Entity> SceneHierarchyPanel::GetSortedRootEntities() {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
     std::vector<Entity> rootEntities;
-
-    if (PrefabEditor::IsInPrefabEditorMode()) {
-		// In prefab editing mode, only return the root entity of the prefab being edited.
-		rootEntities.push_back(PrefabEditor::GetSandboxEntity());
-	}
-    else {
-        std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
     
-        // Collect root entities (no parent)
-        for (Entity entity : allEntities) {
-            if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
-                // Ensure the entity has a sibling index
-                EnsureSiblingIndex(entity);
-                rootEntities.push_back(entity);
-            }
+    // Collect root entities (no parent)
+    for (Entity entity : allEntities) {
+        if (!ecsManager.TryGetComponent<ParentComponent>(entity).has_value()) {
+            // Ensure the entity has a sibling index
+            EnsureSiblingIndex(entity);
+            rootEntities.push_back(entity);
         }
-        // Sort by sibling index
-        std::sort(rootEntities.begin(), rootEntities.end(), 
-            [&ecsManager](Entity a, Entity b) {
-                int idxA = ecsManager.HasComponent<SiblingIndexComponent>(a) 
-                           ? ecsManager.GetComponent<SiblingIndexComponent>(a).siblingIndex : 0;
-                int idxB = ecsManager.HasComponent<SiblingIndexComponent>(b) 
-                           ? ecsManager.GetComponent<SiblingIndexComponent>(b).siblingIndex : 0;
-                return idxA < idxB;
-            });
     }
+    
+    // Sort by sibling index
+    std::sort(rootEntities.begin(), rootEntities.end(), 
+        [&ecsManager](Entity a, Entity b) {
+            int idxA = ecsManager.HasComponent<SiblingIndexComponent>(a) 
+                       ? ecsManager.GetComponent<SiblingIndexComponent>(a).siblingIndex : 0;
+            int idxB = ecsManager.HasComponent<SiblingIndexComponent>(b) 
+                       ? ecsManager.GetComponent<SiblingIndexComponent>(b).siblingIndex : 0;
+            return idxA < idxB;
+        });
     
     return rootEntities;
 }
@@ -1324,8 +1276,7 @@ std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Ent
     SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
 
     for (Entity sourceEntity : sourceEntities) {
-        // Pass false to skip internal snapshot (we already took one)
-        Entity duplicated = DuplicateEntity(sourceEntity, false);
+        Entity duplicated = DuplicateEntity(sourceEntity);
         if (duplicated != static_cast<Entity>(-1)) {
             duplicatedEntities.push_back(duplicated);
         }

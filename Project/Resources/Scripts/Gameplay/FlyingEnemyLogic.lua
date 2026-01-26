@@ -114,20 +114,19 @@ return Component {
     Start = function(self) 
         self._animation = self:GetComponent("AnimationComponent") 
         self.collider = self:GetComponent("ColliderComponent")
-        self._animation:PlayClip(IDLE, true, self.entityId)
+        self._animation:PlayClip(IDLE, true)
         currentState = IDLE
     end,
     
     Update = function(self, dt) 
         local newState = currentState
 
-        -- Determine new state
+        -- Determine new state 
         if self.Health <= 0 then
             newState = FALL
-        -- Debug key removed - use proper damage system instead
-        -- elseif Input.IsActionJustPressed("DebugDamage") then
-        --     TakeDamage(self)
-        --     newState = TAKE_DAMAGE
+        elseif Input.GetKeyDown(Input.Key.U) then
+            TakeDamage(self)
+            newState = TAKE_DAMAGE
         elseif IsPlayerInRange() then
             newState = ATTACK
         else
@@ -186,7 +185,7 @@ return Component {
         if newState ~= currentState then
             self._animation:Pause()
             local loop = (newState ~= FALL and newState ~= TAKE_DAMAGE and newState ~= DEATH)
-            self._animation:PlayClip(newState, loop, self.entityId)
+            self._animation:PlayClip(newState, loop)
             currentState = newState
         end
 

@@ -7,7 +7,7 @@
 # Ignore build folder
 Project/Build
 /Project/.claude
-CLAUDE.md
+
 # Ignore claude
 .claude
 
@@ -19,13 +19,6 @@ AndroidProject/.idea/
 AndroidProject/*.iml
 AndroidProject/*.ipr
 AndroidProject/*.iws
-
-# Android built resources (copied from Project/Resources)
-AndroidProject/app/src/main/assets/Resources/
-
-# Android built libraries
-AndroidProject/app/src/main/jniLibs/arm64-v8a/libEngine.so
-AndroidProject/app/src/main/jniLibs/arm64-v8a/libgam300android.so
 
 # Gradle
 AndroidProject/.gradle/

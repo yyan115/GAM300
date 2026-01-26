@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374a2137542150-000331fc3e00002b",
+        "source": "../../Resources/Models/backpack/backpack.obj",
+        "compiled": "../../Resources/Models/backpack/backpack.mesh",
+        "android_compiled": "Resources/Models/backpack/backpack_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -22,6 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <android/asset_manager.h>
 #include <android/log.h>
 #include <EGL/egl.h>
+#include "Input/VirtualControls.hpp"
 
 class AndroidPlatform : public IPlatform {
 private:
@@ -87,7 +88,7 @@ public:
     ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
     
     // Input handling methods
-    ENGINE_API void HandleTouchEvent(int action, int pointerId, float x, float y);
+    ENGINE_API void HandleTouchEvent(int action, float x, float y);
     ENGINE_API void HandleKeyEvent(int keyCode, int action);
 };
 

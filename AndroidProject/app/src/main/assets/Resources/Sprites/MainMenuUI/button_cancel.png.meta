@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00032e87002e922e-00036d2be2000039",
+        "source": "../../Resources/Sprites/MainMenuUI/button_cancel.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/button_cancel.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/button_cancel_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

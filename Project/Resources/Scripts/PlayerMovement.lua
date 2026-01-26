@@ -146,8 +146,11 @@ return Component {
         -- Timers
         self._footstepTimer = 0
 
-        -- Movement tracking for footstep detection
-        self._wasMoving = false
+        -- Input tracking for key press detection
+        self._prevInputW = false
+        self._prevInputS = false
+        self._prevInputA = false
+        self._prevInputD = false
 
         -- Camera yaw for camera-relative movement (default 180 to match camera initial yaw)
         self._cameraYaw = 180.0
@@ -211,23 +214,27 @@ return Component {
         local isAttacking = (_G.player_is_attacking == true)
         
         --------------------------------------
-        -- 1) Read Movement Input (Unified Input System)
+        -- 1) Read WASD Input
         --------------------------------------
-        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
-
+        local inputW = Input and Input.GetKey and Input.GetKey(Input.Key.W) or false
+        local inputS = Input and Input.GetKey and Input.GetKey(Input.Key.S) or false
+        local inputA = Input and Input.GetKey and Input.GetKey(Input.Key.A) or false
+        local inputD = Input and Input.GetKey and Input.GetKey(Input.Key.D) or false
+        
         -- Raw input direction (before camera transformation)
-        -- axis.x = horizontal (A/D or left stick X)
-        -- axis.y = vertical (W/S or left stick Y)
-        local rawMoveX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
-        local rawMoveZ = axis.y   -- Z is forward/back
+        local rawMoveX, rawMoveZ = 0.0, 0.0
+        if inputW then rawMoveZ = rawMoveZ + 1.0 end  -- forward (+Z)
+        if inputS then rawMoveZ = rawMoveZ - 1.0 end  -- backward (-Z)
+        if inputA then rawMoveX = rawMoveX + 1.0 end  -- left (+X)
+        if inputD then rawMoveX = rawMoveX - 1.0 end  -- right (-X)
 
-        -- Normalize diagonal movement (if needed - axis is already normalized)
+        -- Normalize diagonal movement
         local len = math.sqrt(rawMoveX * rawMoveX + rawMoveZ * rawMoveZ)
-        if len > 1.0001 then
+        if len > 0.0001 then
             rawMoveX = rawMoveX / len
             rawMoveZ = rawMoveZ / len
         end
-
+        
         local hasMovementInput = (len > 0.0001)
 
         -- Transform movement to camera-relative direction
@@ -252,12 +259,17 @@ return Component {
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
         --------------------------------------
-        -- 2) Track Movement Start for Footstep SFX
+        -- 2) Detect Key Press for Footstep SFX
         --------------------------------------
-        -- Track if movement just started (for initial footstep sound)
-        local wasMoving = self._wasMoving or false
-        local movementJustStarted = hasMovementInput and not wasMoving
-        self._wasMoving = hasMovementInput
+        local keyJustPressed = (inputW and not self._prevInputW) or
+                            (inputS and not self._prevInputS) or
+                            (inputA and not self._prevInputA) or
+                            (inputD and not self._prevInputD)
+        
+        self._prevInputW = inputW
+        self._prevInputS = inputS
+        self._prevInputA = inputA
+        self._prevInputD = inputD
 
         --------------------------------------
         -- 3) Jump + Gravity
@@ -266,8 +278,8 @@ return Component {
         local wasInAir = not self._isGrounded
         self._wasGrounded = self._isGrounded
 
-        -- Jump input (unified input system) - disabled while attacking
-        local jumpPressed = Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump")
+        -- Jump input (Space key) - disabled while attacking
+        local jumpPressed = Input and Input.GetKeyDown and Input.GetKeyDown(Input.Key.Space)
         if self._isGrounded and jumpPressed and not isAttacking then
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
@@ -367,10 +379,10 @@ return Component {
             end
         end
 
-        -- Footstep SFX: play when movement starts + timer-based while walking
+        -- Footstep SFX: play on key press + timer-based while walking
         if isWalkingNow then
-            -- Play immediately when movement starts
-            if movementJustStarted then
+            -- Play immediately on key press
+            if keyJustPressed then
                 playRandomSFX(audio, self.footstepSFXClips)
                 self._footstepTimer = 0
             end

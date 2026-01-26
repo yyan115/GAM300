@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0056f3926b46ab53-00036ae4a4000001",
+        "source": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx",
+        "compiled": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx",
+        "android_compiled": "Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

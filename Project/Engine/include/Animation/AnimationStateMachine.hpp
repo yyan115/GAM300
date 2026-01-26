@@ -4,7 +4,6 @@
 #include <functional>
 #include <glm/glm.hpp>
 #include "Animation/AnimationParam.hpp"
-#include "ECS/Entity.hpp"
 
 // DLL export/import macro
 #ifndef ENGINE_API
@@ -81,11 +80,11 @@ public:
 	const std::string& GetName() const { return mName; }
 
 	// Initial/Entry state
-	void SetInitialState(const AnimStateID& id, Entity entity)
+	void SetInitialState(const AnimStateID& id)
 	{
 		mEntryState = id;
 		mCurrentState = id;
-		EnterState(id, entity);
+		EnterState(id);
 	}
 	const AnimStateID& GetEntryState() const { return mEntryState; }
 	void SetEntryState(const AnimStateID& id) { mEntryState = id; }
@@ -100,14 +99,14 @@ public:
 	std::vector<AnimTransition>& GetAllTransitions() { return mTransitions; }
 
 	// Runtime
-	void Update(float dt, Entity entity);
-	void Reset(Entity entity); // Reset to entry state
+	void Update(float dt);
+	void Reset(); // Reset to entry state
 
 	// Clear all data
 	void Clear();
 
 private:
-	void EnterState(const AnimStateID& id, Entity entity);
+	void EnterState(const AnimStateID& id);
 	bool EvaluateTransitionConditions(const AnimTransition& transition) const;
 
 private:

@@ -20,8 +20,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <functional>
 #include <android/log.h>
 #include "WindowManager.hpp"
-#include "Input/InputManager.h"
-#include "Input/AndroidInputManager.h"
+#include "Input/InputManager.hpp"
+#include "Input/VirtualControls.hpp"
 
 AndroidPlatform::AndroidPlatform() 
     : window(nullptr)
@@ -372,54 +372,61 @@ bool AndroidPlatform::FileExists(const std::string& path) {
 }
 
 // Input handling implementation
-void AndroidPlatform::HandleTouchEvent(int action, int pointerId, float x, float y) {
+void AndroidPlatform::HandleTouchEvent(int action, float x, float y) {
     // Convert pixel coordinates to normalized (0-1) coordinates
     float normalizedX = x / static_cast<float>(windowWidth);
     float normalizedY = y / static_cast<float>(windowHeight);
+    
+    // First check if touch hits virtual controls
+    bool isPressed = (action == 0 || action == 2); // ACTION_DOWN or ACTION_MOVE counts as pressed
+    bool handledByVirtualControls = false;
 
-    // Forward touch events to AndroidInputManager for virtual controls
-    AndroidInputManager* androidInput = dynamic_cast<AndroidInputManager*>(g_inputManager);
-    if (androidInput) {
-        switch (action) {
-            case 0: // ACTION_DOWN
-                androidInput->OnTouchDown(pointerId, normalizedX, normalizedY);
-                break;
-            case 1: // ACTION_UP
-                androidInput->OnTouchUp(pointerId, normalizedX, normalizedY);
-                break;
-            case 2: // ACTION_MOVE
-                androidInput->OnTouchMove(pointerId, normalizedX, normalizedY);
-                break;
-        }
+    if (action == 0 || action == 2) {
+        // ACTION_DOWN or ACTION_MOVE - check if touch hits virtual controls
+        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, true);
+    } else if (action == 1) {
+        // ACTION_UP - release any pressed virtual controls
+        handledByVirtualControls = VirtualControls::HandleTouch(normalizedX, normalizedY, false);
     }
-
-    // Also update mouse position for legacy/fallback systems (use first touch only)
-    if (pointerId == 0) {
+    
+    // If not handled by virtual controls, treat as camera look (mouse input)
+    if (!handledByVirtualControls) {
+        // Update mouse position
         mouseX = static_cast<double>(x);
         mouseY = static_cast<double>(y);
-
-        // Map touch actions to mouse button events (primary touch only)
+        
+        // Map touch actions to mouse button events for camera look
         Input::MouseButton button = Input::MouseButton::LEFT;
         int buttonIndex = static_cast<int>(button);
-
+        
         switch (action) {
             case 0: // ACTION_DOWN
                 if (buttonIndex >= 0 && buttonIndex < 8) {
                     mouseButtonStates[buttonIndex] = true;
                 }
+                // Initialize mouse position to current touch to prevent jump
+                InputManager::OnMousePositionEvent(mouseX, mouseY);
+                InputManager::OnMouseButtonEvent(button, Input::KeyAction::PRESS);
                 break;
-
+                
             case 1: // ACTION_UP
                 if (buttonIndex >= 0 && buttonIndex < 8) {
                     mouseButtonStates[buttonIndex] = false;
                 }
+                InputManager::OnMouseButtonEvent(button, Input::KeyAction::RELEASE);
                 break;
-
+                
             case 2: // ACTION_MOVE
-                // Just update position, button state unchanged
+                // Just update position for camera look, button state unchanged
                 break;
         }
+        
+        // Always update mouse position for InputManager (camera look)
+        InputManager::OnMousePositionEvent(mouseX, mouseY);
     }
+    
+    __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Touch event: action=%d, pos=(%.1f, %.1f), virtual=%s", 
+                       action, x, y, handledByVirtualControls ? "true" : "false");
 }
 
 void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {
@@ -453,6 +460,7 @@ void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {
         }
         
         // Notify InputManager
+        InputManager::OnKeyEvent(engineKey, engineAction);
         
         __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Key event: keyCode=%d, action=%d, engineKey=%d", keyCode, action, static_cast<int>(engineKey));
     }

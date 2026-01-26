@@ -22,14 +22,14 @@ namespace {
     }
 
     inline void stopAll(AnimationComponent& a) {
-        //a.Stop();
+        a.Stop();
     }
 
     inline void playOnce(AnimationComponent& a, std::size_t clipIdx) {
         a.EnsureAnimator();        // make sure animator exists
         a.SetLooping(false);
-        //a.SetClip(clipIdx);
-        //a.Play();                  // your PlayOnce wraps this; using explicit path is fine
+        a.SetClip(clipIdx);
+        a.Play();                  // your PlayOnce wraps this; using explicit path is fine
     }
 
     // robust "is finished" check:
@@ -60,7 +60,7 @@ struct GruntIdle : GruntFSM::State {
 
         timer = 3.f;
         armed = false;
-        //if (auto* a = animFrom(ctx)) a->Stop();
+        if (auto* a = animFrom(ctx)) a->Stop();
     }
 
     template <typename TControl>
@@ -91,9 +91,9 @@ struct GruntAttack : GruntFSM::State {
             a->EnsureAnimator();
             if (0 <= kAttackClipIndex && kAttackClipIndex < a->clipCount) {
                 a->SetLooping(false);
-                //a->SetClip(static_cast<size_t>(kAttackClipIndex));
+                a->SetClip(static_cast<size_t>(kAttackClipIndex));
                 a->SetSpeed(1.0f);
-                //a->Play();                             // let component manage isPlay/time
+                a->Play();                             // let component manage isPlay/time
             }
             else {
                 ENGINE_PRINT("[Grunt] invalid attack clip index");
@@ -103,7 +103,7 @@ struct GruntAttack : GruntFSM::State {
 
     template <typename TControl>
     void exit(TControl& ctrl) noexcept {
-        //if (auto* a = animFrom(ctrl.context())) a->Stop();
+        if (auto* a = animFrom(ctrl.context())) a->Stop();
     }
 
     template <typename TControl>

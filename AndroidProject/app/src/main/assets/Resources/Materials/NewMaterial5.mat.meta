@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00787b6909cb05ad-00036d53e6000001",
+        "source": "../../Resources/Materials/NewMaterial5.mat",
+        "compiled": "../../Resources/Materials/NewMaterial5.mat",
+        "android_compiled": "Resources/Materials/NewMaterial5_android.mat"
+    }
+}

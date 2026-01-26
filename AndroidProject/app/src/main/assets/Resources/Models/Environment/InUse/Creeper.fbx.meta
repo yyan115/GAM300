@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad537f7959d5-00036c9b0a000033",
+        "source": "../../Resources/Models/Environment/_InUse/Creeper.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/Creeper.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/Creeper_android.mesh"
+    }
+}

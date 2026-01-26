@@ -1,8 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "007863cdb9e7aea7-0003f76750000001",
-        "source": "../../Resources/Shaders/shadow_depth_pointandroid",
-        "compiled": "../../Resources/Shaders/shadow_depth_pointandroid.shader"
-    }
-}

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002267a22edb9e99-00035ffc1000000b",
+        "source": "../../Resources/Textures/japaneseWallDiffuse.png",
+        "compiled": "../../Resources/Textures/japaneseWallDiffuse.dds",
+        "android_compiled": "Resources/Textures/japaneseWallDiffuse_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -38,7 +38,6 @@ public:
      * @brief Render the inspector panel's ImGui content.
      */
     void OnImGuiRender() override;
-    static void DrawComponentsViaReflection(Entity entity);
 
 private:
     void DrawTagComponent(Entity entity);
@@ -47,7 +46,8 @@ private:
 	void DrawBrainComponent(Entity entity);
 
     // Generic reflection-based rendering
-    static void DrawComponentGeneric(void* componentPtr, const char* componentTypeName, Entity entity);
+    void DrawComponentGeneric(void* componentPtr, const char* componentTypeName, Entity entity);
+    void DrawComponentsViaReflection(Entity entity);
 
     // Multi-entity editing
     void DrawMultiEntityInspector(const std::vector<Entity>& entities);
@@ -58,7 +58,7 @@ private:
 
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
-    static bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr = nullptr, ImGuiTreeNodeFlags flags = 0);
+    bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr = nullptr, ImGuiTreeNodeFlags flags = 0);
     void ProcessPendingComponentRemovals();
     void ProcessPendingComponentResets();
 
@@ -81,8 +81,8 @@ private:
     Entity lockedEntity = static_cast<Entity>(-1);
 
     // Component removal queue (processed after ImGui rendering)
-    static std::vector<ComponentRemovalRequest> pendingComponentRemovals;
-    static std::vector<ComponentResetRequest> pendingComponentResets;
+    std::vector<ComponentRemovalRequest> pendingComponentRemovals;
+    std::vector<ComponentResetRequest> pendingComponentResets;
     GUID_128 lockedAsset = {0, 0};
 
     // Cache for currently edited material to persist changes across frames

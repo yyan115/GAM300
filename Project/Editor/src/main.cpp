@@ -83,7 +83,6 @@ int main()
 
     Engine::Shutdown();
     MetaFilesManager::CleanupUnusedMetaFiles();
-    EngineLogging::Shutdown();
 
     // Add window cleanup before exit
     WindowManager::Exit();

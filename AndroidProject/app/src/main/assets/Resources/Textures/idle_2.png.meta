@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000b223325daff29-0003529da2000003",
+        "source": "../../Resources/Textures/idle_2.png",
+        "compiled": "../../Resources/Textures/idle_2.dds",
+        "android_compiled": "Resources/Textures/idle_2_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

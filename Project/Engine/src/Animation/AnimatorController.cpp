@@ -5,8 +5,6 @@
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 #include "Logging.hpp"
-#include "WindowManager.hpp"
-#include "Platform/IPlatform.h"
 
 using namespace rapidjson;
 
@@ -173,24 +171,6 @@ bool AnimatorController::SaveToFile(const std::string& filePath) const
 
 bool AnimatorController::LoadFromFile(const std::string& filePath)
 {
-	std::string content;
-
-#ifdef ANDROID
-	// On Android, use platform asset reading
-	IPlatform* platform = WindowManager::GetPlatform();
-	if (!platform) {
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Platform is null\n");
-		return false;
-	}
-
-	std::vector<uint8_t> buffer = platform->ReadAsset(filePath);
-	if (buffer.empty()) {
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to read asset: ", filePath, "\n");
-		return false;
-	}
-	content.assign(buffer.begin(), buffer.end());
-#else
-	// On desktop, use standard file I/O
 	std::ifstream file(filePath);
 	if (!file.is_open())
 	{
@@ -198,9 +178,8 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 		return false;
 	}
 
-	content.assign((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	file.close();
-#endif
 
 	Document doc;
 	if (doc.Parse(content.c_str()).HasParseError())

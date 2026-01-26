@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374a213774568a-000331fc5800003b",
+        "source": "../../Resources/Models/cube_backup.obj",
+        "compiled": "../../Resources/Models/cube_backup.mesh",
+        "android_compiled": "Resources/Models/cube_backup_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

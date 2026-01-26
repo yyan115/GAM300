@@ -8,7 +8,7 @@
 
 class PostProcessingManager {
 public:
-    static ENGINE_API PostProcessingManager& GetInstance();
+    static PostProcessingManager& GetInstance();
 
     bool Initialize();
 

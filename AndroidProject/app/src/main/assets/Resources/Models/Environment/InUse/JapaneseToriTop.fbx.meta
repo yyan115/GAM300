@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c262d883a56-000360373c000057",
+        "source": "../../Resources/Models/Environment/_InUse/JapaneseToriTop.fbx",
+        "compiled": "../../Resources/Models/Environment/_InUse/JapaneseToriTop.mesh",
+        "android_compiled": "Resources/Models/Environment/InUse/JapaneseToriTop_android.mesh"
+    }
+}

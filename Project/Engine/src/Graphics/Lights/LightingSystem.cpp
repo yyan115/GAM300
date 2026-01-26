@@ -3,91 +3,25 @@
 #include "Graphics/Lights/LightComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Graphics/GraphicsManager.hpp"
+#include <Graphics/GraphicsManager.hpp>
 #include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
-#include "Asset Manager/ResourceManager.hpp"
 
 bool LightingSystem::Initialise()
 {
-    std::cout << "[LightingSystem] Initializing..." << std::endl;
-
-    // Initialize directional shadow map
-    if (!directionalShadowMap.Initialize(shadowMapResolution))
-    {
-        std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
-        shadowsEnabled = false;
-    }
-
-    // Initialize point light shadow maps
-    pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
-    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
-    {
-        if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
-        {
-            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
-        }
-    }
-
-    std::cout << "[LightingSystem] Initialized" << std::endl;
-    return true;
+	std::cout << "[LightingSystem] Initialized" << std::endl;
+	return true;
 }
-
 
 void LightingSystem::Update()
 {
     PROFILE_FUNCTION();
-    CollectLightData();
+	CollectLightData();
 }
 
 void LightingSystem::Shutdown()
 {
-    directionalShadowMap.Shutdown();
-
-    for (auto& psm : pointShadowMaps)
-    {
-        psm.Shutdown();
-    }
-    pointShadowMaps.clear();
-
-    std::cout << "[LightingSystem] Shutdown" << std::endl;
-}
-
-void LightingSystem::RenderShadowMaps()
-{
-    if (!shadowsEnabled || !shadowRenderCallback)
-    {
-        return;
-    }
-
-    // Render directional shadow
-    if (directionalLightData.hasDirectionalLight)
-    {
-        Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
-        glm::vec3 sceneCenter = camera ? camera->Position : glm::vec3(0.0f);
-
-        directionalShadowMap.Render(
-            directionalLightData.direction,
-            sceneCenter,
-            shadowDistance,
-            shadowRenderCallback
-        );
-    }
-
-    // Render point light shadows
-    int shadowIndex = 0;
-    for (size_t i = 0; i < pointLightData.positions.size() && shadowIndex < MAX_POINT_LIGHT_SHADOWS; ++i)
-    {
-        if (pointLightData.shadowIndex[i] >= 0)
-        {
-            pointShadowMaps[shadowIndex].Render(
-                pointLightData.positions[i],
-                pointLightShadowFarPlane,
-                shadowRenderCallback
-            );
-            shadowIndex++;
-        }
-    }
+	std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
 void LightingSystem::ApplyLighting(Shader& shader)
@@ -96,6 +30,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
     shader.setVec3("ambientSky", ambientSky);
     shader.setVec3("ambientEquator", ambientEquator);
     shader.setVec3("ambientGround", ambientGround);
+    shader.setFloat("ambientIntensity", ambientIntensity);
 
     // Apply directional light
     if (directionalLightData.hasDirectionalLight)
@@ -115,11 +50,11 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat("dirLight.intensity", 0.0f);
     }
 
-    // Send counts to shader
+    // Send counts to shader so it only processes active lights
     shader.setInt("numPointLights", static_cast<int>(pointLightData.positions.size()));
     shader.setInt("numSpotLights", static_cast<int>(spotLightData.positions.size()));
 
-    // Set active point lights
+    // Only loop through and set active point lights
     for (size_t i = 0; i < pointLightData.positions.size(); i++)
     {
         std::string base = "pointLights[" + std::to_string(i) + "]";
@@ -133,7 +68,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".intensity", pointLightData.intensity[i]);
     }
 
-    // Set active spot lights
+    // Only loop through and set active spot lights
     for (size_t i = 0; i < spotLightData.positions.size(); i++)
     {
         std::string base = "spotLights[" + std::to_string(i) + "]";
@@ -151,47 +86,9 @@ void LightingSystem::ApplyLighting(Shader& shader)
     }
 }
 
-void LightingSystem::ApplyShadows(Shader& shader)
-{
-    if (!shadowsEnabled)
-    {
-        shader.setBool("shadowsEnabled", false);
-        return;
-    }
-
-    shader.setBool("shadowsEnabled", true);
-
-    // Directional shadow
-    if (directionalLightData.hasDirectionalLight)
-    {
-        directionalShadowMap.Apply(shader, 8);
-    }
-
-    // Point light shadows
-    shader.setFloat("pointShadowFarPlane", pointLightShadowFarPlane);
-
-    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
-    {
-        if (i < pointShadowMaps.size() && pointShadowMaps[i].IsInitialized())
-        {
-            pointShadowMaps[i].Apply(shader, 9 + i, i);  // Texture units 9, 10, 11, 12
-        }
-    }
-
-    // Send shadow indices for each point light
-    for (size_t i = 0; i < pointLightData.shadowIndex.size(); ++i)
-    {
-        shader.setInt("pointLights[" + std::to_string(i) + "].shadowIndex", pointLightData.shadowIndex[i]);
-    }
-}
-
 void LightingSystem::CollectLightData()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-
-    int pointShadowCount = 0;
-    int requestedShadowCasters = 0;
-    pointLightData.shadowIndex.clear();
 
     // Clear previous frame data
     pointLightData.positions.clear();
@@ -219,12 +116,9 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
-        // Skip inactive entities
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                continue;
-            }
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+            continue;
         }
 
         // Collect directional light (first one only)
@@ -235,11 +129,14 @@ void LightingSystem::CollectLightData()
             {
                 directionalLightData.hasDirectionalLight = true;
 
-                glm::vec3 direction(0.2f, -1.0f, -0.3f);
+                // Use canonical forward direction (0, 0, -1) and apply transform rotation
+                // This makes the transform rotation the sole controller of light direction
+                glm::vec3 direction(0.0f, 0.0f, -1.0f);
                 if (ecsManager.HasComponent<Transform>(entity))
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
                     glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+                    // Extract rotation part and apply to canonical direction
                     glm::mat3 rotationMatrix = glm::mat3(worldMat);
                     direction = glm::normalize(rotationMatrix * direction);
                 }
@@ -249,11 +146,10 @@ void LightingSystem::CollectLightData()
                 directionalLightData.diffuse = light.diffuse.ConvertToGLM();
                 directionalLightData.specular = light.specular.ConvertToGLM();
                 directionalLightData.intensity = light.intensity;
-                // directionalLightData.castShadows = light.castShadows;  // Add this to component if needed
             }
         }
 
-        // Collect point lights
+        // Collect point lights with limit warning
         if (ecsManager.HasComponent<PointLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<PointLightComponent>(entity);
@@ -266,8 +162,9 @@ void LightingSystem::CollectLightData()
                     if (ecsManager.HasComponent<Transform>(entity))
                     {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        // FIX 2: Use world position from world matrix
                         glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                        position = glm::vec3(worldMat[3]);
+                        position = glm::vec3(worldMat[3]); // Extract translation from 4th column
                     }
 
                     pointLightData.positions.push_back(position);
@@ -278,30 +175,10 @@ void LightingSystem::CollectLightData()
                     pointLightData.linear.push_back(light.linear);
                     pointLightData.quadratic.push_back(light.quadratic);
                     pointLightData.intensity.push_back(light.intensity);
-
-                    // Only assign shadow if designer enabled castShadows AND we have slots available
-                    if (light.castShadows)
-                    {
-                        requestedShadowCasters++;
-
-                        if (pointShadowCount < MAX_POINT_LIGHT_SHADOWS)
-                        {
-                            pointLightData.shadowIndex.push_back(pointShadowCount);
-                            pointShadowCount++;
-                        }
-                        else
-                        {
-                            // Designer wanted shadow but we're at limit
-                            pointLightData.shadowIndex.push_back(-1);
-                        }
-                    }
-                    else
-                    {
-                        pointLightData.shadowIndex.push_back(-1);  // No shadow requested
-                    }
                 }
                 else
                 {
+                    // Only warn once when limit is hit
                     static bool pointLightWarningShown = false;
                     if (!pointLightWarningShown) {
                         std::cout << "[LightingSystem] Warning: Maximum point lights (" << MAX_POINT_LIGHTS
@@ -312,7 +189,7 @@ void LightingSystem::CollectLightData()
             }
         }
 
-        // Collect spot lights
+        // Collect spot lights with limit warning
         if (ecsManager.HasComponent<SpotLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<SpotLightComponent>(entity);
@@ -322,13 +199,18 @@ void LightingSystem::CollectLightData()
                 if (spotLightData.positions.size() < MAX_SPOT_LIGHTS)
                 {
                     glm::vec3 position(0.0f);
+                    // Use canonical forward direction (0, 0, -1) and apply transform rotation
                     glm::vec3 direction(0.0f, 0.0f, -1.0f);
 
                     if (ecsManager.HasComponent<Transform>(entity))
                     {
                         auto& transform = ecsManager.GetComponent<Transform>(entity);
                         glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                        position = glm::vec3(worldMat[3]);
+
+                        // Use world position from world matrix
+                        position = glm::vec3(worldMat[3]); // Extract translation from 4th column
+
+                        // Transform canonical direction to world space
                         glm::mat3 rotationMatrix = glm::mat3(worldMat);
                         direction = glm::normalize(rotationMatrix * direction);
                     }
@@ -347,6 +229,7 @@ void LightingSystem::CollectLightData()
                 }
                 else
                 {
+                    // Only warn once when limit is hit
                     static bool spotLightWarningShown = false;
                     if (!spotLightWarningShown) {
                         std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
@@ -357,6 +240,4 @@ void LightingSystem::CollectLightData()
             }
         }
     }
-    // Update active shadow caster count for editor
-    activeShadowCasterCount = pointShadowCount;
 }

@@ -59,8 +59,8 @@ private:
     Entity CreateCubeEntity();
     Entity CreateCameraEntity();
 
-    // Entity duplication (takeSnapshot = true for single entity, false when called from DuplicateEntities)
-    Entity DuplicateEntity(Entity sourceEntity, bool takeSnapshot = true);
+    // Entity duplication
+    Entity DuplicateEntity(Entity sourceEntity);
 
     // Entity clipboard (for copy/paste) - private helpers
 
