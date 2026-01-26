@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0012224c0f5c8852-00036adb5e000003",
+        "source": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallToGround.fbx",
+        "compiled": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallToGround.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
