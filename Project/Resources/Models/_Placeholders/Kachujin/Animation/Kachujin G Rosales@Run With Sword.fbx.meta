@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b64b2c42af-0004054dae000063",
+        "source": "../../Resources/Models/_Placeholders/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Kachujin/Animation/Kachujin G Rosales@Run With Sword.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

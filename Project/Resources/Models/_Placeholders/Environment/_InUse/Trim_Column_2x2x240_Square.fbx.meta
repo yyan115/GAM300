@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b647618067-0004054dae00005d",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Trim_Column_2x2x240_Square.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Trim_Column_2x2x240_Square.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

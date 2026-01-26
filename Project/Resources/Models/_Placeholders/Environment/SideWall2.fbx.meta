@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b671912bea-0004054da800003d",
+        "source": "../../Resources/Models/_Placeholders/Environment/SideWall2.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/SideWall2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

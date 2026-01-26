@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b65fa926f1-0004054da2000017",
+        "source": "../../Resources/Models/_Placeholders/Character/Enemy/EnemyWings.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Character/Enemy/EnemyWings.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b624b0c3e2-0004054dae00005b",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/SquarePedestral.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/SquarePedestral.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

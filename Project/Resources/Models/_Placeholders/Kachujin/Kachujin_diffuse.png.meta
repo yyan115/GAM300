@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b646076be8-0004054da6000039",
+        "source": "../../Resources/Models/_Placeholders/Kachujin/Kachujin_diffuse.png",
+        "compiled": "../../Resources/Models/_Placeholders/Kachujin/Kachujin_diffuse.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

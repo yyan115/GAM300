@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b6535fdb94-0004054da2000013",
+        "source": "../../Resources/Models/_Placeholders/Character/Enemy/Animation/EnemyGroundIdle.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Character/Enemy/Animation/EnemyGroundIdle.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

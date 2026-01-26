@@ -1025,7 +1025,10 @@ void AnimatorEditorWindow::DrawStateInspector()
     }
 
     // Speed
-    if (ImGui::SliderFloat("Speed", &config->speed, 0.0f, 3.0f, "%.2f")) {
+    ImGui::Text("Speed");
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputFloat("##Speed", &config->speed, 0.1f, 1.0f, "%.3f")) {
+        if (config->speed < 0.0f) config->speed = 0.0f;  // Prevent negative speed
         m_HasUnsavedChanges = true;
         ApplyToAnimationComponent();
     }

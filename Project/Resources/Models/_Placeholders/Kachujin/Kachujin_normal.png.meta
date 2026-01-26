@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b64f6afa7f-0004054da4000037",
+        "source": "../../Resources/Models/_Placeholders/Kachujin/Kachujin_normal.png",
+        "compiled": "../../Resources/Models/_Placeholders/Kachujin/Kachujin_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

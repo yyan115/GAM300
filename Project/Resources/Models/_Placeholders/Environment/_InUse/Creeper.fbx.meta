@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b626ec3cad-0004054daa000049",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Creeper.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Creeper.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b62e0fc684-0004054d9c000005",
+        "source": "../../Resources/Models/_Placeholders/backpack/backpack.obj",
+        "compiled": "../../Resources/Models/_Placeholders/backpack/backpack.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

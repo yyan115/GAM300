@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b629e02247-0004054da200001f",
+        "source": "../../Resources/Models/_Placeholders/Character/Enemy/FlyingAnimation/EnemyHurt2.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Character/Enemy/FlyingAnimation/EnemyHurt2.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

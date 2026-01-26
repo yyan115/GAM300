@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b65d3fd642-0004054daa00004b",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/JapaneseSmallWall.obj",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/JapaneseSmallWall.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

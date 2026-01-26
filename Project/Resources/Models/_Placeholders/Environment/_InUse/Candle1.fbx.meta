@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b66e0427d8-0004054daa000041",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Candle1.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Candle1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

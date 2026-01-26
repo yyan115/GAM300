@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b618d21059-0004054da2000029",
+        "source": "../../Resources/Models/_Placeholders/Character/Enemy/GroundAnimation/EnemyHurt.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Character/Enemy/GroundAnimation/EnemyHurt.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

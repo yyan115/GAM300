@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b640f292c8-0004054dae00005f",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Trim_Window_4x8.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Trim_Window_4x8.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

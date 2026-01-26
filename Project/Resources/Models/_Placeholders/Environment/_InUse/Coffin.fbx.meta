@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b60cb8eb1d-0004054daa000047",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Coffin.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Coffin.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

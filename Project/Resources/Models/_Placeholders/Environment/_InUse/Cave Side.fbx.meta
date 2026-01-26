@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b62d267c97-0004054daa000045",
+        "source": "../../Resources/Models/_Placeholders/Environment/_InUse/Cave Side.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/_InUse/Cave Side.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

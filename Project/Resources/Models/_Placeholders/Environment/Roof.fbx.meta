@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ef8b6000f461d-0004054da800003b",
+        "source": "../../Resources/Models/_Placeholders/Environment/Roof.fbx",
+        "compiled": "../../Resources/Models/_Placeholders/Environment/Roof.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
