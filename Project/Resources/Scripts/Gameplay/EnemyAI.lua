@@ -294,14 +294,8 @@ return Component {
 
         self._motionID = self._rb and self._rb.motionID or nil
 
-        if Input.GetKeyDown(Input.Key.H) then self:ApplyHit(1) end
-        if Input.GetKeyDown(Input.Key.J) then self:ApplyHook(4.0) end
-
-        -- TEMP DEBUG: press K to force a small move step
-        if Input.GetKeyDown(Input.Key.K) then
-            print("[EnemyAI] DEBUG forced move step")
-            self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
-        end
+        --if Input.GetKeyDown(Input.Key.J) then self:ApplyHit(1) end
+        if Input.GetKeyDown(Input.Key.K) then self:ApplyHook(4.0) end
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
