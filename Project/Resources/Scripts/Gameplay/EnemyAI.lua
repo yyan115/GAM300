@@ -453,7 +453,7 @@ return Component {
         self._pathRepathT = 0
         self._pathStuckT = 0
         self._pathLastX, self._pathLastZ = nil, nil
-        print("[EnemyAI] ClearPath called. Path is nil")
+        --print("[EnemyAI] ClearPath called. Path is nil")
     end,
 
     SetPath = function(self, waypoints, goalX, goalZ)
@@ -486,7 +486,7 @@ return Component {
         
         _dumpPath(self, "RECEIVED")
 
-        print(string.format("[Nav] path = %d", #path))
+        --print(string.format("[Nav] path = %d", #path))
 
         if path and #path >= 1 then
             --print(string.format("[Nav] PATH OK len=%d", #path))
@@ -507,13 +507,13 @@ return Component {
 
         -- no path yet
         if not self._path or not self._pathIndex then
-            print("[ShouldRepathToXZ] TRUE. PATH IS EMPTY")
+            --print("[ShouldRepathToXZ] TRUE. PATH IS EMPTY")
             return true
         end
 
         -- timed repath
         if self._pathRepathT >= repathInterval then
-            print("[ShouldRepathToXZ] TRUE. self._pathRepathT: ", self._pathRepathT)
+            --print("[ShouldRepathToXZ] TRUE. self._pathRepathT: ", self._pathRepathT)
             return true
         end
 
@@ -522,7 +522,7 @@ return Component {
             local dx = goalX - self._pathGoalX
             local dz = goalZ - self._pathGoalZ
             if (dx*dx + dz*dz) >= (goalMoveThres * goalMoveThres) then
-                print("[ShouldRepathToXZ] TRUE. (dx*dx + dz*dz) >= (goalMoveThres * goalMoveThres)")
+                --print("[ShouldRepathToXZ] TRUE. (dx*dx + dz*dz) >= (goalMoveThres * goalMoveThres)")
                 return true
             end
         end
@@ -534,21 +534,21 @@ return Component {
     FollowPath = function(self, dtSec, speed)
         if not self._path or #self._path == 0 then
             -- NO FALLBACK - if there's no path, STOP
-            print("[FollowPath] NO PATH, STOPPING CC")
+            --print("[FollowPath] NO PATH, STOPPING CC")
             self:StopCC()
             return false
         end
         
         local idx = self._pathIndex or 1
         if idx > #self._path then
-            print("[FollowPath] REACHED GOAL, STOPPING CC")
+            --print("[FollowPath] REACHED GOAL, STOPPING CC")
             self:StopCC()
             return true
         end
 
         local wp = self._path[idx]
         if not wp then
-            print("[FollowPath] INVALID WAYPOINT, idx=", idx);
+            --print("[FollowPath] INVALID WAYPOINT, idx=", idx);
             self:StopCC()
             return true
         end
@@ -568,19 +568,19 @@ return Component {
 
         -- Advance waypoint if close enough
         if d2 <= arriveR2 then
-            print("[FollowPath] REACHED WAYPOINT ", idx)
+            --print("[FollowPath] REACHED WAYPOINT ", idx)
             self._pathIndex = idx + 1
             -- If that was the last waypoint, we arrived.
             if self._pathIndex > #self._path then
-                print("[FollowPath] REACHED GOAL, STOPPING CC")
+                --print("[FollowPath] REACHED GOAL, STOPPING CC")
                 self:StopCC()
                 return true
             end
             wp = self._path[self._pathIndex]
-            print("[FollowPath] NEW PATHINDEX: ", self._pathIndex)
-            print(string.format("[FollowPath] NEW WAYPOINT: %f %f %f", wp.x, wp.y, wp.z))
+            --print("[FollowPath] NEW PATHINDEX: ", self._pathIndex)
+            --print(string.format("[FollowPath] NEW WAYPOINT: %f %f %f", wp.x, wp.y, wp.z))
             if not wp then
-                print("[FollowPath] INVALID WAYPOINT, idx=", idx);
+                --print("[FollowPath] INVALID WAYPOINT, idx=", idx);
                 self:StopCC()
                 return true
             end
@@ -590,7 +590,7 @@ return Component {
             dz = (wp.z or 0) - ez
             d2 = dx*dx + dz*dz
             if d2 <= 1e-8 then
-                print("[FollowPath] REACHED NEW ENDPOINT")
+                --print("[FollowPath] REACHED NEW ENDPOINT")
                 self:StopCC()
                 return false
             end
