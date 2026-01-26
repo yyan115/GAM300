@@ -289,16 +289,24 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     }
     clips.clear();
 
+    // Track which clips loaded successfully
+    std::vector<std::string> validClipPaths;
+    std::vector<GUID_128> validClipGUIDs;
+
     for (size_t i = 0; i < clipPaths.size(); ++i) {
         const auto& path = clipPaths[i];
         std::string pathToLoad{};
 
         // First try to use GUID to get the correct local path (handles cross-machine scenarios)
-        if (i < clipGUIDs.size() && (clipGUIDs[i].high != 0 || clipGUIDs[i].low != 0)) {
-            std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(clipGUIDs[i]);
-            if (!guidPath.empty()) {
-                pathToLoad = guidPath;
-                ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
+        GUID_128 currentGUID = {};
+        if (i < clipGUIDs.size()) {
+            currentGUID = clipGUIDs[i];
+            if (currentGUID.high != 0 || currentGUID.low != 0) {
+                std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(currentGUID);
+                if (!guidPath.empty()) {
+                    pathToLoad = guidPath;
+                    ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
+                }
             }
         }
 
@@ -323,11 +331,18 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
         auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {
             clips.emplace_back(std::move(anim));
+            validClipPaths.push_back(path);
+            validClipGUIDs.push_back(currentGUID);
             ENGINE_PRINT("[AnimationComponent] Successfully loaded clip, total: ", clips.size(), "\n");
         } else {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Failed to load clip from: ", pathToLoad, "\n");
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Failed to load clip from: ", pathToLoad, " - removing from list\n");
         }
     }
+
+    // Replace clipPaths and clipGUIDs with only the successfully loaded ones
+    clipPaths = std::move(validClipPaths);
+    clipGUIDs = std::move(validClipGUIDs);
+    clipCount = static_cast<int>(clipPaths.size());
 
     ENGINE_PRINT("[AnimationComponent] Finished loading clips, count: ", clips.size(), "\n");
 

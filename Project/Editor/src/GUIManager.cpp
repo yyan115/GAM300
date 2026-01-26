@@ -614,19 +614,20 @@ void GUIManager::HandleKeyboardShortcuts() {
 	}
 
 	// Entity shortcuts (work globally when entities are selected)
-	// These are handled here so they work regardless of which panel has focus
+	// Copy and Duplicate work regardless of which panel has focus
+	// Delete only works when hierarchy or scene panel is focused
 	if (!selectedEntities.empty()) {
 		auto hierarchyPanelPtr = panelManager->GetPanel("Scene Hierarchy");
 		if (hierarchyPanelPtr) {
 			auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
 			if (hierarchyPanel) {
-				// Ctrl+C: Copy entities
+				// Ctrl+C: Copy entities (works globally)
 				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
 					hierarchyPanel->CopySelectedEntities();
 					ShowNotification("Copied", 1.0f);
 				}
 
-				// Ctrl+D: Duplicate entities
+				// Ctrl+D: Duplicate entities (works globally)
 				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
 					std::vector<Entity> duplicated = hierarchyPanel->DuplicateEntities(selectedEntities);
 					if (!duplicated.empty()) {
@@ -635,9 +636,16 @@ void GUIManager::HandleKeyboardShortcuts() {
 					}
 				}
 
-				// Delete: Delete entities
+				// Delete: Delete entities - ONLY when hierarchy or scene panel is focused
+				// This prevents deleting entities when other windows (like Animator) have focus
 				if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-					hierarchyPanel->DeleteSelectedEntities();
+					bool hierarchyFocused = hierarchyPanelPtr->IsFocused();
+					auto scenePanelPtr = panelManager->GetPanel("Scene");
+					bool sceneFocused = scenePanelPtr && scenePanelPtr->IsFocused();
+
+					if (hierarchyFocused || sceneFocused) {
+						hierarchyPanel->DeleteSelectedEntities();
+					}
 				}
 			}
 		}

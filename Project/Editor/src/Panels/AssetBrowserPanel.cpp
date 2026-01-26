@@ -321,8 +321,8 @@ void AssetBrowserPanel::OnImGuiRender() {
         StartRenameAsset(lastSelectedAsset);
     }
 
-    // Handle Delete key for deleting
-    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_Delete) && !selectedAssets.empty()) {
+    // Handle Delete key for deleting (only when this panel is focused)
+    if (!isRenaming && ImGui::IsKeyPressed(ImGuiKey_Delete) && !selectedAssets.empty() && IsFocused()) {
         // Find the selected asset and trigger delete confirmation
         for (const auto& asset : currentAssets) {
             if (IsAssetSelected(asset.guid)) {
@@ -383,6 +383,7 @@ void AssetBrowserPanel::OnImGuiRender() {
 
         ImGui::EndChild();
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
