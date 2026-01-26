@@ -1093,7 +1093,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 7
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -1792,7 +1792,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 8
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -4926,7 +4926,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 8
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -5531,7 +5531,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 8
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -6136,7 +6136,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 8
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -6741,7 +6741,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 8
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 0
@@ -34511,7 +34511,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 0
                         },
                         {
                             "type": "bool",
