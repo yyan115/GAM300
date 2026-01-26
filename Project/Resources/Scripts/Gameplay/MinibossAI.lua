@@ -242,7 +242,7 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if Input.GetKeyDown(Input.Key.J) then self:ApplyHit(1) end
+        --if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
         local dtSec = toDtSec(dt)
 
         -- tick hit i-frames

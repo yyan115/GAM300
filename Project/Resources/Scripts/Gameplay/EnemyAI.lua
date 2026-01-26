@@ -330,9 +330,6 @@ return Component {
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
-        -- DEBUG (disabled for unified input - no debug keys mapped)
-        -- if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
-        -- if Input.IsActionJustPressed("DebugHook") then self:ApplyHook(4.0) end
 
         if not self.fsm.current or not self.fsm.currentName then
             self.fsm:ForceChange("Idle", self.states.Idle)
