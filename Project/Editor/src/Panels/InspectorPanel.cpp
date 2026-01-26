@@ -61,6 +61,7 @@ extern std::string DraggedFontPath;
 #include "UI/Button/ButtonComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
+#include <Animation/AnimationStateMachine.hpp>
 #include <Script/ScriptComponentData.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
@@ -2089,6 +2090,25 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				// Reset transform to default values
 				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
 				std::cout << "[Inspector] Reset Transform on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AnimationComponent") {
+				auto& animComp = ecsManager.GetComponent<AnimationComponent>(request.entity);
+				// Clear all animation data
+				animComp.ClearClips();
+				animComp.clipPaths.clear();
+				animComp.clipGUIDs.clear();
+				animComp.clipCount = 0;
+				animComp.controllerPath.clear();
+				animComp.enabled = true;
+				animComp.isPlay = false;
+				animComp.isLoop = true;
+				animComp.speed = 1.0f;
+				// Clear state machine
+				AnimationStateMachine* sm = animComp.GetStateMachine();
+				if (sm) {
+					sm->Clear();
+				}
+				std::cout << "[Inspector] Reset AnimationComponent on entity " << request.entity << std::endl;
 			}
 			else {
 				std::cerr << "[Inspector] Unknown component type for reset: " << request.componentType << std::endl;

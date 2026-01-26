@@ -2081,7 +2081,6 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterComponentRenderer("AnimationComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        (void)ecs;
         AnimationComponent &animComp = *static_cast<AnimationComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
@@ -2323,6 +2322,20 @@ void RegisterInspectorCustomRenderers()
                     bool isSelected = (i == activeClipIndex);
 
                     if (ImGui::Selectable(clipName.c_str(), isSelected)) {
+                        // If clips aren't loaded or out of sync, reload them first
+                        if (animComp.GetClips().size() != animComp.clipPaths.size()) {
+                            if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+                                auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                                if (modelComp.model) {
+                                    animComp.LoadClipsFromPaths(
+                                        modelComp.model->GetBoneInfoMap(),
+                                        modelComp.model->GetBoneCount(),
+                                        entity
+                                    );
+                                }
+                            }
+                        }
+
                         // Change to the selected animation
                         if (i < animComp.GetClips().size()) {
                             animComp.SetClip(i, entity);

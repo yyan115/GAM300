@@ -308,6 +308,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
         }
 
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
