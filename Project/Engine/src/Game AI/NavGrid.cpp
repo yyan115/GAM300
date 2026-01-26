@@ -58,18 +58,18 @@ static bool IsObstacleHit(PhysicsSystem& phys,
     if (bodyId.IsInvalid()) return false;
 
     Entity e = phys.GetEntityFromBody(bodyId);
-    /*std::cout << "[NavGrid] Hit body -> entity " << (int)e
-        << " name=" << SafeName(ecsManager, e);*/
+    std::cout << "[NavGrid] Hit body -> entity " << (int)e
+        << " name=" << SafeName(ecsManager, e);
 
     if (!ecsManager.HasComponent<LayerComponent>(e))
     {
-        //std::cout << " NO LayerComponent\n";
+        std::cout << " NO LayerComponent\n";
         return false;
     }
 
     const auto& lc = ecsManager.GetComponent<LayerComponent>(e);
-    /*std::cout << " layerIndex=" << lc.layerIndex
-        << " (ObstacleIdx=" << obstacleIdx << ")\n";*/
+    std::cout << " layerIndex=" << lc.layerIndex
+        << " (ObstacleIdx=" << obstacleIdx << ")\n";
 
     return lc.layerIndex == obstacleIdx;
 }
@@ -97,7 +97,7 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
     // ------------------------------------------------------------
     if (!phys.IsJoltInitialized())
     {
-        //std::cout << "[NavGrid] Build skipped: Jolt not initialized\n";
+        std::cout << "[NavGrid] Build skipped: Jolt not initialized\n";
         return;
     }
 
@@ -181,11 +181,11 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
 
         if (groundPrinted < 8)
         {
-            /*std::cout << "[NavGrid] Allowed Ground AABB: " << SafeName(ecsManager, e)
+            std::cout << "[NavGrid] Allowed Ground AABB: " << SafeName(ecsManager, e)
                 << " X(" << minx << "," << maxx << ")"
                 << " Z(" << minz << "," << maxz << ")"
                 << " ecsLayer=" << GetLayerIndexOrNeg1(e)
-                << "\n";*/
+                << "\n";
             groundPrinted++;
         }
     }
@@ -198,13 +198,13 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
         minZ = gMinZ - PAD;
         maxZ = gMaxZ + PAD;
 
-        /*std::cout << "[NavGrid] Using ground-derived bounds X(" << minX << "," << maxX
-            << ") Z(" << minZ << "," << maxZ << ")\n";*/
+        std::cout << "[NavGrid] Using ground-derived bounds X(" << minX << "," << maxX
+            << ") Z(" << minZ << "," << maxZ << ")\n";
     }
     else
     {
-        /*std::cout << "[NavGrid] WARNING: No allowed ground bounds found via physics AABB.\n"
-            "          Using configured bounds (may include unreachable areas).\n";*/
+        std::cout << "[NavGrid] WARNING: No allowed ground bounds found via physics AABB.\n"
+            "          Using configured bounds (may include unreachable areas).\n";
     }
 
     // ------------------------------------------------------------
@@ -214,19 +214,19 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
     rows = static_cast<int>(std::ceil((maxZ - minZ) / cellSize));
     cells.assign(rows * cols, {});
 
-    /*std::cout << "[NavGrid] Build begin | bounds X(" << minX << "," << maxX << ")"
+    std::cout << "[NavGrid] Build begin | bounds X(" << minX << "," << maxX << ")"
         << " Z(" << minZ << "," << maxZ << ") cellSize=" << cellSize
         << " cols=" << cols << " rows=" << rows
         << " GroundIdx=" << groundIdx << " ObstacleIdx=" << obstacleIdx
-        << "\n";*/
+        << "\n";
 
     // ------------------------------------------------------------
     // 4) Bake tuning
     // ------------------------------------------------------------
-    constexpr float NAV_RADIUS_INFLATION = 0.70f;
-    constexpr float NAV_HEIGHT_INFLATION = 0.10f;
+    constexpr float NAV_RADIUS_INFLATION = 0.15f;
+    constexpr float NAV_HEIGHT_INFLATION = 0.05f;
 
-    const float AABB_INFLATE = agentRadius + 0.25f;
+    const float AABB_INFLATE = agentRadius * 0.5f;
 
     const float PROBE_TOP = std::max(groundProbeTop, 50.0f);
     const float PROBE_DIST = std::max(groundProbeDist, 200.0f);
@@ -256,18 +256,18 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
 
         if (obsPrinted < 12)
         {
-            /*std::cout << "[NavGrid] Obstacle AABB: " << SafeName(ecsManager, e)
+            std::cout << "[NavGrid] Obstacle AABB: " << SafeName(ecsManager, e)
                 << " X(" << a.minX << "," << a.maxX << ")"
-                << " Z(" << a.minZ << "," << a.maxZ << ")\n";*/
+                << " Z(" << a.minZ << "," << a.maxZ << ")\n";
             obsPrinted++;
         }
     }
 
-    /*std::cout << "[NavGrid] obstacleAABBs=" << obsAABBs.size()
+    std::cout << "[NavGrid] obstacleAABBs=" << obsAABBs.size()
         << " AABB_INFLATE=" << AABB_INFLATE
         << " agentRadius=" << agentRadius
         << " agentHalfHeight=" << agentHalfHeight
-        << "\n";*/
+        << "\n";
 
     // ------------------------------------------------------------
     // 6) Debug Rays (3 points)
@@ -278,32 +278,32 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
             Vector3D d(0, -1, 0);
 
             auto any = phys.Raycast(o, d, PROBE_DIST);
-            //std::cout << "[NavGrid] ANY (" << x << "," << PROBE_TOP << "," << z << ") hit=" << any.hit;
+            std::cout << "[NavGrid] ANY (" << x << "," << PROBE_TOP << "," << z << ") hit=" << any.hit;
             if (any.hit)
             {
                 Entity e = phys.GetEntityFromBody(any.bodyId);
-                /*std::cout << " y=" << any.hitPoint.y
+                std::cout << " y=" << any.hitPoint.y
                     << " ent=" << (int)e
                     << " name=" << SafeName(ecsManager, e)
-                    << " ecsLayer=" << GetLayerIndexOrNeg1(e);*/
+                    << " ecsLayer=" << GetLayerIndexOrNeg1(e);
             }
-            //std::cout << "\n";
+            std::cout << "\n";
 
             auto g = phys.RaycastGround(o, d, PROBE_DIST, ecsManager,
                 groundIdx, obstacleIdx,
                 /*acceptObstacleAsHit=*/false,
                 /*debugLog=*/true);
 
-            //std::cout << "[NavGrid] GROUNDONLY (" << x << "," << PROBE_TOP << "," << z << ") hit=" << g.hit;
+            std::cout << "[NavGrid] GROUNDONLY (" << x << "," << PROBE_TOP << "," << z << ") hit=" << g.hit;
             if (g.hit)
             {
                 Entity e = phys.GetEntityFromBody(g.bodyId);
-                /*std::cout << " y=" << g.hitPoint.y
+                std::cout << " y=" << g.hitPoint.y
                     << " ent=" << (int)e
                     << " name=" << SafeName(ecsManager, e)
-                    << " ecsLayer=" << GetLayerIndexOrNeg1(e);*/
+                    << " ecsLayer=" << GetLayerIndexOrNeg1(e);
             }
-            //std::cout << "\n";
+            std::cout << "\n";
         };
 
     DebugRay(0.0f, 0.0f);
@@ -372,11 +372,11 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
 
                 if (noGroundLogs < MAX_NOGROUND_LOGS)
                 {
-                    /*std::cout << "[NavGrid] NoGround r=" << r << " c=" << c
+                    std::cout << "[NavGrid] NoGround r=" << r << " c=" << c
                         << " x=" << x << " z=" << z
                         << " probeTop=" << PROBE_TOP
                         << " probeDist=" << PROBE_DIST
-                        << "\n";*/
+                        << "\n";
                     noGroundLogs++;
                 }
                 continue;
@@ -424,7 +424,7 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
     const int total = rows * cols;
     auto pct = [&](int n) -> float { return total > 0 ? (100.0f * float(n) / float(total)) : 0.0f; };
 
-    /*std::cout
+    std::cout
         << "[NavGrid] Build done | grid=" << total
         << " walkable=" << walkableCount << " (" << pct(walkableCount) << "%)"
         << " stamp=" << blockedStamp << " (" << pct(blockedStamp) << "%)"
@@ -432,18 +432,18 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
         << " overlap=" << blockedOverlap << " (" << pct(blockedOverlap) << "%)"
         << "\n";
 
-    std::cout << "[NavGrid] ASCII map legend: '.' walkable, 'S' stamp, 'N' noGround, 'O' overlap\n";
-    std::cout << "[NavGrid] row0 is MIN-Z side (r=0). If you want flipped vertically, print rows reversed.\n";*/
+    //std::cout << "[NavGrid] ASCII map legend: '.' walkable, 'S' stamp, 'N' noGround, 'O' overlap\n";
+    //std::cout << "[NavGrid] row0 is MIN-Z side (r=0). If you want flipped vertically, print rows reversed.\n";
 
-    for (int r = 0; r < rows; ++r)
-    {
-        //std::cout << "[NavGrid] r=" << r << " ";
-        for (int c = 0; c < cols; ++c)
-        {
-            std::cout << reasonMap[r * cols + c];
-        }
-        //std::cout << "\n";
-    }
+    //for (int r = 0; r < rows; ++r)
+    //{
+    //    std::cout << "[NavGrid] r=" << r << " ";
+    //    for (int c = 0; c < cols; ++c)
+    //    {
+    //        std::cout << reasonMap[r * cols + c];
+    //    }
+    //    std::cout << "\n";
+    //}
 }
 
 bool NavGrid::InBounds(int r, int c) const
@@ -453,8 +453,25 @@ bool NavGrid::InBounds(int r, int c) const
 
 bool NavGrid::Walkable(int r, int c) const
 {
-    if (!InBounds(r, c)) return false;
-    return cells[r * cols + c].walkable;
+    if (!InBounds(r, c)) {
+        std::cout << "[NavGrid::Walkable] Out of bounds: [" << r << "," << c
+            << "] (bounds: 0-" << (rows - 1) << ", 0-" << (cols - 1) << ")\n";
+        return false;
+    }
+
+    bool result = cells[r * cols + c].walkable;
+
+    // Debug spam reduction - only log non-walkable cells
+    if (!result) {
+        static int logCount = 0;
+        if (logCount < 10) {
+            std::cout << "[NavGrid::Walkable] Cell [" << r << "," << c
+                << "] is NOT walkable\n";
+            logCount++;
+        }
+    }
+
+    return result;
 }
 
 GridPos NavGrid::WorldToCell(float x, float z) const
@@ -464,6 +481,9 @@ GridPos NavGrid::WorldToCell(float x, float z) const
 
     c = std::clamp(c, 0, cols - 1);
     r = std::clamp(r, 0, rows - 1);
+
+    //std::cout << "[WorldToCell] world(" << x << "," << z << ") -> cell["
+    //    << r << "," << c << "] (clamped)\n";
 
     return GridPos{ r, c };
 }
@@ -478,4 +498,14 @@ Vector3D NavGrid::CellToWorld(int r, int c) const
         y = cells[r * cols + c].groundY;
 
     return Vector3D(x, y, z);
+}
+
+const NavCell& NavGrid::GetNavCell(int row, int col) {
+    if (row >= 0 && row < rows &&
+        col >= 0 && col < cols) {
+        return cells[row * rows + col];
+    }
+
+    // Default case: return cells[0]
+    return cells[0];
 }

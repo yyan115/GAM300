@@ -10,7 +10,9 @@ public:
 
     void Build(PhysicsSystem& phys, ECSManager& ecsManager);
 
-    std::vector<Vector3D> RequestPathXZ(float sx, float sz, float gx, float gz);
+    std::vector<Vector3D> RequestPathXZ(float sx, float sz, float gx, float gz, Entity entity);
+
+    float GetGroundY(Entity entity);
 
     // Optional config passthroughs
     NavGrid& GetGrid() { return grid; }

@@ -54,8 +54,13 @@ function ChaseState:Update(ai, dt)
 
     if needRepath then
         ai._pathRepathT = 0
-        ai:RequestPathToXZ(px, pz)
-        -- If request fails, we still fall back to stop this frame (prevents wall-humping)
+        local pathFound = ai:RequestPathToXZ(px, pz)
+        
+        if not pathFound then
+            print("[Chase] NO PATH to player - stopping movement")
+            ai:StopCC()
+            return
+        end
     end
 
     -- Follow the path

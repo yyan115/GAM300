@@ -312,6 +312,7 @@ END_SYSTEM()
 // ============================================================================
 BEGIN_SYSTEM("Nav")
     FUNCTION("RequestPathXZ", NavWrappers::RequestPathXZ)
+    FUNCTION("GetGroundY", NavWrappers::GetGroundY)
 END_SYSTEM()
 
 
