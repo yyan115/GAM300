@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005156d535945b7c-0004059b9c000069",
+        "source": "../../Resources/Textures/M4/FloorMain_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/M4/FloorMain_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "specular",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

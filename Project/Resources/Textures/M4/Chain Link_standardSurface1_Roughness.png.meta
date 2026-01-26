@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00232295e041b38f-0003e82f5400000d",
+        "source": "../../Resources/Textures/M4/Chain Link_standardSurface1_Roughness.png",
+        "compiled": "../../Resources/Textures/M4/Chain Link_standardSurface1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

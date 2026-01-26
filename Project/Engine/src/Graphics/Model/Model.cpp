@@ -192,11 +192,6 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	// Build post-processing flags
     unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace;
 
-    // Check if this is a wall/pillar model and flip winding order to fix face culling
-    if (assetPath.find("Wall") != std::string::npos ) {
-        postProcessFlags |= aiProcess_FlipWindingOrder;
-    }
-
     const aiScene* scene = importer.ReadFile(assetPath, postProcessFlags);
 //#endif
 

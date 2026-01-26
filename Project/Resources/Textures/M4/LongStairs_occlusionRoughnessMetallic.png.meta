@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0069ec14fbf6573f-0004061eaa000007",
+        "source": "../../Resources/Textures/M4/LongStairs_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/M4/LongStairs_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
