@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0050f1176d0478d6-000403bcc6000021",
-        "source": "../../Resources/Scripts/GamePlay/KnifePool.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/KnifePool.lua"
+        "guid": "006d00af14e6e76f-0004032a3200001d",
+        "source": "../../Resources/Scripts/Gameplay/KnifePool.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/KnifePool.lua"
     }
 }

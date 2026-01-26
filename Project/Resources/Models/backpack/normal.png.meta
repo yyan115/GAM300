@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374a2143dace2b-000331fc44000031",
+        "source": "../../Resources/Models/backpack/normal.png",
+        "compiled": "../../Resources/Models/backpack/normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
