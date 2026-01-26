@@ -43664,15 +43664,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.00839469
+                                    "data": -2.99992
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.101027
+                                    "data": 0.231453
                                 },
                                 {
                                     "type": "float",
-                                    "data": -1.10006
+                                    "data": -1.57248
                                 }
                             ]
                         },
@@ -43822,7 +43822,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 0
                         },
                         {
                             "type": "bool",
@@ -44016,93 +44016,58 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "ClipHurt": 2.0,
-                                "UpdateSafe": null,
-                                "dead": false,
-                                "ClipDeath": 3.0,
-                                "GetPosition": null,
-                                "FacePlayer": null,
-                                "_subscriptions": {},
-                                "AttackCooldown": 1.0,
-                                "DoAttack": null,
+                                "PatrolPointA_X": -3.0,
                                 "fsm": {
                                     "timeInState": 0.0,
-                                    "owner": null,
                                     "enabled": true
                                 },
-                                "DebugTransform": null,
-                                "config": {
-                                    "AttackCooldown": 1.0,
-                                    "DetectionRange": 8.0
-                                },
-                                "__created_at": 1768238002.0,
-                                "PlayClip": null,
-                                "Awake": null,
-                                "Start": null,
-                                "health": 5.0,
+                                "ClipDeath": 3.0,
                                 "PlayerName": "Player",
+                                "_subscriptions": {},
+                                "AttackCooldown": 1.0,
                                 "states": {
-                                    "Idle": {
-                                        "Update": null,
-                                        "Exit": null,
-                                        "Enter": null
-                                    },
-                                    "Death": {
-                                        "Update": null,
-                                        "Exit": null,
-                                        "Enter": null
-                                    },
-                                    "Attack": {
-                                        "Update": null,
-                                        "Enter": null
-                                    }
+                                    "Idle": {},
+                                    "Attack": {},
+                                    "Death": {}
                                 },
-                                "SpawnKnife": null,
-                                "Destroy": null,
-                                "DeserializeFields": null,
-                                "Subscribe": null,
-                                "SetRotation": null,
-                                "SerializeFields": null,
-                                "DisableSafe": null,
-                                "After": null,
-                                "StartSafe": null,
-                                "IsPlayerInRange": null,
-                                "GetTransform": null,
+                                "health": 5.0,
+                                "PatrolPointB_X": 3.0,
+                                "__created_at": 1768238002.0,
                                 "_private": {},
-                                "Unsubscribe": null,
-                                "_call_lifecycle": null,
-                                "ApplyHit": null,
-                                "Every": null,
-                                "GetRotation": null,
-                                "AwakeSafe": null,
-                                "GetScale": null,
-                                "Move": null,
+                                "PathGoalMoveThreshold": 0.2,
+                                "PatrolPointA_Z": -1.5,
                                 "MaxHealth": 5.0,
-                                "ClipIdle": 0.0,
-                                "ClipAttack": 1.0,
-                                "SetPosition": null,
-                                "__meta": {},
-                                "__field_list": {
-                                    "AttackCooldown": 1.0,
-                                    "ClipIdle": 0.0,
-                                    "ClipAttack": 1.0,
-                                    "ClipDeath": 3.0,
-                                    "MaxHealth": 5.0,
-                                    "DetectionRange": 8.0,
-                                    "PlayerName": "Player",
-                                    "ClipHurt": 2.0
-                                },
-                                "_transform_fetched": false,
-                                "DetectionRange": 3.0,
-                                "DisableCombat": null,
-                                "Update": null,
-                                "SetScale": null,
+                                "PathWaypointRadius": 0.175,
                                 "clips": {
                                     "Idle": 0.0,
                                     "Hurt": 2.0,
-                                    "Death": 3.0,
-                                    "Attack": 1.0
-                                }
+                                    "Attack": 1.0,
+                                    "Death": 3.0
+                                },
+                                "__meta": {},
+                                "dead": false,
+                                "__field_list": {
+                                    "ClipHurt": 2.0,
+                                    "ClipIdle": 0.0,
+                                    "ClipAttack": 1.0,
+                                    "AttackCooldown": 1.0,
+                                    "MaxHealth": 5.0,
+                                    "ClipDeath": 3.0,
+                                    "PlayerName": "Player",
+                                    "DetectionRange": 8.0
+                                },
+                                "config": {
+                                    "DetectionRange": 8.0,
+                                    "AttackCooldown": 1.0
+                                },
+                                "_transform_fetched": false,
+                                "DetectionRange": 0.0,
+                                "ClipHurt": 2.0,
+                                "ClipIdle": 0.0,
+                                "ClipAttack": 1.0,
+                                "AttackRange": 0.0,
+                                "AttackDisengageRange": 0.0,
+                                "PatrolPointB_Z": -1.5
                             }
                         }
                     ]

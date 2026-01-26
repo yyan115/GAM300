@@ -25,14 +25,16 @@ public:
     int Rows() const { return rows; }
     int Cols() const { return cols; }
 
+    const NavCell& GetNavCell(int row, int col);
+
     // config
-    float cellSize = 1.0f;
+    float cellSize = 0.1f;
     float minX = -20, maxX = 20;
     float minZ = -20, maxZ = 20;
 
     // agent params
-    float agentRadius = 0.25f;
-    float agentHalfHeight = 0.45f;
+    float agentRadius = 0.2f;
+    float agentHalfHeight = 0.4f;
     float groundProbeTop = 10.0f;
     float groundProbeDist = 30.0f;
 

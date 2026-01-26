@@ -750,13 +750,14 @@ namespace NavWrappers {
 
     inline int RequestPathXZ(lua_State* L)
     {
-        // Expect 4 numbers on the stack
+        // Expect 5 numbers on the stack
         float sx = (float)luaL_checknumber(L, 1);
         float sz = (float)luaL_checknumber(L, 2);
         float gx = (float)luaL_checknumber(L, 3);
         float gz = (float)luaL_checknumber(L, 4);
+        Entity e = (Entity)luaL_checknumber(L, 5);
 
-        const auto path = NavSystem::Get().RequestPathXZ(sx, sz, gx, gz);
+        const auto path = NavSystem::Get().RequestPathXZ(sx, sz, gx, gz, e);
 
         lua_newtable(L); // push result table
 
@@ -772,5 +773,9 @@ namespace NavWrappers {
         }
 
         return 1; // returning 1 value (the table)
+    }
+
+    inline float GetGroundY(Entity entity) {
+        return NavSystem::Get().GetGroundY(entity);
     }
 }

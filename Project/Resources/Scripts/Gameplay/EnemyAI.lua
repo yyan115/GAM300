@@ -78,15 +78,15 @@ local function toDtSec(dt)
 end
 
 local function _dumpPath(self, tag)
-    if not self._path then
-        print("[Nav] " .. tag .. " path=nil")
-        return
-    end
-    print(string.format("[Nav] %s pathLen=%d", tag, #self._path))
-    for i = 1, math.min(#self._path, 12) do
-        local p = self._path[i]
-        print(string.format("  [%d] (%.2f, %.2f, %.2f)", i, p.x or 0, p.y or 0, p.z or 0))
-    end
+    -- if not self._path then
+    --     print("[Nav] " .. tag .. " path=nil")
+    --     return
+    -- end
+    -- --print(string.format("[Nav] %s pathLen=%d", tag, #self._path))
+    -- for i = 1, math.min(#self._path, 12) do
+    --     local p = self._path[i]
+    --     print(string.format("  [%d] (%.2f, %.2f, %.2f)", i, p.x or 0, p.y or 0, p.z or 0))
+    -- end
 end
 
 return Component {
@@ -110,10 +110,15 @@ return Component {
         PatrolWait     = 1.5,
         ChaseSpeed     = 0.6,
 
-        -- PathRepathInterval = 0.45,
-        -- PathGoalMoveThreshold = 0.9,
-        -- PathWaypointRadius = 0.6,
-        -- PathStuckTime = 0.75,
+        PathRepathInterval = 10,
+        PathGoalMoveThreshold = 0.9,
+        PathWaypointRadius = 0.6,
+        PathStuckTime = 0.75,
+
+        PatrolPointA_X = 2.0,
+        PatrolPointA_Z = -1.1,
+        PatrolPointB_X = -2.0,
+        PatrolPointB_Z = -1.1,
 
         ClipIdle   = 0,
         ClipAttack = 1,
@@ -177,6 +182,10 @@ return Component {
             PatrolDistance = self.PatrolDistance,
             PatrolWait     = self.PatrolWait,
             EnablePatrol   = self.EnablePatrol,
+            -- PatrolPointA_X = self.PatrolPointA_X,
+            -- PatrolPointA_Z = self.PatrolPointA_Z,
+            -- PatrolPointB_X = self.PatrolPointB_X,
+            -- PatrolPointB_Z = self.PatrolPointB_Z,
         }
 
         -- fixed-step accumulator for kinematic grounding
@@ -213,7 +222,7 @@ return Component {
         end
 
         if self._rb then
-            pcall(function() self._rb.motionID = 1 end)
+            pcall(function() self._rb.motionID = 0 end)
             -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
@@ -231,11 +240,15 @@ return Component {
         local skin = self.WallOffset or 0.1  -- same value CC uses
 
         -- Clamp patrol points slightly inward
-        self._patrolA = { x = x - dist + skin, y = y, z = z }
-        self._patrolB = { x = x + dist - skin, y = y, z = z }
+        self._patrolA = { x = self.PatrolPointA_X, y = y, z = self.PatrolPointA_Z }
+        self._patrolB = { x = self.PatrolPointB_X, y = y, z = self.PatrolPointB_Z }
+        print("[EnemyAI] Patrol points set")
 
         self._patrolWhich = 2
         self._patrolTarget = self._patrolB
+
+        self._patrolWaitT = self.config.PatrolWait
+        self._isPatrolWait = false
 
         -- print(string.format("[EnemyAI] spawn=(%.2f,%.2f,%.2f) A=(%.2f,%.2f) B=(%.2f,%.2f)",
         -- self._spawnX, self._spawnY, self._spawnZ,
@@ -245,6 +258,8 @@ return Component {
         self._patrolA.x, self._patrolA.z, self._patrolB.x, self._patrolB.z))
 
         self.fsm:Change("Idle", self.states.Idle)
+
+        CharacterController.SetPosition()
     end,
 
     Update = function(self, dt)
@@ -268,11 +283,11 @@ return Component {
         -- if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
         -- if Input.IsActionJustPressed("DebugHook") then self:ApplyHook(4.0) end
 
-        -- TEMP DEBUG: press K to force a small move step
-        if Input.GetKeyDown(Input.Key.K) then
-            print("[EnemyAI] DEBUG forced move step")
-            self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
-        end
+        -- -- TEMP DEBUG: press K to force a small move step
+        -- if Input.GetKeyDown(Input.Key.K) then
+        --     print("[EnemyAI] DEBUG forced move step")
+        --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
+        -- end
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
@@ -293,9 +308,17 @@ return Component {
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
-                self:SetPosition(pos.x, pos.y, pos.z)
+                -- TEMP HACK UNTIL PHYSICS IS FIXED
+                local groundY = Nav.GetGroundY(self.entityId)
+                if pos.y ~= groundY  then
+                    pos.y = groundY
+                    --print(string.format("[EnemyAI] Force set position to: %f %f %f", pos.x, pos.y, pos.z))
+                    self:SetPosition(pos.x, pos.y, pos.z)
+                end
             end
         end
+
+
     end,
 
     GetRanges = function(self)
@@ -353,13 +376,21 @@ return Component {
                 vx or 0, vz or 0, p.x, p.y, p.z))
         end
 
+        local pos = CharacterController.GetPosition(self._controller)
+        --print(string.format("[EnemyAI] Before MoveCC Position: %f %f %f", pos.x, pos.y, pos.z))
         CharacterController.Move(self._controller, vx or 0, 0, vz or 0)
+        pos = CharacterController.GetPosition(self._controller)
+        --print(string.format("[EnemyAI] After MoveCC Position: %f %f %f", pos.x, pos.y, pos.z))
     end,
 
     StopCC = function(self)
         if not self._controller then return end
+        local pos = CharacterController.GetPosition(self._controller)
+        --print(string.format("[EnemyAI] Before StopCC Position: %f %f %f", pos.x, pos.y, pos.z))
         -- Sending 0s is a safe "do nothing" step.
         CharacterController.Move(self._controller, 0, 0, 0)
+        pos = CharacterController.GetPosition(self._controller)
+        --print(string.format("[EnemyAI] After StopCC Position: %f %f %f", pos.x, pos.y, pos.z))
 
         -- Also kill RB velocity if anything is leaking into motion.
         if self._rb then
@@ -375,6 +406,7 @@ return Component {
         self._pathRepathT = 0
         self._pathStuckT = 0
         self._pathLastX, self._pathLastZ = nil, nil
+        print("[EnemyAI] ClearPath called. Path is nil")
     end,
 
     SetPath = function(self, waypoints, goalX, goalZ)
@@ -388,18 +420,26 @@ return Component {
     end,
 
     RequestPathToXZ = function(self, goalX, goalZ)
-        -- Always record fallback goal (so we can still move even without a path)
-        self._fallbackGoalX, self._fallbackGoalZ = goalX, goalZ
-
-        if not _G.NavService or not _G.NavService.RequestPathXZ then
-            -- No nav service -> no path, but fallback goal remains
+        if not Nav then
+            print("[Nav] ERROR: Nav is NIL! Nav system not bound to Lua!")
             self:ClearPath()
             return false
         end
-
+        
+        if not Nav.RequestPathXZ then
+            print("[Nav] ERROR: Nav.RequestPathXZ is NIL! Function not bound!")
+            self:ClearPath()
+            return false
+        end
+        
+        --print("[Nav] Nav binding OK, calling RequestPathXZ...")
+        
         local sx, sz = self:GetEnemyPosXZ()
-        local path = _G.NavService.RequestPathXZ(sx, sz, goalX, goalZ)
+        local path = Nav.RequestPathXZ(sx, sz, goalX, goalZ, self.entityId)
+        
         _dumpPath(self, "RECEIVED")
+
+        print(string.format("[Nav] path = %d", #path))
 
         if path and #path >= 1 then
             print(string.format("[Nav] PATH OK len=%d", #path))
@@ -420,11 +460,13 @@ return Component {
 
         -- no path yet
         if not self._path or not self._pathIndex then
+            print("[ShouldRepathToXZ] TRUE. PATH IS EMPTY")
             return true
         end
 
         -- timed repath
         if self._pathRepathT >= repathInterval then
+            print("[ShouldRepathToXZ] TRUE. self._pathRepathT: ", self._pathRepathT)
             return true
         end
 
@@ -433,33 +475,33 @@ return Component {
             local dx = goalX - self._pathGoalX
             local dz = goalZ - self._pathGoalZ
             if (dx*dx + dz*dz) >= (goalMoveThres * goalMoveThres) then
+                print("[ShouldRepathToXZ] TRUE. (dx*dx + dz*dz) >= (goalMoveThres * goalMoveThres)")
                 return true
             end
         end
-
+        
         return false
     end,
 
     -- Returns: true if reached end-of-path (arrived), false otherwise
     FollowPath = function(self, dtSec, speed)
         if not self._path or #self._path == 0 then
-        if self._fallbackGoalX and self._fallbackGoalZ then
-            -- Fallback movement should NOT signal arrival here
-            self:MoveDirectToXZ(self._fallbackGoalX, self._fallbackGoalZ, dtSec, speed)
+            -- NO FALLBACK - if there's no path, STOP
+            print("[FollowPath] NO PATH, STOPPING CC")
+            self:StopCC()
             return false
         end
-        self:StopCC()
-        return false
-    end
-
+        
         local idx = self._pathIndex or 1
         if idx > #self._path then
+            print("[FollowPath] REACHED GOAL, STOPPING CC")
             self:StopCC()
             return true
         end
 
         local wp = self._path[idx]
         if not wp then
+            print("[FollowPath] INVALID WAYPOINT, idx=", idx);
             self:StopCC()
             return true
         end
@@ -472,21 +514,26 @@ return Component {
         local arriveR = self.PathWaypointRadius or 0.6
         local arriveR2 = arriveR * arriveR
 
-        print(string.format("[Nav] following idx=%d / %d target=(%.2f, %.2f, %.2f)",
-            self._pathIndex or 1, #self._path,
-            node.x, node.y or 0, node.z
-        ))
+        -- print(string.format("[Nav] following idx=%d / %d target=(%.2f, %.2f, %.2f)",
+        --     self._pathIndex or 1, #self._path,
+        --     node.x, node.y or 0, node.z
+        -- ))
 
         -- Advance waypoint if close enough
         if d2 <= arriveR2 then
+            print("[FollowPath] REACHED WAYPOINT ", idx)
             self._pathIndex = idx + 1
             -- If that was the last waypoint, we arrived.
             if self._pathIndex > #self._path then
+                print("[FollowPath] REACHED GOAL, STOPPING CC")
                 self:StopCC()
                 return true
             end
             wp = self._path[self._pathIndex]
+            print("[FollowPath] NEW PATHINDEX: ", self._pathIndex)
+            print(string.format("[FollowPath] NEW WAYPOINT: %f %f %f", wp.x, wp.y, wp.z))
             if not wp then
+                print("[FollowPath] INVALID WAYPOINT, idx=", idx);
                 self:StopCC()
                 return true
             end
@@ -496,16 +543,17 @@ return Component {
             dz = (wp.z or 0) - ez
             d2 = dx*dx + dz*dz
             if d2 <= 1e-8 then
+                print("[FollowPath] REACHED NEW ENDPOINT")
                 self:StopCC()
                 return false
             end
         end
 
         local d = math.sqrt(d2)
-        if d <= 1e-6 then
-            self:StopCC()
-            return false
-        end
+        -- if d <= 1e-6 then
+        --     self:StopCC()
+        --     return false
+        -- end
 
         local dirX, dirZ = dx / d, dz / d
         self:MoveCC(dirX * (speed or 0), dirZ * (speed or 0))
@@ -550,11 +598,13 @@ return Component {
     end,
 
     ApplyRotation = function(self, w, x, y, z)
+        --print(string.format("[ApplyRotation] w=%f, x=%f, y=%f, z=%f", w, x, y, z))
         self._lastFacingRot = { w = w, x = x, y = y, z = z }
         self:SetRotation(w, x, y, z)
     end,
 
     FaceDirection = function(self, dx, dz)
+        --print(string.format("[FaceDirection] dx=%f, dz=%f", dx, dz))
         local q = { yawQuatFromDir(dx, dz) }
         -- If direction is too small, DO NOT change rotation (prevents “flip/lie down”)
         if #q == 0 then

@@ -78,6 +78,11 @@ void TransformSystem::UpdateTransform(Entity entity) {
 
 	// Update model matrix only if there is a change
 	if (transform.isDirty) {
+		// Automatically set the child transforms as dirty, as the parent transform has been modified.
+		if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+			SetDirtyRecursive(entity);
+		}
+
 		auto parentCompOpt = ecsManager.TryGetComponent<ParentComponent>(entity);
 		// If the entity has a parent
 		if (parentCompOpt.has_value()) {
@@ -128,16 +133,16 @@ void TransformSystem::TraverseHierarchy(Entity entity, std::function<void(Entity
 		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
 
-		std::string entityName = ecsManager.HasComponent<NameComponent>(entity)
-			? ecsManager.GetComponent<NameComponent>(entity).name
-			: "Unnamed";
+		//std::string entityName = ecsManager.HasComponent<NameComponent>(entity)
+		//	? ecsManager.GetComponent<NameComponent>(entity).name
+		//	: "Unnamed";
 
 		for (const auto& childGUID : childrenComp.children) {
 			Entity child = guidRegistry.GetEntityByGUID(childGUID);
 			if (child == static_cast<Entity>(-1)) {
-				std::cerr << "[TransformSystem] ERROR: Entity '" << entityName
-					<< "' (" << entity << ") has invalid child GUID: "
-					<< GUIDUtilities::ConvertGUID128ToString(childGUID) << "\n";
+				//std::cerr << "[TransformSystem] ERROR: Entity '" << entityName
+				//	<< "' (" << entity << ") has invalid child GUID: "
+				//	<< GUIDUtilities::ConvertGUID128ToString(childGUID) << "\n";
 				continue; // Skip this invalid child
 			}
 			TraverseHierarchy(child, updateTransform);

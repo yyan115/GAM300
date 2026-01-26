@@ -34,10 +34,12 @@ local function stop(ai)
 end
 
 local function switchTarget(ai)
+    print("[GroundPatrolState] Before switch target, target = ", ai._patrolWhich)
     ai._patrolWhich = (ai._patrolWhich == 1) and 2 or 1
     ai._patrolTarget = (ai._patrolWhich == 1) and ai._patrolA or ai._patrolB
     ai._switchLockT = 0.45
     ai._stuckT = 0
+    print("[GroundPatrolState] After switch target, target = ", ai._patrolWhich)
 end
 
 function PatrolState:Enter(ai)
@@ -81,6 +83,20 @@ function PatrolState:Enter(ai)
 
     -- reset any old path
     if ai.ClearPath then ai:ClearPath() end
+
+    local t = ai._patrolTarget
+    if not t then return end
+
+    -- ensure path exists / repath periodically
+    local needRepath = (not ai._path)
+    -- if (ai._pathStuckT or 0) >= (ai.PathStuckTime or 0.75) then
+    --     needRepath = true
+    -- end
+    if needRepath then
+        print("[GroundPatrolState] NEED REPATH.")
+        ai._pathRepathT = 0
+        ai:RequestPathToXZ(t.x, t.z)
+    end
 end
 
 function PatrolState:Update(ai, dt)
@@ -92,16 +108,16 @@ function PatrolState:Update(ai, dt)
     ai._enteredT    = (ai._enteredT or 0) + dtSec
     ai._switchLockT = math.max(0, (ai._switchLockT or 0) - dtSec)
 
-    -- waiting at endpoint
-    if (ai._patrolWaitT or 0) > 0 then
-        ai._patrolWaitT = ai._patrolWaitT - dtSec
-        stop(ai)
+    -- -- waiting at endpoint
+    -- if (ai._patrolWaitT or 0) > 0 then
+    --     ai._patrolWaitT = ai._patrolWaitT - dtSec
+    --     stop(ai)
 
-        local r = ai._waitLockRot
-        if r then ai:SetRotation(r.w, r.x, r.y, r.z) end
-        if ai._patrolWaitT <= 0 then ai._waitLockRot = nil end
-        return
-    end
+    --     -- local r = ai._waitLockRot
+    --     -- if r then ai:SetRotation(r.w, r.x, r.y, r.z) end
+    --     -- if ai._patrolWaitT <= 0 then ai._waitLockRot = nil end
+    --     -- return
+    -- end
 
     -- chase if player enters detection band
     local attackR, diseng = ai:GetRanges()
@@ -118,16 +134,6 @@ function PatrolState:Update(ai, dt)
     local t = ai._patrolTarget
     if not t then return end
 
-    -- ensure path exists / repath periodically
-    local needRepath = (not ai._path) or ai:ShouldRepathToXZ(t.x, t.z, dtSec)
-    if (ai._pathStuckT or 0) >= (ai.PathStuckTime or 0.75) then
-        needRepath = true
-    end
-    if needRepath then
-        ai._pathRepathT = 0
-        ai:RequestPathToXZ(t.x, t.z)
-    end
-
     local pathEnded = ai:FollowPath(dtSec, speed)
 
     -- Only treat as arrived if we're actually close to the patrol target (world-space)
@@ -137,19 +143,32 @@ function PatrolState:Update(ai, dt)
     local arrivedSq = dx*dx + dz*dz
     local arriveR = ai.PathArriveRadius or 0.5
 
-    if arrivedSq <= arriveR*arriveR and (ai._switchLockT or 0) <= 0 then
+    if ai._isPatrolWait == false and pathEnded then
+        print("[GroundPatrolState] Arrived at patrol point")
         ai._waitLockRot = ai._lastFacingRot
-        switchTarget(ai)
         ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
         stop(ai)
+        ai._isPatrolWait = true
         return
     end
 
-    -- If the path ended but we are NOT near target, it means the path ended early (bad goal snap)
-    if pathEnded then
-        ai:ClearPath()
-        ai:RequestPathToXZ(t.x, t.z) -- retry, don't switch targets
+    if ai._isPatrolWait and pathEnded then
+        ai._patrolWaitT = ai._patrolWaitT - dtSec
+        if ai._patrolWaitT <= 0 then
+            print("[GroundPatrolState] Switching patrol targets")
+            switchTarget(ai)
+            ai._isPatrolWait = false
+
+            t = ai._patrolTarget
+            ai:RequestPathToXZ(t.x, t.z)
+        end
     end
+
+    -- -- If the path ended but we are NOT near target, it means the path ended early (bad goal snap)
+    -- if pathEnded then
+    --     ai:ClearPath()
+    --     ai:RequestPathToXZ(t.x, t.z) -- retry, don't switch targets
+    -- end
 
     local ex, ez = ai:GetEnemyPosXZ()
     local movedSq = 0
@@ -167,15 +186,15 @@ function PatrolState:Update(ai, dt)
         ai._stuckT = 0
     end
 
-    if (ai._stuckT or 0) >= 0.75 and (ai._switchLockT or 0) <= 0 then
-        -- Treat blocked movement as arrival
-        ai._waitLockRot = ai._lastFacingRot
-        ai:ClearPath()
-        switchTarget(ai)
-        ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
-        stop(ai)
-        return
-    end
+    -- if (ai._stuckT or 0) >= 0.75 and (ai._switchLockT or 0) <= 0 then
+    --     -- Treat blocked movement as arrival
+    --     ai._waitLockRot = ai._lastFacingRot
+    --     ai:ClearPath()
+    --     switchTarget(ai)
+    --     ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
+    --     stop(ai)
+    --     return
+    -- end
 end
 
 return PatrolState

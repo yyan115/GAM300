@@ -15,24 +15,82 @@ float AStar::HeuristicOctile(const GridPos& a, const GridPos& b)
     return mn * 1.41421356f + (mx - mn);
 }
 
+GridPos AStar::FindNearestWalkable(const NavGrid& grid, const GridPos& target)
+{
+    const int maxRadius = 20; // Search up to 20 cells away
+
+    for (int radius = 1; radius <= maxRadius; ++radius)
+    {
+        // Check cells in expanding square rings
+        for (int dr = -radius; dr <= radius; ++dr)
+        {
+            for (int dc = -radius; dc <= radius; ++dc)
+            {
+                // Only check cells on the current ring (not interior)
+                if (std::abs(dr) != radius && std::abs(dc) != radius)
+                    continue;
+
+                int r = target.row + dr;
+                int c = target.col + dc;
+
+                if (grid.InBounds(r, c) && grid.Walkable(r, c))
+                {
+                    return GridPos{ r, c };
+                }
+            }
+        }
+    }
+
+    return GridPos{ -1, -1 }; // Not found
+}
+
 std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, float gx, float gz)
 {
+    std::cout << "[AStar] ========== PATH REQUEST ==========\n";
+    std::cout << "[AStar] World coords: (" << sx << "," << sz << ") -> (" << gx << "," << gz << ")\n";
+
     GridPos start = grid.WorldToCell(sx, sz);
     GridPos goal = grid.WorldToCell(gx, gz);
 
+    std::cout << "[AStar] Grid cells: [" << start.row << "," << start.col << "] -> ["
+        << goal.row << "," << goal.col << "]\n";
+    std::cout << "[AStar] Grid bounds: rows=" << grid.Rows() << " cols=" << grid.Cols() << "\n";
+    std::cout << "[AStar] Start in bounds: " << grid.InBounds(start.row, start.col) << "\n";
+    std::cout << "[AStar] Goal in bounds: " << grid.InBounds(goal.row, goal.col) << "\n";
+    std::cout << "[AStar] Start walkable: " << grid.Walkable(start.row, start.col) << "\n";
+    std::cout << "[AStar] Goal walkable: " << grid.Walkable(goal.row, goal.col) << "\n";
+
+    // If goal is unwalkable, find nearest walkable cell
     if (!grid.Walkable(goal.row, goal.col))
     {
-        std::cout
-            << "[AStar] Goal cell is NOT walkable: ("
-            << goal.row << ", " << goal.col << ")\n";
+        std::cout << "[AStar] Goal NOT walkable, finding nearest...\n";
+
+        GridPos nearestGoal = FindNearestWalkable(grid, goal);
+
+        if (nearestGoal.row == -1) {
+            std::cout << "[AStar] ERROR: No walkable cells near goal!\n";
+            return {};
+        }
+
+        std::cout << "[AStar] Using nearest walkable: [" << nearestGoal.row << ","
+            << nearestGoal.col << "]\n";
+        goal = nearestGoal;
+    }
+
+    if (!grid.InBounds(start.row, start.col)) {
+        std::cout << "[AStar] ERROR: Start out of bounds!\n";
         return {};
     }
 
-    if (!grid.InBounds(start.row, start.col) || !grid.InBounds(goal.row, goal.col))
+    if (!grid.InBounds(goal.row, goal.col)) {
+        std::cout << "[AStar] ERROR: Goal out of bounds!\n";
         return {};
+    }
 
-    if (!grid.Walkable(start.row, start.col) || !grid.Walkable(goal.row, goal.col))
+    if (!grid.Walkable(start.row, start.col)) {
+        std::cout << "[AStar] ERROR: Start cell NOT walkable!\n";
         return {};
+    }
 
     const int R = grid.Rows();
     const int C = grid.Cols();

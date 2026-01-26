@@ -10,6 +10,7 @@
 class AStar {
 public:
     std::vector<Vector3D> FindPath(const NavGrid& grid, float sx, float sz, float gx, float gz);
+    static GridPos FindNearestWalkable(const NavGrid& grid, const GridPos& target);
 
 private:
     struct Node {

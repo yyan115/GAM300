@@ -223,10 +223,10 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
     // ------------------------------------------------------------
     // 4) Bake tuning
     // ------------------------------------------------------------
-    constexpr float NAV_RADIUS_INFLATION = 0.70f;
-    constexpr float NAV_HEIGHT_INFLATION = 0.10f;
+    constexpr float NAV_RADIUS_INFLATION = 0.15f;
+    constexpr float NAV_HEIGHT_INFLATION = 0.05f;
 
-    const float AABB_INFLATE = agentRadius + 0.25f;
+    const float AABB_INFLATE = agentRadius * 0.5f;
 
     const float PROBE_TOP = std::max(groundProbeTop, 50.0f);
     const float PROBE_DIST = std::max(groundProbeDist, 200.0f);
@@ -432,18 +432,18 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
         << " overlap=" << blockedOverlap << " (" << pct(blockedOverlap) << "%)"
         << "\n";
 
-    std::cout << "[NavGrid] ASCII map legend: '.' walkable, 'S' stamp, 'N' noGround, 'O' overlap\n";
-    std::cout << "[NavGrid] row0 is MIN-Z side (r=0). If you want flipped vertically, print rows reversed.\n";
+    //std::cout << "[NavGrid] ASCII map legend: '.' walkable, 'S' stamp, 'N' noGround, 'O' overlap\n";
+    //std::cout << "[NavGrid] row0 is MIN-Z side (r=0). If you want flipped vertically, print rows reversed.\n";
 
-    for (int r = 0; r < rows; ++r)
-    {
-        std::cout << "[NavGrid] r=" << r << " ";
-        for (int c = 0; c < cols; ++c)
-        {
-            std::cout << reasonMap[r * cols + c];
-        }
-        std::cout << "\n";
-    }
+    //for (int r = 0; r < rows; ++r)
+    //{
+    //    std::cout << "[NavGrid] r=" << r << " ";
+    //    for (int c = 0; c < cols; ++c)
+    //    {
+    //        std::cout << reasonMap[r * cols + c];
+    //    }
+    //    std::cout << "\n";
+    //}
 }
 
 bool NavGrid::InBounds(int r, int c) const
@@ -453,8 +453,25 @@ bool NavGrid::InBounds(int r, int c) const
 
 bool NavGrid::Walkable(int r, int c) const
 {
-    if (!InBounds(r, c)) return false;
-    return cells[r * cols + c].walkable;
+    if (!InBounds(r, c)) {
+        std::cout << "[NavGrid::Walkable] Out of bounds: [" << r << "," << c
+            << "] (bounds: 0-" << (rows - 1) << ", 0-" << (cols - 1) << ")\n";
+        return false;
+    }
+
+    bool result = cells[r * cols + c].walkable;
+
+    // Debug spam reduction - only log non-walkable cells
+    if (!result) {
+        static int logCount = 0;
+        if (logCount < 10) {
+            std::cout << "[NavGrid::Walkable] Cell [" << r << "," << c
+                << "] is NOT walkable\n";
+            logCount++;
+        }
+    }
+
+    return result;
 }
 
 GridPos NavGrid::WorldToCell(float x, float z) const
@@ -464,6 +481,9 @@ GridPos NavGrid::WorldToCell(float x, float z) const
 
     c = std::clamp(c, 0, cols - 1);
     r = std::clamp(r, 0, rows - 1);
+
+    //std::cout << "[WorldToCell] world(" << x << "," << z << ") -> cell["
+    //    << r << "," << c << "] (clamped)\n";
 
     return GridPos{ r, c };
 }
@@ -478,4 +498,14 @@ Vector3D NavGrid::CellToWorld(int r, int c) const
         y = cells[r * cols + c].groundY;
 
     return Vector3D(x, y, z);
+}
+
+const NavCell& NavGrid::GetNavCell(int row, int col) {
+    if (row >= 0 && row < rows &&
+        col >= 0 && col < cols) {
+        return cells[row * rows + col];
+    }
+
+    // Default case: return cells[0]
+    return cells[0];
 }
