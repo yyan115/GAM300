@@ -34748,7 +34748,8 @@
                                 "__created_at": 1768238002.0,
                                 "ClipDeath": 3.0,
                                 "_subscriptions": {},
-                                "dead": false
+                                "dead": false,
+                                "PathWaypointRadius": 0.2
                             }
                         }
                     ]
