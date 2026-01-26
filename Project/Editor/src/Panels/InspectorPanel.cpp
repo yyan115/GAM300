@@ -23,7 +23,7 @@
 #include <Asset Manager/ResourceManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <Utilities/GUID.hpp>
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 #include <ECS/TagComponent.hpp>
 #include <ECS/LayerComponent.hpp>
 #include <ECS/TagManager.hpp>
@@ -74,6 +74,8 @@ extern std::string DraggedFontPath;
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>
+#include <Panels/PrefabEditorPanel.hpp>
+#include <Prefab/PrefabIO.hpp>
 
 // Component clipboard for copy/paste functionality (Unity-style)
 namespace {
@@ -115,6 +117,8 @@ static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
 	return ecs.HasComponent<PrefabLinkComponent>(e);
 }
 
+std::vector<InspectorPanel::ComponentRemovalRequest> InspectorPanel::pendingComponentRemovals;
+std::vector<InspectorPanel::ComponentResetRequest> InspectorPanel::pendingComponentResets;
 
 InspectorPanel::InspectorPanel()
 	: EditorPanel("Inspector", true) {
@@ -448,33 +452,39 @@ void InspectorPanel::OnImGuiRender() {
 			}
 			else {
 				try {
-					ImGui::Text("Entity ID: %u", displayEntity);
-
-					// Lock button on the same line
-					ImGui::SameLine(ImGui::GetWindowWidth() - 42);
-					if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
-						inspectorLocked = !inspectorLocked;
-						if (inspectorLocked) {
-							// Lock to current content (entity or asset)
-							if (selectedAsset.high != 0 || selectedAsset.low != 0) {
-								lockedAsset = selectedAsset;
-								lockedEntity = static_cast<Entity>(-1);
+					if (!PrefabEditor::IsInPrefabEditorMode()) {
+						ImGui::Text("Entity ID: %u", displayEntity);
+						// Lock button on the same line
+						ImGui::SameLine(ImGui::GetWindowWidth() - 42);
+						if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+							inspectorLocked = !inspectorLocked;
+							if (inspectorLocked) {
+								// Lock to current content (entity or asset)
+								if (selectedAsset.high != 0 || selectedAsset.low != 0) {
+									lockedAsset = selectedAsset;
+									lockedEntity = static_cast<Entity>(-1);
+								}
+								else {
+									lockedEntity = GUIManager::GetSelectedEntity();
+									lockedAsset = { 0, 0 };
+								}
 							}
 							else {
-								lockedEntity = GUIManager::GetSelectedEntity();
+								// Unlock
+								lockedEntity = static_cast<Entity>(-1);
 								lockedAsset = { 0, 0 };
 							}
 						}
-						else {
-							// Unlock
-							lockedEntity = static_cast<Entity>(-1);
-							lockedAsset = { 0, 0 };
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
 						}
+						ImGui::Separator();
 					}
-					if (ImGui::IsItemHovered()) {
-						ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+					else {
+						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+						ImGui::Text("Editing Prefab:");
+						ImGui::Separator();
 					}
-					ImGui::Separator();
 
 					// All components (Name, Tag, Layer, Transform, etc.) are now rendered via reflection
 					// See DrawComponentsViaReflection() which uses custom renderers for special UI
@@ -488,9 +498,11 @@ void InspectorPanel::OnImGuiRender() {
 					// ===================================================================
 					DrawComponentsViaReflection(displayEntity);
 
-					// Add Component button
-					ImGui::Separator();
-					DrawAddComponentButton(displayEntity);
+					if (!PrefabEditor::IsInPrefabEditorMode()) {
+						// Add Component button
+						ImGui::Separator();
+						DrawAddComponentButton(displayEntity);
+					}
 
 				}
 				catch (const std::exception& e) {

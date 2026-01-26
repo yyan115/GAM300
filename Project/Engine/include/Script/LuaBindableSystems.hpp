@@ -579,6 +579,19 @@ namespace AudioManagerWrappers {
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
     }
+
+    // Bus/AudioMixerGroup controls (for BGM, SFX, Master buses)
+    inline void SetBusVolume(const std::string& busName, float volume) {
+        AudioManager::GetInstance().SetBusVolume(busName, volume);
+    }
+
+    inline float GetBusVolume(const std::string& busName) {
+        return AudioManager::GetInstance().GetBusVolume(busName);
+    }
+
+    inline void SetBusPaused(const std::string& busName, bool paused) {
+        AudioManager::GetInstance().SetBusPaused(busName, paused);
+    }
 }
 
 // ============================================================================
@@ -617,5 +630,97 @@ namespace PlatformWrappers {
 #else
         return "Unknown";
 #endif
+    }
+}
+
+// ============================================================================
+// GAME SETTINGS WRAPPERS
+// ============================================================================
+#include "Settings/GameSettings.hpp"
+
+namespace GameSettingsWrappers {
+    // Initialization (safe to call multiple times)
+    inline void Init() {
+        GameSettingsManager::GetInstance().Initialize();
+    }
+
+    // Reset all settings to defaults
+    inline void ResetToDefaults() {
+        GameSettingsManager::GetInstance().ResetToDefaults();
+    }
+
+    // Save settings to disk (call when closing settings menu)
+    inline void Save() {
+        GameSettingsManager::GetInstance().SaveSettings();
+    }
+
+    // Save only if settings changed (optimization)
+    inline void SaveIfDirty() {
+        GameSettingsManager::GetInstance().SaveIfDirty();
+    }
+
+    // Audio setters (mark dirty, don't auto-save for performance)
+    inline void SetMasterVolume(float volume) {
+        GameSettingsManager::GetInstance().SetMasterVolume(volume);
+    }
+
+    inline void SetBGMVolume(float volume) {
+        GameSettingsManager::GetInstance().SetBGMVolume(volume);
+    }
+
+    inline void SetSFXVolume(float volume) {
+        GameSettingsManager::GetInstance().SetSFXVolume(volume);
+    }
+
+    // Audio getters
+    inline float GetMasterVolume() {
+        return GameSettingsManager::GetInstance().GetMasterVolume();
+    }
+
+    inline float GetBGMVolume() {
+        return GameSettingsManager::GetInstance().GetBGMVolume();
+    }
+
+    inline float GetSFXVolume() {
+        return GameSettingsManager::GetInstance().GetSFXVolume();
+    }
+
+    // Graphics setters (mark dirty, don't auto-save for performance)
+    inline void SetGamma(float gamma) {
+        GameSettingsManager::GetInstance().SetGamma(gamma);
+    }
+
+    inline void SetExposure(float exposure) {
+        GameSettingsManager::GetInstance().SetExposure(exposure);
+    }
+
+    // Graphics getters
+    inline float GetGamma() {
+        return GameSettingsManager::GetInstance().GetGamma();
+    }
+
+    inline float GetExposure() {
+        return GameSettingsManager::GetInstance().GetExposure();
+    }
+
+    // Default value getters (for UI reset functionality)
+    inline float GetDefaultMasterVolume() {
+        return GameSettingsManager::GetDefaultMasterVolume();
+    }
+
+    inline float GetDefaultBGMVolume() {
+        return GameSettingsManager::GetDefaultBGMVolume();
+    }
+
+    inline float GetDefaultSFXVolume() {
+        return GameSettingsManager::GetDefaultSFXVolume();
+    }
+
+    inline float GetDefaultGamma() {
+        return GameSettingsManager::GetDefaultGamma();
+    }
+
+    inline float GetDefaultExposure() {
+        return GameSettingsManager::GetDefaultExposure();
     }
 }

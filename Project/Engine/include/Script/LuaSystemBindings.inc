@@ -149,6 +149,52 @@ BEGIN_SYSTEM("Audio")
     FUNCTION("SetMasterVolume", AudioManagerWrappers::SetMasterVolume)
     FUNCTION("GetMasterVolume", AudioManagerWrappers::GetMasterVolume)
     FUNCTION("SetGlobalPaused", AudioManagerWrappers::SetGlobalPaused)
+    // Bus/AudioMixerGroup controls (BGM, SFX, Master, etc.)
+    FUNCTION("SetBusVolume", AudioManagerWrappers::SetBusVolume)
+    FUNCTION("GetBusVolume", AudioManagerWrappers::GetBusVolume)
+    FUNCTION("SetBusPaused", AudioManagerWrappers::SetBusPaused)
+END_SYSTEM()
+
+// ============================================================================
+// GAME SETTINGS (Persistent audio/graphics settings with JSON serialization)
+// ============================================================================
+// Usage examples:
+// GameSettings.Init()                    -- Initialize (call once at startup)
+// GameSettings.SetMasterVolume(0.5)      -- Set volume (0.0-1.0)
+// local vol = GameSettings.GetMasterVolume()
+// GameSettings.SetGamma(2.2)             -- Set gamma (1.0-3.0)
+// GameSettings.SaveIfDirty()             -- Save if changed (call when closing menu)
+// GameSettings.ResetToDefaults()         -- Reset all settings
+
+BEGIN_SYSTEM("GameSettings")
+    // Initialization
+    FUNCTION("Init", GameSettingsWrappers::Init)
+    FUNCTION("ResetToDefaults", GameSettingsWrappers::ResetToDefaults)
+
+    // Save functions (call when closing settings menu or on scene transitions)
+    FUNCTION("Save", GameSettingsWrappers::Save)
+    FUNCTION("SaveIfDirty", GameSettingsWrappers::SaveIfDirty)
+
+    // Audio settings
+    FUNCTION("SetMasterVolume", GameSettingsWrappers::SetMasterVolume)
+    FUNCTION("GetMasterVolume", GameSettingsWrappers::GetMasterVolume)
+    FUNCTION("SetBGMVolume", GameSettingsWrappers::SetBGMVolume)
+    FUNCTION("GetBGMVolume", GameSettingsWrappers::GetBGMVolume)
+    FUNCTION("SetSFXVolume", GameSettingsWrappers::SetSFXVolume)
+    FUNCTION("GetSFXVolume", GameSettingsWrappers::GetSFXVolume)
+
+    // Graphics settings
+    FUNCTION("SetGamma", GameSettingsWrappers::SetGamma)
+    FUNCTION("GetGamma", GameSettingsWrappers::GetGamma)
+    FUNCTION("SetExposure", GameSettingsWrappers::SetExposure)
+    FUNCTION("GetExposure", GameSettingsWrappers::GetExposure)
+
+    // Default values (for UI reset)
+    FUNCTION("GetDefaultMasterVolume", GameSettingsWrappers::GetDefaultMasterVolume)
+    FUNCTION("GetDefaultBGMVolume", GameSettingsWrappers::GetDefaultBGMVolume)
+    FUNCTION("GetDefaultSFXVolume", GameSettingsWrappers::GetDefaultSFXVolume)
+    FUNCTION("GetDefaultGamma", GameSettingsWrappers::GetDefaultGamma)
+    FUNCTION("GetDefaultExposure", GameSettingsWrappers::GetDefaultExposure)
 END_SYSTEM()
 
 // ============================================================================
@@ -248,10 +294,13 @@ END_SYSTEM()
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
+    FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
+    FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
+    FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
 END_SYSTEM()
 
 

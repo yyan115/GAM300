@@ -1110,6 +1110,11 @@ void RegisterInspectorCustomRenderers()
         return false;
     });
 
+    // Hide childBonesSaved from ModelRenderComponent (should not be modified in editor).
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "childBonesSaved",
+        [](const char*, void*, Entity, ECSManager&)
+        { return true; });
+
     // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
                                               [](const char *, void *, Entity, ECSManager &)
@@ -1541,16 +1546,37 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Separator();
 
-        // Output section
+        // Output section - Mixer Group dropdown
         ImGui::Text("Output");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        char outputBuf[128];
-        std::snprintf(outputBuf, sizeof(outputBuf), "%s", audio.OutputAudioMixerGroup.empty() ? "None (Audio Mixer Group)" : audio.OutputAudioMixerGroup.c_str());
-        if (UndoableWidgets::InputText("##Output", outputBuf, sizeof(outputBuf)))
-        {
-            audio.OutputAudioMixerGroup = outputBuf;
+
+        // Define available mixer groups
+        const char* mixerGroups[] = { "Default", "BGM", "SFX" };
+        int currentMixerIndex = 0;
+
+        // Find current selection
+        if (audio.OutputAudioMixerGroup == "BGM") {
+            currentMixerIndex = 1;
+        } else if (audio.OutputAudioMixerGroup == "SFX") {
+            currentMixerIndex = 2;
+        } else {
+            currentMixerIndex = 0; // Default or empty
         }
+
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##OutputMixerGroup", &currentMixerIndex, mixerGroups, 3))
+        {
+            // Update the mixer group based on selection
+            if (currentMixerIndex == 1) {
+                audio.SetOutputAudioMixerGroup("BGM");
+            } else if (currentMixerIndex == 2) {
+                audio.SetOutputAudioMixerGroup("SFX");
+            } else {
+                audio.SetOutputAudioMixerGroup(""); // Default/empty means master
+            }
+        }
+        EditorComponents::PopComboColors();
 
         // Checkboxes (aligned with labels) - using UndoableWidgets
         ImGui::AlignTextToFramePadding();
@@ -2145,7 +2171,12 @@ void RegisterInspectorCustomRenderers()
                     const auto& ctrlClipPaths = controller.GetClipPaths();
                     animComp.clipPaths = ctrlClipPaths;
                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                    // Store GUIDs for cross-machine compatibility
+                    animComp.clipGUIDs.clear();
+                    for (const auto& clipPath : ctrlClipPaths) {
+                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                        animComp.clipGUIDs.push_back(guid);
+                    }
 
                     // Load clips from controller paths if model is available
                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
@@ -2217,7 +2248,12 @@ void RegisterInspectorCustomRenderers()
                                     const auto& ctrlClipPaths = controller.GetClipPaths();
                                     animComp.clipPaths = ctrlClipPaths;
                                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                                    // Store GUIDs for cross-machine compatibility
+                                    animComp.clipGUIDs.clear();
+                                    for (const auto& clipPath : ctrlClipPaths) {
+                                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                                        animComp.clipGUIDs.push_back(guid);
+                                    }
 
                                     // Load clips from controller paths if model is available
                                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {

@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "0053821ffd2bd0be-00032d35ac000001",
-        "source": "../../Resources/Scripts/extension/engine_bootstrap.lua",
-        "compiled": "../../Resources/Scripts/extension/engine_bootstrap.lua",
-        "android_compiled": "Resources/Scripts/extension/engine_bootstrap.lua"
-    }
-}

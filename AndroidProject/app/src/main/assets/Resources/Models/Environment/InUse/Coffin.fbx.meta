@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "005fad536b9c7f06-00036c947c00001d",
-        "source": "../../Resources/Models/Environment/_InUse/Coffin.fbx",
-        "compiled": "../../Resources/Models/Environment/_InUse/Coffin.mesh",
-        "android_compiled": "Resources/Models/Environment/InUse/Coffin_android.mesh"
-    }
-}

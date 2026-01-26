@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "001931d2167710b0-000369968c000001",
-        "source": "../../Resources/Scripts/EnemyHealth.lua",
-        "compiled": "../../Resources/Scripts/EnemyHealth.lua",
-        "android_compiled": "Resources/Scripts/EnemyHealth.lua"
-    }
-}

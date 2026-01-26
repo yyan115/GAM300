@@ -25,7 +25,7 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include "EditorState.hpp"
-#include "PrefabIO.hpp"
+#include "Prefab/PrefabIO.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
@@ -1864,6 +1864,9 @@ void ScenePanel::HandleModelDragDrop(float sceneWidth, float sceneHeight) {
             } catch (const std::exception& e) {
                 ENGINE_PRINT("[ScenePanel] Failed to delete preview entity: ", e.what(), "\n");
             }
+
+            // Take snapshot BEFORE spawning so undo can restore to pre-spawn state
+            SnapshotManager::GetInstance().TakeSnapshot("Spawn Model");
 
             // Then spawn the real entity
             Entity realEntity = SpawnModelEntity(previewPosition);

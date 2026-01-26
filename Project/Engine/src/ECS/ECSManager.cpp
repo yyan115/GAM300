@@ -16,7 +16,7 @@
 #include "Sound/AudioListenerComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
-#include "PrefabLinkComponent.hpp"
+#include "Prefab/PrefabLinkComponent.hpp"
 #include "Logging.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Game AI/BrainComponent.hpp"
@@ -289,10 +289,24 @@ void ECSManager::DestroyEntity(Entity entity) {
 }
 
 void ECSManager::ClearAllEntities() {
+	// CRITICAL: Clear the GUID registry first to prevent duplicate entities during undo/redo
+	EntityGUIDRegistry::GetInstance().Clear();
+
 	entityManager->DestroyAllEntities();
 	componentManager->AllEntitiesDestroyed();
 	systemManager->AllEntitiesDestroyed();
-	ENGINE_PRINT("[ECSManager] Cleared all entities. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
+	ENGINE_PRINT("[ECSManager] Cleared all entities and GUID registry. Total active entities: " , entityManager->GetActiveEntityCount(), "\n");
+}
+
+std::vector<Entity> ECSManager::GetAllRootEntities() {
+	std::vector<Entity> rootEntities;
+	for (const auto& entity : GetAllEntities()) {
+		if (!HasComponent<ParentComponent>(entity)) {
+			rootEntities.push_back(entity);
+		}
+	}
+
+	return rootEntities;
 }
 
 bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
@@ -309,14 +323,28 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
 	while (HasComponent<ParentComponent>(currentEntity)) {
+		// Get current entity's name for debugging
+		std::string currentEntityName = HasComponent<NameComponent>(currentEntity)
+			? GetComponent<NameComponent>(currentEntity).name
+			: "Unnamed";
+
 		// Get parent entity
 		auto& parentComp = GetComponent<ParentComponent>(currentEntity);
-		Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+		GUID_128 parentGUID = parentComp.parent;
+		Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
 
 		// Check if parent is valid
-		if (parentEntity == UINT32_MAX) {
+		if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
+			std::cerr << "[IsEntityActiveInHierarchy] ERROR: Entity '" << currentEntityName
+				<< "' (" << currentEntity << ") has invalid parent GUID: "
+				<< GUIDUtilities::ConvertGUID128ToString(parentGUID) << "\n";
 			break; // Invalid parent, stop traversal
 		}
+
+		// Get parent's name for debugging
+		std::string parentEntityName = HasComponent<NameComponent>(parentEntity)
+			? GetComponent<NameComponent>(parentEntity).name
+			: "Unnamed";
 
 		// Check if parent is active
 		if (HasComponent<ActiveComponent>(parentEntity)) {
