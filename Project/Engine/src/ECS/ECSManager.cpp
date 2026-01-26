@@ -212,7 +212,7 @@ void ECSManager::Initialize() {
 	videoSystem = RegisterSystem<VideoSystem>();
 	{
 		Signature signature;
-		signature.set(GetComponentID<VideoSystem>());
+		signature.set(GetComponentID<VideoComponent>());
 		SetSystemSignature<VideoSystem>(signature);
 	}
 

@@ -261,6 +261,26 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 
 	// Generates an OpenGL texture object
 	glGenTextures(1, &ID);
+
+	if (ID == 0) {
+		GLenum error = glGetError();
+		std::cerr << "[Texture] glGenTextures failed! OpenGL Error: " << error << std::endl;
+
+#ifdef ANDROID
+		__android_log_print(ANDROID_LOG_ERROR, "GAM300",
+			"[Texture] glGenTextures failed! Error: %d, ID: %u", error, ID);
+#endif
+
+		// Check if context is current
+#ifdef ANDROID
+		EGLContext ctx = eglGetCurrentContext();
+		if (ctx == EGL_NO_CONTEXT) {
+			__android_log_print(ANDROID_LOG_ERROR, "GAM300",
+				"[Texture] NO OPENGL CONTEXT CURRENT!");
+		}
+#endif
+	}
+
 	glBindTexture(target, ID);
 	glCompressedTexImage2D(
 		target,

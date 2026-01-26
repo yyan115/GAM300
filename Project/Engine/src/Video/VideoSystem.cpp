@@ -38,7 +38,7 @@ void VideoSystem::Update(float dt) {
 
 
     //GET ENTITY VIA TAG
-    for (const auto& entity : entities)
+    for (const auto& entity : m_ecs->GetAllEntities())
     {
         if (foundBlackScreen && foundDialogueBox && foundDialogueText)
         {
@@ -223,14 +223,9 @@ void VideoSystem::Update(float dt) {
 }
 
 void VideoSystem::SwapCutscene(SpriteRenderComponent& comp, std::string newCutscenePath)
-{
-    auto& assetMgr = AssetManager::GetInstance();
-
-    //GET GUID FROM PATH
-    GUID_128 targetGUID = assetMgr.GetGUID128FromAssetMeta(newCutscenePath);
-
-    comp.texture = assetMgr.LoadByGUID<Texture>(targetGUID);        //Updating the actual texture
-    comp.textureGUID = targetGUID;      //for saving
+{    
+    comp.texture = ResourceManager::GetInstance().GetResource<Texture>(newCutscenePath); //Updating the actual texture
+    //comp.textureGUID = targetGUID;      //for saving
     comp.texturePath = newCutscenePath;     //for display purpose
 }
 

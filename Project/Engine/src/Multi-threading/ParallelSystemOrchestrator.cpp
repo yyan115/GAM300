@@ -12,6 +12,7 @@ void ParallelSystemOrchestrator::Update() {
     mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
     mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
+    mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
 
 	// Then update the other systems in parallel.
     frameChannel.Submit([&] {
@@ -56,13 +57,6 @@ void ParallelSystemOrchestrator::Update() {
         //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
         ecs.spriteAnimationSystem->Update();
 		});
-
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running VideoJob");
-        ecs.videoSystem->Update((float)TimeManager::GetDeltaTime());
-        });
-
 
     // Synchronize
     frameChannel.join();
