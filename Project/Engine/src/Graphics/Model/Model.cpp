@@ -480,8 +480,14 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
-    std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + material->GetName() + ".mat";
-    material->SetName(modelName + "_" + material->GetName());
+    // Sanitize material name - replace invalid filename characters (like ':') with '_'
+    std::string sanitizedMatName = material->GetName();
+    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), ':', '_');
+    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), '/', '_');
+    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), '\\', '_');
+
+    std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + sanitizedMatName + ".mat";
+    material->SetName(modelName + "_" + sanitizedMatName);
     if (!AssetManager::GetInstance().IsAssetCompiled(materialPath)) {
         AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
     }
@@ -597,9 +603,13 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
             meshFile.write(reinterpret_cast<const char*>(mesh.indices.data()), indexCount * sizeof(GLuint));
 
             // Write material properties to a separate .mat file as binary data.
-			size_t nameLength = mesh.material->GetName().size();
-			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
+            // Sanitize material name before writing to mesh file
             std::string meshName = mesh.material->GetName();
+            std::replace(meshName.begin(), meshName.end(), ':', '_');
+            std::replace(meshName.begin(), meshName.end(), '/', '_');
+            std::replace(meshName.begin(), meshName.end(), '\\', '_');
+			size_t nameLength = meshName.size();
+			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             meshFile.write(meshName.data(), nameLength); // Writes actual characters
         }
 
@@ -741,6 +751,10 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             std::string matName(nameLength, '\0'); // Pre-size the string
             std::memcpy(&matName[0], buffer.data() + offset, nameLength);
             offset += nameLength;
+            // Sanitize material name - replace invalid filename characters (like ':') with '_'
+            std::replace(matName.begin(), matName.end(), ':', '_');
+            std::replace(matName.begin(), matName.end(), '/', '_');
+            std::replace(matName.begin(), matName.end(), '\\', '_');
             std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + matName + ".mat";
             std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(materialPath));
             materialPath = newPath.generic_string();
