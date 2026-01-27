@@ -627,9 +627,9 @@ bool Engine::InitializeGraphicsResources() {
 #else
 	// Game build loads default scene
 #ifdef ANDROID
-	// Android: Load gameplay directly (main menu buttons don't work yet)
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/M3_Gameplay.scene");
-	ENGINE_LOG_INFO("Loaded gameplay scene (Android)");
+	// Android: Load main menu
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
+	ENGINE_LOG_INFO("Loaded main menu scene (Android)");
 #else
 	// Desktop: Load main menu
 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/Joe_MainMenuTest.scene");

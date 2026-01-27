@@ -22,6 +22,7 @@ AndroidProject/*.iws
 
 # Android built resources (copied from Project/Resources)
 AndroidProject/app/src/main/assets/Resources/
+AndroidProject/app/src/main/assets/asset_manifest.txt
 
 # Android built libraries
 AndroidProject/app/src/main/jniLibs/arm64-v8a/libEngine.so
@@ -56,3 +57,5 @@ AndroidProject/local.properties
 
 Project/Scripting/x64/
 .github/copilot-instructions.md
+AndroidProject/app/src/main/assets/asset_manifest.txt
+AndroidProject/.idea/misc.xml
