@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00232295b5ec05c0-0003e82f52000009",
+        "source": "../../Resources/Textures/M4/Chain Link_standardSurface1_Metallic.png",
+        "compiled": "../../Resources/Textures/M4/Chain Link_standardSurface1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

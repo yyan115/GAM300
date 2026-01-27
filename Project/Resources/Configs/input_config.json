@@ -1,0 +1,121 @@
+{
+  "_schema": {
+    "description": "Unified input configuration - define actions/axes once, bind per platform",
+    "validKeys": "A-Z, 0-9, SPACE, SHIFT, CTRL, ALT, TAB, ESC, ENTER, BACKSPACE, UP, DOWN, LEFT, RIGHT, F1-F12",
+    "validMouseButtons": "LEFT, RIGHT, MIDDLE",
+    "android_note": "Android bindings reference entity names - engine looks up their transforms for hit detection"
+  },
+
+  "actions": {
+    "Jump": {
+      "description": "Player jump",
+      "desktop": {
+        "keys": ["SPACE"]
+      },
+      "android": {
+        "entity": "ChainIcon"
+      }
+    },
+
+    "Attack": {
+      "description": "Primary attack (left click / screen button)",
+      "desktop": {
+        "keys": ["E"],
+        "mouseButtons": ["LEFT"]
+      },
+      "android": {
+        "entity": "(ANDROID)AttackButton"
+      }
+    },
+
+    "ChainAttack": {
+      "description": "Chain/special attack (right click / screen button)",
+      "desktop": {
+        "mouseButtons": ["RIGHT"]
+      },
+      "android": {
+        "entity": "(ANDROID)ChainAttackButton"
+      }
+    },
+
+    "Interact": {
+      "description": "Interact with objects",
+      "desktop": {
+        "keys": ["F"]
+      },
+      "android": {
+        "entity": "(ANDROID)InteractButton"
+      }
+    },
+
+    "Dash": {
+      "description": "Player dash/dodge",
+      "desktop": {
+        "keys": ["SHIFT"]
+      },
+      "android": {
+        "gesture": { "type": "double_tap", "maxInterval": 0.3 }
+      }
+    },
+
+    "Pause": {
+      "description": "Pause game / open menu",
+      "desktop": {
+        "keys": ["ESC"]
+      },
+      "android": {
+        "entity": "(ANDROID)PauseButton"
+      }
+    },
+
+    "OpenInventory": {
+      "description": "Open inventory screen",
+      "desktop": {
+        "keys": ["I", "TAB"]
+      },
+      "android": {
+        "gesture": { "type": "swipe_down", "minDistance": 100, "maxTime": 0.5 }
+      }
+    },
+
+    "Movement": {
+      "description": "Movement joystick touch (use GetActionTouchPosition for direction)",
+      "desktop": {
+        "keys": ["W", "A", "S", "D"]
+      },
+      "android": {
+        "entity": "(ANDROID)Joystick"
+      }
+    }
+  },
+
+  "axes": {
+    "Movement": {
+      "description": "Player movement (returns x,y from -1 to 1)",
+      "desktop": {
+        "type": "keyboard",
+        "up": ["W", "UP"],
+        "down": ["S", "DOWN"],
+        "left": ["A", "LEFT"],
+        "right": ["D", "RIGHT"]
+      },
+      "android": {
+        "type": "joystick_entity",
+        "entity": "(ANDROID)Joystick"
+      }
+    },
+
+    "Look": {
+      "description": "Camera look (returns x,y delta)",
+      "desktop": {
+        "type": "mouse_delta",
+        "sensitivity": 1.0
+      },
+      "android": {
+        "type": "touch_drag",
+        "sensitivity": 1.0
+      }
+    }
+  }
+}
+

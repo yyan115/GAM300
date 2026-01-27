@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001908fd1b7c76e2-000405acdc000049",
+        "source": "../../Resources/Textures/M4/Pedestal_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/M4/Pedestal_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "specular",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

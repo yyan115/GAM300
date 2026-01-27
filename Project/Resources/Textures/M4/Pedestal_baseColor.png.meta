@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001908fd49ba841c-000405acda000043",
+        "source": "../../Resources/Textures/M4/Pedestal_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/Pedestal_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
