@@ -967,6 +967,39 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 									}
 								}
 							}
+
+							// Post-paste sync for components with enum/ID field pairs
+							ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+							if (g_ComponentClipboard.componentType == "ColliderComponent") {
+								auto& collider = ecsManager.GetComponent<ColliderComponent>(entity);
+								// Sync enum fields from their serialized ID fields
+								collider.shapeType = static_cast<ColliderShapeType>(collider.shapeTypeID);
+								collider.layer = static_cast<JPH::ObjectLayer>(collider.layerID);
+								collider.version++; // Mark for physics system update
+							}
+							else if (g_ComponentClipboard.componentType == "RigidBodyComponent") {
+								auto& rb = ecsManager.GetComponent<RigidBodyComponent>(entity);
+								rb.motion = static_cast<Motion>(rb.motionID);
+							}
+							else if (g_ComponentClipboard.componentType == "ScriptComponentData") {
+								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+								// Resolve script paths and GUIDs for each script
+								for (auto& script : scriptComp.scripts) {
+									bool guidIsZero = (script.scriptGuid.high == 0 && script.scriptGuid.low == 0);
+									// If scriptGuidStr is set but scriptGuid is empty, convert it
+									if (!script.scriptGuidStr.empty() && guidIsZero) {
+										script.scriptGuid = GUIDUtilities::ConvertStringToGUID128(script.scriptGuidStr);
+										guidIsZero = false;
+									}
+									// If scriptPath is empty but we have a GUID, resolve the path
+									if (script.scriptPath.empty() && !guidIsZero) {
+										script.scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+									}
+									// Reset runtime state for the new entity
+									script.instanceId = -1;
+									script.instanceCreated = false;
+								}
+							}
 						}
 					}
 				}
@@ -2163,6 +2196,38 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 									if (fieldPtr && member.type) {
 										member.type->Deserialize(fieldPtr, doc[member.name]);
 									}
+								}
+							}
+
+							// Post-paste sync for components with enum/ID field pairs
+							if (componentType == "ColliderComponent") {
+								auto* collider = static_cast<ColliderComponent*>(componentPtr);
+								// Sync enum fields from their serialized ID fields
+								collider->shapeType = static_cast<ColliderShapeType>(collider->shapeTypeID);
+								collider->layer = static_cast<JPH::ObjectLayer>(collider->layerID);
+								collider->version++; // Mark for physics system update
+							}
+							else if (componentType == "RigidBodyComponent") {
+								auto* rb = static_cast<RigidBodyComponent*>(componentPtr);
+								rb->motion = static_cast<Motion>(rb->motionID);
+							}
+							else if (componentType == "ScriptComponentData") {
+								auto* scriptComp = static_cast<ScriptComponentData*>(componentPtr);
+								// Resolve script paths and GUIDs for each script
+								for (auto& script : scriptComp->scripts) {
+									bool guidIsZero = (script.scriptGuid.high == 0 && script.scriptGuid.low == 0);
+									// If scriptGuidStr is set but scriptGuid is empty, convert it
+									if (!script.scriptGuidStr.empty() && guidIsZero) {
+										script.scriptGuid = GUIDUtilities::ConvertStringToGUID128(script.scriptGuidStr);
+										guidIsZero = false;
+									}
+									// If scriptPath is empty but we have a GUID, resolve the path
+									if (script.scriptPath.empty() && !guidIsZero) {
+										script.scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+									}
+									// Reset runtime state
+									script.instanceId = -1;
+									script.instanceCreated = false;
 								}
 							}
 						}
