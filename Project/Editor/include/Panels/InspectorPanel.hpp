@@ -65,6 +65,7 @@ private:
 
     // Component addition functionality
     void DrawAddComponentButton(Entity entity);
+    void DrawAddComponentButtonMulti(const std::vector<Entity>& entities);
     void AddComponent(Entity entity, const std::string& componentType);
 
     // File watcher callback

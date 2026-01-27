@@ -67,6 +67,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
     s_VisitedEntities.clear();
     s_HierarchyDepth = 0;
 
+    // Clear visible expanded nodes tracking (will be rebuilt during rendering)
+    visibleExpandedNodes.clear();
+
     ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_HIERARCHY);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_HIERARCHY);
 
@@ -654,6 +657,9 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     if (opened && hasChildren) {
+        // Track that this node is expanded (for range selection to include visible children)
+        visibleExpandedNodes.insert(entityId);
+
         // Child nodes would be drawn here in a real implementation
         if (ecsManager.HasComponent<ChildrenComponent>(entityId)) {
             const auto& children = ecsManager.GetComponent<ChildrenComponent>(entityId).children;
@@ -1445,8 +1451,12 @@ void SceneHierarchyPanel::CollectEntitiesRecursive(Entity entity, std::vector<En
 
     flatList.push_back(entity);
 
-    // If this entity has children, add them recursively
-    if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+    // Only include children if this entity's tree node is expanded (visible in hierarchy)
+    // Use the tracked set of expanded nodes from the last render
+    bool isExpanded = visibleExpandedNodes.count(entity) > 0;
+
+    // If this entity has children AND the node is expanded, add them recursively
+    if (isExpanded && ecsManager.HasComponent<ChildrenComponent>(entity)) {
         const auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
         for (const auto& childGUID : children) {
             Entity child = guidRegistry.GetEntityByGUID(childGUID);
