@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c6496cce6ff-00036d1a9a000139",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthNotch.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthNotch.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

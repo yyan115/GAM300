@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005fad5321227a86-00036c99fe000027",
+        "source": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.png",
+        "compiled": "../../Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

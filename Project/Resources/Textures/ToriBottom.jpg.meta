@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00596c263a9329dd-00036031e800004f",
+        "source": "../../Resources/Textures/ToriBottom.jpg",
+        "compiled": "../../Resources/Textures/ToriBottom.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

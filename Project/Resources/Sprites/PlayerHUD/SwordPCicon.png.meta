@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c648978c5fa-00036d0e0e00008d",
+        "source": "../../Resources/Sprites/PlayerHUD/SwordPCicon.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/SwordPCicon.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
