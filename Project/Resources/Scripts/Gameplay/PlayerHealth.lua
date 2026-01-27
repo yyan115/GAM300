@@ -25,12 +25,12 @@ return Component {
     },
 
     Awake = function(self)
-        print("[PlayerHealth] Health initialized to ", Health)
+        print("[PlayerHealth] Health initialized to ", self.Health)
     end,
 
     Start = function(self)
         self._animator  = self:GetComponent("AnimationComponent")
-        self._health = Health
+        self._health = self.Health
     end,
 
     Update = function(self, dt)

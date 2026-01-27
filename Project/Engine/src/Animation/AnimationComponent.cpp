@@ -57,6 +57,7 @@ AnimationComponent::AnimationComponent(const AnimationComponent& other)
     , clipGUIDs(other.clipGUIDs)
     , controllerPath(other.controllerPath)
     , activeClip(other.activeClip)
+    , mLoopJustCompleted(false)  // Fresh copy starts with no pending loop
 {
     clips.reserve(other.clips.size());
     for (const auto& c : other.clips) {
@@ -67,7 +68,10 @@ AnimationComponent::AnimationComponent(const AnimationComponent& other)
         : clips[std::min(activeClip, clips.size() - 1)].get();
     animator = std::make_unique<Animator>(active);
 
-    if (active && other.animator) {
+    // Copy state machine if present, and update owner to this
+    if (other.stateMachine) {
+        stateMachine = std::make_unique<AnimationStateMachine>(*other.stateMachine);
+        stateMachine->SetOwner(this);
     }
 }
 
@@ -91,6 +95,12 @@ void swap(AnimationComponent& a, AnimationComponent& b) noexcept
     swap(a.activeClip, b.activeClip);
     swap(a.clips, b.clips);
     swap(a.animator, b.animator);
+    swap(a.stateMachine, b.stateMachine);
+    swap(a.mLoopJustCompleted, b.mLoopJustCompleted);
+
+    // Update owner pointers after swap
+    if (a.stateMachine) a.stateMachine->SetOwner(&a);
+    if (b.stateMachine) b.stateMachine->SetOwner(&b);
 }
 
 void AnimationComponent::Update(float dt, Entity entity)
@@ -99,7 +109,19 @@ void AnimationComponent::Update(float dt, Entity entity)
 
     if (isPlay && !clips.empty() && activeClip < clips.size())
     {
+        // Track time before update to detect loop completion
+        float prevTime = animator->GetCurrentTime();
+
         animator->UpdateAnimation(dt * speed, isLoop, entity);
+
+        float currTime = animator->GetCurrentTime();
+
+        // Detect loop completion: time wrapped back (current < previous)
+        if (isLoop && currTime < prevTime)
+        {
+            mLoopJustCompleted = true;
+        }
+
         if (!isLoop)
         {
             if (activeClip >= clips.size()) {
@@ -365,6 +387,7 @@ void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entit
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
+	mLoopJustCompleted = false;  // Reset loop tracking for new animation
 
 	// Actually start playing the animation on the animator
 	if (!clips.empty() && clipIndex < clips.size()) {
@@ -470,4 +493,46 @@ std::string AnimationComponent::GetCurrentState() const
         return stateMachine->GetCurrentState();
     }
     return "";
+}
+
+float AnimationComponent::GetNormalizedTime() const
+{
+    if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {
+        return 0.0f;
+    }
+
+    float duration = clips[activeClip]->GetDuration();
+    if (duration <= 0.0f) {
+        return 0.0f;
+    }
+
+    float currentTime = animator->GetCurrentTime();
+    float normalized = currentTime / duration;
+
+    // Clamp to 0-1 range
+    return std::clamp(normalized, 0.0f, 1.0f);
+}
+
+bool AnimationComponent::IsAnimationFinished() const
+{
+    if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {
+        return true;  // No animation = finished
+    }
+
+    // Looping animations never "finish"
+    if (isLoop) {
+        return false;
+    }
+
+    float duration = clips[activeClip]->GetDuration();
+    return animator->GetCurrentTime() >= duration;
+}
+
+bool AnimationComponent::HasLoopJustCompleted()
+{
+    if (mLoopJustCompleted) {
+        mLoopJustCompleted = false;
+        return true;
+    }
+    return false;
 }
