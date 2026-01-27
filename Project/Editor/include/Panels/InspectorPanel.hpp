@@ -55,6 +55,7 @@ private:
     std::vector<std::string> GetSharedComponentTypes(const std::vector<Entity>& entities);
     void DrawSharedComponentGeneric(const std::vector<Entity>& entities, const std::string& componentType);
     bool HasComponent(Entity entity, const std::string& componentType);
+    void* GetComponentPtr(Entity entity, const std::string& componentType);
 
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);

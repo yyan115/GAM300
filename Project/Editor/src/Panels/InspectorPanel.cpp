@@ -920,11 +920,61 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 void InspectorPanel::DrawAddComponentButton(Entity entity) {
 	ImGui::Text("Add Component");
 
-	if (ImGui::Button("Add Component", ImVec2(-1, 30))) {
+	// Calculate button width - split space if paste is available
+	float availWidth = ImGui::GetContentRegionAvail().x;
+	bool canPasteComponent = g_ComponentClipboard.hasData && !HasComponent(entity, g_ComponentClipboard.componentType);
+	float buttonWidth = canPasteComponent ? (availWidth - ImGui::GetStyle().ItemSpacing.x) * 0.5f : availWidth;
+
+	if (ImGui::Button("Add Component", ImVec2(buttonWidth, 30))) {
 		ImGui::OpenPopup("AddComponentPopup");
 		componentSearchActive = true;
 		memset(componentSearchBuffer, 0, sizeof(componentSearchBuffer));
 		resetComponentTrees = true;
+	}
+
+	// Paste Component button - only show if clipboard has data and entity doesn't have that component
+	if (canPasteComponent) {
+		ImGui::SameLine();
+		if (ImGui::Button("Paste Component", ImVec2(buttonWidth, 30))) {
+			// Take snapshot for undo
+			SnapshotManager::GetInstance().TakeSnapshot("Paste Component: " + g_ComponentClipboard.componentType);
+
+			// First add the component
+			AddComponent(entity, g_ComponentClipboard.componentType);
+
+			// Then paste the values using reflection
+			auto& lookup = TypeDescriptor::type_descriptor_lookup();
+			auto it = lookup.find(g_ComponentClipboard.componentType);
+			if (it != lookup.end()) {
+				TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+				if (typeDesc) {
+					// Get the newly added component pointer
+					void* componentPtr = GetComponentPtr(entity, g_ComponentClipboard.componentType);
+
+					if (componentPtr) {
+						// Parse JSON from clipboard
+						rapidjson::Document doc;
+						doc.Parse(g_ComponentClipboard.jsonData.c_str());
+
+						if (!doc.HasParseError() && doc.IsObject()) {
+							// Deserialize field by field
+							std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+							for (const auto& member : members) {
+								if (doc.HasMember(member.name)) {
+									void* fieldPtr = member.get_ptr(componentPtr);
+									if (fieldPtr && member.type) {
+										member.type->Deserialize(fieldPtr, doc[member.name]);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Paste %s from clipboard", g_ComponentClipboard.componentType.c_str());
+		}
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, ImGui::GetContentRegionAvail().y), ImGuiCond_Appearing);
@@ -2222,9 +2272,65 @@ bool InspectorPanel::HasComponent(Entity entity, const std::string& componentTyp
 	if (componentType == "BrainComponent") return ecs.HasComponent<BrainComponent>(entity);
 	if (componentType == "ScriptComponentData") return ecs.HasComponent<ScriptComponentData>(entity);
 	if (componentType == "ButtonComponent") return ecs.HasComponent<ButtonComponent>(entity);
+	if (componentType == "SliderComponent") return ecs.HasComponent<SliderComponent>(entity);
 	if (componentType == "UIAnchorComponent") return ecs.HasComponent<UIAnchorComponent>(entity);
 
 	return false;
+}
+
+void* InspectorPanel::GetComponentPtr(Entity entity, const std::string& componentType) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	if (componentType == "Transform" && ecs.HasComponent<Transform>(entity))
+		return &ecs.GetComponent<Transform>(entity);
+	if (componentType == "NameComponent" && ecs.HasComponent<NameComponent>(entity))
+		return &ecs.GetComponent<NameComponent>(entity);
+	if (componentType == "TagComponent" && ecs.HasComponent<TagComponent>(entity))
+		return &ecs.GetComponent<TagComponent>(entity);
+	if (componentType == "LayerComponent" && ecs.HasComponent<LayerComponent>(entity))
+		return &ecs.GetComponent<LayerComponent>(entity);
+	if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(entity))
+		return &ecs.GetComponent<ModelRenderComponent>(entity);
+	if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(entity))
+		return &ecs.GetComponent<SpriteRenderComponent>(entity);
+	if (componentType == "SpriteAnimationComponent" && ecs.HasComponent<SpriteAnimationComponent>(entity))
+		return &ecs.GetComponent<SpriteAnimationComponent>(entity);
+	if (componentType == "TextRenderComponent" && ecs.HasComponent<TextRenderComponent>(entity))
+		return &ecs.GetComponent<TextRenderComponent>(entity);
+	if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(entity))
+		return &ecs.GetComponent<ParticleComponent>(entity);
+	if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(entity))
+		return &ecs.GetComponent<AudioComponent>(entity);
+	if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(entity))
+		return &ecs.GetComponent<AudioListenerComponent>(entity);
+	if (componentType == "AudioReverbZoneComponent" && ecs.HasComponent<AudioReverbZoneComponent>(entity))
+		return &ecs.GetComponent<AudioReverbZoneComponent>(entity);
+	if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(entity))
+		return &ecs.GetComponent<DirectionalLightComponent>(entity);
+	if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(entity))
+		return &ecs.GetComponent<PointLightComponent>(entity);
+	if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(entity))
+		return &ecs.GetComponent<SpotLightComponent>(entity);
+	if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(entity))
+		return &ecs.GetComponent<ColliderComponent>(entity);
+	if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(entity))
+		return &ecs.GetComponent<RigidBodyComponent>(entity);
+	if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(entity))
+		return &ecs.GetComponent<CameraComponent>(entity);
+	if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(entity))
+		return &ecs.GetComponent<AnimationComponent>(entity);
+	if (componentType == "BrainComponent" && ecs.HasComponent<BrainComponent>(entity))
+		return &ecs.GetComponent<BrainComponent>(entity);
+	if (componentType == "ScriptComponentData" && ecs.HasComponent<ScriptComponentData>(entity))
+		return &ecs.GetComponent<ScriptComponentData>(entity);
+	if (componentType == "ButtonComponent" && ecs.HasComponent<ButtonComponent>(entity))
+		return &ecs.GetComponent<ButtonComponent>(entity);
+	if (componentType == "SliderComponent" && ecs.HasComponent<SliderComponent>(entity))
+		return &ecs.GetComponent<SliderComponent>(entity);
+	if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(entity))
+		return &ecs.GetComponent<UIAnchorComponent>(entity);
+
+	return nullptr;
 }
 
 std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vector<Entity>& entities) {
