@@ -111,6 +111,7 @@ bool ParticleSystem::InitialiseParticles()
 
         // Create instance VBO (per-particle data, updated every frame)
         particleComp.instanceVBO = new VBO(particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
+        particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
         // Setup instance attributes (divisor = 1 means advance per instance)
         // Position (location 2)
@@ -179,6 +180,7 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
     particleComp.particleVAO->LinkAttrib(*particleComp.quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     particleComp.instanceVBO = new VBO( particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
+    particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 2, 3, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, position), 1);
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 3, 4, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, color), 1);
