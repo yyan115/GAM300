@@ -74,7 +74,9 @@ void TextRenderingSystem::Update()
             ComputeWrappedLines(textComponent, scaleX);
         }
 
-        // Only submit valid, visible text
+        // Sync sorting values to renderOrder
+        textComponent.renderOrder = textComponent.sortingLayer * 100 + textComponent.sortingOrder;
+
         if (textComponent.isVisible && TextUtils::IsValid(textComponent))
         {
             auto textRenderItem = std::make_unique<TextRenderComponent>(textComponent);
