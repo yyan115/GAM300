@@ -348,6 +348,12 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
 
             if (insideObstacle)
             {
+                //std::cout << "[NavGrid] Cell not walkable r=" << r << " c=" << c
+                //    << " x=" << x << " z=" << z
+                //    << " probeTop=" << PROBE_TOP
+                //    << " probeDist=" << PROBE_DIST
+                //    << "\n";
+
                 cell.walkable = false;
                 reasonMap[r * cols + c] = 'S';
                 blockedStamp++;
@@ -383,6 +389,7 @@ void NavGrid::Build(PhysicsSystem& phys, ECSManager& ecsManager)
             }
 
             cell.groundY = hit.hitPoint.y;
+			//std::cout << "[NavGrid] Row " << r << " Col " << c << " groundY = " << cell.groundY << "\n";
 
             // C) Clearance overlap against obstacles
             const float navRadius = agentRadius + NAV_RADIUS_INFLATION;
@@ -503,9 +510,10 @@ Vector3D NavGrid::CellToWorld(int r, int c) const
 const NavCell& NavGrid::GetNavCell(int row, int col) {
     if (row >= 0 && row < rows &&
         col >= 0 && col < cols) {
-        return cells[row * rows + col];
+        return cells[row * cols + col];
     }
 
     // Default case: return cells[0]
+    //std::cout << "[NavCell] GetNavCell out of bounds. Returning cells[0]" << std::endl;
     return cells[0];
 }

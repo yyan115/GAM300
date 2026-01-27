@@ -69,5 +69,6 @@ float NavSystem::GetGroundY(Entity entity) {
     auto& transform = ecs.GetComponent<Transform>(entity);
     Vector3D worldPos = transform.worldPosition;
     GridPos gridPos = grid.WorldToCell(worldPos.x, worldPos.z);
+    //std::cout << "[NavSystem] GetGroundY gridPos row: " << gridPos.row << " col: " << gridPos.col << std::endl;
     return grid.GetNavCell(gridPos.row, gridPos.col).groundY;
 }

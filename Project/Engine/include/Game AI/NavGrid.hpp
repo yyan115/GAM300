@@ -28,12 +28,12 @@ public:
     const NavCell& GetNavCell(int row, int col);
 
     // config
-    float cellSize = 0.1f;
+    float cellSize = 0.2f;
     float minX = -20, maxX = 20;
     float minZ = -20, maxZ = 20;
 
     // agent params
-    float agentRadius = 0.2f;
+    float agentRadius = 0.1f;
     float agentHalfHeight = 0.4f;
     float groundProbeTop = 10.0f;
     float groundProbeDist = 30.0f;

@@ -102,6 +102,11 @@ void AnimationComponent::Update(float dt, Entity entity)
         animator->UpdateAnimation(dt * speed, isLoop, entity);
         if (!isLoop)
         {
+            if (activeClip >= clips.size()) {
+                ENGINE_LOG_ERROR("[AnimationComponent] activeClip >= clips.size()!");
+                return;
+            }
+
             if (clips[activeClip]) {
                 const float durTicks = clips[activeClip]->GetDuration();
                 if (animator->GetCurrentTime() >= durTicks) isPlay = false;
