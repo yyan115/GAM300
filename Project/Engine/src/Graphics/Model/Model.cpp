@@ -101,6 +101,77 @@ Model::Model(std::shared_ptr<AssetMeta> modelMeta) {
 // Forward declaration for get_file_contents
 std::string get_file_contents(const char* filename);
 
+float Model::GetMaxExtent(const aiScene* scene) {
+    float maxVal = 0.0f;
+
+    // STRATEGY 1: Check Geometry (Preferred for Models)
+    if (scene->mNumMeshes > 0)
+    {
+        // Check a few meshes to find the bounds
+        for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+        {
+            aiMesh* mesh = scene->mMeshes[m];
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+                aiVector3D v = mesh->mVertices[i];
+                maxVal = std::max(maxVal, std::abs(v.x));
+                maxVal = std::max(maxVal, std::abs(v.y));
+                maxVal = std::max(maxVal, std::abs(v.z));
+
+                // Optimization: If we already found huge values, we know it's Centimeters.
+                if (maxVal > 10.0f) return maxVal;
+            }
+        }
+    }
+    // STRATEGY 2: Check Animation Keys (Fallback for Animation-Only files)
+    else if (scene->mNumAnimations > 0)
+    {
+        // Iterate through animations to find translation values
+        for (unsigned int i = 0; i < scene->mNumAnimations; i++)
+        {
+            aiAnimation* anim = scene->mAnimations[i];
+
+            // Iterate through bones (channels)
+            for (unsigned int c = 0; c < anim->mNumChannels; c++)
+            {
+                aiNodeAnim* channel = anim->mChannels[c];
+
+                // Check position keys
+                // We don't need to check every single keyframe; checking the first few is usually enough
+                // to catch a "Hip" bone at height 90.0 (cm) vs 0.9 (m).
+                unsigned int step = 1;
+                if (channel->mNumPositionKeys > 10) step = channel->mNumPositionKeys / 10; // Check ~10 samples per bone
+
+                for (unsigned int k = 0; k < channel->mNumPositionKeys; k += step)
+                {
+                    aiVector3D pos = channel->mPositionKeys[k].mValue;
+                    maxVal = std::max(maxVal, std::abs(pos.x));
+                    maxVal = std::max(maxVal, std::abs(pos.y));
+                    maxVal = std::max(maxVal, std::abs(pos.z));
+
+                    // Optimization: Found evidence of Centimeters? Return immediately.
+                    if (maxVal > 10.0f) return maxVal;
+                }
+            }
+        }
+    }
+
+    return maxVal;
+}
+
+// Determine scale factor based on heuristic
+float Model::CalculateAutoScale(const aiScene* scene) {
+    float maxExtent = GetMaxExtent(scene);
+
+    // Heuristic: If the model is huge (> 50 units), it's likely Centimeters.
+    // A 1.8m character would be 180 units.
+    if (maxExtent > 10.0f) {
+        return 0.5f; // Convert cm -> m
+    }
+
+    // If it's reasonable (0.1 to 10), assume it's already Meters
+    return 1.0f;
+}
+
 std::string Model::CompileToResource(const std::string& assetPath, bool forAndroid)
 {
 	Assimp::Importer importer;
@@ -121,11 +192,6 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	// Build post-processing flags
     unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace;
 
-    // Check if this is a wall/pillar model and flip winding order to fix face culling
-    if (assetPath.find("Wall") != std::string::npos ) {
-        postProcessFlags |= aiProcess_FlipWindingOrder;
-    }
-
     const aiScene* scene = importer.ReadFile(assetPath, postProcessFlags);
 //#endif
 
@@ -137,8 +203,8 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //#endif
         return std::string{};
 	}
+    // HANDLE ANIMATION FILES
     else if (scene->mNumMeshes == 0 && scene->mNumAnimations > 0) {
-        // This is an animation file, just return its own path (no compilation required).
         if (!forAndroid) {
             return assetPath;
         }
@@ -214,6 +280,29 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 //	}
 //
 //#endif
+
+	float scaleFactor = CalculateAutoScale(scene);
+
+    // Re-import if scaling is needed(The "Baking" Step)
+    if (std::abs(scaleFactor - 1.0f) > 0.001f)
+    {
+        ENGINE_LOG_DEBUG("[Model] Auto-scaling model by " + std::to_string(scaleFactor));
+
+        // Configure Assimp to bake the scale for us
+        importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
+
+        // Add the GlobalScale flag
+        postProcessFlags |= aiProcess_GlobalScale;
+
+        // Re-read the file. This destroys the old 'scene' and creates a new one 
+        // with vertices, bones, and animations already scaled.
+        scene = importer.ReadFile(assetPath, postProcessFlags);
+
+        if (!scene || !scene->mRootNode) {
+            ENGINE_PRINT("ERROR:ASSIMP:: Re-import failed: ", importer.GetErrorString(), "\n");
+            return std::string{};
+        }
+    }
 
     std::filesystem::path p(assetPath);
     modelPath = assetPath;
@@ -949,6 +1038,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         }
     }
 
+}
+
+void Model::DrawDepthOnly()
+{
+    for (auto& mesh : meshes)
+    {
+        mesh.DrawDepthOnly();
+    }
 }
 
 #ifdef __ANDROID__

@@ -100,11 +100,12 @@ public:
 
     // Bus (channel group) management
     FMOD_CHANNELGROUP* GetOrCreateBus(const std::string& busName);
-    void SetBusVolume(const std::string& busName, float volume);
+    void ENGINE_API SetBusVolume(const std::string& busName, float volume);
+    float GetBusVolume(const std::string& busName);
     void SetBusPaused(const std::string& busName, bool paused);
 
     // Global audio settings
-    void SetMasterVolume(float volume);
+    void ENGINE_API SetMasterVolume(float volume);
     float GetMasterVolume() const;
     void ENGINE_API SetGlobalPaused(bool paused);
 
@@ -157,6 +158,9 @@ private:
 
     // Channel groups (buses)
     std::unordered_map<std::string, FMOD_CHANNELGROUP*> BusMap;
+
+    // Pending bus volumes (for buses not yet created)
+    std::unordered_map<std::string, float> PendingBusVolumes;
 
     // Global settings
     std::atomic<float> MasterVolume{ 1.0f };

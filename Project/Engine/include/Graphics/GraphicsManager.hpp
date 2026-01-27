@@ -16,6 +16,7 @@
 #include "Particle/ParticleComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
+#include "RenderSorter.hpp"
 
 struct ViewportDimensions {
     int width = 0;
@@ -110,6 +111,8 @@ public:
     const Frustum& GetFrustum() const { return viewFrustum; }
     void ENGINE_API UpdateFrustum(); // Update frustum based on current camera and viewport
 
+    const SortingStats& GetSortingStats() const { return m_sortingStats; }
+
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -178,4 +181,16 @@ private:
 
     // Multi-threading mutex
     std::mutex renderQueueMutex;
+
+    void RenderSceneForShadows(Shader& depthShader);
+
+    // State sorting support
+    ResourceIdCache m_idCache;
+    SortingStats m_sortingStats;
+
+    // Track current bound state to avoid redundant switches
+    Shader* m_currentShader = nullptr;
+    Material* m_currentMaterial = nullptr;
+
+    void RenderModelOptimized(const ModelRenderComponent& item);
 };

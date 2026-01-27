@@ -44,7 +44,7 @@ private:
     ECSManager* m_ecs = nullptr;
 
     std::string rootDirectory   = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
-    std::string sceneToLoad     = "Resources/Scenes/M3_Gameplay.scene";     //PROBABLY MAKE THIS A FIELD INSTEAD, DRAG SCENE TO BE LOADED
+    std::string sceneToLoad     = "Resources/Scenes/04_GameLevel.scene";     //PROBABLY MAKE THIS A FIELD INSTEAD, DRAG SCENE TO BE LOADED
 
     std::string ConstructNewPath(VideoComponent& videoComp);
 
@@ -55,7 +55,6 @@ private:
     bool foundBlackScreen = false;
     bool foundSkipButton = false;
     bool isTransitioning = false;
-    bool cutSceneEnded = false;
 
     Entity dialogueText_Entity = -1;
     Entity dialogueBox_Entity = -1;

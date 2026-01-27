@@ -45,6 +45,8 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     collider.layer = Layers::CHARACTER;
 
     //std::cout << "calculation for new offset Y is " << ((collider.capsuleHalfHeight + collider.capsuleRadius) * transform.localScale.y) << std::endl;
+    collider.capsuleRadius = 0.25f;
+    collider.capsuleHalfHeight = 0.4f;
     collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;

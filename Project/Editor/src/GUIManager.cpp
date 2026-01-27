@@ -68,6 +68,7 @@ void GUIManager::Initialize() {
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable Multi-Viewport (drag windows outside main window)
 
 	// Load default layout from Editor's imgui.ini if build's imgui.ini doesn't exist
 	if (!std::filesystem::exists("imgui.ini")) {
@@ -104,6 +105,16 @@ void GUIManager::Render() {
 	// Start ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
+
+	// When cursor is actually locked (not paused), disable ImGui mouse input
+	// This prevents clicking on editor elements while playing with cursor captured
+	ImGuiIO& ioPreFrame = ImGui::GetIO();
+	if (WindowManager::IsCursorLocked()) {
+		ioPreFrame.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	} else {
+		ioPreFrame.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
+
 	ImGui::NewFrame();
 	
 	// Initialize ImGuizmo for this frame
@@ -126,23 +137,17 @@ void GUIManager::Render() {
 	// Render notification overlay
 	RenderNotification();
 
-	// Handle multi-viewport rendering
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		GLFWwindow* backup_current_context = glfwGetCurrentContext();
-		assert(backup_current_context != nullptr && "No current GLFW context");
-		
-		glfwMakeContextCurrent(backup_current_context);
-	}
-
 	// Render ImGui on top of the scene
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-	// Required for multi-viewport support:
-	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+	// Multi-viewport support: render windows dragged outside main window
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		GLFWwindow* backup_current_context = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
+		glfwMakeContextCurrent(backup_current_context);  // Restore context after rendering platform windows
 	}
 
 	AssetManager::GetInstance().RunEventQueue();
@@ -487,9 +492,16 @@ void GUIManager::CreateEditorTheme() {
 	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.33f, 0.33f, 0.33f, 1.0f); // Active slider
 
 	// Rounding settings for a polished look
-	style.WindowRounding = 4.0f;
 	style.FrameRounding = 4.0f;
 	style.GrabRounding = 4.0f;
+
+	// When viewports are enabled, platform windows should have no rounding
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;  // Ensure solid background for platform windows
+	} else {
+		style.WindowRounding = 4.0f;
+	}
 }
 
 std::string GUIManager::OpenSceneFileDialog() {
@@ -602,19 +614,20 @@ void GUIManager::HandleKeyboardShortcuts() {
 	}
 
 	// Entity shortcuts (work globally when entities are selected)
-	// These are handled here so they work regardless of which panel has focus
+	// Copy and Duplicate work regardless of which panel has focus
+	// Delete only works when hierarchy or scene panel is focused
 	if (!selectedEntities.empty()) {
 		auto hierarchyPanelPtr = panelManager->GetPanel("Scene Hierarchy");
 		if (hierarchyPanelPtr) {
 			auto hierarchyPanel = std::dynamic_pointer_cast<SceneHierarchyPanel>(hierarchyPanelPtr);
 			if (hierarchyPanel) {
-				// Ctrl+C: Copy entities
+				// Ctrl+C: Copy entities (works globally)
 				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
 					hierarchyPanel->CopySelectedEntities();
 					ShowNotification("Copied", 1.0f);
 				}
 
-				// Ctrl+D: Duplicate entities
+				// Ctrl+D: Duplicate entities (works globally)
 				if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
 					std::vector<Entity> duplicated = hierarchyPanel->DuplicateEntities(selectedEntities);
 					if (!duplicated.empty()) {
@@ -623,9 +636,16 @@ void GUIManager::HandleKeyboardShortcuts() {
 					}
 				}
 
-				// Delete: Delete entities
+				// Delete: Delete entities - ONLY when hierarchy or scene panel is focused
+				// This prevents deleting entities when other windows (like Animator) have focus
 				if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-					hierarchyPanel->DeleteSelectedEntities();
+					bool hierarchyFocused = hierarchyPanelPtr->IsFocused();
+					auto scenePanelPtr = panelManager->GetPanel("Scene");
+					bool sceneFocused = scenePanelPtr && scenePanelPtr->IsFocused();
+
+					if (hierarchyFocused || sceneFocused) {
+						hierarchyPanel->DeleteSelectedEntities();
+					}
 				}
 			}
 		}

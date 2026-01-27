@@ -12,6 +12,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #include "pch.h"
 #include <filesystem>
+#include <algorithm>
+#include <cstdio>
 #include "Logging.hpp"
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
@@ -61,6 +63,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Script/ScriptComponentData.hpp"
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
+#include "UI/Anchor/UIAnchorComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -1095,17 +1098,6 @@ void RegisterInspectorCustomRenderers()
             camera.backgroundColor = glm::vec3(bgColor[0], bgColor[1], bgColor[2]);
         }
 
-        ImGui::Text("Ambient Intensity");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
-        if (ecs.lightingSystem) {
-            float ambientIntensity = ecs.lightingSystem->ambientIntensity;
-            if (UndoableWidgets::DragFloat("##AmbientIntensity", &ambientIntensity, 0.01f, 0.0f, 1.0f, "%.2f"))
-            {
-                ecs.lightingSystem->SetAmbientIntensity(ambientIntensity);
-            }
-        }
-
         return false;
     });
 
@@ -1316,6 +1308,11 @@ void RegisterInspectorCustomRenderers()
 
         return false;
     });
+
+    // Hide childBonesSaved from ModelRenderComponent (should not be modified in editor).
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "childBonesSaved",
+        [](const char*, void*, Entity, ECSManager&)
+        { return true; });
 
     // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
@@ -1748,16 +1745,37 @@ void RegisterInspectorCustomRenderers()
 
         ImGui::Separator();
 
-        // Output section
+        // Output section - Mixer Group dropdown
         ImGui::Text("Output");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        char outputBuf[128];
-        std::snprintf(outputBuf, sizeof(outputBuf), "%s", audio.OutputAudioMixerGroup.empty() ? "None (Audio Mixer Group)" : audio.OutputAudioMixerGroup.c_str());
-        if (UndoableWidgets::InputText("##Output", outputBuf, sizeof(outputBuf)))
-        {
-            audio.OutputAudioMixerGroup = outputBuf;
+
+        // Define available mixer groups
+        const char* mixerGroups[] = { "Default", "BGM", "SFX" };
+        int currentMixerIndex = 0;
+
+        // Find current selection
+        if (audio.OutputAudioMixerGroup == "BGM") {
+            currentMixerIndex = 1;
+        } else if (audio.OutputAudioMixerGroup == "SFX") {
+            currentMixerIndex = 2;
+        } else {
+            currentMixerIndex = 0; // Default or empty
         }
+
+        EditorComponents::PushComboColors();
+        if (UndoableWidgets::Combo("##OutputMixerGroup", &currentMixerIndex, mixerGroups, 3))
+        {
+            // Update the mixer group based on selection
+            if (currentMixerIndex == 1) {
+                audio.SetOutputAudioMixerGroup("BGM");
+            } else if (currentMixerIndex == 2) {
+                audio.SetOutputAudioMixerGroup("SFX");
+            } else {
+                audio.SetOutputAudioMixerGroup(""); // Default/empty means master
+            }
+        }
+        EditorComponents::PopComboColors();
 
         // Checkboxes (aligned with labels) - using UndoableWidgets
         ImGui::AlignTextToFramePadding();
@@ -2164,6 +2182,10 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
 
+        ImGui::Text("Cast Shadow");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##CastShadow", &light.castShadows);
+
         return true; // Return true to skip default field rendering
     });
 
@@ -2258,7 +2280,6 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterComponentRenderer("AnimationComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        (void)ecs;
         AnimationComponent &animComp = *static_cast<AnimationComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
@@ -2303,14 +2324,17 @@ void RegisterInspectorCustomRenderers()
         AnimationStateMachine* sm = animComp.GetStateMachine();
         bool hasController = sm && !sm->GetAllStates().empty();
 
-        // Determine display text - show controller name or file name
+        // Determine display text - show controller file name
         std::string displayText;
-        if (hasController) {
-            displayText = sm->GetName().empty() ? "Controller" : sm->GetName();
-        } else if (!animComp.controllerPath.empty()) {
-            // Show file name from saved path (controller not loaded yet)
+        if (!animComp.controllerPath.empty()) {
+            // Show file name from controller path
             std::filesystem::path p(animComp.controllerPath);
-            displayText = p.stem().string() + " (not loaded)";
+            displayText = p.stem().string();
+            if (!hasController) {
+                displayText += " (not loaded)";
+            }
+        } else if (hasController) {
+            displayText = "Controller";
         } else {
             displayText = "None (Animator Controller)";
         }
@@ -2345,7 +2369,12 @@ void RegisterInspectorCustomRenderers()
                     const auto& ctrlClipPaths = controller.GetClipPaths();
                     animComp.clipPaths = ctrlClipPaths;
                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                    // Store GUIDs for cross-machine compatibility
+                    animComp.clipGUIDs.clear();
+                    for (const auto& clipPath : ctrlClipPaths) {
+                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                        animComp.clipGUIDs.push_back(guid);
+                    }
 
                     // Load clips from controller paths if model is available
                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
@@ -2354,8 +2383,17 @@ void RegisterInspectorCustomRenderers()
                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                             Animator* animator = animComp.EnsureAnimator();
                             modelComp.SetAnimator(animator);
-                            if (!animComp.GetClips().empty()) {
-                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
+
+                            // Play the entry state's animation clip (not just first clip)
+                            if (!animComp.GetClips().empty() && stateMachine) {
+                                std::string entryState = stateMachine->GetEntryState();
+                                const AnimStateConfig* entryConfig = stateMachine->GetState(entryState);
+                                size_t clipToPlay = 0;
+                                if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+                                    clipToPlay = entryConfig->clipIndex;
+                                }
+                                animComp.SetClip(clipToPlay, entity);
+                                animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
                             }
                         }
                     }
@@ -2408,7 +2446,12 @@ void RegisterInspectorCustomRenderers()
                                     const auto& ctrlClipPaths = controller.GetClipPaths();
                                     animComp.clipPaths = ctrlClipPaths;
                                     animComp.clipCount = static_cast<int>(ctrlClipPaths.size());
-                                    animComp.clipGUIDs.resize(ctrlClipPaths.size(), {0, 0});
+                                    // Store GUIDs for cross-machine compatibility
+                                    animComp.clipGUIDs.clear();
+                                    for (const auto& clipPath : ctrlClipPaths) {
+                                        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+                                        animComp.clipGUIDs.push_back(guid);
+                                    }
 
                                     // Load clips from controller paths if model is available
                                     if (ecs.HasComponent<ModelRenderComponent>(entity)) {
@@ -2417,8 +2460,17 @@ void RegisterInspectorCustomRenderers()
                                             animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
                                             Animator* animator = animComp.EnsureAnimator();
                                             modelComp.SetAnimator(animator);
-                                            if (!animComp.GetClips().empty()) {
-                                                animator->PlayAnimation(animComp.GetClips()[0].get(), entity);
+
+                                            // Play the entry state's animation clip (not just first clip)
+                                            if (!animComp.GetClips().empty() && stateMachine) {
+                                                std::string entryState = stateMachine->GetEntryState();
+                                                const AnimStateConfig* entryConfig = stateMachine->GetState(entryState);
+                                                size_t clipToPlay = 0;
+                                                if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+                                                    clipToPlay = entryConfig->clipIndex;
+                                                }
+                                                animComp.SetClip(clipToPlay, entity);
+                                                animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
                                             }
                                         }
                                     }
@@ -2445,6 +2497,65 @@ void RegisterInspectorCustomRenderers()
             std::string currentState = sm->GetCurrentState();
             if (currentState.empty()) currentState = sm->GetEntryState();
             ImGui::TextDisabled("%s", currentState.c_str());
+        }
+
+        // ===== ANIMATION CLIP SELECTOR =====
+        if (!animComp.clipPaths.empty()) {
+            ImGui::Spacing();
+            ImGui::Text("Animation Clip");
+            ImGui::SameLine(labelWidth);
+
+            // Get current clip name
+            size_t activeClipIndex = animComp.GetActiveClipIndex();
+            std::string currentClipName = "(None)";
+            if (activeClipIndex < animComp.clipPaths.size()) {
+                std::filesystem::path clipPath(animComp.clipPaths[activeClipIndex]);
+                currentClipName = clipPath.stem().string();
+            }
+
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::BeginCombo("##AnimClipSelect", currentClipName.c_str())) {
+                for (size_t i = 0; i < animComp.clipPaths.size(); i++) {
+                    std::filesystem::path clipPath(animComp.clipPaths[i]);
+                    std::string clipName = clipPath.stem().string();
+                    bool isSelected = (i == activeClipIndex);
+
+                    if (ImGui::Selectable(clipName.c_str(), isSelected)) {
+                        // If clips aren't loaded or out of sync, reload them first
+                        if (animComp.GetClips().size() != animComp.clipPaths.size()) {
+                            if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+                                auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                                if (modelComp.model) {
+                                    animComp.LoadClipsFromPaths(
+                                        modelComp.model->GetBoneInfoMap(),
+                                        modelComp.model->GetBoneCount(),
+                                        entity
+                                    );
+                                }
+                            }
+                        }
+
+                        // Change to the selected animation
+                        if (i < animComp.GetClips().size()) {
+                            animComp.SetClip(i, entity);
+                            animComp.editorPreviewTime = 0.0f;
+                            // Reset animator to play from beginning
+                            Animator* animator = animComp.GetAnimatorPtr();
+                            if (animator) {
+                                animator->PlayAnimation(animComp.GetClips()[i].get(), entity);
+                            }
+                        }
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                    // Show full path as tooltip
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("%s", animComp.clipPaths[i].c_str());
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
 
         ImGui::Spacing();
@@ -2936,59 +3047,196 @@ void RegisterInspectorCustomRenderers()
             editorPreviewScriptPaths.erase(uniqueKey);
         }
 
-        // Helper lambda: Parse Lua script file to extract field declaration order
-        auto extractFieldOrder = [](const std::string& scriptPath) -> std::vector<std::string> {
-            std::vector<std::string> fieldOrder;
+        // Struct to hold field info including comments and default values
+        struct FieldParseInfo {
+            std::string name;
+            std::string comment;       // Comment associated with this field (either inline or preceding line)
+            std::string defaultValue;  // Default value from Lua file (e.g., "5", "true", "\"Player\"")
+            bool isHeader = false;     // True if this is a section header (standalone comment like "-- === Section ===")
+            std::string headerText;    // Text to display for section headers
+        };
 
-            // Handle both relative and absolute paths
-            std::string fullPath = scriptPath;
-            if (scriptPath.find("Resources/") == 0 || scriptPath.find("resources/") == 0) {
-                // Relative path - don't modify, it should work from current directory
-            } else if (scriptPath[0] != '/' && scriptPath.find(":/") == std::string::npos) {
-                // Relative path without Resources prefix
-                fullPath = "Resources/" + scriptPath;
+        // Helper lambda: Parse Lua script file to extract field declaration order and comments
+        auto extractFieldOrderWithComments = [](const std::string& scriptPath) -> std::vector<FieldParseInfo> {
+            std::vector<FieldParseInfo> fieldOrder;
+
+            // Try multiple path resolutions to find the Lua script file
+            // This handles cases where editor runs from build folder but scripts are in source
+            std::vector<std::string> pathsToTry;
+
+            // 1. Try the path as-is
+            pathsToTry.push_back(scriptPath);
+
+            // 2. Try with Resources/ prefix if not already present
+            if (scriptPath.find("Resources/") != 0 && scriptPath.find("resources/") != 0) {
+                pathsToTry.push_back("Resources/" + scriptPath);
             }
 
-            std::ifstream file(fullPath);
+            // 3. Try relative to project source directory (for when running from Build folder)
+            // Go up from Build/EditorDebug to Project level, then into Resources
+            if (scriptPath.find("Resources/") == 0 || scriptPath.find("resources/") == 0) {
+                pathsToTry.push_back("../../" + scriptPath);
+                pathsToTry.push_back("../../../Project/" + scriptPath);
+            } else {
+                pathsToTry.push_back("../../Resources/" + scriptPath);
+                pathsToTry.push_back("../../../Project/Resources/" + scriptPath);
+            }
+
+            // 4. Try absolute paths based on common project structures
+            std::string normalizedPath = scriptPath;
+            // Convert backslashes to forward slashes for consistency
+            std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+            std::ifstream file;
+            std::string openedPath;
+            for (const auto& path : pathsToTry) {
+                file.open(path);
+                if (file.is_open()) {
+                    openedPath = path;
+                    break;
+                }
+            }
+
             if (!file.is_open()) {
-                // Try alternative path
-                file.open(scriptPath);
-                if (!file.is_open()) return fieldOrder;
+                ENGINE_PRINT("WARNING: Could not find Lua script file for field parsing: ", scriptPath.c_str());
+                ENGINE_PRINT("  Tried paths: ");
+                for (const auto& path : pathsToTry) {
+                    ENGINE_PRINT("    - ", path.c_str());
+                }
+                return fieldOrder;
             }
 
             std::string line;
             bool inFieldsTable = false;
             int braceDepth = 0;
+            std::string pendingComment;  // Comment from previous line to associate with next field
+
+            // Helper to count braces outside of strings and comments
+            auto countBracesOutsideStrings = [](const std::string& text, int& depth) {
+                bool inString = false;
+                char stringDelim = 0;
+                bool escaped = false;
+                size_t commentStart = text.find("--");
+
+                for (size_t i = 0; i < text.size(); ++i) {
+                    // Stop at comment start
+                    if (commentStart != std::string::npos && i >= commentStart) break;
+
+                    char c = text[i];
+
+                    if (escaped) {
+                        escaped = false;
+                        continue;
+                    }
+
+                    if (c == '\\') {
+                        escaped = true;
+                        continue;
+                    }
+
+                    if (inString) {
+                        if (c == stringDelim) {
+                            inString = false;
+                        }
+                    } else {
+                        if (c == '"' || c == '\'') {
+                            inString = true;
+                            stringDelim = c;
+                        } else if (c == '{') {
+                            depth++;
+                        } else if (c == '}') {
+                            depth--;
+                        }
+                    }
+                }
+            };
 
             while (std::getline(file, line)) {
-                // Remove leading/trailing whitespace
-                size_t start = line.find_first_not_of(" \t\r\n");
-                if (start == std::string::npos) continue;
-                line = line.substr(start);
+                // Remove leading whitespace only (preserve trailing for comment extraction)
+                size_t start = line.find_first_not_of(" \t");
+                if (start == std::string::npos) {
+                    pendingComment.clear();  // Empty line clears pending comment
+                    continue;
+                }
+                std::string trimmedLine = line.substr(start);
 
                 // Look for "fields = {"
-                if (line.find("fields") == 0 && line.find("=") != std::string::npos) {
+                if (!inFieldsTable && trimmedLine.find("fields") == 0 && trimmedLine.find("=") != std::string::npos) {
                     inFieldsTable = true;
-                    if (line.find("{") != std::string::npos) braceDepth++;
+                    countBracesOutsideStrings(trimmedLine, braceDepth);
+                    pendingComment.clear();
                     continue;
                 }
 
                 if (inFieldsTable) {
-                    // Count braces
-                    for (char c : line) {
-                        if (c == '{') braceDepth++;
-                        else if (c == '}') braceDepth--;
+                    // Check if this is a comment-only line
+                    size_t commentPos = trimmedLine.find("--");
+                    size_t eqPos = trimmedLine.find("=");
+
+                    // If line starts with comment (or is comment-only), check if it's a section header
+                    if (commentPos == 0) {
+                        // Extract comment text (remove -- and trim)
+                        std::string commentText = trimmedLine.substr(2);
+                        size_t textStart = commentText.find_first_not_of(" \t");
+                        if (textStart != std::string::npos) {
+                            std::string trimmedComment = commentText.substr(textStart);
+
+                            // Check if this is a section header (contains === or --- or [Header])
+                            bool isHeader = false;
+                            std::string headerText;
+
+                            if (trimmedComment.find("===") != std::string::npos) {
+                                // Header like "=== Section Name ===" - extract the text between ===
+                                isHeader = true;
+                                size_t start = trimmedComment.find_first_not_of("= \t");
+                                size_t end = trimmedComment.find_last_not_of("= \t");
+                                if (start != std::string::npos && end != std::string::npos && end >= start) {
+                                    headerText = trimmedComment.substr(start, end - start + 1);
+                                } else {
+                                    headerText = trimmedComment;
+                                }
+                            } else if (trimmedComment.find("---") != std::string::npos) {
+                                // Header like "--- Section Name ---"
+                                isHeader = true;
+                                size_t start = trimmedComment.find_first_not_of("- \t");
+                                size_t end = trimmedComment.find_last_not_of("- \t");
+                                if (start != std::string::npos && end != std::string::npos && end >= start) {
+                                    headerText = trimmedComment.substr(start, end - start + 1);
+                                } else {
+                                    headerText = trimmedComment;
+                                }
+                            } else if (trimmedComment.front() == '[' && trimmedComment.back() == ']') {
+                                // Header like "[Section Name]"
+                                isHeader = true;
+                                headerText = trimmedComment.substr(1, trimmedComment.size() - 2);
+                            }
+
+                            if (isHeader && !headerText.empty()) {
+                                // Add as a header entry
+                                FieldParseInfo headerInfo;
+                                headerInfo.isHeader = true;
+                                headerInfo.headerText = headerText;
+                                fieldOrder.push_back(headerInfo);
+                                pendingComment.clear();
+                            } else {
+                                // Regular comment - save for next field
+                                pendingComment = trimmedComment;
+                            }
+                        }
+                        // Still need to count braces in case comment contains them (shouldn't affect depth)
+                        countBracesOutsideStrings(trimmedLine, braceDepth);
+                        if (braceDepth == 0) break;
+                        continue;
                     }
 
-                    // Extract field name (pattern: "fieldName = value" or "fieldName=value")
-                    size_t commentPos = line.find("--");
-                    size_t eqPos = line.find("=");
+                    // Count braces outside strings and comments
+                    countBracesOutsideStrings(trimmedLine, braceDepth);
 
-                    // Only process lines with '=' that don't start with a comment
+                    // Only process lines with '=' that have the = before any comment
                     if (eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
-                        std::string fieldName = line.substr(0, eqPos);
+                        std::string fieldName = trimmedLine.substr(0, eqPos);
 
-                        // Trim whitespace and commas
+                        // Trim whitespace and commas from field name
                         size_t nameStart = fieldName.find_first_not_of(" \t\r\n");
                         size_t nameEnd = fieldName.find_last_not_of(" \t\r\n,");
 
@@ -2997,7 +3245,38 @@ void RegisterInspectorCustomRenderers()
 
                             // Check if valid identifier (starts with letter or underscore)
                             if (!fieldName.empty() && (std::isalpha(static_cast<unsigned char>(fieldName[0])) || fieldName[0] == '_')) {
-                                fieldOrder.push_back(fieldName);
+                                FieldParseInfo info;
+                                info.name = fieldName;
+
+                                // Extract the default value (part after = and before comment or end of line)
+                                size_t valueStart = eqPos + 1;
+                                size_t valueEnd = (commentPos != std::string::npos) ? commentPos : trimmedLine.size();
+                                if (valueStart < valueEnd) {
+                                    std::string valueStr = trimmedLine.substr(valueStart, valueEnd - valueStart);
+                                    // Trim whitespace and trailing comma
+                                    size_t vStart = valueStr.find_first_not_of(" \t");
+                                    size_t vEnd = valueStr.find_last_not_of(" \t\r\n,");
+                                    if (vStart != std::string::npos && vEnd != std::string::npos && vEnd >= vStart) {
+                                        info.defaultValue = valueStr.substr(vStart, vEnd - vStart + 1);
+                                    }
+                                }
+
+                                // Extract inline comment if present
+                                if (commentPos != std::string::npos && commentPos > eqPos) {
+                                    std::string inlineComment = trimmedLine.substr(commentPos + 2);
+                                    size_t textStart = inlineComment.find_first_not_of(" \t");
+                                    if (textStart != std::string::npos) {
+                                        info.comment = inlineComment.substr(textStart);
+                                    }
+                                }
+
+                                // If no inline comment, use pending comment from previous line
+                                if (info.comment.empty() && !pendingComment.empty()) {
+                                    info.comment = pendingComment;
+                                }
+
+                                fieldOrder.push_back(info);
+                                pendingComment.clear();
                             }
                         }
                     }
@@ -3013,7 +3292,8 @@ void RegisterInspectorCustomRenderers()
         // This implements behavior where only serialized fields are shown
         std::vector<Scripting::FieldInfo> filteredFields;
         bool hasFieldsTable = false;
-        std::vector<std::string> fieldOrder;
+        std::vector<FieldParseInfo> parsedFields;
+        std::unordered_map<std::string, std::string> fieldComments;  // Store comments for each field
 
         // Build a map for quick lookup of FieldInfo by name
         std::unordered_map<std::string, Scripting::FieldInfo> fieldMap;
@@ -3022,58 +3302,154 @@ void RegisterInspectorCustomRenderers()
             fieldMap[field.name] = field;
         }
 
-        // Parse the Lua script file to get field declaration order
-        fieldOrder = extractFieldOrder(scriptData.scriptPath);
+        // Parse the Lua script file to get field declaration order and comments
+        parsedFields = extractFieldOrderWithComments(scriptData.scriptPath);
 
-        // Debug output (only once per entity to avoid spam)
-        static std::unordered_set<Entity> debuggedEntities;
-        bool isFirstTimeForEntity = (debuggedEntities.find(entity) == debuggedEntities.end());
-        if (isFirstTimeForEntity) {
-            debuggedEntities.insert(entity);
+        // Build comment map for later tooltip display
+        for (const auto& pf : parsedFields) {
+            if (!pf.comment.empty()) {
+                fieldComments[pf.name] = pf.comment;
+            }
+        }
 
-            if (!fieldOrder.empty()) {
-                std::string debugMsg = "Parsed field order: ";
-                for (const auto& fname : fieldOrder) {
-                    debugMsg += fname + ", ";
+        // TEMPORARY: Always print debug info to help diagnose field visibility issue
+        // TODO: Remove this after fixing the issue
+        static int debugCounter = 0;
+        if (debugCounter < 5) {  // Only print first 5 times to avoid spam
+            debugCounter++;
+
+            // Build debug message
+            std::string debugMsg = "\n[SCRIPT DEBUG] Script: " + scriptData.scriptPath + "\n";
+            debugMsg += "  Parsed from file: " + std::to_string(parsedFields.size()) + " fields\n";
+            debugMsg += "  Instance has: " + std::to_string(fields.size()) + " fields\n";
+
+            if (!parsedFields.empty()) {
+                debugMsg += "  Parsed field names: ";
+                for (size_t i = 0; i < parsedFields.size() && i < 15; i++) {
+                    debugMsg += parsedFields[i].name + ", ";
                 }
-                ENGINE_PRINT(debugMsg.c_str());
+                if (parsedFields.size() > 15) debugMsg += "...(+" + std::to_string(parsedFields.size() - 15) + " more)";
+                debugMsg += "\n";
+            }
 
-                // Also show what fields ScriptInspector found
-                debugMsg = "ScriptInspector fields: ";
-                for (const auto& pair : fieldMap) {
-                    debugMsg += pair.first + ", ";
+            debugMsg += "  Instance field names: ";
+            int count = 0;
+            for (const auto& pair : fieldMap) {
+                if (count++ < 15) debugMsg += pair.first + ", ";
+            }
+            if (fieldMap.size() > 15) debugMsg += "...(+" + std::to_string(fieldMap.size() - 15) + " more)";
+            debugMsg += "\n";
+
+            // Output to log file and console
+            ENGINE_LOG_INFO(debugMsg);
+
+            // Also try standard output for console visibility
+            printf("%s", debugMsg.c_str());
+            fflush(stdout);
+        }
+
+        // Debug output (only once per entity per mode to avoid spam)
+        // Use a composite key: entity + isPlayMode + scriptPath to track what we've debugged
+        static std::unordered_set<std::string> debuggedKeys;
+        bool isPlayMode = Engine::IsPlayMode();
+        std::string debugKey = std::to_string(entity) + "_" + (isPlayMode ? "play" : "edit") + "_" + scriptData.scriptPath;
+        bool isFirstTimeForKey = (debuggedKeys.find(debugKey) == debuggedKeys.end());
+        if (isFirstTimeForKey) {
+            debuggedKeys.insert(debugKey);
+
+            ENGINE_PRINT("=== Script Inspector Debug [", isPlayMode ? "PLAY" : "EDIT", " MODE] ===");
+            ENGINE_PRINT("  Entity: ", entity, " Script: ", scriptData.scriptPath.c_str());
+            ENGINE_PRINT("  Instance type: ", usingPreviewInstance ? "PREVIEW" : "RUNTIME");
+
+            if (!parsedFields.empty()) {
+                ENGINE_PRINT("  File parsing: SUCCESS (", parsedFields.size(), " fields)");
+                std::string debugMsg = "  Parsed fields: ";
+                for (const auto& pf : parsedFields) {
+                    debugMsg += pf.name + ", ";
                 }
                 ENGINE_PRINT(debugMsg.c_str());
             } else {
-                ENGINE_PRINT("WARNING: Failed to parse field order from ", scriptData.scriptPath.c_str());
+                ENGINE_PRINT("  File parsing: FAILED - could not parse fields from file");
             }
+
+            ENGINE_PRINT("  Instance inspection: ", fields.size(), " fields");
+            std::string debugMsg = "  Instance fields: ";
+            for (const auto& pair : fieldMap) {
+                debugMsg += pair.first + ", ";
+            }
+            ENGINE_PRINT(debugMsg.c_str());
+            ENGINE_PRINT("===========================================");
         }
 
         // Check if we successfully parsed field order from the script file
         // (Don't check the instance for a fields table, because Component mixin flattens them)
-        hasFieldsTable = !fieldOrder.empty();
+        hasFieldsTable = !parsedFields.empty();
+
+        // WORKAROUND: In edit mode, preview instances may be incomplete because Lua modules
+        // don't load properly. If we parsed fields from the file but the instance has
+        // fewer fields, try to get field values from pendingInstanceState JSON.
+        // We consider the instance incomplete if it has fewer fields than we parsed from file
+        bool previewInstanceIncomplete = usingPreviewInstance &&
+                                          hasFieldsTable &&
+                                          (fieldMap.size() < parsedFields.size());
+
+        // Debug output for workaround detection (always log to help diagnose)
+        if (isFirstTimeForKey) {
+            ENGINE_PRINT("WORKAROUND CHECK: previewInstanceIncomplete = ", previewInstanceIncomplete ? "TRUE" : "FALSE");
+            ENGINE_PRINT("  usingPreviewInstance = ", usingPreviewInstance ? "TRUE" : "FALSE");
+            ENGINE_PRINT("  hasFieldsTable = ", hasFieldsTable ? "TRUE" : "FALSE");
+            ENGINE_PRINT("  fieldMap.size() = ", fieldMap.size(), ", parsedFields.size() = ", parsedFields.size());
+            ENGINE_PRINT("  pendingInstanceState.size() = ", scriptData.pendingInstanceState.size());
+        }
+
+        // If preview instance is incomplete, try to parse pendingInstanceState to get field values
+        std::unordered_map<std::string, std::string> savedFieldValues;
+        if (previewInstanceIncomplete && !scriptData.pendingInstanceState.empty())
+        {
+            try {
+                rapidjson::Document stateDoc;
+                stateDoc.Parse(scriptData.pendingInstanceState.c_str());
+                if (!stateDoc.HasParseError() && stateDoc.IsObject())
+                {
+                    for (auto it = stateDoc.MemberBegin(); it != stateDoc.MemberEnd(); ++it)
+                    {
+                        std::string fieldName = it->name.GetString();
+                        // Convert value to string representation
+                        rapidjson::StringBuffer buffer;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                        it->value.Accept(writer);
+                        savedFieldValues[fieldName] = buffer.GetString();
+                    }
+                }
+            } catch (...) {
+                // Ignore JSON parsing errors
+            }
+        }
 
         // Build filtered fields in declaration order
         if (hasFieldsTable)
         {
-            // DEBUG
-            if (isFirstTimeForEntity) {
-                ENGINE_PRINT("Using parsed field order (hasFieldsTable=", hasFieldsTable, ", fieldOrder.size=", fieldOrder.size(), ")");
-            }
-
             // Use the parsed field order from the script file
-            for (const auto& fieldName : fieldOrder)
+            for (const auto& parsedField : parsedFields)
             {
-                auto it = fieldMap.find(fieldName);
+                // Handle section headers
+                if (parsedField.isHeader)
+                {
+                    Scripting::FieldInfo headerField;
+                    headerField.name = "__HEADER__";
+                    headerField.type = Scripting::FieldType::Nil;  // Special marker for headers
+                    headerField.meta.displayName = parsedField.headerText;
+                    filteredFields.push_back(headerField);
+                    continue;
+                }
+
+                auto it = fieldMap.find(parsedField.name);
                 if (it != fieldMap.end())
                 {
                     const auto& field = it->second;
 
                     // Skip functions (Start, Update, etc.)
                     if (field.type == Scripting::FieldType::Function) {
-                        if (isFirstTimeForEntity) {
-                            ENGINE_PRINT("  Skipping function: ", field.name.c_str());
-                        }
                         continue;
                     }
 
@@ -3083,56 +3459,82 @@ void RegisterInspectorCustomRenderers()
 
                     // Add field in declaration order from file
                     filteredFields.push_back(field);
-
-                    // DEBUG
-                    if (isFirstTimeForEntity) {
-                        ENGINE_PRINT("  Added field: ", field.name.c_str(), " (type=", static_cast<int>(field.type), ")");
-                    }
                 }
-                else {
-                    // DEBUG
-                    if (isFirstTimeForEntity) {
-                        ENGINE_PRINT("  Field not found in map: ", fieldName.c_str());
-                    }
-                }
-            }
-        }
-        else if (hasFieldsTable && fieldOrder.empty())
-        {
-            // DEBUG
-            if (isFirstTimeForEntity) {
-                ENGINE_PRINT("Using alphabetical fallback (hasFieldsTable=", hasFieldsTable, ", fieldOrder.empty=true)");
-            }
-
-            // File parsing failed, fallback to sorting alphabetically for consistency
-            for (const auto& field : fields)
-            {
-                // Skip functions, private fields, special tables
-                if (field.type == Scripting::FieldType::Function)
-                    continue;
-                if (!field.name.empty() && field.name[0] == '_')
-                    continue;
-                if (field.name == "__editor" || field.name == "mixins" || field.name == "fields")
-                    continue;
-
-                // Check if field exists in fields table
-                auto it = fieldMap.find(field.name);
-                if (it != fieldMap.end())
+                else if (previewInstanceIncomplete)
                 {
-                    filteredFields.push_back(field);
+                    // WORKAROUND: Preview instance is incomplete, create a synthetic field entry
+                    // using the saved value from pendingInstanceState if available
+                    // Skip private fields
+                    if (!parsedField.name.empty() && parsedField.name[0] == '_')
+                        continue;
+
+                    Scripting::FieldInfo syntheticField;
+                    syntheticField.name = parsedField.name;
+                    // Mark as synthetic by using a special meta tooltip prefix
+                    syntheticField.meta.tooltip = "__SYNTHETIC__";
+
+                    // Try to get saved value and determine type
+                    auto savedIt = savedFieldValues.find(parsedField.name);
+                    if (savedIt != savedFieldValues.end())
+                    {
+                        const std::string& val = savedIt->second;
+                        syntheticField.defaultValueSerialized = val;
+
+                        // Guess type from JSON value
+                        if (val == "true" || val == "false") {
+                            syntheticField.type = Scripting::FieldType::Boolean;
+                        } else if (!val.empty() && (val[0] == '"')) {
+                            syntheticField.type = Scripting::FieldType::String;
+                        } else if (!val.empty() && (val[0] == '{' || val[0] == '[')) {
+                            syntheticField.type = Scripting::FieldType::Table;
+                        } else if (!val.empty() && (std::isdigit(val[0]) || val[0] == '-' || val[0] == '.')) {
+                            syntheticField.type = Scripting::FieldType::Number;
+                        } else {
+                            syntheticField.type = Scripting::FieldType::Other;
+                        }
+                    }
+                    else
+                    {
+                        // No saved value - use default value from Lua file if available
+                        const std::string& luaDefault = parsedField.defaultValue;
+
+                        if (!luaDefault.empty()) {
+                            // Determine type and value from Lua default
+                            if (luaDefault == "true" || luaDefault == "false") {
+                                syntheticField.type = Scripting::FieldType::Boolean;
+                                syntheticField.defaultValueSerialized = luaDefault;
+                            } else if (luaDefault.front() == '"' && luaDefault.back() == '"') {
+                                // Lua string literal - keep as-is for String type
+                                syntheticField.type = Scripting::FieldType::String;
+                                syntheticField.defaultValueSerialized = luaDefault;
+                            } else if (luaDefault.front() == '\'' && luaDefault.back() == '\'') {
+                                // Lua single-quoted string - convert to double-quoted
+                                syntheticField.type = Scripting::FieldType::String;
+                                syntheticField.defaultValueSerialized = "\"" + luaDefault.substr(1, luaDefault.size() - 2) + "\"";
+                            } else if (luaDefault.front() == '{') {
+                                // Lua table - can't easily convert, treat as Table
+                                syntheticField.type = Scripting::FieldType::Table;
+                                syntheticField.defaultValueSerialized = "{}";  // Placeholder
+                            } else {
+                                // Assume it's a number
+                                syntheticField.type = Scripting::FieldType::Number;
+                                syntheticField.defaultValueSerialized = luaDefault;
+                            }
+                        } else {
+                            // No default value found, default to Number with 0
+                            syntheticField.type = Scripting::FieldType::Number;
+                            syntheticField.defaultValueSerialized = "0";
+                        }
+                    }
+
+                    filteredFields.push_back(syntheticField);
                 }
             }
-
-            // Sort alphabetically as fallback for consistent ordering
-            std::sort(filteredFields.begin(), filteredFields.end(),
-                [](const Scripting::FieldInfo& a, const Scripting::FieldInfo& b) {
-                    return a.name < b.name;
-                });
         }
         else if (!hasFieldsTable)
         {
             // DEBUG
-            if (isFirstTimeForEntity) {
+            if (isFirstTimeForKey) {
                 ENGINE_PRINT("No fields table found (hasFieldsTable=false), using basic filtering");
             }
 
@@ -3166,6 +3568,16 @@ void RegisterInspectorCustomRenderers()
         bool anyModified = false;
         for (const auto& field : filteredFields)
         {
+            // Handle section headers
+            if (field.name == "__HEADER__" && field.type == Scripting::FieldType::Nil)
+            {
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", field.meta.displayName.c_str());
+                ImGui::Separator();
+                ImGui::Spacing();
+                continue;
+            }
 
             // Create display name (use metadata if available, otherwise use field name)
             std::string displayName = field.meta.displayName.empty() ? field.name : field.meta.displayName;
@@ -3189,6 +3601,21 @@ void RegisterInspectorCustomRenderers()
             bool fieldModified = false;
             std::string newValue;
 
+            // Get the comment for this field (for tooltip display)
+            std::string fieldComment;
+            auto commentIt = fieldComments.find(field.name);
+            if (commentIt != fieldComments.end()) {
+                fieldComment = commentIt->second;
+            }
+
+            // Helper lambda to render field label with tooltip
+            auto renderLabelWithTooltip = [&displayName, &fieldComment]() {
+                ImGui::Text("%s", displayName.c_str());
+                if (!fieldComment.empty() && ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("%s", fieldComment.c_str());
+                }
+            };
+
             // Render appropriate widget based on field type
             try {
                 switch (field.type)
@@ -3196,7 +3623,7 @@ void RegisterInspectorCustomRenderers()
                 case Scripting::FieldType::Number:
                 {
                     float value = std::stof(field.defaultValueSerialized);
-                    ImGui::Text("%s", displayName.c_str());
+                    renderLabelWithTooltip();
                     ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
 
@@ -3211,7 +3638,7 @@ void RegisterInspectorCustomRenderers()
                 case Scripting::FieldType::Boolean:
                 {
                     bool value = (field.defaultValueSerialized == "true" || field.defaultValueSerialized == "1");
-                    ImGui::Text("%s", displayName.c_str());
+                    renderLabelWithTooltip();
                     ImGui::SameLine(labelWidth);
                     ImGui::SetNextItemWidth(-1);
 
@@ -3236,7 +3663,7 @@ void RegisterInspectorCustomRenderers()
                     if (assetType != AssetType::None && IsValidGUID(currentValue))
                     {
                         // Render as asset drag-drop
-                        ImGui::Text("%s", displayName.c_str());
+                        renderLabelWithTooltip();
                         ImGui::SameLine(labelWidth);
                         ImGui::SetNextItemWidth(-1);
 
@@ -3258,7 +3685,7 @@ void RegisterInspectorCustomRenderers()
                         std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
                         buffer[copyLen] = '\0';
 
-                        ImGui::Text("%s", displayName.c_str());
+                        renderLabelWithTooltip();
                         ImGui::SameLine(labelWidth);
                         ImGui::SetNextItemWidth(-1);
 
@@ -3298,7 +3725,7 @@ void RegisterInspectorCustomRenderers()
                     if (isVector3)
                     {
                         // Render as vector3
-                        ImGui::Text("%s", displayName.c_str());
+                        renderLabelWithTooltip();
                         ImGui::SameLine(labelWidth);
                         ImGui::SetNextItemWidth(-1);
 
@@ -3328,16 +3755,19 @@ void RegisterInspectorCustomRenderers()
                         if (doc.HasParseError())
                         {
                             ImGui::Text("%s: [Invalid JSON data]", displayName.c_str());
+                            if (!fieldComment.empty() && ImGui::IsItemHovered()) {
+                                ImGui::SetTooltip("%s", fieldComment.c_str());
+                            }
                         }
                         else if (doc.IsArray())
                         {
                             // Determine asset type for array elements
                             AssetType assetType = GetAssetTypeFromFieldName(field.name);
-                            
+
                             if (assetType != AssetType::None)
                             {
                                 // Render as array of assets
-                                ImGui::Text("%s", displayName.c_str());
+                                renderLabelWithTooltip();
                                 bool arrayModified = false;
                                 rapidjson::Document newDoc;
                                 newDoc.SetArray();
@@ -3434,11 +3864,11 @@ void RegisterInspectorCustomRenderers()
                             {
                                 // Render as array of assets (same as JSON array case)
                                 AssetType assetType = GetAssetTypeFromFieldName(field.name);
-                                
+
                                 if (assetType != AssetType::None)
                                 {
                                     // Render as array of assets
-                                    ImGui::Text("%s", displayName.c_str());
+                                    renderLabelWithTooltip();
                                     bool arrayModified = false;
                                     rapidjson::Document newDoc;
                                     newDoc.SetArray();
@@ -3513,9 +3943,9 @@ void RegisterInspectorCustomRenderers()
                                 {
                                     // Generic array-like table - show as text for now
                                     ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
-                                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
-                                    {
-                                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                    if (ImGui::IsItemHovered()) {
+                                        std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                                        if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
                                     }
                                 }
                             }
@@ -3523,9 +3953,9 @@ void RegisterInspectorCustomRenderers()
                             {
                                 // Generic table
                                 ImGui::Text("%s: [Table]", displayName.c_str());
-                                if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
-                                {
-                                    ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                if (ImGui::IsItemHovered()) {
+                                    std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                                    if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
                                 }
                             }
                         }
@@ -3536,9 +3966,9 @@ void RegisterInspectorCustomRenderers()
                 default:
                 {
                     ImGui::Text("%s: %s", displayName.c_str(), field.defaultValueSerialized.c_str());
-                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
-                    {
-                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                    if (ImGui::IsItemHovered()) {
+                        std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                        if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
                     }
                     break;
                 }
@@ -3552,17 +3982,67 @@ void RegisterInspectorCustomRenderers()
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error rendering field %s", field.name.c_str());
             }
 
-            // Show tooltip if available
-            if (!field.meta.tooltip.empty() && !fieldModified &&
-                (field.type != Scripting::FieldType::Table) && ImGui::IsItemHovered())
+            // Show tooltip if available (prioritize Lua file comment over __editor metadata)
+            // Don't show __SYNTHETIC__ marker as tooltip
+            if (!fieldModified && (field.type != Scripting::FieldType::Table) && ImGui::IsItemHovered())
             {
-                ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                if (!tooltip.empty() && tooltip != "__SYNTHETIC__") {
+                    ImGui::SetTooltip("%s", tooltip.c_str());
+                }
             }
 
-            // If field was modified, update the Lua instance
+            // Check if this is a synthetic field (from incomplete preview instance)
+            bool isSyntheticField = (field.meta.tooltip == "__SYNTHETIC__");
+
+            // If field was modified, update the Lua instance or pendingInstanceState
             if (fieldModified && !newValue.empty())
             {
-                if (inspector.SetFieldFromString(L, instanceToInspect, field, newValue))
+                if (isSyntheticField)
+                {
+                    // SYNTHETIC FIELD: Cannot update Lua instance, directly modify pendingInstanceState JSON
+                    anyModified = true;
+
+                    try {
+                        rapidjson::Document stateDoc;
+                        if (!scriptData.pendingInstanceState.empty()) {
+                            stateDoc.Parse(scriptData.pendingInstanceState.c_str());
+                        }
+                        if (stateDoc.HasParseError() || !stateDoc.IsObject()) {
+                            stateDoc.SetObject();
+                        }
+
+                        auto& alloc = stateDoc.GetAllocator();
+
+                        // Remove existing field if present
+                        if (stateDoc.HasMember(field.name.c_str())) {
+                            stateDoc.RemoveMember(field.name.c_str());
+                        }
+
+                        // Parse the new value and add it
+                        rapidjson::Document valueDoc;
+                        valueDoc.Parse(newValue.c_str());
+                        if (!valueDoc.HasParseError()) {
+                            rapidjson::Value nameVal(field.name.c_str(), alloc);
+                            rapidjson::Value valCopy(valueDoc, alloc);
+                            stateDoc.AddMember(nameVal, valCopy, alloc);
+                        }
+
+                        // Serialize back
+                        rapidjson::StringBuffer buffer;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                        stateDoc.Accept(writer);
+                        scriptData.pendingInstanceState = buffer.GetString();
+
+                        ENGINE_PRINT("SYNTHETIC FIELD UPDATE: '", field.name.c_str(), "' = ", newValue.c_str());
+                    } catch (...) {
+                        ENGINE_PRINT("Error updating synthetic field: ", field.name.c_str());
+                    }
+
+                    // Take snapshot for undo
+                    SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
+                }
+                else if (inspector.SetFieldFromString(L, instanceToInspect, field, newValue))
                 {
                     anyModified = true;
 
@@ -4175,6 +4655,155 @@ void RegisterInspectorCustomRenderers()
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
     ReflectionRenderer::RegisterFieldRenderer("SliderComponent", "handleEntityGuid",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+
+    // ==================== UI ANCHOR COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("UIAnchorComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    {
+        UIAnchorComponent& anchor = *static_cast<UIAnchorComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Anchor Preset dropdown
+        ImGui::Text("Preset");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* presetNames[] = {
+            "Custom", "Top Left", "Top Center", "Top Right",
+            "Middle Left", "Center", "Middle Right",
+            "Bottom Left", "Bottom Center", "Bottom Right"
+        };
+        int currentPreset = static_cast<int>(anchor.GetCurrentPreset());
+        if (ImGui::Combo("##AnchorPreset", &currentPreset, presetNames, IM_ARRAYSIZE(presetNames))) {
+            anchor.SetPreset(static_cast<UIAnchorPreset>(currentPreset));
+            SnapshotManager::GetInstance().TakeSnapshot("Change Anchor Preset");
+        }
+
+        ImGui::Separator();
+
+        // Anchor position
+        ImGui::Text("Anchor X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::SliderFloat("##AnchorX", &anchor.anchorX, 0.0f, 1.0f, "%.2f")) {
+            // Value changed
+        }
+
+        ImGui::Text("Anchor Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (UndoableWidgets::SliderFloat("##AnchorY", &anchor.anchorY, 0.0f, 1.0f, "%.2f")) {
+            // Value changed
+        }
+
+        ImGui::Separator();
+
+        // Offset
+        ImGui::Text("Offset X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##OffsetX", &anchor.offsetX, 1.0f, -10000.0f, 10000.0f, "%.1f");
+
+        ImGui::Text("Offset Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##OffsetY", &anchor.offsetY, 1.0f, -10000.0f, 10000.0f, "%.1f");
+
+        ImGui::Separator();
+
+        // Size Mode dropdown
+        ImGui::Text("Size Mode");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* sizeModeNames[] = {
+            "Fixed", "Stretch X", "Stretch Y", "Stretch Both", "Scale Uniform"
+        };
+        int currentSizeMode = static_cast<int>(anchor.sizeMode);
+        if (ImGui::Combo("##SizeMode", &currentSizeMode, sizeModeNames, IM_ARRAYSIZE(sizeModeNames))) {
+            anchor.sizeMode = static_cast<UISizeMode>(currentSizeMode);
+            SnapshotManager::GetInstance().TakeSnapshot("Change Size Mode");
+        }
+
+        // Show margins for stretch modes
+        if (anchor.sizeMode == UISizeMode::StretchX ||
+            anchor.sizeMode == UISizeMode::StretchY ||
+            anchor.sizeMode == UISizeMode::StretchBoth) {
+
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Margins");
+
+            ImGui::Text("Left");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginLeft", &anchor.marginLeft, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Right");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginRight", &anchor.marginRight, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Top");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginTop", &anchor.marginTop, 1.0f, 0.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Bottom");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##MarginBottom", &anchor.marginBottom, 1.0f, 0.0f, 10000.0f, "%.0f");
+        }
+
+        // Show reference resolution for ScaleUniform mode
+        if (anchor.sizeMode == UISizeMode::ScaleUniform) {
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Reference Resolution");
+
+            ImGui::Text("Width");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##RefWidth", &anchor.referenceWidth, 1.0f, 1.0f, 10000.0f, "%.0f");
+
+            ImGui::Text("Height");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##RefHeight", &anchor.referenceHeight, 1.0f, 1.0f, 10000.0f, "%.0f");
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide UIAnchorComponent fields from default rendering
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "anchorX",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "anchorY",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "offsetX",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "offsetY",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginLeft",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginRight",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginTop",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "marginBottom",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "referenceWidth",
+                                              [](const char*, void*, Entity, ECSManager&)
+                                              { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("UIAnchorComponent", "referenceHeight",
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 

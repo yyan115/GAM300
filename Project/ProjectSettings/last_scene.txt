@@ -1,1 +1,1 @@
-../../Resources/Scenes/CutSceneTest.scene
+Resources/Scenes/04_GameLevel.scene

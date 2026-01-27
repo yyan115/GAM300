@@ -62,10 +62,15 @@ void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) 
 void CharacterControllerSystem::Shutdown() {
     PROFILE_FUNCTION();
 
-    // Manually destroy each controller 
-    for (auto& [entityId, controller] : m_controllers) {
-        if (controller) {
-            controller.reset(); // Explicitly destroy
+    // Remove from char-vs-char collision first
+    if (m_charVsCharCollision) {
+        for (auto& [entityId, controller] : m_controllers) {
+            if (!controller) continue;
+            JPH::CharacterVirtual* character =
+                const_cast<JPH::CharacterVirtual*>(controller->GetCharacterVirtual());
+            if (character) {
+                m_charVsCharCollision->Remove(character);
+            }
         }
     }
     // Clear the map

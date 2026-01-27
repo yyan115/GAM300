@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "007eb270ca8d0285-0003e0aaf0000003",
-        "source": "../../Resources/Scripts/Gameplay/GroundDeathState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundDeathState.lua"
+        "guid": "003cc1d046f47cd6-0004078218000015",
+        "source": "../../Resources/Scripts/GamePlay/GroundDeathState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundDeathState.lua"
     }
 }

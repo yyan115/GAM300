@@ -1,29 +1,183 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include "Reflection/ReflectionBase.hpp"
 #include <tuple>
+
+// ============================================================================
+// VECTOR2D (for 2D values like axis input, pointer position)
+// ============================================================================
+struct Vector2D {
+    REFL_SERIALIZABLE
+
+    float x, y;
+    Vector2D() : x(0), y(0) {}
+    Vector2D(float _x, float _y) : x(_x), y(_y) {}
+};
+
+// ============================================================================
+// TOUCH INFO (for full touch tracking - phases, IDs, etc.)
+// ============================================================================
+struct TouchInfo {
+    int id = -1;                    // Unique finger ID (persists while finger is down)
+    std::string phase = "none";     // "began", "moved", "stationary", "ended"
+    Vector2D position;              // Current position (normalized 0-1)
+    Vector2D startPosition;         // Where the touch started
+    Vector2D delta;                 // Movement since last frame
+    std::string entity = "";        // Entity name if touch is on UI, empty string if none
+    float duration = 0.0f;          // How long the touch has been active (seconds)
+};
 
 // ============================================================================
 // INPUT SYSTEM WRAPPERS
 // ============================================================================
 #include "Input/Keys.h"
-#include "Input/InputManager.hpp"
+#include "Input/InputManager.h"
+#include <unordered_map>
+#include <string>
 
-// Wrapper functions to convert int to enum for Input functions
 namespace InputWrappers {
-    inline bool GetKey(int key) {
-        return InputManager::GetKey(static_cast<Input::Key>(key));
+    // Action-based input (platform-agnostic)
+    inline bool IsActionPressed(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionPressed(action);
     }
 
-    inline bool GetKeyDown(int key) {
-        return InputManager::GetKeyDown(static_cast<Input::Key>(key));
+    inline bool IsActionJustPressed(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustPressed(action);
     }
 
-    inline bool GetMouseButton(int button) {
-        return InputManager::GetMouseButton(static_cast<Input::MouseButton>(button));
+    inline bool IsActionJustReleased(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionJustReleased(action);
     }
 
-    inline bool GetMouseButtonDown(int button) {
-        return InputManager::GetMouseButtonDown(static_cast<Input::MouseButton>(button));
+    // Axis input returns Vector2D (access with .x and .y in Lua)
+    inline Vector2D GetAxis(const std::string& axisName) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 axis = g_inputManager->GetAxis(axisName);
+        return Vector2D(axis.x, axis.y);
+    }
+
+    // Batch API for Lua optimization - returns all action states at once
+    // Lua example: local states = UnifiedInput.GetAllActionStates()
+    //              if states["Jump"] then ... end
+    inline std::unordered_map<std::string, bool> GetAllActionStates() {
+        if (!g_inputManager) return {};
+        return g_inputManager->GetAllActionStates();
+    }
+
+    // Get all axis states at once
+    // Returns map of axis name -> Vector2D with x, y properties
+    inline std::unordered_map<std::string, Vector2D> GetAllAxisStates() {
+        if (!g_inputManager) return {};
+
+        auto axisMap = g_inputManager->GetAllAxisStates();
+        std::unordered_map<std::string, Vector2D> result;
+
+        for (const auto& [name, vec] : axisMap) {
+            result[name] = Vector2D(vec.x, vec.y);
+        }
+
+        return result;
+    }
+
+    // Pointer abstraction (for UI)
+    inline bool IsPointerPressed() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerPressed();
+    }
+
+    inline bool IsPointerJustPressed() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsPointerJustPressed();
+    }
+
+    inline Vector2D GetPointerPosition() {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetPointerPosition();
+        return Vector2D(pos.x, pos.y);
+    }
+
+    // Multi-touch support
+    inline int GetTouchCount() {
+        if (!g_inputManager) return 0;
+        return g_inputManager->GetTouchCount();
+    }
+
+    inline Vector2D GetTouchPosition(int index) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetTouchPosition(index);
+        return Vector2D(pos.x, pos.y);
+    }
+
+    // Entity-based touch position (for joysticks - Android)
+    // Returns touch position relative to entity center in game units
+    inline Vector2D GetActionTouchPosition(const std::string& action) {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 pos = g_inputManager->GetActionTouchPosition(action);
+        return Vector2D(pos.x, pos.y);
+    }
+
+    // Camera drag support (Android - unhandled touches)
+    inline bool IsDragging() {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsDragging();
+    }
+
+    inline Vector2D GetDragDelta() {
+        if (!g_inputManager) return Vector2D(0.0f, 0.0f);
+        glm::vec2 delta = g_inputManager->GetDragDelta();
+        return Vector2D(delta.x, delta.y);
+    }
+
+    // ========== Full Touch System ==========
+
+    // Convert phase enum to string for Lua
+    inline std::string PhaseToString(InputManager::TouchPhase phase) {
+        switch (phase) {
+            case InputManager::TouchPhase::Began: return "began";
+            case InputManager::TouchPhase::Moved: return "moved";
+            case InputManager::TouchPhase::Stationary: return "stationary";
+            case InputManager::TouchPhase::Ended: return "ended";
+            default: return "none";
+        }
+    }
+
+    // Get all touches as a vector of TouchInfo
+    inline std::vector<TouchInfo> GetTouches() {
+        std::vector<TouchInfo> result;
+        if (!g_inputManager) return result;
+
+        auto touches = g_inputManager->GetTouches();
+        for (const auto& t : touches) {
+            TouchInfo info;
+            info.id = t.id;
+            info.phase = PhaseToString(t.phase);
+            info.position = Vector2D(t.position.x, t.position.y);
+            info.startPosition = Vector2D(t.startPosition.x, t.startPosition.y);
+            info.delta = Vector2D(t.delta.x, t.delta.y);
+            info.entity = t.entityName;
+            info.duration = t.duration;
+            result.push_back(info);
+        }
+        return result;
+    }
+
+    // Get a specific touch by ID
+    inline TouchInfo GetTouchById(int touchId) {
+        TouchInfo info;
+        if (!g_inputManager) return info;
+
+        auto t = g_inputManager->GetTouchById(touchId);
+        info.id = t.id;
+        info.phase = PhaseToString(t.phase);
+        info.position = Vector2D(t.position.x, t.position.y);
+        info.startPosition = Vector2D(t.startPosition.x, t.startPosition.y);
+        info.delta = Vector2D(t.delta.x, t.delta.y);
+        info.entity = t.entityName;
+        info.duration = t.duration;
+        return info;
     }
 }
 
@@ -188,9 +342,25 @@ namespace CharacterControllerWrappers {
             controller->SetGravity(Vector3D(x, y, z));
     }
 
-    inline void Destroy(CharacterController* controller) {
-        if (controller)
-            delete controller;
+    inline void DestroyByEntity(Entity id)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->RemoveController(id);
+    }
+
+    inline void UpdateAll(float dt)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->Update(dt, ecsManager);
+    }
+
+    inline void ClearAll()
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->Shutdown();
     }
 }
 
@@ -304,7 +474,8 @@ namespace TimeWrappers {
 
 namespace SceneWrappers {
     inline void LoadScene(const std::string& scenePath) {
-        SceneManager::GetInstance().LoadScene(scenePath);
+        // Pass true for callingFromLua so editor stays in play mode during scene transitions
+        SceneManager::GetInstance().LoadScene(scenePath, true);
     }
     
     inline std::string GetCurrentSceneName() {
@@ -412,16 +583,199 @@ namespace AudioManagerWrappers {
     inline void StopAll() {
         AudioManager::GetInstance().StopAll();
     }
-    
+
     inline void SetMasterVolume(float volume) {
         AudioManager::GetInstance().SetMasterVolume(volume);
     }
-    
+
     inline float GetMasterVolume() {
         return AudioManager::GetInstance().GetMasterVolume();
     }
-    
+
     inline void SetGlobalPaused(bool paused) {
         AudioManager::GetInstance().SetGlobalPaused(paused);
+    }
+
+    // Bus/AudioMixerGroup controls (for BGM, SFX, Master buses)
+    inline void SetBusVolume(const std::string& busName, float volume) {
+        AudioManager::GetInstance().SetBusVolume(busName, volume);
+    }
+
+    inline float GetBusVolume(const std::string& busName) {
+        return AudioManager::GetInstance().GetBusVolume(busName);
+    }
+
+    inline void SetBusPaused(const std::string& busName, bool paused) {
+        AudioManager::GetInstance().SetBusPaused(busName, paused);
+    }
+}
+
+// ============================================================================
+// PLATFORM WRAPPERS
+// ============================================================================
+
+namespace PlatformWrappers {
+    // Returns true if running on Android, false on desktop
+    inline bool IsAndroid() {
+#ifdef ANDROID
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    // Returns true if running on desktop (Windows/Linux/Mac)
+    inline bool IsDesktop() {
+#ifdef ANDROID
+        return false;
+#else
+        return true;
+#endif
+    }
+
+    // Returns platform name as string
+    inline std::string GetPlatformName() {
+#ifdef ANDROID
+        return "Android";
+#elif defined(_WIN32)
+        return "Windows";
+#elif defined(__linux__)
+        return "Linux";
+#elif defined(__APPLE__)
+        return "macOS";
+#else
+        return "Unknown";
+#endif
+    }
+}
+
+// ============================================================================
+// GAME SETTINGS WRAPPERS
+// ============================================================================
+#include "Settings/GameSettings.hpp"
+
+namespace GameSettingsWrappers {
+    // Initialization (safe to call multiple times)
+    inline void Init() {
+        GameSettingsManager::GetInstance().Initialize();
+    }
+
+    // Reset all settings to defaults
+    inline void ResetToDefaults() {
+        GameSettingsManager::GetInstance().ResetToDefaults();
+    }
+
+    // Save settings to disk (call when closing settings menu)
+    inline void Save() {
+        GameSettingsManager::GetInstance().SaveSettings();
+    }
+
+    // Save only if settings changed (optimization)
+    inline void SaveIfDirty() {
+        GameSettingsManager::GetInstance().SaveIfDirty();
+    }
+
+    // Audio setters (mark dirty, don't auto-save for performance)
+    inline void SetMasterVolume(float volume) {
+        GameSettingsManager::GetInstance().SetMasterVolume(volume);
+    }
+
+    inline void SetBGMVolume(float volume) {
+        GameSettingsManager::GetInstance().SetBGMVolume(volume);
+    }
+
+    inline void SetSFXVolume(float volume) {
+        GameSettingsManager::GetInstance().SetSFXVolume(volume);
+    }
+
+    // Audio getters
+    inline float GetMasterVolume() {
+        return GameSettingsManager::GetInstance().GetMasterVolume();
+    }
+
+    inline float GetBGMVolume() {
+        return GameSettingsManager::GetInstance().GetBGMVolume();
+    }
+
+    inline float GetSFXVolume() {
+        return GameSettingsManager::GetInstance().GetSFXVolume();
+    }
+
+    // Graphics setters (mark dirty, don't auto-save for performance)
+    inline void SetGamma(float gamma) {
+        GameSettingsManager::GetInstance().SetGamma(gamma);
+    }
+
+    inline void SetExposure(float exposure) {
+        GameSettingsManager::GetInstance().SetExposure(exposure);
+    }
+
+    // Graphics getters
+    inline float GetGamma() {
+        return GameSettingsManager::GetInstance().GetGamma();
+    }
+
+    inline float GetExposure() {
+        return GameSettingsManager::GetInstance().GetExposure();
+    }
+
+    // Default value getters (for UI reset functionality)
+    inline float GetDefaultMasterVolume() {
+        return GameSettingsManager::GetDefaultMasterVolume();
+    }
+
+    inline float GetDefaultBGMVolume() {
+        return GameSettingsManager::GetDefaultBGMVolume();
+    }
+
+    inline float GetDefaultSFXVolume() {
+        return GameSettingsManager::GetDefaultSFXVolume();
+    }
+
+    inline float GetDefaultGamma() {
+        return GameSettingsManager::GetDefaultGamma();
+    }
+
+    inline float GetDefaultExposure() {
+        return GameSettingsManager::GetDefaultExposure();
+    }
+}
+
+// ============================================================================
+// NAV SYSTEM WRAPPERS
+// ============================================================================
+#include "Game AI/NavSystem.hpp"
+
+namespace NavWrappers {
+
+    inline int RequestPathXZ(lua_State* L)
+    {
+        // Expect 5 numbers on the stack
+        float sx = (float)luaL_checknumber(L, 1);
+        float sz = (float)luaL_checknumber(L, 2);
+        float gx = (float)luaL_checknumber(L, 3);
+        float gz = (float)luaL_checknumber(L, 4);
+        Entity e = (Entity)luaL_checknumber(L, 5);
+
+        const auto path = NavSystem::Get().RequestPathXZ(sx, sz, gx, gz, e);
+
+        lua_newtable(L); // push result table
+
+        int i = 1;
+        for (const auto& p : path)
+        {
+            lua_newtable(L);               // point table
+            lua_pushnumber(L, p.x); lua_setfield(L, -2, "x");
+            lua_pushnumber(L, p.y); lua_setfield(L, -2, "y");
+            lua_pushnumber(L, p.z); lua_setfield(L, -2, "z");
+
+            lua_rawseti(L, -2, i++);       // result[i] = point
+        }
+
+        return 1; // returning 1 value (the table)
+    }
+
+    inline float GetGroundY(Entity entity) {
+        return NavSystem::Get().GetGroundY(entity);
     }
 }

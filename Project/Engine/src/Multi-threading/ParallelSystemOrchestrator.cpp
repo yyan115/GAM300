@@ -8,10 +8,12 @@ void ParallelSystemOrchestrator::Update() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"UpdateChannel">, scheduler };
 
     // Update physics and transform systems sequentially first.
+    // Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
-    mainECS.physicsSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
-    mainECS.characterControllerSystem->Update((float)TimeManager::GetFixedDeltaTime(), mainECS);
+    mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+    mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
+    mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
     mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
 
 	// Then update the other systems in parallel.

@@ -121,12 +121,13 @@ return Component {
     Update = function(self, dt) 
         local newState = currentState
 
-        -- Determine new state 
+        -- Determine new state
         if self.Health <= 0 then
             newState = FALL
-        elseif Input.GetKeyDown(Input.Key.U) then
-            TakeDamage(self)
-            newState = TAKE_DAMAGE
+        -- Debug key removed - use proper damage system instead
+        -- elseif Input.IsActionJustPressed("DebugDamage") then
+        --     TakeDamage(self)
+        --     newState = TAKE_DAMAGE
         elseif IsPlayerInRange() then
             newState = ATTACK
         else

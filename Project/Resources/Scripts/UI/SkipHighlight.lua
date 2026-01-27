@@ -43,9 +43,8 @@ return Component {
 
 
         -- GET GAME COORDINATE FOR MOUSE
-        local mouseX = Input.GetMouseX()
-        local mouseY = Input.GetMouseY()
-        local mouseCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
+        local mousePos = Input.GetPointerPosition()
+        local mouseCoordinate = Engine.GetGameCoordinate(mousePos.x, mousePos.y)
 
         -- CHECK IF COORDINATE IS VALID
         if not mouseCoordinate or not mouseCoordinate[1] or not mouseCoordinate[2] then

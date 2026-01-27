@@ -18,6 +18,8 @@
 #include "ECS/System.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "ECS/NameComponent.hpp"
+#include "ECS/LayerManager.hpp"
 //#include "Physics/JoltInclude.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
@@ -25,8 +27,16 @@
 #include "Physics/CollisionFilters.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
+#include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Transform/TransformComponent.hpp"
 #include <cstdarg>
+
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
+#include <Jolt/Physics/Collision/CollideShape.h>   // <-- gives CollideShapeSettings
+#include <Jolt/Physics/Body/BodyFilter.h>          // BodyFilter
+#include <Jolt/Physics/Collision/ShapeFilter.h>    // ShapeFilter
+#include "Game AI/NavSystem.hpp"
+
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -102,14 +112,14 @@ bool PhysicsSystem::InitialiseJolt() {
 #ifdef JPH_OBJECT_LAYER_BITS
         //JPH_OBJECT_LAYER_BITS
 #else
-        16  // default
+        //16  // default
 #endif
         //);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_ENABLE_ASSERTS=%d",
 #ifdef JPH_ENABLE_ASSERTS
             //1
 #else
-            0
+            //0
 #endif
             //);
 #endif
@@ -168,6 +178,10 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
 #endif
 
+    // Clear CCs first so nothing holds old Jolt pointers between play sessions
+    if (ecsManager.characterControllerSystem)
+        ecsManager.characterControllerSystem->Shutdown();
+
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
     // Remove any previously created bodies from last play session
@@ -207,11 +221,36 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         JPH::RVec3 updatedPos = pos + offsetInWorld;
 
         // --- Set proper collision layer ---
-        //if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
-        if (rb.motion == Motion::Static)
-            col.layer = Layers::NON_MOVING;
+        int ecsLayerIndex = -1;
+        if (ecsManager.HasComponent<LayerComponent>(e))
+            ecsLayerIndex = ecsManager.GetComponent<LayerComponent>(e).layerIndex;
+
+        const int groundIdx = LayerManager::GetInstance().GetLayerIndex("Ground");
+        const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
+
+        // IMPORTANT: Nav layers override motion-based layers.
+        if (ecsLayerIndex == groundIdx)
+        {
+            col.layer = Layers::NAV_GROUND;
+
+            /*if (ecsManager.HasComponent<NameComponent>(e))
+                std::cout << "[Physics] NAV_GROUND body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
+        }
+        else if (ecsLayerIndex == obstacleIdx)
+        {
+            col.layer = Layers::NAV_OBSTACLE;
+
+            /*if (ecsManager.HasComponent<NameComponent>(e))
+                std::cout << "[Physics] NAV_OBSTACLE body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
+        }
         else
-            col.layer = Layers::MOVING;
+        {
+            //if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
+            if (rb.motion == Motion::Static)
+                col.layer = Layers::NON_MOVING;
+            else
+                col.layer = Layers::MOVING;
+        }
 
         // --- Always create body for each entity (use entityBodyMap for tracking) ---
         {
@@ -219,13 +258,33 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             // ALWAYS create shape when creating/recreating body
             switch (col.shapeType) {
             case ColliderShapeType::Box:
-                // Apply local scale
-                col.shape = new JPH::BoxShape(JPH::Vec3(
-                    col.boxHalfExtents.x * tr.localScale.x,
-                    col.boxHalfExtents.y * tr.localScale.y,
-                    col.boxHalfExtents.z * tr.localScale.z
-                ));
+            {
+                // Apply local scale safely
+                float sx = std::abs(tr.localScale.x);
+                float sy = std::abs(tr.localScale.y);
+                float sz = std::abs(tr.localScale.z);
+
+                float hx = std::abs(col.boxHalfExtents.x) * sx;
+                float hy = std::abs(col.boxHalfExtents.y) * sy;
+                float hz = std::abs(col.boxHalfExtents.z) * sz;
+
+                // Clamp to avoid invalid / near-zero boxes (prevents Jolt asserts)
+                constexpr float kMinHalf = 0.05f; // tune if you need thinner walls
+                hx = std::max(hx, kMinHalf);
+                hy = std::max(hy, kMinHalf);
+                hz = std::max(hz, kMinHalf);
+
+                // Prefer settings so we can force convex radius = 0
+                JPH::BoxShapeSettings settings(JPH::Vec3(hx, hy, hz));
+                settings.mConvexRadius = 0.0f;
+
+                JPH::Shape::ShapeResult result = settings.Create();
+                if (result.IsValid())
+                    col.shape = result.Get();
+                else
+                    col.shape = new JPH::BoxShape(JPH::Vec3(hx, hy, hz)); // fallback
                 break;
+            }
 
             case ColliderShapeType::Sphere:
                 col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ tr.localScale.x, tr.localScale.y, tr.localScale.z }));
@@ -237,9 +296,11 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 break;
 
             case ColliderShapeType::Cylinder:
+            {
                 col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * tr.localScale.y,
                     col.cylinderRadius * std::max(tr.localScale.x, tr.localScale.z));
                 break;
+            }
 
             case ColliderShapeType::MeshShape:
             {
@@ -259,16 +320,20 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                                 const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
                                 const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
 
+                                float sx = std::abs(tr.localScale.x);
+                                float sy = std::abs(tr.localScale.y);
+                                float sz = std::abs(tr.localScale.z);
+
                                 // Apply local scale to vertices
-                                JPH::Float3 p0(v0.position.x * tr.localScale.x,
-                                    v0.position.y * tr.localScale.y,
-                                    v0.position.z * tr.localScale.z);
-                                JPH::Float3 p1(v1.position.x * tr.localScale.x,
-                                    v1.position.y * tr.localScale.y,
-                                    v1.position.z * tr.localScale.z);
-                                JPH::Float3 p2(v2.position.x * tr.localScale.x,
-                                    v2.position.y * tr.localScale.y,
-                                    v2.position.z * tr.localScale.z);
+                                JPH::Float3 p0(v0.position.x * sx,
+                                    v0.position.y * sy,
+                                    v0.position.z * sz);
+                                JPH::Float3 p1(v1.position.x * sx,
+                                    v1.position.y * sy,
+                                    v1.position.z * sz);
+                                JPH::Float3 p2(v2.position.x * sx,
+                                    v2.position.y * sy,
+                                    v2.position.z * sz);
 
                                 triangles.push_back(JPH::Triangle(p0, p1, p2));
                             }
@@ -289,13 +354,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 }
                 break;
             }
-            }
+        }
 
-            // Map our Motion enum to JPH::EMotionType
-            const auto motionType =
-                rb.motion == Motion::Static ? JPH::EMotionType::Static :
-                rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
-                JPH::EMotionType::Dynamic;
+        // Map our Motion enum to JPH::EMotionType
+        const auto motionType =
+            rb.motion == Motion::Static ? JPH::EMotionType::Static :
+            rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
+            JPH::EMotionType::Dynamic;
 
             // Create body creation settings
             //JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
@@ -351,9 +416,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 rb.id.GetIndex(), static_cast<int>(motionType), col.layer, rb.ccd,
                 pos.GetX(), pos.GetY(), pos.GetZ());
 #endif
-            }
         }
     }
+}
+
+void PhysicsSystem::PostInitialize(ECSManager& ecsManager) {
+    NavSystem::Get().Build(*this, ecsManager);
+}
 
 
 //KINEMATIC: NOT AFFECTED BY GRAVITY, FORCES, IMPULSES, OTHER BODIES MOVING IT.
@@ -643,7 +712,439 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
         result.hitPoint = Vector3D(static_cast<float>(hitPos.GetX()),
                                    static_cast<float>(hitPos.GetY()),
                                    static_cast<float>(hitPos.GetZ()));
+
+        result.bodyId = hit.mBodyID;
     }
 
     return result;
+}
+
+//PhysicsSystem::RaycastResult PhysicsSystem::RaycastGroundOnly(
+//    const Vector3D& origin,
+//    float maxDistance
+//) {
+//    RaycastResult result;
+//
+//    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+//    JPH::BodyInterface& bi = physics.GetBodyInterface();
+//
+//    // Down ray
+//    const JPH::Vec3 dir(0.0f, -1.0f, 0.0f);
+//
+//    JPH::RVec3 start(origin.x, origin.y, origin.z);
+//    float remaining = maxDistance;
+//
+//    constexpr int   MAX_SKIPS = 24;
+//    constexpr float SKIP_EPS = 0.02f; // move slightly past the hit surface
+//
+//    for (int i = 0; i < MAX_SKIPS && remaining > 0.0f; ++i)
+//    {
+//        JPH::RRayCast ray(start, dir * remaining);
+//
+//        JPH::RayCastResult hit;
+//        if (!query.CastRay(ray, hit))
+//            return result; // no hit at all
+//
+//        const JPH::BodyID body = hit.mBodyID;
+//        if (body.IsInvalid())
+//            return result;
+//
+//        // How far along this sub-ray we hit
+//        const float traveled = hit.mFraction * remaining;
+//
+//        // Decide whether to ignore this hit
+//        bool ignore = false;
+//
+//        // Ignore Jolt layers you never want nav ground to be
+//        const JPH::ObjectLayer ol = bi.GetObjectLayer(body);
+//        if (ol == Layers::SENSOR || ol == Layers::CHARACTER)
+//            ignore = true;
+//
+//        // Ignore ECS "Obstacle" layer (pedestal/pillars)
+//        if (!ignore && BodyIsObstacle(body))
+//            ignore = true;
+//
+//        if (ignore)
+//        {
+//            // Move start slightly past this surface and keep raycasting down
+//            const float advance = traveled + SKIP_EPS;
+//            start = start + dir * advance;
+//            remaining -= advance;
+//            continue;
+//        }
+//
+//        // Accept this as ground
+//        result.hit = true;
+//        result.distance = traveled;
+//
+//        const JPH::RVec3 hitPos = start + dir * traveled;
+//        result.hitPoint = Vector3D(
+//            (float)hitPos.GetX(),
+//            (float)hitPos.GetY(),
+//            (float)hitPos.GetZ()
+//        );
+//        result.bodyId = body;
+//        return result;
+//    }
+//
+//    return result;
+//}
+//
+//PhysicsSystem::RaycastResult PhysicsSystem::RaycastGroundIgnoreObstacles(
+//    const Vector3D& origin, const Vector3D& direction, float maxDistance)
+//{
+//    RaycastResult result;
+//
+//    float dirLen = std::sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+//    if (dirLen < 0.0001f) return result;
+//
+//    JPH::Vec3 dir(direction.x / dirLen, direction.y / dirLen, direction.z / dirLen);
+//
+//    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+//
+//    // We may hit an obstacle first (pedestal/stairs/pillar). Skip it and continue downward.
+//    JPH::RVec3 start(origin.x, origin.y, origin.z);
+//
+//    constexpr int   kMaxSkips = 8;
+//    constexpr float kEps = 0.02f;
+//
+//    for (int i = 0; i < kMaxSkips; ++i)
+//    {
+//        JPH::RRayCast ray(start, dir * maxDistance);
+//
+//        JPH::RayCastResult hit;
+//        if (!query.CastRay(ray, hit))
+//            return result; // no hit
+//
+//        // We hit something
+//        const float dist = hit.mFraction * maxDistance;
+//        const JPH::RVec3 hitPos = start + dir * dist;
+//
+//        const JPH::BodyID body = hit.mBodyID;
+//        if (!body.IsInvalid() && BodyIsObstacle(body))
+//        {
+//            // Skip obstacle and continue slightly past it
+//            start = hitPos + JPH::RVec3(0.0, -kEps, 0.0);
+//            maxDistance -= dist;
+//            if (maxDistance <= 0.0f) return result;
+//            continue;
+//        }
+//
+//        // Accept this as ground
+//        result.hit = true;
+//        result.distance = dist;
+//        result.hitPoint = Vector3D((float)hitPos.GetX(), (float)hitPos.GetY(), (float)hitPos.GetZ());
+//        result.bodyId = body;
+//        return result;
+//    }
+//
+//    return result;
+//}
+
+class NavRaycastObjectFilter : public JPH::ObjectLayerFilter
+{
+public:
+    bool acceptObstacle = false;
+
+    explicit NavRaycastObjectFilter(bool inAcceptObstacle)
+        : acceptObstacle(inAcceptObstacle) {
+    }
+
+    bool ShouldCollide(JPH::ObjectLayer inLayer) const override
+    {
+        if (inLayer == Layers::NAV_GROUND) return true;
+        if (acceptObstacle && inLayer == Layers::NAV_OBSTACLE) return true;
+        return false; // ignore everything else (ceiling, knives, etc.)
+    }
+};
+
+PhysicsSystem::RaycastResult PhysicsSystem::RaycastGround(
+    const Vector3D& origin,
+    const Vector3D& direction,
+    float maxDistance,
+    ECSManager& ecs,
+    int groundIdx,
+    int obstacleIdx,
+    bool acceptObstacleAsHit,
+    bool debugLog)
+{
+    RaycastResult result{};
+
+    // normalize direction
+    float dirLen = std::sqrt(direction.x * direction.x +
+        direction.y * direction.y +
+        direction.z * direction.z);
+    if (dirLen < 0.0001f) return result;
+
+    const JPH::Vec3 dir(direction.x / dirLen,
+        direction.y / dirLen,
+        direction.z / dirLen);
+
+    const JPH::RVec3 start(origin.x, origin.y, origin.z);
+    const JPH::RRayCast ray(start, dir * maxDistance);
+
+    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+
+    // Filters: only hit NAV_GROUND (and NAV_OBSTACLE if enabled)
+    NavRaycastObjectFilter objFilter(acceptObstacleAsHit);
+
+    // Broadphase filter can stay permissive; object filter is doing the real work
+    class NavRaycastBroadPhaseFilter : public JPH::BroadPhaseLayerFilter
+    {
+    public:
+        bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override
+        {
+            // NAV layers are in NON_MOVING broadphase; allow NON_MOVING
+            return true;
+        }
+    } bpFilter;
+
+    JPH::RayCastResult hit;
+    const bool ok = query.CastRay(ray, hit, bpFilter, objFilter);
+
+    if (!ok)
+    {
+        if (debugLog)
+            //std::cout << "[RaycastGround] no hit\n";
+        return result;
+    }
+
+    result.hit = true;
+    result.distance = hit.mFraction * maxDistance;
+
+    const JPH::RVec3 hitPos = start + dir * result.distance;
+    result.hitPoint = Vector3D((float)hitPos.GetX(),
+        (float)hitPos.GetY(),
+        (float)hitPos.GetZ());
+
+    result.bodyId = hit.mBodyID;
+
+    if (debugLog)
+    {
+        Entity e = GetEntityFromBody(result.bodyId);
+        int layer = -1;
+        if ((int)e != 0 && ecs.HasComponent<LayerComponent>(e))
+            layer = ecs.GetComponent<LayerComponent>(e).layerIndex;
+
+        const char* nm = "<noname>";
+        if ((int)e != 0 && ecs.HasComponent<NameComponent>(e))
+            nm = ecs.GetComponent<NameComponent>(e).name.c_str();
+
+        /*std::cout << "[RaycastGround] HIT ent=" << (int)e
+            << " name=" << nm
+            << " ecsLayer=" << layer
+            << " hitY=" << result.hitPoint.y
+            << "\n";*/
+    }
+
+    return result;
+}
+
+PhysicsSystem::OverlapResult PhysicsSystem::OverlapCapsule(
+    const Vector3D& center,
+    float halfHeight,
+    float radius
+) {
+    OverlapResult out;
+
+    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+
+    // capsule shape
+    JPH::CapsuleShapeSettings capSettings(halfHeight, radius);
+    auto shapeRes = capSettings.Create();
+    if (!shapeRes.IsValid())
+        return out;
+
+    JPH::ShapeRefC shape = shapeRes.Get();
+
+    JPH::RVec3 pos(center.x, center.y, center.z);
+    JPH::Quat rot = JPH::Quat::sIdentity();
+
+    // Filters (keep yours)
+    class NavBroadPhaseFilter : public JPH::BroadPhaseLayerFilter {
+    public:
+        bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override {
+            return inLayer != BroadPhaseLayers::CHARACTER;
+        }
+    } bpFilter;
+
+    class NavObjectLayerFilter : public JPH::ObjectLayerFilter {
+    public:
+        bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
+            return inLayer != Layers::SENSOR && inLayer != Layers::CHARACTER;
+        }
+    } objFilter;
+
+    // Collector: only treat ECS-layer Obstacle as blocking
+    struct NavObstacleCollector : public JPH::CollideShapeCollector
+    {
+        const PhysicsSystem* ps = nullptr;
+        bool anyHit = false;
+
+        explicit NavObstacleCollector(const PhysicsSystem* inPs) : ps(inPs) {}
+
+        void AddHit(const JPH::CollideShapeResult& hit) override
+        {
+            // For CollideShape, the hit body is usually mBodyID2.
+            // If your compiler complains, change to hit.mBodyID1 or hit.mBodyID.
+            const JPH::BodyID& body = hit.mBodyID2;
+
+            if (ps && ps->BodyIsObstacle(body))
+            {
+                anyHit = true;
+                ForceEarlyOut();
+            }
+        }
+    } collector(this);
+
+    JPH::CollideShapeSettings settings;
+    JPH::Vec3 scale(1.0f, 1.0f, 1.0f);
+    JPH::RVec3 baseOffset(0.0, 0.0, 0.0);
+
+    query.CollideShape(
+        shape.GetPtr(),
+        scale,
+        JPH::RMat44::sRotationTranslation(rot, pos),
+        settings,
+        baseOffset,
+        collector,
+        bpFilter,
+        objFilter,
+        JPH::BodyFilter(),
+        JPH::ShapeFilter()
+    );
+
+    out.hit = collector.anyHit;
+    return out;
+}
+
+bool PhysicsSystem::BodyIsInECSLayer(const JPH::BodyID& body, int layerIndex) const
+{
+    auto it = bodyToEntityMap.find(body);
+    if (it == bodyToEntityMap.end()) return false;
+
+    Entity e = static_cast<Entity>(it->second);
+
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (!ecs.HasComponent<LayerComponent>(e)) return false;
+
+    const auto& lc = ecs.GetComponent<LayerComponent>(e);
+    return lc.layerIndex == layerIndex;
+}
+
+bool PhysicsSystem::BodyIsObstacle(const JPH::BodyID& body) const
+{
+    const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
+    return BodyIsInECSLayer(body, obstacleIdx);
+}
+
+bool PhysicsSystem::OverlapCapsuleObstacleLayer(
+    const Vector3D& center,
+    float halfHeight,
+    float radius,
+    ECSManager& ecsManager,
+    int obstacleLayerIndex
+) {
+    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+
+    // capsule shape
+    JPH::CapsuleShapeSettings capSettings(halfHeight, radius);
+    auto shapeRes = capSettings.Create();
+    if (!shapeRes.IsValid())
+        return false;
+
+    JPH::ShapeRefC shape = shapeRes.Get();
+
+    JPH::RVec3 pos(center.x, center.y, center.z);
+    JPH::Quat rot = JPH::Quat::sIdentity();
+
+    // Same filters you already use (ignore sensors + character layer)
+    class NavBroadPhaseFilter : public JPH::BroadPhaseLayerFilter {
+    public:
+        bool ShouldCollide(JPH::BroadPhaseLayer inLayer) const override {
+            return inLayer != BroadPhaseLayers::CHARACTER;
+        }
+    } bpFilter;
+
+    class NavObjectLayerFilter : public JPH::ObjectLayerFilter {
+    public:
+        bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
+            return inLayer != Layers::SENSOR && inLayer != Layers::CHARACTER;
+        }
+    } objFilter;
+
+    struct ObstacleOnlyCollector : public JPH::CollideShapeCollector {
+        PhysicsSystem* phys = nullptr;
+        ECSManager* ecs = nullptr;
+        int obstacleIdx = -1;
+        bool hitObstacle = false;
+
+        void AddHit(const JPH::CollideShapeResult& hit) override {
+            // Body that we collided with
+            const JPH::BodyID bodyId = hit.mBodyID2;
+
+            auto it = phys->bodyToEntityMap.find(bodyId);
+            if (it == phys->bodyToEntityMap.end())
+                return;
+
+            Entity e = it->second;
+
+            if (!ecs->HasComponent<LayerComponent>(e))
+                return;
+
+            auto& lc = ecs->GetComponent<LayerComponent>(e);
+            if (lc.layerIndex == obstacleIdx) {
+                hitObstacle = true;
+                ForceEarlyOut();
+            }
+        }
+    } collector;
+
+    collector.phys = this;
+    collector.ecs = &ecsManager;
+    collector.obstacleIdx = obstacleLayerIndex;
+
+    JPH::CollideShapeSettings settings;
+    JPH::Vec3 scale(1.0f, 1.0f, 1.0f);
+    JPH::RVec3 baseOffset(0.0, 0.0, 0.0);
+
+    query.CollideShape(
+        shape.GetPtr(),
+        scale,
+        JPH::RMat44::sRotationTranslation(rot, pos),
+        settings,
+        baseOffset,
+        collector,
+        bpFilter,
+        objFilter,
+        JPH::BodyFilter(),
+        JPH::ShapeFilter()
+    );
+
+    return collector.hitObstacle;
+}
+
+Entity PhysicsSystem::GetEntityFromBody(const JPH::BodyID& id) const
+{
+    auto it = bodyToEntityMap.find(id);
+    if (it != bodyToEntityMap.end())
+        return static_cast<Entity>(it->second);
+
+    return Entity{}; // replace with INVALID_ENTITY if your engine has one
+}
+
+bool PhysicsSystem::GetBodyWorldAABB(Entity e, JPH::AABox& outAABB) const
+{
+    auto it = entityBodyMap.find(e);
+    if (it == entityBodyMap.end()) return false;
+
+    const JPH::BodyID bodyId = it->second;
+    if (bodyId.IsInvalid()) return false;
+
+    const JPH::BodyLockInterface& bli = physics.GetBodyLockInterface();
+    JPH::BodyLockRead lock(bli, bodyId);
+    if (!lock.Succeeded()) return false;
+
+    outAABB = lock.GetBody().GetWorldSpaceBounds();
+    return true;
 }

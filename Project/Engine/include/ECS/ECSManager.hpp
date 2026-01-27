@@ -20,6 +20,7 @@
 #include <Graphics/Sprite/SpriteAnimationSystem.hpp>
 #include "UI/Button/ButtonSystem.hpp"
 #include "UI/Slider/SliderSystem.hpp"
+#include "UI/Anchor/UIAnchorSystem.hpp"
 #include "Video/VideoSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
@@ -37,7 +38,7 @@ public:
 
 	void ENGINE_API DestroyEntity(Entity entity);
 
-	void ClearAllEntities();
+	void ENGINE_API ClearAllEntities();
 
 	template <typename T>
 	void RegisterComponent() {
@@ -115,9 +116,11 @@ public:
 		return entityManager->GetActiveEntities();
 	}
 
-	std::vector<Entity> GetAllEntities() const {
+	std::vector<Entity> ENGINE_API GetAllEntities() const {
 		return entityManager->GetAllEntities();
 	}
+
+	std::vector<Entity> GetAllRootEntities();
 
 	/**
 	 * @brief Check if an entity is active considering its entire parent hierarchy.
@@ -151,6 +154,7 @@ public:
 	std::shared_ptr<SpriteAnimationSystem> spriteAnimationSystem;
 	std::shared_ptr<ButtonSystem> buttonSystem;
 	std::shared_ptr<SliderSystem> sliderSystem;
+	std::shared_ptr<UIAnchorSystem> uiAnchorSystem;
 	std::shared_ptr<VideoSystem> videoSystem;
 private:
 	template <typename T>

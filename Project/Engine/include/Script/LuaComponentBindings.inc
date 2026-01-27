@@ -6,6 +6,11 @@
 // Value-like types (Math types)
 // ============================================================================
 
+BEGIN_COMPONENT(Vector2D, "Vector2D")
+    PROPERTY("x", &Vector2D::x)
+    PROPERTY("y", &Vector2D::y)
+END_COMPONENT()
+
 BEGIN_COMPONENT(Vector3D, "Vector3D")
     PROPERTY("x", &Vector3D::x)
     PROPERTY("y", &Vector3D::y)

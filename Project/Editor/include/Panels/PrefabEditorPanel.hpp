@@ -4,31 +4,44 @@
 #include <ECS/ECSRegistry.hpp>
 #include <ECS/ECSManager.hpp>
 
-class PrefabEditorPanel : public EditorPanel
+class PrefabEditor
 {
 public:
-    PrefabEditorPanel();
+    PrefabEditor() = default;
 
     // Call this each time you want to edit another prefab
-    void SetPrefabPath(const std::string& path);
-    void OnImGuiRender() override;
+    //void SetPrefabPath(const std::string& path);
+    //void OnImGuiRender() override;
+
+	static bool IsInPrefabEditorMode() { return isInPrefabEditorMode; }
+	//static bool HasUnsavedChanges() { return hasUnsavedChanges; }
+	//static void SetUnsavedChanges(bool unsaved) { hasUnsavedChanges = unsaved; }
+
+	static Entity GetSandboxEntity() { return sandboxEntity; }
+    static void StartEditingPrefab(const std::string& _prefabPath);
+    static void StopEditingPrefab();
+    static void SaveEditedPrefab();
 
 private:
     // Loads prefab into the sandbox ECS (isolated from the live scene)
     void LoadPrefabSandbox();
     // Pushes saved prefab to live instances (uses active ECS)
-    void PropagateToInstances();
+    static void PropagateToInstances();
 
     // --- sandbox "Prefab Mode" state ---
     ECSManager sandboxECS{};                   // isolated world just for editing
-    Entity     sandboxEntity = static_cast<Entity>(-1);
+    static Entity sandboxEntity;
 
-    std::string prefabPath;
+    static std::string prefabPath;
+    static bool isInPrefabEditorMode;
+	//static bool hasUnsavedChanges;
+
+	//static std::vector<Entity> previouslyActiveEntities;
 };
 
-// ---- helper API (no PanelManager changes needed) ----
-namespace PrefabEditor
-{
-    // Opens (or focuses) the Prefab Editor and loads `path`.
-    void Open(const std::string& path);
-}
+//// ---- helper API (no PanelManager changes needed) ----
+//namespace PrefabEditor
+//{
+//    // Opens (or focuses) the Prefab Editor and loads `path`.
+//    void Open(const std::string& path);
+//}

@@ -8,7 +8,7 @@
 #include "Performance/PerformanceProfiler.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
-#include "Input/InputManager.hpp"
+#include "Input/InputManager.h"
 #include "ECS/TagManager.hpp"
 #include "ECS/TagComponent.hpp"
 #include "Video/cutscenelayer.hpp"
@@ -35,7 +35,6 @@ void VideoSystem::Update(float dt) {
     int dialogueBoxTagIndex = TagManager::GetInstance().GetTagIndex("DialogueBox");
     int blackScreenIndex = TagManager::GetInstance().GetTagIndex("BlackScreen");
     int skipButtonIndex = TagManager::GetInstance().GetTagIndex("SkipButton");
-
 
     //GET ENTITY VIA TAG
     for (const auto& entity : m_ecs->GetAllEntities())
@@ -119,7 +118,7 @@ void VideoSystem::Update(float dt) {
             m_dialogueManager.Reset();
             SwapCutscene(spriteComp, firstPath);
             isTransitioning = true;
-            cutSceneEnded = false;
+            videoComp.cutsceneEnded = false;
         }
         videoComp.currentTime += dt;
 
@@ -142,14 +141,15 @@ void VideoSystem::Update(float dt) {
         //HANDLE TRANSITION
         if (isTransitioning)
         {
-            if (cutSceneEnded)
+            if (videoComp.cutsceneEnded)
             {
                 FadeOutTransition(blackScreenSprite, dt, videoComp.preTime);
                 if (blackScreenSprite.alpha >= 0.99f)
                 {
                     blackScreenSprite.alpha = 1.0f;
                     isTransitioning = false;
-                    SceneManager::GetInstance().LoadScene(sceneToLoad);
+                    SceneManager::GetInstance().LoadScene(sceneToLoad, true);
+
                 }
             }
             else
@@ -164,21 +164,21 @@ void VideoSystem::Update(float dt) {
         }
 
         //SKIP BUTTON INPUT
-        if (skipButtonSprite.isVisible && InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
+        //if (skipButtonSprite.isVisible && InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
+        if (skipButtonSprite.isVisible && g_inputManager->IsPointerJustPressed())
         {
-            cutSceneEnded = true;
+            videoComp.cutsceneEnded = true; //USE THIS INSTEAD, REPLACE ALL CUT SCENE ENDED
             isTransitioning = true;
         }
 
 
-
-
         //BLOCK INPUT IF SCENE IS OVER / TRANSITITION STATE
-        if (cutSceneEnded)
+        if (videoComp.cutsceneEnded)
             return;
         //CHANGE BACK TO MOUSE BUTTON LEFT LATER
         //if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
-        if (InputManager::GetKeyDown(Input::Key::SPACE))
+        if(g_inputManager->IsPointerJustPressed())
+        //if (InputManager::GetKeyDown(Input::Key::SPACE))
         {
             //IF CURRENT SCENE HAS YET TO FINISH RENDERING ALL THE DIALOGUE, FINISH IT AND CONTINUE; DO NOT SWAP CUTSCENE
             //This only applies to the start transition since end transition is blocked
@@ -197,7 +197,7 @@ void VideoSystem::Update(float dt) {
                 if (videoComp.activeFrame > videoComp.frameEnd)
                 {
                     videoComp.activeFrame = videoComp.frameEnd; //just to fix it in place
-                    cutSceneEnded = true;
+                    videoComp.cutsceneEnded = true;
                     isTransitioning = true;     //for fade out transition
                 }
                 else

@@ -41,6 +41,8 @@ struct ENGINE_API VideoComponent {
 	bool asset_dirty = false;   // Set to true when videoPath changes 
 	bool seek_dirty = false;    // Set to true if currentTime is modified manually (seeking)
 
+	bool cutsceneEnded = false;	//To change scene when toggled.
+
 	VideoComponent() = default;
 	~VideoComponent() = default;
 

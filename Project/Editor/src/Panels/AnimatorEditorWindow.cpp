@@ -6,9 +6,14 @@
 #include "GUIManager.hpp"
 #include "SnapshotManager.hpp"
 #include "Logging.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "Graphics/Model/ModelRenderComponent.hpp"
+#include "Asset Manager/AssetManager.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <set>
+#include <map>
 
 #ifdef _WIN32
 #define NOMINMAX  // Prevent Windows.h from defining min/max macros
@@ -150,6 +155,7 @@ void AnimatorEditorWindow::OnImGuiRender()
         DrawInspectorPanel();
         ImGui::EndChild();
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     // Handle close button click (after ImGui::End so the window is properly closed)
@@ -157,7 +163,10 @@ void AnimatorEditorWindow::OnImGuiRender()
         SetOpen(false);
     }
 
-    HandleKeyboardShortcuts();
+    // Only handle keyboard shortcuts when this window is focused
+    if (IsFocused()) {
+        HandleKeyboardShortcuts();
+    }
 }
 
 void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* animComponent)
@@ -165,11 +174,13 @@ void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* anim
     m_CurrentEntity = entity;
     m_AnimComponent = animComponent;
     SetOpen(true);  // Use base class method
-    m_ControllerFilePath.clear();
     m_HasUnsavedChanges = false;
 
     // Extract state machine data if exists
     if (animComponent) {
+        // Use the controller path from the animation component for saving
+        m_ControllerFilePath = animComponent->controllerPath;
+
         AnimationStateMachine* sm = animComponent->GetStateMachine();
         if (sm) {
             m_Controller->ExtractFromStateMachine(sm);
@@ -179,6 +190,8 @@ void AnimatorEditorWindow::OpenForEntity(Entity entity, AnimationComponent* anim
 
         // Copy clip paths from animation component
         m_Controller->GetClipPaths() = animComponent->clipPaths;
+    } else {
+        m_ControllerFilePath.clear();
     }
 
     // Reset view
@@ -623,8 +636,14 @@ void AnimatorEditorWindow::DrawStateNode(const std::string& stateId, AnimStateCo
     );
     drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), stateId.c_str());
 
-    // Clip index indicator - centered horizontally
-    std::string clipText = "Clip " + std::to_string(config.clipIndex);
+    // Clip name indicator - centered horizontally
+    std::string clipText;
+    auto& clipPaths = m_Controller->GetClipPaths();
+    if (config.clipIndex < clipPaths.size()) {
+        clipText = GetClipDisplayName(clipPaths[config.clipIndex]);
+    } else {
+        clipText = "(No Clip)";
+    }
     ImVec2 clipTextSize = ImGui::CalcTextSize(clipText.c_str());
     ImVec2 clipTextPos(
         screenPos.x + (nodeSize.x - clipTextSize.x) * 0.5f,
@@ -950,70 +969,76 @@ void AnimatorEditorWindow::DrawStateInspector()
     }
     ImGui::Separator();
 
-    // Animation Clip selection
-    ImGui::Text("Animation Clip");
+    // Animation Clip selection (Unity-style: single field with browse button)
+    ImGui::Text("Motion");
 
     auto& clipPaths = m_Controller->GetClipPaths();
 
-    // Dropdown for existing clips
+    // Get current clip name
     std::string currentClipName = "(None)";
+    std::string currentClipPath = "";
     if (config->clipIndex < clipPaths.size()) {
         currentClipName = GetClipDisplayName(clipPaths[config->clipIndex]);
+        currentClipPath = clipPaths[config->clipIndex];
     }
 
-    ImGui::SetNextItemWidth(-60);  // Leave space for browse button
-    if (ImGui::BeginCombo("##ClipSelect", currentClipName.c_str())) {
-        for (size_t i = 0; i < clipPaths.size(); i++) {
-            std::string displayName = GetClipDisplayName(clipPaths[i]);
-            bool isSelected = (config->clipIndex == i);
-            if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-                config->clipIndex = i;
-                m_HasUnsavedChanges = true;
-            }
-            if (isSelected) {
-                ImGui::SetItemDefaultFocus();
-            }
-            // Show full path as tooltip
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", clipPaths[i].c_str());
-            }
-        }
-        ImGui::EndCombo();
+    // Display current clip as a selectable field (like Unity's object field)
+    ImGui::SetNextItemWidth(-30);  // Leave space for browse button
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+    ImGui::InputText("##ClipField", &currentClipName[0], currentClipName.size() + 1, ImGuiInputTextFlags_ReadOnly);
+    ImGui::PopStyleColor();
+    if (ImGui::IsItemHovered() && !currentClipPath.empty()) {
+        ImGui::SetTooltip("%s", currentClipPath.c_str());
     }
 
     // Browse button
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BrowseClip")) {
+    if (ImGui::Button(ICON_FA_CIRCLE_DOT "##BrowseClip")) {
         std::string newPath = OpenAnimationFileDialog();
         if (!newPath.empty()) {
-            // Check if this path already exists
-            auto it = std::find(clipPaths.begin(), clipPaths.end(), newPath);
+            // Normalize the path to be relative from "Resources" for cross-machine compatibility
+            std::string normalizedPath = newPath;
+            size_t resPos = newPath.find("Resources");
+            if (resPos != std::string::npos) {
+                normalizedPath = newPath.substr(resPos);
+            }
+            // Also normalize separators to forward slashes
+            std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+
+            // Check if this clip already exists in clipPaths
+            auto it = std::find(clipPaths.begin(), clipPaths.end(), normalizedPath);
             if (it != clipPaths.end()) {
                 // Use existing clip
                 config->clipIndex = std::distance(clipPaths.begin(), it);
             } else {
                 // Add new clip
-                clipPaths.push_back(newPath);
+                clipPaths.push_back(normalizedPath);
                 config->clipIndex = clipPaths.size() - 1;
             }
+
             m_HasUnsavedChanges = true;
+
+            // Apply changes - this will also clean up unused clips
+            ApplyToAnimationComponent();
         }
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Browse for animation file");
+        ImGui::SetTooltip("Select animation clip");
     }
-
-    // Show current clip index for reference
-    ImGui::TextDisabled("Clip Index: %zu", config->clipIndex);
 
     // Loop
     if (ImGui::Checkbox("Loop", &config->loop)) {
         m_HasUnsavedChanges = true;
+        ApplyToAnimationComponent();
     }
 
     // Speed
-    if (ImGui::SliderFloat("Speed", &config->speed, 0.0f, 3.0f, "%.2f")) {
+    ImGui::Text("Speed");
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputFloat("##Speed", &config->speed, 0.1f, 1.0f, "%.3f")) {
+        if (config->speed < 0.0f) config->speed = 0.0f;  // Prevent negative speed
         m_HasUnsavedChanges = true;
+        ApplyToAnimationComponent();
     }
 
     ImGui::Separator();
@@ -1439,7 +1464,7 @@ void AnimatorEditorWindow::CreateNewState(const ImVec2& position)
     std::string stateName = GenerateUniqueStateName();
     AnimStateConfig config;
     config.nodePosition = glm::vec2(position.x, position.y);
-    config.clipIndex = 0;
+    config.clipIndex = SIZE_MAX;  // No clip assigned by default
     config.loop = true;
     config.speed = 1.0f;
 
@@ -1580,8 +1605,17 @@ void AnimatorEditorWindow::SaveController()
         return;
     }
 
+    // Clean up unused clips before saving
+    CleanupUnusedClips();
+
     if (m_Controller->SaveToFile(m_ControllerFilePath)) {
         m_HasUnsavedChanges = false;
+
+        // Also update the AnimationComponent so changes persist when reopening
+        if (m_AnimComponent) {
+            m_AnimComponent->controllerPath = m_ControllerFilePath;
+            ApplyToAnimationComponent();
+        }
     }
 }
 
@@ -1606,11 +1640,13 @@ void AnimatorEditorWindow::SaveControllerAs()
             pFileSave->SetDefaultExtension(L"animator");
             pFileSave->SetTitle(L"Save Animator Controller");
 
-            // Set default filename
-            std::wstring defaultName = L"NewController";
-            std::string controllerName = m_Controller->GetName();
-            if (!controllerName.empty()) {
-                defaultName = std::wstring(controllerName.begin(), controllerName.end());
+            // Set default filename - use existing filename or "New Animator"
+            std::wstring defaultName = L"New Animator";
+            if (!m_ControllerFilePath.empty()) {
+                // Use existing file name if we have one
+                std::filesystem::path existingPath(m_ControllerFilePath);
+                std::string stemName = existingPath.stem().string();
+                defaultName = std::wstring(stemName.begin(), stemName.end());
             }
             pFileSave->SetFileName(defaultName.c_str());
 
@@ -1652,10 +1688,19 @@ void AnimatorEditorWindow::SaveControllerAs()
             std::filesystem::create_directories(parentDir);
         }
 
+        // Clean up unused clips before saving
+        CleanupUnusedClips();
+
         m_ControllerFilePath = chosenPath;
         if (m_Controller->SaveToFile(m_ControllerFilePath)) {
             m_HasUnsavedChanges = false;
             ENGINE_LOG_INFO("[AnimatorEditor] Saved controller to: {}", m_ControllerFilePath);
+
+            // Also update the AnimationComponent so changes persist when reopening
+            if (m_AnimComponent) {
+                m_AnimComponent->controllerPath = m_ControllerFilePath;
+                ApplyToAnimationComponent();
+            }
         }
     }
 }
@@ -1722,10 +1767,60 @@ void AnimatorEditorWindow::LoadController()
 
 void AnimatorEditorWindow::ApplyToAnimationComponent()
 {
-    if (!m_AnimComponent) return;
+    if (!m_AnimComponent || m_CurrentEntity == 0) return;
 
+    // Remove any clips not used by states
+    CleanupUnusedClips();
+
+    // Sync clip paths from controller to component
+    const auto& ctrlClipPaths = m_Controller->GetClipPaths();
+    bool clipPathsChanged = (m_AnimComponent->clipPaths != ctrlClipPaths);
+
+    m_AnimComponent->clipPaths = ctrlClipPaths;
+    m_AnimComponent->clipCount = static_cast<int>(ctrlClipPaths.size());
+    // Store GUIDs for cross-machine compatibility
+    m_AnimComponent->clipGUIDs.clear();
+    for (const auto& clipPath : ctrlClipPaths) {
+        GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(clipPath);
+        m_AnimComponent->clipGUIDs.push_back(guid);
+    }
+
+    // Apply state machine configuration
     AnimationStateMachine* sm = m_AnimComponent->EnsureStateMachine();
     m_Controller->ApplyToStateMachine(sm);
+
+    // If clip paths changed, we need to reload the animation clips
+    if (clipPathsChanged) {
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecs.HasComponent<ModelRenderComponent>(m_CurrentEntity)) {
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(m_CurrentEntity);
+            if (modelComp.model) {
+                m_AnimComponent->LoadClipsFromPaths(
+                    modelComp.model->GetBoneInfoMap(),
+                    modelComp.model->GetBoneCount(),
+                    m_CurrentEntity
+                );
+                Animator* animator = m_AnimComponent->EnsureAnimator();
+                modelComp.SetAnimator(animator);
+            }
+        }
+    }
+
+    // Get the current/selected state to determine which clip to play
+    std::string stateToPlay = m_SelectedStateId;
+    if (stateToPlay.empty()) {
+        stateToPlay = sm->GetCurrentState();
+        if (stateToPlay.empty()) {
+            stateToPlay = sm->GetEntryState();
+        }
+    }
+
+    const AnimStateConfig* stateConfig = sm->GetState(stateToPlay);
+    if (stateConfig && stateConfig->clipIndex < m_AnimComponent->GetClips().size()) {
+        // Play the animation for the selected/current state
+        m_AnimComponent->PlayClip(stateConfig->clipIndex, stateConfig->loop, m_CurrentEntity);
+        m_AnimComponent->SetSpeed(stateConfig->speed);
+    }
 }
 
 // Utility
@@ -1815,6 +1910,51 @@ std::string AnimatorEditorWindow::GetClipDisplayName(const std::string& path) co
     // Get just the filename without extension
     std::filesystem::path fsPath(path);
     return fsPath.stem().string();
+}
+
+void AnimatorEditorWindow::CleanupUnusedClips()
+{
+    if (!m_Controller) return;
+
+    auto& clipPaths = m_Controller->GetClipPaths();
+    auto& states = m_Controller->GetStates();
+
+    if (clipPaths.empty()) return;
+
+    // Collect all clip indices used by states
+    std::set<size_t> usedIndices;
+    for (const auto& [stateId, config] : states) {
+        usedIndices.insert(config.clipIndex);
+    }
+
+    // Build new clip paths with only used clips, and create index mapping
+    std::vector<std::string> newClipPaths;
+    std::map<size_t, size_t> oldToNewIndex;
+
+    for (size_t oldIdx = 0; oldIdx < clipPaths.size(); ++oldIdx) {
+        if (usedIndices.count(oldIdx) > 0) {
+            oldToNewIndex[oldIdx] = newClipPaths.size();
+            newClipPaths.push_back(clipPaths[oldIdx]);
+        }
+    }
+
+    // If nothing changed, skip
+    if (newClipPaths.size() == clipPaths.size()) return;
+
+    // Update all state clip indices to use new mapping
+    for (auto& [stateId, config] : states) {
+        auto it = oldToNewIndex.find(config.clipIndex);
+        if (it != oldToNewIndex.end()) {
+            config.clipIndex = it->second;
+        } else {
+            // Clip was removed (shouldn't happen if we collected used indices correctly)
+            config.clipIndex = 0;
+        }
+    }
+
+    // Replace clip paths with the cleaned-up version
+    clipPaths = std::move(newClipPaths);
+    m_HasUnsavedChanges = true;
 }
 
 std::string AnimatorEditorWindow::OpenAnimationFileDialog()
