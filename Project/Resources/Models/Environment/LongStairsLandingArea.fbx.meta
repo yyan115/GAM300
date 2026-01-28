@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f6595c99e188-00040932c4000005",
+        "source": "../../Resources/Models/Environment/LongStairsLandingArea.fbx",
+        "compiled": "../../Resources/Models/Environment/LongStairsLandingArea.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

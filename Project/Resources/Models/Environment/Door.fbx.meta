@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e626577eb1-00040a628c0000a9",
+        "source": "../../Resources/Models/Environment/Door.fbx",
+        "compiled": "../../Resources/Models/Environment/Door.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

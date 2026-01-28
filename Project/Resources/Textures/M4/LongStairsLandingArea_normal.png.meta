@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f6593a638d0c-00040932e400000f",
+        "source": "../../Resources/Textures/M4/LongStairsLandingArea_normal.png",
+        "compiled": "../../Resources/Textures/M4/LongStairsLandingArea_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

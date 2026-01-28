@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f6597699eacd-00040932e400000b",
+        "source": "../../Resources/Textures/M4/GroundedPlatform_normal.png",
+        "compiled": "../../Resources/Textures/M4/GroundedPlatform_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

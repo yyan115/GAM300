@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "007e0af6f7948b49-000406285c000011",
-        "source": "../../Resources/Scripts/GamePlay/GroundHookedState.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/GroundHookedState.lua"
+        "guid": "004b86df23bd8479-00040b430a000011",
+        "source": "../../Resources/Scripts/Gameplay/GroundHookedState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/GroundHookedState.lua"
     }
 }

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e602c79d19-00040a628c0000a5",
+        "source": "../../Resources/Models/Environment/RightDoor.fbx",
+        "compiled": "../../Resources/Models/Environment/RightDoor.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
