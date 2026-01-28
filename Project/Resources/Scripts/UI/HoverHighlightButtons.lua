@@ -69,10 +69,7 @@ Update = function(self, dt)
     if not pointerPos then return end
 
     local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-<<<<<<< HEAD
-=======
     if not mouseCoordinate then return end
->>>>>>> main
 
     local inputX = mouseCoordinate[1]
     local inputY = mouseCoordinate[2]

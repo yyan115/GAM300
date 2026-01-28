@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003514c13e543018-00040b1292000001",
+        "source": "../../Resources/Sprites/MainMenuUI/fade.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/fade.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
