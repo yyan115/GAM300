@@ -419,7 +419,7 @@ void GUIManager::CreateEditorTheme() {
 
     // Scale font size based on DPI (base 18.0f, adjusted for scale)
     float font_size = 18.0f * main_scale;
-	io.Fonts->AddFontFromFileTTF("Resources/Inter.ttf", font_size);
+	io.Fonts->AddFontFromFileTTF("Resources/Fonts/Inter.ttf", font_size);
 
     // Merge FontAwesome icons (scale accordingly)
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };

@@ -41,29 +41,7 @@ void DialogueManager::HandleTextRender(float deltaTime, TextRenderComponent& tex
     }
 
     // Set the text component to display
-    textComp.text = displayedText;
-
-
-    //float charWidth = 0.02f;
-    //// Assuming charWidth is 15.0f and charsToShow is your typewriter count
-    //float currentTextWidth = (float)charsToShow * 15.0f;
-
-    //// Calculate the far left boundary of the parent
-    //float parentLeftEdge = -(boxTransform.localScale.x / 2.0f);
-
-    //// Calculate the offset so the middle-drawn child stays inside the edge
-    //float childHalfWidth = currentTextWidth / 2.0f;
-
-    //// Set local position
-    //textTransform.localPosition.x = parentLeftEdge + childHalfWidth;
-    //textTransform.localPosition.y = 0.0f; // Vertically centered
-    //textTransform.isDirty = true;
-
-    //NEED TO ASK WHOEVER WHO DID TEXT RENDER COMPONENT TO IMPLEMENT "NEXT LINE" TEXT RENDER
-    //Will be good if we can set our own constraint
-
-
-    
+    textComp.text = displayedText;    
 }
 
 

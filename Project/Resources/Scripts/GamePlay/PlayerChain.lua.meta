@@ -1,11 +1,7 @@
 {
     "AssetMetaData": {
         "version": 7,
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/PlayerChain.lua.meta
-        "guid": "003cc1d00af84414-000407821800002d",
-=======
         "guid": "007e0af6bf1587f8-000406285c00001f",
->>>>>>> main:Project/Resources/Scripts/GamePlay/PlayerChain.lua.meta
         "source": "../../Resources/Scripts/GamePlay/PlayerChain.lua",
         "compiled": "../../Resources/Scripts/GamePlay/PlayerChain.lua"
     }
