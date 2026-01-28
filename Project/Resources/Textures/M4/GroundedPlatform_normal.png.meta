@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/M4/GroundedPlatform_normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
-        "flipUVs": false,
+        "type": "diffuse",
+        "flipUVs": true,
         "generateMipmaps": true
     }
 }
