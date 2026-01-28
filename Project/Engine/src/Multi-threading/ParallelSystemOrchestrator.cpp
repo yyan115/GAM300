@@ -67,6 +67,7 @@ void ParallelSystemOrchestrator::Update() {
 
 void ParallelSystemOrchestrator::Draw() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"DrawChannel">, scheduler };
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -101,4 +102,7 @@ void ParallelSystemOrchestrator::Draw() {
 
     frameChannel.join(); // waits for actual work to finish
     //ENGINE_LOG_DEBUG("Draw Synchronized\n");
+
+    // Set all isDirty flags to false after rendering
+    ecs.transformSystem->PostUpdate();
 }

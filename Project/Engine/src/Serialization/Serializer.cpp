@@ -2857,6 +2857,8 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
+        readVec3Generic(d[10], colliderComp.center);
+        //readVec3Generic(d[11], colliderComp.offset);
     }
 }
 

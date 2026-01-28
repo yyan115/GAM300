@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "006a4ea44613bb74-0003fb4d0a000001",
-        "source": "../../Resources/Scripts/GamePlay/DamageZone.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/DamageZone.lua"
+        "source": "../../Resources/Scripts/Gameplay/DamageZone.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/DamageZone.lua"
     }
 }
