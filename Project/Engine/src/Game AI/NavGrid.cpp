@@ -77,8 +77,8 @@ static bool IsObstacleHit(PhysicsSystem& phys,
 static ObstacleFootprint MakeBoxFootprint(const Transform& tr, const ColliderComponent& col, float inflate)
 {
     // World center (offset scaled)
-    const float cx = tr.localPosition.x + col.offset.x * tr.localScale.x;
-    const float cz = tr.localPosition.z + col.offset.z * tr.localScale.z;
+    const float cx = tr.localPosition.x + col.center.x * tr.localScale.x;
+    const float cz = tr.localPosition.z + col.center.z * tr.localScale.z;
 
     // Half extents in world
     const float hx = std::abs(col.boxHalfExtents.x * tr.localScale.x) + inflate;

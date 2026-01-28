@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e67bd8d96b-00040a5628000045",
+        "source": "../../Resources/Textures/M4/WallModular_normal.png",
+        "compiled": "../../Resources/Textures/M4/WallModular_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

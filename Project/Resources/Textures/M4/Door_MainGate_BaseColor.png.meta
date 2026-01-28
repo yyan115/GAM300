@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e677a2ef5f-00040a62a00000b9",
+        "source": "../../Resources/Textures/M4/Door_MainGate_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Door_MainGate_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

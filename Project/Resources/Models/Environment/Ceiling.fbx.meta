@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001a962e521e5a33-000408e1ee000001",
+        "source": "../../Resources/Models/Environment/Ceiling.fbx",
+        "compiled": "../../Resources/Models/Environment/Ceiling.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

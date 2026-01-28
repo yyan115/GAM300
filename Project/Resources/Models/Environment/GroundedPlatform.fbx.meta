@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f6590c681165-00040932c0000001",
+        "source": "../../Resources/Models/Environment/GroundedPlatform.fbx",
+        "compiled": "../../Resources/Models/Environment/GroundedPlatform.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

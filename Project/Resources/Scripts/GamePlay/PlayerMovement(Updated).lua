@@ -76,7 +76,7 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
 
-        print("transform here is ", self._transform.localPosition.x)
+        print("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
         -- Use PlayClip directly (state machine approach doesn't work)

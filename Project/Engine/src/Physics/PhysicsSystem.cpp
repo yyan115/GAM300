@@ -25,7 +25,6 @@
 
 #include "Physics/PhysicsSystem.hpp"
 #include "Physics/CollisionFilters.hpp"
-#include "Physics/ColliderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 #include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Transform/TransformComponent.hpp"
@@ -41,6 +40,7 @@
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
+#include <Hierarchy/ParentComponent.hpp>
 
 
 #define STR2(x) #x
@@ -178,13 +178,12 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
 #endif
 
-    // Clear CCs first so nothing holds old Jolt pointers between play sessions
     if (ecsManager.characterControllerSystem)
         ecsManager.characterControllerSystem->Shutdown();
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
-    // Remove any previously created bodies from last play session
+    // Remove previously created bodies
     for (auto& [entity, bodyId] : entityBodyMap) {
         if (!bodyId.IsInvalid() && bi.IsAdded(bodyId)) {
             bi.RemoveBody(bodyId);
@@ -195,7 +194,6 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     bodyToEntityMap.clear();
 
     for (auto& e : entities) {
-        // Skip entities that don't actually have the required components
         if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
             !ecsManager.HasComponent<ColliderComponent>(e) ||
             !ecsManager.HasComponent<Transform>(e)) {
@@ -206,21 +204,48 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
 
-        //apply motiontype
         rb.motion = static_cast<Motion>(rb.motionID);
 
-        JPH::RVec3Arg pos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-        // Convert rotation from ECS to Jolt
-        JPH::Quat rot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
-            tr.localRotation.z, tr.localRotation.w);
-        rot = rot.Normalized();  // Safety normalization
-        JPH_ASSERT(rot.IsNormalized());
+        // =========================================================
+        // FIX: MATCH SCENE PANEL GIZMO LOGIC
+        // Instead of using tr.worldRotation/Scale (which might be stale),
+        // we extract the authoritative data directly from the WorldMatrix.
+        // =========================================================
 
-        Vector3D scaledOffSet = { col.offset.x * tr.localScale.x, col.offset.y * tr.localScale.y, col.offset.z * tr.localScale.z };
-        JPH::Vec3 offsetInWorld = rot * JPH::Vec3(scaledOffSet.x, scaledOffSet.y, scaledOffSet.z);
-        JPH::RVec3 updatedPos = pos + offsetInWorld;
+        // 1. Extract Raw Axes (Columns) from the Matrix
+        // This captures Rotation AND Scale AND Parent transforms exactly as the renderer sees them.
+        JPH::Vec3 axisX(tr.worldMatrix.m.m00, tr.worldMatrix.m.m10, tr.worldMatrix.m.m20);
+        JPH::Vec3 axisY(tr.worldMatrix.m.m01, tr.worldMatrix.m.m11, tr.worldMatrix.m.m21);
+        JPH::Vec3 axisZ(tr.worldMatrix.m.m02, tr.worldMatrix.m.m12, tr.worldMatrix.m.m22);
 
-        // --- Set proper collision layer ---
+        // 2. Extract Scale (Magnitude of the axes)
+        float sx = axisX.Length();
+        float sy = axisY.Length();
+        float sz = axisZ.Length();
+
+        // 3. Extract Rotation (Normalize the axes to get pure rotation)
+        // We handle small scales to prevent divide-by-zero
+        JPH::Vec3 normX = (sx > 0.0001f) ? axisX / sx : JPH::Vec3(1, 0, 0);
+        JPH::Vec3 normY = (sy > 0.0001f) ? axisY / sy : JPH::Vec3(0, 1, 0);
+        JPH::Vec3 normZ = (sz > 0.0001f) ? axisZ / sz : JPH::Vec3(0, 0, 1);
+
+        JPH::Mat44 rotationMatrix = JPH::Mat44::sIdentity();
+        rotationMatrix.SetColumn3(0, normX);
+        rotationMatrix.SetColumn3(1, normY);
+        rotationMatrix.SetColumn3(2, normZ);
+        JPH::Quat rot = rotationMatrix.GetRotation().GetQuaternion();
+
+        // 4. Calculate Center Position
+        // Gizmo Logic: WorldMatrix * LocalCenter
+        // Math: WorldPos + (AxisX * cx) + (AxisY * cy) + (AxisZ * cz)
+        // Note: We use the RAW un-normalized axes here because they contain the scale.
+        JPH::Vec3 centerOffset = (axisX * col.center.x) + (axisY * col.center.y) + (axisZ * col.center.z);
+
+        // Final World Position for the Physics Body
+        JPH::RVec3 updatedPos = JPH::RVec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z) + centerOffset;
+
+
+        // ... Layer Logic ...
         int ecsLayerIndex = -1;
         if (ecsManager.HasComponent<LayerComponent>(e))
             ecsLayerIndex = ecsManager.GetComponent<LayerComponent>(e).layerIndex;
@@ -228,80 +253,45 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         const int groundIdx = LayerManager::GetInstance().GetLayerIndex("Ground");
         const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
 
-        // IMPORTANT: Nav layers override motion-based layers.
-        if (ecsLayerIndex == groundIdx)
-        {
-            col.layer = Layers::NAV_GROUND;
-
-            /*if (ecsManager.HasComponent<NameComponent>(e))
-                std::cout << "[Physics] NAV_GROUND body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
-        }
-        else if (ecsLayerIndex == obstacleIdx)
-        {
-            col.layer = Layers::NAV_OBSTACLE;
-
-            /*if (ecsManager.HasComponent<NameComponent>(e))
-                std::cout << "[Physics] NAV_OBSTACLE body: " << ecsManager.GetComponent<NameComponent>(e).name << "\n";*/
-        }
-        else
-        {
-            //if (rb.motion == Motion::Static || rb.motion == Motion::Kinematic)
-            if (rb.motion == Motion::Static)
-                col.layer = Layers::NON_MOVING;
-            else
-                col.layer = Layers::MOVING;
+        if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
+        else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;
+        else {
+            if (rb.motion == Motion::Static) col.layer = Layers::NON_MOVING;
+            else col.layer = Layers::MOVING;
         }
 
-        // --- Always create body for each entity (use entityBodyMap for tracking) ---
         {
-
-            // ALWAYS create shape when creating/recreating body
+            // Create Shape using the EXTRACTED Scale (sx, sy, sz)
             switch (col.shapeType) {
             case ColliderShapeType::Box:
             {
-                // Apply local scale safely
-                float sx = std::abs(tr.localScale.x);
-                float sy = std::abs(tr.localScale.y);
-                float sz = std::abs(tr.localScale.z);
-
+                // Apply extracted scale to half extents
                 float hx = std::abs(col.boxHalfExtents.x) * sx;
                 float hy = std::abs(col.boxHalfExtents.y) * sy;
                 float hz = std::abs(col.boxHalfExtents.z) * sz;
 
-                // Clamp to avoid invalid / near-zero boxes (prevents Jolt asserts)
-                constexpr float kMinHalf = 0.05f; // tune if you need thinner walls
+                constexpr float kMinHalf = 0.05f;
                 hx = std::max(hx, kMinHalf);
                 hy = std::max(hy, kMinHalf);
                 hz = std::max(hz, kMinHalf);
 
-                // Prefer settings so we can force convex radius = 0
                 JPH::BoxShapeSettings settings(JPH::Vec3(hx, hy, hz));
                 settings.mConvexRadius = 0.0f;
-
                 JPH::Shape::ShapeResult result = settings.Create();
-                if (result.IsValid())
-                    col.shape = result.Get();
-                else
-                    col.shape = new JPH::BoxShape(JPH::Vec3(hx, hy, hz)); // fallback
+
+                col.shape = result.IsValid() ? result.Get() : new JPH::BoxShape(JPH::Vec3(hx, hy, hz));
                 break;
             }
-
             case ColliderShapeType::Sphere:
-                col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ tr.localScale.x, tr.localScale.y, tr.localScale.z }));
+                col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ sx, sy, sz }));
                 break;
-
             case ColliderShapeType::Capsule:
-                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight * tr.localScale.y,
-                    col.capsuleRadius * std::max(tr.localScale.x, tr.localScale.z));
+                // Radius scales by X/Z, Height by Y
+                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight * sy, col.capsuleRadius * std::max(sx, sz));
                 break;
-
             case ColliderShapeType::Cylinder:
-            {
-                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * tr.localScale.y,
-                    col.cylinderRadius * std::max(tr.localScale.x, tr.localScale.z));
+                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * sy, col.cylinderRadius * std::max(sx, sz));
                 break;
-            }
-
             case ColliderShapeType::MeshShape:
             {
                 // Get the model's mesh data
@@ -362,72 +352,39 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 }
                 break;
             }
+            }
         }
 
-        // Map our Motion enum to JPH::EMotionType
         const auto motionType =
             rb.motion == Motion::Static ? JPH::EMotionType::Static :
             rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
             JPH::EMotionType::Dynamic;
 
-            // Create body creation settings
-            //JPH::BodyCreationSettings bcs(col.shape.GetPtr(), pos, rot, motionType, col.layer);
-            JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
+        JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
 
-            if (motionType == JPH::EMotionType::Dynamic)
-            {
-                // --- Apply CCD according to component ---
-                bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
-            }
+        if (motionType == JPH::EMotionType::Dynamic)
+            bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
 
-            //// IMPORTANT: Also enable CCD for kinematic bodies if they move fast
-            //if (motionType == JPH::EMotionType::Kinematic)
-            //    bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
-
-
-            if (motionType == JPH::EMotionType::Kinematic)
-            {
-                bcs.mCollideKinematicVsNonDynamic = true;
-                bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
-            }
-
-
-            // --- Apply damping and restitution ---
-            bcs.mRestitution = 0.2f;
-            bcs.mFriction = 0.5f;
-            bcs.mLinearDamping = rb.linearDamping;
-            bcs.mAngularDamping = rb.angularDamping;
-
-            // --- Apply gravity factor ---
-            bcs.mGravityFactor = rb.gravityFactor;
-
-            // Create and add the body to the physics system
-            JPH::BodyID newBodyId = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
-
-            // Store body ID in our per-entity map (avoids shared component bug)
-            entityBodyMap[e] = newBodyId;
-            bodyToEntityMap[newBodyId] = e;
-
-            // Also store in component for Update/SyncBack compatibility
-            rb.id = newBodyId;
-
-            // Update bookkeeping
-            rb.collider_seen_version = col.version;
-            rb.transform_dirty = rb.motion_dirty = false;
-
-            // Limit angular velocity to avoid instability
-            bi.SetMaxAngularVelocity(newBodyId, 2.0f);
-
-#ifdef __ANDROID__
-            __android_log_print(ANDROID_LOG_INFO, "GAM300",
-                "[Physics] Created body id=%u, motion=%d, layer=%d, CCD=%d, pos=(%f,%f,%f)",
-                rb.id.GetIndex(), static_cast<int>(motionType), col.layer, rb.ccd,
-                pos.GetX(), pos.GetY(), pos.GetZ());
-#endif
+        if (motionType == JPH::EMotionType::Kinematic) {
+            bcs.mCollideKinematicVsNonDynamic = true;
+            bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
         }
+
+        bcs.mRestitution = 0.2f;
+        bcs.mFriction = 0.5f;
+        bcs.mLinearDamping = rb.linearDamping;
+        bcs.mAngularDamping = rb.angularDamping;
+        bcs.mGravityFactor = rb.gravityFactor;
+
+        JPH::BodyID newBodyId = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
+        entityBodyMap[e] = newBodyId;
+        bodyToEntityMap[newBodyId] = e;
+        rb.id = newBodyId;
+        rb.collider_seen_version = col.version;
+        rb.transform_dirty = rb.motion_dirty = false;
+        bi.SetMaxAngularVelocity(newBodyId, 2.0f);
     }
 }
-
 void PhysicsSystem::PostInitialize(ECSManager& ecsManager) {
     NavSystem::Get().Build(*this, ecsManager);
 }
@@ -454,7 +411,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     // ========== UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP ==========
     for (auto& e : entities) {
-        // Skip entities without a body in our map
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
@@ -462,70 +418,51 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& tr = ecsManager.GetComponent<Transform>(e);
-        
 
         if (rb.motion == Motion::Kinematic) {
-            // Get the collider component to access offset
             auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
-            // Calculate the scaled offset (same as in Initialise)
+            // FIX: Use World Scale
             Vector3D scaledOffset = {
-                col.offset.x * tr.localScale.x,
-                col.offset.y * tr.localScale.y,
-                col.offset.z * tr.localScale.z
+                col.center.x * tr.worldScale.x,
+                col.center.y * tr.worldScale.y,
+                col.center.z * tr.worldScale.z
             };
 
-            // Get target rotation first
-            JPH::Quat targetRot = JPH::Quat(tr.localRotation.x, tr.localRotation.y,
-                tr.localRotation.z, tr.localRotation.w).Normalized();
+            // FIX: Use World Rotation
+            JPH::Quat targetRot = JPH::Quat(tr.worldRotation.x, tr.worldRotation.y,
+                tr.worldRotation.z, tr.worldRotation.w).Normalized();
 
-            // Rotate offset to world space and ADD to get physics body position
+            // Rotate offset to world space
             JPH::Vec3 offsetInWorld = targetRot * JPH::Vec3(scaledOffset.x, scaledOffset.y, scaledOffset.z);
 
-            // Calculate target position WITH offset applied
-            JPH::RVec3 basePos(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+            // FIX: Use World Position as base
+            JPH::RVec3 basePos(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
             JPH::RVec3 targetPos = basePos + offsetInWorld;
 
-            // Get current position and rotation
+            // Get current Jolt position (World Space)
             JPH::RVec3 currentPos = bi.GetPosition(bodyId);
             JPH::Quat currentRot = bi.GetRotation(bodyId);
 
-            // Calculate linear velocity from position delta (CRITICAL for collision detection!)
+            // Calculate velocities required to reach target
             JPH::Vec3 linearVel = (targetPos - currentPos) / fixedDt;
 
-            // Calculate angular velocity from rotation delta
+            // Calculate angular velocity
             JPH::Quat deltaRot = targetRot * currentRot.Conjugated();
-
-            // Extract axis and angle using GetAxisAngle
             JPH::Vec3 axis;
             float angle;
             deltaRot.GetAxisAngle(axis, angle);
-
-            // Angular velocity = axis * (angle / deltaTime)
             JPH::Vec3 angularVel = axis * (angle / fixedDt);
 
-            // Set velocities BEFORE moving (Jolt uses this for collision detection)
             bi.SetLinearVelocity(bodyId, linearVel);
             bi.SetAngularVelocity(bodyId, angularVel);
-
-            // Now move the kinematic body to the offset position
             bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
-
-            // Ensure body stays active for collision detection
             bi.ActivateBody(bodyId);
 
             rb.transform_dirty = false;
-
-#ifdef __ANDROID__
-            if (updateCount % 60 == 0) {
-                __android_log_print(ANDROID_LOG_INFO, "GAM300",
-                    "[Physics] MoveKinematic body %u to (%f, %f, %f) with offset (%f, %f, %f), dt=%f",
-                    rb.id.GetIndex(), targetPos.GetX(), targetPos.GetY(), targetPos.GetZ(),
-                    offsetInWorld.GetX(), offsetInWorld.GetY(), offsetInWorld.GetZ(), fixedDt);
-            }
-#endif
         }
     }
+
     // ========== SYNC ECS -> JOLT (for dynamic bodies) ==========
     for (auto& e : entities) {
         // Skip entities without a body in our map
@@ -580,6 +517,23 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PhysicsSyncBack(ecsManager);
 }
 
+void PhysicsSystem::EditorUpdate(ECSManager& ecs) {
+    //for (const auto& entity : entities) {
+    //    if (ecs.HasComponent<Transform>(entity)) {
+    //        auto& transform = ecs.GetComponent<Transform>(entity);
+
+    //        // If the transform system marked this as dirty (via Gizmo or SetDirtyRecursive)
+    //        if (transform.isDirty) {
+    //            SyncPhysicsBodyToTransform(entity, ecs);
+
+    //            // Note: We DO NOT clear transform.isDirty here. 
+    //            // The TransformSystem should clear it at the end of the frame 
+    //            // after all systems (Rendering, Physics, etc.) have had their turn.
+    //        }
+    //    }
+    //}
+}
+
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     auto& bi = physics.GetBodyInterface();
 
@@ -615,21 +569,28 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
             // WRITE to ECS Transform (so renderer/other systems can see it)
             float offsetY = col.center.y * tr.localScale.y;     //in case meshes pivot start from the bottom instead of center
 
-            Vector3D scaledOffset = { col.offset.x * tr.localScale.x, col.offset.y * tr.localScale.y, col.offset.z * tr.localScale.z };
+            Vector3D scaledOffset = {
+                col.center.x * tr.worldScale.x,
+                col.center.y * tr.worldScale.y,
+                col.center.z * tr.worldScale.z
+            };
 
             // Rotate offset to world space and SUBTRACT to get entity position
             JPH::Vec3 offsetInWorld = r * JPH::Vec3(scaledOffset.x, scaledOffset.y, scaledOffset.z);
             JPH::RVec3 entityPos = p - offsetInWorld;
 
+            Quaternion entityWorldRot(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
 
             // WRITE to ECS Transform (so renderer/other systems can see it)
-            tr.localPosition = Vector3D(
-                entityPos.GetX(),
-                entityPos.GetY() - offsetY,  
-                entityPos.GetZ()
-            );
-            tr.localRotation = Quaternion(r.GetW(), r.GetX(), r.GetY(), r.GetZ());
-            tr.isDirty = true;
+            if (ecsManager.HasComponent<ParentComponent>(e)) {
+                // Use TransformSystem to set world position (it handles parent conversion)
+                ecsManager.transformSystem->SetWorldPosition(e, Vector3D(entityPos.GetX(), entityPos.GetY(), entityPos.GetZ()));
+                ecsManager.transformSystem->SetWorldRotation(e, entityWorldRot);
+            }
+            else {
+                ecsManager.transformSystem->SetLocalPosition(e, Vector3D(entityPos.GetX(), entityPos.GetY(), entityPos.GetZ()));
+                ecsManager.transformSystem->SetLocalRotation(e, entityWorldRot);
+            }
 
 #ifdef __ANDROID__
             if (syncCount % 60 == 0) {
@@ -1166,4 +1127,43 @@ bool PhysicsSystem::GetBodyWorldAABB(Entity e, JPH::AABox& outAABB) const
 
     outAABB = lock.GetBody().GetWorldSpaceBounds();
     return true;
+}
+
+void PhysicsSystem::SyncPhysicsBodyToTransform(Entity entity, ECSManager& ecs) {
+    if (!ecs.HasComponent<Transform>(entity)) return;
+
+    auto& transform = ecs.GetComponent<Transform>(entity);
+
+    // Get world transform data.
+    Vector3D worldPos = transform.worldPosition;
+    //Quaternion worldRot = Quaternion::FromEulerDegrees(transform.worldRotation);
+    Vector3D worldScale = transform.worldScale;
+
+    if (ecs.HasComponent<ColliderComponent>(entity)) {
+        auto& col = ecs.GetComponent<ColliderComponent>(entity);
+        
+        Vector3D newColliderCenter = worldPos + col.center;
+
+		col.center = newColliderCenter;
+    }
+}
+
+void PhysicsSystem::UpdateColliderShapeScale(ColliderComponent& col, Vector3D worldScale) {
+    if (col.shapeType == ColliderShapeType::Box) {
+        col.boxHalfExtents *= worldScale;
+    }
+    else if (col.shapeType == ColliderShapeType::Sphere) {
+        float maxScale = std::max({ worldScale.x, worldScale.y, worldScale.z });
+		col.sphereRadius *= maxScale;
+    }
+    else if (col.shapeType == ColliderShapeType::Capsule) {
+        float maxScale = std::max({ worldScale.x, worldScale.z }); // XZ for radius
+        col.capsuleRadius *= maxScale;
+        col.capsuleHalfHeight *= worldScale.y; // Y for height
+	}
+    else if (col.shapeType == ColliderShapeType::Cylinder) {
+        float maxScale = std::max({ worldScale.x, worldScale.z }); // XZ for radius
+        col.cylinderRadius *= maxScale;
+		col.cylinderHalfHeight *= worldScale.y; // Y for height
+    }
 }

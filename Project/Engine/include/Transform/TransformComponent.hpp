@@ -6,7 +6,7 @@ struct Transform {
 	REFL_SERIALIZABLE
 	Vector3D worldPosition = { 0, 0, 0 };
 	Vector3D worldScale = { 0, 0, 0 };
-	Vector3D worldRotation = { 0, 0, 0 };
+	Quaternion worldRotation = {};
 
 	bool overrideFromPrefab = false;
 	Vector3D localPosition = {0.0f, 0.0f, 0.0f};

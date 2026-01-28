@@ -11,6 +11,8 @@
 #include <ECS/NameComponent.hpp>
 
 void TransformSystem::Initialise() {
+	isInitialised = false;
+
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	// Update entities' transform starting from root entities, in a depth-first manner.
 	for (const auto& entity : entities) {
@@ -20,6 +22,8 @@ void TransformSystem::Initialise() {
 			});
 		}
 	}
+
+	isInitialised = true;
 
 	//for (const auto& entity : entities) {
 	//	auto& transform = ecsManager.GetComponent<Transform>(entity);
@@ -72,12 +76,21 @@ void TransformSystem::Update() {
 	}
 }
 
+void TransformSystem::PostUpdate() {
+	// Clear all isDirty flags after all systems have had their turn this frame.
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	for (const auto& entity : entities) {
+		auto& transform = ecsManager.GetComponent<Transform>(entity);
+		transform.isDirty = false;
+	}
+}
+
 void TransformSystem::UpdateTransform(Entity entity) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	auto& transform = ecsManager.GetComponent<Transform>(entity);
 
 	// Update model matrix only if there is a change
-	if (transform.isDirty) {
+	if (!isInitialised || transform.isDirty) {
 		// Automatically set the child transforms as dirty, as the parent transform has been modified.
 		if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
 			SetDirtyRecursive(entity);
@@ -113,10 +126,13 @@ void TransformSystem::UpdateTransform(Entity entity) {
 		}
 
 		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
-		transform.worldRotation = Matrix4x4::ExtractRotation(transform.worldMatrix);
+		transform.worldRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(transform.worldMatrix));
 		transform.worldScale = Matrix4x4::ExtractScale(transform.worldMatrix);
 
-		transform.isDirty = false;
+		// Note: We DO NOT clear transform.isDirty here. 
+		// The TransformSystem should clear it at the end of the frame 
+		// after all systems (Rendering, Physics, etc.) have had their turn.
+		//transform.isDirty = false;
 	}
 
 	//// Update the last known values
@@ -216,6 +232,27 @@ void TransformSystem::SetWorldRotation(Entity entity, Vector3D rotation) {
 	SetDirtyRecursive(entity);
 }
 
+void ENGINE_API TransformSystem::SetWorldRotation(Entity entity, Quaternion rotation) {
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+
+	if (ecsManager.HasComponent<ParentComponent>(entity)) {
+		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
+		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
+
+		// Convert world to local.
+		Matrix4x4 parentNoScale = Matrix4x4::RemoveScale(parentTransform.worldMatrix);
+		Quaternion parentWorldRot = Quaternion::FromMatrix(parentNoScale);
+
+		transform.localRotation = parentWorldRot.Inverse() * rotation;
+	}
+	else {
+		transform.localRotation = rotation;
+	}
+
+	SetDirtyRecursive(entity);
+}
+
 void TransformSystem::SetLocalRotation(Entity entity, Vector3D rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
@@ -264,7 +301,7 @@ Vector3D& TransformSystem::GetWorldPosition(Entity entity) {
 	return transform.worldPosition;
 }
 
-Vector3D& TransformSystem::GetWorldRotation(Entity entity) {
+Quaternion& TransformSystem::GetWorldRotation(Entity entity) {
 	auto& transform = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<Transform>(entity);
 	return transform.worldRotation;
 }

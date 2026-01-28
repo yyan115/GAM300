@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f65979540f7c-00040932e4000009",
+        "source": "../../Resources/Textures/M4/GroundedPlatform_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/GroundedPlatform_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

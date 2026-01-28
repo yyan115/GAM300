@@ -90,6 +90,8 @@ void VideoSystem::Update(float dt) {
 
 
     //GET RESPECTIVE COMPONENT
+    if (m_ecs->HasComponent<TextRenderComponent>(dialogueText_Entity) == false)
+        return;
     auto& textComp      = m_ecs->GetComponent<TextRenderComponent>(dialogueText_Entity);
     auto& textTransform = m_ecs->GetComponent<Transform>(dialogueText_Entity);
     auto& blackScreenSprite = m_ecs->GetComponent<SpriteRenderComponent>(blackScreen_Entity);

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e631a8d29a-00040a629e0000b1",
+        "source": "../../Resources/Textures/M4/Door_LeftDoor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Door_LeftDoor_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

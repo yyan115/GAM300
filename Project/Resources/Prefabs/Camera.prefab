@@ -1,0 +1,245 @@
+{
+    "prefab_entities": [
+        {
+            "id": 0,
+            "guid": "002fa2440d714d5d-000402304e0000b5",
+            "components": {
+                "NameComponent": {
+                    "name": "Camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 3.9
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": -90
+                        },
+                        {
+                            "type": "float",
+                            "data": -16
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 30
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 25
+                        },
+                        "0000000000000000-0000000000000000"
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.2046331763267517,
+                            0.2046331763267517,
+                            0.2046331763267517
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": ""
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0056d777f1cbc62d-00035f4bd2000001",
+                            "scriptPath": "../../Resources/Scripts/camera_follow.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "mouseSensitivity": 0.15,
+                                "followLerp": 10.0,
+                                "__meta": {},
+                                "_targetPos": {
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "x": 0.0
+                                },
+                                "_subscriptions": {},
+                                "_lastMouseY": 0.0,
+                                "_posSub": {
+                                    "id": 1064.0,
+                                    "event": "player_position"
+                                },
+                                "__created_at": 1764350815.0,
+                                "followDistance": 5.0,
+                                "_hasTarget": false,
+                                "_firstMouse": true,
+                                "_yaw": 180.0,
+                                "minPitch": -30.0,
+                                "__field_list": {
+                                    "mouseSensitivity": 0.15,
+                                    "followLerp": 10.0,
+                                    "maxPitch": 60.0,
+                                    "heightOffset": 0.0,
+                                    "followDistance": 5.0,
+                                    "minPitch": -30.0
+                                },
+                                "_pitch": 15.0,
+                                "_transform_fetched": false,
+                                "_lastMouseX": 0.0,
+                                "heightOffset": 0.0,
+                                "_private": {},
+                                "maxPitch": 60.0
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
