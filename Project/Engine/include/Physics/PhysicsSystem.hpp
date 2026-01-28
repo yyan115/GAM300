@@ -23,6 +23,7 @@ class ECSManager;
 #include "Math/Vector3D.hpp"
 #include "Physics/PhysicsContactListener.hpp"
 #include "ECS/LayerComponent.hpp"
+#include "Physics/ColliderComponent.hpp"
 
 #include "../Engine.h"  // For ENGINE_API macro
 
@@ -36,6 +37,7 @@ public:
 	void PostInitialize(ECSManager& ecsManager);
 
 	void Update(float fixedDt, ECSManager& ecsManager);	//SIMULATE PHYSICS e.g APPLY FORCES e.t.c
+	void EditorUpdate(ECSManager& ecs); // CALLED ONLY WHEN THE EDITOR IS IN STOP MODE.
 	//void SyncDirtyComponents(ECSManager& ecsManager);	//APPLY INSPECTOR CHANGES TO JOLT
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
@@ -110,4 +112,6 @@ private:
 	std::unique_ptr<JPH::TempAllocator> temp;       // e.g., TempAllocatorImpl
 	bool m_joltInitialized;  // Track if THIS instance's physics has been initialized
 
+	void SyncPhysicsBodyToTransform(Entity entity, ECSManager& ecs);
+	void UpdateColliderShapeScale(ColliderComponent& col, Vector3D worldScale);
 };

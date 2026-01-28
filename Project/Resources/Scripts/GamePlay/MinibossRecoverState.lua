@@ -1,8 +1,4 @@
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/MinibossRecoverState.lua
 -- Resources/Scripts/Gameplay/MinibossRecoverState.lua
-=======
--- Resources/Scripts/GamePlay/MinibossRecoverState.lua
->>>>>>> main:Project/Resources/Scripts/GamePlay/MinibossRecoverState.lua
 local RecoverState = {}
 
 function RecoverState:Enter(ai)

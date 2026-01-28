@@ -1,8 +1,4 @@
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/MinibossChooseState.lua
 -- Resources/Scripts/Gameplay/MinibossChooseState.lua
-=======
--- Resources/Scripts/GamePlay/MinibossChooseState.lua
->>>>>>> main:Project/Resources/Scripts/GamePlay/MinibossChooseState.lua
 local ChooseState = {}
 
 function ChooseState:Enter(ai)
