@@ -680,6 +680,237 @@ void InspectorPanel::DrawLayerComponent(Entity entity) {
 	}
 }
 
+void InspectorPanel::DrawTagComponentMulti(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		// Ensure all entities have TagComponent
+		for (Entity entity : entities) {
+			if (!ecsManager.HasComponent<TagComponent>(entity)) {
+				ecsManager.AddComponent<TagComponent>(entity, TagComponent{ 0 });
+			}
+		}
+
+		// Get the first entity's tag to show as current selection
+		TagComponent& firstTagComponent = ecsManager.GetComponent<TagComponent>(entities[0]);
+		int currentTag = firstTagComponent.tagIndex;
+
+		// Check if all entities have the same tag
+		bool mixedValues = false;
+		for (size_t i = 1; i < entities.size(); ++i) {
+			TagComponent& tagComp = ecsManager.GetComponent<TagComponent>(entities[i]);
+			if (tagComp.tagIndex != currentTag) {
+				mixedValues = true;
+				break;
+			}
+		}
+
+		ImGui::PushID("TagComponentMulti");
+
+		// Get available tags
+		const auto& availableTags = TagManager::GetInstance().GetAllTags();
+
+		// Create items for combo box, including "Add Tag..." option
+		std::vector<std::string> tagItems;
+		tagItems.reserve(availableTags.size() + 1);
+		for (const auto& tag : availableTags) {
+			tagItems.push_back(tag);
+		}
+		tagItems.push_back("Add Tag...");
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> tagItemPtrs;
+		tagItemPtrs.reserve(tagItems.size());
+		for (const auto& item : tagItems) {
+			tagItemPtrs.push_back(item.c_str());
+		}
+
+		// Ensure tagIndex is valid
+		if (currentTag < 0 || currentTag >= static_cast<int>(availableTags.size())) {
+			currentTag = 0;
+		}
+
+		// Show mixed indicator if values differ
+		if (mixedValues) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+			ImGui::Text("Tag (Mixed)");
+			ImGui::PopStyleColor();
+		}
+
+		// Combo box for tag selection
+		ImGui::SetNextItemWidth(120.0f);
+		int selectedTag = mixedValues ? -1 : currentTag;
+
+		// Create preview text
+		const char* previewText = mixedValues ? "— Mixed —" : tagItemPtrs[currentTag];
+
+		if (ImGui::BeginCombo("##TagMulti", previewText)) {
+			for (int i = 0; i < static_cast<int>(tagItemPtrs.size()); ++i) {
+				bool isSelected = (i == currentTag && !mixedValues);
+				if (ImGui::Selectable(tagItemPtrs[i], isSelected)) {
+					if (i >= 0 && i < static_cast<int>(availableTags.size())) {
+						// Apply to all selected entities
+						for (Entity entity : entities) {
+							TagComponent& tagComp = ecsManager.GetComponent<TagComponent>(entity);
+							tagComp.tagIndex = i;
+						}
+					}
+					else if (i == static_cast<int>(availableTags.size())) {
+						// "Add Tag..." was selected - open Tags & Layers window
+						auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+						if (tagsLayersPanel) {
+							tagsLayersPanel->SetOpen(true);
+						}
+					}
+				}
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error accessing TagComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawLayerComponentMulti(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		// Ensure all entities have LayerComponent
+		for (Entity entity : entities) {
+			if (!ecsManager.HasComponent<LayerComponent>(entity)) {
+				ecsManager.AddComponent<LayerComponent>(entity, LayerComponent{ 0 });
+			}
+		}
+
+		// Get the first entity's layer to show as current selection
+		LayerComponent& firstLayerComponent = ecsManager.GetComponent<LayerComponent>(entities[0]);
+		int currentLayerIndex = firstLayerComponent.layerIndex;
+
+		// Check if all entities have the same layer
+		bool mixedValues = false;
+		for (size_t i = 1; i < entities.size(); ++i) {
+			LayerComponent& layerComp = ecsManager.GetComponent<LayerComponent>(entities[i]);
+			if (layerComp.layerIndex != currentLayerIndex) {
+				mixedValues = true;
+				break;
+			}
+		}
+
+		ImGui::PushID("LayerComponentMulti");
+
+		// Get available layers
+		const auto& availableLayers = LayerManager::GetInstance().GetAllLayers();
+
+		// Create items for combo box (only show named layers)
+		std::vector<std::string> layerItems;
+		std::vector<int> layerIndices;
+		for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+			const std::string& layerName = availableLayers[i];
+			if (!layerName.empty()) {
+				layerItems.push_back(std::to_string(i) + ": " + layerName);
+				layerIndices.push_back(i);
+			}
+		}
+
+		// Add "Add Layer..." option
+		layerItems.push_back("Add Layer...");
+		std::vector<int> tempIndices = layerIndices;
+		tempIndices.push_back(-1); // Special value for "Add Layer..."
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> layerItemPtrs;
+		layerItemPtrs.reserve(layerItems.size());
+		for (const auto& item : layerItems) {
+			layerItemPtrs.push_back(item.c_str());
+		}
+
+		// Find current selection index in our filtered list
+		int currentSelection = -1;
+		for (size_t i = 0; i < layerIndices.size(); ++i) {
+			if (layerIndices[i] == currentLayerIndex) {
+				currentSelection = static_cast<int>(i);
+				break;
+			}
+		}
+
+		// If current layer is not in the named list, add it
+		if (currentSelection == -1 && !mixedValues) {
+			const std::string& currentLayerName = firstLayerComponent.GetLayerName();
+			if (!currentLayerName.empty()) {
+				std::string item = std::to_string(currentLayerIndex) + ": " + currentLayerName;
+				layerItems.insert(layerItems.end() - 1, item);
+				tempIndices.insert(tempIndices.end() - 1, currentLayerIndex);
+				layerItemPtrs.clear();
+				for (const auto& itm : layerItems) {
+					layerItemPtrs.push_back(itm.c_str());
+				}
+				currentSelection = static_cast<int>(layerItems.size() - 2);
+			}
+			else {
+				currentSelection = 0;
+			}
+		}
+
+		// Show mixed indicator if values differ
+		if (mixedValues) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+			ImGui::Text("Layer (Mixed)");
+			ImGui::PopStyleColor();
+		}
+
+		// Create preview text
+		const char* previewText = mixedValues ? "— Mixed —" :
+			(currentSelection >= 0 && currentSelection < static_cast<int>(layerItemPtrs.size() - 1) ?
+				layerItemPtrs[currentSelection] : "Default");
+
+		// Combo box for layer selection
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::BeginCombo("##LayerMulti", previewText)) {
+			for (int i = 0; i < static_cast<int>(layerItemPtrs.size()); ++i) {
+				bool isSelected = (i == currentSelection && !mixedValues);
+				if (ImGui::Selectable(layerItemPtrs[i], isSelected)) {
+					if (i >= 0 && i < static_cast<int>(tempIndices.size())) {
+						int selectedIndex = tempIndices[i];
+						if (selectedIndex == -1) {
+							// "Add Layer..." was selected - open Tags & Layers window
+							auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+							if (tagsLayersPanel) {
+								tagsLayersPanel->SetOpen(true);
+							}
+						}
+						else {
+							// Apply to all selected entities
+							for (Entity entity : entities) {
+								LayerComponent& layerComp = ecsManager.GetComponent<LayerComponent>(entity);
+								layerComp.layerIndex = selectedIndex;
+							}
+						}
+					}
+				}
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error accessing LayerComponent: %s", e.what());
+	}
+}
+
 void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -2938,6 +3169,16 @@ void InspectorPanel::DrawMultiEntityInspector(const std::vector<Entity>& entitie
 	try {
 		// Draw header with entity count and names
 		DrawSharedComponentsHeader(entities);
+
+		// Draw Tag and Layer dropdowns for multi-entity editing
+		ImGui::Text("Tag");
+		ImGui::SameLine(60.0f);
+		DrawTagComponentMulti(entities);
+		ImGui::SameLine();
+		ImGui::Text("Layer");
+		ImGui::SameLine();
+		DrawLayerComponentMulti(entities);
+		ImGui::Separator();
 
 		// Get list of shared components
 		std::vector<std::string> sharedComponents = GetSharedComponentTypes(entities);

@@ -43,6 +43,8 @@ public:
 private:
     void DrawTagComponent(Entity entity);
     void DrawLayerComponent(Entity entity);
+    void DrawTagComponentMulti(const std::vector<Entity>& entities);
+    void DrawLayerComponentMulti(const std::vector<Entity>& entities);
     void DrawModelRenderComponent(Entity entity);
 	void DrawBrainComponent(Entity entity);
 
