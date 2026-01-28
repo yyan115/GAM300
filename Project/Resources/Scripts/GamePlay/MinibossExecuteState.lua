@@ -1,8 +1,4 @@
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/MinibossExecuteState.lua
 -- Resources/Scripts/Gameplay/MinibossExecuteState.lua
-=======
--- Resources/Scripts/GamePlay/MinibossExecuteState.lua
->>>>>>> main:Project/Resources/Scripts/GamePlay/MinibossExecuteState.lua
 local ExecuteState = {}
 
 function ExecuteState:Enter(ai)

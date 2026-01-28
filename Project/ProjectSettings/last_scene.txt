@@ -1,1 +1,1 @@
-../../Resources/Scenes/01_MainMenu.scene
+../../Resources/Scenes/04_GameLevel.scene
