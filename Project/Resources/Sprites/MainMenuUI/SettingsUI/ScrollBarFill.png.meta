@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00184bbda696d675-00040b030600000b",
+        "source": "../../Resources/Sprites/MainMenuUI/SettingsUI/ScrollBarFill.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/SettingsUI/ScrollBarFill.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

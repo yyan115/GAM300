@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00184bbdf46d69ad-00040b0304000001",
+        "source": "../../Resources/Sprites/MainMenuUI/SettingsUI/BackButtonDefault.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/SettingsUI/BackButtonDefault.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

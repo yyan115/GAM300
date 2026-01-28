@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00184bbd8b45c187-00040b030600000f",
+        "source": "../../Resources/Sprites/MainMenuUI/SettingsUI/SettingsAudioBanner.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/SettingsUI/SettingsAudioBanner.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}
