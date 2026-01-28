@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "005fad5341c48e6d-00036c9a1800002d",
-        "source": "../../Resources/Materials/Trim_Column_2x2x240_Square_lambert2.mat",
-        "compiled": "../../Resources/Materials/Trim_Column_2x2x240_Square_lambert2.mat",
-        "android_compiled": "Resources/Materials/Trim_Column_2x2x240_Square_lambert2_android.mat"
-    }
-}

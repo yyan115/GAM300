@@ -69,14 +69,19 @@ Update = function(self, dt)
     if not pointerPos then return end
 
     local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+<<<<<<< HEAD
+=======
+    if not mouseCoordinate then return end
+>>>>>>> main
 
     local inputX = mouseCoordinate[1]
     local inputY = mouseCoordinate[2]
+    if not inputX or not inputY then return end
 
     -- CHECK IF ANY UI IS OPEN
     local anyUIOpen = false
     for _, states in ipairs(self.UIState) do
-        if states.component.isActive then 
+        if states.component and states.component.isActive then
             anyUIOpen = true
             break
         end
@@ -94,9 +99,10 @@ Update = function(self, dt)
 
     for index, bounds in ipairs(self.buttonBounds) do
 
-        --HOVERING OVER A BUTTON
-        if  inputX >= bounds.minX and inputX <= bounds.maxX and
-            inputY >= bounds.minY and inputY <= bounds.maxY then
+        --HOVERING OVER A BUTTON (skip if bounds are nil)
+        if bounds.minX and bounds.maxX and bounds.minY and bounds.maxY and
+           inputX >= bounds.minX and inputX <= bounds.maxX and
+           inputY >= bounds.minY and inputY <= bounds.maxY then
 
                 --IF BUTTON IS CLICKED, LOCK HIGHLIGHT FOR THE BUTTON.
                 if Input.IsPointerPressed() then

@@ -28,11 +28,19 @@
                                 },
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
                                     "data": 5
+=======
+                                    "data": 2.36785
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 2.086
+>>>>>>> main
                                 }
                             ]
                         },
@@ -32407,7 +32415,11 @@
                             "data": [
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 0.999569
+=======
+                                    "data": 0.99957
+>>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -35684,7 +35696,11 @@
                             "data": [
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 0.846673
+=======
+                                    "data": 0.846674
+>>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -37256,7 +37272,11 @@
                             "data": [
                                 {
                                     "type": "float",
+<<<<<<< HEAD
                                     "data": 0.996187
+=======
+                                    "data": 0.996186
+>>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -38662,6 +38682,72 @@
                     ]
                 }
             }
+<<<<<<< HEAD
+=======
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/Player_Animation_Bug.prefab",
+            "id": 390,
+            "guid": "005d31dd063bfca6-000407d5120010bb",
+            "Name": "Player",
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 5000
+                    }
+                },
+                {
+                    "ScriptComponent": {
+                        "scripts": [
+                            {
+                                "scriptGuidStr": "006284839ba9fd53-000407a7b8000191",
+                                "scriptPath": "../../Resources/Scripts/GamePlay/PlayerHealth.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "Health": 10.0,
+                                    "_private": {},
+                                    "SetRotation": null,
+                                    "GetPosition": null,
+                                    "GetTransform": null,
+                                    "Destroy": null,
+                                    "_transform_fetched": false,
+                                    "DeserializeFields": null,
+                                    "UpdateSafe": null,
+                                    "SerializeFields": null,
+                                    "DisableSafe": null,
+                                    "GetScale": null,
+                                    "Every": null,
+                                    "_call_lifecycle": null,
+                                    "StartSafe": null,
+                                    "AwakeSafe": null,
+                                    "After": null,
+                                    "Subscribe": null,
+                                    "__field_list": {
+                                        "Health": 10.0
+                                    },
+                                    "_subscriptions": {},
+                                    "Unsubscribe": null,
+                                    "Move": null,
+                                    "DebugTransform": null,
+                                    "SetScale": null,
+                                    "Start": null,
+                                    "__created_at": 1769500619.0,
+                                    "__meta": {},
+                                    "Awake": null,
+                                    "OnDisable": null,
+                                    "Update": null,
+                                    "GetRotation": null,
+                                    "SetPosition": null
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+>>>>>>> main
         }
     ],
     "layers": [

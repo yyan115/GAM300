@@ -27,6 +27,13 @@ return Component {
                 fadeActive.isActive = false
             end
             if fadeSprite then
+<<<<<<< HEAD
+=======
+                -- Set color to black for fade-to-black effect
+                fadeSprite.color.x = 0
+                fadeSprite.color.y = 0
+                fadeSprite.color.z = 0
+>>>>>>> main
                 fadeSprite.alpha = 0
             end
         end
@@ -51,6 +58,13 @@ return Component {
                 self._fadeActive.isActive = true
             end
             if self._fadeSprite then
+<<<<<<< HEAD
+=======
+                -- Set color to black for fade-to-black effect
+                self._fadeSprite.color.x = 0
+                self._fadeSprite.color.y = 0
+                self._fadeSprite.color.z = 0
+>>>>>>> main
                 self._fadeSprite.alpha = 0
             end
         end

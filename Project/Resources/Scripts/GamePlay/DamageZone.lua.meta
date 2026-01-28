@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/DamageZone.lua.meta
+        "guid": "003cc1d02cb3c1b3-0004078218000007",
+=======
+        "guid": "006a4ea44613bb74-0003fb4d0a000001",
+>>>>>>> main:Project/Resources/Scripts/GamePlay/DamageZone.lua.meta
+        "source": "../../Resources/Scripts/GamePlay/DamageZone.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/DamageZone.lua"
+    }
+}

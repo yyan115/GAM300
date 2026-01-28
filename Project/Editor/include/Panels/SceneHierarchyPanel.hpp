@@ -86,6 +86,10 @@ private:
     std::set<Entity> forceExpandedEntities;
     Entity lastSelectedEntity = static_cast<Entity>(-1);
 
+    // Track which tree nodes are currently expanded (updated during rendering)
+    // Used for range selection to only include visible entities
+    std::set<Entity> visibleExpandedNodes;
+
     // Helper to expand all parents of an entity
     void ExpandParentsOfEntity(Entity entity);
 

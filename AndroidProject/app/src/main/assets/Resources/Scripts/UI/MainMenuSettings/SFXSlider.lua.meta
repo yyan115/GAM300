@@ -1,9 +1,15 @@
 {
     "AssetMetaData": {
         "version": 7,
+<<<<<<<< HEAD:AndroidProject/app/src/main/assets/Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua.meta
         "guid": "0049a203b9f178d6-0003e94a5e000003",
         "source": "../../Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua",
         "compiled": "../../Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua",
         "android_compiled": "Resources/Scripts/UI/MainMenuSettings/SFXSlider.lua"
+========
+        "guid": "0058c63758894902-0003fd00f0000001",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua"
+>>>>>>>> main:Project/Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua.meta
     }
 }

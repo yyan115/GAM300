@@ -351,6 +351,14 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                             col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
                         }
                     }
+                    else {
+                        // Fallback to box if mesh creation fails
+                        col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
+                    }
+                }
+                else {
+                    // Fallback to box if mesh creation fails
+                    col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
                 }
                 break;
             }
@@ -910,14 +918,25 @@ PhysicsSystem::RaycastResult PhysicsSystem::RaycastGround(
     }
 
     result.hit = true;
+    result.bodyId = hit.mBodyID;
+
+    // FIX: Use Jolt's exact hit position instead of recalculating
+    // GetPointOnRay returns the exact hit point with full precision
+    const JPH::RVec3 hitPos = ray.GetPointOnRay(hit.mFraction);
+
+    result.hitPoint = Vector3D(static_cast<float>(hitPos.GetX()),
+        static_cast<float>(hitPos.GetY()),
+        static_cast<float>(hitPos.GetZ()));
+
     result.distance = hit.mFraction * maxDistance;
 
-    const JPH::RVec3 hitPos = start + dir * result.distance;
-    result.hitPoint = Vector3D((float)hitPos.GetX(),
-        (float)hitPos.GetY(),
-        (float)hitPos.GetZ());
+    //result.distance = hit.mFraction * maxDistance;
 
-    result.bodyId = hit.mBodyID;
+    //const JPH::RVec3 hitPos = start + dir * result.distance;
+    //result.hitPoint = Vector3D((float)hitPos.GetX(),
+    //    (float)hitPos.GetY(),
+    //    (float)hitPos.GetZ());
+
 
     if (debugLog)
     {

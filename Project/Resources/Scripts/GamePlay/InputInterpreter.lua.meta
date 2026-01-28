@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/InputInterpreter.lua.meta
+        "guid": "003cc1d00aed51e2-000407821800001f",
+=======
+        "guid": "007e0af6fad5bc1e-000406285c000019",
+>>>>>>> main:Project/Resources/Scripts/GamePlay/InputInterpreter.lua.meta
+        "source": "../../Resources/Scripts/GamePlay/InputInterpreter.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/InputInterpreter.lua"
+    }
+}

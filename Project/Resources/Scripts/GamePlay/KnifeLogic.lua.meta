@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/KnifeLogic.lua.meta
+        "guid": "003cc1d026236e98-0004078218000021",
+=======
+        "guid": "007e0af690419ab3-000406285c00001b",
+>>>>>>> main:Project/Resources/Scripts/GamePlay/KnifeLogic.lua.meta
+        "source": "../../Resources/Scripts/GamePlay/KnifeLogic.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/KnifeLogic.lua"
+    }
+}

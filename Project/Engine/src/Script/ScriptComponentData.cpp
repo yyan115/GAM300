@@ -6,8 +6,9 @@
 #pragma region Reflection
 // Register ScriptData (individual script)
 REFL_REGISTER_START(ScriptData)
+    REFL_REGISTER_PROPERTY(scriptGuid)
     REFL_REGISTER_PROPERTY(scriptGuidStr)
-    //REFL_REGISTER_PROPERTY(scriptPath)
+    REFL_REGISTER_PROPERTY(scriptPath)
     REFL_REGISTER_PROPERTY(enabled)
     REFL_REGISTER_PROPERTY(preserveKeys)
     REFL_REGISTER_PROPERTY(entryFunction)

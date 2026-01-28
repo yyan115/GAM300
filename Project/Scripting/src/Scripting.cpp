@@ -164,6 +164,10 @@ namespace {
     static std::unique_ptr<ScriptingRuntime> g_runtime;
     static std::shared_ptr<ReadAllTextAdapter> g_fsAdapter;
 
+    // Global mutex to protect Lua state access from multiple threads
+    // Lua is NOT thread-safe, so all operations must be serialized
+    static std::mutex g_luaStateMutex;
+
     // atomics to store engine-provided callbacks (same pattern as previous glue)
     static AtomicSharedPtr<HostLogFn> g_hostLoggerPtr{ nullptr };
     static AtomicSharedPtr<ReadAllTextFn> g_fileReaderPtr{ nullptr };
@@ -362,6 +366,10 @@ int Scripting::CreateInstanceFromFile(const std::string& scriptPath) {
         ENGINE_PRINT(EngineLogging::LogLevel::Warn, "CreateInstanceFromFile: runtime not initialized");
         return LUA_NOREF;
     }
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return LUA_NOREF;
 
@@ -400,10 +408,14 @@ int Scripting::CreateInstanceFromFile(const std::string& scriptPath) {
 void Scripting::DestroyInstance(int instanceRef) {
     ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance START: instanceRef=", instanceRef);
     if (!g_runtime) return;
+    if (instanceRef == LUA_NOREF) return;
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return;
-    if (instanceRef == LUA_NOREF) return;
-    
+
     ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] DestroyInstance: Getting instance from registry");
     // Call Destroy() method on the instance if it exists to clean up properly
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
@@ -450,9 +462,13 @@ bool Scripting::IsValidInstance(int instanceRef) {
 
 bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcName) {
     if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF) return false;
+
+    // Lock to ensure thread-safe access to Lua state (Lua is NOT thread-safe)
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return false;
-    if (instanceRef == LUA_NOREF) return false;
 
     int base = lua_gettop(L); // remember stack top for clean restore
 
@@ -650,9 +666,13 @@ void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {
 // Returns false on error.
 bool Scripting::BindInstanceToEntity(int instanceRef, uint32_t entityId) {
     if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF) return false;
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return false;
-    if (instanceRef == LUA_NOREF) return false;
 
     // push instance table
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); // +1
@@ -710,16 +730,26 @@ bool Scripting::BindInstanceToEntity(int instanceRef, uint32_t entityId) {
 
 std::string Scripting::SerializeInstanceToJson(int instanceRef) {
     if (!g_runtime) return "{}";
+    if (instanceRef == LUA_NOREF) return "{}";
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
-    if (!L || instanceRef == LUA_NOREF) return "{}";
+    if (!L) return "{}";
     ScriptSerializer ss;
     return ss.SerializeInstanceToJson(L, instanceRef);
 }
 
 bool Scripting::DeserializeJsonToInstance(int instanceRef, const std::string& json) {
     if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF) return false;
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
-    if (!L || instanceRef == LUA_NOREF) return false;
+    if (!L) return false;
     ScriptSerializer ss;
     return ss.DeserializeJsonToInstance(L, instanceRef, json);
 }
@@ -733,6 +763,10 @@ void Scripting::RegisterInstancePreserveKeys(int instanceRef, const std::vector<
 std::string Scripting::ExtractInstancePreserveState(int instanceRef) {
     static std::unique_ptr<StatePreserver> s_preserver;
     if (!s_preserver || !g_runtime) return {};
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return {};
     return s_preserver->ExtractState(L, instanceRef);
@@ -741,6 +775,10 @@ std::string Scripting::ExtractInstancePreserveState(int instanceRef) {
 bool Scripting::ReinjectInstancePreserveState(int instanceRef, const std::string& json) {
     static std::unique_ptr<StatePreserver> s_preserver;
     if (!s_preserver || !g_runtime) return false;
+
+    // Lock to ensure thread-safe access to Lua state
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
     lua_State* L = g_runtime->GetLuaState();
     if (!L) return false;
     return s_preserver->ReinjectState(L, instanceRef, json, nullptr);

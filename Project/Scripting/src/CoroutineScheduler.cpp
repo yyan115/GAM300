@@ -156,10 +156,16 @@ namespace Scripting {
     }
 
     void CoroutineScheduler::Shutdown() {
-        // mark not running quickly under lock
+        // First, stop and cleanup all coroutines BEFORE setting m_running to false
+        // StopAll() checks m_running, so we must call it first
+        StopAll();
+
+        // Now mark not running under lock
         {
             std::lock_guard<std::mutex> lk(m_mutex);
-            if (!m_running) return;
+            if (!m_running) {
+                // Already stopped by StopAll(), just need to clear registry pointer
+            }
             m_running = false;
         }
 
@@ -168,9 +174,6 @@ namespace Scripting {
             lua_pushnil(m_mainL);
             lua_setfield(m_mainL, LUA_REGISTRYINDEX, kSchedulerRegistryKey);
         }
-
-        // Stop and cleanup coroutines (implemented to be safe without holding mutex)
-        StopAll();
 
         // remove StartCoroutine global (optional)
         if (m_mainL) {

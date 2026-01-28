@@ -2469,7 +2469,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "00092849f6ebfca5-000386dee2000001",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",

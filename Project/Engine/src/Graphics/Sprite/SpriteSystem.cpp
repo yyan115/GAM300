@@ -162,8 +162,10 @@ void SpriteSystem::Update()
             } else {
                 // No Transform component - use sprite's own properties
             }
-
-                gfxManager.Submit(std::move(spriteRenderItem));
+                
+            // Sync sorting values to renderOrder
+            spriteRenderItem->renderOrder = spriteComponent.sortingLayer * 100 + spriteComponent.sortingOrder;
+            gfxManager.Submit(std::move(spriteRenderItem));
         }
 #ifdef ANDROID
         else {

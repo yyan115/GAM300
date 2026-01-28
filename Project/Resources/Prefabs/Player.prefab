@@ -388,7 +388,11 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "001d790d0f919dc3-0003eff7ec00001b",
+<<<<<<< HEAD
                             "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
+=======
+                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
+>>>>>>> main
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",

@@ -109,6 +109,7 @@ public:
 private:
 	void EnterState(const AnimStateID& id, Entity entity);
 	bool EvaluateTransitionConditions(const AnimTransition& transition) const;
+	void ConsumeTriggers(const AnimTransition& transition);
 
 private:
 	AnimationComponent* mOwner = nullptr;

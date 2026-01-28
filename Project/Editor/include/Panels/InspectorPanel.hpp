@@ -43,6 +43,8 @@ public:
 private:
     void DrawTagComponent(Entity entity);
     void DrawLayerComponent(Entity entity);
+    void DrawTagComponentMulti(const std::vector<Entity>& entities);
+    void DrawLayerComponentMulti(const std::vector<Entity>& entities);
     void DrawModelRenderComponent(Entity entity);
 	void DrawBrainComponent(Entity entity);
 
@@ -55,6 +57,7 @@ private:
     std::vector<std::string> GetSharedComponentTypes(const std::vector<Entity>& entities);
     void DrawSharedComponentGeneric(const std::vector<Entity>& entities, const std::string& componentType);
     bool HasComponent(Entity entity, const std::string& componentType);
+    void* GetComponentPtr(Entity entity, const std::string& componentType);
 
     void DrawSelectedAsset(const GUID_128& assetGuid);
     void ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath);
@@ -64,6 +67,7 @@ private:
 
     // Component addition functionality
     void DrawAddComponentButton(Entity entity);
+    void DrawAddComponentButtonMulti(const std::vector<Entity>& entities);
     void AddComponent(Entity entity, const std::string& componentType);
 
     // File watcher callback
