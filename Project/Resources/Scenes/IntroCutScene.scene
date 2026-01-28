@@ -255,7 +255,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3188e-10
+                                    "data": 9.31886e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +263,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3188e-10
+                                    "data": 9.31886e-10
                                 }
                             ]
                         }
@@ -378,6 +378,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0055c75f5ba7954a-00040a8388000001",
+                            "scriptPath": "../../Resources/Scripts/UI/CutsceneHandler.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 },

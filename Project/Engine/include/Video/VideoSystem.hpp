@@ -55,6 +55,7 @@ private:
     bool foundBlackScreen = false;
     bool foundSkipButton = false;
     bool isTransitioning = false;
+    bool internalCutsceneEnded = false;
 
     Entity dialogueText_Entity = -1;
     Entity dialogueBox_Entity = -1;

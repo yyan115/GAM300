@@ -119,6 +119,7 @@ void VideoSystem::Update(float dt) {
             SwapCutscene(spriteComp, firstPath);
             isTransitioning = true;
             videoComp.cutsceneEnded = false;
+            internalCutsceneEnded = false;
         }
         videoComp.currentTime += dt;
 
@@ -141,15 +142,16 @@ void VideoSystem::Update(float dt) {
         //HANDLE TRANSITION
         if (isTransitioning)
         {
-            if (videoComp.cutsceneEnded)
+            if (internalCutsceneEnded)
             {
                 FadeOutTransition(blackScreenSprite, dt, videoComp.preTime);
                 if (blackScreenSprite.alpha >= 0.99f)
                 {
+                    std::cout << "am i seein this right? " << blackScreenSprite.alpha << std::endl;
                     blackScreenSprite.alpha = 1.0f;
                     isTransitioning = false;
-                    SceneManager::GetInstance().LoadScene(sceneToLoad, true);
-
+                    videoComp.cutsceneEnded = true;     //set this to true, handle in lua script.
+                    //SceneManager::GetInstance().LoadScene(sceneToLoad, true);
                 }
             }
             else
@@ -167,18 +169,16 @@ void VideoSystem::Update(float dt) {
         //if (skipButtonSprite.isVisible && InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
         if (skipButtonSprite.isVisible && g_inputManager->IsPointerJustPressed())
         {
-            videoComp.cutsceneEnded = true; //USE THIS INSTEAD, REPLACE ALL CUT SCENE ENDED
+            internalCutsceneEnded = true;
+            //videoComp.cutsceneEnded = true; //USE THIS INSTEAD, REPLACE ALL CUT SCENE ENDED
             isTransitioning = true;
         }
 
 
         //BLOCK INPUT IF SCENE IS OVER / TRANSITITION STATE
-        if (videoComp.cutsceneEnded)
+        if (internalCutsceneEnded)
             return;
-        //CHANGE BACK TO MOUSE BUTTON LEFT LATER
-        //if (InputManager::GetMouseButtonDown(Input::MouseButton::LEFT))
         if(g_inputManager->IsPointerJustPressed())
-        //if (InputManager::GetKeyDown(Input::Key::SPACE))
         {
             //IF CURRENT SCENE HAS YET TO FINISH RENDERING ALL THE DIALOGUE, FINISH IT AND CONTINUE; DO NOT SWAP CUTSCENE
             //This only applies to the start transition since end transition is blocked
@@ -197,7 +197,8 @@ void VideoSystem::Update(float dt) {
                 if (videoComp.activeFrame > videoComp.frameEnd)
                 {
                     videoComp.activeFrame = videoComp.frameEnd; //just to fix it in place
-                    videoComp.cutsceneEnded = true;
+                    internalCutsceneEnded = true;
+                    //videoComp.cutsceneEnded = true;
                     isTransitioning = true;     //for fade out transition
                 }
                 else

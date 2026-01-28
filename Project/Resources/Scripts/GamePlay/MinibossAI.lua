@@ -1,23 +1,12 @@
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/MinibossAI.lua
--- Resources/Scripts/Gameplay/MinibossAI.lua
-=======
 -- Resources/Scripts/GamePlay/MinibossAI.lua
->>>>>>> main:Project/Resources/Scripts/GamePlay/MinibossAI.lua
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/MinibossAI.lua
-local StateMachine = require("Gameplay.StateMachine")
-local ChooseState  = require("Gameplay.MinibossChooseState")
-local ExecuteState = require("Gameplay.MinibossExecuteState")
-local RecoverState = require("Gameplay.MinibossRecoverState")
-=======
 local StateMachine = require("GamePlay.StateMachine")
 local ChooseState  = require("GamePlay.MinibossChooseState")
 local ExecuteState = require("GamePlay.MinibossExecuteState")
 local RecoverState = require("GamePlay.MinibossRecoverState")
->>>>>>> main:Project/Resources/Scripts/GamePlay/MinibossAI.lua
 
 -------------------------------------------------
 -- Helpers
