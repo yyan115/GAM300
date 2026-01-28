@@ -23804,6 +23804,18 @@
                             "data": false
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0020cb24b4d5da5c-00040b2cca000003",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/CreditsHandler.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         },
@@ -24004,11 +24016,11 @@
             }
         },
         {
-            "id": 174,
+            "id": 173,
             "guid": "00032e876ace1a85-00036d32de000055",
             "components": {
                 "NameComponent": {
-                    "name": "CreditsText"
+                    "name": "CreditsFullText"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -24200,7 +24212,7 @@
             }
         },
         {
-            "id": 178,
+            "id": 174,
             "guid": "00066903e9afd1a2-00040b25e4000005",
             "components": {
                 "NameComponent": {
@@ -24457,6 +24469,57 @@
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0020cb24a4ad56fa-00040b2cca000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/CloseCreditsButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/CloseCreditsButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "0020cb24a4ad56fa-00040b2cca000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "OnClickCloseCreditsButton"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
                         {
                             "type": "bool",
                             "data": true
