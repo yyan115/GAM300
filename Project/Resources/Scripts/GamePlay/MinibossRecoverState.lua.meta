@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0015759bb5a73844-00040b9ace000017",
-        "source": "../../Resources/Scripts/Gameplay/MinibossRecoverState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/MinibossRecoverState.lua"
+        "guid": "00238022d22009c9-00040c8fa0000029",
+        "source": "../../Resources/Scripts/GamePlay/MinibossRecoverState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/MinibossRecoverState.lua"
     }
 }

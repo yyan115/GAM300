@@ -862,6 +862,7 @@ void ScenePanel::HandleEntitySelection() {
     bool isLeftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
     bool isLeftReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
     bool isAltPressed = io.KeyAlt;
+    bool isCtrlPressed = io.KeyCtrl;  // For multi-selection like file explorer
 
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
     if ((isLeftClicked || isDoubleClicked || isLeftDown || isLeftReleased) && !isAltPressed) {
@@ -951,9 +952,21 @@ void ScenePanel::HandleEntitySelection() {
                         }
 
                         if (!selectedEntities.empty()) {
-                            GUIManager::SetSelectedEntities(selectedEntities);
-                            ENGINE_PRINT("[ScenePanel] Marquee selected ", selectedEntities.size(), " entities\n");
-                        } else {
+                            if (isCtrlPressed) {
+                                // Ctrl+marquee: add to existing selection
+                                for (Entity entity : selectedEntities) {
+                                    if (!GUIManager::IsEntitySelected(entity)) {
+                                        GUIManager::AddSelectedEntity(entity);
+                                    }
+                                }
+                                ENGINE_PRINT("[ScenePanel] Ctrl+Marquee added ", selectedEntities.size(), " entities to selection\n");
+                            } else {
+                                // Regular marquee: replace selection
+                                GUIManager::SetSelectedEntities(selectedEntities);
+                                ENGINE_PRINT("[ScenePanel] Marquee selected ", selectedEntities.size(), " entities\n");
+                            }
+                        } else if (!isCtrlPressed) {
+                            // Only clear selection if Ctrl is not pressed
                             GUIManager::ClearSelectedEntities();
                             ENGINE_PRINT("[ScenePanel] Marquee selection cleared\n");
                         }
@@ -964,10 +977,10 @@ void ScenePanel::HandleEntitySelection() {
                 }
             }
 
-            // Only perform raycast on actual click/release, not during drag
-            // Skip raycast while marquee dragging or during continuous drag
-            if (!isLeftClicked && !isDoubleClicked && !(isLeftReleased && !isMarqueeSelecting)) {
-                return; // Skip raycast during drag or other states
+            // Only perform raycast on actual click, not during drag or release
+            // This prevents double-firing on Ctrl+click (which would toggle twice)
+            if (!isLeftClicked && !isDoubleClicked) {
+                return; // Skip raycast during drag, release, or other states
             }
 
             // Perform proper raycasting for entity selection
@@ -1068,12 +1081,24 @@ void ScenePanel::HandleEntitySelection() {
                 }
 
                 // Select the entity (for both single and double click)
-                GUIManager::SetSelectedEntity(hit.entity);
-                ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
-                    , " at distance ", hit.distance, "\n");
+                if (isCtrlPressed && !isDoubleClicked) {
+                    // Ctrl+click: toggle selection (like file explorer)
+                    if (GUIManager::IsEntitySelected(hit.entity)) {
+                        GUIManager::RemoveSelectedEntity(hit.entity);
+                        ENGINE_PRINT("[ScenePanel] Ctrl+Click removed entity ", hit.entity, " from selection\n");
+                    } else {
+                        GUIManager::AddSelectedEntity(hit.entity);
+                        ENGINE_PRINT("[ScenePanel] Ctrl+Click added entity ", hit.entity, " to selection\n");
+                    }
+                } else {
+                    // Regular click or double-click: replace selection
+                    GUIManager::SetSelectedEntity(hit.entity);
+                    ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
+                        , " at distance ", hit.distance, "\n");
+                }
             } else {
-                // No entity hit, clear selection (only on single click)
-                if (!isDoubleClicked) {
+                // No entity hit, clear selection (only on single click without Ctrl)
+                if (!isDoubleClicked && !isCtrlPressed) {
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                     ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
                 }
