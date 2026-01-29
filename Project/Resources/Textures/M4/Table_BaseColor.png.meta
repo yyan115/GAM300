@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84ac701aafd-00040cfeca000233",
+        "source": "../../Resources/Textures/M4/Table_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Table_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

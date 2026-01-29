@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84a9ff34fb1-00040d06f600cee5",
+        "source": "../../Resources/Models/Environment/Carpet.fbx",
+        "compiled": "../../Resources/Models/Environment/Carpet.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

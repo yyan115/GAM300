@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84aca9b343b-00040d18ea02b44f",
+        "source": "../../Resources/Models/Environment/Bookshelf.fbx",
+        "compiled": "../../Resources/Models/Environment/Bookshelf.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
