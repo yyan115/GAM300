@@ -224,6 +224,7 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
+        self.particles  = self:GetComponent("ParticleComponent")
 
         if self._controller then
             pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
@@ -248,6 +249,11 @@ return Component {
             -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        if self.particles then
+            self.particles.isEmitting   = false
+            self.particles.emissionRate = 0
         end
 
         -- === Damage event subscription ===

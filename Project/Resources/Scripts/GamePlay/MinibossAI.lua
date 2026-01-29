@@ -1,4 +1,4 @@
--- Resources/Scripts/GamePlay/MinibossAI.lua
+-- Resources/Scripts/Gameplay/MinibossAI.lua
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")

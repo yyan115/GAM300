@@ -26,6 +26,9 @@ return Component {
         self.UIState = {}
         self._lockedState = false
 
+        -- Cache audio component for hover SFX
+        self._audio = self:GetComponent("AudioComponent")
+
         --GET ALL THE MIN MAX X Y FOR EACH BUTTON AND STORE IT
         for index, value in ipairs(targetButtons) do
             local targetEntity = Engine.GetEntityByName(value)
@@ -61,18 +64,21 @@ return Component {
 
 Update = function(self, dt)
 
-    --GET GAME COORDINATE FOR MOUSE
-    local mouseX = Input.GetMouseX()
-    local mouseY = Input.GetMouseY()
-    local mouseCoordinate = Engine.GetGameCoordinate(mouseX, mouseY)
+    --GET GAME COORDINATE FOR MOUSE (unified input system)
+    local pointerPos = Input.GetPointerPosition()
+    if not pointerPos then return end
+
+    local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+    if not mouseCoordinate then return end
 
     local inputX = mouseCoordinate[1]
     local inputY = mouseCoordinate[2]
+    if not inputX or not inputY then return end
 
     -- CHECK IF ANY UI IS OPEN
     local anyUIOpen = false
     for _, states in ipairs(self.UIState) do
-        if states.component.isActive then 
+        if states.component and states.component.isActive then
             anyUIOpen = true
             break
         end
@@ -90,12 +96,13 @@ Update = function(self, dt)
 
     for index, bounds in ipairs(self.buttonBounds) do
 
-        --HOVERING OVER A BUTTON
-        if  inputX >= bounds.minX and inputX <= bounds.maxX and
-            inputY >= bounds.minY and inputY <= bounds.maxY then
+        --HOVERING OVER A BUTTON (skip if bounds are nil)
+        if bounds.minX and bounds.maxX and bounds.minY and bounds.maxY and
+           inputX >= bounds.minX and inputX <= bounds.maxX and
+           inputY >= bounds.minY and inputY <= bounds.maxY then
 
                 --IF BUTTON IS CLICKED, LOCK HIGHLIGHT FOR THE BUTTON.
-                if Input.GetMouseButton(Input.MouseButton.Left) then
+                if Input.IsPointerPressed() then
                     self._lockedState = true
                 end
 
@@ -112,6 +119,11 @@ Update = function(self, dt)
                     oldButtonHighlight.isVisible = false
                     newButtonHighlight.isVisible = true
                     self.lastState = index  --update state
+
+                    -- Play hover SFX
+                    if self._audio then
+                        self._audio:Play()
+                    end
                 end
         end
     end

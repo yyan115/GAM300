@@ -409,14 +409,49 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
-    // ========== UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP ==========
+    // =========================================================================================
+    // 1. MANAGE BODY ACTIVATION STATE (Add/Remove from World)
+    //    This ensures that if an entity is disabled in the hierarchy OR the collider is disabled,
+    //    it is removed from the physics simulation entirely.
+    // =========================================================================================
     for (auto& e : entities) {
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
 
+        if (!ecsManager.HasComponent<ColliderComponent>(e)) continue;
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+
+        // Determine if this body SHOULD be in the physics world
+        bool shouldBeActive = ecsManager.IsEntityActiveInHierarchy(e) && col.enabled;
+        bool isCurrentlyAdded = bi.IsAdded(bodyId);
+
+        if (shouldBeActive && !isCurrentlyAdded) {
+            // Re-add to the world (Wake it up)
+            bi.AddBody(bodyId, JPH::EActivation::Activate);
+        }
+        else if (!shouldBeActive && isCurrentlyAdded) {
+            // Remove from the world (Stops all collisions and processing)
+            bi.RemoveBody(bodyId);
+        }
+    }
+
+    // =========================================================================================
+    // 2. UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP
+    // =========================================================================================
+    for (auto& e : entities) {
+        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
+
+        auto bodyIt = entityBodyMap.find(e);
+        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
+        JPH::BodyID bodyId = bodyIt->second;
+
+        // Optimization: If we just removed it in Step 1, don't try to move it
+        if (!bi.IsAdded(bodyId)) continue;
+
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+
         auto& tr = ecsManager.GetComponent<Transform>(e);
 
         if (rb.motion == Motion::Kinematic) {
@@ -463,12 +498,18 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         }
     }
 
-    // ========== SYNC ECS -> JOLT (for dynamic bodies) ==========
+    // =========================================================================================
+    // 3. SYNC ECS -> JOLT (for dynamic bodies)
+    // =========================================================================================
     for (auto& e : entities) {
-        // Skip entities without a body in our map
+        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
+
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
+
+        // Skip if not currently in physics world
+        if (!bi.IsAdded(bodyId)) continue;
 
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
@@ -476,37 +517,28 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
 
-
         if (rb.motion == Motion::Dynamic)
         {
-            // Only apply velocity if it's non-zero, but should never touch this directly in script.
             if (rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f || rb.linearVel.z != 0.0f) {
                 bi.SetLinearVelocity(bodyId, ToJoltVec3(rb.linearVel));
-                rb.linearVel = Vector3D(0, 0, 0); // Reset after applying
+                rb.linearVel = Vector3D(0, 0, 0);
             }
-
             if (rb.angularVel.x != 0.0f || rb.angularVel.y != 0.0f || rb.angularVel.z != 0.0f) {
                 bi.SetAngularVelocity(bodyId, ToJoltVec3(rb.angularVel));
-                rb.angularVel = Vector3D(0, 0, 0); // Reset after applying
+                rb.angularVel = Vector3D(0, 0, 0);
             }
-
-            if (rb.forceApplied.x != 0.0f || rb.forceApplied.y != 0.0f || rb.forceApplied.z != 0.0f)
-            {
+            if (rb.forceApplied.x != 0.0f || rb.forceApplied.y != 0.0f || rb.forceApplied.z != 0.0f) {
                 bi.AddForce(bodyId, ToJoltVec3(rb.forceApplied));
-                rb.forceApplied = Vector3D(0.0f, 0.0f, 0.0f);   //reset back to 0
+                rb.forceApplied = Vector3D(0.0f, 0.0f, 0.0f);
             }
-            if (rb.torqueApplied.x != 0.0f || rb.torqueApplied.y != 0.0f || rb.torqueApplied.z != 0.0f)
-            {
+            if (rb.torqueApplied.x != 0.0f || rb.torqueApplied.y != 0.0f || rb.torqueApplied.z != 0.0f) {
                 bi.AddTorque(bodyId, ToJoltVec3(rb.torqueApplied));
                 rb.torqueApplied = Vector3D(0.0f, 0.0f, 0.0f);
             }
-            
-            if (rb.impulseApplied.x != 0.0f || rb.impulseApplied.y != 0.0f || rb.impulseApplied.z != 0.0f)
-            {
+            if (rb.impulseApplied.x != 0.0f || rb.impulseApplied.y != 0.0f || rb.impulseApplied.z != 0.0f) {
                 bi.AddImpulse(bodyId, ToJoltVec3(rb.impulseApplied));
                 rb.impulseApplied = Vector3D(0.0f, 0.0f, 0.0f);
             }
-
         }
     }
 
@@ -546,6 +578,8 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 #endif
 
     for (auto& e : entities) {
+        if (!ecsManager.IsEntityActiveInHierarchy(e)) return;
+
         // Skip entities without a body in our map
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;

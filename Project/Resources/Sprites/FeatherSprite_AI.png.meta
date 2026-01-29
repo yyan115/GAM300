@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0067d7b772bde87a-00040b9528000069",
+        "source": "../../Resources/Sprites/FeatherSprite_AI.png",
+        "compiled": "../../Resources/Sprites/FeatherSprite_AI.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -70,7 +70,7 @@ return Component {
     Start = function(self)
         self.model    = self:GetComponent("ModelRenderComponent")
         self.collider = self:GetComponent("ColliderComponent")
-        self.rb       = self:GetComponent("RigidBodyComponent") -- should be nil now
+        self.rb       = self:GetComponent("RigidBodyComponent")
 
         self.active = false
         self.reserved = false
