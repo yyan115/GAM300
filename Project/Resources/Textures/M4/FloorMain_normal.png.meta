@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/M4/FloorMain_normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }
