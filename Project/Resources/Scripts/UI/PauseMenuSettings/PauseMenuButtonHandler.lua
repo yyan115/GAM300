@@ -7,11 +7,33 @@ return Component {
         fadeScreenName = "MenuFadeScreen",
     },
 
+    OnClickContinueButton = function(self)
+        -- Logic for continue
+    end,
+
+    OnClickSettingButton = function(self)
+        --DISABLE PAUSE MENU UI SCREEN, ENABLE SETTINGS UI SCREEN
+        local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
+        local PauseComp = GetComponent(PauseUIEntity, "ActiveComponent")
+        PauseComp.isActive = false
+
+        local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
+        local SettingsComp = GetComponent(SettingsUIEntity, "ActiveComponent")
+        SettingsComp.isActive = true
+
+    
+
+        print("Hello boss")
+    end,
+
+    OnClickMainMenuButton = function(self)
+        -- Logic for quit
+    end,
+
     Start = function(self)
         self._buttonData = {} 
         self.lastState = 1
 
-        -- Link the detection area to the visual hover entity
         local buttonMapping = {
             { base = "ContinueButton", hover = "HoveredContinue" },
             { base = "SettingsButton", hover = "HoveredSetting" },
@@ -36,33 +58,41 @@ return Component {
                     maxY = pos.y + (scale.y / 2)
                 }
 
-                -- Initialize: Hide all except the default first button
+                -- Initialize: Show only the default button if it exists
                 if hoverSprite then
                     hoverSprite.isVisible = (index == self.lastState)
                 end
+            else
+                self._buttonData[index] = nil
+                print("Warning: Missing entities for " .. names.base)
             end
         end
     end,
 
     Update = function(self, dt)
+        if not self._buttonData then 
+        return 
+    end
         local pointerPos = Input.GetPointerPosition()
         if not pointerPos then return end
 
         local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
         local inputX, inputY = mouseCoordinate[1], mouseCoordinate[2]
 
-        for index, data in ipairs(self._buttonData) do
+        for index, data in pairs(self._buttonData) do
             if inputX >= data.minX and inputX <= data.maxX and
                inputY >= data.minY and inputY <= data.maxY then
-
-                -- Only swap if we moved to a new button
+                
+                -- Only update if the button state has actually changed
                 if index ~= self.lastState then
-                    -- Hide previous
-                    if self._buttonData[self.lastState].hoverSprite then
-                        self._buttonData[self.lastState].hoverSprite.isVisible = false
+                    
+                    -- Hide the previous hover sprite safely
+                    local prevData = self._buttonData[self.lastState]
+                    if prevData and prevData.hoverSprite then
+                        prevData.hoverSprite.isVisible = false
                     end
 
-                    -- Show current
+                    -- Show the new hover sprite safely
                     if data.hoverSprite then
                         data.hoverSprite.isVisible = true
                     end
@@ -72,18 +102,5 @@ return Component {
                 return 
             end
         end
-    end,
-
-    OnClickContinueButton = function(self)
-        local ui = Engine.GetEntityByName("PauseMenuUI")
-        if ui then GetComponent(ui, "ActiveComponent").isActive = false end
-    end,
-
-    OnClickSettingButton = function(self)
-        -- Your settings logic
-    end,
-
-    OnClickMainMenuButton = function(self)
-        -- Your quit logic
     end,
 }

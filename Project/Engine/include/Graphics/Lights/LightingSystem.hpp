@@ -59,6 +59,7 @@ public:
     glm::vec3 ambientSky = glm::vec3(0.7f, 0.7f, 0.7f);
     glm::vec3 ambientEquator = glm::vec3(0.5f, 0.5f, 0.5f);
     glm::vec3 ambientGround = glm::vec3(0.3f, 0.3f, 0.3f);
+    float ambientIntensity = 1.0f;  // Multiplier for ambient lighting
 
     void SetAmbientMode(AmbientMode mode) { ambientMode = mode; }
     void SetAmbientSky(glm::vec3 color) { ambientSky = color; }

@@ -21,6 +21,21 @@
 #include <Sound/AudioComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
+#include <ECS/TagComponent.hpp>
+#include <ECS/LayerComponent.hpp>
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
+#include <Graphics/Particle/ParticleComponent.hpp>
+#include <Graphics/DebugDraw/DebugDrawComponent.hpp>
+#include <Sound/AudioListenerComponent.hpp>
+#include <Sound/AudioReverbZoneComponent.hpp>
+#include <UI/Button/ButtonComponent.hpp>
+#include <UI/Slider/SliderComponent.hpp>
+#include <UI/Anchor/UIAnchorComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
+#include <Game AI/BrainComponent.hpp>
+#include <Video/VideoComponent.hpp>
 #include "EditorState.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
@@ -58,8 +73,18 @@ void SceneHierarchyPanel::MarkForRefresh() {
     needsRefresh = true;
 }
 
+// Static set to track visited entities during hierarchy rendering (prevents infinite recursion from circular refs)
+static thread_local std::set<Entity> s_VisitedEntities;
+static thread_local int s_HierarchyDepth = 0;
+
 void SceneHierarchyPanel::OnImGuiRender() {
-    
+    // Clear visited entities tracking at start of each frame
+    s_VisitedEntities.clear();
+    s_HierarchyDepth = 0;
+
+    // Clear visible expanded nodes tracking (will be rebuilt during rendering)
+    visibleExpandedNodes.clear();
+
     ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorComponents::PANEL_BG_HIERARCHY);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_HIERARCHY);
 
@@ -308,6 +333,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
         }
 
     }
+    UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
 
     ImGui::PopStyleColor(2);  // Pop WindowBg and ChildBg colors
@@ -316,6 +342,26 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
 void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity entityId, bool hasChildren)
 {
+    // Circular reference detection
+    if (s_VisitedEntities.count(entityId) > 0) {
+        std::cerr << "[SceneHierarchy] ERROR: Circular reference detected for entity " << entityId << " (" << entityName << ")" << std::endl;
+        std::cerr << "[SceneHierarchy] Visited entities in current chain: ";
+        for (Entity e : s_VisitedEntities) {
+            std::cerr << e << " ";
+        }
+        std::cerr << std::endl;
+        return;
+    }
+
+    // Depth limit to prevent stack overflow (max 100 levels deep)
+    if (s_HierarchyDepth > 100) {
+        std::cerr << "[SceneHierarchy] ERROR: Hierarchy depth exceeded 100 levels at entity " << entityId << " (" << entityName << ")" << std::endl;
+        return;
+    }
+
+    s_VisitedEntities.insert(entityId);
+    s_HierarchyDepth++;
+
     if (!renamingEntity)
         assert(!entityName.empty() && "Entity name cannot be empty");
 
@@ -626,14 +672,28 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     if (opened && hasChildren) {
+        // Track that this node is expanded (for range selection to include visible children)
+        visibleExpandedNodes.insert(entityId);
+
         // Child nodes would be drawn here in a real implementation
-        for (const auto& childGUID : ecsManager.GetComponent<ChildrenComponent>(entityId).children) {
-            Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
-            DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
+        if (ecsManager.HasComponent<ChildrenComponent>(entityId)) {
+            const auto& children = ecsManager.GetComponent<ChildrenComponent>(entityId).children;
+            for (const auto& childGUID : children) {
+                Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+                // Safety check: verify child entity is valid and has required components
+                if (child == static_cast<Entity>(-1) || !ecsManager.HasComponent<NameComponent>(child)) {
+                    continue;  // Skip invalid children
+                }
+                DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
+            }
         }
 
         ImGui::TreePop();
     }
+
+    // Cleanup visited tracking
+    s_VisitedEntities.erase(entityId);
+    s_HierarchyDepth--;
 }
 
 void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetParent) {
@@ -667,13 +727,18 @@ void SceneHierarchyPanel::ReparentEntity(Entity draggedEntity, Entity targetPare
         parentComponent.parent = targetParentGUID;
 
         // Remove the child from the old parent.
-        auto oldPChildCompOpt = ecsManager.TryGetComponent<ChildrenComponent>(oldParent);
-        auto it = std::find(oldPChildCompOpt->get().children.begin(), oldPChildCompOpt->get().children.end(), EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
-        ecsManager.GetComponent<ChildrenComponent>(oldParent).children.erase(it);
+        if (oldParent != static_cast<Entity>(-1) && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
+            auto& oldChildren = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
+            auto it = std::find(oldChildren.begin(), oldChildren.end(), draggedEntityGUID);
+            if (it != oldChildren.end()) {
+                oldChildren.erase(it);
+            }
 
-        // If the old parent has no more children, remove the children component from the old parent.
-        if (oldPChildCompOpt->get().children.empty())
-            ecsManager.RemoveComponent<ChildrenComponent>(oldParent);
+            // If the old parent has no more children, remove the children component from the old parent.
+            if (oldChildren.empty()) {
+                ecsManager.RemoveComponent<ChildrenComponent>(oldParent);
+            }
+        }
     }
     else {
         ecsManager.AddComponent<ParentComponent>(draggedEntity, ParentComponent{});
@@ -821,11 +886,16 @@ void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
         ecsManager.RemoveComponent<ParentComponent>(draggedEntity);
 
         // Update the parent by removing the dragged entity from its children.
-        ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
-        auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(),EntityGUIDRegistry::GetInstance().GetGUIDByEntity(draggedEntity));
-        pChildrenComponent.children.erase(it);
-        if (pChildrenComponent.children.empty()) {
-            ecsManager.RemoveComponent<ChildrenComponent>(parent);
+        if (parent != static_cast<Entity>(-1) && ecsManager.HasComponent<ChildrenComponent>(parent)) {
+            ChildrenComponent& pChildrenComponent = ecsManager.GetComponent<ChildrenComponent>(parent);
+            GUID_128 draggedGUID = guidRegistry.GetGUIDByEntity(draggedEntity);
+            auto it = std::find(pChildrenComponent.children.begin(), pChildrenComponent.children.end(), draggedGUID);
+            if (it != pChildrenComponent.children.end()) {
+                pChildrenComponent.children.erase(it);
+            }
+            if (pChildrenComponent.children.empty()) {
+                ecsManager.RemoveComponent<ChildrenComponent>(parent);
+            }
         }
 
         // Calculate the child's local position, rotation and scale equal to its world transform (since it now has no parent).
@@ -845,6 +915,9 @@ void SceneHierarchyPanel::UnparentEntity(Entity draggedEntity) {
 }
 
 void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nestedChildren, std::function<void(Entity, std::set<Entity>&)> addNestedChildren) {
+    // Safety check for invalid entity
+    if (entity == static_cast<Entity>(-1)) return;
+
     // Update its own transform first.
     addNestedChildren(entity, nestedChildren);
 
@@ -856,7 +929,9 @@ void SceneHierarchyPanel::TraverseHierarchy(Entity entity, std::set<Entity>& nes
         auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
         for (const auto& childGUID : childrenComp.children) {
             Entity child = guidRegistry.GetEntityByGUID(childGUID);
-            TraverseHierarchy(child, nestedChildren, addNestedChildren);
+            if (child != static_cast<Entity>(-1)) {
+                TraverseHierarchy(child, nestedChildren, addNestedChildren);
+            }
         }
     }
 }
@@ -868,9 +943,9 @@ void SceneHierarchyPanel::AddNestedChildren(Entity entity, std::set<Entity>& nes
 void SceneHierarchyPanel::CollectParentChain(Entity entity, std::vector<Entity>& chain) {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
-    
+
     Entity current = entity;
-    while (ecsManager.HasComponent<ParentComponent>(current)) {
+    while (current != static_cast<Entity>(-1) && ecsManager.HasComponent<ParentComponent>(current)) {
         GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
         Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
         if (parent == static_cast<Entity>(-1)) break;
@@ -1131,6 +1206,222 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
             }
         }
 
+        // Copy ColliderComponent
+        if (ecsManager.HasComponent<ColliderComponent>(sourceEntity)) {
+            ColliderComponent sourceCollider = ecsManager.GetComponent<ColliderComponent>(sourceEntity);
+            // Increment version to trigger physics system to rebuild the shape
+            sourceCollider.version++;
+            // Clear runtime-only fields that will be recreated by PhysicsSystem
+            sourceCollider.shape = nullptr;
+            ecsManager.AddComponent<ColliderComponent>(newEntity, sourceCollider);
+        }
+
+        // Copy RigidBodyComponent
+        if (ecsManager.HasComponent<RigidBodyComponent>(sourceEntity)) {
+            RigidBodyComponent sourceRigidBody = ecsManager.GetComponent<RigidBodyComponent>(sourceEntity);
+            // Reset runtime-only fields
+            sourceRigidBody.id = JPH::BodyID();  // Invalid body ID, will be assigned by PhysicsSystem
+            sourceRigidBody.collider_seen_version = 0;  // Reset so physics rebuilds the body
+            sourceRigidBody.transform_dirty = true;     // Mark transform as needing sync
+            sourceRigidBody.motion_dirty = true;        // Mark motion as needing update
+            // Clear accumulated forces/impulses
+            sourceRigidBody.forceApplied = { 0.0f, 0.0f, 0.0f };
+            sourceRigidBody.torqueApplied = { 0.0f, 0.0f, 0.0f };
+            sourceRigidBody.impulseApplied = { 0.0f, 0.0f, 0.0f };
+            ecsManager.AddComponent<RigidBodyComponent>(newEntity, sourceRigidBody);
+        }
+
+        // Copy TagComponent
+        if (ecsManager.HasComponent<TagComponent>(sourceEntity)) {
+            TagComponent sourceTag = ecsManager.GetComponent<TagComponent>(sourceEntity);
+            ecsManager.AddComponent<TagComponent>(newEntity, sourceTag);
+        }
+
+        // Copy LayerComponent
+        if (ecsManager.HasComponent<LayerComponent>(sourceEntity)) {
+            LayerComponent sourceLayer = ecsManager.GetComponent<LayerComponent>(sourceEntity);
+            ecsManager.AddComponent<LayerComponent>(newEntity, sourceLayer);
+        }
+
+        // Copy DirectionalLightComponent
+        if (ecsManager.HasComponent<DirectionalLightComponent>(sourceEntity)) {
+            DirectionalLightComponent sourceLight = ecsManager.GetComponent<DirectionalLightComponent>(sourceEntity);
+            ecsManager.AddComponent<DirectionalLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy PointLightComponent
+        if (ecsManager.HasComponent<PointLightComponent>(sourceEntity)) {
+            PointLightComponent sourceLight = ecsManager.GetComponent<PointLightComponent>(sourceEntity);
+            ecsManager.AddComponent<PointLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy SpotLightComponent
+        if (ecsManager.HasComponent<SpotLightComponent>(sourceEntity)) {
+            SpotLightComponent sourceLight = ecsManager.GetComponent<SpotLightComponent>(sourceEntity);
+            ecsManager.AddComponent<SpotLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy SpriteAnimationComponent
+        if (ecsManager.HasComponent<SpriteAnimationComponent>(sourceEntity)) {
+            SpriteAnimationComponent sourceAnim = ecsManager.GetComponent<SpriteAnimationComponent>(sourceEntity);
+            // Reset runtime state
+            sourceAnim.timeInCurrentFrame = 0.0f;
+            sourceAnim.editorPreviewTime = 0.0f;
+            sourceAnim.editorPreviewFrameIndex = 0;
+            ecsManager.AddComponent<SpriteAnimationComponent>(newEntity, sourceAnim);
+        }
+
+        // Copy ParticleComponent
+        if (ecsManager.HasComponent<ParticleComponent>(sourceEntity)) {
+            ParticleComponent sourceParticle = ecsManager.GetComponent<ParticleComponent>(sourceEntity);
+            // Clear runtime-only fields
+            sourceParticle.particles.clear();
+            sourceParticle.particleTexture = nullptr;
+            sourceParticle.particleShader = nullptr;
+            sourceParticle.particleVAO = nullptr;
+            sourceParticle.quadVBO = nullptr;
+            sourceParticle.quadEBO = nullptr;
+            sourceParticle.instanceVBO = nullptr;
+            sourceParticle.timeSinceEmission = 0.0f;
+            ecsManager.AddComponent<ParticleComponent>(newEntity, sourceParticle);
+        }
+
+        // Copy AudioListenerComponent
+        if (ecsManager.HasComponent<AudioListenerComponent>(sourceEntity)) {
+            AudioListenerComponent sourceListener = ecsManager.GetComponent<AudioListenerComponent>(sourceEntity);
+            ecsManager.AddComponent<AudioListenerComponent>(newEntity, sourceListener);
+        }
+
+        // Copy AudioReverbZoneComponent
+        if (ecsManager.HasComponent<AudioReverbZoneComponent>(sourceEntity)) {
+            AudioReverbZoneComponent sourceReverb = ecsManager.GetComponent<AudioReverbZoneComponent>(sourceEntity);
+            // Clear runtime FMOD handle - will be recreated
+            sourceReverb.reverbHandle = nullptr;
+            sourceReverb.reverbInstanceIndex = -1;
+            ecsManager.AddComponent<AudioReverbZoneComponent>(newEntity, sourceReverb);
+        }
+
+        // Copy ButtonComponent
+        if (ecsManager.HasComponent<ButtonComponent>(sourceEntity)) {
+            ButtonComponent sourceButton = ecsManager.GetComponent<ButtonComponent>(sourceEntity);
+            ecsManager.AddComponent<ButtonComponent>(newEntity, sourceButton);
+        }
+
+        // Copy SliderComponent
+        if (ecsManager.HasComponent<SliderComponent>(sourceEntity)) {
+            SliderComponent sourceSlider = ecsManager.GetComponent<SliderComponent>(sourceEntity);
+            // Reset runtime cache
+            sourceSlider.lastValue = sourceSlider.value;
+            ecsManager.AddComponent<SliderComponent>(newEntity, sourceSlider);
+        }
+
+        // Copy UIAnchorComponent
+        if (ecsManager.HasComponent<UIAnchorComponent>(sourceEntity)) {
+            UIAnchorComponent sourceAnchor = ecsManager.GetComponent<UIAnchorComponent>(sourceEntity);
+            // Reset initialization flag so it recalculates on first frame
+            sourceAnchor.hasInitialized = false;
+            ecsManager.AddComponent<UIAnchorComponent>(newEntity, sourceAnchor);
+        }
+
+        // Copy ScriptComponentData
+        if (ecsManager.HasComponent<ScriptComponentData>(sourceEntity)) {
+            ScriptComponentData sourceScript = ecsManager.GetComponent<ScriptComponentData>(sourceEntity);
+            // Reset runtime state for each script - instances will be recreated
+            for (auto& script : sourceScript.scripts) {
+                script.instanceId = -1;
+                script.instanceCreated = false;
+            }
+            ecsManager.AddComponent<ScriptComponentData>(newEntity, sourceScript);
+        }
+
+        // Copy BrainComponent
+        if (ecsManager.HasComponent<BrainComponent>(sourceEntity)) {
+            BrainComponent sourceBrain = ecsManager.GetComponent<BrainComponent>(sourceEntity);
+            // Reset runtime state - brain impl will be recreated
+            sourceBrain.impl = nullptr;
+            sourceBrain.started = false;
+            sourceBrain.activeState = "";
+            ecsManager.AddComponent<BrainComponent>(newEntity, sourceBrain);
+        }
+
+        // Copy VideoComponent
+        if (ecsManager.HasComponent<VideoComponent>(sourceEntity)) {
+            VideoComponent sourceVideo = ecsManager.GetComponent<VideoComponent>(sourceEntity);
+            // Reset playback state
+            sourceVideo.isPlaying = false;
+            sourceVideo.currentTime = 0.0f;
+            sourceVideo.activeFrame = sourceVideo.frameStart;
+            sourceVideo.textureID = 0;
+            sourceVideo.asset_dirty = true;
+            sourceVideo.seek_dirty = false;
+            sourceVideo.cutsceneEnded = false;
+            ecsManager.AddComponent<VideoComponent>(newEntity, sourceVideo);
+        }
+
+        // Copy DebugDrawComponent
+        if (ecsManager.HasComponent<DebugDrawComponent>(sourceEntity)) {
+            DebugDrawComponent sourceDebug = ecsManager.GetComponent<DebugDrawComponent>(sourceEntity);
+            // Clear runtime VAO/VBO references - will be recreated by system
+            sourceDebug.shader = nullptr;
+            sourceDebug.cubeVAO = nullptr;
+            sourceDebug.sphereVAO = nullptr;
+            sourceDebug.lineVAO = nullptr;
+            ecsManager.AddComponent<DebugDrawComponent>(newEntity, sourceDebug);
+        }
+
+        // NOTE: PrefabLinkComponent is intentionally NOT copied
+        // Duplicating an entity should create an independent copy, not another prefab instance
+
+        // Preserve parent relationship - duplicated entity should have same parent as source
+        if (ecsManager.HasComponent<ParentComponent>(sourceEntity)) {
+            EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+            GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(sourceEntity).parent;
+            Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
+
+            std::cout << "[SceneHierarchy] Source entity " << sourceEntity << " has parent entity " << parentEntity << std::endl;
+
+            // Verify parent entity is valid and still exists
+            if (parentEntity != static_cast<Entity>(-1) && ecsManager.HasComponent<NameComponent>(parentEntity)) {
+                std::string parentName = ecsManager.GetComponent<NameComponent>(parentEntity).name;
+                std::cout << "[SceneHierarchy] Parent name: " << parentName << std::endl;
+
+                // Safety check: make sure we're not making the entity its own ancestor
+                // (shouldn't happen with newly created entity, but check anyway)
+                if (parentEntity == newEntity) {
+                    std::cerr << "[SceneHierarchy] ERROR: Cannot set entity as its own parent!" << std::endl;
+                } else {
+                    // Add ParentComponent to new entity
+                    if (!ecsManager.HasComponent<ParentComponent>(newEntity)) {
+                        ecsManager.AddComponent<ParentComponent>(newEntity, ParentComponent{ parentGUID });
+                    } else {
+                        ecsManager.GetComponent<ParentComponent>(newEntity).parent = parentGUID;
+                    }
+
+                    // Add new entity to parent's children list
+                    GUID_128 newEntityGUID = guidRegistry.GetGUIDByEntity(newEntity);
+                    std::cout << "[SceneHierarchy] New entity " << newEntity << " GUID: "
+                              << std::hex << newEntityGUID.high << "-" << newEntityGUID.low << std::dec << std::endl;
+
+                    if (newEntityGUID.high != 0 || newEntityGUID.low != 0) {
+                        if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
+                            auto& children = ecsManager.GetComponent<ChildrenComponent>(parentEntity).children;
+                            std::cout << "[SceneHierarchy] Parent has " << children.size() << " children before adding" << std::endl;
+                            children.push_back(newEntityGUID);
+                            std::cout << "[SceneHierarchy] Parent now has " << children.size() << " children" << std::endl;
+                        } else {
+                            ChildrenComponent childrenComp;
+                            childrenComp.children.push_back(newEntityGUID);
+                            ecsManager.AddComponent<ChildrenComponent>(parentEntity, childrenComp);
+                        }
+                        std::cout << "[SceneHierarchy] Preserved parent relationship for duplicated entity" << std::endl;
+                    }
+                }
+            }
+        }
+
+        // Ensure duplicated entity has a sibling index
+        EnsureSiblingIndex(newEntity);
+
         std::cout << "[SceneHierarchy] Successfully duplicated entity (ID: " << newEntity << ")" << std::endl;
         return newEntity;
 
@@ -1341,8 +1632,12 @@ void SceneHierarchyPanel::CollectEntitiesRecursive(Entity entity, std::vector<En
 
     flatList.push_back(entity);
 
-    // If this entity has children, add them recursively
-    if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
+    // Only include children if this entity's tree node is expanded (visible in hierarchy)
+    // Use the tracked set of expanded nodes from the last render
+    bool isExpanded = visibleExpandedNodes.count(entity) > 0;
+
+    // If this entity has children AND the node is expanded, add them recursively
+    if (isExpanded && ecsManager.HasComponent<ChildrenComponent>(entity)) {
         const auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
         for (const auto& childGUID : children) {
             Entity child = guidRegistry.GetEntityByGUID(childGUID);

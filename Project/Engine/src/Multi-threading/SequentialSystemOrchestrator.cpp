@@ -22,6 +22,7 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
 	mainECS.buttonSystem->Update();
 	mainECS.sliderSystem->Update();
+	mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime());
 	mainECS.spriteAnimationSystem->Update();
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

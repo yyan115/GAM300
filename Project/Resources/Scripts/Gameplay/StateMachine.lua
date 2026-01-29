@@ -1,4 +1,4 @@
--- Resources/Scripts/Gameplay/StateMachine.lua
+-- Resources/Scripts/GamePlay/StateMachine.lua
 local StateMachine = {}
 StateMachine.__index = StateMachine
 

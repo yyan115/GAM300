@@ -132,6 +132,9 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Button system initialized");
 	ecsManager.sliderSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Slider system initialized");
+	ecsManager.videoSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Video system initialized");
+
 
 	if (!multithreadSystems)
 	{
@@ -158,6 +161,7 @@ void SceneInstance::InitializePhysics()
 	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Physics system initialized");
+	ecsManager.physicsSystem->PostInitialize(ecsManager);
 }
 
 void SceneInstance::Update(double dt)
@@ -520,6 +524,27 @@ void SceneInstance::CreateDefaultCamera(ECSManager &ecsManager)
 
 void testing(ECSManager& ecsManager)
 {
+	// ===== TEXT WRAPPING TEST =====
+	Entity textEntity = ecsManager.CreateEntity();
+	ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
+
+	GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
+	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
+
+	// Add component first
+	TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
+	textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
+	textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
+	ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
+
+	// Now get reference and set wrap properties
+	auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
+	text.wordWrap = true;
+	text.maxWidth = 300.0f;
+	text.lineSpacing = 1.2f;
+
+	std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
+
 	Entity sAnim = ecsManager.CreateEntity();
 	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
 	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());

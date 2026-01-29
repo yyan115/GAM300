@@ -3,17 +3,50 @@
 
 void AnimationStateMachine::Update(float dt, Entity entity)
 {
+	// Safety check: mOwner must be valid
+	if (!mOwner) return;
+
 	mStateTime += dt;
 
 	AnimStateID nextState = mCurrentState;
 	bool found = false;
+	AnimTransition* triggeredTransition = nullptr;
+
+	// Get current animation progress for exit time checks
+	float normalizedTime = mOwner->GetNormalizedTime();
+	bool animationFinished = mOwner->IsAnimationFinished();
+	// Check if a loop just completed (for looping animations with exitTime ~1.0)
+	bool loopJustCompleted = mOwner->HasLoopJustCompleted();
 
 	for (auto& t : mTransitions)
 	{
 		if (!t.anyState && t.from != mCurrentState)
 			continue;
 
-		// Use serializable conditions if available, otherwise fall back to lambda
+		// Check exit time first (if required)
+		// hasExitTime means we must wait until animation reaches exitTime before transitioning
+		if (t.hasExitTime)
+		{
+			// For looping animations with exitTime >= 1.0, use loop completion detection
+			// For other cases, check normalized time against exitTime
+			bool exitTimeReached = false;
+			if (t.exitTime >= 0.99f && loopJustCompleted)
+			{
+				// Exit time is ~1.0 and a loop just completed
+				exitTimeReached = true;
+			}
+			else
+			{
+				// Normal case: check if normalized time reached exitTime, or animation finished
+				exitTimeReached = (normalizedTime >= t.exitTime) || animationFinished;
+			}
+			if (!exitTimeReached)
+			{
+				continue;  // Skip this transition - exit time not reached yet
+			}
+		}
+
+		// Now check conditions
 		bool conditionMet = false;
 		if (!t.conditions.empty())
 		{
@@ -25,20 +58,35 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 		}
 		else
 		{
-			// No conditions means always transition (immediate)
-			conditionMet = true;
+			// No conditions:
+			// - If hasExitTime is true, transition when animation reaches exit time (Unity behavior)
+			// - If hasExitTime is false, transition immediately
+			if (t.hasExitTime)
+			{
+				// We already checked exit time above, so if we're here, exit time is reached
+				conditionMet = true;
+			}
+			else
+			{
+				// No exit time and no conditions = immediate transition
+				conditionMet = true;
+			}
 		}
 
 		if (conditionMet)
 		{
 			nextState = t.to;
+			triggeredTransition = &t;
 			found = true;
 			break;
 		}
 	}
 
-	if (found)
+	if (found && triggeredTransition)
 	{
+		// Consume any triggers that were used in this transition
+		ConsumeTriggers(*triggeredTransition);
+
 		EnterState(nextState, entity);
 	}
 }
@@ -54,6 +102,19 @@ bool AnimationStateMachine::EvaluateTransitionConditions(const AnimTransition& t
 	return true;
 }
 
+void AnimationStateMachine::ConsumeTriggers(const AnimTransition& transition)
+{
+	// After a transition fires, consume any trigger parameters that were used
+	for (const auto& cond : transition.conditions)
+	{
+		if (cond.mode == AnimConditionMode::TriggerFired)
+		{
+			// Consume the trigger by calling GetTrigger (which sets consumed = true)
+			mParam.GetTrigger(cond.paramName);
+		}
+	}
+}
+
 void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
 {
 	mCurrentState = id;
@@ -67,6 +128,11 @@ void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
 
 	// Safety: check if clips are loaded before trying to play
 	if (mOwner->GetClips().empty()) {
+		return;
+	}
+
+	// Safety: validate clipIndex is within bounds
+	if (config.clipIndex >= mOwner->GetClips().size()) {
 		return;
 	}
 

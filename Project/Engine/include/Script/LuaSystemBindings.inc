@@ -241,7 +241,9 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
     FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
     FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
-    FUNCTION("Destroy", CharacterControllerWrappers::Destroy)
+    FUNCTION("DestroyByEntity", CharacterControllerWrappers::DestroyByEntity)
+    FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
+    FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
 END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
@@ -301,6 +303,16 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+END_SYSTEM()
+
+
+
+// ============================================================================
+// NAV SYSTEM
+// ============================================================================
+BEGIN_SYSTEM("Nav")
+    FUNCTION("RequestPathXZ", NavWrappers::RequestPathXZ)
+    FUNCTION("GetGroundY", NavWrappers::GetGroundY)
 END_SYSTEM()
 
 

@@ -22,6 +22,8 @@ class ECSManager;
 #include "Physics/CollisionFilters.hpp"
 #include "Math/Vector3D.hpp"
 #include "Physics/PhysicsContactListener.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Physics/ColliderComponent.hpp"
 
 #include "../Engine.h"  // For ENGINE_API macro
 
@@ -32,8 +34,10 @@ public:
 
 	bool InitialiseJolt();
 	void Initialise(ECSManager& ecsManager);
+	void PostInitialize(ECSManager& ecsManager);
 
 	void Update(float fixedDt, ECSManager& ecsManager);	//SIMULATE PHYSICS e.g APPLY FORCES e.t.c
+	void EditorUpdate(ECSManager& ecs); // CALLED ONLY WHEN THE EDITOR IS IN STOP MODE.
 	//void SyncDirtyComponents(ECSManager& ecsManager);	//APPLY INSPECTOR CHANGES TO JOLT
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
@@ -47,13 +51,57 @@ public:
 		float distance = -1.0f;
 		Vector3D hitPoint = Vector3D(0, 0, 0);
 		Vector3D hitNormal = Vector3D(0, 0, 0);
+
+		JPH::BodyID bodyId = JPH::BodyID();
 	};
 	RaycastResult Raycast(const Vector3D& origin, const Vector3D& direction, float maxDistance);
-
+	/*RaycastResult RaycastGroundOnly(const Vector3D& origin, float maxDistance);
+	RaycastResult RaycastGroundIgnoreObstacles(const Vector3D& origin,
+		const Vector3D& direction,
+		float maxDistance);*/
+	RaycastResult RaycastGround(
+		const Vector3D& origin,
+		const Vector3D& dir,
+		float dist,
+		ECSManager& ecs,
+		int groundIdx,
+		int obstacleIdx,
+		bool acceptObstacleAsHit,
+		bool debugLog = false
+	);
 
 	MyBroadPhaseLayerInterface broadphase;
 	MyObjectVsBroadPhaseLayerFilter objVsBP;
 	MyObjectLayerPairFilter objPair;
+
+	struct OverlapResult {
+		bool hit = false;
+	};
+
+	// test if a capsule overlaps solid world at the given position
+	OverlapResult OverlapCapsule(
+		const Vector3D& center,
+		float halfHeight,
+		float radius
+	);
+
+	bool BodyIsInECSLayer(const JPH::BodyID& body, int layerIndex) const;
+
+	bool BodyIsObstacle(const JPH::BodyID& body) const;
+
+	bool OverlapCapsuleObstacleLayer(
+		const Vector3D& center,
+		float halfHeight,
+		float radius,
+		ECSManager& ecsManager,
+		int obstacleLayerIndex
+	);
+
+	Entity GetEntityFromBody(const JPH::BodyID& id) const;
+
+	bool IsJoltInitialized() const { return m_joltInitialized; }
+
+	bool GetBodyWorldAABB(Entity e, JPH::AABox& outAABB) const;
 
 private:
 	JPH::PhysicsSystem          physics;
@@ -64,4 +112,6 @@ private:
 	std::unique_ptr<JPH::TempAllocator> temp;       // e.g., TempAllocatorImpl
 	bool m_joltInitialized;  // Track if THIS instance's physics has been initialized
 
+	void SyncPhysicsBodyToTransform(Entity entity, ECSManager& ecs);
+	void UpdateColliderShapeScale(ColliderComponent& col, Vector3D worldScale);
 };

@@ -13,5 +13,7 @@ REFL_REGISTER_START(ColliderComponent)
 	REFL_REGISTER_PROPERTY(capsuleHalfHeight)
 	REFL_REGISTER_PROPERTY(cylinderRadius)
 	REFL_REGISTER_PROPERTY(cylinderHalfHeight)
+	REFL_REGISTER_PROPERTY(center)
+	//REFL_REGISTER_PROPERTY(offset)
 REFL_REGISTER_END;
 #pragma endregion

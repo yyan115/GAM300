@@ -9,6 +9,7 @@
 #include "Scene/SceneManager.hpp"
 #include "Physics/PhysicsSystem.hpp"
 #include "Animation/AnimationComponent.hpp"
+#include "Video/VideoComponent.hpp"
 
 
 EditorState& EditorState::GetInstance() {
@@ -75,6 +76,15 @@ void EditorState::Play() {
                 }
             }
         }
+
+        //RESET FLAG FOR VIDEOCOMPONENT
+        for (auto ent : ecs.GetActiveEntities()) {
+            if (ecs.HasComponent<VideoComponent>(ent)) {
+                VideoComponent& videoComp = ecs.GetComponent<VideoComponent>(ent);
+                videoComp.asset_dirty = true;
+            }
+        }
+
 
         SceneManager::GetInstance().InitializeScenePhysics();
 

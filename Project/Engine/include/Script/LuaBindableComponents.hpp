@@ -66,7 +66,9 @@
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 
-
-
+// ============================================================================
+// Video Components
+// ============================================================================
+#include "Video/VideoComponent.hpp"
 
 #include "ECS/ActiveComponent.hpp"

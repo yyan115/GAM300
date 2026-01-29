@@ -10,8 +10,6 @@ return Component {
         bgmBar = "BGMBar",
         sfxNotch = "SFXNotch",
         sfxBar = "SFXBar",
-        contrastNotch = "ContrastNotch",
-        contrastBar = "ContrastBar"
     },
 
     -- Reset all settings to defaults
@@ -65,6 +63,6 @@ return Component {
         updateSlider(self.masterNotch, self.masterBar, GameSettings.GetDefaultMasterVolume(), 0, 1)
         updateSlider(self.bgmNotch, self.bgmBar, GameSettings.GetDefaultBGMVolume(), 0, 1)
         updateSlider(self.sfxNotch, self.sfxBar, GameSettings.GetDefaultSFXVolume(), 0, 1)
-        updateSlider(self.gammaNotch, self.gammaBar, GameSettings.GetDefaultGamma(), 1, 3)
+        -- updateSlider(self.gammaNotch, self.gammaBar, GameSettings.GetDefaultGamma(), 1, 3)
     end,
 }

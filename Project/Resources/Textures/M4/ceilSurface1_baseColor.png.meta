@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001a962e179114f3-000408e20c000005",
+        "source": "../../Resources/Textures/M4/ceilSurface1_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/ceilSurface1_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

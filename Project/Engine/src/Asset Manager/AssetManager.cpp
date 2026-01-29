@@ -151,6 +151,10 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	else if (scriptExtensions.find(extension) != scriptExtensions.end()) {
 		return CompileAsset<Script>(filePathStr, forceCompile, forAndroid);
 	}
+	else if (textExtensions.find(extension) != textExtensions.end()) {
+		return CompileAsset<Script>(filePathStr, forceCompile, forAndroid);
+	}
+
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
 		return false;
@@ -181,6 +185,10 @@ bool AssetManager::CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool force
 	}
 	else if (scriptExtensions.find(extension) != scriptExtensions.end()) {
 		return CompileAsset<Script>(assetMeta->sourceFilePath, forceCompile, forAndroid, assetMeta);
+	}
+	else if (textExtensions.find(extension) != textExtensions.end()) {
+		// Correct: uses filePathStr to match the other cases in this function
+		return CompileAsset<Script>(assetMeta->sourceFilePath, forceCompile, forAndroid);
 	}
 	else {
 		std::cerr << "[AssetManager] ERROR: Attempting to compile unsupported asset extension: " << extension << std::endl;
@@ -315,6 +323,9 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 		else if (scriptExtensions.find(extension) != shaderExtensions.end()) {
 			ResourceManager::GetInstance().UnloadResource<Script>(guid, it->second->compiledFilePath);
 		}
+		else if (textExtensions.find(extension) != textExtensions.end()) {
+			ResourceManager::GetInstance().UnloadResource<Script>(guid, it->second->compiledFilePath);
+		}
 		else {
 			std::cerr << "[AssetManager] ERROR: Trying to unload unsupported asset extension: " << extension << std::endl;
 		}
@@ -370,6 +381,8 @@ void AssetManager::InitializeSupportedExtensions() {
 	supportedAssetExtensions.insert(shaderExtensions.begin(), shaderExtensions.end());
 	supportedAssetExtensions.insert(materialExtensions.begin(), materialExtensions.end());
 	supportedAssetExtensions.insert(scriptExtensions.begin(), scriptExtensions.end());
+	supportedAssetExtensions.insert(textExtensions.begin(), textExtensions.end());
+
 }
 
 std::unordered_set<std::string>& AssetManager::GetSupportedExtensions() {

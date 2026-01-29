@@ -50,7 +50,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Animation/AnimatorController.hpp"
 #include "Panels/AnimatorEditorWindow.hpp"
 #include <filesystem>
-
+#include "Video/VideoComponent.hpp"
 #ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
@@ -100,9 +100,12 @@ extern GUID_128 DraggedFontGuid;
 extern std::string DraggedFontPath;
 extern GUID_128 DraggedScriptGuid;
 extern std::string DraggedScriptPath;
+extern GUID_128 DraggedTextGuid;
+extern std::string DraggedTextPath;
+
 
 // Helper function to determine asset type from field name
-enum class AssetType { None, Audio, Model, Texture, Material, Font, Script };
+enum class AssetType { None, Audio, Model, Texture, Material, Font, Script, Text };
 AssetType GetAssetTypeFromFieldName(const std::string& fieldName) {
     std::string lowerName = fieldName;
     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
@@ -125,6 +128,13 @@ AssetType GetAssetTypeFromFieldName(const std::string& fieldName) {
     if (lowerName.find("script") != std::string::npos) {
         return AssetType::Script;
     }
+    if (lowerName.find("text") != std::string::npos ||
+        lowerName.find("config") != std::string::npos ||
+        lowerName.find("cutscene") != std::string::npos ||
+        lowerName.find("data") != std::string::npos) {
+        return AssetType::Text;
+    }
+
     return AssetType::None;
 }
 
@@ -181,6 +191,12 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             displayText = path.empty() ? "None (Script)" : path.substr(path.find_last_of("/\\") + 1);
             break;
         }
+        case AssetType::Text: {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+            std::string path = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+            displayText = path.empty() ? "None (Text)" : path.substr(path.find_last_of("/\\") + 1);
+            break;
+        }
         default:
             return false;
     }
@@ -198,6 +214,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
             case AssetType::Material: payloadType = "MATERIAL_DRAG"; break;
             case AssetType::Font: payloadType = "FONT_DRAG"; break;
             case AssetType::Script: payloadType = "SCRIPT_PAYLOAD"; break;
+            case AssetType::Text: payloadType = "TEXT_PAYLOAD"; break;
             default: break;
         }
         
@@ -217,6 +234,7 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
                     case AssetType::Material: newGuid = DraggedMaterialGuid; break;
                     case AssetType::Font: newGuid = DraggedFontGuid; break;
                     case AssetType::Script: newGuid = DraggedScriptGuid; break;
+                    case AssetType::Text: newGuid = DraggedTextGuid; break;
                     default: break;
                 }
             }
@@ -584,17 +602,15 @@ void RegisterInspectorCustomRenderers()
         bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
         EditorComponents::PopComboColors();
 
-        ImGui::Text("Collider Offset");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
+        //ImGui::Text("Collider Offset");
+        //ImGui::SameLine(labelWidth);
+        //ImGui::SetNextItemWidth(-1);
 
-        float colliderOffset[3] = { collider.offset.x, collider.offset.y, collider.offset.z };
-        if (UndoableWidgets::DragFloat3("##ColliderOffset", colliderOffset, 0.05f, -FLT_MAX, FLT_MAX, "%.2f"))
-        {
-            collider.offset = Vector3D(colliderOffset[0], colliderOffset[1], colliderOffset[2]);
-        }
-
-
+        //float colliderOffset[3] = { collider.offset.x, collider.offset.y, collider.offset.z };
+        //if (UndoableWidgets::DragFloat3("##ColliderOffset", colliderOffset, 0.05f, -FLT_MAX, FLT_MAX, "%.2f"))
+        //{
+        //    collider.offset = Vector3D(colliderOffset[0], colliderOffset[1], colliderOffset[2]);
+        //}
 
         if (changed)
         {
@@ -728,6 +744,12 @@ void RegisterInspectorCustomRenderers()
         ecs;
         return false; 
     });
+    //ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "center",
+    //    [](const char*, void*, Entity, ECSManager& ecs)
+    //    {
+    //        ecs;
+    //        return false;
+    //    });
 
     // ==================== RIGIDBODY COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
@@ -741,7 +763,7 @@ void RegisterInspectorCustomRenderers()
         const float labelWidth = EditorComponents::GetLabelWidth();
 
         // --- Motion Type dropdown ---
-        ImGui::Text("Motion");
+        ImGui::Text("Motion"); 
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
@@ -832,6 +854,186 @@ void RegisterInspectorCustomRenderers()
         ImGui::PopID();
         return true; // skip default reflection
     });
+
+    //ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
+    //    [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
+    //    {
+    //        // 1. Cast to the actual component type
+    //        auto& videoComp = *static_cast<VideoComponent*>(ptr);
+    //        const float labelWidth = EditorComponents::GetLabelWidth();
+
+    //        ImGui::Text("Configuration File");
+    //        ImGui::SameLine(labelWidth);
+    //        ImGui::SetNextItemWidth(-1);
+
+    //        // 2. Use the path stored in the component to show the display text
+    //        std::string texPath = videoComp.videoPath;
+    //        videoComp.inputFilePath = texPath;
+    //        std::string displayText = texPath.empty() ? "None (Text)" : texPath.substr(texPath.find_last_of("/\\") + 1);
+
+    //        float buttonWidth = ImGui::GetContentRegionAvail().x;
+    //        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+    //        if (EditorComponents::BeginDragDropTarget())
+    //        {
+    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
+    //            {
+    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Cutscene File");
+
+    //                const char* payloadPath = (const char*)payload->Data;
+    //                std::string pathStr(payloadPath, payload->DataSize);
+    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+    //                // 3. Update the component directly
+
+    //                videoComp.ProcessMetaData(pathStr);     //split path accordingly.
+    //                videoComp.asset_dirty = true; // Mark for reload      
+
+    //                EditorComponents::EndDragDropTarget();
+    //                return true;
+    //            }
+    //            EditorComponents::EndDragDropTarget();
+    //        }
+
+    //        ImGui::Spacing(); // Add some space between the two inputs
+
+    //        // --- 2. DIALOGUE FILE (New) ---
+    //        ImGui::Text("Dialogue File");
+    //        ImGui::SameLine(labelWidth);
+    //        ImGui::SetNextItemWidth(-1);
+
+    //        // Assuming you add 'dialoguePath' to your VideoComponent
+    //        std::string diagPath = videoComp.dialoguePath;
+    //        std::string diagDisplay = diagPath.empty() ? "None (Dialogue)" : diagPath.substr(diagPath.find_last_of("/\\") + 1);
+
+    //        EditorComponents::DrawDragDropButton(diagDisplay.c_str(), buttonWidth);
+
+    //        if (EditorComponents::BeginDragDropTarget())
+    //        {
+    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
+    //            {
+    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
+    //                const char* payloadPath = (const char*)payload->Data;
+    //                std::string pathStr(payloadPath, payload->DataSize);
+    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+    //                // Store the path and trigger the parser you wrote in the DialogueManager
+    //                videoComp.dialoguePath = pathStr;   
+    //                videoComp.ProcessDialogueData(pathStr);
+
+    //                EditorComponents::EndDragDropTarget();
+    //                return true;
+    //            }
+    //            EditorComponents::EndDragDropTarget();
+    //        }
+
+    //        return false;
+    //    });
+
+
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "videoPath",
+        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
+        {
+            std::string* pathPtr = static_cast<std::string*>(ptr);
+            const float labelWidth = EditorComponents::GetLabelWidth();
+
+            ImGui::Text("Configuration File");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            std::string displayText = pathPtr->empty() ? "None (Text)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop configuration file here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
+                {
+                    // Take snapshot before changing file
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Configuration File");
+
+                    const char* filePath = (const char*)payload->Data;
+                    std::string pathStr(filePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    std::cout << "Configuration PathStr is " << pathStr << std::endl;
+
+                    // Update the videoPath directly
+                    *pathPtr = pathStr;
+
+                    // Get the component and process the metadata
+                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
+                    videoComp.videoPath = pathStr;
+                    videoComp.ProcessMetaData(pathStr);
+                    videoComp.asset_dirty = true;
+
+                    EditorComponents::EndDragDropTarget();
+                    return true; // Field was modified
+                }
+                EditorComponents::EndDragDropTarget();
+            }
+
+            return false;
+        });
+
+
+
+
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "dialoguePath",
+        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
+        {
+            std::string* pathPtr = static_cast<std::string*>(ptr);
+            const float labelWidth = EditorComponents::GetLabelWidth();
+
+            ImGui::Text("Dialogue File");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+
+            std::string displayText = pathPtr->empty() ? "None (Dialogue)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
+            float buttonWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
+
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop dialogue file here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
+                {
+                    // Take snapshot before changing file
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
+
+                    const char* filePath = (const char*)payload->Data;
+                    std::string pathStr(filePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    std::cout << "Dialogue PathStr is " << pathStr << std::endl;
+
+                    // Update the dialoguePath directly
+                    *pathPtr = pathStr;
+
+                    // Get the component and process the dialogue data
+                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
+                    videoComp.dialoguePath = pathStr;
+                    videoComp.ProcessDialogueData(pathStr);
+
+                    EditorComponents::EndDragDropTarget();
+                    return true; // Field was modified
+                }
+                EditorComponents::EndDragDropTarget();
+            }
+
+            return false;
+        });
+
+
+
+
+
+
+
+
+
+
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
@@ -1093,6 +1295,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                std::cout << "PathStr is " << pathStr << std::endl;
                 *guid = textureGUID;
 
                 // Load texture immediately
@@ -2081,7 +2284,6 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterComponentRenderer("AnimationComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        (void)ecs;
         AnimationComponent &animComp = *static_cast<AnimationComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
@@ -2323,6 +2525,20 @@ void RegisterInspectorCustomRenderers()
                     bool isSelected = (i == activeClipIndex);
 
                     if (ImGui::Selectable(clipName.c_str(), isSelected)) {
+                        // If clips aren't loaded or out of sync, reload them first
+                        if (animComp.GetClips().size() != animComp.clipPaths.size()) {
+                            if (ecs.HasComponent<ModelRenderComponent>(entity)) {
+                                auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+                                if (modelComp.model) {
+                                    animComp.LoadClipsFromPaths(
+                                        modelComp.model->GetBoneInfoMap(),
+                                        modelComp.model->GetBoneCount(),
+                                        entity
+                                    );
+                                }
+                            }
+                        }
+
                         // Change to the selected animation
                         if (i < animComp.GetClips().size()) {
                             animComp.SetClip(i, entity);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "imgui.h"
 
 /**
  * @brief Abstract base class for all editor panels in the GUI system.
@@ -41,7 +42,20 @@ public:
      */
     void ToggleOpen() { isOpen = !isOpen; }
 
+    /**
+     * @brief Check if this panel is currently focused.
+     * @return True if the panel window has focus, false otherwise.
+     */
+    bool IsFocused() const { return isFocused; }
+
 protected:
     std::string name;
     bool isOpen;
+    mutable bool isFocused = false;  // Updated during OnImGuiRender
+
+    /**
+     * @brief Call this at the end of OnImGuiRender to update focus state.
+     * Call after ImGui::Begin() and before ImGui::End().
+     */
+    void UpdateFocusState() const { isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows); }
 };

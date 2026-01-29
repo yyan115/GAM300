@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e67fb4bb5f-00040a62a00000b7",
+        "source": "../../Resources/Textures/M4/Door_MainGate_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Door_MainGate_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -167,7 +167,11 @@ public:
 		if(param.type == AnimParamType::Trigger)
 		{
 			if(cond.mode == AnimConditionMode::TriggerFired)
-				return !param.consumed;
+			{
+				// Trigger is "fired" only if value is true AND not yet consumed
+				bool triggerValue = std::get<bool>(param.value);
+				return triggerValue && !param.consumed;
+			}
 			return false;
 		}
 

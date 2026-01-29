@@ -1,4 +1,4 @@
--- Resources/Scripts/Gameplay/GroundHookedState.lua
+-- Resources/Scripts/GamePlay/GroundHookedState.lua
 local HookedState = {}
 
 function HookedState:Enter(ai)

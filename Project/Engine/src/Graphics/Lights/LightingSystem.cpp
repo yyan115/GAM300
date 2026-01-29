@@ -153,6 +153,15 @@ void LightingSystem::ApplyLighting(Shader& shader)
 
 void LightingSystem::ApplyShadows(Shader& shader)
 {
+    // CRITICAL: Always set samplerCube uniforms to their dedicated texture units (9-12)
+    // to prevent conflict with sampler2D textures at units 0-7.
+    // If these aren't set, they default to 0 which causes "samplers of different type
+    // assigned to same texture unit" error on OpenGL ES.
+    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        shader.setInt("pointShadowMaps[" + std::to_string(i) + "]", 9 + i);
+    }
+
     if (!shadowsEnabled)
     {
         shader.setBool("shadowsEnabled", false);

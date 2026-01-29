@@ -33,6 +33,7 @@
 #include <UI/Button/ButtonComponent.hpp>
 #include <UI/Slider/SliderComponent.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
+#include <Video/VideoComponent.hpp>
 
 class Serializer {
 public:
@@ -178,6 +179,7 @@ public:
 	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
 	static void DeserializePrefabLinkComponent(PrefabLinkComponent& prefabComp, const rapidjson::Value& prefabJSON);
 
+    static void DeserializeVideoComponent(VideoComponent & videoComp, const rapidjson::Value& sliderJSON);
     // ==================================================================================
     // Boolean Helper
     // Handles: [true] OR [{"type": "bool", "data": true}]

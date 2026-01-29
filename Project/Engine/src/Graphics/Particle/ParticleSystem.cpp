@@ -111,6 +111,7 @@ bool ParticleSystem::InitialiseParticles()
 
         // Create instance VBO (per-particle data, updated every frame)
         particleComp.instanceVBO = new VBO(particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
+        particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
         // Setup instance attributes (divisor = 1 means advance per instance)
         // Position (location 2)
@@ -179,6 +180,7 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
     particleComp.particleVAO->LinkAttrib(*particleComp.quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     particleComp.instanceVBO = new VBO( particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
+    particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 2, 3, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, position), 1);
     particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 3, 4, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, color), 1);
@@ -274,11 +276,12 @@ void ParticleSystem::Update()
         // Update particle physics
         UpdateParticles(particleComp, dt);
 
-        // Get emitter position from Transform component
+        // Calculate world emission position (transform + local offset)
+        glm::vec3 emitterWorldPos = particleComp.emitterPosition.ConvertToGLM();
         if (ecsManager.HasComponent<Transform>(entity))
         {
             auto& transform = ecsManager.GetComponent<Transform>(entity);
-            particleComp.emitterPosition = Vector3D(
+            emitterWorldPos += glm::vec3(
                 transform.worldMatrix.m.m03,
                 transform.worldMatrix.m.m13,
                 transform.worldMatrix.m.m23
@@ -286,9 +289,9 @@ void ParticleSystem::Update()
         }
 
         // Emit new particles
-        if (particleComp.isEmitting) 
+        if (particleComp.isEmitting)
         {
-            EmitParticles(particleComp, dt);
+            EmitParticles(particleComp, dt, emitterWorldPos);
         }
 
         // Remove dead particles
@@ -395,7 +398,7 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
 \param      dt - Delta time in seconds since last frame
 */
 /******************************************************************************/
-void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
+void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm::vec3& worldPos)
 {
     comp.timeSinceEmission += dt;
     float emissionInterval = 1.0f / comp.emissionRate;
@@ -407,7 +410,7 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt)
         if (comp.particles.size() >= comp.maxParticles) break;
 
         Particle p;
-        p.position = comp.emitterPosition.ConvertToGLM();
+        p.position = worldPos;
         p.life = 1.0f;
         p.size = comp.startSize;
         p.color = glm::vec4{ comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha };

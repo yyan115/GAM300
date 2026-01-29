@@ -192,6 +192,7 @@ private:
 	const std::unordered_set<std::string> shaderExtensions = { ".vert", ".frag" };
 	const std::unordered_set<std::string> materialExtensions = { ".mat" };
 	const std::unordered_set<std::string> scriptExtensions = { ".lua" };
+	const std::unordered_set<std::string> textExtensions = { ".txt" };
 	std::unordered_set<std::string> supportedAssetExtensions;
 
 	AssetManager() {

@@ -60,7 +60,7 @@ bool PointShadowMap::Initialize(int res)
     // Load shader
 #ifdef __ANDROID__
     // Android uses simple vertex/fragment shader (no geometry shader)
-    std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth_point_es");
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth_point");
 #else
     // Desktop uses geometry shader for single-pass rendering
     std::string shaderPath = ResourceManager::GetPlatformShaderPath("shadow_depth_point");

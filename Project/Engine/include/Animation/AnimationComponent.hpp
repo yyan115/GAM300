@@ -102,7 +102,18 @@ public:
     // Get current state name from state machine
     std::string GetCurrentState() const;
 
+    // Get normalized animation progress (0.0 to 1.0) for current clip
+    float GetNormalizedTime() const;
+
+    // Check if current animation has finished (for non-looping)
+    bool IsAnimationFinished() const;
+
+    // Check if a loop just completed (for looping animations with exit time)
+    // Returns true once per loop completion, then resets
+    bool HasLoopJustCompleted();
+
 private:
+    bool mLoopJustCompleted = false;
     std::vector<std::unique_ptr<Animation>> clips;
     size_t activeClip = 0;
 

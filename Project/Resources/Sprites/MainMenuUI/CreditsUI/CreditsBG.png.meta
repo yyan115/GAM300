@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00066903f9848177-00040b20a8000003",
+        "source": "../../Resources/Sprites/MainMenuUI/CreditsUI/CreditsBG.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/CreditsUI/CreditsBG.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

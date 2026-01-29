@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005156d536327f25-00040591c400005d",
+        "source": "../../Resources/Models/Environment/FloorMainModel.fbx",
+        "compiled": "../../Resources/Models/Environment/FloorMainModel.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

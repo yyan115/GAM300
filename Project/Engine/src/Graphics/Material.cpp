@@ -154,18 +154,25 @@ void Material::BindTextures(Shader& shader) const
 	bool hasNormal = HasTexture(TextureType::NORMAL);
 	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
 
-	//std::cout << "[MATERIAL] DEBUG: Texture flags - diffuse:" << hasDiffuse << " specular:" << hasSpecular << " normal:" << hasNormal << " emissive:" << hasEmissive << std::endl;
-	//std::cout << "[MATERIAL] DEBUG: Total texture info entries: " << m_textureInfo.size() << std::endl;
-
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Texture flags - diffuse:%d specular:%d normal:%d emissive:%d",
-//		hasDiffuse, hasSpecular, hasNormal, hasEmissive);
-//#endif
-
+#if defined(ANDROID) || defined(__ANDROID__)
+	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
+	// Use uniform names WITHOUT "material." prefix for samplers and flags
+	static bool loggedOnce = false;
+	if (!loggedOnce) {
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Setting texture flags: hasDiffuse=%d hasSpecular=%d hasNormal=%d hasEmissive=%d",
+			hasDiffuse, hasSpecular, hasNormal, hasEmissive);
+		loggedOnce = true;
+	}
+	shader.setBool("hasDiffuseMap", hasDiffuse);
+	shader.setBool("hasSpecularMap", hasSpecular);
+	shader.setBool("hasNormalMap", hasNormal);
+	shader.setBool("hasEmissiveMap", hasEmissive);
+#else
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
 	shader.setBool("material.hasNormalMap", hasNormal);
 	shader.setBool("material.hasEmissiveMap", hasEmissive);
+#endif
 	// For Future Use
 	/*shader.setBool("material.hasHeightMap", hasTexture(TextureType::HEIGHT));
 	shader.setBool("material.hasAOMap", hasTexture(TextureType::AMBIENT_OCCLUSION));
@@ -195,14 +202,16 @@ void Material::BindTextures(Shader& shader) const
 		if (textureInfo && textureInfo->texture && textureUnit < 16)
 		{
 			glActiveTexture(GL_TEXTURE0 + textureUnit);
-			//std::cout << "[MATERIAL] DEBUG: Activating texture unit " << textureUnit << std::endl;
 
 			textureInfo->texture->Bind(textureUnit);
-			//std::cout << "[MATERIAL] DEBUG: Bound texture to unit " << textureUnit << std::endl;
 
+#if defined(ANDROID) || defined(__ANDROID__)
+			// Android shader has samplers outside of Material struct
+			std::string uniformName = TextureTypeToString(type);
+#else
 			std::string uniformName = "material." + TextureTypeToString(type);
+#endif
 			shader.setInt(uniformName.c_str(), textureUnit);
-			//std::cout << "[MATERIAL] DEBUG: Set uniform '" << uniformName << "' to " << textureUnit << std::endl;
 
 			textureUnit++;
 		}

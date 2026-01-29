@@ -12,6 +12,7 @@
 #include <Graphics/Particle/ParticleComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
+#include <Graphics/DebugDraw/DebugDrawComponent.hpp>
 #include <Physics/ColliderComponent.hpp>
 #include <Physics/RigidBodyComponent.hpp>
 #include <Physics/CollisionLayers.hpp>
@@ -36,6 +37,7 @@
 #include <chrono>
 #include <glm/glm.hpp>
 #include <FileWatch.hpp>
+#include "Video/VideoComponent.hpp"
 
 // Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
@@ -61,6 +63,7 @@ extern std::string DraggedFontPath;
 #include "UI/Button/ButtonComponent.hpp"
 #include "Sound/AudioReverbZoneComponent.hpp"
 #include <Animation/AnimationComponent.hpp>
+#include <Animation/AnimationStateMachine.hpp>
 #include <Script/ScriptComponentData.hpp>
 #include <RunTimeVar.hpp>
 #include <Panels/AssetInspector.hpp>
@@ -275,6 +278,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<RigidBodyComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<RigidBodyComponent>(entity); }},
 
+		//Video Component
+		{"Video", "VideoComponent",
+			[&]() { return ecs.HasComponent<VideoComponent>(entity) ?
+				(void*)&ecs.GetComponent<VideoComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<VideoComponent>(entity); }},
 		// Camera component
 		{"Camera", "CameraComponent",
 			[&]() { return ecs.HasComponent<CameraComponent>(entity) ?
@@ -679,6 +687,237 @@ void InspectorPanel::DrawLayerComponent(Entity entity) {
 	}
 }
 
+void InspectorPanel::DrawTagComponentMulti(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		// Ensure all entities have TagComponent
+		for (Entity entity : entities) {
+			if (!ecsManager.HasComponent<TagComponent>(entity)) {
+				ecsManager.AddComponent<TagComponent>(entity, TagComponent{ 0 });
+			}
+		}
+
+		// Get the first entity's tag to show as current selection
+		TagComponent& firstTagComponent = ecsManager.GetComponent<TagComponent>(entities[0]);
+		int currentTag = firstTagComponent.tagIndex;
+
+		// Check if all entities have the same tag
+		bool mixedValues = false;
+		for (size_t i = 1; i < entities.size(); ++i) {
+			TagComponent& tagComp = ecsManager.GetComponent<TagComponent>(entities[i]);
+			if (tagComp.tagIndex != currentTag) {
+				mixedValues = true;
+				break;
+			}
+		}
+
+		ImGui::PushID("TagComponentMulti");
+
+		// Get available tags
+		const auto& availableTags = TagManager::GetInstance().GetAllTags();
+
+		// Create items for combo box, including "Add Tag..." option
+		std::vector<std::string> tagItems;
+		tagItems.reserve(availableTags.size() + 1);
+		for (const auto& tag : availableTags) {
+			tagItems.push_back(tag);
+		}
+		tagItems.push_back("Add Tag...");
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> tagItemPtrs;
+		tagItemPtrs.reserve(tagItems.size());
+		for (const auto& item : tagItems) {
+			tagItemPtrs.push_back(item.c_str());
+		}
+
+		// Ensure tagIndex is valid
+		if (currentTag < 0 || currentTag >= static_cast<int>(availableTags.size())) {
+			currentTag = 0;
+		}
+
+		// Show mixed indicator if values differ
+		if (mixedValues) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+			ImGui::Text("Tag (Mixed)");
+			ImGui::PopStyleColor();
+		}
+
+		// Combo box for tag selection
+		ImGui::SetNextItemWidth(120.0f);
+		int selectedTag = mixedValues ? -1 : currentTag;
+
+		// Create preview text
+		const char* previewText = mixedValues ? "— Mixed —" : tagItemPtrs[currentTag];
+
+		if (ImGui::BeginCombo("##TagMulti", previewText)) {
+			for (int i = 0; i < static_cast<int>(tagItemPtrs.size()); ++i) {
+				bool isSelected = (i == currentTag && !mixedValues);
+				if (ImGui::Selectable(tagItemPtrs[i], isSelected)) {
+					if (i >= 0 && i < static_cast<int>(availableTags.size())) {
+						// Apply to all selected entities
+						for (Entity entity : entities) {
+							TagComponent& tagComp = ecsManager.GetComponent<TagComponent>(entity);
+							tagComp.tagIndex = i;
+						}
+					}
+					else if (i == static_cast<int>(availableTags.size())) {
+						// "Add Tag..." was selected - open Tags & Layers window
+						auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+						if (tagsLayersPanel) {
+							tagsLayersPanel->SetOpen(true);
+						}
+					}
+				}
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error accessing TagComponent: %s", e.what());
+	}
+}
+
+void InspectorPanel::DrawLayerComponentMulti(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	try {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		// Ensure all entities have LayerComponent
+		for (Entity entity : entities) {
+			if (!ecsManager.HasComponent<LayerComponent>(entity)) {
+				ecsManager.AddComponent<LayerComponent>(entity, LayerComponent{ 0 });
+			}
+		}
+
+		// Get the first entity's layer to show as current selection
+		LayerComponent& firstLayerComponent = ecsManager.GetComponent<LayerComponent>(entities[0]);
+		int currentLayerIndex = firstLayerComponent.layerIndex;
+
+		// Check if all entities have the same layer
+		bool mixedValues = false;
+		for (size_t i = 1; i < entities.size(); ++i) {
+			LayerComponent& layerComp = ecsManager.GetComponent<LayerComponent>(entities[i]);
+			if (layerComp.layerIndex != currentLayerIndex) {
+				mixedValues = true;
+				break;
+			}
+		}
+
+		ImGui::PushID("LayerComponentMulti");
+
+		// Get available layers
+		const auto& availableLayers = LayerManager::GetInstance().GetAllLayers();
+
+		// Create items for combo box (only show named layers)
+		std::vector<std::string> layerItems;
+		std::vector<int> layerIndices;
+		for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+			const std::string& layerName = availableLayers[i];
+			if (!layerName.empty()) {
+				layerItems.push_back(std::to_string(i) + ": " + layerName);
+				layerIndices.push_back(i);
+			}
+		}
+
+		// Add "Add Layer..." option
+		layerItems.push_back("Add Layer...");
+		std::vector<int> tempIndices = layerIndices;
+		tempIndices.push_back(-1); // Special value for "Add Layer..."
+
+		// Convert to const char* array for ImGui
+		std::vector<const char*> layerItemPtrs;
+		layerItemPtrs.reserve(layerItems.size());
+		for (const auto& item : layerItems) {
+			layerItemPtrs.push_back(item.c_str());
+		}
+
+		// Find current selection index in our filtered list
+		int currentSelection = -1;
+		for (size_t i = 0; i < layerIndices.size(); ++i) {
+			if (layerIndices[i] == currentLayerIndex) {
+				currentSelection = static_cast<int>(i);
+				break;
+			}
+		}
+
+		// If current layer is not in the named list, add it
+		if (currentSelection == -1 && !mixedValues) {
+			const std::string& currentLayerName = firstLayerComponent.GetLayerName();
+			if (!currentLayerName.empty()) {
+				std::string item = std::to_string(currentLayerIndex) + ": " + currentLayerName;
+				layerItems.insert(layerItems.end() - 1, item);
+				tempIndices.insert(tempIndices.end() - 1, currentLayerIndex);
+				layerItemPtrs.clear();
+				for (const auto& itm : layerItems) {
+					layerItemPtrs.push_back(itm.c_str());
+				}
+				currentSelection = static_cast<int>(layerItems.size() - 2);
+			}
+			else {
+				currentSelection = 0;
+			}
+		}
+
+		// Show mixed indicator if values differ
+		if (mixedValues) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+			ImGui::Text("Layer (Mixed)");
+			ImGui::PopStyleColor();
+		}
+
+		// Create preview text
+		const char* previewText = mixedValues ? "— Mixed —" :
+			(currentSelection >= 0 && currentSelection < static_cast<int>(layerItemPtrs.size() - 1) ?
+				layerItemPtrs[currentSelection] : "Default");
+
+		// Combo box for layer selection
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::BeginCombo("##LayerMulti", previewText)) {
+			for (int i = 0; i < static_cast<int>(layerItemPtrs.size()); ++i) {
+				bool isSelected = (i == currentSelection && !mixedValues);
+				if (ImGui::Selectable(layerItemPtrs[i], isSelected)) {
+					if (i >= 0 && i < static_cast<int>(tempIndices.size())) {
+						int selectedIndex = tempIndices[i];
+						if (selectedIndex == -1) {
+							// "Add Layer..." was selected - open Tags & Layers window
+							auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+							if (tagsLayersPanel) {
+								tagsLayersPanel->SetOpen(true);
+							}
+						}
+						else {
+							// Apply to all selected entities
+							for (Entity entity : entities) {
+								LayerComponent& layerComp = ecsManager.GetComponent<LayerComponent>(entity);
+								layerComp.layerIndex = selectedIndex;
+							}
+						}
+					}
+				}
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopID();
+	}
+	catch (const std::exception& e) {
+		ImGui::Text("Error accessing LayerComponent: %s", e.what());
+	}
+}
+
 void InspectorPanel::DrawModelRenderComponent(Entity entity) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -919,11 +1158,94 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 void InspectorPanel::DrawAddComponentButton(Entity entity) {
 	ImGui::Text("Add Component");
 
-	if (ImGui::Button("Add Component", ImVec2(-1, 30))) {
+	// Calculate button width - split space if paste is available
+	float availWidth = ImGui::GetContentRegionAvail().x;
+	bool canPasteComponent = g_ComponentClipboard.hasData && !HasComponent(entity, g_ComponentClipboard.componentType);
+	float buttonWidth = canPasteComponent ? (availWidth - ImGui::GetStyle().ItemSpacing.x) * 0.5f : availWidth;
+
+	if (ImGui::Button("Add Component", ImVec2(buttonWidth, 30))) {
 		ImGui::OpenPopup("AddComponentPopup");
 		componentSearchActive = true;
 		memset(componentSearchBuffer, 0, sizeof(componentSearchBuffer));
 		resetComponentTrees = true;
+	}
+
+	// Paste Component button - only show if clipboard has data and entity doesn't have that component
+	if (canPasteComponent) {
+		ImGui::SameLine();
+		if (ImGui::Button("Paste Component", ImVec2(buttonWidth, 30))) {
+			// Take snapshot for undo
+			SnapshotManager::GetInstance().TakeSnapshot("Paste Component: " + g_ComponentClipboard.componentType);
+
+			// First add the component
+			AddComponent(entity, g_ComponentClipboard.componentType);
+
+			// Then paste the values using reflection
+			auto& lookup = TypeDescriptor::type_descriptor_lookup();
+			auto it = lookup.find(g_ComponentClipboard.componentType);
+			if (it != lookup.end()) {
+				TypeDescriptor_Struct* typeDesc = dynamic_cast<TypeDescriptor_Struct*>(it->second);
+				if (typeDesc) {
+					// Get the newly added component pointer
+					void* componentPtr = GetComponentPtr(entity, g_ComponentClipboard.componentType);
+
+					if (componentPtr) {
+						// Parse JSON from clipboard
+						rapidjson::Document doc;
+						doc.Parse(g_ComponentClipboard.jsonData.c_str());
+
+						if (!doc.HasParseError() && doc.IsObject()) {
+							// Deserialize field by field
+							std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+							for (const auto& member : members) {
+								if (doc.HasMember(member.name)) {
+									void* fieldPtr = member.get_ptr(componentPtr);
+									if (fieldPtr && member.type) {
+										member.type->Deserialize(fieldPtr, doc[member.name]);
+									}
+								}
+							}
+
+							// Post-paste sync for components with enum/ID field pairs
+							ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+							if (g_ComponentClipboard.componentType == "ColliderComponent") {
+								auto& collider = ecsManager.GetComponent<ColliderComponent>(entity);
+								// Sync enum fields from their serialized ID fields
+								collider.shapeType = static_cast<ColliderShapeType>(collider.shapeTypeID);
+								collider.layer = static_cast<JPH::ObjectLayer>(collider.layerID);
+								collider.version++; // Mark for physics system update
+							}
+							else if (g_ComponentClipboard.componentType == "RigidBodyComponent") {
+								auto& rb = ecsManager.GetComponent<RigidBodyComponent>(entity);
+								rb.motion = static_cast<Motion>(rb.motionID);
+							}
+							else if (g_ComponentClipboard.componentType == "ScriptComponentData") {
+								auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+								// Resolve script paths and GUIDs for each script
+								for (auto& script : scriptComp.scripts) {
+									bool guidIsZero = (script.scriptGuid.high == 0 && script.scriptGuid.low == 0);
+									// If scriptGuidStr is set but scriptGuid is empty, convert it
+									if (!script.scriptGuidStr.empty() && guidIsZero) {
+										script.scriptGuid = GUIDUtilities::ConvertStringToGUID128(script.scriptGuidStr);
+										guidIsZero = false;
+									}
+									// If scriptPath is empty but we have a GUID, resolve the path
+									if (script.scriptPath.empty() && !guidIsZero) {
+										script.scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+									}
+									// Reset runtime state for the new entity
+									script.instanceId = -1;
+									script.instanceCreated = false;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("Paste %s from clipboard", g_ComponentClipboard.componentType.c_str());
+		}
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, ImGui::GetContentRegionAvail().y), ImGuiCond_Appearing);
@@ -951,7 +1273,8 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				{"Scripting", ICON_FA_CODE},
 				{"General", ICON_FA_TAG},
 				{"Scripts", ICON_FA_FILE_CODE},
-				{"UI", ICON_FA_HAND_POINTER}
+				{"UI", ICON_FA_HAND_POINTER},
+				{"Video", ICON_FA_FILE_VIDEO},
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -998,6 +1321,10 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<RigidBodyComponent>(entity)) {
 				allComponents.push_back({ "RigidBody", "RigidBodyComponent", "Physics" });
 			}
+			if (!ecsManager.HasComponent<VideoComponent>(entity)) {
+				allComponents.push_back({ "Video", "VideoComponent", "Video" });
+			}
+
 			if (!ecsManager.HasComponent<AnimationComponent>(entity)) {
 				allComponents.push_back({ "Animation Component", "AnimationComponent", "Animation" });
 			}
@@ -1128,7 +1455,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				std::vector<std::string> categoryOrder = {
 					"Rendering", "Audio", "Lighting", "Camera", "Physics",
-					"Animation", "AI", "Scripting", "General", "Scripts", "UI"
+					"Animation", "AI", "Scripting", "General", "Scripts", "UI","Video"
 				};
 
 				for (const auto& category : categoryOrder) {
@@ -1180,6 +1507,260 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			}
 
 			ImGui::EndChild();
+
+		ImGui::EndPopup();
+	}
+}
+
+void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& entities) {
+	if (entities.empty()) return;
+
+	ImGui::Text("Add Component to All");
+	ImGui::SameLine();
+	ImGui::TextDisabled("(%zu entities)", entities.size());
+
+	float availWidth = ImGui::GetContentRegionAvail().x;
+
+	if (ImGui::Button("Add Component to All", ImVec2(availWidth, 30))) {
+		ImGui::OpenPopup("AddComponentMultiPopup");
+		componentSearchActive = true;
+		memset(componentSearchBuffer, 0, sizeof(componentSearchBuffer));
+		resetComponentTrees = true;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetItemRectSize().x, ImGui::GetContentRegionAvail().y), ImGuiCond_Appearing);
+
+	if (ImGui::BeginPopup("AddComponentMultiPopup")) {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		struct ComponentEntry {
+			std::string displayName;
+			std::string componentType;
+			std::string category;
+			bool isScript = false;
+			std::string scriptPath;
+		};
+
+		// Static category icons
+		static const std::unordered_map<std::string, std::string> categoryIcons = {
+			{"Rendering", ICON_FA_CUBE},
+			{"Audio", ICON_FA_HEADPHONES},
+			{"Lighting", ICON_FA_LIGHTBULB},
+			{"Camera", ICON_FA_CAMERA},
+			{"Physics", ICON_FA_CUBES},
+			{"Animation", ICON_FA_PLAY},
+			{"AI", ICON_FA_BRAIN},
+			{"Scripting", ICON_FA_CODE},
+			{"General", ICON_FA_TAG},
+			{"Scripts", ICON_FA_FILE_CODE},
+			{"UI", ICON_FA_HAND_POINTER}
+		};
+
+		std::vector<ComponentEntry> allComponents;
+
+		// Helper lambda to check if ALL entities lack a component
+		auto allEntitiesLackComponent = [&](auto hasComponentFunc) {
+			for (const auto& entity : entities) {
+				if (hasComponentFunc(entity)) return false;
+			}
+			return true;
+		};
+
+		// Only show components that NONE of the entities have
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ModelRenderComponent>(e); })) {
+			allComponents.push_back({ "Model Renderer", "ModelRenderComponent", "Rendering" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<SpriteRenderComponent>(e); })) {
+			allComponents.push_back({ "Sprite Renderer", "SpriteRenderComponent", "Rendering" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<SpriteAnimationComponent>(e); })) {
+			allComponents.push_back({"Sprite Animation", "SpriteAnimationComponent", "Rendering"});
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<TextRenderComponent>(e); })) {
+			allComponents.push_back({ "Text Renderer", "TextRenderComponent", "Rendering" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ParticleComponent>(e); })) {
+			allComponents.push_back({ "Particle System", "ParticleComponent", "Rendering" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<AudioComponent>(e); })) {
+			allComponents.push_back({ "Audio Source", "AudioComponent", "Audio" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<AudioListenerComponent>(e); })) {
+			allComponents.push_back({ "Audio Listener", "AudioListenerComponent", "Audio" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<AudioReverbZoneComponent>(e); })) {
+			allComponents.push_back({ "Audio Reverb Zone", "AudioReverbZoneComponent", "Audio" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<DirectionalLightComponent>(e); })) {
+			allComponents.push_back({ "Directional Light", "DirectionalLightComponent", "Lighting" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<PointLightComponent>(e); })) {
+			allComponents.push_back({ "Point Light", "PointLightComponent", "Lighting" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<SpotLightComponent>(e); })) {
+			allComponents.push_back({ "Spot Light", "SpotLightComponent", "Lighting" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<CameraComponent>(e); })) {
+			allComponents.push_back({ "Camera", "CameraComponent", "Camera" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ColliderComponent>(e); })) {
+			allComponents.push_back({ "Collider", "ColliderComponent", "Physics" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<RigidBodyComponent>(e); })) {
+			allComponents.push_back({ "RigidBody", "RigidBodyComponent", "Physics" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<AnimationComponent>(e); })) {
+			allComponents.push_back({ "Animation Component", "AnimationComponent", "Animation" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<BrainComponent>(e); })) {
+			allComponents.push_back({ "Brain", "Brain", "AI" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ScriptComponentData>(e); })) {
+			allComponents.push_back({ "Script", "ScriptComponentData", "Scripting" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<TagComponent>(e); })) {
+			allComponents.push_back({ "Tag", "TagComponent", "General" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<LayerComponent>(e); })) {
+			allComponents.push_back({ "Layer", "LayerComponent", "General" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ButtonComponent>(e); })) {
+			allComponents.push_back({ "Button", "ButtonComponent", "UI" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<SliderComponent>(e); })) {
+			allComponents.push_back({ "Slider", "SliderComponent", "UI" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<UIAnchorComponent>(e); })) {
+			allComponents.push_back({ "UI Anchor", "UIAnchorComponent", "UI" });
+		}
+
+		// Cache scripts
+		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
+		if (cachedScripts.empty()) {
+			cachedScripts.clear();
+			if (std::filesystem::exists(scriptsFolder)) {
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(scriptsFolder)) {
+					if (entry.is_regular_file() && entry.path().extension() == ".lua") {
+						cachedScripts.push_back(entry.path().generic_string());
+					}
+				}
+			}
+		}
+		for (const auto& scriptPath : cachedScripts) {
+			std::string scriptName = std::filesystem::path(scriptPath).stem().string();
+			allComponents.push_back(ComponentEntry{scriptName, "", "Scripts", true, scriptPath});
+		}
+
+		ImGui::SetNextItemWidth(-1);
+		if (componentSearchActive) {
+			ImGui::SetKeyboardFocusHere();
+			componentSearchActive = false;
+		}
+		ImGui::InputTextWithHint("##ComponentSearchMulti", "Search", componentSearchBuffer, sizeof(componentSearchBuffer));
+
+		ImGui::Separator();
+
+		ImGui::BeginChild("ComponentListMulti", ImVec2(0, 300), true);
+
+		std::string searchStr = componentSearchBuffer;
+		std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+
+		bool isSearching = !searchStr.empty();
+
+		// Lambda to add component to all entities
+		auto addComponentToAll = [&](const ComponentEntry& comp) {
+			SnapshotManager::GetInstance().TakeSnapshot("Add " + comp.displayName + " to " + std::to_string(entities.size()) + " entities");
+
+			for (const auto& entity : entities) {
+				if (comp.isScript) {
+					if (!ecsManager.HasComponent<ScriptComponentData>(entity)) {
+						AddComponent(entity, "ScriptComponentData");
+					}
+					auto& scriptComp = ecsManager.GetComponent<ScriptComponentData>(entity);
+					ScriptData newScript{};
+					newScript.scriptGuid = AssetManager::GetInstance().GetGUID128FromAssetMeta(comp.scriptPath);
+					newScript.scriptGuidStr = GUIDUtilities::ConvertGUID128ToString(newScript.scriptGuid);
+					newScript.scriptPath = comp.scriptPath;
+					newScript.instanceCreated = false;
+					newScript.instanceId = -1;
+					scriptComp.scripts.push_back(newScript);
+				} else {
+					if (!HasComponent(entity, comp.componentType)) {
+						AddComponent(entity, comp.componentType);
+					}
+				}
+			}
+			std::cout << "[Inspector] Added " << comp.displayName << " to " << entities.size() << " entities" << std::endl;
+		};
+
+		if (isSearching) {
+			std::vector<ComponentEntry> filteredComponents;
+			for (const auto& comp : allComponents) {
+				std::string displayNameLower = comp.displayName;
+				std::transform(displayNameLower.begin(), displayNameLower.end(), displayNameLower.begin(), ::tolower);
+
+				std::string categoryLower = comp.category;
+				std::transform(categoryLower.begin(), categoryLower.end(), categoryLower.begin(), ::tolower);
+
+				if (displayNameLower.find(searchStr) != std::string::npos ||
+					categoryLower.find(searchStr) != std::string::npos) {
+					filteredComponents.push_back(comp);
+				}
+			}
+
+			if (filteredComponents.empty()) {
+				ImGui::TextDisabled("No results found");
+			}
+			else {
+				for (const auto& comp : filteredComponents) {
+					std::string icon = categoryIcons.at(comp.category);
+					if (ImGui::Selectable((icon + " " + comp.displayName).c_str())) {
+						addComponentToAll(comp);
+						ImGui::CloseCurrentPopup();
+					}
+				}
+			}
+		}
+		else {
+			std::unordered_map<std::string, std::vector<ComponentEntry>> categorizedComponents;
+			for (const auto& comp : allComponents) {
+				categorizedComponents[comp.category].push_back(comp);
+			}
+
+			std::vector<std::string> categoryOrder = {
+				"Rendering", "Audio", "Lighting", "Camera", "Physics",
+				"Animation", "AI", "Scripting", "General", "Scripts", "UI"
+			};
+
+			for (const auto& category : categoryOrder) {
+				auto it = categorizedComponents.find(category);
+				if (it == categorizedComponents.end() || it->second.empty()) {
+					continue;
+				}
+
+				if (resetComponentTrees) {
+					ImGui::SetNextItemOpen(false);
+				}
+
+				std::string catIcon = categoryIcons.at(category);
+				if (ImGui::TreeNode((catIcon + " " + category).c_str())) {
+					for (const auto& comp : it->second) {
+						std::string compIcon = categoryIcons.at(comp.category);
+						if (ImGui::Selectable((compIcon + " " + comp.displayName).c_str())) {
+							addComponentToAll(comp);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					ImGui::TreePop();
+				}
+			}
+
+			if (resetComponentTrees) {
+				resetComponentTrees = false;
+			}
+		}
+
+		ImGui::EndChild();
 
 		ImGui::EndPopup();
 	}
@@ -1465,6 +2046,25 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "VideoComponent") {
+			VideoComponent component;
+			ecsManager.AddComponent<VideoComponent>(entity, component);
+			if (!ecsManager.HasComponent<SpriteRenderComponent>(entity))
+			{
+				SpriteRenderComponent spriteRenderComp;
+				ecsManager.AddComponent<SpriteRenderComponent>(entity, spriteRenderComp);
+			}
+
+			// Ensure entity has Transform component
+			if (!ecsManager.HasComponent<Transform>(entity)) {
+				Transform transform;
+				ecsManager.AddComponent<Transform>(entity, transform);
+				std::cout << "[Inspector] Added Transform component for VideoComponent" << std::endl;
+			}
+
+			std::cout << "[Inspector] Added VideoComponent to entity " << entity << std::endl;
+			}
+
 		else if (componentType == "TagComponent") {
 			TagComponent component;
 			ecsManager.AddComponent<TagComponent>(entity, component);
@@ -1728,6 +2328,11 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			auto& comp = ecs.GetComponent<RigidBodyComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
 		}
+		else if (componentType == "VideoComponent") {
+			auto& comp = ecs.GetComponent<VideoComponent>(entity);
+			enabledFieldPtr = &comp.enabled;
+		}
+
 		else if (componentType == "AnimationComponent") {
 			auto& comp = ecs.GetComponent<AnimationComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
@@ -1860,6 +2465,38 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 									}
 								}
 							}
+
+							// Post-paste sync for components with enum/ID field pairs
+							if (componentType == "ColliderComponent") {
+								auto* collider = static_cast<ColliderComponent*>(componentPtr);
+								// Sync enum fields from their serialized ID fields
+								collider->shapeType = static_cast<ColliderShapeType>(collider->shapeTypeID);
+								collider->layer = static_cast<JPH::ObjectLayer>(collider->layerID);
+								collider->version++; // Mark for physics system update
+							}
+							else if (componentType == "RigidBodyComponent") {
+								auto* rb = static_cast<RigidBodyComponent*>(componentPtr);
+								rb->motion = static_cast<Motion>(rb->motionID);
+							}
+							else if (componentType == "ScriptComponentData") {
+								auto* scriptComp = static_cast<ScriptComponentData*>(componentPtr);
+								// Resolve script paths and GUIDs for each script
+								for (auto& script : scriptComp->scripts) {
+									bool guidIsZero = (script.scriptGuid.high == 0 && script.scriptGuid.low == 0);
+									// If scriptGuidStr is set but scriptGuid is empty, convert it
+									if (!script.scriptGuidStr.empty() && guidIsZero) {
+										script.scriptGuid = GUIDUtilities::ConvertStringToGUID128(script.scriptGuidStr);
+										guidIsZero = false;
+									}
+									// If scriptPath is empty but we have a GUID, resolve the path
+									if (script.scriptPath.empty() && !guidIsZero) {
+										script.scriptPath = AssetManager::GetInstance().GetAssetPathFromGUID(script.scriptGuid);
+									}
+									// Reset runtime state
+									script.instanceId = -1;
+									script.instanceCreated = false;
+								}
+							}
 						}
 					}
 				}
@@ -1937,6 +2574,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
 				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "VideoComponent") {
+				ecsManager.RemoveComponent<VideoComponent>(request.entity);
+				std::cout << "[Inspector] Removed VideoComponent from entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.RemoveComponent<CameraComponent>(request.entity);
@@ -2056,6 +2697,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				ecsManager.GetComponent<RigidBodyComponent>(request.entity) = RigidBodyComponent{};
 				std::cout << "[Inspector] Reset RigidBodyComponent on entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "VideoComponent") {
+				ecsManager.GetComponent<VideoComponent>(request.entity) = VideoComponent{};
+				std::cout << "[Inspector] Reset VideoComponent on entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.GetComponent<CameraComponent>(request.entity) = CameraComponent{};
 				std::cout << "[Inspector] Reset CameraComponent on entity " << request.entity << std::endl;
@@ -2089,6 +2734,25 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				// Reset transform to default values
 				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
 				std::cout << "[Inspector] Reset Transform on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "AnimationComponent") {
+				auto& animComp = ecsManager.GetComponent<AnimationComponent>(request.entity);
+				// Clear all animation data
+				animComp.ClearClips();
+				animComp.clipPaths.clear();
+				animComp.clipGUIDs.clear();
+				animComp.clipCount = 0;
+				animComp.controllerPath.clear();
+				animComp.enabled = true;
+				animComp.isPlay = false;
+				animComp.isLoop = true;
+				animComp.speed = 1.0f;
+				// Clear state machine
+				AnimationStateMachine* sm = animComp.GetStateMachine();
+				if (sm) {
+					sm->Clear();
+				}
+				std::cout << "[Inspector] Reset AnimationComponent on entity " << request.entity << std::endl;
 			}
 			else {
 				std::cerr << "[Inspector] Unknown component type for reset: " << request.componentType << std::endl;
@@ -2197,14 +2861,71 @@ bool InspectorPanel::HasComponent(Entity entity, const std::string& componentTyp
 	if (componentType == "SpotLightComponent") return ecs.HasComponent<SpotLightComponent>(entity);
 	if (componentType == "ColliderComponent") return ecs.HasComponent<ColliderComponent>(entity);
 	if (componentType == "RigidBodyComponent") return ecs.HasComponent<RigidBodyComponent>(entity);
+	if (componentType == "VideoComponent") return ecs.HasComponent<VideoComponent>(entity);
 	if (componentType == "CameraComponent") return ecs.HasComponent<CameraComponent>(entity);
 	if (componentType == "AnimationComponent") return ecs.HasComponent<AnimationComponent>(entity);
-	if (componentType == "BrainComponent") return ecs.HasComponent<BrainComponent>(entity);
+	if (componentType == "BrainComponent" || componentType == "Brain") return ecs.HasComponent<BrainComponent>(entity);
 	if (componentType == "ScriptComponentData") return ecs.HasComponent<ScriptComponentData>(entity);
 	if (componentType == "ButtonComponent") return ecs.HasComponent<ButtonComponent>(entity);
+	if (componentType == "SliderComponent") return ecs.HasComponent<SliderComponent>(entity);
 	if (componentType == "UIAnchorComponent") return ecs.HasComponent<UIAnchorComponent>(entity);
 
 	return false;
+}
+
+void* InspectorPanel::GetComponentPtr(Entity entity, const std::string& componentType) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	if (componentType == "Transform" && ecs.HasComponent<Transform>(entity))
+		return &ecs.GetComponent<Transform>(entity);
+	if (componentType == "NameComponent" && ecs.HasComponent<NameComponent>(entity))
+		return &ecs.GetComponent<NameComponent>(entity);
+	if (componentType == "TagComponent" && ecs.HasComponent<TagComponent>(entity))
+		return &ecs.GetComponent<TagComponent>(entity);
+	if (componentType == "LayerComponent" && ecs.HasComponent<LayerComponent>(entity))
+		return &ecs.GetComponent<LayerComponent>(entity);
+	if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(entity))
+		return &ecs.GetComponent<ModelRenderComponent>(entity);
+	if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(entity))
+		return &ecs.GetComponent<SpriteRenderComponent>(entity);
+	if (componentType == "SpriteAnimationComponent" && ecs.HasComponent<SpriteAnimationComponent>(entity))
+		return &ecs.GetComponent<SpriteAnimationComponent>(entity);
+	if (componentType == "TextRenderComponent" && ecs.HasComponent<TextRenderComponent>(entity))
+		return &ecs.GetComponent<TextRenderComponent>(entity);
+	if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(entity))
+		return &ecs.GetComponent<ParticleComponent>(entity);
+	if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(entity))
+		return &ecs.GetComponent<AudioComponent>(entity);
+	if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(entity))
+		return &ecs.GetComponent<AudioListenerComponent>(entity);
+	if (componentType == "AudioReverbZoneComponent" && ecs.HasComponent<AudioReverbZoneComponent>(entity))
+		return &ecs.GetComponent<AudioReverbZoneComponent>(entity);
+	if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(entity))
+		return &ecs.GetComponent<DirectionalLightComponent>(entity);
+	if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(entity))
+		return &ecs.GetComponent<PointLightComponent>(entity);
+	if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(entity))
+		return &ecs.GetComponent<SpotLightComponent>(entity);
+	if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(entity))
+		return &ecs.GetComponent<ColliderComponent>(entity);
+	if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(entity))
+		return &ecs.GetComponent<RigidBodyComponent>(entity);
+	if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(entity))
+		return &ecs.GetComponent<CameraComponent>(entity);
+	if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(entity))
+		return &ecs.GetComponent<AnimationComponent>(entity);
+	if (componentType == "BrainComponent" && ecs.HasComponent<BrainComponent>(entity))
+		return &ecs.GetComponent<BrainComponent>(entity);
+	if (componentType == "ScriptComponentData" && ecs.HasComponent<ScriptComponentData>(entity))
+		return &ecs.GetComponent<ScriptComponentData>(entity);
+	if (componentType == "ButtonComponent" && ecs.HasComponent<ButtonComponent>(entity))
+		return &ecs.GetComponent<ButtonComponent>(entity);
+	if (componentType == "SliderComponent" && ecs.HasComponent<SliderComponent>(entity))
+		return &ecs.GetComponent<SliderComponent>(entity);
+	if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(entity))
+		return &ecs.GetComponent<UIAnchorComponent>(entity);
+
+	return nullptr;
 }
 
 std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vector<Entity>& entities) {
@@ -2310,6 +3031,7 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		{"SpotLightComponent", "Spot Light"},
 		{"ColliderComponent", "Collider"},
 		{"RigidBodyComponent", "RigidBody"},
+		{"VideoComponent", "Video"},
 		{"CameraComponent", "Camera"},
 		{"AnimationComponent", "Animation"},
 		{"BrainComponent", "Brain"},
@@ -2359,6 +3081,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	}
 	else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<RigidBodyComponent>(firstEntity);
+	}
+	else if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<VideoComponent>(firstEntity);
 	}
 	else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<CameraComponent>(firstEntity);
@@ -2470,20 +3195,165 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		}
 	}
 	else {
-		// For other components, just show the first entity's component with a note
+		// For other components, show the first entity's component and apply changes to all
 		ImGui::TextDisabled("Showing values from first selected entity");
 		ImGui::TextDisabled("Editing will apply to all selected entities");
 		ImGui::Spacing();
 
-		// Render using reflection (changes will be applied to first entity only for now)
+		// Render using reflection and track if changes were made
 		ImGui::PushID(firstComponentPtr);
+		bool wasModified = false;
 		try {
-			ReflectionRenderer::RenderComponent(firstComponentPtr, typeDesc, firstEntity, ecs);
+			wasModified = ReflectionRenderer::RenderComponent(firstComponentPtr, typeDesc, firstEntity, ecs);
 		}
 		catch (const std::exception& e) {
 			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());
 		}
 		ImGui::PopID();
+
+		// If the component was modified, apply the changes to all other selected entities
+		if (wasModified && entities.size() > 1) {
+			for (size_t i = 1; i < entities.size(); ++i) {
+				Entity otherEntity = entities[i];
+
+				// Copy component data from first entity to other entities based on component type
+				if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(otherEntity)) {
+					ecs.GetComponent<ModelRenderComponent>(otherEntity) = ecs.GetComponent<ModelRenderComponent>(firstEntity);
+				}
+				else if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(otherEntity)) {
+					ecs.GetComponent<SpriteRenderComponent>(otherEntity) = ecs.GetComponent<SpriteRenderComponent>(firstEntity);
+				}
+				else if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(otherEntity)) {
+					ColliderComponent& src = ecs.GetComponent<ColliderComponent>(firstEntity);
+					ColliderComponent& dst = ecs.GetComponent<ColliderComponent>(otherEntity);
+					// Copy serializable fields, preserve runtime fields
+					dst.enabled = src.enabled;
+					dst.layerID = src.layerID;
+					dst.shapeTypeID = src.shapeTypeID;
+					dst.boxHalfExtents = src.boxHalfExtents;
+					dst.sphereRadius = src.sphereRadius;
+					dst.capsuleRadius = src.capsuleRadius;
+					dst.capsuleHalfHeight = src.capsuleHalfHeight;
+					dst.cylinderRadius = src.cylinderRadius;
+					dst.cylinderHalfHeight = src.cylinderHalfHeight;
+					dst.center = src.center;
+					dst.shapeType = src.shapeType;
+					dst.layer = src.layer;
+					dst.version++;  // Trigger physics rebuild
+				}
+				else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(otherEntity)) {
+					RigidBodyComponent& src = ecs.GetComponent<RigidBodyComponent>(firstEntity);
+					RigidBodyComponent& dst = ecs.GetComponent<RigidBodyComponent>(otherEntity);
+					// Copy serializable fields, preserve runtime fields
+					dst.enabled = src.enabled;
+					dst.motionID = src.motionID;
+					dst.motion = src.motion;
+					dst.ccd = src.ccd;
+					dst.isTrigger = src.isTrigger;
+					dst.gravityFactor = src.gravityFactor;
+					dst.linearVel = src.linearVel;
+					dst.angularVel = src.angularVel;
+					dst.linearDamping = src.linearDamping;
+					dst.angularDamping = src.angularDamping;
+					dst.collideWithStatic = src.collideWithStatic;
+					dst.motion_dirty = true;  // Trigger physics update
+				}
+				else if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(otherEntity)) {
+					ecs.GetComponent<VideoComponent>(otherEntity) = ecs.GetComponent<VideoComponent>(firstEntity);
+				}
+				else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(otherEntity)) {
+					ecs.GetComponent<CameraComponent>(otherEntity) = ecs.GetComponent<CameraComponent>(firstEntity);
+				}
+				else if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(otherEntity)) {
+					ecs.GetComponent<DirectionalLightComponent>(otherEntity) = ecs.GetComponent<DirectionalLightComponent>(firstEntity);
+				}
+				else if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(otherEntity)) {
+					ecs.GetComponent<PointLightComponent>(otherEntity) = ecs.GetComponent<PointLightComponent>(firstEntity);
+				}
+				else if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(otherEntity)) {
+					ecs.GetComponent<SpotLightComponent>(otherEntity) = ecs.GetComponent<SpotLightComponent>(firstEntity);
+				}
+				else if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(otherEntity)) {
+					ecs.GetComponent<AudioComponent>(otherEntity) = ecs.GetComponent<AudioComponent>(firstEntity);
+				}
+				else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(otherEntity)) {
+					ParticleComponent& src = ecs.GetComponent<ParticleComponent>(firstEntity);
+					ParticleComponent& dst = ecs.GetComponent<ParticleComponent>(otherEntity);
+					// Copy serializable fields only, preserve runtime state
+					dst.textureGUID = src.textureGUID;
+					dst.emitterPosition = src.emitterPosition;
+					dst.emissionRate = src.emissionRate;
+					dst.maxParticles = src.maxParticles;
+					dst.particleLifetime = src.particleLifetime;
+					dst.startSize = src.startSize;
+					dst.endSize = src.endSize;
+					dst.startColor = src.startColor;
+					dst.startColorAlpha = src.startColorAlpha;
+					dst.endColor = src.endColor;
+					dst.endColorAlpha = src.endColorAlpha;
+					dst.gravity = src.gravity;
+					dst.velocityRandomness = src.velocityRandomness;
+					dst.initialVelocity = src.initialVelocity;
+					dst.isEmitting = src.isEmitting;
+				}
+				else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(otherEntity)) {
+					ecs.GetComponent<AnimationComponent>(otherEntity) = ecs.GetComponent<AnimationComponent>(firstEntity);
+				}
+				else if (componentType == "SpriteAnimationComponent" && ecs.HasComponent<SpriteAnimationComponent>(otherEntity)) {
+					ecs.GetComponent<SpriteAnimationComponent>(otherEntity) = ecs.GetComponent<SpriteAnimationComponent>(firstEntity);
+				}
+				else if (componentType == "TextRenderComponent" && ecs.HasComponent<TextRenderComponent>(otherEntity)) {
+					ecs.GetComponent<TextRenderComponent>(otherEntity) = ecs.GetComponent<TextRenderComponent>(firstEntity);
+				}
+				else if (componentType == "ButtonComponent" && ecs.HasComponent<ButtonComponent>(otherEntity)) {
+					ecs.GetComponent<ButtonComponent>(otherEntity) = ecs.GetComponent<ButtonComponent>(firstEntity);
+				}
+				else if (componentType == "SliderComponent" && ecs.HasComponent<SliderComponent>(otherEntity)) {
+					ecs.GetComponent<SliderComponent>(otherEntity) = ecs.GetComponent<SliderComponent>(firstEntity);
+				}
+				else if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(otherEntity)) {
+					ecs.GetComponent<UIAnchorComponent>(otherEntity) = ecs.GetComponent<UIAnchorComponent>(firstEntity);
+				}
+				else if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(otherEntity)) {
+					ecs.GetComponent<AudioListenerComponent>(otherEntity) = ecs.GetComponent<AudioListenerComponent>(firstEntity);
+				}
+				else if (componentType == "AudioReverbZoneComponent" && ecs.HasComponent<AudioReverbZoneComponent>(otherEntity)) {
+					AudioReverbZoneComponent& src = ecs.GetComponent<AudioReverbZoneComponent>(firstEntity);
+					AudioReverbZoneComponent& dst = ecs.GetComponent<AudioReverbZoneComponent>(otherEntity);
+					// Copy serializable fields, preserve FMOD handles
+					dst.enabled = src.enabled;
+					dst.MinDistance = src.MinDistance;
+					dst.MaxDistance = src.MaxDistance;
+					dst.reverbPresetIndex = src.reverbPresetIndex;
+					dst.decayTime = src.decayTime;
+					dst.earlyDelay = src.earlyDelay;
+					dst.lateDelay = src.lateDelay;
+					dst.hfReference = src.hfReference;
+					dst.hfDecayRatio = src.hfDecayRatio;
+					dst.diffusion = src.diffusion;
+					dst.density = src.density;
+					dst.lowShelfFrequency = src.lowShelfFrequency;
+					dst.lowShelfGain = src.lowShelfGain;
+					dst.highCut = src.highCut;
+					dst.earlyLateMix = src.earlyLateMix;
+					dst.wetLevel = src.wetLevel;
+				}
+				else if (componentType == "BrainComponent" && ecs.HasComponent<BrainComponent>(otherEntity)) {
+					BrainComponent& src = ecs.GetComponent<BrainComponent>(firstEntity);
+					BrainComponent& dst = ecs.GetComponent<BrainComponent>(otherEntity);
+					// Copy serializable fields, preserve runtime impl
+					dst.kind = src.kind;
+					dst.kindInt = src.kindInt;
+					dst.enabled = src.enabled;
+				}
+				else if (componentType == "ScriptComponentData" && ecs.HasComponent<ScriptComponentData>(otherEntity)) {
+					ecs.GetComponent<ScriptComponentData>(otherEntity) = ecs.GetComponent<ScriptComponentData>(firstEntity);
+				}
+				else if (componentType == "DebugDrawComponent" && ecs.HasComponent<DebugDrawComponent>(otherEntity)) {
+					ecs.GetComponent<DebugDrawComponent>(otherEntity) = ecs.GetComponent<DebugDrawComponent>(firstEntity);
+				}
+			}
+		}
 	}
 }
 
@@ -2494,24 +3364,40 @@ void InspectorPanel::DrawMultiEntityInspector(const std::vector<Entity>& entitie
 		// Draw header with entity count and names
 		DrawSharedComponentsHeader(entities);
 
+		// Draw Tag and Layer dropdowns for multi-entity editing
+		ImGui::Text("Tag");
+		ImGui::SameLine(60.0f);
+		DrawTagComponentMulti(entities);
+		ImGui::SameLine();
+		ImGui::Text("Layer");
+		ImGui::SameLine();
+		DrawLayerComponentMulti(entities);
+		ImGui::Separator();
+
 		// Get list of shared components
 		std::vector<std::string> sharedComponents = GetSharedComponentTypes(entities);
 
 		if (sharedComponents.empty()) {
 			ImGui::TextDisabled("No shared components between selected entities");
-			return;
+		}
+		else {
+			// Display info about shared components
+			ImGui::Text("Shared Components:");
+			ImGui::SameLine();
+			ImGui::TextDisabled("(%zu)", sharedComponents.size());
+			ImGui::Separator();
+
+			// Draw each shared component
+			for (const auto& componentType : sharedComponents) {
+				DrawSharedComponentGeneric(entities, componentType);
+			}
 		}
 
-		// Display info about shared components
-		ImGui::Text("Shared Components:");
-		ImGui::SameLine();
-		ImGui::TextDisabled("(%zu)", sharedComponents.size());
+		// Add component button for multi-entity selection
+		ImGui::Spacing();
 		ImGui::Separator();
-
-		// Draw each shared component
-		for (const auto& componentType : sharedComponents) {
-			DrawSharedComponentGeneric(entities, componentType);
-		}
+		ImGui::Spacing();
+		DrawAddComponentButtonMulti(entities);
 	}
 	catch (const std::exception& e) {
 		ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00184bbd8a7238af-00040b0304000005",
+        "source": "../../Resources/Sprites/MainMenuUI/SettingsUI/ResetButton.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/SettingsUI/ResetButton.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

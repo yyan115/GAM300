@@ -1,4 +1,4 @@
--- Resources/Scripts/Gameplay/GroundHurtState.lua
+-- Resources/Scripts/GamePlay/GroundHurtState.lua
 local HurtState = {}
 
 function HurtState:Enter(ai)
@@ -9,6 +9,11 @@ function HurtState:Enter(ai)
 
     -- Lock out attacks briefly
     ai._hurtTimer = 0
+
+    if ai.particles then
+        ai.particles.isEmitting   = true
+        ai.particles.emissionRate = 4
+    end
 end
 
 function HurtState:Update(ai, dt)
@@ -33,7 +38,10 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
-    -- nothing
+    if ai.particles then
+        ai.particles.isEmitting   = false
+        ai.particles.emissionRate = 0
+    end
 end
 
 return HurtState

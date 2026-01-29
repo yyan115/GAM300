@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0033f65949c6de09-00040932e400000d",
+        "source": "../../Resources/Textures/M4/LongStairsLandingArea_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/LongStairsLandingArea_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

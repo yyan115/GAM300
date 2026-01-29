@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004cbd56b5d217e0-0003fba388000001",
+        "source": "../../Resources/Sprites/CutSceneUI/BlackScreen.jpg",
+        "compiled": "../../Resources/Sprites/CutSceneUI/BlackScreen.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

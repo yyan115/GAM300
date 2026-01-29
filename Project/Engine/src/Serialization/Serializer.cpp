@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Prefab/PrefabIO.hpp>
+#include "Video/VideoComponent.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -161,9 +162,9 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 
     //auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
-	// Iterate entities recursively, starting from root entities (those without parents)
+    // Iterate entities recursively, starting from root entities (those without parents)
     for (auto entity : ecs.GetAllRootEntities()) {
-		SerializeEntityRecursively(entity, alloc, entitiesArr);
+        SerializeEntityRecursively(entity, alloc, entitiesArr);
         //auto entObj = SerializeEntity(entity, alloc);
         //entitiesArr.PushBack(entObj, alloc);
     }
@@ -297,13 +298,13 @@ rapidjson::Value& Serializer::SerializeEntityGUID(Entity entity, rapidjson::Docu
 }
 
 void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entitiesArr) {
-	auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     Entity prefabReferenceEntity = static_cast<Entity>(-1);
 
     // Check whether this entity is a prefab root.
     // If it is, then when we recursively serialize this entity and its children,
-	// we should only serialize components that have been modified from the prefab defaults.
+    // we should only serialize components that have been modified from the prefab defaults.
     // This is so that when we load the prefab instance, we can apply the overrides.
     if (ecs.HasComponent<PrefabLinkComponent>(entity)) {
         // This is a Prefab Instance!
@@ -318,29 +319,29 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         pathVal.SetString(path.c_str(), static_cast<rapidjson::SizeType>(path.length()), alloc);
         prefabNode.AddMember("PrefabPath", pathVal, alloc);
 
-  //      // Always save Root Transform (Position/Rot) as it's always an override
-		//rapidjson::Value overridesArray(rapidjson::kArrayType);
-  //      if (ecs.HasComponent<NameComponent>(entity)) {
-  //          auto& c = ecs.GetComponent<NameComponent>(entity);
-  //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
+        //      // Always save Root Transform (Position/Rot) as it's always an override
+              //rapidjson::Value overridesArray(rapidjson::kArrayType);
+        //      if (ecs.HasComponent<NameComponent>(entity)) {
+        //          auto& c = ecs.GetComponent<NameComponent>(entity);
+        //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
 
-  //          rapidjson::Value wrapper(rapidjson::kObjectType);
-  //          wrapper.AddMember(rapidjson::StringRef("NameComponent"), valInst, alloc);
-  //          overridesArray.PushBack(wrapper, alloc);
-  //      }
-  //      if (ecs.HasComponent<Transform>(entity)) {
-  //          auto& c = ecs.GetComponent<Transform>(entity);
-  //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
+        //          rapidjson::Value wrapper(rapidjson::kObjectType);
+        //          wrapper.AddMember(rapidjson::StringRef("NameComponent"), valInst, alloc);
+        //          overridesArray.PushBack(wrapper, alloc);
+        //      }
+        //      if (ecs.HasComponent<Transform>(entity)) {
+        //          auto& c = ecs.GetComponent<Transform>(entity);
+        //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
 
-  //          rapidjson::Value wrapper(rapidjson::kObjectType);
-  //          wrapper.AddMember(rapidjson::StringRef("Transform"), valInst, alloc);
-  //          overridesArray.PushBack(wrapper, alloc);
-  //      }
+        //          rapidjson::Value wrapper(rapidjson::kObjectType);
+        //          wrapper.AddMember(rapidjson::StringRef("Transform"), valInst, alloc);
+        //          overridesArray.PushBack(wrapper, alloc);
+        //      }
 
-        // D. Save recursive overrides
+              // D. Save recursive overrides
         SerializePrefabOverridesRecursive(ecs, entity, baselineRoot, alloc, prefabNode);
 
-		ecs.DestroyEntity(baselineRoot); // clean up baseline prefab entity
+        ecs.DestroyEntity(baselineRoot); // clean up baseline prefab entity
 
         entitiesArr.PushBack(prefabNode, alloc);
     }
@@ -348,11 +349,11 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         auto entObj = SerializeEntity(entity, alloc);
         entitiesArr.PushBack(entObj, alloc);
 
-	    // If entity has children, serialize them recursively
+        // If entity has children, serialize them recursively
         if (ecs.HasComponent<ChildrenComponent>(entity)) {
-		    auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
+            auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
             for (const auto& childGUID : childComp.children) {
-			    Entity childEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+                Entity childEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
                 SerializeEntityRecursively(childEntity, alloc, entitiesArr);
             }
         }
@@ -361,13 +362,13 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
 
 rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc, Entity prefabReferenceEntity) {
     auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-	auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     rapidjson::Value entObj = SerializeEntityGUID(entity, alloc);
 
     rapidjson::Value compsObj(rapidjson::kObjectType);
 
-	// If this entity is part of a prefab instance, we should only serialize components that differ from the prefab defaults.
+    // If this entity is part of a prefab instance, we should only serialize components that differ from the prefab defaults.
     bool isPrefabInstance = prefabReferenceEntity != static_cast<Entity>(-1);
 
     // For each component type, if entity has it, serialize and attach under its name
@@ -729,6 +730,13 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         compsObj.AddMember("SliderComponent", v, alloc);
     }
 
+    if (ecs.HasComponent<VideoComponent>(entity)) {
+        auto& c = ecs.GetComponent<VideoComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("VideoComponent", v, alloc);
+    }
+
+
     entObj.AddMember("components", compsObj, alloc);
 
     return entObj;
@@ -761,6 +769,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<BrainComponent>("BrainComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<ButtonComponent>("ButtonComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<SliderComponent>("SliderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
 
@@ -1009,12 +1018,12 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         outEntityNode.AddMember("Name", rapidjson::StringRef(sceneECS.GetComponent<NameComponent>(instanceEnt).name.c_str()), alloc);
     }
     if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
-		rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
+        rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
         outEntityNode.AddMember("ParentComponent", v, alloc);
     }
 
     // 2. Compare & Save Component Overrides
-	rapidjson::Value overridesArray(rapidjson::kArrayType);
+    rapidjson::Value overridesArray(rapidjson::kArrayType);
     SerializePrefabInstanceDelta(sceneECS, instanceEnt, baselineEnt, alloc, overridesArray);
 
     if (!overridesArray.Empty()) {
@@ -1068,7 +1077,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
 }
 
 void Serializer::UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 newGUID) {
-	GUID_128 oldGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(entity);
+    GUID_128 oldGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(entity);
 
     if (oldGUID == newGUID) return; // Already correct
 
@@ -1177,7 +1186,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
 
                 // IMPORTANT: You must also add this child to the Parent's list!
                 // (If your engine doesn't do this automatically via system)
-				std::string instanceName = ecs.GetComponent<NameComponent>(instanceRoot).name;
+                std::string instanceName = ecs.GetComponent<NameComponent>(instanceRoot).name;
                 Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
                 if (parentEnt != -1 && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
                     GUID_128 instanceGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(instanceRoot);
@@ -1192,7 +1201,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
                         Entity child = realChildrenEntities[i];
                         if (!ecs.HasComponent<NameComponent>(child)) continue;
 
-						std::string childName = ecs.GetComponent<NameComponent>(child).name;
+                        std::string childName = ecs.GetComponent<NameComponent>(child).name;
                         if (childName == instanceName) {
                             // Fix MY Parent's reference to ME
                             auto& childrenList = childComp.children;
@@ -1241,7 +1250,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
             ecs.AddComponent<PrefabLinkComponent>(newEnt, PrefabLinkComponent{});
             auto& prefabComp = ecs.GetComponent<PrefabLinkComponent>(newEnt);
             DeserializePrefabLinkComponent(prefabComp, prefabCompJSON);
-        
+
             InstantiatePrefabIntoEntity(prefabComp.prefabPath, newEnt);
             return;
         }
@@ -1402,16 +1411,16 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         DeserializeCameraComponent(cameraComp, tv);
     }
 
-	// AnimationComponent
+    // AnimationComponent
     if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["AnimationComponent"];
         AnimationComponent animComp{};
         TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
         ecs.AddComponent<AnimationComponent>(newEnt, animComp);
 
-		// For prefabs, we need to initialise the animation component after deserialization.
+        // For prefabs, we need to initialise the animation component after deserialization.
         if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
-			auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
+            auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
             auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
             ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, actualAnimComp);
         }
@@ -1452,6 +1461,14 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         auto& sliderComp = ecs.GetComponent<SliderComponent>(newEnt);
         DeserializeSliderComponent(sliderComp, sliderCompJSON);
     }
+    // VideoComponent
+    if (comps.HasMember("VideoComponent") && comps["VideoComponent"].IsObject()) {
+        const auto& videoCompJSON = comps["VideoComponent"];
+        ecs.AddComponent<VideoComponent>(newEnt, VideoComponent{});
+        auto& videoComp = ecs.GetComponent<VideoComponent>(newEnt);
+        DeserializeVideoComponent(videoComp, videoCompJSON);
+    }
+
 
     // Ensure all entities have TagComponent and LayerComponent
     if (!ecs.HasComponent<TagComponent>(newEnt)) {
@@ -1597,6 +1614,11 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEn
                     if (!ecs.HasComponent<SliderComponent>(currentEntity)) ecs.AddComponent<SliderComponent>(currentEntity, SliderComponent{});
                     DeserializeSliderComponent(ecs.GetComponent<SliderComponent>(currentEntity), data);
                 }
+                else if (typeName == "VideoComponent") {
+                    if (!ecs.HasComponent<VideoComponent>(currentEntity)) ecs.AddComponent<VideoComponent>(currentEntity, VideoComponent{});
+                    DeserializeVideoComponent(ecs.GetComponent<VideoComponent>(currentEntity), data);
+                }
+
             }
         }
     }
@@ -2609,6 +2631,17 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
             textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
             // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
+
+            // LINE WRAPPING PROPERTIES (indices 11, 12, 13)
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
+                textComp.wordWrap = Serializer::GetBool(d, startIdx + 11, false);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                textComp.maxWidth = Serializer::GetFloat(d, startIdx + 12, 0.0f);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 13, 1.2f);
+            }
         }
     }
 }
@@ -2824,6 +2857,8 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
+        readVec3Generic(d[10], colliderComp.center);
+        //readVec3Generic(d[11], colliderComp.offset);
     }
 }
 
@@ -2832,14 +2867,14 @@ void Serializer::DeserializeParentComponent(ParentComponent& parentComp, const r
 
     // Use helper function to extract parent GUID
     GUID_string parentGUIDStr = extractGUIDString(d[0]);
-	GUID_128 parentGUID = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
+    GUID_128 parentGUID = GUIDUtilities::ConvertStringToGUID128(parentGUIDStr);
 
     if (guidRemap == nullptr) {
         parentComp.parent = parentGUID;
     }
     else {
         if (guidRemap->find(parentGUID) != guidRemap->end()) {
-			parentComp.parent = (*guidRemap)[parentGUID];
+            parentComp.parent = (*guidRemap)[parentGUID];
         }
         else {
             ENGINE_LOG_WARN("[Serializer] Parent GUID not found in remap during deserialization: " + parentGUIDStr);
@@ -2854,7 +2889,7 @@ void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, cons
         for (const auto& childJSON : childrenVectorJSON) {
             // Use helper function to extract child GUIDs
             GUID_string childGUIDStr = extractGUIDString(childJSON);
-			GUID_128 childGUID = GUIDUtilities::ConvertStringToGUID128(childGUIDStr);
+            GUID_128 childGUID = GUIDUtilities::ConvertStringToGUID128(childGUIDStr);
 
             if (guidRemap == nullptr) {
                 childComp.children.push_back(GUIDUtilities::ConvertStringToGUID128(childGUIDStr));
@@ -2865,7 +2900,7 @@ void Serializer::DeserializeChildrenComponent(ChildrenComponent& childComp, cons
                 }
                 else {
                     ENGINE_LOG_WARN("[Serializer] Child GUID not found in remap during deserialization: " + childGUIDStr);
-				}
+                }
             }
         }
     }
@@ -3340,12 +3375,60 @@ void Serializer::DeserializePrefabLinkComponent(PrefabLinkComponent& prefabLinkC
     if (prefabLinkJSON.HasMember("data") && prefabLinkJSON["data"].IsArray()) {
         const auto& d = prefabLinkJSON["data"];
 #ifdef EDITOR
-		prefabLinkComp.prefabPath = Serializer::GetString(d, 0);
+        prefabLinkComp.prefabPath = Serializer::GetString(d, 0);
 #else
-		// For game builds, we need to adjust the prefab path to be relative to Resources.
-		std::string prefabPath = Serializer::GetString(d, 0);
-		prefabPath = prefabPath.substr(prefabPath.find("Resources/")); // Remove any leading relative path
-		prefabLinkComp.prefabPath = prefabPath;
+        // For game builds, we need to adjust the prefab path to be relative to Resources.
+        std::string prefabPath = Serializer::GetString(d, 0);
+        prefabPath = prefabPath.substr(prefabPath.find("Resources/")); // Remove any leading relative path
+        prefabLinkComp.prefabPath = prefabPath;
 #endif
+    }
+}
+
+void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapidjson::Value& videoJSON) {
+    if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
+        const auto& d = videoJSON["data"];
+
+        // Index 0: enabled
+        videoComp.enabled = Serializer::GetBool(d, 0);
+
+        // Index 1: isPlaying
+        videoComp.isPlaying = Serializer::GetBool(d, 1);
+
+        // Index 2: loop
+        videoComp.loop = Serializer::GetBool(d, 2);
+
+        // Index 3: playbackSpeed
+        videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
+
+        // Index 4: currentTime
+        videoComp.currentTime = Serializer::GetFloat(d, 4);
+
+        // Index 5: videoPath
+        if (d.Size() > 5 && d[5].HasMember("data") && d[5]["data"].IsString()) {
+            videoComp.videoPath = d[5]["data"].GetString();
+            if (videoComp.videoPath.find("../../Resources") == 0) {
+                videoComp.videoPath = videoComp.videoPath.substr(6);
+            }
+
+            // IMPORTANT: Process the configuration file after loading the path
+            if (!videoComp.videoPath.empty()) {
+                videoComp.ProcessMetaData(videoComp.videoPath);
+                videoComp.asset_dirty = true;
+            }
+        }
+
+        // Index 6: dialoguePath
+        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
+            videoComp.dialoguePath = d[6]["data"].GetString();
+            if (videoComp.dialoguePath.find("../../Resources") == 0) {
+                videoComp.dialoguePath = videoComp.dialoguePath.substr(6);
+            }
+
+            // IMPORTANT: Process the dialogue file after loading the path
+            if (!videoComp.dialoguePath.empty()) {
+                videoComp.ProcessDialogueData(videoComp.dialoguePath);
+            }
+        }
     }
 }

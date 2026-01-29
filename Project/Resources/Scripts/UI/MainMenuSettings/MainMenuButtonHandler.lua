@@ -27,6 +27,10 @@ return Component {
                 fadeActive.isActive = false
             end
             if fadeSprite then
+                -- Set color to black for fade-to-black effect
+                fadeSprite.color.x = 0
+                fadeSprite.color.y = 0
+                fadeSprite.color.z = 0
                 fadeSprite.alpha = 0
             end
         end
@@ -51,6 +55,10 @@ return Component {
                 self._fadeActive.isActive = true
             end
             if self._fadeSprite then
+                -- Set color to black for fade-to-black effect
+                self._fadeSprite.color.x = 0
+                self._fadeSprite.color.y = 0
+                self._fadeSprite.color.z = 0
                 self._fadeSprite.alpha = 0
             end
         end
@@ -87,7 +95,28 @@ return Component {
     OnClickCreditButton = function(self)
         -- Play click SFX
         self:_playClickSFX("Credits")
-        -- Add credits logic here
+
+        -- Enable CreditsUI
+        local creditsUIEntity = Engine.GetEntityByName("CreditsUI")
+        if creditsUIEntity then
+            local creditsUI = GetComponent(creditsUIEntity, "ActiveComponent")
+            if creditsUI then
+                creditsUI.isActive = true
+            end
+        end
+
+        -- Disable main menu buttons when credits is active
+        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        for _, buttonName in ipairs(targetButtons) do
+            local entity = Engine.GetEntityByName(buttonName)
+            if entity then
+                local button = GetComponent(entity, "ButtonComponent")
+                if button then
+                    button.interactable = false
+                    print("[MainMenuButtonHandler] Disabled button: " .. buttonName)
+                end
+            end
+        end
     end,
 
     -- Helper function to play click SFX from a named button entity

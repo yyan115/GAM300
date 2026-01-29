@@ -1,4 +1,4 @@
--- Resources/Scripts/Gameplay/GroundDeathState.lua
+-- Resources/Scripts/GamePlay/GroundDeathState.lua
 local DeathState = {}
 
 function DeathState:Enter(ai)

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00106c158eac9d6b-0004061702000009",
+        "source": "../../Resources/Textures/M4/SmallStairs_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/M4/SmallStairs_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

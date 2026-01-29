@@ -1,4 +1,4 @@
--- Resources/Scripts/Gameplay/GroundIdleState.lua
+-- Resources/Scripts/GamePlay/GroundIdleState.lua
 local IdleState = {}
 
 function IdleState:Enter(ai)

@@ -21,6 +21,7 @@
 #include "UI/Button/ButtonSystem.hpp"
 #include "UI/Slider/SliderSystem.hpp"
 #include "UI/Anchor/UIAnchorSystem.hpp"
+#include "Video/VideoSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
 class CharacterControllerSystem;
@@ -154,6 +155,7 @@ public:
 	std::shared_ptr<ButtonSystem> buttonSystem;
 	std::shared_ptr<SliderSystem> sliderSystem;
 	std::shared_ptr<UIAnchorSystem> uiAnchorSystem;
+	std::shared_ptr<VideoSystem> videoSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

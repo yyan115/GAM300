@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00184bbdef4418e1-00040b0306000013",
+        "source": "../../Resources/Sprites/MainMenuUI/SettingsUI/SettingsPaper.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/SettingsUI/SettingsPaper.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

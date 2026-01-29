@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e638e83ceb-00040a5628000047",
+        "source": "../../Resources/Textures/M4/WallModular_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/WallModular_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

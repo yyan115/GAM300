@@ -328,6 +328,35 @@ bool Shader::SetupShader(const std::string& path) {
 #endif
 	glDeleteShader(fragmentShader);
 
+#ifdef __ANDROID__
+	// Log all active attributes for debugging
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] === Shader ID=%u linked successfully ===", ID);
+	GLint numAttribs = 0;
+	glGetProgramiv(ID, GL_ACTIVE_ATTRIBUTES, &numAttribs);
+	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Active attributes: %d", numAttribs);
+	for (int i = 0; i < numAttribs; i++) {
+		char name[128];
+		GLsizei length;
+		GLint attribSize;
+		GLenum attribType;
+		glGetActiveAttrib(ID, i, 128, &length, &attribSize, &attribType, name);
+		GLint location = glGetAttribLocation(ID, name);
+		const char* typeName = "unknown";
+		switch(attribType) {
+			case GL_FLOAT: typeName = "float"; break;
+			case GL_FLOAT_VEC2: typeName = "vec2"; break;
+			case GL_FLOAT_VEC3: typeName = "vec3"; break;
+			case GL_FLOAT_VEC4: typeName = "vec4"; break;
+			case GL_INT: typeName = "int"; break;
+			case GL_INT_VEC2: typeName = "ivec2"; break;
+			case GL_INT_VEC3: typeName = "ivec3"; break;
+			case GL_INT_VEC4: typeName = "ivec4"; break;
+		}
+		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Attrib[%d]: '%s' location=%d type=%s(0x%x) size=%d",
+			i, name, location, typeName, attribType, attribSize);
+	}
+#endif
+
 	return true;
 }
 
