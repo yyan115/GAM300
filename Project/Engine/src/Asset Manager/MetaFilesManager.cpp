@@ -176,6 +176,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			}
 			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
 			AddGUID128Mapping(assetPath, guid128);
+			ENGINE_PRINT("[MetaFilesManager] Added GUID_128 Mapping: ", GUIDUtilities::ConvertGUID128ToString(guid128), " to ", assetPath);
 			auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
 			AssetManager::GetInstance().CompileAsset(assetMeta, true);
 		}
@@ -233,6 +234,10 @@ GUID_128 MetaFilesManager::GetGUID128FromAssetFile(const std::string& assetPath)
 	if (assetPathToGUID128.find(assetPath) == assetPathToGUID128.end()) {
 		ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUIDFromAssetFile: " + assetPath);
 		GUID_string guidStr = GetGUIDFromAssetFile(assetPath);
+		if (guidStr == "") {
+			guidStr = GUIDUtilities::GenerateGUIDString();
+			return GUIDUtilities::ConvertStringToGUID128(guidStr);
+		}
 		GUID_128 guid128 = GUIDUtilities::ConvertStringToGUID128(guidStr);
 		assetPathToGUID128[assetPath] = guid128;
 		return guid128;
