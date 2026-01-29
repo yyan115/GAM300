@@ -1,13 +1,21 @@
--- ChainController.lua
--- Owns positions[], prevPositions[], invMass[], anchors and runtime chain state
+-- ChainController.lua (refactored, authoritative chain length, clear responsibilities)
+-- Owns logical chain state (chainLen, extending/retracting), anchors, and prepares pure-physics params.
 local VerletAdapter = require("extension.VerletAdapter")
 local M = {}
+
+local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
+local function normalize(x,y,z)
+    local L = vec_len(x,y,z)
+    if L < 1e-9 then return 0,0,0 end
+    return x / L, y / L, z / L
+end
 
 function M.New(params)
     local self = {}
     self.params = params or {}
-    self.n = tonumber(self.params.NumberOfLinks) or 1
-    -- allocate arrays once
+    self.n = math.max(1, tonumber(self.params.NumberOfLinks) or 1)
+
+    -- allocate arrays once (positions/prev/invMass are owned by controller and passed to Verlet)
     self.positions = {}
     self.prev = {}
     self.invMass = {}
@@ -16,157 +24,209 @@ function M.New(params)
         self.prev[i] = {0,0,0}
         self.invMass[i] = 1
     end
-    self.anchors = {}           -- map index->true for kinematic anchors (besides start/end)
-    self.chainLen = 0.0         -- authoritative chain visible to editor
+
+    self.anchors = {}           -- map index->true; ComputeAnchors only marks anchors (does not mutate invMass)
+    self.chainLen = 0.0         -- authoritative logical chain length (meters)
     self.extensionTime = 0.0
     self.isExtending = false
     self.isRetracting = false
-    self.lastForward = {0,0,1}
+    self.lastForward = {0,0,1}  -- use component to set a different forward if desired (StartExtension(forward))
+    self.startPos = {0,0,0}
+    self.endPos = {0,0,0}
+
+    -- Verlet state is a thin wrapper over these arrays
     self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
     return setmetatable(self, { __index = M })
 end
 
 function M:SetStartPos(x,y,z)
-    self.startPos = {x,y,z}
+    self.startPos = {x or 0, y or 0, z or 0}
 end
 function M:SetEndPos(x,y,z)
-    self.endPos = {x,y,z}
+    self.endPos = {x or 0, y or 0, z or 0}
 end
 
-function M:StartExtension()
+-- Accept optional forward vector when starting extension to preserve component-level forward
+function M:StartExtension(forward)
     self.isExtending = true
     self.isRetracting = false
     self.extensionTime = 0
     self.chainLen = 0
+    if forward and type(forward) == "table" and (#forward >= 3) then
+        local fx,fy,fz = forward[1], forward[2], forward[3]
+        local nx,ny,nz = normalize(fx,fy,fz)
+        if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end
+    end
 end
+
 function M:StopExtension()
     self.isExtending = false
 end
+
 function M:StartRetraction()
-    if self.chainLen <= 0 then return end
+    if (self.chainLen or 0) <= 0 then return end
     self.isRetracting = true
     self.isExtending = false
 end
 
--- compute anchors based on geometry: detect large angle changes and create anchor there
+-- Detect anchors (corner detection) and record them without mutating invMass here.
+-- Anchor application to invMass happens each update so controller remains authoritative.
 function M:ComputeAnchors(angleThresholdRad)
     angleThresholdRad = angleThresholdRad or math.rad(45)
     self.anchors = {}
-    local n = self.n
-    if n < 3 then return end
-    for i = 2, n-1 do
+    if self.n < 3 then return end
+    for i = 2, self.n - 1 do
         local a = self.positions[i-1]; local b = self.positions[i]; local c = self.positions[i+1]
         local v1x,v1y,v1z = b[1]-a[1], b[2]-a[2], b[3]-a[3]
         local v2x,v2y,v2z = c[1]-b[1], c[2]-b[2], c[3]-b[3]
-        local l1 = math.sqrt(v1x*v1x + v1y*v1y + v1z*v1z)
-        local l2 = math.sqrt(v2x*v2x + v2y*v2y + v2z*v2z)
+        local l1 = vec_len(v1x,v1y,v1z)
+        local l2 = vec_len(v2x,v2y,v2z)
         if l1 > 1e-6 and l2 > 1e-6 then
-            local dotp = (v1x*v2x + v1y*v2y + v1z*v2z) / (l1*l2)
+            local dotp = (v1x*v2x + v1y*v2y + v1z*v2z) / (l1 * l2)
             if dotp < -1 then dotp = -1 elseif dotp > 1 then dotp = 1 end
             local ang = math.acos(dotp)
             if ang >= angleThresholdRad then
                 self.anchors[i] = true
-                -- treat anchors as kinematic for Verlet
-                self.invMass[i] = 0
-            else
-                if self.invMass[i] == 0 and not self.anchors[i] then
-                    self.invMass[i] = 1
-                end
             end
         end
     end
 end
 
-
+-- Controller update: authoritative chainLen -> produce startPos/endPos, segmentLen and per-link invMass.
+-- Returns positions (for transform writing), startPos, endPos.
 function M:Update(dt, settings)
     settings = settings or {}
-    -- update desired chain length when extending/retracting
+
+    local chainSpeed = tonumber(settings.ChainSpeed) or tonumber(self.params.ChainSpeed) or 10
+    local maxLenSetting = tonumber(settings.MaxLength) or tonumber(self.params.MaxLength) or 0
+    local isElastic = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true)
+    local linkMax = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
+
+    -- 1) Update authoritative chainLen based on extending/retracting
     if self.isExtending then
         self.extensionTime = self.extensionTime + dt
-        local desired = (settings.ChainSpeed or 10) * self.extensionTime
-        if settings.MaxLength and settings.MaxLength > 0 then desired = math.min(desired, settings.MaxLength) end
-        -- clamp when inelastic
-        if not settings.IsElastic then
-            local maxAllowed = (settings.LinkMaxDistance or 0.025) * math.max(1, self.n - 1)
+        local desired = chainSpeed * self.extensionTime
+        if maxLenSetting and maxLenSetting > 0 then desired = math.min(desired, maxLenSetting) end
+        if not isElastic and linkMax and linkMax > 0 then
+            local maxAllowed = linkMax * math.max(1, (self.n - 1))
             if desired > maxAllowed then desired = maxAllowed end
         end
         self.chainLen = desired
     end
+
     if self.isRetracting then
-        self.chainLen = math.max(0, self.chainLen - (settings.ChainSpeed or 10) * dt)
+        self.chainLen = math.max(0, (self.chainLen or 0) - chainSpeed * dt)
         if self.chainLen <= 0 then
             self.isRetracting = false
+            self.chainLen = 0
         end
     end
 
-    -- compute start world and end world positions via callbacks if provided in settings (component)
+    -- 2) Resolve start world position once (use settings.getStart if provided)
     local sx,sy,sz = 0,0,0
     if type(settings.getStart) == "function" then
         sx,sy,sz = settings.getStart()
     elseif settings.startOverride then
-        sx,sy,sz = settings.startOverride[1], settings.startOverride[2], settings.startOverride[3]
-    end
-    local sx, sy, sz = 0, 0, 0
-    if type(settings.getStart) == "function" then
-        sx, sy, sz = settings.getStart()
-    elseif settings.startOverride then
-        sx, sy, sz = settings.startOverride[1], settings.startOverride[2], settings.startOverride[3]
-    end
-
-    local ex, ey, ez
-    if settings.endOverride then
-        ex, ey, ez = settings.endOverride[1], settings.endOverride[2], settings.endOverride[3]
-    elseif self.endPos then
-        ex, ey, ez = self.endPos[1], self.endPos[2], self.endPos[3]
+        sx,sy,sz = settings.startOverride[1] or 0, settings.startOverride[2] or 0, settings.startOverride[3] or 0
     else
-        ex, ey, ez = sx, sy, sz
+        sx,sy,sz = self.startPos[1] or 0, self.startPos[2] or 0, self.startPos[3] or 0
+    end
+    self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
+
+    -- 3) Determine end world position:
+    -- If an explicit endOverride passed, use it. Else derive from authoritative chainLen + lastForward.
+    local ex,ey,ez
+    if settings.endOverride then
+        ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
+    elseif self.endPos and (self.endPos[1] ~= nil) and (self.endPos[2] ~= nil) and (self.endPos[3] ~= nil) and (not self.isExtending) then
+        -- keep previously set endPos when not actively extending (useful for pinned hit points)
+        ex,ey,ez = self.endPos[1], self.endPos[2], self.endPos[3]
+    else
+        -- derive end from start + forward * chainLen
+        local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
+        ex = sx + (fx * (self.chainLen or 0))
+        ey = sy + (fy * (self.chainLen or 0))
+        ez = sz + (fz * (self.chainLen or 0))
+    end
+    self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
+
+    -- 4) Compute current physical distance and determine a "totalLen" and segmentLen that physics will try to satisfy.
+    local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
+    -- Prefer authoritative chainLen when > 0; fallback to current end distance
+    local totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
+    -- However, respect MaxLength if configured (physics shouldn't expand beyond this)
+    if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
+
+    local segmentLen = (self.n > 1) and (totalLen / (self.n - 1)) or 0
+    if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
+        segmentLen = linkMax
     end
 
-    self.startPos = { sx, sy, sz }
-    self.endPos = self.endPos or { ex, ey, ez }
-
-    -- compute totalLen and segmentLen for VerletAdapter
-    local curEndDist = math.sqrt((self.endPos[1]-sx)^2 + (self.endPos[2]-sy)^2 + (self.endPos[3]-sz)^2)
-    local totalLen = (settings.MaxLength and settings.MaxLength > 0) and settings.MaxLength or math.max(curEndDist, 1e-6)
-    local segmentLen = (self.n > 1) and totalLen / (self.n - 1) or 0
-
-    -- set per-link kinematic flags based on chainLen and segmentLen
+    -- 5) Determine per-link kinematic state based on authoritative chainLen and anchors.
+    -- If a link's required distance (i-1)*segmentLen is greater than chainLen, that link is not yet "deployed" and should be kinematic at start.
     for i = 1, self.n do
         local requiredDist = (i - 1) * segmentLen
-        if self.chainLen + 1e-6 < requiredDist then
-            self.invMass[i] = 0
+        if (self.chainLen + 1e-9) < requiredDist then
+            -- not deployed -> snap to start and mark kinematic (invMass=0)
             self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
             self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
+            self.invMass[i] = 0
         else
-            if i ~= 1 and (self.invMass[i] == 0) and (not self.anchors[i]) then
+            -- deployed => dynamic unless explicitly anchored by corner detection
+            if self.anchors[i] then
+                self.invMass[i] = 0
+            else
                 self.invMass[i] = 1
             end
         end
     end
 
-    -- compute anchors by angle heuristic (corner detection)
-    self:ComputeAnchors(settings.AnchorAngleThresholdRad or math.rad(45))
+    -- 6) Compute anchors from current geometry; anchors only set marker table (ComputeAnchors won't mutate invMass)
+    --TAKE NOTE THIS FUNCTION IS BUGGED
+    --self:ComputeAnchors(settings.AnchorAngleThresholdRad or self.params.AnchorAngleThresholdRad or math.rad(45))
 
-    -- Prepare params for VerletAdapter
+    -- Re-apply anchors as kinematic overrides (anchors should always be kinematic)
+    for idx, _ in pairs(self.anchors) do
+        if idx >= 1 and idx <= self.n then
+            self.invMass[idx] = 0
+        end
+    end
+
+    -- 7) Build Verlet params and step physics
     local vparams = {
-        VerletGravity = settings.VerletGravity,
-        VerletDamping = settings.VerletDamping,
-        ConstraintIterations = settings.ConstraintIterations,
-        IsElastic = settings.IsElastic,
-        LinkMaxDistance = settings.LinkMaxDistance,
+        VerletGravity = settings.VerletGravity or self.params.VerletGravity,
+        VerletDamping = settings.VerletDamping or self.params.VerletDamping,
+        ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations,
+        IsElastic = isElastic,
+        LinkMaxDistance = linkMax,
         totalLen = totalLen,
         segmentLen = segmentLen,
-        ClampSegment = settings.LinkMaxDistance,
-        pinnedLast = (not self.isExtending) and (self.chainLen + 1e-6 >= (self.n - 1) * segmentLen) and settings.PinEndWhenExtended,
-        endPos = self.endPos,
-        startPos = self.startPos
+        ClampSegment = linkMax,
+        pinnedLast = (not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (self.n - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended),
+        endPos = { ex, ey, ez },
+        startPos = { sx, sy, sz }
     }
 
-    -- Step Verlet
+    -- Step Verlet physics (in-place modification of self.positions/self.prev/self.invMass)
     VerletAdapter.Step(self.VerletState, dt, vparams)
 
-    -- After verlet, provide positions for transform handler and rotation computation
-    return self.positions, self.startPos, self.endPos
+    -- 8) After physics, ensure anchors and undeployed links remain kinematic (defensive)
+    if vparams.pinnedLast and vparams.endPos then
+        local li = self.n
+        self.positions[li][1], self.positions[li][2], self.positions[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
+        self.prev[li][1], self.prev[li][2], self.prev[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
+        self.invMass[li] = 0
+    end
+
+    -- ensure anchors are preserved
+    for idx, _ in pairs(self.anchors) do
+        if idx >= 1 and idx <= self.n then
+            self.invMass[idx] = 0
+        end
+    end
+
+    -- Return positions for transform handler, and authoritative start/end positions
+    return self.positions, { self.startPos[1], self.startPos[2], self.startPos[3] }, { self.endPos[1], self.endPos[2], self.endPos[3] }
 end
 
 function M:GetPublicState()

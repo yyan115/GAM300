@@ -1,12 +1,10 @@
--- VerletAdapter.lua
--- Non-intrusive wrapper: operates on positions/prevPositions/invMass arrays provided by controller.
+-- VerletAdapter.lua (refactored: pure physics, does NOT mutate invMass; controller owns invMass)
 local M = {}
 local EPS = 1e-6
 
-local function vec_len(x,y,z) return math.sqrt(x*x + y*y + z*z) end
+local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
 
 function M.Init(state)
-    -- state: { positions = { {x,y,z}, ... }, prev = {...}, invMass = {...}, childTransforms = optional }
     state.positions = state.positions or {}
     state.prev = state.prev or {}
     state.invMass = state.invMass or {}
@@ -25,9 +23,9 @@ function M.Step(state, dt, params)
     local prev = state.prev
     local invMass = state.invMass
 
-    -- integrate dynamic particles into a temporary local buffer (in-place)
+    -- integrate dynamic particles (respect invMass array provided by controller; do not mutate it)
     for i = 1, n do
-        local inv = invMass[i] or 1
+        local inv = (invMass[i] ~= nil) and invMass[i] or 1
         if inv > 0 then
             local px,py,pz = positions[i][1], positions[i][2], positions[i][3]
             local ppx,ppy,ppz = prev[i][1], prev[i][2], prev[i][3]
@@ -43,13 +41,12 @@ function M.Step(state, dt, params)
         end
     end
 
-    -- Anchor start (index 1) and any controller-provided anchors (params.anchors)
+    -- enforce pinned start/end positions if provided (do not change invMass)
     if params and type(params.startPos) == "table" then
         positions[1][1], positions[1][2], positions[1][3] =
             params.startPos[1], params.startPos[2], params.startPos[3]
         prev[1][1], prev[1][2], prev[1][3] =
             params.startPos[1], params.startPos[2], params.startPos[3]
-        invMass[1] = 0
     end
 
     if params and params.pinnedLast and type(params.endPos) == "table" then
@@ -58,12 +55,10 @@ function M.Step(state, dt, params)
             params.endPos[1], params.endPos[2], params.endPos[3]
         prev[li][1], prev[li][2], prev[li][3] =
             params.endPos[1], params.endPos[2], params.endPos[3]
-        invMass[li] = 0
     end
 
-    -- constraints: segmentLen is provided by controller (params.segmentLen)
-    local totalLen = math.max((params and params.totalLen) or 0.000001, EPS)
-    local segLen = (params and params.segmentLen) or ( (n>1) and totalLen / (n-1) or 0 )
+    -- constraints: prefer explicit segmentLen from params; fallback to totalLen/(n-1)
+    local segLen = (params and params.segmentLen) or ( (n>1) and (math.max((params and params.totalLen) or 0.000001, EPS) / (n-1)) or 0 )
     if params and params.ClampSegment then segLen = math.min(segLen, params.ClampSegment) end
 
     local iterations = math.max(1, math.min(8, tonumber((params and params.ConstraintIterations) or 2)))
@@ -78,7 +73,7 @@ function M.Step(state, dt, params)
             local dist = vec_len(dx,dy,dz)
             if dist < EPS then dist = EPS end
             local target = segLen
-            -- if controller provided max per link, respect it
+            -- respect a strict per-link clamp if provided (controller decided IsElastic / LinkMaxDistance)
             if params and params.LinkMaxDistance and (not params.IsElastic) then
                 if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
             end
@@ -102,13 +97,12 @@ function M.Step(state, dt, params)
             end
         end
 
-        -- re-apply kinematic anchors each iteration
+        -- re-apply pinned anchors each iteration (positions/prev only)
         if params and type(params.startPos) == "table" then
             positions[1][1], positions[1][2], positions[1][3] =
                 params.startPos[1], params.startPos[2], params.startPos[3]
             prev[1][1], prev[1][2], prev[1][3] =
                 params.startPos[1], params.startPos[2], params.startPos[3]
-            invMass[1] = 0
         end
         if params and params.pinnedLast and type(params.endPos) == "table" then
             local li = n
@@ -116,15 +110,13 @@ function M.Step(state, dt, params)
                 params.endPos[1], params.endPos[2], params.endPos[3]
             prev[li][1], prev[li][2], prev[li][3] =
                 params.endPos[1], params.endPos[2], params.endPos[3]
-            invMass[li] = 0
         end
     end
 
-    -- final clamp for strict inelastic behavior
+    -- final strict inelastic pass if controller requested per-link clamp (positions only)
     if params and (not params.IsElastic) and params.LinkMaxDistance and params.LinkMaxDistance > 0 then
         local maxd = params.LinkMaxDistance
         if (params.pinnedLast and params.endPos) then
-            -- backward pass anchor at end
             for i = n-1, 1, -1 do
                 local a = positions[i+1]; local b = positions[i]
                 local dx,dy,dz = b[1]-a[1], b[2]-a[2], b[3]-a[3]
@@ -136,7 +128,6 @@ function M.Step(state, dt, params)
                 end
             end
         else
-            -- forward pass anchor at start
             for i = 2, n do
                 local a = positions[i-1]; local b = positions[i]
                 local dx,dy,dz = b[1]-a[1], b[2]-a[2], b[3]-a[3]

@@ -63018,7 +63018,48 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "TriggerKey": "G",
+                                "PinEndWhenExtended": true,
+                                "MaxLength": 5.0,
+                                "IsElastic": true,
+                                "ChainSpeed": 10.0,
+                                "AutoStart": false,
+                                "LinkName": "Link",
+                                "EnableLogs": true,
+                                "_subs_map": {},
+                                "_private": {},
+                                "NumberOfLinks": 200.0,
+                                "AnchorAngleThresholdDeg": 45.0,
+                                "__meta": {},
+                                "SimulatedHitDistance": 0.0,
+                                "ConstraintIterations": 10.0,
+                                "VerletGravity": 0.5,
+                                "__field_list": {
+                                    "NumberOfLinks": 200.0,
+                                    "TriggerKey": "G",
+                                    "PinEndWhenExtended": true,
+                                    "SimulatedHitDistance": 0.0,
+                                    "AnchorAngleThresholdDeg": 45.0,
+                                    "MaxLength": 0.0,
+                                    "IsElastic": true,
+                                    "ChainSpeed": 10.0,
+                                    "AutoStart": false,
+                                    "LinkName": "Link",
+                                    "EnableLogs": false,
+                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "VerletGravity": 9.81,
+                                    "VerletDamping": 0.02,
+                                    "ConstraintIterations": 2.0,
+                                    "LinkMaxDistance": 0.025
+                                },
+                                "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                "__created_at": 1769708392.0,
+                                "VerletDamping": 0.02,
+                                "_subscriptions": {},
+                                "LinkMaxDistance": 0.025
+                            }
                         }
                     ]
                 }
