@@ -21,6 +21,21 @@
 #include <Sound/AudioComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Animation/AnimationComponent.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
+#include <ECS/TagComponent.hpp>
+#include <ECS/LayerComponent.hpp>
+#include <Graphics/Sprite/SpriteAnimationComponent.hpp>
+#include <Graphics/Particle/ParticleComponent.hpp>
+#include <Graphics/DebugDraw/DebugDrawComponent.hpp>
+#include <Sound/AudioListenerComponent.hpp>
+#include <Sound/AudioReverbZoneComponent.hpp>
+#include <UI/Button/ButtonComponent.hpp>
+#include <UI/Slider/SliderComponent.hpp>
+#include <UI/Anchor/UIAnchorComponent.hpp>
+#include <Script/ScriptComponentData.hpp>
+#include <Game AI/BrainComponent.hpp>
+#include <Video/VideoComponent.hpp>
 #include "EditorState.hpp"
 #include "Graphics/GraphicsManager.hpp"
 #include <Utilities/GUID.hpp>
@@ -1190,6 +1205,172 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
                 }
             }
         }
+
+        // Copy ColliderComponent
+        if (ecsManager.HasComponent<ColliderComponent>(sourceEntity)) {
+            ColliderComponent sourceCollider = ecsManager.GetComponent<ColliderComponent>(sourceEntity);
+            // Increment version to trigger physics system to rebuild the shape
+            sourceCollider.version++;
+            // Clear runtime-only fields that will be recreated by PhysicsSystem
+            sourceCollider.shape = nullptr;
+            ecsManager.AddComponent<ColliderComponent>(newEntity, sourceCollider);
+        }
+
+        // Copy RigidBodyComponent
+        if (ecsManager.HasComponent<RigidBodyComponent>(sourceEntity)) {
+            RigidBodyComponent sourceRigidBody = ecsManager.GetComponent<RigidBodyComponent>(sourceEntity);
+            // Reset runtime-only fields
+            sourceRigidBody.id = JPH::BodyID();  // Invalid body ID, will be assigned by PhysicsSystem
+            sourceRigidBody.collider_seen_version = 0;  // Reset so physics rebuilds the body
+            sourceRigidBody.transform_dirty = true;     // Mark transform as needing sync
+            sourceRigidBody.motion_dirty = true;        // Mark motion as needing update
+            // Clear accumulated forces/impulses
+            sourceRigidBody.forceApplied = { 0.0f, 0.0f, 0.0f };
+            sourceRigidBody.torqueApplied = { 0.0f, 0.0f, 0.0f };
+            sourceRigidBody.impulseApplied = { 0.0f, 0.0f, 0.0f };
+            ecsManager.AddComponent<RigidBodyComponent>(newEntity, sourceRigidBody);
+        }
+
+        // Copy TagComponent
+        if (ecsManager.HasComponent<TagComponent>(sourceEntity)) {
+            TagComponent sourceTag = ecsManager.GetComponent<TagComponent>(sourceEntity);
+            ecsManager.AddComponent<TagComponent>(newEntity, sourceTag);
+        }
+
+        // Copy LayerComponent
+        if (ecsManager.HasComponent<LayerComponent>(sourceEntity)) {
+            LayerComponent sourceLayer = ecsManager.GetComponent<LayerComponent>(sourceEntity);
+            ecsManager.AddComponent<LayerComponent>(newEntity, sourceLayer);
+        }
+
+        // Copy DirectionalLightComponent
+        if (ecsManager.HasComponent<DirectionalLightComponent>(sourceEntity)) {
+            DirectionalLightComponent sourceLight = ecsManager.GetComponent<DirectionalLightComponent>(sourceEntity);
+            ecsManager.AddComponent<DirectionalLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy PointLightComponent
+        if (ecsManager.HasComponent<PointLightComponent>(sourceEntity)) {
+            PointLightComponent sourceLight = ecsManager.GetComponent<PointLightComponent>(sourceEntity);
+            ecsManager.AddComponent<PointLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy SpotLightComponent
+        if (ecsManager.HasComponent<SpotLightComponent>(sourceEntity)) {
+            SpotLightComponent sourceLight = ecsManager.GetComponent<SpotLightComponent>(sourceEntity);
+            ecsManager.AddComponent<SpotLightComponent>(newEntity, sourceLight);
+        }
+
+        // Copy SpriteAnimationComponent
+        if (ecsManager.HasComponent<SpriteAnimationComponent>(sourceEntity)) {
+            SpriteAnimationComponent sourceAnim = ecsManager.GetComponent<SpriteAnimationComponent>(sourceEntity);
+            // Reset runtime state
+            sourceAnim.timeInCurrentFrame = 0.0f;
+            sourceAnim.editorPreviewTime = 0.0f;
+            sourceAnim.editorPreviewFrameIndex = 0;
+            ecsManager.AddComponent<SpriteAnimationComponent>(newEntity, sourceAnim);
+        }
+
+        // Copy ParticleComponent
+        if (ecsManager.HasComponent<ParticleComponent>(sourceEntity)) {
+            ParticleComponent sourceParticle = ecsManager.GetComponent<ParticleComponent>(sourceEntity);
+            // Clear runtime-only fields
+            sourceParticle.particles.clear();
+            sourceParticle.particleTexture = nullptr;
+            sourceParticle.particleShader = nullptr;
+            sourceParticle.particleVAO = nullptr;
+            sourceParticle.quadVBO = nullptr;
+            sourceParticle.quadEBO = nullptr;
+            sourceParticle.instanceVBO = nullptr;
+            sourceParticle.timeSinceEmission = 0.0f;
+            ecsManager.AddComponent<ParticleComponent>(newEntity, sourceParticle);
+        }
+
+        // Copy AudioListenerComponent
+        if (ecsManager.HasComponent<AudioListenerComponent>(sourceEntity)) {
+            AudioListenerComponent sourceListener = ecsManager.GetComponent<AudioListenerComponent>(sourceEntity);
+            ecsManager.AddComponent<AudioListenerComponent>(newEntity, sourceListener);
+        }
+
+        // Copy AudioReverbZoneComponent
+        if (ecsManager.HasComponent<AudioReverbZoneComponent>(sourceEntity)) {
+            AudioReverbZoneComponent sourceReverb = ecsManager.GetComponent<AudioReverbZoneComponent>(sourceEntity);
+            // Clear runtime FMOD handle - will be recreated
+            sourceReverb.reverbHandle = nullptr;
+            sourceReverb.reverbInstanceIndex = -1;
+            ecsManager.AddComponent<AudioReverbZoneComponent>(newEntity, sourceReverb);
+        }
+
+        // Copy ButtonComponent
+        if (ecsManager.HasComponent<ButtonComponent>(sourceEntity)) {
+            ButtonComponent sourceButton = ecsManager.GetComponent<ButtonComponent>(sourceEntity);
+            ecsManager.AddComponent<ButtonComponent>(newEntity, sourceButton);
+        }
+
+        // Copy SliderComponent
+        if (ecsManager.HasComponent<SliderComponent>(sourceEntity)) {
+            SliderComponent sourceSlider = ecsManager.GetComponent<SliderComponent>(sourceEntity);
+            // Reset runtime cache
+            sourceSlider.lastValue = sourceSlider.value;
+            ecsManager.AddComponent<SliderComponent>(newEntity, sourceSlider);
+        }
+
+        // Copy UIAnchorComponent
+        if (ecsManager.HasComponent<UIAnchorComponent>(sourceEntity)) {
+            UIAnchorComponent sourceAnchor = ecsManager.GetComponent<UIAnchorComponent>(sourceEntity);
+            // Reset initialization flag so it recalculates on first frame
+            sourceAnchor.hasInitialized = false;
+            ecsManager.AddComponent<UIAnchorComponent>(newEntity, sourceAnchor);
+        }
+
+        // Copy ScriptComponentData
+        if (ecsManager.HasComponent<ScriptComponentData>(sourceEntity)) {
+            ScriptComponentData sourceScript = ecsManager.GetComponent<ScriptComponentData>(sourceEntity);
+            // Reset runtime state for each script - instances will be recreated
+            for (auto& script : sourceScript.scripts) {
+                script.instanceId = -1;
+                script.instanceCreated = false;
+            }
+            ecsManager.AddComponent<ScriptComponentData>(newEntity, sourceScript);
+        }
+
+        // Copy BrainComponent
+        if (ecsManager.HasComponent<BrainComponent>(sourceEntity)) {
+            BrainComponent sourceBrain = ecsManager.GetComponent<BrainComponent>(sourceEntity);
+            // Reset runtime state - brain impl will be recreated
+            sourceBrain.impl = nullptr;
+            sourceBrain.started = false;
+            sourceBrain.activeState = "";
+            ecsManager.AddComponent<BrainComponent>(newEntity, sourceBrain);
+        }
+
+        // Copy VideoComponent
+        if (ecsManager.HasComponent<VideoComponent>(sourceEntity)) {
+            VideoComponent sourceVideo = ecsManager.GetComponent<VideoComponent>(sourceEntity);
+            // Reset playback state
+            sourceVideo.isPlaying = false;
+            sourceVideo.currentTime = 0.0f;
+            sourceVideo.activeFrame = sourceVideo.frameStart;
+            sourceVideo.textureID = 0;
+            sourceVideo.asset_dirty = true;
+            sourceVideo.seek_dirty = false;
+            sourceVideo.cutsceneEnded = false;
+            ecsManager.AddComponent<VideoComponent>(newEntity, sourceVideo);
+        }
+
+        // Copy DebugDrawComponent
+        if (ecsManager.HasComponent<DebugDrawComponent>(sourceEntity)) {
+            DebugDrawComponent sourceDebug = ecsManager.GetComponent<DebugDrawComponent>(sourceEntity);
+            // Clear runtime VAO/VBO references - will be recreated by system
+            sourceDebug.shader = nullptr;
+            sourceDebug.cubeVAO = nullptr;
+            sourceDebug.sphereVAO = nullptr;
+            sourceDebug.lineVAO = nullptr;
+            ecsManager.AddComponent<DebugDrawComponent>(newEntity, sourceDebug);
+        }
+
+        // NOTE: PrefabLinkComponent is intentionally NOT copied
+        // Duplicating an entity should create an independent copy, not another prefab instance
 
         // Preserve parent relationship - duplicated entity should have same parent as source
         if (ecsManager.HasComponent<ParentComponent>(sourceEntity)) {
