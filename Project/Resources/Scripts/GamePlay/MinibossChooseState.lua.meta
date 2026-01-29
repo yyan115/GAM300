@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00465fde0369526a-00040ce568000023",
-        "source": "../../Resources/Scripts/Gameplay/MinibossChooseState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/MinibossChooseState.lua"
+        "guid": "00688d57c0732f82-00040e0144000025",
+        "source": "../../Resources/Scripts/GamePlay/MinibossChooseState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/MinibossChooseState.lua"
     }
 }
