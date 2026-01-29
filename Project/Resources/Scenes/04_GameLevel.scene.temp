@@ -15088,15 +15088,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.567568
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.273923
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.273923
                                 }
                             ]
                         },
@@ -15151,6 +15151,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001a073cdd768a24-00040d1ab2001f47",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealthBar.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
@@ -16069,55 +16081,55 @@
                             "autoInvokeEntry": true,
                             "instanceState": {
                                 "clips": {
-                                    "Death": 3.0,
+                                    "Idle": 0.0,
                                     "Attack": 1.0,
-                                    "Hurt": 2.0,
-                                    "Idle": 0.0
+                                    "Death": 3.0,
+                                    "Hurt": 2.0
                                 },
-                                "_private": {},
                                 "__meta": {},
-                                "PlayerName": "Player",
-                                "DetectionRange": 3.0,
-                                "ClipAttack": 1.0,
+                                "_private": {},
+                                "MaxHealth": 5.0,
+                                "states": {
+                                    "Idle": {},
+                                    "Death": {},
+                                    "Attack": {}
+                                },
+                                "dead": false,
+                                "_transform_fetched": false,
+                                "AttackCooldown": 3.0,
+                                "PatrolPointB_Z": -2.0,
                                 "__field_list": {
                                     "DetectionRange": 8.0,
-                                    "ClipHurt": 2.0,
-                                    "MaxHealth": 5.0,
+                                    "ClipIdle": 0.0,
+                                    "ClipDeath": 3.0,
                                     "PlayerName": "Player",
                                     "AttackCooldown": 1.0,
-                                    "ClipDeath": 3.0,
                                     "ClipAttack": 1.0,
-                                    "ClipIdle": 0.0
+                                    "ClipHurt": 2.0,
+                                    "MaxHealth": 5.0
                                 },
-                                "AttackCooldown": 1.0,
-                                "_transform_fetched": false,
-                                "health": 5.0,
                                 "config": {
-                                    "AttackCooldown": 1.0,
-                                    "DetectionRange": 8.0
+                                    "DetectionRange": 8.0,
+                                    "AttackCooldown": 1.0
                                 },
-                                "states": {
-                                    "Attack": {},
-                                    "Death": {},
-                                    "Idle": {}
-                                },
+                                "PatrolPointA_Z": -2.0,
+                                "ClipDeath": 3.0,
+                                "PatrolPointB_X": 1.2,
+                                "ClipHurt": 2.0,
+                                "ClipAttack": 1.0,
+                                "PatrolPointA_X": -1.2,
+                                "PathGoalMoveThreshold": 0.2,
+                                "DetectionRange": 3.0,
                                 "ClipIdle": 0.0,
+                                "health": 5.0,
+                                "_subscriptions": {},
+                                "PlayerName": "Player",
+                                "__created_at": 1768238002.0,
+                                "PathWaypointRadius": 0.2,
                                 "fsm": {
                                     "timeInState": 0.0,
                                     "enabled": true
-                                },
-                                "MaxHealth": 5.0,
-                                "ClipHurt": 2.0,
-                                "__created_at": 1768238002.0,
-                                "ClipDeath": 3.0,
-                                "_subscriptions": {},
-                                "dead": false,
-                                "PathWaypointRadius": 0.2,
-                                "PathGoalMoveThreshold": 0.2,
-                                "PatrolPointA_X": -1.2,
-                                "PatrolPointA_Z": -2.0,
-                                "PatrolPointB_X": 1.2,
-                                "PatrolPointB_Z": -2.0
+                                }
                             }
                         }
                     ]
@@ -31985,18 +31997,18 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_private": {},
-                                "__meta": {},
+                                "Speed": 5.0,
                                 "_subscriptions": {},
+                                "_private": {},
                                 "__field_list": {
-                                    "Damage": 1.0,
                                     "Speed": 10.0,
-                                    "Lifetime": 1.2
+                                    "Lifetime": 1.2,
+                                    "Damage": 1.0
                                 },
+                                "__created_at": 1769419004.0,
                                 "Lifetime": 1.2,
                                 "_transform_fetched": false,
-                                "Speed": 10.0,
-                                "__created_at": 1769419004.0,
+                                "__meta": {},
                                 "Damage": 1.0
                             }
                         }
@@ -32929,18 +32941,18 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_private": {},
-                                "__meta": {},
+                                "Speed": 5.0,
                                 "_subscriptions": {},
+                                "_private": {},
                                 "__field_list": {
-                                    "Damage": 1.0,
                                     "Speed": 10.0,
-                                    "Lifetime": 1.2
+                                    "Lifetime": 1.2,
+                                    "Damage": 1.0
                                 },
+                                "__created_at": 1769419004.0,
                                 "Lifetime": 1.2,
                                 "_transform_fetched": false,
-                                "Speed": 10.0,
-                                "__created_at": 1769419004.0,
+                                "__meta": {},
                                 "Damage": 1.0
                             }
                         }
@@ -36305,7 +36317,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 4
                         },
                         {
                             "type": "std::vector<std::string>",
@@ -36313,18 +36325,33 @@
                                 {
                                     "type": "std::string",
                                     "data": "Resources/Animations/Kusane@Idle.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "Resources/Animations/Kusane@Hurt.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "Resources/Animations/Kusane@Run.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "Resources/Animations/Kusane@Death.fbx"
                                 }
                             ]
                         },
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0021cfe696d7800b-0004055ab000147b"
+                                "0021cfe696d7800b-0004055ab000147b",
+                                "0078e0e1ab0a863d-00040569a0000003",
+                                "0078e0e1983f1346-00040569a2000005",
+                                "0078e0e1b6fb5612-00040569a0000001"
                             ]
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "../../Resources/Animations/PlayerAC.animator"
                         }
                     ]
                 },
@@ -36541,6 +36568,14 @@
                                 "__created_at": 1769419243.0,
                                 "_stateTimer": 0.0
                             }
+                        },
+                        {
+                            "scriptGuidStr": "00465fde2b22d5e3-00040ce56800002b",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }

@@ -14,6 +14,16 @@
             "name": "Hurt",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "IsRunning",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDead",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -38,6 +48,28 @@
                 "x": -85.0,
                 "y": 5.0
             }
+        },
+        {
+            "id": "Run",
+            "clipIndex": 2,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 129.0,
+                "y": -86.0
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -85.0,
+                "y": 102.0
+            }
         }
     ],
     "transitions": [
@@ -46,17 +78,23 @@
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
-            "conditions": []
+            "exitTime": 0.6899999976158142,
+            "transitionDuration": 0.699999988079071,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
         },
         {
             "from": "Idle",
             "to": "Hurt",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.11999999731779099,
-            "transitionDuration": 0.11999999731779099,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.03999999910593033,
             "conditions": [
                 {
                     "paramName": "Hurt",
@@ -64,10 +102,87 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.6899999976158142,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
         "Resources/Animations/Kusane@Idle.fbx",
-        "Resources/Animations/Kusane@Hurt.fbx"
+        "Resources/Animations/Kusane@Hurt.fbx",
+        "Resources/Animations/Kusane@Run.fbx",
+        "Resources/Animations/Kusane@Death.fbx"
     ]
 }
