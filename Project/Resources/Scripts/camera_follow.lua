@@ -64,7 +64,8 @@ return Component {
         actionModePitch     = 25.0,
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
-        actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
+        actionModeLockRotation = true,  -- Set to true to lock camera rotation when in action mode
+
         -- Camera rotation lock
         lockCameraRotation  = false,
     },
@@ -201,10 +202,14 @@ return Component {
 
         -- Action mode toggle
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
-            if self._toggleCooldown <= 0 then
-                self._actionModeActive = not self._actionModeActive
-                self._toggleCooldown = 0.25
-                print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
+            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                if Screen.IsCursorLocked() then
+                    if self._toggleCooldown <= 0 then
+                        self._actionModeActive = not self._actionModeActive
+                        self._toggleCooldown = 0.25
+                        print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
+                    end
+                end
             end
         end
 
