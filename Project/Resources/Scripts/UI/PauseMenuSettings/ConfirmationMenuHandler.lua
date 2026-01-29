@@ -7,34 +7,28 @@ return Component {
         fadeScreenName = "MenuFadeScreen",
     },
 
-    OnClickContinueButton = function(self)
-        print("GAME RESUMED")
+    OnClickYesButton = function(self)
+        print("TIME TO RETURN TO MAIN MENU")
     end,
 
-    OnClickSettingButton = function(self)
-        local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
-        local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
-        
-        if PauseUIEntity then GetComponent(PauseUIEntity, "ActiveComponent").isActive = false end
-        if SettingsUIEntity then GetComponent(SettingsUIEntity, "ActiveComponent").isActive = true end
-    end,
-
-    OnClickMainMenuButton = function(self) 
-        local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
-        local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
-        pauseComp.isActive = false
-           
+    --CLOSE CONFIRM UI MENU, OPEN UP PAUSE UI MENU
+    OnClickNoButton = function(self)
         local confirmUIEntity = Engine.GetEntityByName("ConfirmationPromptUI")
         local confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")
-        confirmComp.isActive = true
-end,
+        confirmComp.isActive = false
+
+        local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
+        local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
+        pauseComp.isActive = true
+
+
+    end,
 
     Start = function(self)
         self._buttonData = {} 
         local buttonMapping = {
-            { base = "ContinueButton", hover = "HoveredContinue" },
-            { base = "SettingsButton", hover = "HoveredSetting" },
-            { base = "MainMenuButton", hover = "HoveredMainMenu" }
+            { base = "YesButton", hover = "HoveredYesButton" },
+            { base = "NoButton", hover = "HoveredNoButton" },
         }
 
         for index, names in ipairs(buttonMapping) do

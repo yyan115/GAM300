@@ -8,8 +8,29 @@ return Component {
     },
 
     OnClickResetButton = function(self)
-    end,
+        --not sure why self._sliderData is empty when try accessing.. TEMP FIX
+        local sliderMapping = {
+            { notch = "MasterTip", bar = "MasterAudioBar", type = "master" },
+            { notch = "BGMTip",    bar = "BGMAudioBar",    type = "bgm"    },
+            { notch = "SFXTip",    bar = "SFXAudioBar",    type = "sfx"    }
+        }
 
+        for _, cfg in ipairs(sliderMapping) do
+            local notchEnt = Engine.GetEntityByName(cfg.notch)
+            local barEnt   = Engine.GetEntityByName(cfg.bar)
+
+            if notchEnt and barEnt then
+                local nTrans = GetComponent(notchEnt, "Transform")
+                local bTrans = GetComponent(barEnt, "Transform")
+                nTrans.localPosition.x = bTrans.localPosition.x
+                nTrans.isDirty = true 
+            end
+        end
+        --Set to 50% vol....
+
+
+
+    end,    
     OnClickBackButton = function(self)
         --DISABLE SETTINGS UI SCREEN, ENABLE PAUSE UI SCREEN
         local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
@@ -22,17 +43,12 @@ return Component {
 
     end,
 
-
     Start = function(self)
         self._buttonData = {} 
-
+        self._sliderData = {}
         local buttonMapping = {
             { base = "ResetButton", hover = "HoveredResetButton" },
             { base = "BackButton", hover = "HoveredBackButton" }
-        }
-
-        local audioSliders = {
-            slider = "MasterTip", fill = "MasterAudioFill"
         }
 
         for index, names in ipairs(buttonMapping) do
@@ -59,10 +75,41 @@ return Component {
                 print("Warning: Missing entities for " .. names.base)
             end
         end
-    end,
 
---HANDLE TOGGLE SPRITE UPON HOVER LOGIC
---HANDLE DRAGGING OF AUDIO SLIDERS
+-- 2. Setup Sliders 
+        local sliderMapping = {
+            { notch = "MasterTip", bar = "MasterAudioBar", type = "master" },
+            { notch = "BGMTip",    bar = "BGMAudioBar",    type = "bgm"    },
+            { notch = "SFXTip",    bar = "SFXAudioBar",    type = "sfx"    }
+        }
+
+        for _, cfg in ipairs(sliderMapping) do
+            local notchEnt = Engine.GetEntityByName(cfg.notch)
+            local barEnt   = Engine.GetEntityByName(cfg.bar)
+
+            if notchEnt and barEnt then
+                local nTrans = GetComponent(notchEnt, "Transform")
+                local bTrans = GetComponent(barEnt, "Transform")
+                
+                -- Calculate bounds based on the specific bar for this slider
+                local offsetX = bTrans.localScale.x / 2.0
+                local offsetY = bTrans.localScale.y / 2.0 + 20
+
+                table.insert(self._sliderData, {
+                    notchTrans = nTrans,
+                    barTrans   = bTrans,
+                    type       = cfg.type,
+                    minX = bTrans.localPosition.x - offsetX,
+                    maxX = bTrans.localPosition.x + offsetX,
+                    minY = bTrans.localPosition.y - offsetY,
+                    maxY = bTrans.localPosition.y + offsetY
+                })
+                
+            else
+                print("Warning: Missing slider entities for " .. cfg.type)
+            end
+        end
+    end,
 
     Update = function(self, dt)
         if not self._buttonData then return end
@@ -89,10 +136,32 @@ return Component {
                 if data.hoverSprite then
                     data.hoverSprite.isVisible = true
                 end
-                
-                -- Stop looking once we find the hovered button
-                return 
             end
         end
-    end,
+
+-- Check if the user is actually clicking/holding
+        if Input.IsPointerPressed() then
+            for _, s in ipairs(self._sliderData) do
+
+                if inputX >= s.minX and inputX <= s.maxX and
+                   inputY >= s.minY and inputY <= s.maxY then
+                    
+                    -- Clamp within the bar boundaries
+                    local clampedX = math.max(s.minX, math.min(inputX, s.maxX))
+                    s.notchTrans.localPosition.x = clampedX
+                    s.notchTrans.isDirty = true
+
+                    local range = s.maxX - s.minX
+                    local vol = (clampedX - s.minX) / range
+                    
+                --SNAPPING: Clean up the edges
+                    if vol < 0.01 then vol = 0 
+                    elseif vol > 0.99 then vol = 1.0 end
+
+                    -- Set the volume based on the slider type
+                    break 
+                end
+            end
+        end
+    end
 }
