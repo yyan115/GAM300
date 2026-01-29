@@ -8,8 +8,7 @@ layout (location = 2) in vec3 aColor;
 layout (location = 3) in vec2 aTexCoord;
 layout (location = 4) in vec3 aTangent;
 
-// OpenGL ES doesn't support ivec4 attributes well, use vec4 and cast to int
-layout (location = 5) in vec4 aBoneIds;
+layout (location = 5) in ivec4 aBoneIds;
 layout (location = 6) in vec4 aWeights;
 
 out vec3 FragPos;
