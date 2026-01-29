@@ -138,9 +138,9 @@ function M:Update(dt, settings)
     local ex,ey,ez
     if settings.endOverride then
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
-    elseif self.endPos and (self.endPos[1] ~= nil) and (self.endPos[2] ~= nil) and (self.endPos[3] ~= nil) and (not self.isExtending) then
+    --elseif self.endPos and (self.endPos[1] ~= nil) and (self.endPos[2] ~= nil) and (self.endPos[3] ~= nil) and (not self.isExtending) then
         -- keep previously set endPos when not actively extending (useful for pinned hit points)
-        ex,ey,ez = self.endPos[1], self.endPos[2], self.endPos[3]
+    --    ex,ey,ez = self.endPos[1], self.endPos[2], self.endPos[3]
     else
         -- derive end from start + forward * chainLen
         local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
@@ -163,7 +163,6 @@ function M:Update(dt, settings)
     end
 
     -- 5) Determine per-link kinematic state based on authoritative chainLen and anchors.
-    -- If a link's required distance (i-1)*segmentLen is greater than chainLen, that link is not yet "deployed" and should be kinematic at start.
     for i = 1, self.n do
         local requiredDist = (i - 1) * segmentLen
         if (self.chainLen + 1e-9) < requiredDist then
@@ -179,6 +178,13 @@ function M:Update(dt, settings)
                 self.invMass[i] = 1
             end
         end
+    end
+
+    -- NEW: During extension, pin the last link to the endpoint so it extends in the right direction
+    if self.isExtending then
+        self.positions[self.n][1], self.positions[self.n][2], self.positions[self.n][3] = ex, ey, ez
+        self.prev[self.n][1], self.prev[self.n][2], self.prev[self.n][3] = ex, ey, ez
+        self.invMass[self.n] = 0
     end
 
     -- 6) Compute anchors from current geometry; anchors only set marker table (ComputeAnchors won't mutate invMass)

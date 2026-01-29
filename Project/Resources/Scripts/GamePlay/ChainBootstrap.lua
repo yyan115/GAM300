@@ -98,6 +98,69 @@ return Component {
         return false
     end,
 
+    GetForwardDirection = function(self) --TO BE REMOVED
+        -- Get player transform
+        local playerTr = self.playerTransform
+        if not playerTr then
+            playerTr = Engine.FindTransformByName(self.PlayerName)
+            self.playerTransform = playerTr  -- cache it
+        end
+        
+        if playerTr then
+            -- Method 1: Try direct forward property
+            if playerTr.forward then
+                local fwd = playerTr.forward
+                if type(fwd) == "table" or type(fwd) == "userdata" then
+                    local fx = fwd.x or fwd[1] or 0
+                    local fy = fwd.y or fwd[2] or 0
+                    local fz = fwd.z or fwd[3] or 0
+                    local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
+                    if mag > 0.0001 then
+                        return {fx/mag, fy/mag, fz/mag}
+                    end
+                end
+            end
+            
+            -- Method 2: Extract from rotation quaternion
+            if playerTr.rotation then
+                local rot = playerTr.rotation
+                local qx = rot.x or rot[1] or 0
+                local qy = rot.y or rot[2] or 0
+                local qz = rot.z or rot[3] or 0
+                local qw = rot.w or rot[4] or 1
+                
+                -- Convert quaternion to forward vector (Unity-style, forward is +Z)
+                local fx = 2 * (qx*qz + qw*qy)
+                local fy = 2 * (qy*qz - qw*qx)
+                local fz = 1 - 2 * (qx*qx + qy*qy)
+                
+                local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
+                if mag > 0.0001 then
+                    return {fx/mag, fy/mag, fz/mag}
+                end
+            end
+            
+            -- Method 3: Check if Engine has a GetTransformForward function
+            if Engine and Engine.GetTransformForward then
+                local ok, fx, fy, fz = pcall(function() 
+                    return Engine.GetTransformForward(playerTr) 
+                end)
+                if ok and fx then
+                    if type(fx) == "table" then
+                        fx, fy, fz = fx.x or fx[1] or 0, fx.y or fx[2] or 0, fx.z or fx[3] or 0
+                    end
+                    local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
+                    if mag > 0.0001 then
+                        return {fx/mag, fy/mag, fz/mag}
+                    end
+                end
+            end
+        end
+        
+        -- Fallback
+        return {0.0, 0.0, 1.0}
+    end,
+    
     _on_chain_down = function(self, payload)
         print("down")
         self._chain_pressing = true
@@ -237,7 +300,9 @@ return Component {
             local a={}
             for idx,_ in pairs(ctrl.anchors) do table.insert(a, idx) end
             if #a>0 then print("[CHAIN DEBUG] anchors:", table.concat(a, ",")) end
-            
+            print(self:GetForwardDirection()[1]);
+            print(self:GetForwardDirection()[2]);
+            print(self:GetForwardDirection()[3]);
         end
         -- call: dump_state(self.controller)
         local settings = {
