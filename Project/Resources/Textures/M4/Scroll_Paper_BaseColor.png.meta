@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84ae57dbeda-00040cff4000024d",
+        "source": "../../Resources/Textures/M4/Scroll_Paper_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Scroll_Paper_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
