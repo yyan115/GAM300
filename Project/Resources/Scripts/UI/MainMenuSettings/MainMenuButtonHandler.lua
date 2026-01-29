@@ -113,7 +113,6 @@ return Component {
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = false
-                    print("[MainMenuButtonHandler] Disabled button: " .. buttonName)
                 end
             end
         end

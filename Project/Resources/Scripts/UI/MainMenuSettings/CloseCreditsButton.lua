@@ -16,6 +16,7 @@ return Component {
         self._isHovered = false
         self._isFading = false
         self._fadeTimer = 0
+        self._wasCreditsActive = false  -- Track previous active state for rising edge detection
 
         -- Cache entity references
         self._creditsTextEntity = Engine.GetEntityByName("CreditsFullText")
@@ -37,6 +38,24 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- Check current active state
+        local isActive = self._creditsUIActive and self._creditsUIActive.isActive
+
+        -- Detect rising edge (CreditsUI just became active) - reset state
+        if isActive and not self._wasCreditsActive then
+            self._isFading = false
+            self._fadeTimer = 0
+            self._isHovered = false
+        end
+
+        -- Update previous state
+        self._wasCreditsActive = isActive
+
+        -- Early exit if CreditsUI is not active
+        if not isActive then
+            return
+        end
+
         -- Handle hover sound
         if self._transform then
             local pointerPos = Input.GetPointerPosition()
@@ -82,8 +101,6 @@ return Component {
     end,
 
     OnClickCloseCreditsButton = function(self)
-        print("[CloseCreditsButton] OnClickCloseCreditsButton called!")
-
         if self._audio then
             self._audio:Play()
         end
@@ -127,11 +144,8 @@ return Component {
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = true
-                    print("[CloseCreditsButton] Enabled button: " .. buttonName)
                 end
             end
         end
-
-        print("[CloseCreditsButton] Credits UI closed")
     end,
 }

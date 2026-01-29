@@ -42,15 +42,12 @@ return Component {
     end,
 
     OnClickCloseButton = function(self)
-        print("[CloseSettingButton] OnClickCloseButton called!")
-
         if self._audio then
             self._audio:Play()
         end
 
         -- Save settings when closing menu (only writes if dirty)
         GameSettings.SaveIfDirty()
-        print("[CloseSettingButton] Settings saved")
 
         -- BUTTONS TO ENABLE
         local targetButtons = {
@@ -66,29 +63,21 @@ return Component {
                 local btnComp = GetComponent(targetEntity, "ButtonComponent")
                 if btnComp then
                     btnComp.interactable = true
-                    print("[CloseSettingButton] Enabled button: " .. value)
                 else
-                    print("[CloseSettingButton] Warning: No ButtonComponent on " .. value)
                 end
             else
-                print("[CloseSettingButton] Warning: Could not find entity " .. value)
             end
         end
 
         -- CLOSE SETTINGS UI
         local settingUIEntity = Engine.GetEntityByName("SettingsUI")
-        print("[CloseSettingButton] SettingsUI entity: " .. tostring(settingUIEntity))
-
         if settingUIEntity and settingUIEntity ~= -1 then
             local activeComp = GetComponent(settingUIEntity, "ActiveComponent")
             if activeComp then
                 activeComp.isActive = false
-                print("[CloseSettingButton] Set SettingsUI.isActive = false")
             else
-                print("[CloseSettingButton] Warning: No ActiveComponent on SettingsUI")
             end
         else
-            print("[CloseSettingButton] Warning: Could not find SettingsUI entity")
         end
     end,
 }

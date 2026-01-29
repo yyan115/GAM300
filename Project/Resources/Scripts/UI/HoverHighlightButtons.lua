@@ -16,7 +16,8 @@ local targetButtons =
 
 local UIMenus = 
 {
-    "SettingsUI"
+    "SettingsUI",
+    "CreditsUI"
 }
 
 return Component {
