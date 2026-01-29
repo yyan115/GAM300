@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e6126a597c-00040a62a00000bb",
+        "source": "../../Resources/Textures/M4/Door_LeftDoor_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Door_LeftDoor_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

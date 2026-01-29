@@ -3,16 +3,16 @@ require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local StateMachine       = require("GamePlay.StateMachine")
-local GroundIdleState    = require("GamePlay.GroundIdleState")
-local GroundAttackState  = require("GamePlay.GroundAttackState")
-local GroundHurtState    = require("GamePlay.GroundHurtState")
-local GroundDeathState   = require("GamePlay.GroundDeathState")
-local GroundHookedState  = require("GamePlay.GroundHookedState")
-local GroundPatrolState  = require("GamePlay.GroundPatrolState")
-local GroundChaseState = require("GamePlay.GroundChaseState")
+local StateMachine       = require("Gameplay.StateMachine")
+local GroundIdleState    = require("Gameplay.GroundIdleState")
+local GroundAttackState  = require("Gameplay.GroundAttackState")
+local GroundHurtState    = require("Gameplay.GroundHurtState")
+local GroundDeathState   = require("Gameplay.GroundDeathState")
+local GroundHookedState  = require("Gameplay.GroundHookedState")
+local GroundPatrolState  = require("Gameplay.GroundPatrolState")
+local GroundChaseState = require("Gameplay.GroundChaseState")
 
-local KnifePool = require("GamePlay.KnifePool")
+local KnifePool = require("Gameplay.KnifePool")
 local Input = _G.Input
 local Time  = _G.Time
 local Physics = _G.Physics
@@ -224,6 +224,7 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
+        self.particles  = self:GetComponent("ParticleComponent")
 
         if self._controller then
             pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
@@ -248,6 +249,11 @@ return Component {
             -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        if self.particles then
+            self.particles.isEmitting   = false
+            self.particles.emissionRate = 0
         end
 
         -- === Damage event subscription ===

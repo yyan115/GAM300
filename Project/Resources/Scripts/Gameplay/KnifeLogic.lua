@@ -3,7 +3,7 @@ require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local KnifePool = require("GamePlay.KnifePool")
+local KnifePool = require("Gameplay.KnifePool")
 local event_bus = _G.event_bus
 
 local function atan2(y, x)
@@ -70,7 +70,7 @@ return Component {
     Start = function(self)
         self.model    = self:GetComponent("ModelRenderComponent")
         self.collider = self:GetComponent("ColliderComponent")
-        self.rb       = self:GetComponent("RigidBodyComponent") -- should be nil now
+        self.rb       = self:GetComponent("RigidBodyComponent")
 
         self.active = false
         self.reserved = false

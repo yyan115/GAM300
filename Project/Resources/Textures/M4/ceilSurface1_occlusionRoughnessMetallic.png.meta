@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001a962e4fe0bf4d-000408e20c000009",
+        "source": "../../Resources/Textures/M4/ceilSurface1_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/M4/ceilSurface1_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

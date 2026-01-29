@@ -11,6 +11,7 @@
 #include <iostream>
 #include "Logging.hpp"
 #include <Graphics/PostProcessing/PostProcessingManager.hpp>
+#include "Physics/PhysicsSystem.hpp"
 
 // Static member definitions for SCENE panel
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
@@ -182,6 +183,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         }
         mainECS.transformSystem->Update();
 
+		// ONLY CALLED VIA EDITOR - Update physics in editor mode
+        mainECS.physicsSystem->EditorUpdate(mainECS);
+
         // Set the static editor camera (this won't be updated by input)
         gfxManager.SetCamera(editorCamera);
 
@@ -226,6 +230,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
         // Reset editor rendering flag
         gfxManager.SetRenderingForEditor(false);
+
+		// Set all isDirty flags to false after rendering
+        mainECS.transformSystem->PostUpdate();
 
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");

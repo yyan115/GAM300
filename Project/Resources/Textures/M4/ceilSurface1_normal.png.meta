@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001a962e58459034-000408e20c000007",
+        "source": "../../Resources/Textures/M4/ceilSurface1_normal.png",
+        "compiled": "../../Resources/Textures/M4/ceilSurface1_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

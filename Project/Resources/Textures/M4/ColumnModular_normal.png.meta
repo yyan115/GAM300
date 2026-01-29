@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e664f77a24-00040a5a4c000061",
+        "source": "../../Resources/Textures/M4/ColumnModular_normal.png",
+        "compiled": "../../Resources/Textures/M4/ColumnModular_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e651a9df9c-00040a5a3e00005d",
+        "source": "../../Resources/Models/Environment/ColumnModular.fbx",
+        "compiled": "../../Resources/Models/Environment/ColumnModular.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

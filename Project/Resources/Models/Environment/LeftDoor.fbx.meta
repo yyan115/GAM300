@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e66d20a13b-00040a628c0000ad",
+        "source": "../../Resources/Models/Environment/LeftDoor.fbx",
+        "compiled": "../../Resources/Models/Environment/LeftDoor.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

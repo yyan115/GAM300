@@ -862,6 +862,7 @@ void ScenePanel::HandleEntitySelection() {
     bool isLeftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
     bool isLeftReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
     bool isAltPressed = io.KeyAlt;
+    bool isCtrlPressed = io.KeyCtrl;  // For multi-selection like file explorer
 
     // Only select entities when left clicking without Alt (Alt is for camera orbit)
     if ((isLeftClicked || isDoubleClicked || isLeftDown || isLeftReleased) && !isAltPressed) {
@@ -951,9 +952,21 @@ void ScenePanel::HandleEntitySelection() {
                         }
 
                         if (!selectedEntities.empty()) {
-                            GUIManager::SetSelectedEntities(selectedEntities);
-                            ENGINE_PRINT("[ScenePanel] Marquee selected ", selectedEntities.size(), " entities\n");
-                        } else {
+                            if (isCtrlPressed) {
+                                // Ctrl+marquee: add to existing selection
+                                for (Entity entity : selectedEntities) {
+                                    if (!GUIManager::IsEntitySelected(entity)) {
+                                        GUIManager::AddSelectedEntity(entity);
+                                    }
+                                }
+                                ENGINE_PRINT("[ScenePanel] Ctrl+Marquee added ", selectedEntities.size(), " entities to selection\n");
+                            } else {
+                                // Regular marquee: replace selection
+                                GUIManager::SetSelectedEntities(selectedEntities);
+                                ENGINE_PRINT("[ScenePanel] Marquee selected ", selectedEntities.size(), " entities\n");
+                            }
+                        } else if (!isCtrlPressed) {
+                            // Only clear selection if Ctrl is not pressed
                             GUIManager::ClearSelectedEntities();
                             ENGINE_PRINT("[ScenePanel] Marquee selection cleared\n");
                         }
@@ -964,10 +977,10 @@ void ScenePanel::HandleEntitySelection() {
                 }
             }
 
-            // Only perform raycast on actual click/release, not during drag
-            // Skip raycast while marquee dragging or during continuous drag
-            if (!isLeftClicked && !isDoubleClicked && !(isLeftReleased && !isMarqueeSelecting)) {
-                return; // Skip raycast during drag or other states
+            // Only perform raycast on actual click, not during drag or release
+            // This prevents double-firing on Ctrl+click (which would toggle twice)
+            if (!isLeftClicked && !isDoubleClicked) {
+                return; // Skip raycast during drag, release, or other states
             }
 
             // Perform proper raycasting for entity selection
@@ -1068,12 +1081,24 @@ void ScenePanel::HandleEntitySelection() {
                 }
 
                 // Select the entity (for both single and double click)
-                GUIManager::SetSelectedEntity(hit.entity);
-                ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
-                    , " at distance ", hit.distance, "\n");
+                if (isCtrlPressed && !isDoubleClicked) {
+                    // Ctrl+click: toggle selection (like file explorer)
+                    if (GUIManager::IsEntitySelected(hit.entity)) {
+                        GUIManager::RemoveSelectedEntity(hit.entity);
+                        ENGINE_PRINT("[ScenePanel] Ctrl+Click removed entity ", hit.entity, " from selection\n");
+                    } else {
+                        GUIManager::AddSelectedEntity(hit.entity);
+                        ENGINE_PRINT("[ScenePanel] Ctrl+Click added entity ", hit.entity, " to selection\n");
+                    }
+                } else {
+                    // Regular click or double-click: replace selection
+                    GUIManager::SetSelectedEntity(hit.entity);
+                    ENGINE_PRINT("[ScenePanel] Raycast hit entity ", hit.entity
+                        , " at distance ", hit.distance, "\n");
+                }
             } else {
-                // No entity hit, clear selection (only on single click)
-                if (!isDoubleClicked) {
+                // No entity hit, clear selection (only on single click without Ctrl)
+                if (!isDoubleClicked && !isCtrlPressed) {
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                     ENGINE_PRINT("[ScenePanel] Raycast missed - cleared selection\n");
                 }
@@ -2004,7 +2029,7 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
-        //check if entity has ModelRender - only auto-calculate center if it's at default (0,0,0)
+        // check if entity has ModelRender - only auto-calculate center if it's at default (0,0,0)
         // This preserves manually set or pasted center values
         if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
         {
@@ -2013,23 +2038,6 @@ void ScenePanel::DrawColliderGizmos() {
                 collider.center = rc.CalculateCenter(*rc.model);
             }
         }
-
-
-
-        // Get world position, rotation and scale from transform
-        glm::vec3 worldPos = glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
-        glm::quat worldRot = glm::quat(transform.localRotation.w, transform.localRotation.x, transform.localRotation.y, transform.localRotation.z); // Convert custom Quaternion to glm::quat
-        glm::vec3 worldScale = glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
-
-        // Build transformation matrix (TRS order: Translation * Rotation * Scale)
-        glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), worldPos)
-            * glm::mat4_cast(worldRot)
-            * glm::scale(glm::mat4(1.0f), worldScale);
-
-        // Apply collider offset in local space
-        glm::vec3 localOffset = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
-        glm::vec3 offset = glm::vec3(transformMatrix * glm::vec4(localOffset, 1.0f)) - worldPos;
-        worldPos += offset;
 
         // Get viewport dimensions from current ImGui window
         ImVec2 windowSize = cachedWindowSize;
@@ -2044,39 +2052,53 @@ void ScenePanel::DrawColliderGizmos() {
         // Green color for collider gizmos (like Unity)
         ImU32 gizmoColor = IM_COL32(0, 255, 0, 255);
 
-        // Helper lambda to transform a local point to world space
-        auto TransformPoint = [&](const glm::vec3& localPoint) -> glm::vec3 {
-            return glm::vec3(transformMatrix * glm::vec4(localPoint, 1.0f));
+        // --- FIX START ---
+        // Instead of manually reconstructing the matrix from worldPos/Rot/Scale, 
+        // we use the authoritative worldMatrix from the Transform component.
+        // This ensures the gizmo matches the rendered mesh exactly, including all parent rotations.
+
+        // Convert custom Matrix4x4 to GLM matrix
+        glm::mat4 transformMatrix = transform.worldMatrix.ConvertToGLM();
+
+        // Define the local center offset
+        glm::vec3 localCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
+
+        // Lambda to transform a point: WorldMatrix * (Center + Point)
+        // This handles Rotation, Scale (including parent scale), and Translation correctly.
+        auto TransformPoint = [&](const glm::vec3& pointRelativeToCenter) -> glm::vec3 {
+            // Apply local center offset, then full world transform
+            glm::vec4 localPos = glm::vec4(localCenter + pointRelativeToCenter, 1.0f);
+            return glm::vec3(transformMatrix * localPos);
             };
+        // --- FIX END ---
 
         // Draw based on shape type
         switch (collider.shapeType) {
         case ColliderShapeType::Box: {
-            // Draw wireframe box - define corners in LOCAL space
+            // Draw wireframe box - define corners in LOCAL space (relative to collider center)
             glm::vec3 extents = glm::vec3(
                 collider.boxHalfExtents.x,
                 collider.boxHalfExtents.y,
                 collider.boxHalfExtents.z
             );
 
-            // 8 corners in LOCAL space (before transformation)
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
-            glm::vec3 localCorners[8] = {
-                colliderCenter + glm::vec3(-extents.x, -extents.y, -extents.z),
-                colliderCenter + glm::vec3(extents.x, -extents.y, -extents.z),
-                colliderCenter + glm::vec3(extents.x,  extents.y, -extents.z),
-                colliderCenter + glm::vec3(-extents.x,  extents.y, -extents.z),
-                colliderCenter + glm::vec3(-extents.x, -extents.y,  extents.z),
-                colliderCenter + glm::vec3(extents.x, -extents.y,  extents.z),
-                colliderCenter + glm::vec3(extents.x,  extents.y,  extents.z),
-                colliderCenter + glm::vec3(-extents.x,  extents.y,  extents.z),
+            // Define the 8 corners relative to (0,0,0)
+            glm::vec3 relativeCorners[8] = {
+                glm::vec3(-extents.x, -extents.y, -extents.z),
+                glm::vec3(extents.x, -extents.y, -extents.z),
+                glm::vec3(extents.x,  extents.y, -extents.z),
+                glm::vec3(-extents.x,  extents.y, -extents.z),
+                glm::vec3(-extents.x, -extents.y,  extents.z),
+                glm::vec3(extents.x, -extents.y,  extents.z),
+                glm::vec3(extents.x,  extents.y,  extents.z),
+                glm::vec3(-extents.x,  extents.y,  extents.z)
             };
 
             // Transform corners to world space, then project to screen
             ImVec2 screenCorners[8];
             bool visible[8];
             for (int i = 0; i < 8; i++) {
-                glm::vec3 worldCorner = TransformPoint(localCorners[i]);
+                glm::vec3 worldCorner = TransformPoint(relativeCorners[i]);
                 screenCorners[i] = ProjectToScreen(worldCorner, visible[i], vp, windowPos, windowSize);
             }
 
@@ -2101,16 +2123,14 @@ void ScenePanel::DrawColliderGizmos() {
             // Draw wireframe sphere (3 orthogonal circles)
             float radius = collider.sphereRadius;
             int segments = 32;
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
-            // Define circles in LOCAL space, then transform each point
             // XY plane circle
             for (int i = 0; i < segments; i++) {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
-                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0);
 
                 glm::vec3 p1 = TransformPoint(localP1);
                 glm::vec3 p2 = TransformPoint(localP2);
@@ -2128,8 +2148,8 @@ void ScenePanel::DrawColliderGizmos() {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 localP1 = colliderCenter + glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
-                glm::vec3 localP2 = colliderCenter + glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
+                glm::vec3 localP1 = glm::vec3(cos(angle1) * radius, 0, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(cos(angle2) * radius, 0, sin(angle2) * radius);
 
                 glm::vec3 p1 = TransformPoint(localP1);
                 glm::vec3 p2 = TransformPoint(localP2);
@@ -2147,8 +2167,8 @@ void ScenePanel::DrawColliderGizmos() {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
 
-                glm::vec3 localP1 = colliderCenter + glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
-                glm::vec3 localP2 = colliderCenter + glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
+                glm::vec3 localP1 = glm::vec3(0, cos(angle1) * radius, sin(angle1) * radius);
+                glm::vec3 localP2 = glm::vec3(0, cos(angle2) * radius, sin(angle2) * radius);
 
                 glm::vec3 p1 = TransformPoint(localP1);
                 glm::vec3 p2 = TransformPoint(localP2);
@@ -2167,14 +2187,12 @@ void ScenePanel::DrawColliderGizmos() {
             // Draw wireframe capsule with hemispheres
             float radius = collider.capsuleRadius;
             float halfHeight = collider.capsuleHalfHeight;
-            int segments = 16; // Horizontal segments around the capsule
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
+            int segments = 16;
 
-            // Define top and bottom centers in LOCAL space
-            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
-            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
+            glm::vec3 localTop = glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = glm::vec3(0, -halfHeight, 0); // Corrected to negative
 
-            // 1. Draw cylinder body (vertical lines connecting top and bottom circles)
+            // 1. Draw cylinder body 
             for (int i = 0; i < segments; i++) {
                 float angle = (float)i / segments * 2.0f * 3.14159f;
                 glm::vec3 localOffset(cos(angle) * radius, 0, sin(angle) * radius);
@@ -2190,7 +2208,7 @@ void ScenePanel::DrawColliderGizmos() {
                 }
             }
 
-            // 2. Draw equator circles (where cylinder meets hemispheres)
+            // 2. Draw equator circles
             for (int i = 0; i < segments; i++) {
                 float angle1 = (float)i / segments * 2.0f * 3.14159f;
                 float angle2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
@@ -2213,16 +2231,14 @@ void ScenePanel::DrawColliderGizmos() {
                 if (vis3 && vis4) drawList->AddLine(s3, s4, gizmoColor, 2.0f);
             }
 
-            // 3. Draw TOP HEMISPHERE - draw several vertical arc slices
+            // 3. Draw TOP HEMISPHERE
             for (int slice = 0; slice < segments; slice++) {
                 float theta = (float)slice / segments * 2.0f * 3.14159f;
 
-                // Draw arc from equator up to the top pole
                 for (int i = 0; i < segments / 2; i++) {
                     float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
                     float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
 
-                    // Arc in the vertical plane
                     glm::vec3 localP1(
                         cos(theta) * radius * sin(angle1),
                         radius * cos(angle1),
@@ -2246,11 +2262,10 @@ void ScenePanel::DrawColliderGizmos() {
                 }
             }
 
-            // 4. Draw BOTTOM HEMISPHERE - draw several vertical arc slices
+            // 4. Draw BOTTOM HEMISPHERE
             for (int slice = 0; slice < segments; slice++) {
                 float theta = (float)slice / segments * 2.0f * 3.14159f;
 
-                // Draw arc from equator down to the bottom pole
                 for (int i = 0; i < segments / 2; i++) {
                     float angle1 = (float)i / (segments / 2) * 3.14159f * 0.5f;
                     float angle2 = (float)(i + 1) / (segments / 2) * 3.14159f * 0.5f;
@@ -2278,53 +2293,6 @@ void ScenePanel::DrawColliderGizmos() {
                     }
                 }
             }
-
-            // 5. Draw horizontal latitude circles on both hemispheres for better visibility
-            int latitudeLines = 3; // Number of horizontal circles on each hemisphere
-            for (int lat = 1; lat <= latitudeLines; lat++) {
-                float angle = (float)lat / (latitudeLines + 1) * 3.14159f * 0.5f;
-                float latRadius = radius * sin(angle);
-                float latHeight = radius * cos(angle);
-
-                // Top hemisphere circle
-                for (int i = 0; i < segments; i++) {
-                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
-                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 topP1 = glm::vec3(latRadius * cos(theta1), latHeight, latRadius * sin(theta1));
-                    glm::vec3 topP2 = glm::vec3(latRadius * cos(theta2), latHeight, latRadius * sin(theta2));
-
-                    glm::vec3 p1 = TransformPoint(localTop + topP1);
-                    glm::vec3 p2 = TransformPoint(localTop + topP2);
-
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
-                }
-
-                // Bottom hemisphere circle
-                for (int i = 0; i < segments; i++) {
-                    float theta1 = (float)i / segments * 2.0f * 3.14159f;
-                    float theta2 = (float)(i + 1) / segments * 2.0f * 3.14159f;
-
-                    glm::vec3 botP1 = glm::vec3(latRadius * cos(theta1), -latHeight, latRadius * sin(theta1));
-                    glm::vec3 botP2 = glm::vec3(latRadius * cos(theta2), -latHeight, latRadius * sin(theta2));
-
-                    glm::vec3 p1 = TransformPoint(localBottom + botP1);
-                    glm::vec3 p2 = TransformPoint(localBottom + botP2);
-
-                    bool vis1, vis2;
-                    ImVec2 s1 = ProjectToScreen(p1, vis1, vp, windowPos, windowSize);
-                    ImVec2 s2 = ProjectToScreen(p2, vis2, vp, windowPos, windowSize);
-                    if (vis1 && vis2) {
-                        drawList->AddLine(s1, s2, gizmoColor, 2.0f);
-                    }
-                }
-            }
-
             break;
         }
         case ColliderShapeType::Cylinder: {
@@ -2332,11 +2300,9 @@ void ScenePanel::DrawColliderGizmos() {
             float radius = collider.cylinderRadius;
             float halfHeight = collider.cylinderHalfHeight;
             int segments = 16;
-            glm::vec3 colliderCenter = glm::vec3(collider.center.x + collider.offset.x, collider.center.y + collider.offset.y, collider.center.z + collider.offset.z);
 
-            // Define top and bottom centers in LOCAL space
-            glm::vec3 localTop = colliderCenter + glm::vec3(0, halfHeight, 0);
-            glm::vec3 localBottom = colliderCenter - glm::vec3(0, halfHeight, 0);
+            glm::vec3 localTop = glm::vec3(0, halfHeight, 0);
+            glm::vec3 localBottom = glm::vec3(0, -halfHeight, 0); // Corrected to negative
 
             // Vertical edges
             for (int i = 0; i < segments; i++) {
@@ -2384,6 +2350,7 @@ void ScenePanel::DrawColliderGizmos() {
         ENGINE_PRINT("[ScenePanel] entity might be deleted: ", e.what(), "\n");
     }
 }
+
 void ScenePanel::DrawCameraGizmos() {
     Entity selectedEntity = GUIManager::GetSelectedEntity();
     if (selectedEntity == static_cast<Entity>(-1)) return;

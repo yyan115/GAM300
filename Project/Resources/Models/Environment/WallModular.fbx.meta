@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e63fd3daec-00040a5614000041",
+        "source": "../../Resources/Models/Environment/WallModular.fbx",
+        "compiled": "../../Resources/Models/Environment/WallModular.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
