@@ -5,10 +5,14 @@ return Component {
     fields = {
         fadeDuration = 1.0,
         fadeScreenName = "MenuFadeScreen",
+        mainMenuScene = "Resources/Scenes/01_MainMenu.scene"
+
     },
 
     OnClickYesButton = function(self)
+        --TODO TRANSITION
         print("TIME TO RETURN TO MAIN MENU")
+        Scene.Load(self.mainMenuScene)
     end,
 
     --CLOSE CONFIRM UI MENU, OPEN UP PAUSE UI MENU
@@ -20,8 +24,6 @@ return Component {
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
         local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
         pauseComp.isActive = true
-
-
     end,
 
     Start = function(self)

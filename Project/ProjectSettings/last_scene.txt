@@ -1,1 +1,1 @@
-../../Resources/Scenes/TestScenes/PauseUI.scene
+../../Resources/Scenes/04_GameLevel.scene

@@ -8,7 +8,10 @@ return Component {
     },
 
     OnClickContinueButton = function(self)
-        print("GAME RESUMED")
+        local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
+        local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
+        pauseComp.isActive = false
+        Time.SetPaused(false)       --Reset Dt back to normal
     end,
 
     OnClickSettingButton = function(self)
@@ -20,6 +23,7 @@ return Component {
     end,
 
     OnClickMainMenuButton = function(self) 
+        print("is this shit showing")
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
         local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
         pauseComp.isActive = false

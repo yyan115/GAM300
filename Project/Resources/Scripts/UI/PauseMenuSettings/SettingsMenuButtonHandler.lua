@@ -27,9 +27,6 @@ return Component {
             end
         end
         --Set to 50% vol....
-
-
-
     end,    
     OnClickBackButton = function(self)
         --DISABLE SETTINGS UI SCREEN, ENABLE PAUSE UI SCREEN
@@ -74,6 +71,10 @@ return Component {
             else
                 print("Warning: Missing entities for " .. names.base)
             end
+
+            local fillEnt = Engine.GetEntityByName("MasterAudioBarFill")
+            self._fillEnt = GetComponent(fillEnt, "Transform")
+
         end
 
 -- 2. Setup Sliders 
@@ -157,9 +158,7 @@ return Component {
                 --SNAPPING: Clean up the edges
                     if vol < 0.01 then vol = 0 
                     elseif vol > 0.99 then vol = 1.0 end
-
-                    -- Set the volume based on the slider type
-                    break 
+                    -- Set the volume
                 end
             end
         end
