@@ -1415,7 +1415,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
     if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["AnimationComponent"];
         AnimationComponent animComp{};
-        TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
+        DeserializeAnimationComponent(animComp, tv);
         ecs.AddComponent<AnimationComponent>(newEnt, animComp);
 
         // For prefabs, we need to initialise the animation component after deserialization.
@@ -1546,7 +1546,7 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEn
                 else if (typeName == "AnimationComponent") {
                     // Animation usually requires TypeResolver or specific logic
                     AnimationComponent animComp{};
-                    TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, data);
+                    DeserializeAnimationComponent(animComp, data);
                     ecs.AddComponent<AnimationComponent>(currentEntity, animComp);
 
                     // Re-initialization might be needed if model changed
@@ -2542,6 +2542,33 @@ void Serializer::DeserializeSpriteAnimationComponent(SpriteAnimationComponent& a
     }
     if (animJSON.HasMember("autoPlay") && animJSON["autoPlay"].IsBool()) {
         animComp.autoPlay = animJSON["autoPlay"].GetBool();
+    }
+}
+
+void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON) {
+    if (animJSON.HasMember("data") && animJSON["data"].IsArray()) {
+        const auto& d = animJSON["data"];
+        animComp.enabled = Serializer::GetBool(d, 0);
+        animComp.isPlay = Serializer::GetBool(d, 1);
+        animComp.isLoop = Serializer::GetBool(d, 2);
+        animComp.speed = Serializer::GetFloat(d, 3);
+        animComp.clipCount = Serializer::GetInt(d, 4);
+        
+        const auto& clipPathsJSON = animJSON["data"][5]["data"].GetArray();
+        size_t index = 0;
+        for (const auto& clipPathJSON : clipPathsJSON) {
+            animComp.clipPaths.push_back(Serializer::GetString(clipPathJSON, index++));
+        }
+
+        const auto& clipGUIDSJSON = animJSON["data"][6]["data"].GetArray();
+        index = 0;
+        for (const auto& clipGUIDJSON : clipGUIDSJSON) {
+            GUID_string clipGUIDStr = extractGUIDString(clipGUIDJSON);
+            GUID_128 clipGUID = GUIDUtilities::ConvertStringToGUID128(clipGUIDStr);
+            animComp.clipGUIDs.push_back(clipGUID);
+        }
+
+        animComp.controllerPath = Serializer::GetString(d, 7);
     }
 }
 
