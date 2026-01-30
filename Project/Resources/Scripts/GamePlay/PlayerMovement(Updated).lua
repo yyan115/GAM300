@@ -47,6 +47,7 @@ return Component {
         Speed = 1.5,
         JumpHeight = 1.2,
         DamageStunDuration = 1.0,
+        LandingDuration = 0.5,
     },
 
     Awake = function(self)
@@ -108,6 +109,8 @@ return Component {
 
         self._damageStunDuration = self.DamageStunDuration
         self._isDamageStun = false
+
+        self._landingDuration = self.LandingDuration
     end,
 
     Update = function(self, dt)
@@ -120,6 +123,15 @@ return Component {
             if self._damageStunDuration <= 0 then
                 self._damageStunDuration = self.DamageStunDuration
                 self._isDamageStun = false
+            end
+        end
+
+        if self._isLanding == true then
+            self._landingDuration = self._landingDuration - dt
+            if self._landingDuration <= 0 then
+                self._landingDuration = self.LandingDuration
+                self._isLanding = false
+                self._isRolling = false
             end
         end
 
@@ -149,6 +161,9 @@ return Component {
         local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
         local moveX, moveZ = 0, 0
         if rawX ~= 0 or rawZ ~= 0 then
+            self._prevRawX = rawX
+            self._prevRawZ = rawZ
+
             local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
@@ -175,7 +190,7 @@ return Component {
             return -- Exit immediately so we don't process movement on the death frame
         end
 
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+        if not self._isLanding and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
@@ -183,6 +198,23 @@ return Component {
 
         -- APPLY MOVEMENT
         if not isJumping and isMoving then
+            CharacterController.Move(
+                self._controller,
+                moveX * self.Speed,
+                0,
+                moveZ * self.Speed
+            )
+        end
+
+        -- FORCE MOVEMENT IF PLAYER IS ROLLING
+        if self._isRolling and not isMoving then
+            local yawRad = math.rad(cameraYaw)
+            local sinYaw = math.sin(yawRad)
+            local cosYaw = math.cos(yawRad)
+
+            moveX = self._prevRawZ * (-sinYaw) - self._prevRawX * cosYaw
+            moveZ = self._prevRawZ * (-cosYaw) + self._prevRawX * sinYaw
+
             CharacterController.Move(
                 self._controller,
                 moveX * self.Speed,
@@ -201,11 +233,13 @@ return Component {
             if self._isJumping then
                 self._isJumping = false
                 self._animator:SetBool("IsJumping", false)
+                self._isLanding = true
                 -- Resume proper state based on movement
                 if isMoving then
                     print("[PlayerMovement] SetBool(IsRunning, true)")
                     self._animator:SetBool("IsRunning", true)
                     self._isRunning = true
+                    self._isRolling = true
                 else
                     print("[PlayerMovement] SetBool(IsRunning, false)")
                     self._animator:SetBool("IsRunning", false)

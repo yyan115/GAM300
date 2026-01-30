@@ -85,7 +85,7 @@ void EditorState::Play() {
             }
         }
 
-
+        ecs.animationSystem->Initialise();
         SceneManager::GetInstance().InitializeScenePhysics();
 
     } else if (currentState == State::PAUSED) {

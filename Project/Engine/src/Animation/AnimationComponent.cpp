@@ -320,14 +320,19 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     std::vector<std::string> validClipPaths;
     std::vector<GUID_128> validClipGUIDs;
 
+    ENGINE_PRINT("[AnimationComponent] clipPaths size: ", clipPaths.size());
+    ENGINE_PRINT("[AnimationComponent] clipGUIDs size: ", clipGUIDs.size());
+
     for (size_t i = 0; i < clipPaths.size(); ++i) {
         const auto& path = clipPaths[i];
+        ENGINE_PRINT("[AnimationComponent] Clip ", i, " path: ", path);
         std::string pathToLoad{};
 
         // First try to use GUID to get the correct local path (handles cross-machine scenarios)
         GUID_128 currentGUID = {};
         if (i < clipGUIDs.size()) {
             currentGUID = clipGUIDs[i];
+            ENGINE_PRINT("[AnimationComponent] Clip ", i, " GUID: ", currentGUID.low, " ", currentGUID.high);
             if (currentGUID.high != 0 || currentGUID.low != 0) {
                 std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(currentGUID);
                 if (!guidPath.empty()) {

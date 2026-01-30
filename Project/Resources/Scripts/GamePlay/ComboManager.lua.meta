@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00688d57ff3a240e-00040e0144000005",
-        "source": "../../Resources/Scripts/GamePlay/ComboManager.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/ComboManager.lua"
+        "guid": "002e3c80b8302dff-0004102b4200000b",
+        "source": "../../Resources/Scripts/Gameplay/ComboManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/ComboManager.lua"
     }
 }

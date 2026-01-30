@@ -28,19 +28,11 @@
                                 },
                                 {
                                     "type": "float",
-<<<<<<< HEAD
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 5
-=======
                                     "data": 2.36785
                                 },
                                 {
                                     "type": "float",
                                     "data": 2.086
->>>>>>> main
                                 }
                             ]
                         },
@@ -402,7 +394,7 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Models/Test/KusaneTest3.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -3585,7 +3577,7 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Models/Test/KusaneTest3.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -12151,11 +12143,11 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Idle.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Placeholders/PlayerSlashOutward.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -32415,11 +32407,7 @@
                             "data": [
                                 {
                                     "type": "float",
-<<<<<<< HEAD
-                                    "data": 0.999569
-=======
                                     "data": 0.99957
->>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -35696,11 +35684,7 @@
                             "data": [
                                 {
                                     "type": "float",
-<<<<<<< HEAD
-                                    "data": 0.846673
-=======
                                     "data": 0.846674
->>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -37272,11 +37256,7 @@
                             "data": [
                                 {
                                     "type": "float",
-<<<<<<< HEAD
-                                    "data": 0.996187
-=======
                                     "data": 0.996186
->>>>>>> main
                                 },
                                 {
                                     "type": "float",
@@ -38682,8 +38662,6 @@
                     ]
                 }
             }
-<<<<<<< HEAD
-=======
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Player_Animation_Bug.prefab",
@@ -38747,7 +38725,6 @@
                     }
                 }
             ]
->>>>>>> main
         }
     ],
     "layers": [
