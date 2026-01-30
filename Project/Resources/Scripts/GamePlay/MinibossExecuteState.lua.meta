@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "00465fde4d7d3082-00040ce568000025",
-        "source": "../../Resources/Scripts/Gameplay/MinibossExecuteState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/MinibossExecuteState.lua"
+        "source": "../../Resources/Scripts/GamePlay/MinibossExecuteState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/MinibossExecuteState.lua"
     }
 }

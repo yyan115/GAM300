@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "00465fde6763ff8a-00040ce568000017",
-        "source": "../../Resources/Scripts/Gameplay/GroundIdleState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundIdleState.lua"
+        "source": "../../Resources/Scripts/GamePlay/GroundIdleState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundIdleState.lua"
     }
 }

@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "00465fde1c90942a-00040ce56800000f",
-        "source": "../../Resources/Scripts/Gameplay/GroundChaseState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundChaseState.lua"
+        "source": "../../Resources/Scripts/GamePlay/GroundChaseState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundChaseState.lua"
     }
 }
