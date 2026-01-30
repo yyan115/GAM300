@@ -85,10 +85,14 @@ Update = function(self, dt)
         end
     end
 
-    -- If no UI is open, unlock the state
-    if not anyUIOpen then
-        self._lockedState = false
+    -- If any UI is open, skip all hover processing to prevent button highlights
+    -- from appearing in front of the UI overlay
+    if anyUIOpen then
+        return
     end
+
+    -- If no UI is open, unlock the state
+    self._lockedState = false
 
     -- If locked, don't process hover logic
     if self._lockedState then

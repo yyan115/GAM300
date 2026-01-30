@@ -163,5 +163,17 @@ return Component {
                 end
             end
         end
+
+        -- Re-enable button text entities
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        for _, textName in ipairs(targetTexts) do
+            local textEntity = Engine.GetEntityByName(textName)
+            if textEntity then
+                local textActive = GetComponent(textEntity, "ActiveComponent")
+                if textActive then
+                    textActive.isActive = true
+                end
+            end
+        end
     end,
 }

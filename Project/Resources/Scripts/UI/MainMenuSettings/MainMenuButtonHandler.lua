@@ -94,8 +94,9 @@ return Component {
             print("[MainMenuButtonHandler] Warning: SettingsUI entity not found")
         end
 
-        -- Disable buttons when settings menu is active
+        -- Disable buttons and hide text when settings menu is active
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
             if entity then
@@ -107,6 +108,16 @@ return Component {
                 end
             else
                 print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
+            end
+        end
+        -- Hide button text to prevent z-order issues with SettingsUI overlay
+        for _, textName in ipairs(targetTexts) do
+            local textEntity = Engine.GetEntityByName(textName)
+            if textEntity then
+                local textActive = GetComponent(textEntity, "ActiveComponent")
+                if textActive then
+                    textActive.isActive = false
+                end
             end
         end
     end,
@@ -125,14 +136,25 @@ return Component {
             end
         end
 
-        -- Disable main menu buttons when credits is active
+        -- Disable main menu buttons and hide text when credits is active
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
             if entity then
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = false
+                end
+            end
+        end
+        -- Hide button text to prevent z-order issues with CreditsUI overlay
+        for _, textName in ipairs(targetTexts) do
+            local textEntity = Engine.GetEntityByName(textName)
+            if textEntity then
+                local textActive = GetComponent(textEntity, "ActiveComponent")
+                if textActive then
+                    textActive.isActive = false
                 end
             end
         end
