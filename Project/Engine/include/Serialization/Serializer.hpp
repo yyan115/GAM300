@@ -156,6 +156,7 @@ public:
 	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root, bool skipSpawnChildren = false);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
 	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
+	static void DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);
 	static void DeserializeParticleComponent(ParticleComponent& particleComp, const rapidjson::Value& particleJSON);
 	static void DeserializeDirLightComponent(DirectionalLightComponent& dirLightComp, const rapidjson::Value& dirLightJSON);
@@ -287,6 +288,54 @@ public:
         }
 
         return defaultValue;
+    }
+
+    static Vector3D GetVector3D(const rapidjson::Value& dataArray, size_t index, const Vector3D& defaultValue = Vector3D(0, 0, 0))
+    {
+        // 1. Basic Bounds Check
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        // 2. Identify where the XYZ data is located
+        const rapidjson::Value* vecData = nullptr;
+
+        // Case A: The item is the wrapper object {"type": "Vector3D", "data": [...]}
+        if (item.IsObject() && item.HasMember("data") && item["data"].IsArray()) {
+            vecData = &item["data"];
+        }
+        // Case B: The item is a raw array [x, y, z]
+        else if (item.IsArray()) {
+            vecData = &item;
+        }
+
+        // 3. Validation: Must have at least 3 components
+        if (!vecData || vecData->Size() < 3) {
+            return defaultValue;
+        }
+
+        Vector3D result;
+        float* outComponents[3] = { &result.x, &result.y, &result.z };
+
+        // 4. Extract each component using your GetFloat-style logic
+        for (size_t i = 0; i < 3; ++i) {
+            const rapidjson::Value& val = (*vecData)[i];
+
+            if (val.IsNumber()) {
+                *outComponents[i] = val.GetFloat();
+            }
+            else if (val.IsObject() && val.HasMember("data") && val["data"].IsNumber()) {
+                *outComponents[i] = val["data"].GetFloat();
+            }
+            else {
+                // If any component is invalid, return the full default to avoid partial vectors
+                return defaultValue;
+            }
+        }
+
+        return result;
     }
 
 private:

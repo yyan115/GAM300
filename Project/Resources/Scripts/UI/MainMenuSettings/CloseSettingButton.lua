@@ -2,17 +2,26 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
 return Component {
-    Start = function(self)
-        local closeEntity = Engine.GetEntityByName("CloseButton")
-        if closeEntity then
-            self._audio = GetComponent(closeEntity, "AudioComponent")
-            self._transform = GetComponent(closeEntity, "Transform")
-        end
+    fields = {
+        -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
+        -- Drag-drop textures from editor (recognized via "sprite" in field name)
+        spriteGUIDs = {},
+        HoverSFX = {},
+    },
 
-        self._isHovered = false
+    Start = function(self)
+        self._transform = self:GetComponent("Transform")
+        self._audio = self:GetComponent("AudioComponent")
+        self._sprite = self:GetComponent("SpriteRenderComponent")
+        self._isHovered = false       
     end,
 
     Update = function(self, dt)
+        self:_updateHover()
+    end,
+
+    -- Simple hover detection and sprite swap
+    _updateHover = function(self)
         if not self._transform then return end
 
         local pointerPos = Input.GetPointerPosition()
@@ -33,24 +42,33 @@ return Component {
 
         if isHovering and not self._isHovered then
             self._isHovered = true
-            if self._audio then
-                self._audio:Play()
+            if self._audio and self.HoverSFX and self.HoverSFX[1] then
+                self._audio:PlayOneShot(self.HoverSFX[1])
             end
-        elseif not isHovering then
+            -- Switch to hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
+            else
+                print("[CloseSettingButton] Cannot switch to hover sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[2]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[2]))
+            end
+        elseif not isHovering and self._isHovered then
             self._isHovered = false
+            -- Switch back to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            else
+                print("[CloseSettingButton] Cannot switch to normal sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[1]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[1]))
+            end
         end
     end,
 
     OnClickCloseButton = function(self)
-        print("[CloseSettingButton] OnClickCloseButton called!")
-
-        if self._audio then
-            self._audio:Play()
-        end
+            if self._audio and self.HoverSFX and self.HoverSFX[2] then
+                self._audio:PlayOneShot(self.HoverSFX[2])
+            end
 
         -- Save settings when closing menu (only writes if dirty)
         GameSettings.SaveIfDirty()
-        print("[CloseSettingButton] Settings saved")
 
         -- BUTTONS TO ENABLE
         local targetButtons = {
@@ -66,29 +84,29 @@ return Component {
                 local btnComp = GetComponent(targetEntity, "ButtonComponent")
                 if btnComp then
                     btnComp.interactable = true
-                    print("[CloseSettingButton] Enabled button: " .. value)
-                else
-                    print("[CloseSettingButton] Warning: No ButtonComponent on " .. value)
                 end
-            else
-                print("[CloseSettingButton] Warning: Could not find entity " .. value)
+            end
+        end
+
+        -- Re-enable button text entities
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        for _, textName in ipairs(targetTexts) do
+            local textEntity = Engine.GetEntityByName(textName)
+            if textEntity and textEntity ~= -1 then
+                local textActive = GetComponent(textEntity, "ActiveComponent")
+                if textActive then
+                    textActive.isActive = true
+                end
             end
         end
 
         -- CLOSE SETTINGS UI
         local settingUIEntity = Engine.GetEntityByName("SettingsUI")
-        print("[CloseSettingButton] SettingsUI entity: " .. tostring(settingUIEntity))
-
         if settingUIEntity and settingUIEntity ~= -1 then
             local activeComp = GetComponent(settingUIEntity, "ActiveComponent")
             if activeComp then
                 activeComp.isActive = false
-                print("[CloseSettingButton] Set SettingsUI.isActive = false")
-            else
-                print("[CloseSettingButton] Warning: No ActiveComponent on SettingsUI")
             end
-        else
-            print("[CloseSettingButton] Warning: Could not find SettingsUI entity")
         end
     end,
 }

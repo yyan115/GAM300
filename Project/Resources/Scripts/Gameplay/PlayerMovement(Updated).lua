@@ -46,6 +46,8 @@ return Component {
     fields = {
         Speed = 1.5,
         JumpHeight = 1.2,
+        DamageStunDuration = 1.0,
+        LandingDuration = 0.5,
     },
 
     Awake = function(self)
@@ -65,7 +67,22 @@ return Component {
                     self._cameraYaw = yaw
                 end
             end)
-            print("[PlayerMovement] Subscription token: " .. tostring(self._cameraYawSub))
+
+            print("[PlayerMovement] Subscribing to playerDead")
+            self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
+                if playerDead then
+                    self._playerDeadPending = playerDead
+                end
+            end)
+
+            print("[PlayerMovement] Subscribing to playerHurtTriggered")
+            self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
+                if hit then
+                    print("[PlayerMovement] playerHurtTriggered received")
+                    self._isDamageStun = true
+                    if self._animator then self._animator:SetBool("IsJumping", false) end
+                end
+            end)
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -79,7 +96,6 @@ return Component {
         print("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        -- Use PlayClip directly (state machine approach doesn't work)
         if self._animator then
             print("[PlayerMovement] Animator found, playing IDLE clip")
             self._animator:PlayClip(IDLE, true)
@@ -90,28 +106,64 @@ return Component {
         self._isRunning = false
         self._isJumping = false
         self.rotationSpeed = 10.0
+
+        self._damageStunDuration = self.DamageStunDuration
+        self._isDamageStun = false
+
+        self._landingDuration = self.LandingDuration
     end,
 
     Update = function(self, dt)
-        if not self._collider or not self._transform or not self._controller then
+        if not self._collider or not self._transform or not self._controller or self._playerDead then
             return
         end
 
-        -- ===============================
-        -- RAW INPUT (LOCAL SPACE) - Using new unified input system
-        -- ===============================
+        if self._isDamageStun == true then
+            self._damageStunDuration = self._damageStunDuration - dt
+            if self._damageStunDuration <= 0 then
+                self._damageStunDuration = self.DamageStunDuration
+                self._isDamageStun = false
+            end
+        end
+
+        if self._isLanding == true then
+            self._landingDuration = self._landingDuration - dt
+            if self._landingDuration <= 0 then
+                self._landingDuration = self.LandingDuration
+                self._isLanding = false
+                self._isRolling = false
+            end
+        end
+
+        if self._isDamageStun == true then
+            local isGrounded = CharacterController.IsGrounded(self._controller)
+            self._animator:SetBool("IsGrounded", isGrounded)
+            
+            self._animator:SetBool("IsRunning", self._isRunning)
+            --self._animator:SetBool("IsJumping", self._isJumping)
+
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
+            return
+        end
+
+        -- RAW INPUT (LOCAL SPACE)
         local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
-        local rawX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
-        local rawZ = axis.y   -- Z is forward/back
+        local rawX = -axis.x
+        local rawZ = axis.y
 
-        -- ===============================
-        -- CAMERA-RELATIVE MOVEMENT (MERGED)
-        -- ===============================
-        -- Read camera yaw from global (set by camera_follow.lua) - bypasses event_bus
+        -- CAMERA-RELATIVE MOVEMENT
         local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
-
         local moveX, moveZ = 0, 0
         if rawX ~= 0 or rawZ ~= 0 then
+            self._prevRawX = rawX
+            self._prevRawZ = rawZ
+
             local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
@@ -122,20 +174,29 @@ return Component {
 
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
-        -- ===============================
         -- JUMP
-        -- ===============================
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping = false
+        self._animator:SetBool("IsGrounded", isGrounded)
 
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
-            CharacterController.Jump(self._controller, self.JumpHeight)
-            isJumping = true
+        -- If death is pending AND we are on the floor, die now.
+        if self._playerDeadPending and isGrounded then
+            if self._animator then
+                self._animator:SetBool("IsDead", true)
+                print("[PlayerMovement] Player grounded, playing Death animation")
+            end
+            self._playerDead = true
+            self._playerDeadPending = false
+            return -- Exit immediately so we don't process movement on the death frame
         end
 
-        -- ===============================
-        -- APPLY MOVEMENT (WORLD UNITS)
-        -- ===============================
+        if not self._isLanding and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+            CharacterController.Jump(self._controller, self.JumpHeight)
+            isJumping = true
+            self._animator:SetBool("IsJumping", true)
+        end
+
+        -- APPLY MOVEMENT
         if not isJumping and isMoving then
             CharacterController.Move(
                 self._controller,
@@ -145,71 +206,73 @@ return Component {
             )
         end
 
-        -- ANIMATION (using PlayClip directly)
+        -- FORCE MOVEMENT IF PLAYER IS ROLLING
+        if self._isRolling and not isMoving then
+            local yawRad = math.rad(cameraYaw)
+            local sinYaw = math.sin(yawRad)
+            local cosYaw = math.cos(yawRad)
+
+            moveX = self._prevRawZ * (-sinYaw) - self._prevRawX * cosYaw
+            moveZ = self._prevRawZ * (-cosYaw) + self._prevRawX * sinYaw
+
+            CharacterController.Move(
+                self._controller,
+                moveX * self.Speed,
+                0,
+                moveZ * self.Speed
+            )
+        end
+
+        -- ANIMATION LOGIC
         if not isGrounded then
             if not self._isJumping then
-                -- Start jump animation
-                print("[PlayerMovement] PlayClip(JUMP=" .. JUMP .. ")")
-                self._animator:PlayClip(JUMP, false)
                 self._isJumping = true
                 self._isRunning = false
             end
         else
-            -- Landed
             if self._isJumping then
                 self._isJumping = false
+                self._animator:SetBool("IsJumping", false)
+                self._isLanding = true
                 -- Resume proper state based on movement
                 if isMoving then
-                    print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
-                    self._animator:PlayClip(RUN, true)
+                    print("[PlayerMovement] SetBool(IsRunning, true)")
+                    self._animator:SetBool("IsRunning", true)
                     self._isRunning = true
+                    self._isRolling = true
                 else
-                    print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
-                    self._animator:PlayClip(IDLE, true)
+                    print("[PlayerMovement] SetBool(IsRunning, false)")
+                    self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
             elseif isMoving and not self._isRunning then
-                print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
-                self._animator:PlayClip(RUN, true)
+                self._animator:SetBool("IsRunning", true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
-                print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
-                self._animator:PlayClip(IDLE, true)
+                self._animator:SetBool("IsRunning", false)
                 self._isRunning = false
             end
         end
 
-        -- ===============================
         -- ROTATION
-        -- ===============================
         if isMoving and self.SetRotation then
-            local targetW, targetX, targetY, targetZ =
-                directionToQuaternion(moveX, moveZ)
-
+            local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
             local t = math.min(self.rotationSpeed * dt, 1.0)
-            local newW, newX, newY, newZ =
-                lerpQuaternion(
-                    self._currentRotW, self._currentRotX,
-                    self._currentRotY, self._currentRotZ,
-                    targetW, targetX, targetY, targetZ,
-                    t
-                )
+            local newW, newX, newY, newZ = lerpQuaternion(
+                self._currentRotW, self._currentRotX,
+                self._currentRotY, self._currentRotZ,
+                targetW, targetX, targetY, targetZ,
+                t
+            )
 
-            self._currentRotW = newW
-            self._currentRotX = newX
-            self._currentRotY = newY
-            self._currentRotZ = newZ
-
+            self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = newW, newX, newY, newZ
             pcall(self.SetRotation, self, newW, newX, newY, newZ)
         end
 
-        -- ===============================
-        -- POSITION SYNC + CAMERA BROADCAST
-        -- ===============================
+        -- POSITION SYNC
         local position = CharacterController.GetPosition(self._controller)
         if position then
             self:SetPosition(position.x, position.y, position.z)
-
             if event_bus and event_bus.publish then
                 event_bus.publish("player_position", position)
             end

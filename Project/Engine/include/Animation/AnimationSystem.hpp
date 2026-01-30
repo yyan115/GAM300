@@ -6,7 +6,7 @@
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include "Animation/AnimationComponent.hpp"
 
-class AnimationSystem : public System
+class ENGINE_API AnimationSystem : public System
 {
 public:
     AnimationSystem() = default;

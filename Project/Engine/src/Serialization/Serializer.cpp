@@ -1415,8 +1415,13 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
     if (comps.HasMember("AnimationComponent") && comps["AnimationComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["AnimationComponent"];
         AnimationComponent animComp{};
-        TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, tv);
-        ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        DeserializeAnimationComponent(animComp, tv);
+        if (!ecs.HasComponent<AnimationComponent>(newEnt))
+            ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        else {
+            auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
+            actualAnimComp = animComp;
+        }
 
         // For prefabs, we need to initialise the animation component after deserialization.
         if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
@@ -1546,8 +1551,13 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEn
                 else if (typeName == "AnimationComponent") {
                     // Animation usually requires TypeResolver or specific logic
                     AnimationComponent animComp{};
-                    TypeResolver<AnimationComponent>::Get()->Deserialize(&animComp, data);
-                    ecs.AddComponent<AnimationComponent>(currentEntity, animComp);
+                    DeserializeAnimationComponent(animComp, data);
+                    if (!ecs.HasComponent<AnimationComponent>(currentEntity))
+                        ecs.AddComponent<AnimationComponent>(currentEntity, animComp);
+                    else {
+                        auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(currentEntity);
+                        actualAnimComp = animComp;
+                    }
 
                     // Re-initialization might be needed if model changed
                     if (ecs.HasComponent<ModelRenderComponent>(currentEntity)) {
@@ -2545,6 +2555,33 @@ void Serializer::DeserializeSpriteAnimationComponent(SpriteAnimationComponent& a
     }
 }
 
+void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON) {
+    if (animJSON.HasMember("data") && animJSON["data"].IsArray()) {
+        const auto& d = animJSON["data"];
+        animComp.enabled = Serializer::GetBool(d, 0);
+        animComp.isPlay = Serializer::GetBool(d, 1);
+        animComp.isLoop = Serializer::GetBool(d, 2);
+        animComp.speed = Serializer::GetFloat(d, 3);
+        animComp.clipCount = Serializer::GetInt(d, 4);
+        
+        const auto& clipPathsJSON = animJSON["data"][5]["data"].GetArray();
+        size_t index = 0;
+        for (const auto& clipPathJSON : clipPathsJSON) {
+            animComp.clipPaths.push_back(Serializer::GetString(clipPathJSON, index++));
+        }
+
+        const auto& clipGUIDSJSON = animJSON["data"][6]["data"].GetArray();
+        index = 0;
+        for (const auto& clipGUIDJSON : clipGUIDSJSON) {
+            GUID_string clipGUIDStr = extractGUIDString(clipGUIDJSON);
+            GUID_128 clipGUID = GUIDUtilities::ConvertStringToGUID128(clipGUIDStr);
+            animComp.clipGUIDs.push_back(clipGUID);
+        }
+
+        animComp.controllerPath = Serializer::GetString(d, 7);
+    }
+}
+
 void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON) {
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (textJSON.HasMember("data") && textJSON["data"].IsArray()) {
@@ -2750,6 +2787,7 @@ void Serializer::DeserializeSpotLightComponent(SpotLightComponent& spotlightComp
         readVec3Generic(d[8], spotlightComp.ambient);
         readVec3Generic(d[9], spotlightComp.diffuse);
         readVec3Generic(d[10], spotlightComp.specular);
+        spotlightComp.outerCutOff = Serializer::GetFloat(d, 11);
     }
 }
 
@@ -2857,7 +2895,8 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
-        readVec3Generic(d[10], colliderComp.center);
+        colliderComp.center = Serializer::GetVector3D(d, 10);
+        //readVec3Generic(d[10], colliderComp.center);
         //readVec3Generic(d[11], colliderComp.offset);
     }
 }

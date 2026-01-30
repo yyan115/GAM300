@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84aefb9379b-00040cff2e00023d",
+        "source": "../../Resources/Models/Environment/Scroll.fbx",
+        "compiled": "../../Resources/Models/Environment/Scroll.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -14,6 +14,26 @@
             "name": "Hurt",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "IsRunning",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsGrounded",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsJumping",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -24,8 +44,8 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -84.0,
-                "y": -88.0
+                "x": 100.0,
+                "y": -128.0
             }
         },
         {
@@ -35,8 +55,63 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -85.0,
-                "y": 5.0
+                "x": 275.0,
+                "y": 147.0
+            }
+        },
+        {
+            "id": "Run",
+            "clipIndex": 2,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 449.0,
+                "y": -130.0
+            }
+        },
+        {
+            "id": "Jump",
+            "clipIndex": 4,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
+            }
+        },
+        {
+            "id": "Land",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -15.5799560546875,
+                "y": 150.6720428466797
+            }
+        },
+        {
+            "id": "Roll",
+            "clipIndex": 6,
+            "loop": true,
+            "speed": 1.3000000715255737,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -155.5,
+                "y": 38.5
             }
         }
     ],
@@ -46,17 +121,33 @@
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
-            "conditions": []
+            "exitTime": 0.6899999976158142,
+            "transitionDuration": 0.699999988079071,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         },
         {
             "from": "Idle",
             "to": "Hurt",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.11999999731779099,
-            "transitionDuration": 0.11999999731779099,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.10999999940395355,
             "conditions": [
                 {
                     "paramName": "Hurt",
@@ -64,10 +155,370 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.6899999976158142,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.09000000357627869,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.10999999940395355,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.11999999731779099,
+            "transitionDuration": 0.07999999821186066,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.14000000059604645,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7099999785423279,
+            "transitionDuration": 0.6600000262260437,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.6600000262260437,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6399999856948853,
+            "transitionDuration": 0.6299999952316284,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7200000286102295,
+            "transitionDuration": 0.6800000071525574,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.27000001072883606,
+            "transitionDuration": 0.27000001072883606,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5799999833106995,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6200000047683716,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
         "Resources/Animations/Kusane@Idle.fbx",
-        "Resources/Animations/Kusane@Hurt.fbx"
+        "Resources/Animations/Kusane@Hurt.fbx",
+        "Resources/Animations/Kusane@Run.fbx",
+        "Resources/Animations/Kusane@Death.fbx",
+        "Resources/Animations/Kusane@Jump.fbx",
+        "Resources/Animations/Kusane@Land.fbx",
+        "Resources/Animations/Kusane@Roll.fbx"
     ]
 }

@@ -4,18 +4,21 @@ local Component = require("extension.mono_helper")
 return Component {
     fields = {
         fadeDuration = 0.5,   -- Duration for fade out when manually closing
+        -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
+        -- Drag-drop textures from editor (recognized via "sprite" in field name)
+        spriteGUIDs = {},
+        HoverSFX = {},
     },
 
     Start = function(self)
-        local closeEntity = Engine.GetEntityByName("CloseCreditsButton")
-        if closeEntity then
-            self._audio = GetComponent(closeEntity, "AudioComponent")
-            self._transform = GetComponent(closeEntity, "Transform")
-        end
+        self._transform = self:GetComponent("Transform")
+        self._audio = self:GetComponent("AudioComponent")
+        self._sprite = self:GetComponent("SpriteRenderComponent")
 
         self._isHovered = false
         self._isFading = false
         self._fadeTimer = 0
+        self._wasCreditsActive = false  -- Track previous active state for rising edge detection
 
         -- Cache entity references
         self._creditsTextEntity = Engine.GetEntityByName("CreditsFullText")
@@ -37,33 +40,30 @@ return Component {
     end,
 
     Update = function(self, dt)
-        -- Handle hover sound
-        if self._transform then
-            local pointerPos = Input.GetPointerPosition()
-            if pointerPos then
-                local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-                local inputX = mouseCoordinate[1]
-                local inputY = mouseCoordinate[2]
+        -- Check current active state
+        local isActive = self._creditsUIActive and self._creditsUIActive.isActive
 
-                local pos = self._transform.localPosition
-                local scale = self._transform.localScale
-                local minX = pos.x - (scale.x / 2)
-                local maxX = pos.x + (scale.x / 2)
-                local minY = pos.y - (scale.y / 2)
-                local maxY = pos.y + (scale.y / 2)
-
-                local isHovering = inputX >= minX and inputX <= maxX and inputY >= minY and inputY <= maxY
-
-                if isHovering and not self._isHovered then
-                    self._isHovered = true
-                    if self._audio then
-                        self._audio:Play()
-                    end
-                elseif not isHovering then
-                    self._isHovered = false
-                end
+        -- Detect rising edge (CreditsUI just became active) - reset state
+        if isActive and not self._wasCreditsActive then
+            self._isFading = false
+            self._fadeTimer = 0
+            self._isHovered = false
+            -- Reset to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
             end
         end
+
+        -- Update previous state
+        self._wasCreditsActive = isActive
+
+        -- Early exit if CreditsUI is not active
+        if not isActive then
+            return
+        end
+
+        -- Handle hover detection and sprite swapping
+        self:_updateHover()
 
         -- Handle fade out when manually closing
         if self._isFading and self._creditsBGSprite then
@@ -81,11 +81,47 @@ return Component {
         end
     end,
 
-    OnClickCloseCreditsButton = function(self)
-        print("[CloseCreditsButton] OnClickCloseCreditsButton called!")
+    -- Simple hover detection and sprite swap
+    _updateHover = function(self)
+        if not self._transform then return end
 
-        if self._audio then
-            self._audio:Play()
+        local pointerPos = Input.GetPointerPosition()
+        if not pointerPos then return end
+
+        local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+        local inputX = mouseCoordinate[1]
+        local inputY = mouseCoordinate[2]
+
+        local pos = self._transform.localPosition
+        local scale = self._transform.localScale
+        local minX = pos.x - (scale.x / 2)
+        local maxX = pos.x + (scale.x / 2)
+        local minY = pos.y - (scale.y / 2)
+        local maxY = pos.y + (scale.y / 2)
+
+        local isHovering = inputX >= minX and inputX <= maxX and inputY >= minY and inputY <= maxY
+
+        if isHovering and not self._isHovered then
+            self._isHovered = true
+            if self._audio and self.HoverSFX and self.HoverSFX[1] then
+                self._audio:PlayOneShot(self.HoverSFX[1])
+            end
+            -- Switch to hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
+            end
+        elseif not isHovering and self._isHovered then
+            self._isHovered = false
+            -- Switch back to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            end
+        end
+    end,
+
+    OnClickCloseCreditsButton = function(self)
+        if self._audio and self.HoverSFX and self.HoverSFX[2] then
+            self._audio:PlayOneShot(self.HoverSFX[2])
         end
 
         -- Start fade out
@@ -127,11 +163,20 @@ return Component {
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = true
-                    print("[CloseCreditsButton] Enabled button: " .. buttonName)
                 end
             end
         end
 
-        print("[CloseCreditsButton] Credits UI closed")
+        -- Re-enable button text entities
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        for _, textName in ipairs(targetTexts) do
+            local textEntity = Engine.GetEntityByName(textName)
+            if textEntity then
+                local textActive = GetComponent(textEntity, "ActiveComponent")
+                if textActive then
+                    textActive.isActive = true
+                end
+            end
+        end
     end,
 }

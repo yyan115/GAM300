@@ -299,6 +299,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
+    FUNCTION("GetTransformWorldRotation", &Lua_GetTransformWorldRotation)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
