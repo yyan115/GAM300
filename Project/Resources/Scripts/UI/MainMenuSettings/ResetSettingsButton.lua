@@ -52,12 +52,16 @@ return Component {
             -- Switch to hover sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
+            else
+                print("[ResetSettingsButton] Cannot switch to hover - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs[2]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[2]))
             end
         elseif not isHovering and self._isHovered then
             self._isHovered = false
             -- Switch back to normal sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            else
+                print("[ResetSettingsButton] Cannot switch to normal - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs[1]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[1]))
             end
         end
     end,

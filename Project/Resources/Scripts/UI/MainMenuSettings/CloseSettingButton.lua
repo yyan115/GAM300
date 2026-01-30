@@ -9,13 +9,10 @@ return Component {
     },
 
     Start = function(self)
-        local closeEntity = Engine.GetEntityByName("CloseButton")
-        if closeEntity then
-            self._audio = GetComponent(closeEntity, "AudioComponent")
-            self._transform = GetComponent(closeEntity, "Transform")
-            self._sprite = GetComponent(closeEntity, "SpriteRenderComponent")
-        end
-        self._isHovered = false
+        self._transform = self:GetComponent("Transform")
+        self._audio = self:GetComponent("AudioComponent")
+        self._sprite = self:GetComponent("SpriteRenderComponent")
+        self._isHovered = false       
     end,
 
     Update = function(self, dt)
@@ -48,12 +45,16 @@ return Component {
             -- Switch to hover sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
+            else
+                print("[CloseSettingButton] Cannot switch to hover sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[2]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[2]))
             end
         elseif not isHovering and self._isHovered then
             self._isHovered = false
             -- Switch back to normal sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            else
+                print("[CloseSettingButton] Cannot switch to normal sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[1]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[1]))
             end
         end
     end,

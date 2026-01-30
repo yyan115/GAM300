@@ -10,12 +10,9 @@ return Component {
     },
 
     Start = function(self)
-        local closeEntity = Engine.GetEntityByName("CloseCreditsButton")
-        if closeEntity then
-            self._audio = GetComponent(closeEntity, "AudioComponent")
-            self._transform = GetComponent(closeEntity, "Transform")
-            self._sprite = GetComponent(closeEntity, "SpriteRenderComponent")
-        end
+        self._transform = self:GetComponent("Transform")
+        self._audio = self:GetComponent("AudioComponent")
+        self._sprite = self:GetComponent("SpriteRenderComponent")
 
         self._isHovered = false
         self._isFading = false

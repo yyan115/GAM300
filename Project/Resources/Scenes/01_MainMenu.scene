@@ -439,22 +439,15 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "std::vector<std::string>",
-                            "data": [
-                                {
-                                    "type": "std::string",
-                                    "data": "../../Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx"
-                                }
-                            ]
+                            "data": []
                         },
                         {
                             "type": "std::vector<GUID_128>",
-                            "data": [
-                                "00736103a388472e-000366d5fc000003"
-                            ]
+                            "data": []
                         },
                         {
                             "type": "std::string",
@@ -5574,7 +5567,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.942167
+                                    "data": 0.942166
                                 },
                                 {
                                     "type": "float",
@@ -5586,7 +5579,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00965787
+                                    "data": 0.00965786
                                 }
                             ]
                         }
@@ -19837,33 +19830,17 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_subscriptions": {},
-                                "OnClickCloseButton": null,
-                                "Unsubscribe": null,
-                                "UpdateSafe": null,
-                                "spriteGUIDs": [
-                                    "00184bbdf46d69ad-00040b0304000001",
-                                    "00184bbddbda44c2-00040b0304000003"
-                                ],
-                                "__created_at": 1769758759.0,
-                                "After": null,
-                                "Update": null,
-                                "_updateHover": null,
-                                "_private": {},
-                                "AwakeSafe": null,
                                 "__field_list": {
                                     "spriteGUIDs": {}
                                 },
-                                "StartSafe": null,
+                                "__created_at": 1769758759.0,
+                                "_subscriptions": {},
+                                "spriteGUIDs": [
+                                    "00184bbdf46d69ad-00040b0304000001",
+                                    "007354f86f8622a9-000410470c000003"
+                                ],
                                 "__meta": {},
-                                "Subscribe": null,
-                                "Destroy": null,
-                                "DeserializeFields": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "_call_lifecycle": null,
-                                "Start": null,
-                                "Every": null
+                                "_private": {}
                             }
                         }
                     ]
@@ -23199,46 +23176,30 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "masterBar": "MasterBar",
-                                "UpdateSliderPositions": null,
-                                "__created_at": 1769766982.0,
-                                "StartSafe": null,
-                                "Subscribe": null,
-                                "OnClickResetButton": null,
-                                "Start": null,
-                                "Destroy": null,
-                                "_private": {},
-                                "DisableSafe": null,
-                                "After": null,
-                                "SerializeFields": null,
-                                "masterNotch": "MasterNotch",
-                                "DeserializeFields": null,
-                                "Every": null,
-                                "UpdateSafe": null,
-                                "Update": null,
                                 "sfxNotch": "SFXNotch",
-                                "AwakeSafe": null,
-                                "_subscriptions": {},
-                                "Unsubscribe": null,
-                                "_updateHover": null,
-                                "_call_lifecycle": null,
+                                "__created_at": 1769775063.0,
+                                "masterNotch": "MasterNotch",
                                 "bgmNotch": "BGMNotch",
+                                "_private": {},
+                                "__meta": {},
+                                "sfxBar": "SFXBar",
+                                "_subscriptions": {},
                                 "__field_list": {
-                                    "masterBar": "MasterBar",
-                                    "bgmNotch": "BGMNotch",
-                                    "spriteGUIDs": {},
                                     "sfxNotch": "SFXNotch",
-                                    "sfxBar": "SFXBar",
+                                    "masterBar": "MasterBar",
+                                    "spriteGUIDs": {},
+                                    "bgmNotch": "BGMNotch",
                                     "bgmBar": "BGMBar",
+                                    "sfxBar": "SFXBar",
                                     "masterNotch": "MasterNotch"
                                 },
+                                "_subs_map": {},
                                 "spriteGUIDs": [
                                     "00184bbd8a7238af-00040b0304000005",
-                                    "00184bbdfb2c492a-00040b0304000007"
+                                    "007354f82b7f8f77-000410470c000005"
                                 ],
-                                "sfxBar": "SFXBar",
                                 "bgmBar": "BGMBar",
-                                "__meta": {}
+                                "masterBar": "MasterBar"
                             }
                         }
                     ]
@@ -24650,37 +24611,19 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__created_at": 1769766937.0,
-                                "StartSafe": null,
-                                "Subscribe": null,
-                                "Unsubscribe": null,
-                                "_updateHover": null,
-                                "spriteGUIDs": [
-                                    "00184bbdf46d69ad-00040b0304000001",
-                                    "00184bbddbda44c2-00040b0304000003"
-                                ],
-                                "After": null,
-                                "SerializeFields": null,
-                                "Destroy": null,
-                                "DeserializeFields": null,
-                                "OnClickCloseCreditsButton": null,
-                                "DisableSafe": null,
-                                "Update": null,
                                 "__meta": {},
-                                "UpdateSafe": null,
-                                "_private": {},
-                                "_resetCreditsPosition": null,
-                                "Every": null,
-                                "_call_lifecycle": null,
+                                "__created_at": 1769766937.0,
                                 "fadeDuration": 0.5,
                                 "_subscriptions": {},
-                                "Start": null,
-                                "AwakeSafe": null,
-                                "_finishClose": null,
+                                "spriteGUIDs": [
+                                    "00184bbdf46d69ad-00040b0304000001",
+                                    "007354f86f8622a9-000410470c000003"
+                                ],
                                 "__field_list": {
-                                    "fadeDuration": 0.5,
-                                    "spriteGUIDs": {}
-                                }
+                                    "spriteGUIDs": {},
+                                    "fadeDuration": 0.5
+                                },
+                                "_private": {}
                             }
                         }
                     ]
