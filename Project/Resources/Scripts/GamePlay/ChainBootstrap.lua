@@ -171,6 +171,11 @@ return Component {
         print("up")
         self._chain_pressing = false
         self._chain_held = false
+        -- Deactivate camera aiming
+        if event_bus and event_bus.publish then
+            event_bus.publish("chain.aim_camera", {active = false})
+        end
+        
         if not self.controller then return end
 
         local len = (self.controller.chainLen or 0)
@@ -196,6 +201,19 @@ return Component {
     _on_chain_hold = function(self, payload)
         print("hold")
         self._chain_held = true
+
+        -- Tell camera to move to aim position ONLY if chain is not extended
+        if self.controller then
+            local len = (self.controller.chainLen or 0)
+            local isExt = self.controller.isExtending or false
+            
+            if len <= 1e-4 and not isExt then
+                -- Chain is retracted, activate camera aiming
+                if event_bus and event_bus.publish then
+                    event_bus.publish("chain.aim_camera", {active = true})
+                end
+            end
+        end
     end,
 
     Start = function(self)
