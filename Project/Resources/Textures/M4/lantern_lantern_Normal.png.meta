@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84aa044cdda-00040d12c801e315",
+        "source": "../../Resources/Textures/M4/lantern_lantern_Normal.png",
+        "compiled": "../../Resources/Textures/M4/lantern_lantern_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

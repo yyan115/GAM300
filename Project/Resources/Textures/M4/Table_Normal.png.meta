@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84a933d9ef5-00040cfeca000231",
+        "source": "../../Resources/Textures/M4/Table_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Table_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

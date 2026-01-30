@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84ae1c5f073-00040cff02000239",
+        "source": "../../Resources/Models/Environment/RockDebris.fbx",
+        "compiled": "../../Resources/Models/Environment/RockDebris.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
