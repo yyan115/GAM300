@@ -65,6 +65,9 @@ return Component {
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
         actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
+        -- Chain mode aim settings
+        chainAimTargetName = "ChainAimPoint",
+        chainAimTransitionSpeed = 5.0,
         -- Camera rotation lock
         lockCameraRotation  = false,
     },
@@ -87,6 +90,11 @@ return Component {
         self._normalDistance = 2.0
         self._toggleCooldown = 0.0
 
+        -- Chain mode aim settings
+        self._chainAiming = false
+        self._chainAimPos = nil
+        self._normalCameraPos = nil
+
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
                 if not payload then return end
@@ -104,6 +112,14 @@ return Component {
                     end
                 end
                 self._hasTarget = true
+            end)    
+
+            self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
+                if not payload then return end
+                self._chainAiming = payload.active or false
+                if not self._chainAiming then
+                    self._chainAimPos = nil
+                end
             end)
         end
     end,
@@ -112,6 +128,11 @@ return Component {
         if event_bus and event_bus.unsubscribe and self._posSub then
             event_bus.unsubscribe(self._posSub)
             self._posSub = nil
+        end
+
+        if event_bus and event_bus.unsubscribe and self._chainAimSub then
+            event_bus.unsubscribe(self._chainAimSub)
+            self._chainAimSub = nil
         end
 
         -- Unlock cursor when camera is disabled
@@ -213,12 +234,11 @@ return Component {
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 local isLocked = Screen.IsCursorLocked()
                 Screen.SetCursorLocked(not isLocked)
-                self._firstMouse = true  -- Reset mouse tracking to avoid camera jump
+                self._firstMouse = true
             end
         end
 
-        -- Re-lock cursor when clicking Attack action (for standalone game builds)
-        -- In Editor, this is handled by GamePanel which only re-locks when clicking inside game panel
+        -- Re-lock cursor when clicking Attack action
         if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
             if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                 if not Screen.IsCursorLocked() then
@@ -231,14 +251,12 @@ return Component {
         -- Only update camera look when cursor is locked (desktop) or always on Android
         local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
 
-        -- Debug log once
         if not self._loggedPlatform then
             print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
             self._loggedPlatform = true
         end
 
         if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
-            -- Check if rotation should be locked (either always locked OR locked during action mode)
             local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
             
             if not shouldLockRotation then
@@ -258,87 +276,186 @@ return Component {
         self._pitch = self._pitch + (targetPitch - self._pitch) * t
         self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
 
-        local radius = self.followDistance or 5.0
-        local pitchRad = math.rad(self._pitch)
-        local yawRad = math.rad(self._yaw)
+        -- ==========================================
+        -- CAMERA TARGET CALCULATION (Extensible)
+        -- ==========================================
+        local cameraTarget = { x = 0, y = 0, z = 0 }  -- Where camera looks at
+        local desiredX, desiredY, desiredZ             -- Where camera should be positioned
+        local useOrbitFollow = true                    -- Default: orbit around player
+        local useFreeRotation = false                  -- Use yaw/pitch for look direction
+        
+        -- PRIORITY 1: Chain aiming mode (overrides orbit)
+        if self._chainAiming then
+            print("Chain aiming active")
+                
+                -- FIRST FRAME: Snap yaw/pitch to aim target rotation BEFORE doing anything else
+                if not self._chainAimPos then
+                    print("First frame of chain aim")
+                    
+                    local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
+                    print("aimTarget:", aimTarget)
+                    print("Engine:", Engine)
+                    print("Engine.GetTransformWorldRotation:", Engine and Engine.GetTransformWorldRotation)
+                    
+                    if aimTarget then
+                        print("aimTarget found!")
+                        if Engine and Engine.GetTransformWorldRotation then
+                            print("GetTransformWorldRotation exists, calling...")
+                            local qw, qx, qy, qz = Engine.GetTransformWorldRotation(aimTarget)
+                            print("Quaternion: qw=" .. qw .. " qx=" .. qx .. " qy=" .. qy .. " qz=" .. qz)
+                            
+                            if qw then
+                                print("Got quaternion!")
+                                -- Extract forward vector from quaternion
+                                local fx = 2 * (qx*qz + qw*qy)
+                                local fy = 2 * (qy*qz - qw*qx)
+                                local fz = 1 - 2 * (qx*qx + qy*qy)
+                                
+                                print("Forward vector: fx=" .. fx .. " fy=" .. fy .. " fz=" .. fz)
+                                
+                                -- IMMEDIATELY update yaw/pitch
+                                local horizontalLen = math.sqrt(fx*fx + fz*fz)
+                                if horizontalLen > 0.0001 then
+                                    self._yaw = math.deg(atan2(fx, fz))
+                                    self._pitch = -math.deg(math.atan(fy / horizontalLen))
+                                    print("[CameraFollow] SNAP rotation: yaw=" .. self._yaw .. " pitch=" .. self._pitch)
+                                else
+                                    print("horizontalLen too small:", horizontalLen)
+                                end
+                            else
+                                print("pcall failed or qw is nil")
+                            end
+                        else
+                            print("Engine.GetTransformWorldRotation does NOT exist")
+                        end
+                    else
+                        print("aimTarget NOT found with name:", self.chainAimTargetName)
+                    end
+                else
+                    print("Not first frame, _chainAimPos already exists")
+                end
+            
+            useOrbitFollow = false
+            useFreeRotation = true
+            
+            -- NOW get position (every frame)
+            local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
+            if aimTarget then
+                local ax, ay, az = 0, 0, 0
+                local ok, a, b, c = pcall(function()
+                    if Engine and Engine.GetTransformWorldPosition then
+                        return Engine.GetTransformWorldPosition(aimTarget)
+                    end
+                    return nil
+                end)
+                if ok and a ~= nil then
+                    if type(a) == "table" then
+                        ax, ay, az = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                    else
+                        ax, ay, az = a, b, c
+                    end
+                end
+                self._chainAimPos = {x = ax, y = ay, z = az}
+            end
+            
+            if self._chainAimPos then
+                desiredX = self._chainAimPos.x
+                desiredY = self._chainAimPos.y
+                desiredZ = self._chainAimPos.z
+                
+                -- Use the NOW-CORRECT yaw/pitch
+                local pitchRad = math.rad(self._pitch)
+                local yawRad = math.rad(self._yaw)
+                
+                local forwardDist = 10.0
+                local fx = math.sin(yawRad) * math.cos(pitchRad)
+                local fy = -math.sin(pitchRad)
+                local fz = math.cos(yawRad) * math.cos(pitchRad)
+                
+                cameraTarget.x = desiredX + fx * forwardDist
+                cameraTarget.y = desiredY + fy * forwardDist
+                cameraTarget.z = desiredZ + fz * forwardDist
+            else
+                useOrbitFollow = true
+                useFreeRotation = false
+            end
+        end
+        
+        -- DEFAULT: Player orbit follow
+        if useOrbitFollow then
+            local radius = self.followDistance or 5.0
+            local pitchRad = math.rad(self._pitch)
+            local yawRad = math.rad(self._yaw)
 
-        -- Scale height offset based on zoom distance (less offset when zoomed in)
-        local minZoom = self.minZoom or 2.0
-        local maxZoom = self.maxZoom or 15.0
-        local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)  -- 0 at min zoom, 1 at max zoom
-        zoomFactor = clamp(zoomFactor, 0.0, 1.0)
+            -- Scale height offset based on zoom distance
+            local minZoom = self.minZoom or 2.0
+            local maxZoom = self.maxZoom or 15.0
+            local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)
+            zoomFactor = clamp(zoomFactor, 0.0, 1.0)
 
-        -- Target look-at point: scale from feet (0.5) at close zoom to chest (1.2) at far zoom
-        local lookAtHeight = 0.5 + zoomFactor * 0.7  -- 0.5 to 1.2
-        local tx = self._targetPos.x
-        local ty = self._targetPos.y + lookAtHeight
-        local tz = self._targetPos.z
+            -- Target look-at point
+            local lookAtHeight = 0.5 + zoomFactor * 0.7
+            cameraTarget.x = self._targetPos.x
+            cameraTarget.y = self._targetPos.y + lookAtHeight
+            cameraTarget.z = self._targetPos.z
 
-        -- Camera height offset also scales with zoom
-        local baseHeightOffset = self.heightOffset or 1.0
-        local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)  -- 30% to 100% of offset
+            -- Publish camera basis for player movement
+            if event_bus and event_bus.publish then
+                local fx = math.sin(yawRad)
+                local fz = math.cos(yawRad)
+                event_bus.publish("camera_basis", {
+                    forward = { x = fx, y = 0.0, z = fz },
+                })
+            end
 
-        if event_bus and event_bus.publish then
-            local fx = math.sin(yawRad)  -- forward.x
-            local fz = math.cos(yawRad)  -- forward.z
-            event_bus.publish("camera_basis", {
-                forward = { x = fx, y = 0.0, z = fz },
-            })
+            -- Camera position offset
+            local baseHeightOffset = self.heightOffset or 1.0
+            local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)
+            local horizontalRadius = radius * math.cos(pitchRad)
+            local offsetX = horizontalRadius * math.sin(yawRad)
+            local offsetZ = horizontalRadius * math.cos(yawRad)
+            local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
+
+            desiredX = cameraTarget.x + offsetX
+            desiredY = cameraTarget.y + offsetY
+            desiredZ = cameraTarget.z + offsetZ
         end
 
-        local horizontalRadius = radius * math.cos(pitchRad)
-        local offsetX = horizontalRadius * math.sin(yawRad)
-        local offsetZ = horizontalRadius * math.cos(yawRad)
-        local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
-
-        local desiredX, desiredY, desiredZ = tx + offsetX, ty + offsetY, tz + offsetZ
-
-        -- Camera collision detection using raycast
-        if self.collisionEnabled and Physics and Physics.Raycast then
-            -- Direction from target to desired camera position
+        -- ==========================================
+        -- CAMERA COLLISION (only for orbit mode)
+        -- ==========================================
+        if useOrbitFollow and self.collisionEnabled and Physics and Physics.Raycast then
+            local tx, ty, tz = cameraTarget.x, cameraTarget.y, cameraTarget.z
             local dirX = desiredX - tx
             local dirY = desiredY - ty
             local dirZ = desiredZ - tz
             local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
 
             if dirLen > 0.001 then
-                -- Normalize direction
                 dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
 
-                -- Raycast from target toward camera
-                -- Returns: distance (float, -1 if no hit)
                 local dist = Physics.Raycast(
-                    tx, ty, tz,           -- origin (player position)
-                    dirX, dirY, dirZ,     -- direction (toward camera)
-                    dirLen + 0.5          -- max distance (slightly beyond desired)
+                    tx, ty, tz,
+                    dirX, dirY, dirZ,
+                    dirLen + 0.5
                 )
 
                 local hit = (dist >= 0 and dist < dirLen)
                 local collisionOffset = self.collisionOffset or 0.2
-                local targetDist = dirLen  -- Default: no collision
+                local targetDist = dirLen
 
                 if hit then
-                    -- Wall detected! Pull camera in front of hit point
-                    targetDist = math.max(dist - collisionOffset, 0.5)  -- Minimum 0.5 distance from player
+                    targetDist = math.max(dist - collisionOffset, 0.5)
                 end
 
-                -- Smooth collision distance (fast in, slow out)
                 if self._currentCollisionDist == nil then
                     self._currentCollisionDist = targetDist
                 else
-                    local lerpSpeed
-                    if targetDist < self._currentCollisionDist then
-                        -- Snapping in (wall hit) - fast
-                        lerpSpeed = self.collisionLerpIn or 20.0
-                    else
-                        -- Easing out (wall cleared) - slow
-                        lerpSpeed = self.collisionLerpOut or 5.0
-                    end
+                    local lerpSpeed = targetDist < self._currentCollisionDist and (self.collisionLerpIn or 20.0) or (self.collisionLerpOut or 5.0)
                     local collisionT = 1.0 - math.exp(-lerpSpeed * dt)
                     self._currentCollisionDist = self._currentCollisionDist + (targetDist - self._currentCollisionDist) * collisionT
                 end
 
-                -- Apply collision-adjusted position
                 local adjustedDist = self._currentCollisionDist
                 desiredX = tx + dirX * adjustedDist
                 desiredY = ty + dirY * adjustedDist
@@ -346,7 +463,9 @@ return Component {
             end
         end
 
-        -- Smooth follow
+        -- ==========================================
+        -- SMOOTH FOLLOW & ROTATION
+        -- ==========================================
         local cx, cy, cz = 0.0, 0.0, 0.0
         local px, py, pz = self:GetPosition()
         if type(px) == "table" then
@@ -355,21 +474,30 @@ return Component {
             cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
         end
 
-        local t = 1.0 - math.exp(-(self.followLerp or 10.0) * dt)
-        local newX = cx + (desiredX - cx) * t
-        local newY = cy + (desiredY - cy) * t
-        local newZ = cz + (desiredZ - cz) * t
+        -- Smooth lerp to desired position
+        local followSpeed = self._chainAiming and (self.chainAimTransitionSpeed or 5.0) or (self.followLerp or 10.0)
+        local lerpT = 1.0 - math.exp(-followSpeed * dt)
+        local newX = cx + (desiredX - cx) * lerpT
+        local newY = cy + (desiredY - cy) * lerpT
+        local newZ = cz + (desiredZ - cz) * lerpT
         self:SetPosition(newX, newY, newZ)
 
-        -- Look at target: compute yaw/pitch, then convert to quaternion
-        local fx, fy, fz = tx - newX, ty - newY, tz - newZ
-        local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
-        if flen > 0.0001 then
-            fx, fy, fz = fx/flen, fy/flen, fz/flen
-            local yawDeg   = math.deg(atan2(fx, fz))
-            local pitchDeg = -math.deg(math.asin(fy))
-            local quat = eulerToQuat(pitchDeg, yawDeg, 0.0)
+        -- Set rotation based on mode
+        if useFreeRotation then
+            -- Use current yaw/pitch directly (camera looks forward from its position)
+            local quat = eulerToQuat(self._pitch, self._yaw, 0.0)
             self:SetRotation(quat.w, quat.x, quat.y, quat.z)
+        else
+            -- Look at target (orbit mode)
+            local fx, fy, fz = cameraTarget.x - newX, cameraTarget.y - newY, cameraTarget.z - newZ
+            local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
+            if flen > 0.0001 then
+                fx, fy, fz = fx/flen, fy/flen, fz/flen
+                local yawDeg   = math.deg(atan2(fx, fz))
+                local pitchDeg = -math.deg(math.asin(fy))
+                local quat = eulerToQuat(pitchDeg, yawDeg, 0.0)
+                self:SetRotation(quat.w, quat.x, quat.y, quat.z)
+            end
         end
 
         self.isDirty = true
