@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00688d57a4b8a40c-00040e014400002d",
-        "source": "../../Resources/Scripts/GamePlay/PlayerHealth.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/PlayerHealth.lua"
+        "guid": "002e3c8091caec1d-0004102b42000033",
+        "source": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerHealth.lua"
     }
 }

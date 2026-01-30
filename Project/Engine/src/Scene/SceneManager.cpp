@@ -491,6 +491,7 @@ void SceneManager::ReloadTempScene() {
         ecs.modelSystem->Initialise();
         ecs.textSystem->Initialise();
         ecs.spriteAnimationSystem->Initialise();
+        ecs.particleSystem->Initialise(true);
         ecs.animationSystem->Initialise();
         ecs.scriptSystem->ReloadSystem();
 

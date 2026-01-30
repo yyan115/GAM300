@@ -36143,6 +36143,82 @@
                     }
                 },
                 {
+                    "AnimationComponent": {
+                        "type": "AnimationComponent",
+                        "data": [
+                            {
+                                "type": "bool",
+                                "data": true
+                            },
+                            {
+                                "type": "bool",
+                                "data": true
+                            },
+                            {
+                                "type": "bool",
+                                "data": true
+                            },
+                            {
+                                "type": "float",
+                                "data": 1
+                            },
+                            {
+                                "type": "int",
+                                "data": 7
+                            },
+                            {
+                                "type": "std::vector<std::string>",
+                                "data": [
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Idle.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Hurt.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Run.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Death.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Jump.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Land.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Kusane@Roll.fbx"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "std::vector<GUID_128>",
+                                "data": [
+                                    "0021cfe696d7800b-0004055ab000147b",
+                                    "0078e0e1ab0a863d-00040569a0000003",
+                                    "0078e0e1983f1346-00040569a2000005",
+                                    "0078e0e1b6fb5612-00040569a0000001",
+                                    "00293680445a81bd-00040d31fc000191",
+                                    "006c6ee2251c2d11-00040fc31e0029d3",
+                                    "00485ed685fc886a-0004104122005d8d"
+                                ]
+                            },
+                            {
+                                "type": "std::string",
+                                "data": "../../Resources/Animations/PlayerAC.animator"
+                            }
+                        ]
+                    }
+                },
+                {
                     "ScriptComponent": {
                         "scripts": [
                             {
@@ -36182,7 +36258,8 @@
                                         "JumpHeight": 1.2,
                                         "Speed": 1.5,
                                         "DamageStunDuration": 1.0
-                                    }
+                                    },
+                                    "LandingDuration": 0.85
                                 }
                             },
                             {
@@ -36193,46 +36270,21 @@
                                 "entryFunction": "OnInit",
                                 "autoInvokeEntry": true,
                                 "instanceState": {
-                                    "Awake": null,
-                                    "Move": null,
-                                    "SerializeFields": null,
-                                    "IFrameDuration": 1.0,
-                                    "_call_lifecycle": null,
-                                    "_transform_fetched": false,
-                                    "UpdateSafe": null,
-                                    "Update": null,
-                                    "DeserializeFields": null,
-                                    "StartSafe": null,
-                                    "SetRotation": null,
-                                    "AwakeSafe": null,
-                                    "_subscriptions": {},
-                                    "_knifeHitPlayerDmgSub": {
-                                        "id": 4.0,
-                                        "event": "knifeHitPlayerDmg"
-                                    },
-                                    "Subscribe": null,
-                                    "SetScale": null,
-                                    "Start": null,
-                                    "After": null,
-                                    "__created_at": 1769707349.0,
-                                    "SetPosition": null,
-                                    "Every": null,
                                     "__meta": {},
-                                    "GetScale": null,
-                                    "Destroy": null,
-                                    "Unsubscribe": null,
-                                    "__field_list": {
-                                        "IFrameDuration": 1.0,
-                                        "Health": 10.0
+                                    "__created_at": 1769707349.0,
+                                    "_knifeHitPlayerDmgSub": {
+                                        "event": "knifeHitPlayerDmg",
+                                        "id": 4.0
                                     },
-                                    "GetTransform": null,
-                                    "GetPosition": null,
-                                    "OnDisable": null,
-                                    "Health": 3.0,
-                                    "GetRotation": null,
+                                    "_subscriptions": {},
+                                    "_transform_fetched": false,
+                                    "Health": 5.0,
                                     "_private": {},
-                                    "DisableSafe": null,
-                                    "DebugTransform": null
+                                    "IFrameDuration": 1.0,
+                                    "__field_list": {
+                                        "Health": 10.0,
+                                        "IFrameDuration": 1.0
+                                    }
                                 }
                             },
                             {

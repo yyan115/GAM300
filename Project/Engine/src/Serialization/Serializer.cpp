@@ -1416,7 +1416,12 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         const rapidjson::Value& tv = comps["AnimationComponent"];
         AnimationComponent animComp{};
         DeserializeAnimationComponent(animComp, tv);
-        ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        if (!ecs.HasComponent<AnimationComponent>(newEnt))
+            ecs.AddComponent<AnimationComponent>(newEnt, animComp);
+        else {
+            auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
+            actualAnimComp = animComp;
+        }
 
         // For prefabs, we need to initialise the animation component after deserialization.
         if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
@@ -1547,7 +1552,12 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEn
                     // Animation usually requires TypeResolver or specific logic
                     AnimationComponent animComp{};
                     DeserializeAnimationComponent(animComp, data);
-                    ecs.AddComponent<AnimationComponent>(currentEntity, animComp);
+                    if (!ecs.HasComponent<AnimationComponent>(currentEntity))
+                        ecs.AddComponent<AnimationComponent>(currentEntity, animComp);
+                    else {
+                        auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(currentEntity);
+                        actualAnimComp = animComp;
+                    }
 
                     // Re-initialization might be needed if model changed
                     if (ecs.HasComponent<ModelRenderComponent>(currentEntity)) {
@@ -2777,6 +2787,7 @@ void Serializer::DeserializeSpotLightComponent(SpotLightComponent& spotlightComp
         readVec3Generic(d[8], spotlightComp.ambient);
         readVec3Generic(d[9], spotlightComp.diffuse);
         readVec3Generic(d[10], spotlightComp.specular);
+        spotlightComp.outerCutOff = Serializer::GetFloat(d, 11);
     }
 }
 
@@ -2884,7 +2895,8 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
-        readVec3Generic(d[10], colliderComp.center);
+        colliderComp.center = Serializer::GetVector3D(d, 10);
+        //readVec3Generic(d[10], colliderComp.center);
         //readVec3Generic(d[11], colliderComp.offset);
     }
 }
