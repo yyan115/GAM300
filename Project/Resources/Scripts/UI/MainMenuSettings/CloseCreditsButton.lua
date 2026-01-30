@@ -4,6 +4,9 @@ local Component = require("extension.mono_helper")
 return Component {
     fields = {
         fadeDuration = 0.5,   -- Duration for fade out when manually closing
+        -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
+        -- Drag-drop textures from editor (recognized via "sprite" in field name)
+        spriteGUIDs = {},
     },
 
     Start = function(self)
@@ -11,6 +14,7 @@ return Component {
         if closeEntity then
             self._audio = GetComponent(closeEntity, "AudioComponent")
             self._transform = GetComponent(closeEntity, "Transform")
+            self._sprite = GetComponent(closeEntity, "SpriteRenderComponent")
         end
 
         self._isHovered = false
@@ -46,6 +50,10 @@ return Component {
             self._isFading = false
             self._fadeTimer = 0
             self._isHovered = false
+            -- Reset to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            end
         end
 
         -- Update previous state
@@ -56,33 +64,8 @@ return Component {
             return
         end
 
-        -- Handle hover sound
-        if self._transform then
-            local pointerPos = Input.GetPointerPosition()
-            if pointerPos then
-                local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-                local inputX = mouseCoordinate[1]
-                local inputY = mouseCoordinate[2]
-
-                local pos = self._transform.localPosition
-                local scale = self._transform.localScale
-                local minX = pos.x - (scale.x / 2)
-                local maxX = pos.x + (scale.x / 2)
-                local minY = pos.y - (scale.y / 2)
-                local maxY = pos.y + (scale.y / 2)
-
-                local isHovering = inputX >= minX and inputX <= maxX and inputY >= minY and inputY <= maxY
-
-                if isHovering and not self._isHovered then
-                    self._isHovered = true
-                    if self._audio then
-                        self._audio:Play()
-                    end
-                elseif not isHovering then
-                    self._isHovered = false
-                end
-            end
-        end
+        -- Handle hover detection and sprite swapping
+        self:_updateHover()
 
         -- Handle fade out when manually closing
         if self._isFading and self._creditsBGSprite then
@@ -96,6 +79,42 @@ return Component {
             if fadeProgress >= 1.0 then
                 self._isFading = false
                 self:_finishClose()
+            end
+        end
+    end,
+
+    -- Simple hover detection and sprite swap
+    _updateHover = function(self)
+        if not self._transform then return end
+
+        local pointerPos = Input.GetPointerPosition()
+        if not pointerPos then return end
+
+        local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+        local inputX = mouseCoordinate[1]
+        local inputY = mouseCoordinate[2]
+
+        local pos = self._transform.localPosition
+        local scale = self._transform.localScale
+        local minX = pos.x - (scale.x / 2)
+        local maxX = pos.x + (scale.x / 2)
+        local minY = pos.y - (scale.y / 2)
+        local maxY = pos.y + (scale.y / 2)
+
+        local isHovering = inputX >= minX and inputX <= maxX and inputY >= minY and inputY <= maxY
+
+        if isHovering and not self._isHovered then
+            self._isHovered = true
+            if self._audio then self._audio:Play() end
+            -- Switch to hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
+            end
+        elseif not isHovering and self._isHovered then
+            self._isHovered = false
+            -- Switch back to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
             end
         end
     end,

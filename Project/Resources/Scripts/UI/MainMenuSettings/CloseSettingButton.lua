@@ -2,17 +2,28 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
 return Component {
+    fields = {
+        -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
+        -- Drag-drop textures from editor (recognized via "sprite" in field name)
+        spriteGUIDs = {},
+    },
+
     Start = function(self)
         local closeEntity = Engine.GetEntityByName("CloseButton")
         if closeEntity then
             self._audio = GetComponent(closeEntity, "AudioComponent")
             self._transform = GetComponent(closeEntity, "Transform")
+            self._sprite = GetComponent(closeEntity, "SpriteRenderComponent")
         end
-
         self._isHovered = false
     end,
 
     Update = function(self, dt)
+        self:_updateHover()
+    end,
+
+    -- Simple hover detection and sprite swap
+    _updateHover = function(self)
         if not self._transform then return end
 
         local pointerPos = Input.GetPointerPosition()
@@ -33,11 +44,17 @@ return Component {
 
         if isHovering and not self._isHovered then
             self._isHovered = true
-            if self._audio then
-                self._audio:Play()
+            if self._audio then self._audio:Play() end
+            -- Switch to hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
             end
-        elseif not isHovering then
+        elseif not isHovering and self._isHovered then
             self._isHovered = false
+            -- Switch back to normal sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            end
         end
     end,
 
@@ -63,9 +80,7 @@ return Component {
                 local btnComp = GetComponent(targetEntity, "ButtonComponent")
                 if btnComp then
                     btnComp.interactable = true
-                else
                 end
-            else
             end
         end
 
@@ -75,9 +90,7 @@ return Component {
             local activeComp = GetComponent(settingUIEntity, "ActiveComponent")
             if activeComp then
                 activeComp.isActive = false
-            else
             end
-        else
         end
     end,
 }

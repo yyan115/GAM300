@@ -70,7 +70,11 @@ return Component {
     OnClickQuitButton = function(self)
         -- Play click SFX
         self:_playClickSFX("ExitGame")
-        Screen.RequestClose()
+        if Screen and Screen.RequestClose then
+            Screen.RequestClose()
+        else
+            print("[MainMenuButtonHandler] Warning: Screen.RequestClose missing")
+        end
     end,
 
     -- Settings Button Function
@@ -79,15 +83,31 @@ return Component {
         self:_playClickSFX("Settings")
 
         local settingUIEntity = Engine.GetEntityByName("SettingsUI")
-        local settingUI = GetComponent(settingUIEntity, "ActiveComponent")
-        settingUI.isActive = true
+        if settingUIEntity then
+            local settingUI = GetComponent(settingUIEntity, "ActiveComponent")
+            if settingUI then
+                settingUI.isActive = true
+            else
+                print("[MainMenuButtonHandler] Warning: SettingsUI ActiveComponent missing")
+            end
+        else
+            print("[MainMenuButtonHandler] Warning: SettingsUI entity not found")
+        end
 
         -- Disable buttons when settings menu is active
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
-            local button = GetComponent(entity, "ButtonComponent")
-            button.interactable = false
+            if entity then
+                local button = GetComponent(entity, "ButtonComponent")
+                if button then
+                    button.interactable = false
+                else
+                    print("[MainMenuButtonHandler] Warning: ButtonComponent missing on " .. buttonName)
+                end
+            else
+                print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
+            end
         end
     end,
 
@@ -143,7 +163,11 @@ return Component {
             if self._fadeAlpha >= 1.0 then
                 self._isFading = false
                 if self._pendingScene then
-                    Scene.Load(self._pendingScene)
+                    if Scene and Scene.Load then
+                        Scene.Load(self._pendingScene)
+                    else
+                        print("[MainMenuButtonHandler] Warning: Scene.Load missing, cannot load " .. tostring(self._pendingScene))
+                    end
                     self._pendingScene = nil
                 end
             end

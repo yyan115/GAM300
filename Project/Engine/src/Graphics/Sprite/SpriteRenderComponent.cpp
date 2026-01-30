@@ -1,5 +1,9 @@
 #include "pch.h"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
+#include "Utilities/GUID.hpp"
+#include "Graphics/Texture.h"
 
 #pragma region Reflection
 REFL_REGISTER_START(SpriteRenderComponent)
@@ -18,3 +22,11 @@ REFL_REGISTER_START(SpriteRenderComponent)
 	REFL_REGISTER_PROPERTY(saved3DPosition)
 REFL_REGISTER_END
 #pragma endregion
+
+void SpriteRenderComponent::SetTextureFromGUID(const std::string& guidString) {
+	GUID_128 textureGUID = GUIDUtilities::ConvertStringToGUID128(guidString);
+	std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(textureGUID);
+	texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(textureGUID, texturePath);
+	this->textureGUID = textureGUID;
+	this->texturePath = texturePath;
+}
