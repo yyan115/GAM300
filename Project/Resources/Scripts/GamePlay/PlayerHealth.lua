@@ -10,17 +10,17 @@ local HurtTrigger = "Hurt"
 local function PlayerTakeDmg(self, dmg)
     print("[PlayerTakeDmg] Animator set trigger Hurt")
     self._animator:SetTrigger(HurtTrigger)
+    self._hurtTriggered = true
 
     self._currentHealth = self._currentHealth - dmg
     print(string.format("[PlayerTakeDmg] Player took %d damage. Remaining health: %d", dmg, self._currentHealth))
-
+    
     if self._currentHealth <= 0 then
         self._currentHealth = 0
         self._animator:SetBool("IsDead", true)
 
         event_bus.publish("playerDead", true)
     end
-
     if event_bus and event_bus.publish then
         event_bus.publish("playerMaxhealth", self._maxHealth)
         event_bus.publish("playerCurrentHealth", self._currentHealth)
@@ -33,25 +33,22 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        Health = 10
+        Health = 10,
+        IFrameDuration = 1.0,
     },
 
     Awake = function(self)
         print("[PlayerHealth] Health initialized to ", self.Health)
 
         if event_bus and event_bus.subscribe then
-            print("[PlayerHealth] Subscribing to isKnifeHitPlayer")
-            self._knifeHitPlayerSub = event_bus.subscribe("isKnifeHitPlayer", function(hit)
-                if hit then
-                    self._knifeHitPlayer = hit
-                end
-            end)
-            print("[PlayerHealth] Subscription token: " .. tostring(self._knifeHitPlayerSub))
-
             print("[PlayerHealth] Subscribing to knifeHitPlayerDmg")
             self._knifeHitPlayerDmgSub = event_bus.subscribe("knifeHitPlayerDmg", function(dmg)
                 if dmg then
-                    self._knifeHitPlayerDmg = dmg
+                    if self._isIFrame == false then
+                        PlayerTakeDmg(self, dmg)
+                    end
+
+                    self._isIFrame = true
                 end
             end)
             print("[PlayerHealth] Subscription token: " .. tostring(self._knifeHitPlayerSub))
@@ -66,6 +63,9 @@ return Component {
         self._maxHealth = self.Health
         self._currentHealth = self._maxHealth
 
+        self._iFrameDuration = self.IFrameDuration
+        self._isIFrame = false
+
         if event_bus and event_bus.publish then
             event_bus.publish("playerMaxhealth", self._maxHealth)
             event_bus.publish("playerCurrentHealth", self._currentHealth)
@@ -77,9 +77,20 @@ return Component {
             return
         end
 
-        if self._knifeHitPlayer == true then
-            local dmg = self._knifeDmg or 1
-            PlayerTakeDmg(self, dmg)
+        if self._hurtTriggered then
+            if event_bus and event_bus.publish then
+                print("[PlayerHealth] playerHurtTriggered published")
+                event_bus.publish("playerHurtTriggered", true)
+                self._hurtTriggered = false
+            end
+        end
+
+        if self._isIFrame == true then
+            self._iFrameDuration = self._iFrameDuration - dt
+            if self._iFrameDuration <= 0 then
+                self._iFrameDuration = self.IFrameDuration
+                self._isIFrame = false
+            end
         end
     end,
 
