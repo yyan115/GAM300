@@ -88,6 +88,8 @@ void VideoSystem::Update(float dt) {
     //ITS FINE IF CANNOT FIND, BUT NEED MAKE SURE NOT TO ACCESS IT (DIALOGUE BOX + DIALOGUE TEXT)
    //but for now we just assume its found.
 
+    if (m_ecs->HasComponent<TextRenderComponent>(dialogueText_Entity) == false)
+        return;
 
     //GET RESPECTIVE COMPONENT
     if (m_ecs->HasComponent<TextRenderComponent>(dialogueText_Entity) == false)

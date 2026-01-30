@@ -23,7 +23,14 @@ end
 function Bus.publish(event, payload)
     local t = Bus._listeners[event]
     if not t then return end
+
+    -- take a snapshot of listener functions to avoid mutation during iteration
+    local snapshot = {}
     for _, fn in pairs(t) do
+        snapshot[#snapshot + 1] = fn
+    end
+
+    for _, fn in ipairs(snapshot) do
         local ok, err = pcall(fn, payload)
         if not ok then
             if cpp_log then cpp_log("event_bus publish error: "..tostring(err)) else print("event_bus publish error", err) end

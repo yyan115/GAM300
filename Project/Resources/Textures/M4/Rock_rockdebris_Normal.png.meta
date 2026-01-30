@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84add456760-00040cfec800022d",
+        "source": "../../Resources/Textures/M4/Rock_rockdebris_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Rock_rockdebris_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

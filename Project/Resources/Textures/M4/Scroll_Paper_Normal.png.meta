@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84aaa1fa679-00040cff3e000245",
+        "source": "../../Resources/Textures/M4/Scroll_Paper_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Scroll_Paper_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
