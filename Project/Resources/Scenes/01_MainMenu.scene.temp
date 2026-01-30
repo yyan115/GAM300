@@ -19830,15 +19830,21 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__field_list": {
-                                    "spriteGUIDs": {}
-                                },
-                                "__created_at": 1769758759.0,
                                 "_subscriptions": {},
+                                "__field_list": {
+                                    "spriteGUIDs": {},
+                                    "HoverSFX": {}
+                                },
+                                "__created_at": 1769791047.0,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "spriteGUIDs": [
                                     "00184bbdf46d69ad-00040b0304000001",
                                     "007354f86f8622a9-000410470c000003"
                                 ],
+                                "_subs_map": {},
                                 "__meta": {},
                                 "_private": {}
                             }
@@ -23199,7 +23205,11 @@
                                     "007354f82b7f8f77-000410470c000005"
                                 ],
                                 "bgmBar": "BGMBar",
-                                "masterBar": "MasterBar"
+                                "masterBar": "MasterBar",
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ]
                             }
                         }
                     ]
@@ -23779,7 +23789,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.886275
+                            "data": 0.941176
                         },
                         {
                             "type": "bool",
@@ -24623,7 +24633,11 @@
                                     "spriteGUIDs": {},
                                     "fadeDuration": 0.5
                                 },
-                                "_private": {}
+                                "_private": {},
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ]
                             }
                         }
                     ]

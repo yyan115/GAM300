@@ -6,6 +6,7 @@ return Component {
         -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
         -- Drag-drop textures from editor (recognized via "sprite" in field name)
         spriteGUIDs = {},
+        HoverSFX = {},
     },
 
     Start = function(self)
@@ -41,7 +42,9 @@ return Component {
 
         if isHovering and not self._isHovered then
             self._isHovered = true
-            if self._audio then self._audio:Play() end
+            if self._audio and self.HoverSFX and self.HoverSFX[1] then
+                self._audio:PlayOneShot(self.HoverSFX[1])
+            end
             -- Switch to hover sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
@@ -60,9 +63,9 @@ return Component {
     end,
 
     OnClickCloseButton = function(self)
-        if self._audio then
-            self._audio:Play()
-        end
+            if self._audio and self.HoverSFX and self.HoverSFX[2] then
+                self._audio:PlayOneShot(self.HoverSFX[2])
+            end
 
         -- Save settings when closing menu (only writes if dirty)
         GameSettings.SaveIfDirty()
