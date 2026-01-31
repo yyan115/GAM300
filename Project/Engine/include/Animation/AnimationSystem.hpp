@@ -12,7 +12,7 @@ public:
     AnimationSystem() = default;
     ~AnimationSystem() = default;
 
-    bool Initialise();
+    bool ENGINE_API Initialise();
     void InitialiseAnimationComponent(Entity entity, ModelRenderComponent& modelComp, AnimationComponent& animComp);
     void Update();
 };
