@@ -15,6 +15,7 @@ void ParallelSystemOrchestrator::Update() {
     mainECS.transformSystem->Update();
     mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
     mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
+    mainECS.scriptSystem->Update();
 
 	// Then update the other systems in parallel.
     frameChannel.Submit([&] {
@@ -37,11 +38,11 @@ void ParallelSystemOrchestrator::Update() {
         //ENGINE_LOG_DEBUG("Running LightingJob");
         ecs.lightingSystem->Update();
         });
-	frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running ScriptingJob");
-        ecs.scriptSystem->Update();
-		});
+	//frameChannel.Submit([&] {
+ //       auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+ //       //ENGINE_LOG_DEBUG("Running ScriptingJob");
+ //       ecs.scriptSystem->Update();
+	//	});
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running ButtonJob");

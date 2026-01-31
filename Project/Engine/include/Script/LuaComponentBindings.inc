@@ -261,6 +261,8 @@ BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
     // Asset path (read-only for display)
     PROPERTY("texturePath", &SpriteRenderComponent::texturePath)
     PROPERTY("hasMigratedToTransform", &SpriteRenderComponent::hasMigratedToTransform)
+    // Methods
+    METHOD("SetTextureFromGUID", &SpriteRenderComponent::SetTextureFromGUID)
 END_COMPONENT()
 
 BEGIN_COMPONENT(TextRenderComponent, "TextRenderComponent")

@@ -439,22 +439,15 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "std::vector<std::string>",
-                            "data": [
-                                {
-                                    "type": "std::string",
-                                    "data": "../../Resources/Animations/Kachujin G Rosales@Sword And Shield Idle.fbx"
-                                }
-                            ]
+                            "data": []
                         },
                         {
                             "type": "std::vector<GUID_128>",
-                            "data": [
-                                "00736103a388472e-000366d5fc000003"
-                            ]
+                            "data": []
                         },
                         {
                             "type": "std::string",
@@ -5574,7 +5567,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.942167
+                                    "data": 0.942166
                                 },
                                 {
                                     "type": "float",
@@ -5586,7 +5579,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00965787
+                                    "data": 0.00965786
                                 }
                             ]
                         }
@@ -19827,6 +19820,37 @@
                         }
                     ]
                 },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0054fb434423d354-0003e8028a000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "__field_list": {
+                                    "spriteGUIDs": {},
+                                    "HoverSFX": {}
+                                },
+                                "__created_at": 1769791047.0,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "spriteGUIDs": [
+                                    "00184bbdf46d69ad-00040b0304000001",
+                                    "007354f86f8622a9-000410470c000003"
+                                ],
+                                "_subs_map": {},
+                                "__meta": {},
+                                "_private": {}
+                            }
+                        }
+                    ]
+                },
                 "ButtonComponent": {
                     "type": "ButtonComponent",
                     "data": [
@@ -23069,12 +23093,124 @@
                         "00032e877a997c98-00036d2b58000001"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001e8426f932eb96-0003fb33ee000005",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/ResetSettingsButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "sfxNotch": "SFXNotch",
+                                "__created_at": 1769775063.0,
+                                "masterNotch": "MasterNotch",
+                                "bgmNotch": "BGMNotch",
+                                "_private": {},
+                                "__meta": {},
+                                "sfxBar": "SFXBar",
+                                "_subscriptions": {},
+                                "__field_list": {
+                                    "sfxNotch": "SFXNotch",
+                                    "masterBar": "MasterBar",
+                                    "spriteGUIDs": {},
+                                    "bgmNotch": "BGMNotch",
+                                    "bgmBar": "BGMBar",
+                                    "sfxBar": "SFXBar",
+                                    "masterNotch": "MasterNotch"
+                                },
+                                "_subs_map": {},
+                                "spriteGUIDs": [
+                                    "00184bbd8a7238af-00040b0304000005",
+                                    "007354f82b7f8f77-000410470c000005"
+                                ],
+                                "bgmBar": "BGMBar",
+                                "masterBar": "MasterBar",
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ]
+                            }
                         }
                     ]
                 },
@@ -23653,7 +23789,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.886275
+                            "data": 0.941176
                         },
                         {
                             "type": "bool",
@@ -24483,7 +24619,26 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "__meta": {},
+                                "__created_at": 1769766937.0,
+                                "fadeDuration": 0.5,
+                                "_subscriptions": {},
+                                "spriteGUIDs": [
+                                    "00184bbdf46d69ad-00040b0304000001",
+                                    "007354f86f8622a9-000410470c000003"
+                                ],
+                                "__field_list": {
+                                    "spriteGUIDs": {},
+                                    "fadeDuration": 0.5
+                                },
+                                "_private": {},
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ]
+                            }
                         }
                     ]
                 },

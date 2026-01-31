@@ -21,12 +21,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsGrounded",
+            "name": "IsDead",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
+            "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -44,8 +44,8 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -84.0,
-                "y": -88.0
+                "x": 100.0,
+                "y": -128.0
             }
         },
         {
@@ -55,8 +55,8 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 130.0,
-                "y": 105.0
+                "x": 275.0,
+                "y": 147.0
             }
         },
         {
@@ -66,19 +66,8 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 129.0,
-                "y": -86.0
-            }
-        },
-        {
-            "id": "Death",
-            "clipIndex": 3,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 227.52955627441406,
-                "y": 10.52940845489502
+                "x": 449.0,
+                "y": -130.0
             }
         },
         {
@@ -88,8 +77,19 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -84.49996948242188,
-                "y": 9.52942943572998
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
             }
         },
         {
@@ -99,8 +99,19 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -242.5799560546875,
-                "y": 131.6720428466797
+                "x": -15.5799560546875,
+                "y": 150.6720428466797
+            }
+        },
+        {
+            "id": "Roll",
+            "clipIndex": 6,
+            "loop": true,
+            "speed": 1.3000000715255737,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -155.5,
+                "y": 38.5
             }
         }
     ],
@@ -122,6 +133,11 @@
                     "paramName": "IsJumping",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -322,6 +338,16 @@
                     "paramName": "IsGrounded",
                     "mode": "Equals",
                     "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -366,21 +392,6 @@
             ]
         },
         {
-            "from": "Hurt",
-            "to": "Land",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "IsGrounded",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
             "from": "Land",
             "to": "Death",
             "anyState": false,
@@ -394,6 +405,111 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.27000001072883606,
+            "transitionDuration": 0.27000001072883606,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5799999833106995,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6200000047683716,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -402,6 +518,7 @@
         "Resources/Animations/Kusane@Run.fbx",
         "Resources/Animations/Kusane@Death.fbx",
         "Resources/Animations/Kusane@Jump.fbx",
-        "Resources/Animations/Kusane@Land.fbx"
+        "Resources/Animations/Kusane@Land.fbx",
+        "Resources/Animations/Kusane@Roll.fbx"
     ]
 }
