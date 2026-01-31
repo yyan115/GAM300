@@ -67,6 +67,9 @@ return Component {
         end
         if self._confirmComp.isActive or self._settingsComp.isActive or self._pauseComp.isActive then
             self._blackScreenComp.isActive = true
+            if Screen and Screen.IsCursorLocked() then
+                Screen.SetCursorLocked(false)
+            end
         else
             self._blackScreenComp.isActive = false
         end

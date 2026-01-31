@@ -8,6 +8,9 @@ return Component {
     },
 
     OnClickContinueButton = function(self)
+            if Screen and Screen.IsCursorLocked() then
+                Screen.SetCursorLocked(true)
+            end
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
         if pauseUIEntity then
             local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
